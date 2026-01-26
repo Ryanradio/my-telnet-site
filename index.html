@@ -23,14 +23,14 @@
 
         // --- Server & Proxy Settings ---
         // REPLACE THIS WITH YOUR TARGET SERVER'S REAL HOSTNAME OR IP ADDRESS
-        Options.Hostname = 'your_server_hostname_or_ip';
-        Options.Port = 23; // The default Telnet port is 23
+        Options.Hostname = '3.136.65.236;
+        Options.Port = 12146; // The default Telnet port is 23
 
         // You may need to configure proxy settings if required
-        // Options.ProxyHostname = 'your_proxy_hostname';
-        // Options.ProxyPort = 443;
+        Options.ProxyHostname = 'p-us-east.ftelnet.ca';
+        Options.ProxyPort = 443;
 
-        Options.AutoConnect = false; // Set to true to connect automatically on page load
+        Options.AutoConnect = true; // Set to true to connect automatically on page load
         Options.AllowYModemG = true;
         Options.SendLocation = true;
 
@@ -41,6 +41,7 @@
         Options.ScreenColumns = 80; // Standard terminal width
         Options.ScreenRows = 25; // Standard terminal height
         Options.Font = 'CP437'; // Common terminal font
+        Options.BitsPerSecond = 57600;
 
         // --- Keyboard Settings ---
         Options.Enter = '\r'; // Telnet uses carriage return for Enter
