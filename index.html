@@ -13,19 +13,25 @@
     <div id="fTelnetContainer"></div>
     <script src="https://embed-v2.ftelnet.ca" id="fTelnetScript"></script>
     <script>
-        var Options = new fTelnetOptions();
-        Options.Hostname = '3.136.65.236';
-        Options.Port = 12146;
-        Options.ConnectionType = 'telnet';
-        Options.AutoConnect = true;
-        Options.Emulation = 'ansi-bbs';
-        Options.ScreenColumns = 80;
-        Options.ScreenRows = 25;
-        Options.Font = 'CP437';
-        Options.Enter = '\r';
-        Options.LocalEcho = false;
-        
-        var Client = new fTelnetClient('fTelnetContainer', Options);
+        // Wait for the fTelnet script to fully load
+        window.addEventListener('load', function() {
+            var Options = new fTelnetOptions();
+            Options.Hostname = '3.136.65.236';
+            Options.Port = 12146;
+            Options.ProxyHostname = 'proxy-us-east.ftelnet.ca';
+            Options.ProxyPort = 1123;
+            Options.ProxyPortSecure = 11235;
+            Options.ConnectionType = 'telnet';
+            Options.AutoConnect = true;
+            Options.Emulation = 'ansi-bbs';
+            Options.ScreenColumns = 80;
+            Options.ScreenRows = 25;
+            Options.Font = 'CP437';
+            Options.Enter = '\r';
+            Options.LocalEcho = false;
+            
+            var Client = new fTelnetClient('fTelnetContainer', Options);
+        });
     </script>
 </body>
 </html>
