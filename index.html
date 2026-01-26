@@ -47,12 +47,25 @@
             const container = document.getElementById('fTelnetContainer');
             container.style.display = 'block';
             container.scrollIntoView({ behavior: 'smooth' });
+
             var Options = new fTelnetOptions();
+            
+            // 1. The TARGET BBS Address (Pantheon)
             Options.Hostname = "3.22.53.161"; 
             Options.Port = 19352;
-            Options.ProxyType = "none"; // Direct IP connection
+
+            // 2. The BRIDGE (Your Ngrok Domain)
+            Options.ProxyHostname = "unabruptly-multiplated-kory.ngrok-free.dev"; 
+            
+            // 3. The CONNECTION Settings
+            // GitHub (HTTPS) requires Secure WebSockets (WSS) via port 443
+            Options.ProxyPort = 443; 
+            Options.ProxyPortSecure = 443;
+            Options.ProxyType = "websocket"; 
+
             var Client = new fTelnetClient('fTelnetContainer', Options);
         }
+
         async function loadConnectionInfo() {
             try {
                 const response = await fetch('connection.json?t=' + new Date().getTime());
