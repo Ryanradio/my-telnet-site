@@ -26,6 +26,7 @@
         .client-link { background-color: #000; border: 1px solid #0f0; padding: 15px; text-align: center; text-decoration: none; color: #0f0; display: block; cursor: pointer; }
         .web-client-btn { border: 2px solid #fff; color: #fff; }
         #fTelnetContainer { margin-top: 20px; width: 100%; height: 500px; display: none; border: 1px solid #0f0; }
+        .last-updated { text-align: center; color: #0a0; font-size: 0.9em; margin-top: 20px; }
     </style>
 </head>
 <body>
@@ -43,25 +44,26 @@
         <div class="last-updated" id="lastUpdated"></div>
     </div>
     <script>
-        function connectViaWeb() {
+        async function connectViaWeb() {
             const container = document.getElementById('fTelnetContainer');
             container.style.display = 'block';
             container.scrollIntoView({ behavior: 'smooth' });
 
-            var Options = new fTelnetOptions();
+            // Get current connection info
+            const response = await fetch('connection.json?t=' + new Date().getTime());
+            const data = await response.json();
 
-            // Add this line to bypass the ngrok warning for your users:
+            var Options = new fTelnetOptions();
             Options.ProxyHeaders = { "ngrok-skip-browser-warning": "true" };
             
             // 1. The TARGET BBS Address (Pantheon)
             Options.Hostname = "192.168.40.69"; 
             Options.Port = 23;
 
-            // 2. The BRIDGE (Your Ngrok Domain)
-            Options.ProxyHostname = "unabruptly-multiplated-kory.ngrok-free.dev"; 
+            // 2. The BRIDGE (Your Ngrok Domain) - NOW DYNAMIC!
+            Options.ProxyHostname = data.proxy_hostname; 
             
             // 3. The CONNECTION Settings
-            // GitHub (HTTPS) requires Secure WebSockets (WSS) via port 443
             Options.ProxyPort = 443; 
             Options.ProxyPortSecure = 443;
             Options.ProxyType = "websocket"; 
@@ -76,7 +78,8 @@
                 document.getElementById('connectionInfo').innerHTML = `
                     <h2>Current Connection:</h2>
                     <div class="address"><strong>IP:</strong> ${data.ip}<br><strong>Port:</strong> ${data.port}</div>
-                    <button class="copy-btn" onclick="navigator.clipboard.writeText('${data.ip}')">Copy IP</button>`;
+                    <button class="copy-btn" onclick="navigator.clipboard.writeText('${data.ip}')">Copy IP</button>
+                    <button class="copy-btn" onclick="navigator.clipboard.writeText('${data.port}')">Copy Port</button>`;
                 document.getElementById('lastUpdated').textContent = `Last updated: ${data.last_updated}`;
             } catch (error) { console.error(error); }
         }
