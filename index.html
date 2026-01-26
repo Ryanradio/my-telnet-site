@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Telnet Terminal</title>
+    <style>
+        body { background-color: #000; color: #fff; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        #fTelnetContainer { border: 2px solid #444; width: 800px; height: 450px; }
+    </style>
+</head>
+<body>
+
+    <!-- This is where the terminal appears on your page -->
+    <div id="fTelnetContainer"></div>
+
+    <!-- This script loads the actual fTelnet tool from their servers -->
+    <script src="https://embed-v2.ftelnet.ca" id="fTelnetScript"></script>
+
+    <script>
+        // These are the settings you chose earlier, now updated with the VA proxy
+        var Options = new fTelnetOptions();
+        
+        // --- Server & Proxy Settings ---
+        // REPLACE THIS WITH YOUR TARGET SERVER'S REAL HOSTNAME (e.g., 'bbs.foobar.com')
+        Options.Hostname = '3.136.65.236'; 
+        Options.Port = 12146;                                  // The port of the target server
+        
+        // Use the Ashburn, VA proxy (best ping for you)
+        Options.ProxyHostname = 'p-us-east.ftelnet.ca'; 
+        Options.ProxyPort = 443;                            // Use 443 because GitHub Pages is HTTPS
+        
+        Options.AutoConnect = false; 
+        Options.AllowYModemG = true; 
+        Options.SendLocation = true; 
+                // --- Connection & Display Settings ---
+        Options.ConnectionType = 'telnet';
+        Options.BitsPerSecond = 57600;
+        Options.Emulation = 'ansi-bbs';
+        Options.ScreenColumns = 80;
+        Options.ScreenRows = 25;
+        Options.Font = 'CP437';
+        
+        // --- Keyboard Settings ---
+        Options.Enter = '\r';
+        Options.LocalEcho = false;
+        Options.NegotiateLocalEcho = true;
+        
+        // This line starts the client inside the 'fTelnetContainer' box
+        var Client = new fTelnetClient('fTelnetContainer', Options);
+    </script>
+</body>
+</html>
