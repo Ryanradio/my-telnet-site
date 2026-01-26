@@ -43,8 +43,9 @@
         <div id="fTelnetContainer"></div>
         <div class="last-updated" id="lastUpdated"></div>
     </div>
-    <script>
-        async function connectViaWeb() {
+<script>
+    async function connectViaWeb() {
+        try {
             const container = document.getElementById('fTelnetContainer');
             container.style.display = 'block';
             container.scrollIntoView({ behavior: 'smooth' });
@@ -69,21 +70,28 @@
             Options.ProxyType = "websocket"; 
 
             var Client = new fTelnetClient('fTelnetContainer', Options);
+        } catch (error) {
+            console.error("Connection error:", error);
+            alert("Could not connect. Please check the console for errors.");
         }
+    }
 
-        async function loadConnectionInfo() {
-            try {
-                const response = await fetch('connection.json?t=' + new Date().getTime());
-                const data = await response.json();
-                document.getElementById('connectionInfo').innerHTML = `
-                    <h2>Current Connection:</h2>
-                    <div class="address"><strong>IP:</strong> ${data.ip}<br><strong>Port:</strong> ${data.port}</div>
-                    <button class="copy-btn" onclick="navigator.clipboard.writeText('${data.ip}')">Copy IP</button>
-                    <button class="copy-btn" onclick="navigator.clipboard.writeText('${data.port}')">Copy Port</button>`;
-                document.getElementById('lastUpdated').textContent = `Last updated: ${data.last_updated}`;
-            } catch (error) { console.error(error); }
+    async function loadConnectionInfo() {
+        try {
+            const response = await fetch('connection.json?t=' + new Date().getTime());
+            const data = await response.json();
+            document.getElementById('connectionInfo').innerHTML = `
+                <h2>Current Connection:</h2>
+                <div class="address"><strong>IP:</strong> ${data.ip}<br><strong>Port:</strong> ${data.port}</div>
+                <button class="copy-btn" onclick="navigator.clipboard.writeText('${data.ip}')">Copy IP</button>
+                <button class="copy-btn" onclick="navigator.clipboard.writeText('${data.port}')">Copy Port</button>`;
+            document.getElementById('lastUpdated').textContent = `Last updated: ${data.last_updated}`;
+        } catch (error) { 
+            console.error(error); 
+            document.getElementById('connectionInfo').innerHTML = '<div style="color: #f00;">Error loading connection info</div>';
         }
-        loadConnectionInfo();
-    </script>
+    }
+    loadConnectionInfo();
+</script>
 </body>
 </html>
