@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect to Pantheon Major BBS</title>
+    <!-- fTelnet CSS (Ensure these files are in your GitHub repo) -->
+    <link href="ftelnet.css" rel="stylesheet">
+    <script src="ftelnet.rip.xfer.min.js"></script>
+    <style>
+        body { 
+            background-color: #000; 
+            color: #0f0; 
+            font-family: 'Courier New', monospace;
+            display: flex; 
+            flex-direction: column;
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            max-width: 800px;
+            border: 2px solid #0f0;
+            padding: 30px;
+            background-color: #001100;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+        }
+        h1 {
+            text-align: center;
+            color: #0f0;
+            font-size: 2em;
+            margin-top: 0;
+            text-shadow: 0 0 10px #0f0;
+        }
+        .connection-info {
+            background-color: #000;
+            border: 1px solid #0f0;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .connection-info h2 {
+            margin-top: 0;
+            color: #0f0;
+        }
+        .address {
+            font-size: 1.5em;
+            color: #fff;
+            margin: 15px 0;
+            word-break: break-all;
+        }
+        .copy-btn {
+            background-color: #0f0;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 1em;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        .copy-btn:hover {
+            background-color: #0c0;
+        }
+        .instructions {
+            margin: 20px 0;
+            line-height: 1.8;
+        }
+        .instructions h3 {
+            color: #0f0;
+            border-bottom: 1px solid #0f0;
+            padding-bottom: 10px;
+        }
+        .client-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .client-link {
+            background-color: #000;
+            border: 1px solid #0f0;
+            padding: 15px;
+            text-align: center;
+            text-decoration: none;
+            color: #0f0;
+            display: block;
+            cursor: pointer;
+        }
+        .client-link:hover {
+            background-color: #002200;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+        /* Highlight the web client button */
+        .web-client-btn {
+            border: 2px solid #fff;
+            color: #fff;
+        }
+        .last-updated {
+            text-align: center;
+            color: #0a0;
+            font-size: 0.9em;
+            margin-top: 20px;
+        }
+        .loading {
+            text-align: center;
+            color: #0a0;
+        }
+        .error {
+            color: #f00;
+            text-align: center;
+        }
+        /* Style for the terminal container */
+        #fTelnetContainer {
+            margin-top: 20px;
+            width: 100%;
+            height: 500px;
+            display: none; /* Hidden until button is clicked */
+            border: 1px solid #0f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>═══ THE PANTHEON MAJOR BBS ═══</h1>
+        
+        <div class="connection-info" id="connectionInfo">
+            <div class="loading">Loading connection information...</div>
+        </div>
+        
+        <div class="instructions">
+            <h3>How to Connect:</h3>
+            <ol>
+                <li>Click <strong>Connect via Web Browser</strong> for instant access</li>
+                <li>Or download a telnet client and enter the IP/Port shown above</li>
+            </ol>
+        </div>
+        
+        <div class="client-links">
+            <!-- NEW BUTTON: Connect directly to Pantheon via fTelnet -->
+            <div class="client-link web-client-btn" onclick="connectViaWeb()">
+                <strong>Connect via Web Browser</strong><br>
+                Instant Access
+            </div>
+
+            <a href="https://www.putty.org/" target="_blank" class="client-link">
+                <strong>PuTTY</strong><br>
+                Windows
+            </a>
+            <a href="https://apps.apple.com/us/app/termius-ssh-client/id549039908" target="_blank" class="client-link">
+                <strong>Termius</strong><br>
+                Mac/iOS
+            </a>
+            <a href="https://play.google.com/store/apps/details?id=com.sonelli.juicessh" target="_blank" class="client-link">
+                <strong>JuiceSSH</strong><br>
+                Android
+            </a>
+        </div>
+
+        <!-- Terminal will appear here -->
+        <div id="fTelnetContainer"></div>
+        
+        <div class="last-updated" id="lastUpdated"></div>
+    </div>
+
+    <script>
+        // fTelnet Connection Logic
+        function connectViaWeb() {
+            const container = document.getElementById('fTelnetContainer');
+            container.style.display = 'block'; // Show the terminal
+            container.scrollIntoView({ behavior: 'smooth' });
+
+            var Options = new fTelnetOptions();
+            Options.Hostname = "3.22.53.161"; 
+            Options.Port = 19352;
+            
+            // Set ProxyType to 'none' if connecting directly to an IP.
+            // NOTE: This usually requires a WebSocket proxy at that IP.
+            // If Pantheon doesn't have one, you'd need to use your TrueNAS Websockify as the bridge.
+            Options.ProxyType = "none"; 
+
+            var Client = new fTelnetClient('fTelnetContainer', Options);
+        }
+
+        // Existing Connection Info Logic
+        async function loadConnectionInfo() {
+            try {
+                const response = await fetch('connection.json?t=' + new Date().getTime());
+                if (!response.ok) throw new Error('Failed to load connection info');
+                const data = await response.json();
+                
+                const html = `
+                    <h2>Current Connection:</h2>
+                    <div class="address">
+                        <strong>IP:</strong> ${data.ip}<br>
+                        <strong>Port:</strong> ${data.port}
+                    </div>
+                    <button class="copy-btn" onclick="copyToClipboard('${data.ip}')">Copy IP</button>
+                    <button class="copy-btn" onclick="copyToClipboard('${data.port}')">Copy Port</button>
+                `;
+                document.getElementById('connectionInfo').innerHTML = html;
+                document.getElementById('lastUpdated').textContent = `Last updated: ${data.last_updated}`;
+            } catch (error) {
+                document.getElementById('connectionInfo').innerHTML = 
+                    '<div class="error">Unable to load connection info. Please check back later.</div>';
+            }
+        }
+        
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Copied to clipboard: ' + text);
+            });
+        }
+        
+        loadConnectionInfo();
+        setInterval(loadConnectionInfo, 60000);
+    </script>
+</body>
+</html>
