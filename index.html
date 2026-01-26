@@ -49,6 +49,9 @@
             container.scrollIntoView({ behavior: 'smooth' });
 
             var Options = new fTelnetOptions();
+
+            // Add this line to bypass the ngrok warning for your users:
+            Options.ProxyHeaders = { "ngrok-skip-browser-warning": "true" };
             
             // 1. The TARGET BBS Address (Pantheon)
             Options.Hostname = "192.168.40.69"; 
