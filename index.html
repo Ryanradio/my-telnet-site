@@ -5,32 +5,48 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Telnet Terminal</title>
     <style>
-        body { background-color: #000; color: #fff; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        #fTelnetContainer { border: 2px solid #444; width: 800px; height: 450px; }
+        body { 
+            background-color: #000; 
+            color: #fff; 
+            font-family: sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+        }
+        .fTelnetContainer { 
+            border: 2px solid #444; 
+            width: 800px; 
+            height: 450px; 
+        }
     </style>
 </head>
 <body>
-    <div id="fTelnetContainer"></div>
-    <script src="https://embed-v2.ftelnet.ca/ftelnet.js" id="fTelnetScript"></script>
+    <div id="fTelnetContainer" class="fTelnetContainer"></div>
+    <script>document.write('<script src="//embed-v2.ftelnet.ca/js/ftelnet-loader.norip.xfer.js?v=' + (new Date()).getTime() + '"><\/script>');</script>
     <script>
-        window.addEventListener('load', function() {
-            var Options = new fTelnetOptions();
-            Options.Hostname = '3.136.65.236';
-            Options.Port = 12146;
-            Options.ProxyHostname = 'proxy-us-east.ftelnet.ca';
-            Options.ProxyPort = 1123;
-            Options.ProxyPortSecure = 11235;
-            Options.ConnectionType = 'telnet';
-            Options.AutoConnect = true;
-            Options.Emulation = 'ansi-bbs';
-            Options.ScreenColumns = 80;
-            Options.ScreenRows = 25;
-            Options.Font = 'CP437';
-            Options.Enter = '\r';
-            Options.LocalEcho = false;
-            
-            var Client = new fTelnetClient('fTelnetContainer', Options);
-        });
+        var Options = new fTelnetOptions();
+        Options.BareLFtoCRLF = false;
+        Options.BitsPerSecond = 57600;
+        Options.ConnectionType = 'telnet';
+        Options.Emulation = 'ansi-bbs';
+        Options.Enter = '\r';
+        Options.Font = 'CP437';
+        Options.ForceWss = false;
+        Options.FullScreenOnConnect = false;
+        Options.Hostname = '3.136.65.236';
+        Options.LocalEcho = false;
+        Options.NegotiateLocalEcho = true;
+        Options.Port = 12146;
+        Options.ProxyHostname = 'p-us-east.ftelnet.ca';
+        Options.ProxyPort = 80;
+        Options.ProxyPortSecure = 443;
+        Options.ScreenColumns = 80;
+        Options.ScreenRows = 25;
+        Options.SendLocation = true;
+        var fTelnet = new fTelnetClient('fTelnetContainer', Options);
+        fTelnet.Connect();
     </script>
 </body>
 </html>
