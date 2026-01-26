@@ -10,30 +10,23 @@
     </style>
 </head>
 <body>
-
     <!-- This is where the terminal appears on your page -->
     <div id="fTelnetContainer"></div>
-
     <!-- This script loads the actual fTelnet tool from their servers -->
     <script src="https://embed-v2.ftelnet.ca" id="fTelnetScript"></script>
-
     <script>
         // These are the settings for your fTelnet client
         var Options = new fTelnetOptions();
-
         // --- Server & Proxy Settings ---
         // REPLACE THIS WITH YOUR TARGET SERVER'S REAL HOSTNAME OR IP ADDRESS
-        Options.Hostname = '3.136.65.236;
+        Options.Hostname = '3.136.65.236'; // FIXED: Added closing quote
         Options.Port = 12146; // The default Telnet port is 23
-
         // You may need to configure proxy settings if required
         Options.ProxyHostname = 'p-us-east.ftelnet.ca';
         Options.ProxyPort = 443;
-
         Options.AutoConnect = true; // Set to true to connect automatically on page load
         Options.AllowYModemG = true;
         Options.SendLocation = true;
-
         // --- Connection & Display Settings ---
         Options.ConnectionType = 'telnet';
         Options.BitsPerSecond = 57600; // Adjust as needed
@@ -41,13 +34,10 @@
         Options.ScreenColumns = 80; // Standard terminal width
         Options.ScreenRows = 25; // Standard terminal height
         Options.Font = 'CP437'; // Common terminal font
-        Options.BitsPerSecond = 57600;
-
         // --- Keyboard Settings ---
         Options.Enter = '\r'; // Telnet uses carriage return for Enter
         Options.LocalEcho = false;
         Options.NegotiateLocalEcho = true;
-
         // This line starts the client inside the 'fTelnetContainer' box
         var Client = new fTelnetClient('fTelnetContainer', Options);
     </script>
