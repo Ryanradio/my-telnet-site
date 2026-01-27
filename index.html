@@ -624,8 +624,8 @@
                 // Play modem sound and wait for it to finish
                 playModemSound();
                 
-                // Show a "connecting" message while modem sound plays
-                container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:1.2em;text-align:center;"><div>📞 DIALING...<br><br>Please wait for handshake...</div></div>';
+                // Show a "dialing" message while modem sound plays
+                container.innerHTML = '<div class="xp-loading-container"><div class="xp-loading-text">📞 DIALING...</div><div class="xp-status-text">Please wait for handshake...</div></div>';
                 container.classList.add('active');
                 container.scrollIntoView({ behavior: 'smooth' });
                 
@@ -641,7 +641,21 @@
                     }
                 });
                 
-                // Clear the connecting message
+                // Show Windows XP style loading bar
+                container.innerHTML = `
+                    <div class="xp-loading-container">
+                        <div class="xp-loading-text">✓ Connected</div>
+                        <div class="xp-loading-bar">
+                            <div class="xp-loading-fill" id="xpProgressBar"></div>
+                        </div>
+                        <div class="xp-status-text" id="xpStatusText">Initializing terminal...</div>
+                    </div>
+                `;
+                
+                // Animate the progress bar
+                await animateXPProgress();
+                
+                // Clear the loading message
                 container.innerHTML = '';
 
                 const response = await fetch('connection.json?t=' + new Date().getTime());
@@ -661,6 +675,28 @@
                 console.error("Connection error:", error);
                 alert("Could not establish connection. Error: " + error.message);
             }
+        }
+
+        async function animateXPProgress() {
+            const progressBar = document.getElementById('xpProgressBar');
+            const statusText = document.getElementById('xpStatusText');
+            
+            const steps = [
+                { percent: 20, text: 'Loading protocols...', delay: 300 },
+                { percent: 40, text: 'Establishing secure connection...', delay: 400 },
+                { percent: 60, text: 'Negotiating terminal settings...', delay: 500 },
+                { percent: 80, text: 'Preparing display...', delay: 400 },
+                { percent: 100, text: 'Ready!', delay: 300 }
+            ];
+            
+            for (const step of steps) {
+                await new Promise(resolve => setTimeout(resolve, step.delay));
+                if (progressBar) progressBar.style.width = step.percent + '%';
+                if (statusText) statusText.textContent = step.text;
+            }
+            
+            // Wait a moment before showing terminal
+            await new Promise(resolve => setTimeout(resolve, 500));
         }
 
         async function loadConnectionInfo() {
@@ -1061,6 +1097,94 @@
             0% { transform: rotateX(0deg); opacity: 0.5; }
             50% { transform: rotateX(90deg); opacity: 0.2; }
             100% { transform: rotateX(0deg); opacity: 1; }
+        }
+
+        /* Windows XP Loading Bar */
+        .xp-loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            gap: 20px;
+        }
+
+        .xp-loading-text {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+
+        .xp-loading-bar {
+            width: 300px;
+            height: 24px;
+            background: #003366;
+            border: 2px solid currentColor;
+            border-radius: 3px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .xp-loading-fill {
+            height: 100%;
+            background: linear-gradient(
+                to right,
+                #0066cc 0%,
+                #3399ff 50%,
+                #0066cc 100%
+            );
+            background-size: 200% 100%;
+            animation: xp-progress 2s linear infinite;
+            width: 0%;
+            transition: width 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .xp-loading-fill::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 50%;
+            background: linear-gradient(
+                to bottom,
+                rgba(255, 255, 255, 0.4),
+                transparent
+            );
+        }
+
+        .xp-loading-fill::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.3),
+                transparent
+            );
+            animation: xp-shimmer 1.5s infinite;
+        }
+
+        @keyframes xp-progress {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 200% 0%; }
+        }
+
+        @keyframes xp-shimmer {
+            0% { left: -100%; }
+            100% { left: 200%; }
+        }
+
+        .xp-status-text {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-top: 10px;
         }
 
         /* Matrix rain effect */
