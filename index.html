@@ -318,6 +318,30 @@
             font-size: 0.9rem;
         }
 
+        .sound-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 17, 0, 0.9);
+            border: 2px solid #0f0;
+            color: #0f0;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 1.2rem;
+            z-index: 1002;
+            transition: all 0.3s;
+        }
+
+        .sound-toggle:hover {
+            background: rgba(0, 255, 0, 0.2);
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+        }
+
+        .sound-toggle.muted {
+            opacity: 0.5;
+        }
+
         .ascii-art {
             font-size: 0.6rem;
             line-height: 1;
@@ -368,6 +392,12 @@
 </head>
 <body>
     <div class="stars" id="stars"></div>
+    
+    <button class="sound-toggle" id="soundToggle" onclick="toggleSound()" title="Toggle dial-up sound">🔊</button>
+    
+    <audio id="modemSound" preload="auto">
+        <source src="modem.mp3" type="audio/mpeg">
+    </audio>
     
     <div class="container">
         <div class="header">
@@ -445,6 +475,28 @@
     </div>
 
     <script>
+        // Sound control
+        let soundEnabled = true;
+        const modemSound = document.getElementById('modemSound');
+        const soundToggle = document.getElementById('soundToggle');
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            soundToggle.textContent = soundEnabled ? '🔊' : '🔇';
+            soundToggle.classList.toggle('muted');
+            if (!soundEnabled && modemSound) {
+                modemSound.pause();
+                modemSound.currentTime = 0;
+            }
+        }
+
+        function playModemSound() {
+            if (soundEnabled && modemSound) {
+                modemSound.currentTime = 0;
+                modemSound.play().catch(e => console.log('Audio play failed:', e));
+            }
+        }
+
         // Generate random stars
         function createStars() {
             const container = document.getElementById('stars');
@@ -460,6 +512,9 @@
 
         async function connectViaWeb() {
             try {
+                // Play modem sound
+                playModemSound();
+
                 const container = document.getElementById('fTelnetContainer');
                 container.classList.add('active');
                 container.scrollIntoView({ behavior: 'smooth' });
