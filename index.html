@@ -512,10 +512,16 @@
 
         async function connectViaWeb() {
             try {
+                const container = document.getElementById('fTelnetContainer');
+                
+                // Prevent multiple connections
+                if (container.classList.contains('active')) {
+                    return; // Already connected
+                }
+                
                 // Play modem sound
                 playModemSound();
 
-                const container = document.getElementById('fTelnetContainer');
                 container.classList.add('active');
                 container.scrollIntoView({ behavior: 'smooth' });
 
