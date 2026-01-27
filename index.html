@@ -3,68 +3,477 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Connect to Pantheon Major BBS</title>
-    <!-- Essential: These point to your uploaded local files -->
+    <title>The Pantheon Major BBS</title>
     <link href="ftelnet.css" rel="stylesheet">
-    <!-- The ID below is required by fTelnet to find fonts/keyboard maps -->
     <script src="ftelnet.rip.xfer.min.js" id="fTelnetScript"></script>
     <style>
-        body { 
-            background-color: #000; color: #0f0; font-family: 'Courier New', monospace;
-            display: flex; flex-direction: column; justify-content: center; 
-            align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
+
+        @keyframes scanline {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100%); }
+        }
+
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.95; }
+        }
+
+        @keyframes glow-pulse {
+            0%, 100% { text-shadow: 0 0 10px #0f0, 0 0 20px #0f0; }
+            50% { text-shadow: 0 0 20px #0f0, 0 0 30px #0f0, 0 0 40px #0f0; }
+        }
+
+        body {
+            background: #000;
+            color: #0f0;
+            font-family: 'Courier New', Courier, monospace;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* CRT scanline effect */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                transparent 50%,
+                rgba(0, 255, 0, 0.02) 51%
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 1000;
+            animation: flicker 0.15s infinite;
+        }
+
+        /* Moving scanline */
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: rgba(0, 255, 0, 0.1);
+            pointer-events: none;
+            z-index: 1001;
+            animation: scanline 6s linear infinite;
+        }
+
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #0f0;
+            opacity: 0.3;
+            animation: twinkle 3s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.8; }
+        }
+
         .container {
-            max-width: 800px; border: 2px solid #0f0; padding: 30px;
-            background-color: #001100; box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
         }
-        h1 { text-align: center; color: #0f0; font-size: 2em; text-shadow: 0 0 10px #0f0; }
-        .connection-info { background-color: #000; border: 1px solid #0f0; padding: 20px; margin: 20px 0; text-align: center; }
-        .address { font-size: 1.5em; color: #fff; margin: 15px 0; word-break: break-all; }
-        .copy-btn { background-color: #0f0; color: #000; border: none; padding: 10px 20px; cursor: pointer; margin: 10px 5px; }
-        .client-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0; }
-        .client-link { background-color: #000; border: 1px solid #0f0; padding: 15px; text-align: center; text-decoration: none; color: #0f0; display: block; cursor: pointer; }
-        .web-client-btn { border: 2px solid #fff; color: #fff; }
-        #fTelnetContainer { margin-top: 20px; width: 100%; height: 500px; display: none; border: 1px solid #0f0; }
-        .last-updated { text-align: center; color: #0a0; font-size: 0.9em; margin-top: 20px; }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 30px 20px;
+            border: 3px double #0f0;
+            background: rgba(0, 17, 0, 0.8);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: "";
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #0f0, transparent, #0f0);
+            opacity: 0.3;
+            animation: rotate-border 4s linear infinite;
+            z-index: -1;
+        }
+
+        @keyframes rotate-border {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        h1 {
+            font-size: clamp(1.5rem, 5vw, 3rem);
+            margin-bottom: 10px;
+            animation: glow-pulse 3s infinite;
+            letter-spacing: 0.1em;
+        }
+
+        .tagline {
+            font-size: clamp(0.8rem, 2vw, 1.2rem);
+            opacity: 0.8;
+            margin-top: 10px;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-around;
+            padding: 15px;
+            background: rgba(0, 17, 0, 0.6);
+            border: 1px solid #0f0;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            background: #0f0;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 5px #0f0; }
+            50% { opacity: 0.5; box-shadow: 0 0 15px #0f0; }
+        }
+
+        .connection-panel {
+            background: rgba(0, 17, 0, 0.8);
+            border: 2px solid #0f0;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+        }
+
+        .connection-panel h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: clamp(1.2rem, 3vw, 1.8rem);
+            border-bottom: 1px solid #0f0;
+            padding-bottom: 10px;
+        }
+
+        .connection-info {
+            background: #000;
+            border: 1px solid #0f0;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .address {
+            font-size: clamp(1rem, 2.5vw, 1.5rem);
+            color: #fff;
+            margin: 15px 0;
+            word-break: break-all;
+            font-weight: bold;
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            background: #000;
+            border: 2px solid #0f0;
+            color: #0f0;
+            padding: 15px 20px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(0, 255, 0, 0.1);
+            transform: translate(-50%, -50%);
+            transition: width 0.3s, height 0.3s;
+        }
+
+        .btn:hover::before {
+            width: 100%;
+            height: 100%;
+        }
+
+        .btn:hover {
+            background: rgba(0, 255, 0, 0.1);
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            border-color: #fff;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .btn-primary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        }
+
+        .copy-btn {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: #0c0;
+            box-shadow: 0 0 15px #0f0;
+            transform: scale(1.05);
+        }
+
+        #fTelnetContainer {
+            width: 100%;
+            height: 70vh;
+            min-height: 500px;
+            max-height: 1000px;
+            display: none;
+            border: 2px solid #0f0;
+            margin-top: 20px;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.4);
+            background: #000;
+        }
+
+        #fTelnetContainer.active {
+            animation: terminal-boot 0.5s;
+        }
+
+        @keyframes terminal-boot {
+            0% { opacity: 0; transform: scale(0.95); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            border-top: 1px solid #0f0;
+            margin-top: 30px;
+            opacity: 0.7;
+            font-size: 0.9rem;
+        }
+
+        .ascii-art {
+            font-size: 0.6rem;
+            line-height: 1;
+            opacity: 0.5;
+            margin: 20px 0;
+            text-align: center;
+            overflow-x: auto;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header {
+                padding: 20px 10px;
+            }
+
+            .status-bar {
+                flex-direction: column;
+            }
+
+            .button-grid {
+                grid-template-columns: 1fr;
+            }
+
+            #fTelnetContainer {
+                height: 60vh;
+                min-height: 400px;
+            }
+
+            .ascii-art {
+                font-size: 0.4rem;
+            }
+        }
+
+        .loading {
+            text-align: center;
+            color: #0a0;
+        }
+
+        .error {
+            color: #f00;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
+    <div class="stars" id="stars"></div>
+    
     <div class="container">
-        <h1>═══ THE PANTHEON MAJOR BBS ═══</h1>
-        <div class="connection-info" id="connectionInfo">Loading connection information...</div>
-        <div class="client-links">
-            <div class="client-link web-client-btn" onclick="connectViaWeb()">
-                <strong>Connect via Web Browser</strong><br>Instant Access
-            </div>
-            <a href="https://www.putty.org" target="_blank" class="client-link"><strong>PuTTY</strong><br>Windows</a>
-            <a href="https://apps.apple.com" target="_blank" class="client-link"><strong>Termius</strong><br>Mac/iOS</a>
+        <div class="header">
+            <h1>═══ THE PANTHEON MAJOR BBS ═══</h1>
+            <div class="tagline">⚡ Since 1995 · Keeping the Legacy Alive · 30 Years Strong ⚡</div>
         </div>
+
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-indicator"></div>
+                <span>SYSTEM ONLINE</span>
+            </div>
+            <div class="status-item">
+                <div class="status-indicator"></div>
+                <span>TUNNELS ACTIVE</span>
+            </div>
+            <div class="status-item">
+                <div class="status-indicator"></div>
+                <span id="lastUpdated" class="loading">LOADING...</span>
+            </div>
+        </div>
+
+        <div class="connection-panel">
+            <h2>▼ CONNECTION INFORMATION ▼</h2>
+            <div class="connection-info" id="connectionInfo">
+                <div class="loading">Establishing connection to mainframe...</div>
+            </div>
+        </div>
+
+        <div class="connection-panel">
+            <h2>▼ ACCESS METHODS ▼</h2>
+            <div class="button-grid">
+                <button class="btn btn-primary" onclick="connectViaWeb()">
+                    <span style="font-size: 1.5em;">⚡</span>
+                    <strong>INSTANT WEB ACCESS</strong>
+                    <span style="font-size: 0.8em;">Connect Now</span>
+                </button>
+                <a href="https://www.putty.org" target="_blank" class="btn">
+                    <span style="font-size: 1.5em;">💻</span>
+                    <strong>PuTTY</strong>
+                    <span style="font-size: 0.8em;">Windows Client</span>
+                </a>
+                <a href="https://apps.apple.com/us/app/termius-ssh-client/id549039908" target="_blank" class="btn">
+                    <span style="font-size: 1.5em;">🍎</span>
+                    <strong>Termius</strong>
+                    <span style="font-size: 0.8em;">Mac/iOS Client</span>
+                </a>
+                <a href="https://play.google.com/store/apps/details?id=com.sonelli.juicessh" target="_blank" class="btn">
+                    <span style="font-size: 1.5em;">🤖</span>
+                    <strong>JuiceSSH</strong>
+                    <span style="font-size: 0.8em;">Android Client</span>
+                </a>
+            </div>
+        </div>
+
         <div id="fTelnetContainer"></div>
-        <div class="last-updated" id="lastUpdated"></div>
+
+        <div class="ascii-art">
+<pre>
+    ╔═══════════════════════════════════════════════════════════════════════╗
+    ║  ██████╗  █████╗ ███╗   ██╗████████╗██╗  ██╗███████╗ ██████╗ ███╗   ██║
+    ║  ██╔══██╗██╔══██╗████╗  ██║╚══██╔══╝██║  ██║██╔════╝██╔═══██╗████╗  ██║
+    ║  ██████╔╝███████║██╔██╗ ██║   ██║   ███████║█████╗  ██║   ██║██╔██╗ ██║
+    ║  ██╔═══╝ ██╔══██║██║╚██╗██║   ██║   ██╔══██║██╔══╝  ██║   ██║██║╚██╗██║
+    ║  ██║     ██║  ██║██║ ╚████║   ██║   ██║  ██║███████╗╚██████╔╝██║ ╚████║
+    ║  ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═╝  ╚═══║
+    ╚═══════════════════════════════════════════════════════════════════════╝
+</pre>
+        </div>
+
+        <div class="footer">
+            <p>Running on authentic Windows XP hardware · MajorBBS · A piece of computing history</p>
+            <p style="margin-top: 10px; font-size: 0.8em;">Established 1995 · Preserving the golden age of dial-up BBSing</p>
+        </div>
     </div>
+
     <script>
+        // Generate random stars
+        function createStars() {
+            const container = document.getElementById('stars');
+            for (let i = 0; i < 100; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                container.appendChild(star);
+            }
+        }
+
         async function connectViaWeb() {
             try {
                 const container = document.getElementById('fTelnetContainer');
                 container.style.display = 'block';
+                container.classList.add('active');
                 container.scrollIntoView({ behavior: 'smooth' });
 
-                // Get current connection info including the proxy hostname
                 const response = await fetch('connection.json?t=' + new Date().getTime());
                 const data = await response.json();
 
                 var Options = new fTelnetOptions();
                 Options.ProxyHeaders = { "ngrok-skip-browser-warning": "true" };
-                
-                // 1. The TARGET BBS Address (Pantheon)
                 Options.Hostname = "192.168.40.69"; 
                 Options.Port = 23;
-
-                // 2. The BRIDGE (Your Ngrok Domain) - NOW DYNAMIC!
                 Options.ProxyHostname = data.proxy_hostname; 
-                
-                // 3. The CONNECTION Settings
                 Options.ProxyPort = 443; 
                 Options.ProxyPortSecure = 443;
                 Options.ProxyType = "websocket"; 
@@ -72,7 +481,7 @@
                 var Client = new fTelnetClient('fTelnetContainer', Options);
             } catch (error) {
                 console.error("Connection error:", error);
-                alert("Could not connect. Error: " + error.message);
+                alert("Could not establish connection. Error: " + error.message);
             }
         }
 
@@ -80,18 +489,47 @@
             try {
                 const response = await fetch('connection.json?t=' + new Date().getTime());
                 const data = await response.json();
+                
                 document.getElementById('connectionInfo').innerHTML = `
-                    <h2>Current Connection:</h2>
-                    <div class="address"><strong>IP:</strong> ${data.ip}<br><strong>Port:</strong> ${data.port}</div>
-                    <button class="copy-btn" onclick="navigator.clipboard.writeText('${data.ip}')">Copy IP</button>
-                    <button class="copy-btn" onclick="navigator.clipboard.writeText('${data.port}')">Copy Port</button>`;
-                document.getElementById('lastUpdated').textContent = `Last updated: ${data.last_updated}`;
+                    <h3 style="color: #0f0; margin-bottom: 15px;">⚡ ACTIVE CONNECTION ⚡</h3>
+                    <div class="address">
+                        <strong>HOST:</strong> ${data.ip}<br>
+                        <strong>PORT:</strong> ${data.port}
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <button class="copy-btn" onclick="navigator.clipboard.writeText('${data.ip}')">📋 COPY IP</button>
+                        <button class="copy-btn" onclick="navigator.clipboard.writeText('${data.port}')">📋 COPY PORT</button>
+                        <button class="copy-btn" onclick="navigator.clipboard.writeText('telnet ${data.ip} ${data.port}')">📋 COPY COMMAND</button>
+                    </div>
+                `;
+                
+                const lastUpdate = new Date(data.last_updated);
+                const timeAgo = getTimeAgo(lastUpdate);
+                document.getElementById('lastUpdated').textContent = `UPDATED ${timeAgo}`;
+                document.getElementById('lastUpdated').classList.remove('loading');
             } catch (error) { 
                 console.error(error); 
-                document.getElementById('connectionInfo').innerHTML = '<div style="color: #f00;">Error loading connection info</div>';
+                document.getElementById('connectionInfo').innerHTML = '<div class="error">⚠ CONNECTION DATA UNAVAILABLE ⚠</div>';
             }
         }
+
+        function getTimeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+            if (seconds < 60) return 'JUST NOW';
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 60) return minutes + 'M AGO';
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) return hours + 'H AGO';
+            const days = Math.floor(hours / 24);
+            return days + 'D AGO';
+        }
+
+        // Initialize
+        createStars();
         loadConnectionInfo();
+        
+        // Auto-refresh connection info every 60 seconds
+        setInterval(loadConnectionInfo, 60000);
     </script>
 </body>
 </html>
