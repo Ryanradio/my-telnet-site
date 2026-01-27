@@ -1068,6 +1068,38 @@
         }
 
         function addMarioScenery() {
+            // Add Mario CSS overrides as inline style
+            const marioStyles = document.createElement('style');
+            marioStyles.id = 'mario-overrides';
+            marioStyles.textContent = `
+                body.nes-mode {
+                    background: #5c94fc !important;
+                }
+                body.nes-mode * {
+                    color: #ffffff !important;
+                }
+                body.nes-mode .header,
+                body.nes-mode .connection-panel,
+                body.nes-mode .status-bar,
+                body.nes-mode .connection-info,
+                body.nes-mode .btn,
+                body.nes-mode #fTelnetContainer,
+                body.nes-mode .visitor-counter,
+                body.nes-mode .sound-toggle,
+                body.nes-mode .guestbook-entry,
+                body.nes-mode .counter-digit {
+                    border-color: #fc9838 !important;
+                    background: rgba(252, 152, 56, 0.3) !important;
+                }
+                body.nes-mode h1,
+                body.nes-mode h2,
+                body.nes-mode h3 {
+                    color: #f83800 !important;
+                    text-shadow: 3px 3px 0 #000000 !important;
+                }
+            `;
+            document.head.appendChild(marioStyles);
+            
             // Add hills
             for (let i = 1; i <= 3; i++) {
                 const hill = document.createElement('div');
