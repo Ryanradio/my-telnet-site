@@ -434,17 +434,17 @@
     </style>
 </head>
 <body>
+    <div class="sysop-overlay" id="sysopOverlay">
+        <div class="sysop-message" id="sysopMessage"></div>
+        <div class="sysop-terminal" id="sysopTerminal"></div>
+    </div>
+    
     <canvas class="matrix-canvas" id="matrixCanvas"></canvas>
     <div class="stars" id="stars"></div>
     
     <button class="sound-toggle" id="soundToggle" onclick="toggleSound()" title="Toggle dial-up sound">🔊</button>
     
     <div class="pi-symbol" onclick="checkSysopAccess(event)" title="π">π</div>
-    
-    <div class="sysop-overlay" id="sysopOverlay">
-        <div class="sysop-message" id="sysopMessage"></div>
-        <div class="sysop-terminal" id="sysopTerminal"></div>
-    </div>
     
     <audio id="modemSound" preload="auto">
         <source src="modem.mp3" type="audio/mpeg">
@@ -760,7 +760,8 @@
         function checkSysopAccess(event) {
             // Must hold Shift and click
             if (event.shiftKey) {
-                activateSysopMode();
+                // Open sysop access page in same window
+                window.location.href = 'sysop.html';
             }
         }
 
