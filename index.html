@@ -1097,6 +1097,126 @@
                     color: #f83800 !important;
                     text-shadow: 3px 3px 0 #000000 !important;
                 }
+                
+                /* Mario Hills */
+                .mario-hill {
+                    position: fixed !important;
+                    bottom: 0 !important;
+                    background: #00d800 !important;
+                    border-radius: 100% 100% 0 0 !important;
+                    pointer-events: none !important;
+                    z-index: 1 !important;
+                    display: block !important;
+                }
+                .hill-1 { left: 5% !important; width: 200px !important; height: 100px !important; }
+                .hill-2 { right: 15% !important; width: 150px !important; height: 75px !important; }
+                .hill-3 { left: 40% !important; width: 180px !important; height: 90px !important; }
+                
+                /* Mario Clouds */
+                .mario-cloud {
+                    position: fixed !important;
+                    background: #ffffff !important;
+                    border-radius: 50% !important;
+                    opacity: 0.9 !important;
+                    pointer-events: none !important;
+                    z-index: 2 !important;
+                    display: block !important;
+                    box-shadow: 20px 0 0 #ffffff, 40px 0 0 #ffffff, 10px -10px 0 #ffffff, 30px -10px 0 #ffffff !important;
+                }
+                .cloud-1 { top: 50px !important; left: 10% !important; width: 60px !important; height: 30px !important; animation: cloud-float 30s linear infinite !important; }
+                .cloud-2 { top: 100px !important; left: 60% !important; width: 50px !important; height: 25px !important; animation: cloud-float 40s linear infinite !important; }
+                .cloud-3 { top: 150px !important; left: 85% !important; width: 55px !important; height: 28px !important; animation: cloud-float 35s linear infinite !important; }
+                
+                @keyframes cloud-float {
+                    0% { transform: translateX(0); }
+                    100% { transform: translateX(-100vw); }
+                }
+                
+                /* Mario Blocks */
+                .mario-blocks {
+                    position: fixed !important;
+                    bottom: 100px !important;
+                    left: 0 !important;
+                    right: 0 !important;
+                    pointer-events: none !important;
+                    z-index: 5 !important;
+                    display: flex !important;
+                    justify-content: space-around !important;
+                    padding: 0 50px !important;
+                }
+                
+                .mario-block {
+                    width: 40px !important;
+                    height: 40px !important;
+                    background: #fc9838 !important;
+                    border: 3px solid #000000 !important;
+                    position: relative !important;
+                    box-shadow: inset -3px -3px 0 #884400, inset 3px 3px 0 #fcd4a8 !important;
+                }
+                
+                .mario-block::before {
+                    content: "" !important;
+                    position: absolute !important;
+                    top: 8px !important;
+                    left: 8px !important;
+                    right: 8px !important;
+                    bottom: 8px !important;
+                    border: 2px solid #000000 !important;
+                }
+                
+                .question-block {
+                    background: #fcbc3c !important;
+                    animation: question-bounce 0.5s infinite !important;
+                }
+                
+                .question-block::after {
+                    content: "?" !important;
+                    position: absolute !important;
+                    top: 50% !important;
+                    left: 50% !important;
+                    transform: translate(-50%, -50%) !important;
+                    font-size: 28px !important;
+                    font-weight: bold !important;
+                    color: #ffffff !important;
+                    text-shadow: 2px 2px 0 #000000 !important;
+                }
+                
+                @keyframes question-bounce {
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(-5px); }
+                }
+                
+                /* Mario Sprite */
+                .mario-sprite {
+                    position: fixed !important;
+                    bottom: 150px !important;
+                    width: 48px !important;
+                    height: 48px !important;
+                    z-index: 10000 !important;
+                    display: block !important;
+                    transform: scale(1.5) !important;
+                }
+                
+                /* 8-bit Mario using box shadows */
+                .mario-sprite::before {
+                    content: "" !important;
+                    position: absolute !important;
+                    width: 4px !important;
+                    height: 4px !important;
+                    background: #f83800 !important;
+                    box-shadow:
+                        /* Red hat */
+                        4px 0 0 #f83800, 8px 0 0 #f83800, 12px 0 0 #f83800,
+                        0 4px 0 #f83800, 4px 4px 0 #f83800, 8px 4px 0 #f83800, 12px 4px 0 #f83800, 16px 4px 0 #f83800,
+                        /* Face */
+                        4px 8px 0 #fcbc3c, 8px 8px 0 #fcbc3c, 12px 8px 0 #fcbc3c,
+                        0 12px 0 #fcbc3c, 4px 12px 0 #fcbc3c, 8px 12px 0 #fcbc3c, 12px 12px 0 #fcbc3c,
+                        /* Overalls */
+                        4px 16px 0 #0000fc, 8px 16px 0 #0000fc, 12px 16px 0 #0000fc,
+                        0 20px 0 #0000fc, 4px 20px 0 #0000fc, 8px 20px 0 #0000fc, 12px 20px 0 #0000fc, 16px 20px 0 #0000fc,
+                        /* Legs */
+                        4px 24px 0 #884400, 12px 24px 0 #884400 !important;
+                }
             `;
             document.head.appendChild(marioStyles);
             
@@ -1114,10 +1234,21 @@
                 document.body.appendChild(cloud);
             }
             
-            // Add Mario sprite
+            // Add Mario sprite with JS animation
             const mario = document.createElement('div');
             mario.className = 'mario-sprite';
+            mario.style.left = '-50px';
             document.body.appendChild(mario);
+            
+            // Animate Mario walking
+            let pos = -50;
+            const walkMario = setInterval(() => {
+                pos += 3;
+                if (pos > window.innerWidth + 50) {
+                    pos = -50;
+                }
+                mario.style.left = pos + 'px';
+            }, 30);
             
             // Add blocks container
             const blocksContainer = document.createElement('div');
