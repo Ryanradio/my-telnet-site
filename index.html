@@ -996,6 +996,7 @@
             const message = document.getElementById('guestMessage').value.trim();
             
             if (!name || !message) {
+                alert('Please fill in your name and message!');
                 submitBtn.disabled = false;
                 submitBtn.textContent = '✍️ SIGN THE GUEST BOOK ✍️';
                 return;
@@ -1010,52 +1011,23 @@
                     timestamp: new Date().toISOString()
                 };
                 
-                // Get existing entries from GitHub
-                const response = await fetch('https://api.github.com/repos/ryanradio/my-telnet-site/contents/guestbook.json', {
-                    headers: {
-                        'Accept': 'application/vnd.github.v3+json'
-                    }
-                });
-                
+                // Get existing entries from storage
                 let entries = [];
-                let sha = null;
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    sha = data.sha;
-                    const content = atob(data.content);
-                    entries = JSON.parse(content);
+                try {
+                    const result = await window.storage.get('guestbook-entries', true);
+                    if (result && result.value) {
+                        entries = JSON.parse(result.value);
+                    }
+                } catch (error) {
+                    console.log('No existing entries or error loading:', error);
+                    entries = [];
                 }
                 
                 // Add new entry to beginning
                 entries.unshift(entry);
                 
-                // Prepare update
-                const content = btoa(JSON.stringify(entries, null, 2));
-                const payload = {
-                    message: `New guest book entry from ${name}`,
-                    content: content,
-                    branch: 'main'
-                };
-                
-                if (sha) {
-                    payload.sha = sha;
-                }
-                
-                // Update GitHub
-                const updateResponse = await fetch('https://api.github.com/repos/ryanradio/my-telnet-site/contents/guestbook.json', {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': 'token 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',
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                });
-                
-                if (!updateResponse.ok) {
-                    throw new Error('Failed to save entry');
-                }
+                // Save to storage (shared with all users)
+                await window.storage.set('guestbook-entries', JSON.stringify(entries), true);
                 
                 // Clear form
                 document.getElementById('guestbookForm').reset();
@@ -1073,8 +1045,8 @@
                     setTimeout(() => successMsg.remove(), 500);
                 }, 3000);
                 
-                // Reload entries after a short delay to allow GitHub to update
-                setTimeout(() => loadGuestbookEntries(), 2000);
+                // Reload entries
+                await loadGuestbookEntries();
                 
             } catch (error) {
                 console.error('Guest book error:', error);
@@ -1090,10 +1062,10 @@
             if (!container) return;
             
             try {
-                const response = await fetch('https://raw.githubusercontent.com/ryanradio/my-telnet-site/main/guestbook.json?t=' + new Date().getTime());
+                // Get entries from storage
+                const result = await window.storage.get('guestbook-entries', true);
                 
-                if (!response.ok) {
-                    // File doesn't exist yet
+                if (!result || !result.value) {
                     container.innerHTML = `
                         <div style="text-align: center; opacity: 0.5; padding: 40px;">
                             📭 No entries yet. Be the first to sign the guest book! 📭
@@ -1102,7 +1074,7 @@
                     return;
                 }
                 
-                const entries = await response.json();
+                const entries = JSON.parse(result.value);
                 
                 if (entries.length === 0) {
                     container.innerHTML = `
@@ -1141,7 +1113,7 @@
                 console.error('Error loading guest book:', error);
                 container.innerHTML = `
                     <div style="text-align: center; opacity: 0.5; padding: 40px;">
-                        ⚠️ Error loading entries. Please refresh the page. ⚠️
+                        📭 No entries yet. Be the first to sign the guest book! 📭
                     </div>
                 `;
             }
