@@ -434,6 +434,7 @@
     </style>
 </head>
 <body>
+    <canvas class="matrix-canvas" id="matrixCanvas"></canvas>
     <div class="stars" id="stars"></div>
     
     <button class="sound-toggle" id="soundToggle" onclick="toggleSound()" title="Toggle dial-up sound">🔊</button>
@@ -642,9 +643,96 @@
         createStars();
         loadConnectionInfo();
         incrementVisitorCount();
+        initKonamiCode();
         
         // Auto-refresh connection info every 60 seconds
         setInterval(loadConnectionInfo, 60000);
+
+        // Konami Code Easter Egg
+        function initKonamiCode() {
+            const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+            let konamiIndex = 0;
+
+            document.addEventListener('keydown', (e) => {
+                const key = e.key.toLowerCase();
+                
+                if (key === konamiCode[konamiIndex] || e.key === konamiCode[konamiIndex]) {
+                    konamiIndex++;
+                    
+                    if (konamiIndex === konamiCode.length) {
+                        activateEasterEgg();
+                        konamiIndex = 0;
+                    }
+                } else {
+                    konamiIndex = 0;
+                }
+            });
+        }
+
+        function activateEasterEgg() {
+            // Start matrix rain
+            startMatrixRain();
+            
+            // After 15 seconds, switch to NES mode
+            setTimeout(() => {
+                stopMatrixRain();
+                document.body.classList.add('nes-mode');
+                
+                // Optional: Show a message
+                const msg = document.createElement('div');
+                msg.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.9);border:3px solid #d82800;padding:30px;z-index:10000;color:#fcfcfc;font-size:2em;text-align:center;text-shadow:0 0 10px #d82800;';
+                msg.innerHTML = '🎮 NES MODE ACTIVATED! 🎮<br><span style="font-size:0.5em;">30 LIVES GRANTED</span>';
+                document.body.appendChild(msg);
+                
+                setTimeout(() => {
+                    msg.style.transition = 'opacity 1s';
+                    msg.style.opacity = '0';
+                    setTimeout(() => msg.remove(), 1000);
+                }, 3000);
+            }, 15000);
+        }
+
+        function startMatrixRain() {
+            const canvas = document.getElementById('matrixCanvas');
+            canvas.classList.add('active');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            const chars = 'ﾊﾐﾋｰｳｼﾅﾓﾆｻﾜﾂｵﾘｱﾎﾃﾏｹﾒｴｶｷﾑﾕﾗｾﾈｽﾀﾇﾍ01234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            const fontSize = 14;
+            const columns = canvas.width / fontSize;
+            const drops = Array(Math.floor(columns)).fill(1);
+            
+            canvas.matrixInterval = setInterval(() => {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.fillStyle = '#0f0';
+                ctx.font = fontSize + 'px monospace';
+                
+                for (let i = 0; i < drops.length; i++) {
+                    const text = chars[Math.floor(Math.random() * chars.length)];
+                    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                    
+                    if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                        drops[i] = 0;
+                    }
+                    drops[i]++;
+                }
+            }, 33);
+        }
+
+        function stopMatrixRain() {
+            const canvas = document.getElementById('matrixCanvas');
+            if (canvas.matrixInterval) {
+                clearInterval(canvas.matrixInterval);
+            }
+            canvas.classList.remove('active');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
 
         // Visitor counter
         function incrementVisitorCount() {
@@ -679,6 +767,87 @@
             0% { transform: rotateX(0deg); opacity: 0.5; }
             50% { transform: rotateX(90deg); opacity: 0.2; }
             100% { transform: rotateX(0deg); opacity: 1; }
+        }
+
+        /* Matrix rain effect */
+        .matrix-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        .matrix-canvas.active {
+            opacity: 1;
+        }
+
+        /* NES color theme */
+        body.nes-mode {
+            color: #fcfcfc;
+        }
+
+        body.nes-mode .header,
+        body.nes-mode .connection-panel,
+        body.nes-mode .status-bar,
+        body.nes-mode .connection-info,
+        body.nes-mode .btn,
+        body.nes-mode #fTelnetContainer,
+        body.nes-mode .visitor-counter,
+        body.nes-mode .sound-toggle {
+            border-color: #d82800;
+            color: #fcfcfc;
+        }
+
+        body.nes-mode h1,
+        body.nes-mode h2,
+        body.nes-mode .tagline,
+        body.nes-mode .status-item,
+        body.nes-mode .counter-label,
+        body.nes-mode .counter-digit,
+        body.nes-mode .btn {
+            color: #fcfcfc;
+            text-shadow: 0 0 10px #d82800, 0 0 20px #d82800;
+        }
+
+        body.nes-mode .status-indicator {
+            background: #d82800;
+            box-shadow: 0 0 10px #d82800;
+        }
+
+        body.nes-mode .copy-btn {
+            background: #d82800;
+            color: #fcfcfc;
+        }
+
+        body.nes-mode .copy-btn:hover {
+            background: #ff3c1e;
+            box-shadow: 0 0 15px #d82800;
+        }
+
+        body.nes-mode .btn:hover {
+            border-color: #ff3c1e;
+            box-shadow: 0 0 20px rgba(216, 40, 0, 0.5);
+        }
+
+        body.nes-mode .header::before {
+            background: linear-gradient(45deg, #d82800, transparent, #d82800);
+        }
+
+        body.nes-mode .star {
+            background: #fcfcfc;
+        }
+
+        body.nes-mode .connection-panel,
+        body.nes-mode .status-bar,
+        body.nes-mode .header,
+        body.nes-mode .visitor-counter,
+        body.nes-mode .sound-toggle {
+            box-shadow: 0 0 20px rgba(216, 40, 0, 0.3);
         }
     </style>
 </body>
