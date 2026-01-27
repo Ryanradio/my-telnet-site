@@ -543,16 +543,6 @@
             </div>
         </div>
 
-        <div class="connection-panel">
-            <h2>▼ BBS LINGO GUIDE ▼</h2>
-            <div class="lingo-panel">
-                <div style="text-align: center; margin-bottom: 15px; opacity: 0.9;">
-                    💬 New to BBS culture? Hover over terms throughout the site or click below! 💬
-                </div>
-                <div class="lingo-grid" id="lingoGrid"></div>
-            </div>
-        </div>
-
         <div id="fTelnetContainer"></div>
 
         <div class="ascii-art">
@@ -631,11 +621,28 @@
                     return; // Already connected
                 }
                 
-                // Play modem sound
+                // Play modem sound and wait for it to finish
                 playModemSound();
-
+                
+                // Show a "connecting" message while modem sound plays
+                container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:1.2em;text-align:center;"><div>📞 DIALING...<br><br>Please wait for handshake...</div></div>';
                 container.classList.add('active');
                 container.scrollIntoView({ behavior: 'smooth' });
+                
+                // Wait for modem sound to finish
+                await new Promise((resolve) => {
+                    if (modemSound && soundEnabled) {
+                        modemSound.onended = resolve;
+                        // Fallback timeout in case audio doesn't trigger onended
+                        setTimeout(resolve, 35000); // 35 seconds max
+                    } else {
+                        // If sound is disabled, just wait 2 seconds
+                        setTimeout(resolve, 2000);
+                    }
+                });
+                
+                // Clear the connecting message
+                container.innerHTML = '';
 
                 const response = await fetch('connection.json?t=' + new Date().getTime());
                 const data = await response.json();
@@ -702,7 +709,6 @@
         initKonamiCode();
         loadGuestbookEntries();
         setupCharCounter();
-        initLingoGuide();
         
         // Auto-refresh connection info every 60 seconds
         setInterval(loadConnectionInfo, 60000);
