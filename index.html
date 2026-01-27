@@ -637,16 +637,21 @@
                 container.scrollIntoView({ behavior: 'smooth' });
                 
                 // Wait for modem sound to finish
-                await new Promise((resolve) => {
-                    if (modemSound && soundEnabled) {
-                        modemSound.onended = resolve;
-                        // Fallback timeout in case audio doesn't trigger onended
-                        setTimeout(resolve, 35000); // 35 seconds max
-                    } else {
-                        // If sound is disabled, just wait 2 seconds
-                        setTimeout(resolve, 2000);
-                    }
-                });
+                if (!soundEnabled) {
+                    // If sound is muted, just wait 2 seconds
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                } else {
+                    // Wait for sound to end
+                    await new Promise((resolve) => {
+                        if (modemSound) {
+                            modemSound.onended = resolve;
+                            // Fallback timeout
+                            setTimeout(resolve, 35000);
+                        } else {
+                            setTimeout(resolve, 2000);
+                        }
+                    });
+                }
                 
                 // Show Windows XP style loading bar
                 container.innerHTML = `
@@ -758,7 +763,7 @@
 
         // Sysop Access (Secret Pi Symbol)
         function checkSysopAccess(event) {
-            // Must hold Shift and click
+            // Must hold Shift and click, OR Ctrl+Shift and click
             if (event.shiftKey) {
                 // Open sysop access page in same window
                 window.location.href = 'sysop.html';
