@@ -299,18 +299,13 @@
             margin-top: 20px;
             box-shadow: 0 0 30px rgba(0, 255, 0, 0.4);
             background: #000;
-            overflow: hidden;
+            overflow: auto;
+            position: relative;
         }
         
         #fTelnetContainer.active {
             display: block;
             animation: terminal-boot 0.5s;
-        }
-        
-        #fTelnetContainer > div,
-        #fTelnetContainer > canvas {
-            width: 100% !important;
-            height: 100% !important;
         }
 
         @keyframes terminal-boot {
