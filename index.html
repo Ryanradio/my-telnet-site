@@ -769,10 +769,12 @@
             const message = document.getElementById('sysopMessage');
             const terminal = document.getElementById('sysopTerminal');
             
-            // Show overlay
+            // Show black overlay
             overlay.classList.add('active');
+            overlay.style.background = '#000';
             
             // Phase 1: Dialing message
+            message.style.display = 'block';
             message.innerHTML = '🔒 ACCESSING SECURE CHANNEL...<br><span style="font-size:0.7em;">ESTABLISHING ENCRYPTED CONNECTION</span>';
             
             // Play modem sound
@@ -811,7 +813,7 @@
             
             await new Promise(resolve => setTimeout(resolve, 2000));
             
-            // Phase 4: Show terminal
+            // Phase 4: Clear message and show terminal
             message.style.display = 'none';
             terminal.classList.add('active');
             
