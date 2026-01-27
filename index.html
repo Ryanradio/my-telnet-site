@@ -1003,16 +1003,19 @@
             // Start matrix rain
             startMatrixRain();
             
-            // After 15 seconds, switch to NES mode
+            // After 10 seconds, switch to Mario mode
             setTimeout(() => {
                 stopMatrixRain();
                 document.body.classList.add('nes-mode');
                 
                 // Optional: Show a message
                 const msg = document.createElement('div');
-                msg.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(10,10,10,0.95);border:3px solid #e63946;padding:30px;z-index:10000;color:#d4d4d4;font-size:2em;text-align:center;box-shadow:0 0 30px rgba(230,57,70,0.5);';
-                msg.innerHTML = '🎮 NES MODE ACTIVATED! 🎮<br><span style="font-size:0.5em;color:#e63946;">CLASSIC 8-BIT POWER</span>';
+                msg.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fcbc3c;border:5px solid #000000;padding:30px;z-index:10000;color:#f83800;font-size:2em;text-align:center;text-shadow:3px 3px 0 #ffffff;font-weight:bold;box-shadow:8px 8px 0 #000000;';
+                msg.innerHTML = '🍄 SUPER MARIO MODE! 🍄<br><span style="font-size:0.5em;color:#000000;">IT\'S-A ME, YOUR BBS!</span>';
                 document.body.appendChild(msg);
+                
+                // Add Mario blocks and scenery
+                addMarioScenery();
                 
                 setTimeout(() => {
                     msg.style.transition = 'opacity 1s';
@@ -1062,6 +1065,50 @@
             canvas.classList.remove('active');
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function addMarioScenery() {
+            // Add hills
+            for (let i = 1; i <= 3; i++) {
+                const hill = document.createElement('div');
+                hill.className = `mario-hill hill-${i}`;
+                document.body.appendChild(hill);
+            }
+            
+            // Add clouds
+            for (let i = 1; i <= 3; i++) {
+                const cloud = document.createElement('div');
+                cloud.className = `mario-cloud cloud-${i}`;
+                document.body.appendChild(cloud);
+            }
+            
+            // Add Mario sprite
+            const mario = document.createElement('div');
+            mario.className = 'mario-sprite';
+            document.body.appendChild(mario);
+            
+            // Add blocks container
+            const blocksContainer = document.createElement('div');
+            blocksContainer.className = 'mario-blocks';
+            
+            // Add various blocks
+            const blocks = [
+                'mario-block',
+                'mario-block question-block',
+                'mario-block',
+                'mario-block question-block',
+                'mario-block',
+                'mario-block question-block',
+                'mario-block'
+            ];
+            
+            blocks.forEach(blockClass => {
+                const block = document.createElement('div');
+                block.className = blockClass;
+                blocksContainer.appendChild(block);
+            });
+            
+            document.body.appendChild(blocksContainer);
         }
 
         // Visitor counter
