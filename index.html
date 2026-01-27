@@ -158,6 +158,49 @@
             margin-bottom: 20px;
             flex-wrap: wrap;
             gap: 10px;
+            align-items: center;
+        }
+
+        .visitor-counter {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            padding: 8px;
+            background: rgba(0, 17, 0, 0.95);
+            border: 2px solid #0f0;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3), inset 0 0 10px rgba(0, 255, 0, 0.2);
+            z-index: 1002;
+        }
+
+        .counter-label {
+            font-size: 0.5rem;
+            opacity: 0.8;
+            letter-spacing: 0.05em;
+        }
+
+        .counter-display {
+            display: flex;
+            gap: 2px;
+        }
+
+        .counter-digit {
+            background: #000;
+            border: 1px solid #0f0;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            font-weight: bold;
+            width: 18px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-shadow: 0 0 5px #0f0;
+            box-shadow: inset 0 0 3px rgba(0, 255, 0, 0.3);
         }
 
         .status-item {
@@ -472,6 +515,18 @@
             <p>Running on authentic Windows XP hardware · MajorBBS · A piece of computing history</p>
             <p style="margin-top: 10px; font-size: 0.8em;">Established 1995 · Preserving the golden age of dial-up BBSing</p>
         </div>
+        
+        <div class="visitor-counter">
+            <div class="counter-label">VISITORS</div>
+            <div class="counter-display" id="visitorCounter">
+                <div class="counter-digit">0</div>
+                <div class="counter-digit">0</div>
+                <div class="counter-digit">0</div>
+                <div class="counter-digit">0</div>
+                <div class="counter-digit">0</div>
+                <div class="counter-digit">0</div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -586,9 +641,45 @@
         // Initialize
         createStars();
         loadConnectionInfo();
+        incrementVisitorCount();
         
         // Auto-refresh connection info every 60 seconds
         setInterval(loadConnectionInfo, 60000);
+
+        // Visitor counter
+        function incrementVisitorCount() {
+            // Get current count from localStorage
+            let count = parseInt(localStorage.getItem('bbsVisitorCount') || '0');
+            count++;
+            localStorage.setItem('bbsVisitorCount', count);
+            
+            // Display the count with leading zeros
+            displayCount(count);
+        }
+
+        function displayCount(count) {
+            const countStr = count.toString().padStart(6, '0');
+            const digits = document.querySelectorAll('.counter-digit');
+            
+            // Animate each digit
+            countStr.split('').forEach((digit, index) => {
+                if (digits[index]) {
+                    // Add a little flip animation
+                    digits[index].style.animation = 'none';
+                    setTimeout(() => {
+                        digits[index].textContent = digit;
+                        digits[index].style.animation = 'digit-flip 0.3s';
+                    }, index * 50);
+                }
+            });
+        }
     </script>
+    <style>
+        @keyframes digit-flip {
+            0% { transform: rotateX(0deg); opacity: 0.5; }
+            50% { transform: rotateX(90deg); opacity: 0.2; }
+            100% { transform: rotateX(0deg); opacity: 1; }
+        }
+    </style>
 </body>
 </html>
