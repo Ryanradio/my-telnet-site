@@ -439,6 +439,13 @@
     
     <button class="sound-toggle" id="soundToggle" onclick="toggleSound()" title="Toggle dial-up sound">🔊</button>
     
+    <div class="pi-symbol" onclick="checkSysopAccess(event)" title="π">π</div>
+    
+    <div class="sysop-overlay" id="sysopOverlay">
+        <div class="sysop-message" id="sysopMessage"></div>
+        <div class="sysop-terminal" id="sysopTerminal"></div>
+    </div>
+    
     <audio id="modemSound" preload="auto">
         <source src="modem.mp3" type="audio/mpeg">
     </audio>
@@ -748,6 +755,101 @@
         
         // Auto-refresh connection info every 60 seconds
         setInterval(loadConnectionInfo, 60000);
+
+        // Sysop Access (Secret Pi Symbol)
+        function checkSysopAccess(event) {
+            // Must hold Shift and click
+            if (event.shiftKey) {
+                activateSysopMode();
+            }
+        }
+
+        async function activateSysopMode() {
+            const overlay = document.getElementById('sysopOverlay');
+            const message = document.getElementById('sysopMessage');
+            const terminal = document.getElementById('sysopTerminal');
+            
+            // Show overlay
+            overlay.classList.add('active');
+            
+            // Phase 1: Dialing message
+            message.innerHTML = '🔒 ACCESSING SECURE CHANNEL...<br><span style="font-size:0.7em;">ESTABLISHING ENCRYPTED CONNECTION</span>';
+            
+            // Play modem sound
+            playModemSound();
+            
+            // Wait for modem sound
+            await new Promise((resolve) => {
+                if (modemSound && soundEnabled) {
+                    modemSound.onended = resolve;
+                    setTimeout(resolve, 35000);
+                } else {
+                    setTimeout(resolve, 2000);
+                }
+            });
+            
+            // Phase 2: Loading
+            message.innerHTML = `
+                <div style="margin-bottom: 20px;">✓ CONNECTION ESTABLISHED</div>
+                <div class="xp-loading-container">
+                    <div class="xp-loading-bar">
+                        <div class="xp-loading-fill" id="sysopProgressBar"></div>
+                    </div>
+                    <div class="xp-status-text" id="sysopStatusText">Authenticating...</div>
+                </div>
+            `;
+            
+            // Animate loading
+            await animateSysopProgress();
+            
+            // Phase 3: Access Granted
+            message.innerHTML = `
+                <div style="font-size: 2em; margin-bottom: 10px;">⚠️ SYSOP ACCESS GRANTED ⚠️</div>
+                <div style="font-size: 0.8em; opacity: 0.8;">AUTHORIZED PERSONNEL ONLY</div>
+                <div style="font-size: 0.7em; margin-top: 10px; color: #fc0;">WARNING: ALL ACTIONS ARE LOGGED</div>
+            `;
+            
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // Phase 4: Show terminal
+            message.style.display = 'none';
+            terminal.classList.add('active');
+            
+            // Load fTelnet in sysop terminal
+            const response = await fetch('connection.json?t=' + new Date().getTime());
+            const data = await response.json();
+
+            var Options = new fTelnetOptions();
+            Options.ProxyHeaders = { "ngrok-skip-browser-warning": "true" };
+            Options.Hostname = "192.168.40.69"; 
+            Options.Port = 23;
+            Options.ProxyHostname = data.proxy_hostname; 
+            Options.ProxyPort = 443; 
+            Options.ProxyPortSecure = 443;
+            Options.ProxyType = "websocket"; 
+
+            var Client = new fTelnetClient('sysopTerminal', Options);
+        }
+
+        async function animateSysopProgress() {
+            const progressBar = document.getElementById('sysopProgressBar');
+            const statusText = document.getElementById('sysopStatusText');
+            
+            const steps = [
+                { percent: 25, text: 'Verifying credentials...', delay: 400 },
+                { percent: 50, text: 'Bypassing security protocols...', delay: 500 },
+                { percent: 75, text: 'Accessing Praetorian system...', delay: 400 },
+                { percent: 100, text: 'Authorization complete!', delay: 300 }
+            ];
+            
+            for (const step of steps) {
+                await new Promise(resolve => setTimeout(resolve, step.delay));
+                if (progressBar) progressBar.style.width = step.percent + '%';
+                if (statusText) statusText.textContent = step.text;
+            }
+            
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
 
         // BBS Lingo Guide
         const bbsLingo = {
