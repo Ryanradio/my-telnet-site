@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SYSOP ACCESS</title>
+    <link href="ftelnet.css" rel="stylesheet">
+    <script src="ftelnet.rip.xfer.min.js" id="fTelnetScript"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .message-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            font-size: 1.5em;
+            text-shadow: 0 0 10px #0f0;
+            z-index: 1000;
+        }
+
+        .xp-loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .xp-loading-bar {
+            width: 400px;
+            height: 24px;
+            background: #003366;
+            border: 2px solid #0f0;
+            border-radius: 3px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .xp-loading-fill {
+            height: 100%;
+            background: linear-gradient(to right, #0066cc 0%, #3399ff 50%, #0066cc 100%);
+            background-size: 200% 100%;
+            animation: xp-progress 2s linear infinite;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        @keyframes xp-progress {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 200% 0%; }
+        }
+
+        .xp-status-text {
+            font-size: 0.9em;
+            opacity: 0.8;
+            color: #0f0;
+        }
+
+        #sysopTerminal {
+            width: 90%;
+            max-width: 1200px;
+            height: 70vh;
+            min-height: 500px;
+            border: 2px solid #0f0;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.4);
+            background: #000;
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        #sysopTerminal.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <audio id="modemSound" preload="auto">
+        <source src="modem.mp3" type="audio/mpeg">
+    </audio>
+
+    <div class="message-container" id="messageContainer"></div>
+    <div id="sysopTerminal"></div>
+
+    <script>
+        const messageContainer = document.getElementById('messageContainer');
+        const terminal = document.getElementById('sysopTerminal');
+        const modemSound = document.getElementById('modemSound');
+
+        async function initSysopAccess() {
+            // Phase 1: Dialing
+            messageContainer.innerHTML = `
+                🔒 ACCESSING SECURE CHANNEL...<br>
+                <span style="font-size:0.7em;">ESTABLISHING ENCRYPTED CONNECTION</span>
+            `;
+
+            // Play modem sound
+            modemSound.play().catch(e => console.log('Audio play failed:', e));
+
+            // Wait for modem
+            await new Promise((resolve) => {
+                modemSound.onended = resolve;
+                setTimeout(resolve, 35000);
+            });
+
+            // Phase 2: Loading
+            messageContainer.innerHTML = `
+                <div style="margin-bottom: 20px;">✓ CONNECTION ESTABLISHED</div>
+                <div class="xp-loading-container">
+                    <div class="xp-loading-bar">
+                        <div class="xp-loading-fill" id="progressBar"></div>
+                    </div>
+                    <div class="xp-status-text" id="statusText">Authenticating...</div>
+                </div>
+            `;
+
+            await animateProgress();
+
+            // Phase 3: Access Granted
+            messageContainer.innerHTML = `
+                <div style="font-size: 2em; margin-bottom: 10px;">⚠️ SYSOP ACCESS GRANTED ⚠️</div>
+                <div style="font-size: 0.8em; opacity: 0.8;">AUTHORIZED PERSONNEL ONLY</div>
+                <div style="font-size: 0.7em; margin-top: 10px; color: #fc0;">WARNING: ALL ACTIONS ARE LOGGED</div>
+            `;
+
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            // Phase 4: Show terminal
+            messageContainer.style.display = 'none';
+            terminal.classList.add('active');
+
+            // Connect to BBS
+            const response = await fetch('connection.json?t=' + new Date().getTime());
+            const data = await response.json();
+
+            var Options = new fTelnetOptions();
+            Options.ProxyHeaders = { "ngrok-skip-browser-warning": "true" };
+            Options.Hostname = "192.168.40.69";
+            Options.Port = 23;
+            Options.ProxyHostname = data.proxy_hostname;
+            Options.ProxyPort = 443;
+            Options.ProxyPortSecure = 443;
+            Options.ProxyType = "websocket";
+
+            var Client = new fTelnetClient('sysopTerminal', Options);
+        }
+
+        async function animateProgress() {
+            const progressBar = document.getElementById('progressBar');
+            const statusText = document.getElementById('statusText');
+
+            const steps = [
+                { percent: 25, text: 'Verifying credentials...', delay: 400 },
+                { percent: 50, text: 'Bypassing security protocols...', delay: 500 },
+                { percent: 75, text: 'Accessing Praetorian system...', delay: 400 },
+                { percent: 100, text: 'Authorization complete!', delay: 300 }
+            ];
+
+            for (const step of steps) {
+                await new Promise(resolve => setTimeout(resolve, step.delay));
+                if (progressBar) progressBar.style.width = step.percent + '%';
+                if (statusText) statusText.textContent = step.text;
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
+        // Start the sequence on page load
+        window.addEventListener('load', initSysopAccess);
+    </script>
+</body>
+</html>
