@@ -299,8 +299,9 @@
             margin-top: 20px;
             box-shadow: 0 0 30px rgba(0, 255, 0, 0.4);
             background: #000;
+            overflow: auto;
         }
-
+        
         #fTelnetContainer.active {
             animation: terminal-boot 0.5s;
         }
@@ -462,7 +463,6 @@
         async function connectViaWeb() {
             try {
                 const container = document.getElementById('fTelnetContainer');
-                container.style.display = 'block';
                 container.classList.add('active');
                 container.scrollIntoView({ behavior: 'smooth' });
 
