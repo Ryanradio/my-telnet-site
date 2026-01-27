@@ -314,6 +314,69 @@
             box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
         }
 
+        .rgb-border-wrapper {
+            position: relative;
+            padding: 4px;
+            background: linear-gradient(
+                45deg,
+                #ff0000,
+                #ff7300,
+                #fffb00,
+                #48ff00,
+                #00ffd5,
+                #002bff,
+                #7a00ff,
+                #ff00c8,
+                #ff0000
+            );
+            background-size: 400% 400%;
+            animation: rgb-rotate 3s linear infinite;
+            border-radius: 2px;
+        }
+
+        .rgb-border-wrapper::before {
+            content: "";
+            position: absolute;
+            inset: -8px;
+            background: inherit;
+            background-size: 400% 400%;
+            filter: blur(15px);
+            opacity: 0.7;
+            z-index: -1;
+            animation: rgb-rotate 3s linear infinite;
+        }
+
+        .rgb-border-wrapper .btn {
+            margin: 0;
+            width: 100%;
+        }
+
+        .rgb-border-wrapper:hover {
+            animation: rgb-rotate 1.5s linear infinite;
+        }
+
+        .rgb-border-wrapper:hover::before {
+            animation: rgb-rotate 1.5s linear infinite;
+            filter: blur(20px);
+        }
+
+        @keyframes rgb-rotate {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .btn-primary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
+            transform: translateY(-3px) scale(1.02);
+        }
+
+        .btn-primary:hover::after {
+            filter: blur(3px);
+            animation: rgb-rotate 1.5s linear infinite;
+        }
+
         .copy-btn {
             background: #0f0;
             color: #000;
@@ -481,11 +544,13 @@
         <div class="connection-panel">
             <h2>▼ ACCESS METHODS ▼</h2>
             <div class="button-grid">
-                <button class="btn btn-primary" onclick="connectViaWeb()">
-                    <span style="font-size: 1.5em;">⚡</span>
-                    <strong>INSTANT WEB ACCESS</strong>
-                    <span style="font-size: 0.8em;">Connect Now</span>
-                </button>
+                <div class="rgb-border-wrapper">
+                    <button class="btn btn-primary" onclick="connectViaWeb()">
+                        <span style="font-size: 1.5em;">⚡</span>
+                        <strong>INSTANT WEB ACCESS</strong>
+                        <span style="font-size: 0.8em;">Connect Now</span>
+                    </button>
+                </div>
                 <a href="https://www.putty.org" target="_blank" class="btn">
                     <span style="font-size: 1.5em;">💻</span>
                     <strong>PuTTY</strong>
