@@ -662,8 +662,9 @@
             background: #0f0;
             animation: blink 1s infinite;
             vertical-align: text-bottom;
-            margin-left: 2px;
-            transition: margin-left 0.05s;
+            position: absolute;
+            left: 20px;
+            transition: left 0.05s;
         }
 
         .login-hint {
@@ -1577,29 +1578,42 @@
             } else {
                 // New user - show login prompt
                 loginScreen.classList.remove('hidden');
-                setTimeout(() => handleInput.focus(), 100);
-                
-                // Make cursor follow typing like old terminals
-                const cursor = document.querySelector('.login-cursor');
-                const updateCursor = () => {
-                    // Create a temporary span to measure text width
-                    const temp = document.createElement('span');
-                    temp.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;font-family:Courier New;font-size:' + window.getComputedStyle(handleInput).fontSize;
-                    temp.textContent = handleInput.value || '';
-                    document.body.appendChild(temp);
+                setTimeout(() => {
+                    handleInput.focus();
                     
-                    // Position cursor after the text
-                    const textWidth = temp.offsetWidth;
-                    cursor.style.marginLeft = (textWidth + 2) + 'px';
+                    // Setup cursor following
+                    const cursor = document.querySelector('.login-cursor');
+                    const inputLine = document.querySelector('.login-input-line');
+                    const prompt = inputLine.querySelector('span:first-child');
                     
-                    document.body.removeChild(temp);
-                };
-                
-                // Update cursor position on every keystroke
-                handleInput.addEventListener('input', updateCursor);
-                
-                // Initial cursor position
-                updateCursor();
+                    const updateCursor = () => {
+                        // Create a temporary canvas to measure text
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+                        const computedStyle = window.getComputedStyle(handleInput);
+                        context.font = computedStyle.fontSize + ' ' + computedStyle.fontFamily;
+                        
+                        // Measure the typed text
+                        const textWidth = context.measureText(handleInput.value).width;
+                        
+                        // Get the input's position
+                        const inputRect = handleInput.getBoundingClientRect();
+                        const promptRect = prompt.getBoundingClientRect();
+                        
+                        // Calculate cursor position (relative to where input text starts)
+                        const leftOffset = textWidth + 2; // 2px padding
+                        
+                        // Position cursor absolutely
+                        cursor.style.position = 'absolute';
+                        cursor.style.left = (promptRect.width + 10 + leftOffset) + 'px'; // 10px is the gap
+                    };
+                    
+                    // Update cursor on input
+                    handleInput.addEventListener('input', updateCursor);
+                    
+                    // Initial position
+                    updateCursor();
+                }, 100);
                 
                 // Handle login submission
                 handleInput.addEventListener('keypress', function(e) {
