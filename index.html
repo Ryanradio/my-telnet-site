@@ -587,6 +587,96 @@
             animation: glow-pulse 2s infinite;
         }
 
+        /* ============================================
+           DOS LOGIN SCREEN STYLES - START
+           (DELETE THIS SECTION TO REMOVE LOGIN)
+           ============================================ */
+        .dos-login-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 99998;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Courier New', monospace;
+            color: #0f0;
+            padding: 20px;
+            opacity: 1;
+            transition: opacity 0.5s;
+        }
+
+        .dos-login-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .login-container {
+            max-width: 600px;
+            width: 100%;
+            text-align: left;
+        }
+
+        .login-header {
+            font-size: clamp(1rem, 3vw, 1.5rem);
+            margin-bottom: 30px;
+            text-align: center;
+            border: 2px solid #0f0;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+        }
+
+        .login-prompt {
+            font-size: clamp(0.9rem, 2vw, 1.2rem);
+            margin-bottom: 10px;
+        }
+
+        .login-input-line {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .login-input {
+            background: transparent;
+            border: none;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            font-size: clamp(0.9rem, 2vw, 1.2rem);
+            outline: none;
+            flex: 1;
+            text-shadow: 0 0 5px #0f0;
+        }
+
+        .login-cursor {
+            display: inline-block;
+            width: 12px;
+            height: 1.2em;
+            background: #0f0;
+            animation: blink 1s infinite;
+        }
+
+        .login-hint {
+            font-size: clamp(0.7rem, 1.5vw, 0.9rem);
+            opacity: 0.6;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .returning-user-message {
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
+            text-align: center;
+            animation: glow-pulse 2s infinite;
+        }
+        /* ============================================
+           DOS LOGIN SCREEN STYLES - END
+           ============================================ */
+
         .ascii-art {
             font-size: 0.6rem;
             line-height: 1;
@@ -643,6 +733,42 @@
         <div class="skip-hint">PRESS ANY KEY TO SKIP</div>
     </div>
     
+    <!-- ============================================
+         DOS LOGIN SCREEN HTML - START
+         (DELETE THIS SECTION TO REMOVE LOGIN)
+         ============================================ -->
+    <div class="dos-login-screen hidden" id="dosLoginScreen">
+        <div class="login-container">
+            <div class="login-header">
+                ╔═══════════════════════════════════════╗<br>
+                ║   PANTHEON BBS LOGIN SYSTEM v2.5    ║<br>
+                ║      Est. 1995 - Still Online       ║<br>
+                ╚═══════════════════════════════════════╝
+            </div>
+            
+            <div id="loginContent">
+                <div class="login-prompt">ENTER YOUR HANDLE:</div>
+                <div class="login-input-line">
+                    <span>></span>
+                    <input type="text" 
+                           id="handleInput" 
+                           class="login-input" 
+                           maxlength="20" 
+                           autocomplete="off"
+                           spellcheck="false">
+                    <span class="login-cursor"></span>
+                </div>
+                <div class="login-hint">
+                    [Press ENTER to continue]<br>
+                    Choose your BBS handle (e.g., Raven, CyberWolf, Neo)
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- ============================================
+         DOS LOGIN SCREEN HTML - END
+         ============================================ -->
+    
     <div class="sysop-overlay" id="sysopOverlay">
         <div class="sysop-message" id="sysopMessage"></div>
         <div class="sysop-terminal" id="sysopTerminal"></div>
@@ -677,6 +803,11 @@
             <div class="status-item">
                 <div class="status-indicator"></div>
                 <span id="lastUpdated" class="loading">LOADING...</span>
+            </div>
+            <!-- DOS LOGIN: User welcome message (DELETE THIS to remove) -->
+            <div class="status-item" id="userWelcome" style="display: none;">
+                <div class="status-indicator"></div>
+                <span id="welcomeMessage">WELCOME</span>
             </div>
         </div>
 
@@ -976,6 +1107,140 @@
         // Auto-refresh connection info every 60 seconds
         setInterval(loadConnectionInfo, 60000);
 
+        /* ============================================
+           DOS LOGIN FUNCTIONS - START
+           (DELETE THIS SECTION TO REMOVE LOGIN)
+           ============================================ */
+        
+        // Cookie functions
+        function setCookie(name, value, days) {
+            const expires = new Date();
+            expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+            document.cookie = name + '=' + value + ';expires=' + expires.toUTCString() + ';path=/';
+        }
+
+        function getCookie(name) {
+            const nameEQ = name + "=";
+            const ca = document.cookie.split(';');
+            for(let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+                if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+            }
+            return null;
+        }
+
+        function deleteCookie(name) {
+            document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:01 GMT;path=/';
+        }
+
+        // Show DOS login after loading screen completes
+        async function showDOSLogin() {
+            const loginScreen = document.getElementById('dosLoginScreen');
+            const handleInput = document.getElementById('handleInput');
+            
+            // Check if user already has a handle saved
+            const savedHandle = getCookie('bbsHandle');
+            
+            if (savedHandle) {
+                // Returning user
+                const loginContent = document.getElementById('loginContent');
+                loginContent.innerHTML = `
+                    <div class="returning-user-message">
+                        ╔═══════════════════════════════════════╗<br>
+                        ║     WELCOME BACK, ${savedHandle.toUpperCase()}!     ║<br>
+                        ║        Last login: ${getLastLoginTime()}        ║<br>
+                        ╚═══════════════════════════════════════╝
+                    </div>
+                `;
+                
+                loginScreen.classList.remove('hidden');
+                
+                // Auto-continue after 2 seconds
+                setTimeout(() => {
+                    loginScreen.classList.add('hidden');
+                    setTimeout(() => loginScreen.remove(), 500);
+                    
+                    // Show welcome in status bar
+                    showUserWelcome(savedHandle);
+                }, 2000);
+                
+            } else {
+                // New user - show login prompt
+                loginScreen.classList.remove('hidden');
+                setTimeout(() => handleInput.focus(), 100);
+                
+                // Handle login submission
+                handleInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        const handle = handleInput.value.trim();
+                        if (handle) {
+                            processLogin(handle);
+                        }
+                    }
+                });
+            }
+        }
+
+        function processLogin(handle) {
+            const loginContent = document.getElementById('loginContent');
+            const loginScreen = document.getElementById('dosLoginScreen');
+            
+            // Save handle and login time
+            setCookie('bbsHandle', handle, 365);
+            setCookie('lastLogin', new Date().toISOString(), 365);
+            
+            // Show access granted message
+            loginContent.innerHTML = `
+                <div class="returning-user-message">
+                    ╔═══════════════════════════════════════╗<br>
+                    ║       ACCESS GRANTED                ║<br>
+                    ║       WELCOME, ${handle.toUpperCase()}!              ║<br>
+                    ║       Initializing session...       ║<br>
+                    ╚═══════════════════════════════════════╝
+                </div>
+            `;
+            
+            // Hide login screen and show site
+            setTimeout(() => {
+                loginScreen.classList.add('hidden');
+                setTimeout(() => loginScreen.remove(), 500);
+                
+                // Show welcome in status bar
+                showUserWelcome(handle);
+            }, 2000);
+        }
+
+        function showUserWelcome(handle) {
+            const welcomeElement = document.getElementById('userWelcome');
+            const welcomeMessage = document.getElementById('welcomeMessage');
+            
+            if (welcomeElement && welcomeMessage) {
+                welcomeMessage.textContent = `USER: ${handle.toUpperCase()}`;
+                welcomeElement.style.display = 'flex';
+            }
+        }
+
+        function getLastLoginTime() {
+            const lastLogin = getCookie('lastLogin');
+            if (!lastLogin) return 'First time';
+            
+            const lastDate = new Date(lastLogin);
+            const now = new Date();
+            const diffMs = now - lastDate;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+            
+            if (diffMins < 60) return diffMins + ' mins ago';
+            if (diffHours < 24) return diffHours + ' hours ago';
+            return diffDays + ' days ago';
+        }
+
+        /* ============================================
+           DOS LOGIN FUNCTIONS - END
+           ============================================ */
+
         // Retro Loading Screen Sequence
         async function startLoadingSequence() {
             const screen = document.getElementById('loadingScreen');
@@ -1079,6 +1344,8 @@
             // Remove from DOM after fade
             setTimeout(() => {
                 screen.remove();
+                // DOS LOGIN: Show login screen after loading (DELETE THIS LINE to remove)
+                showDOSLogin();
             }, 500);
         }
 
