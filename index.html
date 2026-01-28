@@ -1,0 +1,3932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Pantheon Major BBS</title>
+    
+    <!-- 
+    ═══════════════════════════════════════════════════════════════
+    WELCOME, HACKER!
+    You found the secret developer notes. Nice work!
+    
+    EASTER EGG HINTS:
+    • Try the classic Konami Code: ↑ ↑ ↓ ↓ ← → ← → B A
+    • There's a mysterious π symbol hidden on the page...
+      (Shift + Click or Ctrl + Shift + Click)
+    • Type "SYSOP" anywhere on the page for admin access
+    
+    Happy exploring! - The Sysop
+    ═══════════════════════════════════════════════════════════════
+    -->
+    
+    <link href="ftelnet.css" rel="stylesheet">
+    <script src="ftelnet.rip.xfer.min.js" id="fTelnetScript"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @keyframes scanline {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100%); }
+        }
+
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.95; }
+        }
+
+        @keyframes glow-pulse {
+            0%, 100% { text-shadow: 0 0 10px #0f0, 0 0 20px #0f0; }
+            50% { text-shadow: 0 0 20px #0f0, 0 0 30px #0f0, 0 0 40px #0f0; }
+        }
+
+        body {
+            background: #000;
+            color: #0f0;
+            font-family: 'Courier New', Courier, monospace;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* CRT scanline effect */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                transparent 50%,
+                rgba(0, 255, 0, 0.02) 51%
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 1000;
+            animation: flicker 0.15s infinite;
+        }
+
+        /* Moving scanline */
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: rgba(0, 255, 0, 0.1);
+            pointer-events: none;
+            z-index: 1001;
+            animation: scanline 6s linear infinite;
+        }
+
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #0f0;
+            opacity: 0.3;
+            animation: twinkle 3s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.8; }
+        }
+
+        .container {
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 30px 20px;
+            border: 3px double #0f0;
+            background: rgba(0, 17, 0, 0.8);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: "";
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #0f0, transparent, #0f0);
+            opacity: 0.3;
+            animation: rotate-border 4s linear infinite;
+            z-index: -1;
+        }
+
+        @keyframes rotate-border {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        h1 {
+            font-size: clamp(1.5rem, 5vw, 3rem);
+            margin-bottom: 10px;
+            animation: glow-pulse 3s infinite;
+            letter-spacing: 0.1em;
+        }
+
+        .tagline {
+            font-size: clamp(0.8rem, 2vw, 1.2rem);
+            opacity: 0.8;
+            margin-top: 10px;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-around;
+            padding: 15px;
+            background: rgba(0, 17, 0, 0.6);
+            border: 1px solid #0f0;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .visitor-counter {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            padding: 8px;
+            background: rgba(0, 17, 0, 0.95);
+            border: 2px solid #0f0;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3), inset 0 0 10px rgba(0, 255, 0, 0.2);
+            z-index: 1002;
+        }
+
+        .counter-label {
+            font-size: 0.5rem;
+            opacity: 0.8;
+            letter-spacing: 0.05em;
+        }
+
+        .counter-display {
+            display: flex;
+            gap: 2px;
+        }
+
+        .counter-digit {
+            background: #000;
+            border: 1px solid #0f0;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            font-weight: bold;
+            width: 18px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-shadow: 0 0 5px #0f0;
+            box-shadow: inset 0 0 3px rgba(0, 255, 0, 0.3);
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            background: #0f0;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 5px #0f0; }
+            50% { opacity: 0.5; box-shadow: 0 0 15px #0f0; }
+        }
+
+        .connection-panel {
+            background: rgba(0, 17, 0, 0.8);
+            border: 2px solid #0f0;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+        }
+
+        .connection-panel h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: clamp(1.2rem, 3vw, 1.8rem);
+            border-bottom: 1px solid #0f0;
+            padding-bottom: 10px;
+        }
+
+        .connection-info {
+            background: #000;
+            border: 1px solid #0f0;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .address {
+            font-size: clamp(1rem, 2.5vw, 1.5rem);
+            color: #fff;
+            margin: 15px 0;
+            word-break: break-all;
+            font-weight: bold;
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            background: #000;
+            border: 2px solid #0f0;
+            color: #0f0;
+            padding: 15px 20px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(0, 255, 0, 0.1);
+            transform: translate(-50%, -50%);
+            transition: width 0.3s, height 0.3s;
+        }
+
+        .btn:hover::before {
+            width: 100%;
+            height: 100%;
+        }
+
+        .btn:hover {
+            background: rgba(0, 255, 0, 0.1);
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            border-color: #fff;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .btn-primary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        }
+
+        .rgb-border-wrapper {
+            position: relative;
+            padding: 4px;
+            background: linear-gradient(
+                45deg,
+                #ff0000,
+                #ff7300,
+                #fffb00,
+                #48ff00,
+                #00ffd5,
+                #002bff,
+                #7a00ff,
+                #ff00c8,
+                #ff0000
+            );
+            background-size: 400% 400%;
+            animation: rgb-rotate 3s linear infinite;
+            border-radius: 2px;
+        }
+
+        .rgb-border-wrapper::before {
+            content: "";
+            position: absolute;
+            inset: -8px;
+            background: inherit;
+            background-size: 400% 400%;
+            filter: blur(15px);
+            opacity: 0.7;
+            z-index: -1;
+            animation: rgb-rotate 3s linear infinite;
+        }
+
+        .rgb-border-wrapper .btn {
+            margin: 0;
+            width: 100%;
+        }
+
+        .rgb-border-wrapper:hover {
+            animation: rgb-rotate 1.5s linear infinite;
+        }
+
+        .rgb-border-wrapper:hover::before {
+            animation: rgb-rotate 1.5s linear infinite;
+            filter: blur(20px);
+        }
+
+        @keyframes rgb-rotate {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .btn-primary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
+            transform: translateY(-3px) scale(1.02);
+        }
+
+        .btn-primary:hover::after {
+            filter: blur(3px);
+            animation: rgb-rotate 1.5s linear infinite;
+        }
+
+        .copy-btn {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: #0c0;
+            box-shadow: 0 0 15px #0f0;
+            transform: scale(1.05);
+        }
+
+        #fTelnetContainer {
+            margin-top: 20px;
+            width: 100%;
+            height: 630px;
+            display: none;
+            border: 2px solid #0f0;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.4);
+            background: #000;
+        }
+        
+        #fTelnetContainer.active {
+            display: block;
+            animation: terminal-boot 0.5s;
+        }
+
+        @keyframes terminal-boot {
+            0% { opacity: 0; transform: scale(0.95); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            border-top: 1px solid #0f0;
+            margin-top: 30px;
+            opacity: 0.7;
+            font-size: 0.9rem;
+        }
+
+        .sound-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 17, 0, 0.9);
+            border: 2px solid #0f0;
+            color: #0f0;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 1.2rem;
+            z-index: 1002;
+            transition: all 0.3s;
+        }
+
+        .sound-toggle:hover {
+            background: rgba(0, 255, 0, 0.2);
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+        }
+
+        .sound-toggle.muted {
+            opacity: 0.5;
+        }
+
+        .pi-symbol {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            background: transparent;
+            border: none;
+            color: #0f0;
+            padding: 5px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 1.8rem;
+            z-index: 1002;
+            transition: all 0.3s;
+            opacity: 0.15;
+        }
+
+        .pi-symbol:hover {
+            opacity: 0.4;
+        }
+
+        /* Retro Loading Screen */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Courier New', monospace;
+            color: #0f0;
+            padding: 20px;
+            opacity: 1;
+            transition: opacity 0.5s;
+        }
+
+        .loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-terminal {
+            max-width: 800px;
+            width: 100%;
+            text-align: left;
+            font-size: clamp(0.7rem, 2vw, 1rem);
+            line-height: 1.6;
+        }
+
+        .loading-line {
+            margin: 8px 0;
+            opacity: 0;
+            animation: fadeInLine 0.3s forwards;
+        }
+
+        @keyframes fadeInLine {
+            to { opacity: 1; }
+        }
+
+        .loading-progress {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .progress-bar {
+            flex: 1;
+            height: 20px;
+            border: 2px solid #0f0;
+            background: #000;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #0f0;
+            width: 0%;
+            transition: width 0.3s;
+            box-shadow: 0 0 10px #0f0;
+        }
+
+        .progress-percent {
+            min-width: 45px;
+            text-align: right;
+        }
+
+        .loading-cursor {
+            display: inline-block;
+            width: 10px;
+            height: 1em;
+            background: #0f0;
+            animation: blink 1s infinite;
+            margin-left: 5px;
+        }
+
+        @keyframes blink {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+
+        .skip-hint {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.8em;
+            opacity: 0.6;
+            text-align: center;
+        }
+
+        .system-ready {
+            font-size: 1.5em;
+            text-align: center;
+            margin-top: 30px;
+            animation: glow-pulse 2s infinite;
+        }
+
+        /* ============================================
+           DOS LOGIN SCREEN STYLES - START
+           (DELETE THIS SECTION TO REMOVE LOGIN)
+           ============================================ */
+        .dos-login-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 99998;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Courier New', monospace;
+            color: #0f0;
+            padding: 20px;
+            opacity: 1;
+            transition: opacity 0.5s;
+        }
+
+        .dos-login-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .login-container {
+            max-width: 600px;
+            width: 100%;
+            text-align: left;
+        }
+
+        .login-header {
+            font-size: clamp(1rem, 3vw, 1.5rem);
+            margin-bottom: 30px;
+            text-align: center;
+            border: 2px solid #0f0;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+        }
+
+        .login-prompt {
+            font-size: clamp(0.9rem, 2vw, 1.2rem);
+            margin-bottom: 10px;
+        }
+
+        .login-input-line {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .login-input {
+            background: transparent;
+            border: none;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            font-size: clamp(0.9rem, 2vw, 1.2rem);
+            outline: none;
+            flex: 1;
+            text-shadow: 0 0 5px #0f0;
+            caret-color: transparent; /* Hide default cursor */
+        }
+
+        .login-cursor {
+            display: inline-block;
+            width: 10px;
+            height: 1.2em;
+            background: #0f0;
+            animation: blink 1s infinite;
+            vertical-align: text-bottom;
+            position: absolute;
+            left: 20px;
+            transition: left 0.05s;
+        }
+
+        .login-hint {
+            font-size: clamp(0.7rem, 1.5vw, 0.9rem);
+            opacity: 0.6;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .returning-user-message {
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
+            text-align: center;
+            animation: glow-pulse 2s infinite;
+        }
+        /* ============================================
+           DOS LOGIN SCREEN STYLES - END
+           ============================================ */
+
+        /* ASCII Art Gallery Styles */
+        .ascii-gallery {
+            background: rgba(0, 17, 0, 0.6);
+            border: 2px solid #0f0;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+        }
+
+        .gallery-header {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: clamp(1rem, 2.5vw, 1.5rem);
+            border-bottom: 1px solid #0f0;
+            padding-bottom: 10px;
+        }
+
+        .ascii-display {
+            background: #000;
+            border: 1px solid #0f0;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: clamp(0.5rem, 1.5vw, 0.75rem);
+            line-height: 1.1;
+            text-align: center;
+            overflow-x: auto;
+            margin-bottom: 15px;
+            white-space: pre;
+        }
+
+        .game-info {
+            text-align: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(0, 255, 0, 0.05);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+        }
+
+        .game-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .game-author {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .gallery-controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .gallery-btn {
+            background: #000;
+            border: 2px solid #0f0;
+            color: #0f0;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .gallery-btn:hover {
+            background: rgba(0, 255, 0, 0.1);
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+            transform: translateY(-2px);
+        }
+
+        /* Collapsible Guestbook */
+        .collapsible-header {
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.3s;
+        }
+
+        .collapsible-header:hover {
+            text-shadow: 0 0 15px currentColor;
+            transform: translateX(5px);
+        }
+
+        .collapsible-content {
+            max-height: 2000px;
+            overflow: hidden;
+            transition: max-height 0.5s ease-out, opacity 0.3s;
+            opacity: 1;
+        }
+
+        .collapsible-content.collapsed {
+            max-height: 0;
+            opacity: 0;
+        }
+
+        .collapse-indicator {
+            display: inline-block;
+            transition: transform 0.3s;
+        }
+
+        .collapse-indicator.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        /* SYSOP Admin Panel Styles */
+        .sysop-panel {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 700px;
+            max-height: 80vh;
+            background: rgba(0, 0, 0, 0.95);
+            border: 3px solid #0f0;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.5), inset 0 0 30px rgba(0, 255, 0, 0.1);
+            z-index: 100000;
+            display: none;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+        }
+
+        .sysop-panel.active {
+            display: block;
+            animation: panel-appear 0.3s;
+        }
+
+        @keyframes panel-appear {
+            from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+
+        .sysop-header {
+            background: #0f0;
+            color: #000;
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            position: relative;
+            border-bottom: 2px solid #0f0;
+        }
+
+        .sysop-close {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            font-size: 1.5em;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .sysop-close:hover {
+            color: #f00;
+            transform: translateY(-50%) scale(1.2);
+        }
+
+        .sysop-content {
+            padding: 20px;
+            color: #0f0;
+        }
+
+        .sysop-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            background: rgba(0, 255, 0, 0.05);
+        }
+
+        .sysop-section-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid rgba(0, 255, 0, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sysop-control {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin: 5px 0;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 255, 0, 0.2);
+            transition: all 0.2s;
+        }
+
+        .sysop-control:hover {
+            background: rgba(0, 255, 0, 0.1);
+            border-color: #0f0;
+        }
+
+        .sysop-button {
+            background: #000;
+            border: 2px solid #0f0;
+            color: #0f0;
+            padding: 8px 15px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            transition: all 0.2s;
+            font-size: 0.9em;
+        }
+
+        .sysop-button:hover {
+            background: rgba(0, 255, 0, 0.2);
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+        }
+
+        .sysop-button:active {
+            transform: scale(0.95);
+        }
+
+        .sysop-toggle {
+            width: 50px;
+            height: 25px;
+            background: #000;
+            border: 2px solid #0f0;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .sysop-toggle::after {
+            content: "";
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 18px;
+            height: 18px;
+            background: #f00;
+            transition: all 0.3s;
+        }
+
+        .sysop-toggle.on {
+            background: rgba(0, 255, 0, 0.2);
+        }
+
+        .sysop-toggle.on::after {
+            left: 26px;
+            background: #0f0;
+            box-shadow: 0 0 10px #0f0;
+        }
+
+        .sysop-input {
+            background: #000;
+            border: 1px solid #0f0;
+            color: #0f0;
+            padding: 5px 10px;
+            font-family: 'Courier New', monospace;
+            width: 100px;
+        }
+
+        .sysop-select {
+            background: #000;
+            border: 1px solid #0f0;
+            color: #0f0;
+            padding: 5px 10px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .status-indicator-sysop {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #0f0;
+            box-shadow: 0 0 10px #0f0;
+            animation: pulse 2s infinite;
+        }
+
+        .broadcast-message {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 17, 0, 0.95);
+            border: 3px solid #0f0;
+            padding: 20px 40px;
+            z-index: 99999;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.5);
+            animation: broadcast-flash 0.5s infinite;
+            text-align: center;
+        }
+
+        @keyframes broadcast-flash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        /* Terminal Overlay Styles */
+        .terminal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 999999;
+            display: none;
+            flex-direction: column;
+            font-family: 'Courier New', monospace;
+            color: #0f0;
+        }
+
+        .terminal-overlay.active {
+            display: flex;
+        }
+
+        .terminal-header {
+            padding: 20px;
+            border-bottom: 2px solid #0f0;
+            text-align: center;
+            font-size: 1.2em;
+            background: rgba(0, 255, 0, 0.1);
+        }
+
+        .terminal-output {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            font-size: 1em;
+            line-height: 1.6;
+        }
+
+        .terminal-line {
+            margin: 5px 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .terminal-error {
+            color: #ff0040;
+        }
+
+        .terminal-success {
+            color: #00ff88;
+        }
+
+        .terminal-info {
+            color: #00bfff;
+        }
+
+        .terminal-input-area {
+            padding: 20px;
+            border-top: 2px solid #0f0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0, 255, 0, 0.05);
+        }
+
+        .terminal-prompt {
+            color: #0f0;
+            font-weight: bold;
+        }
+
+        .terminal-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            font-size: 1em;
+            outline: none;
+            caret-color: #0f0;
+        }
+
+        .qr-code-container {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0, 255, 0, 0.05);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            margin: 10px 0;
+        }
+
+        .qr-code-canvas {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            display: inline-block;
+        }
+
+        .ascii-art {
+            font-size: 0.6rem;
+            line-height: 1;
+            opacity: 0.5;
+            margin: 20px 0;
+            text-align: center;
+            overflow-x: auto;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header {
+                padding: 20px 10px;
+            }
+
+            .status-bar {
+                flex-direction: column;
+            }
+
+            .button-grid {
+                grid-template-columns: 1fr;
+            }
+
+            #fTelnetContainer {
+                height: 60vh;
+                min-height: 400px;
+            }
+
+            .ascii-art {
+                font-size: 0.4rem;
+            }
+        }
+
+        .loading {
+            text-align: center;
+            color: #0a0;
+        }
+
+        .error {
+            color: #f00;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-terminal" id="loadingTerminal">
+            <!-- Loading messages will be inserted here by JavaScript -->
+        </div>
+        <div class="skip-hint">PRESS ANY KEY TO SKIP</div>
+    </div>
+    
+    <!-- ============================================
+         DOS LOGIN SCREEN HTML - START
+         (DELETE THIS SECTION TO REMOVE LOGIN)
+         ============================================ -->
+    <div class="dos-login-screen hidden" id="dosLoginScreen">
+        <div class="login-container">
+            <div class="login-header">
+                ╔═══════════════════════════════════════╗<br>
+                ║   PANTHEON BBS LOGIN SYSTEM v2.5    ║<br>
+                ║      Est. 1995 - Still Online       ║<br>
+                ╚═══════════════════════════════════════╝
+            </div>
+            
+            <div id="loginContent">
+                <div class="login-prompt">ENTER YOUR HANDLE:</div>
+                <div class="login-input-line">
+                    <span>></span>
+                    <input type="text" 
+                           id="handleInput" 
+                           class="login-input" 
+                           maxlength="20" 
+                           autocomplete="off"
+                           spellcheck="false">
+                    <span class="login-cursor"></span>
+                </div>
+                <div class="login-hint">
+                    [Press ENTER to continue]<br>
+                    Choose your BBS handle (e.g., Raven, CyberWolf, Neo)
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- ============================================
+         DOS LOGIN SCREEN HTML - END
+         ============================================ -->
+    
+    <div class="sysop-overlay" id="sysopOverlay">
+        <div class="sysop-message" id="sysopMessage"></div>
+        <div class="sysop-terminal" id="sysopTerminal"></div>
+    </div>
+    
+    <canvas class="matrix-canvas" id="matrixCanvas"></canvas>
+    <div class="stars" id="stars"></div>
+    
+    <button class="sound-toggle" id="soundToggle" onclick="toggleSound()" title="Toggle dial-up sound">🔊</button>
+    
+    <div class="pi-symbol" onclick="checkSysopAccess(event)" title="π">π</div>
+    
+    <!-- SYSOP Admin Panel -->
+    <div class="sysop-panel" id="sysopPanel">
+        <div class="sysop-header">
+            ⚡ SYSOP CONTROL PANEL ⚡
+            <span class="sysop-close" onclick="closeSysopPanel()">✕</span>
+        </div>
+        <div class="sysop-content">
+            <div style="text-align: center; margin-bottom: 20px; padding: 10px; background: rgba(0, 255, 0, 0.1); border: 1px solid #0f0;">
+                <span class="status-indicator-sysop"></span> ACCESS LEVEL: ADMINISTRATOR <span class="status-indicator-sysop"></span>
+            </div>
+
+            <div class="sysop-section">
+                <div class="sysop-section-title">
+                    <span class="status-indicator-sysop"></span> VISUAL EFFECTS
+                </div>
+                <div class="sysop-control">
+                    <span>CRT Scanlines</span>
+                    <div class="sysop-toggle on" id="toggleScanlines" onclick="toggleScanlines()"></div>
+                </div>
+                <div class="sysop-control">
+                    <span>Background Stars</span>
+                    <div class="sysop-toggle on" id="toggleStars" onclick="toggleStars()"></div>
+                </div>
+                <div class="sysop-control">
+                    <span>Matrix Rain</span>
+                    <div class="sysop-toggle" id="toggleMatrix" onclick="toggleMatrixRain()"></div>
+                </div>
+            </div>
+
+            <div class="sysop-section">
+                <div class="sysop-section-title">
+                    <span class="status-indicator-sysop"></span> COLOR SCHEME
+                </div>
+                <div class="sysop-control">
+                    <span>Terminal Color</span>
+                    <select class="sysop-select" onchange="changeColorScheme(this.value)">
+                        <option value="green">Green (Classic)</option>
+                        <option value="amber">Amber</option>
+                        <option value="blue">Blue</option>
+                        <option value="red">Red</option>
+                        <option value="white">White</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="sysop-section">
+                <div class="sysop-section-title">
+                    <span class="status-indicator-sysop"></span> SYSTEM CONTROLS
+                </div>
+                <div class="sysop-control">
+                    <span>Visitor Counter</span>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="number" class="sysop-input" id="counterInput" placeholder="000000" max="999999">
+                        <button class="sysop-button" onclick="setCounter()">SET</button>
+                    </div>
+                </div>
+                <div class="sysop-control">
+                    <span>Broadcast Message</span>
+                    <button class="sysop-button" onclick="showBroadcast()">📢 SEND</button>
+                </div>
+                <div class="sysop-control">
+                    <span>Clear User Data</span>
+                    <button class="sysop-button" onclick="clearUserData()">🗑️ RESET</button>
+                </div>
+            </div>
+
+            <div class="sysop-section">
+                <div class="sysop-section-title">
+                    <span class="status-indicator-sysop"></span> EMERGENCY
+                </div>
+                <div class="sysop-control">
+                    <span>System Reboot</span>
+                    <button class="sysop-button" onclick="systemReboot()" style="border-color: #f00; color: #f00;">⚠️ REBOOT</button>
+                </div>
+            </div>
+
+            <div class="sysop-section">
+                <div class="sysop-section-title">
+                    <span class="status-indicator-sysop"></span> REMOTE TERMINAL ACCESS
+                </div>
+                <div class="qr-code-container" id="qrCodeContainer">
+                    <div style="margin-bottom: 10px; font-size: 0.9em;">
+                        Scan with phone to unlock terminal
+                    </div>
+                    <canvas id="qrCodeCanvas" class="qr-code-canvas"></canvas>
+                    <div style="margin-top: 10px; font-size: 0.8em; opacity: 0.7;">
+                        Session ID: <span id="sessionId">Generating...</span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 20px; padding: 10px; opacity: 0.6; font-size: 0.8em;">
+                Press ESC to close | SysOp since 1995
+            </div>
+        </div>
+    </div>
+    
+    <audio id="modemSound" preload="auto">
+        <source src="modem.mp3" type="audio/mpeg">
+    </audio>
+    
+    <div class="container">
+        <div class="header">
+            <h1>═══ THE PANTHEON MAJOR <span class="bbs-term">BBS<span class="bbs-tooltip">Bulletin Board System - A computer system that allowed users to dial in via modem to read messages, play games, and chat before the World Wide Web existed (1980s-1990s).</span></span> ═══</h1>
+            <div class="tagline">⚡ Since 1995 · Keeping the Legacy Alive · 30 Years Strong ⚡</div>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-indicator"></div>
+                <span>SYSTEM ONLINE</span>
+            </div>
+            <div class="status-item">
+                <div class="status-indicator"></div>
+                <span>TUNNELS ACTIVE</span>
+            </div>
+            <div class="status-item">
+                <div class="status-indicator"></div>
+                <span id="lastUpdated" class="loading">LOADING...</span>
+            </div>
+            <!-- DOS LOGIN: User welcome message (DELETE THIS to remove) -->
+            <div class="status-item" id="userWelcome" style="display: none;">
+                <div class="status-indicator"></div>
+                <span id="welcomeMessage">WELCOME</span>
+            </div>
+        </div>
+
+        <div class="connection-panel">
+            <h2>▼ CONNECTION INFORMATION ▼</h2>
+            <div class="connection-info" id="connectionInfo">
+                <div class="loading">Establishing connection to mainframe...</div>
+            </div>
+        </div>
+
+        <div class="connection-panel">
+            <h2>▼ ACCESS METHODS ▼</h2>
+            <div class="button-grid">
+                <div class="rgb-border-wrapper">
+                    <button class="btn btn-primary" onclick="connectViaWeb()">
+                        <span style="font-size: 1.5em;">⚡</span>
+                        <strong>INSTANT WEB ACCESS</strong>
+                        <span style="font-size: 0.8em;">Connect Now</span>
+                    </button>
+                </div>
+                <a href="https://www.putty.org" target="_blank" class="btn">
+                    <span style="font-size: 1.5em;">💻</span>
+                    <strong>PuTTY</strong>
+                    <span style="font-size: 0.8em;">Windows Client</span>
+                </a>
+                <a href="https://apps.apple.com/us/app/termius-ssh-client/id549039908" target="_blank" class="btn">
+                    <span style="font-size: 1.5em;">🍎</span>
+                    <strong>Termius</strong>
+                    <span style="font-size: 0.8em;">Mac/iOS Client</span>
+                </a>
+                <a href="https://play.google.com/store/apps/details?id=com.sonelli.juicessh" target="_blank" class="btn">
+                    <span style="font-size: 1.5em;">🤖</span>
+                    <strong>JuiceSSH</strong>
+                    <span style="font-size: 0.8em;">Android Client</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- ASCII Door Games Gallery -->
+        <div class="connection-panel ascii-gallery">
+            <div class="gallery-header">
+                ═══ CLASSIC BBS DOOR GAMES ARCHIVE ═══
+            </div>
+            
+            <div class="ascii-display" id="asciiArtDisplay">
+                <!-- ASCII art will be inserted here -->
+            </div>
+            
+            <div class="game-info" id="gameInfo">
+                <!-- Game info will be inserted here -->
+            </div>
+            
+            <div class="gallery-controls">
+                <button class="gallery-btn" onclick="previousArt()">◄ PREVIOUS</button>
+                <button class="gallery-btn" onclick="nextArt()">NEXT ►</button>
+            </div>
+        </div>
+
+        <div class="connection-panel">
+            <h2 class="collapsible-header" onclick="toggleGuestbook()">
+                <span class="collapse-indicator" id="guestbookIndicator">▼</span> GUEST BOOK · SIGN IN <span class="collapse-indicator" id="guestbookIndicator2">▼</span>
+            </h2>
+            <div class="collapsible-content" id="guestbookContent">
+            <div style="background: #000; border: 1px solid currentColor; padding: 20px; margin-bottom: 20px;">
+                <div style="text-align: center; margin-bottom: 20px; opacity: 0.8; font-size: 0.9em;">
+                    📝 Leave your mark on The Pantheon! All messages are welcome. 📝
+                </div>
+                <form id="guestbookForm" onsubmit="submitGuestbookEntry(event)">
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-size: 0.9em;">HANDLE/NAME:</label>
+                        <input type="text" id="guestName" maxlength="30" required 
+                            style="width: 100%; background: #000; border: 1px solid currentColor; color: inherit; padding: 10px; font-family: 'Courier New', monospace; font-size: 1em;"
+                            placeholder="Enter your handle...">
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-size: 0.9em;">LOCATION (OPTIONAL):</label>
+                        <input type="text" id="guestLocation" maxlength="50"
+                            style="width: 100%; background: #000; border: 1px solid currentColor; color: inherit; padding: 10px; font-family: 'Courier New', monospace; font-size: 1em;"
+                            placeholder="City, State/Country...">
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-size: 0.9em;">MESSAGE:</label>
+                        <textarea id="guestMessage" maxlength="500" rows="4" required
+                            style="width: 100%; background: #000; border: 1px solid currentColor; color: inherit; padding: 10px; font-family: 'Courier New', monospace; font-size: 1em; resize: vertical;"
+                            placeholder="Share your thoughts, memories, or just say hi!"></textarea>
+                        <div style="text-align: right; font-size: 0.8em; opacity: 0.6; margin-top: 5px;">
+                            <span id="charCount">0</span>/500 characters
+                        </div>
+                    </div>
+                    <button type="submit" class="copy-btn" style="width: 100%; padding: 15px; font-size: 1.1em;">
+                        ✍️ SIGN THE GUEST BOOK ✍️
+                    </button>
+                </form>
+            </div>
+            
+            <div style="background: #000; border: 1px solid currentColor; padding: 20px;">
+                <h3 style="text-align: center; margin-bottom: 20px; border-bottom: 1px solid currentColor; padding-bottom: 10px;">
+                    📖 RECENT ENTRIES 📖
+                </h3>
+                <div id="guestbookEntries" style="max-height: 400px; overflow-y: auto;">
+                    <div style="text-align: center; opacity: 0.5; padding: 20px;">
+                        Loading entries...
+                    </div>
+                </div>
+            </div>
+            </div> <!-- End collapsible-content -->
+        </div>
+
+        <div id="fTelnetContainer"></div>
+
+        <div class="ascii-art">
+<pre>
+    ╔═══════════════════════════════════════════════════════════════════════╗
+    ║  ██████╗  █████╗ ███╗   ██╗████████╗██╗  ██╗███████╗ ██████╗ ███╗   ██║
+    ║  ██╔══██╗██╔══██╗████╗  ██║╚══██╔══╝██║  ██║██╔════╝██╔═══██╗████╗  ██║
+    ║  ██████╔╝███████║██╔██╗ ██║   ██║   ███████║█████╗  ██║   ██║██╔██╗ ██║
+    ║  ██╔═══╝ ██╔══██║██║╚██╗██║   ██║   ██╔══██║██╔══╝  ██║   ██║██║╚██╗██║
+    ║  ██║     ██║  ██║██║ ╚████║   ██║   ██║  ██║███████╗╚██████╔╝██║ ╚████║
+    ║  ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═╝  ╚═══║
+    ╚═══════════════════════════════════════════════════════════════════════╝
+</pre>
+        </div>
+
+        <div class="footer">
+            <p>Running on authentic Windows XP hardware · <span class="bbs-term">MajorBBS<span class="bbs-tooltip">Galacticomm's MajorBBS - One of the most popular commercial BBS software packages, known for supporting multiple phone lines and advanced features.</span></span> · A piece of computing history</p>
+            <p style="margin-top: 10px; font-size: 0.8em;">Established 1995 · Preserving the golden age of dial-up <span class="bbs-term">BBSing<span class="bbs-tooltip">The act of calling and using a BBS - a hobby that peaked in the early 1990s with millions of systems worldwide.</span></span></p>
+            <p style="margin-top: 15px; font-size: 0.6em; opacity: 0.3; letter-spacing: 1px;">[SYSOP]</p>
+        </div>
+        
+        <div class="visitor-counter">
+            <div class="counter-label">VISITORS</div>
+            <div class="counter-display" id="visitorCounter">
+                <div class="counter-digit">0</div>
+                <div class="counter-digit">0</div>
+                <div class="counter-digit">0</div>
+                <div class="counter-digit">0</div>
+                <div class="counter-digit">0</div>
+                <div class="counter-digit">0</div>
+            </div>
+            <div style="font-size: 0.5rem; opacity: 0.3; margin-top: 5px; text-align: center; letter-spacing: 1px;">↑↑↓↓←→←→BA</div>
+        </div>
+    </div>
+
+    <!-- Terminal Overlay -->
+    <div class="terminal-overlay" id="terminalOverlay">
+        <div class="terminal-header">
+            ═══ PANTHEON BBS REMOTE TERMINAL ═══<br>
+            <span style="font-size: 0.7em; opacity: 0.8;">Type /? for help · Type /exit to close</span>
+        </div>
+        <div class="terminal-output" id="terminalOutput">
+            <div class="terminal-line terminal-success">✓ Terminal access granted</div>
+            <div class="terminal-line">Welcome to The Pantheon BBS Remote Terminal</div>
+            <div class="terminal-line">Type /? or /help for available commands</div>
+            <div class="terminal-line" style="margin-top: 10px;"></div>
+        </div>
+        <div class="terminal-input-area">
+            <span class="terminal-prompt">></span>
+            <input type="text" 
+                   id="terminalInput" 
+                   class="terminal-input" 
+                   autocomplete="off"
+                   spellcheck="false"
+                   placeholder="Enter command...">
+        </div>
+    </div>
+
+    <script>
+        // Sound control
+        let soundEnabled = true;
+        const modemSound = document.getElementById('modemSound');
+        const soundToggle = document.getElementById('soundToggle');
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            soundToggle.textContent = soundEnabled ? '🔊' : '🔇';
+            soundToggle.classList.toggle('muted');
+            if (!soundEnabled && modemSound) {
+                modemSound.pause();
+                modemSound.currentTime = 0;
+            }
+        }
+
+        function playModemSound() {
+            if (soundEnabled && modemSound) {
+                modemSound.currentTime = 0;
+                modemSound.play().catch(e => console.log('Audio play failed:', e));
+            }
+        }
+
+        // Generate random stars
+        function createStars() {
+            const container = document.getElementById('stars');
+            for (let i = 0; i < 100; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                container.appendChild(star);
+            }
+        }
+
+        async function connectViaWeb() {
+            try {
+                const container = document.getElementById('fTelnetContainer');
+                
+                // Prevent multiple connections
+                if (container.classList.contains('active')) {
+                    return; // Already connected
+                }
+                
+                // Play modem sound and wait for it to finish
+                playModemSound();
+                
+                // Show a "dialing" message while modem sound plays
+                container.innerHTML = '<div class="xp-loading-container"><div class="xp-loading-text">📞 DIALING...</div><div class="xp-status-text">Please wait for handshake...</div></div>';
+                container.classList.add('active');
+                container.scrollIntoView({ behavior: 'smooth' });
+                
+                // Wait for modem sound to finish
+                if (!soundEnabled) {
+                    // If sound is muted, just wait 2 seconds
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                } else {
+                    // Wait for sound to end
+                    await new Promise((resolve) => {
+                        if (modemSound) {
+                            modemSound.onended = resolve;
+                            // Fallback timeout
+                            setTimeout(resolve, 35000);
+                        } else {
+                            setTimeout(resolve, 2000);
+                        }
+                    });
+                }
+                
+                // Show Windows XP style loading bar
+                container.innerHTML = `
+                    <div class="xp-loading-container">
+                        <div class="xp-loading-text">✓ Connected</div>
+                        <div class="xp-loading-bar">
+                            <div class="xp-loading-fill" id="xpProgressBar"></div>
+                        </div>
+                        <div class="xp-status-text" id="xpStatusText">Initializing terminal...</div>
+                    </div>
+                `;
+                
+                // Animate the progress bar
+                await animateXPProgress();
+                
+                // Clear the loading message
+                container.innerHTML = '';
+
+                const response = await fetch('connection.json?t=' + new Date().getTime());
+                const data = await response.json();
+
+                var Options = new fTelnetOptions();
+                Options.ProxyHeaders = { "ngrok-skip-browser-warning": "true" };
+                Options.Hostname = "192.168.40.69"; 
+                Options.Port = 23;
+                Options.ProxyHostname = data.proxy_hostname; 
+                Options.ProxyPort = 443; 
+                Options.ProxyPortSecure = 443;
+                Options.ProxyType = "websocket"; 
+
+                var Client = new fTelnetClient('fTelnetContainer', Options);
+            } catch (error) {
+                console.error("Connection error:", error);
+                alert("Could not establish connection. Error: " + error.message);
+            }
+        }
+
+        async function animateXPProgress() {
+            const progressBar = document.getElementById('xpProgressBar');
+            const statusText = document.getElementById('xpStatusText');
+            
+            const steps = [
+                { percent: 20, text: 'Loading protocols...', delay: 300 },
+                { percent: 40, text: 'Establishing secure connection...', delay: 400 },
+                { percent: 60, text: 'Negotiating terminal settings...', delay: 500 },
+                { percent: 80, text: 'Preparing display...', delay: 400 },
+                { percent: 100, text: 'Ready!', delay: 300 }
+            ];
+            
+            for (const step of steps) {
+                await new Promise(resolve => setTimeout(resolve, step.delay));
+                if (progressBar) progressBar.style.width = step.percent + '%';
+                if (statusText) statusText.textContent = step.text;
+            }
+            
+            // Wait a moment before showing terminal
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
+        async function loadConnectionInfo() {
+            try {
+                const response = await fetch('connection.json?t=' + new Date().getTime());
+                const data = await response.json();
+                
+                document.getElementById('connectionInfo').innerHTML = `
+                    <h3 style="color: #0f0; margin-bottom: 15px;">⚡ ACTIVE CONNECTION ⚡</h3>
+                    <div class="address">
+                        <strong>HOST:</strong> ${data.ip}<br>
+                        <strong>PORT:</strong> ${data.port}
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <button class="copy-btn" onclick="navigator.clipboard.writeText('${data.ip}')">📋 COPY IP</button>
+                        <button class="copy-btn" onclick="navigator.clipboard.writeText('${data.port}')">📋 COPY PORT</button>
+                        <button class="copy-btn" onclick="navigator.clipboard.writeText('telnet ${data.ip} ${data.port}')">📋 COPY COMMAND</button>
+                    </div>
+                `;
+                
+                const lastUpdate = new Date(data.last_updated);
+                const timeAgo = getTimeAgo(lastUpdate);
+                document.getElementById('lastUpdated').textContent = `UPDATED ${timeAgo}`;
+                document.getElementById('lastUpdated').classList.remove('loading');
+            } catch (error) { 
+                console.error(error); 
+                document.getElementById('connectionInfo').innerHTML = '<div class="error">⚠ CONNECTION DATA UNAVAILABLE ⚠</div>';
+            }
+        }
+
+        function getTimeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+            if (seconds < 60) return 'JUST NOW';
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 60) return minutes + 'M AGO';
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) return hours + 'H AGO';
+            const days = Math.floor(hours / 24);
+            return days + 'D AGO';
+        }
+
+        // Initialize
+        createStars();
+        loadConnectionInfo();
+        incrementVisitorCount();
+        initKonamiCode();
+        loadGuestbookEntries();
+        setupCharCounter();
+        
+        // Start loading screen sequence
+        startLoadingSequence();
+        
+        // Auto-refresh connection info every 60 seconds
+        setInterval(loadConnectionInfo, 60000);
+
+        /* ============================================
+           DOS LOGIN FUNCTIONS - START
+           (DELETE THIS SECTION TO REMOVE LOGIN)
+           ============================================ */
+        
+        // Cookie functions
+        function setCookie(name, value, days) {
+            const expires = new Date();
+            expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+            document.cookie = name + '=' + value + ';expires=' + expires.toUTCString() + ';path=/';
+        }
+
+        function getCookie(name) {
+            const nameEQ = name + "=";
+            const ca = document.cookie.split(';');
+            for(let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+                if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+            }
+            return null;
+        }
+
+        function deleteCookie(name) {
+            document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:01 GMT;path=/';
+        }
+
+        // Show DOS login after loading screen completes
+        async function showDOSLogin() {
+            const loginScreen = document.getElementById('dosLoginScreen');
+            const handleInput = document.getElementById('handleInput');
+            
+            // Check if user already has a handle saved
+            const savedHandle = getCookie('bbsHandle');
+            
+            if (savedHandle) {
+                // Returning user
+                const loginContent = document.getElementById('loginContent');
+                loginContent.innerHTML = `
+                    <div class="returning-user-message">
+                        ╔═══════════════════════════════════════╗<br>
+                        ║     WELCOME BACK, ${savedHandle.toUpperCase()}!     ║<br>
+                        ║        Last login: ${getLastLoginTime()}        ║<br>
+                        ╚═══════════════════════════════════════╝
+                    </div>
+                `;
+                
+                loginScreen.classList.remove('hidden');
+                
+                // Auto-continue after 2 seconds
+                setTimeout(() => {
+                    loginScreen.classList.add('hidden');
+                    setTimeout(() => loginScreen.remove(), 500);
+                    
+                    // Show welcome in status bar
+                    showUserWelcome(savedHandle);
+                }, 2000);
+                
+            } else {
+                // New user - show login prompt
+                loginScreen.classList.remove('hidden');
+                setTimeout(() => {
+                    handleInput.focus();
+                    
+                    // Setup cursor following
+                    const cursor = document.querySelector('.login-cursor');
+                    const inputLine = document.querySelector('.login-input-line');
+                    const prompt = inputLine.querySelector('span:first-child');
+                    
+                    const updateCursor = () => {
+                        // Create a temporary canvas to measure text
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+                        const computedStyle = window.getComputedStyle(handleInput);
+                        context.font = computedStyle.fontSize + ' ' + computedStyle.fontFamily;
+                        
+                        // Measure the typed text
+                        const textWidth = context.measureText(handleInput.value).width;
+                        
+                        // Get the input's position
+                        const inputRect = handleInput.getBoundingClientRect();
+                        const promptRect = prompt.getBoundingClientRect();
+                        
+                        // Calculate cursor position (relative to where input text starts)
+                        const leftOffset = textWidth + 2; // 2px padding
+                        
+                        // Position cursor absolutely
+                        cursor.style.position = 'absolute';
+                        cursor.style.left = (promptRect.width + 10 + leftOffset) + 'px'; // 10px is the gap
+                    };
+                    
+                    // Update cursor on input
+                    handleInput.addEventListener('input', updateCursor);
+                    
+                    // Initial position
+                    updateCursor();
+                }, 100);
+                
+                // Handle login submission
+                handleInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        const handle = handleInput.value.trim();
+                        if (handle) {
+                            processLogin(handle);
+                        }
+                    }
+                });
+            }
+        }
+
+        function processLogin(handle) {
+            const loginContent = document.getElementById('loginContent');
+            const loginScreen = document.getElementById('dosLoginScreen');
+            
+            // Save handle and login time
+            setCookie('bbsHandle', handle, 365);
+            setCookie('lastLogin', new Date().toISOString(), 365);
+            
+            // Show access granted message
+            loginContent.innerHTML = `
+                <div class="returning-user-message">
+                    ╔═══════════════════════════════════════╗<br>
+                    ║       ACCESS GRANTED                ║<br>
+                    ║       WELCOME, ${handle.toUpperCase()}!              ║<br>
+                    ║       Initializing session...       ║<br>
+                    ╚═══════════════════════════════════════╝
+                </div>
+            `;
+            
+            // Hide login screen and show site
+            setTimeout(() => {
+                loginScreen.classList.add('hidden');
+                setTimeout(() => loginScreen.remove(), 500);
+                
+                // Show welcome in status bar
+                showUserWelcome(handle);
+            }, 2000);
+        }
+
+        function showUserWelcome(handle) {
+            const welcomeElement = document.getElementById('userWelcome');
+            const welcomeMessage = document.getElementById('welcomeMessage');
+            
+            if (welcomeElement && welcomeMessage) {
+                welcomeMessage.textContent = `USER: ${handle.toUpperCase()}`;
+                welcomeElement.style.display = 'flex';
+            }
+        }
+
+        function getLastLoginTime() {
+            const lastLogin = getCookie('lastLogin');
+            if (!lastLogin) return 'First time';
+            
+            const lastDate = new Date(lastLogin);
+            const now = new Date();
+            const diffMs = now - lastDate;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+            
+            if (diffMins < 60) return diffMins + ' mins ago';
+            if (diffHours < 24) return diffHours + ' hours ago';
+            return diffDays + ' days ago';
+        }
+
+        /* ============================================
+           DOS LOGIN FUNCTIONS - END
+           ============================================ */
+
+        // ASCII Art Gallery
+        const doorGameArt = [
+            {
+                title: "Legend of the Red Dragon",
+                author: "by Seth Able Robinson (1989)",
+                year: "The most popular BBS door game ever!",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║    THE LEGEND OF THE RED DRAGON                  ║
+    ║                                                    ║
+    ║              /\\                                    ║
+    ║             /  \\          ,   ,                   ║
+    ║            /____\\        /   /                    ║
+    ║           /      \\      /   /                     ║
+    ║          /  L.O.R.D.   /___/                      ║
+    ║         /              \\                          ║
+    ║        /    /\\          \\                         ║
+    ║       /    /  \\          \\                        ║
+    ║      /    /    \\          \\                       ║
+    ║     /__  /______\\     =====\\====                  ║
+    ║        \\/        \\   /      \\                     ║
+    ║                   \\ /________\\                    ║
+    ║                                                    ║
+    ║        "Slay the Dragon, Save the Realm!"        ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Crossroads of the Elements",
+                author: "by Steve Laskey (1991)",
+                year: "Elemental magic combat",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║      CROSSROADS OF THE ELEMENTS                  ║
+    ║                                                    ║
+    ║           FIRE        AIR                         ║
+    ║             🔥    *    💨                         ║
+    ║              \\    |    /                          ║
+    ║               \\   |   /                           ║
+    ║                \\ | /                             ║
+    ║         ═══════ ╬ ═══════                        ║
+    ║                / | \\                             ║
+    ║               /   |   \\                           ║
+    ║              /    |    \\                          ║
+    ║             💧    |    ⛰️                         ║
+    ║          WATER       EARTH                        ║
+    ║                                                    ║
+    ║      "Master the Elements, Control Destiny!"     ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Tele-Arena 5.6 GOLD",
+                author: "by Joseph Masters III (1988)",
+                year: "Strategic gladiator combat",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║          TELE-ARENA 5.6 GOLD                     ║
+    ║                                                    ║
+    ║     ___________________________________            ║
+    ║    |                                   |           ║
+    ║    |    ⚔️                    ⚔️      |           ║
+    ║    |   /|\\     ARENA        /|\\      |           ║
+    ║    |   / \\      GOLD        / \\      |           ║
+    ║    |                                   |           ║
+    ║    |    🛡️    VS    🛡️                |           ║
+    ║    |___________________________________|           ║
+    ║                                                    ║
+    ║           CROWD: ▓▓▓▓▓▓▓▓▓▓▓▓▓▓                   ║
+    ║                                                    ║
+    ║       "Train, Fight, Become Champion!"           ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Kannons & Katapults",
+                author: "by Scott Skowronski (1993)",
+                year: "Artillery warfare strategy",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║        KANNONS & KATAPULTS                       ║
+    ║                                                    ║
+    ║         ___                                       ║
+    ║        /   \\    *BOOM*                           ║
+    ║       |  O  |    ***     ___                     ║
+    ║        \\___/      **    /   \\                    ║
+    ║         |||        *   |  O  |                   ║
+    ║        [===]          \\___/                     ║
+    ║       /|||||\\          |||                       ║
+    ║      //|||||\\\\        [===]                      ║
+    ║     ///|||||\\\\\\      /|||||\\                    ║
+    ║    ▓▓▓▓▓▓▓▓▓▓▓▓    ▓▓▓▓▓▓▓▓▓                    ║
+    ║                                                    ║
+    ║        "Angle, Power, FIRE!"                     ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Blademaster",
+                author: "by Mike Snyder (1993)",
+                year: "Sword fighting mastery",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║            BLADEMASTER                           ║
+    ║                                                    ║
+    ║              __|__                                ║
+    ║           /--------\\                              ║
+    ║          /          \\                             ║
+    ║         |   SWORD    |                            ║
+    ║         |   MASTER   |                            ║
+    ║          \\          /                             ║
+    ║           \\--------/                              ║
+    ║              ||||                                 ║
+    ║              ||||                                 ║
+    ║              |__|                                 ║
+    ║               ||                                  ║
+    ║                                                    ║
+    ║      "Master the Blade, Become Legend!"          ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Fazuul",
+                author: "by Jason Coleman (1994)",
+                year: "Dark fantasy adventure",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║              FAZUUL                              ║
+    ║                                                    ║
+    ║            _____                                  ║
+    ║           /     \\                                 ║
+    ║          | () () |    DARK                        ║
+    ║          |   ^   |    SORCERER                    ║
+    ║          |  \\_/  |                                ║
+    ║           \\_____/                                 ║
+    ║             |||                                   ║
+    ║            /|||\\                                  ║
+    ║           / ||| \\                                 ║
+    ║             | |                                   ║
+    ║            /   \\                                  ║
+    ║                                                    ║
+    ║       "Face the Dark Lord Fazuul!"               ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Galactic Empire",
+                author: "by Martech Software (1991)",
+                year: "Space conquest strategy",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║         GALACTIC EMPIRE                          ║
+    ║                                                    ║
+    ║      *    .  *    GALAXY   .    *                ║
+    ║   .    *       ___MAP___      *     .            ║
+    ║      *    .   /         \\  .    *                ║
+    ║   .      *   |  O  O  O  |      .    *           ║
+    ║      *       |  O [*] O  |  *        .           ║
+    ║   .     *    |  O  O  O  |      *                ║
+    ║      *    .   \\_________/  .       *             ║
+    ║   .      *         |         *         .         ║
+    ║      *       [==EMPIRE==]        *               ║
+    ║   .     *         ||         .       *           ║
+    ║                                                    ║
+    ║        "Conquer the Galaxy, Rule All!"           ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Mutants!",
+                author: "by Steve Lorenz (1991)",
+                year: "Post-apocalyptic survival",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║             MUTANTS!                             ║
+    ║                                                    ║
+    ║         ___                                       ║
+    ║        /o o\\      WASTELAND                      ║
+    ║       (  ^  )       AHEAD                         ║
+    ║        \\ ~ /                                      ║
+    ║         |||                                       ║
+    ║        /|||\\       ☢️  ☢️  ☢️                    ║
+    ║       / ||| \\                                     ║
+    ║                                                    ║
+    ║      ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓                        ║
+    ║      RADIOACTIVE WASTELAND                        ║
+    ║                                                    ║
+    ║    "Survive the Wasteland, Evolve or Die!"       ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Swords and Sorcery",
+                author: "by Gary Sanders (1992)",
+                year: "Fantasy RPG adventure",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║        SWORDS AND SORCERY                        ║
+    ║                                                    ║
+    ║        ⚔️          ✨                             ║
+    ║       SWORD      MAGIC                            ║
+    ║          \\        /                               ║
+    ║           \\      /                                ║
+    ║            \\    /                                 ║
+    ║             \\  /                                  ║
+    ║              \\/                                   ║
+    ║           [HERO]                                  ║
+    ║            /|\\                                    ║
+    ║           / | \\                                   ║
+    ║                                                    ║
+    ║     "Wield Steel and Spell Together!"            ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Swords of Chaos",
+                author: "by Todd Henschell (1993)",
+                year: "Medieval warfare",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║          SWORDS OF CHAOS                         ║
+    ║                                                    ║
+    ║           ⚔️  ⚔️  ⚔️                             ║
+    ║            \\  |  /                                ║
+    ║             \\ | /                                 ║
+    ║              \\|/                                  ║
+    ║          [WARRIOR]                                ║
+    ║              /|\\                                  ║
+    ║             / | \\                                 ║
+    ║            /  |  \\                                ║
+    ║           🛡️  🛡️  🛡️                             ║
+    ║                                                    ║
+    ║        "Chaos Reigns, Order Falls!"              ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Trade Wars 2002",
+                author: "by Gary Martin (1986)",
+                year: "Epic space trading strategy",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║         TRADE WARS 2002                          ║
+    ║                                                    ║
+    ║              *  .  *    .    *                    ║
+    ║         *        .    *        .                  ║
+    ║     .      *   [===]     *         .             ║
+    ║        *      /=====\\        .                    ║
+    ║    .        </=======\\>    *                      ║
+    ║         *   \\=========/  .        *              ║
+    ║      .       \\=======/        .                   ║
+    ║    *     .    \\====/    *            .           ║
+    ║       .         \\/                                ║
+    ║            *         .    *     .                ║
+    ║   *    .       *         .          *            ║
+    ║                                                    ║
+    ║      "Conquer the Universe, One Sector at a Time" ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "MajorMUD",
+                author: "by Metropolis Inc (1994)",
+                year: "Multi-user dungeon classic",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║             MAJORMUD                             ║
+    ║                                                    ║
+    ║          ___________________                      ║
+    ║         |  DUNGEON ENTRANCE |                     ║
+    ║         |   ___________     |                     ║
+    ║         |  |    ___    |    |                     ║
+    ║         |  |   |🗝️|   |    |                     ║
+    ║         |  |   |___|   |    |                     ║
+    ║         |  |___________|    |                     ║
+    ║         |       ||||        |                     ║
+    ║         |___________________|                     ║
+    ║              ||      ||                           ║
+    ║                                                    ║
+    ║      "Explore, Battle, Loot, Level Up!"          ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "CyberTank",
+                author: "by Noel Cower (1994)",
+                year: "Futuristic tank combat",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║            CYBERTANK                             ║
+    ║                                                    ║
+    ║              [====]                               ║
+    ║             /======\\                              ║
+    ║            |  TANK  |                             ║
+    ║         __/|________|\\__                          ║
+    ║        |  ============  |                         ║
+    ║        |  |▓▓▓▓▓▓▓▓|  |                         ║
+    ║        |__|▓▓▓▓▓▓▓▓|__|                         ║
+    ║         |||          |||                          ║
+    ║        [===]        [===]                         ║
+    ║         |||          |||                          ║
+    ║                                                    ║
+    ║       "Armor Up, Lock On, Destroy!"              ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Oltima 2000",
+                author: "by Mike McQuesten (1991)",
+                year: "Fantasy world exploration",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║            OLTIMA 2000                           ║
+    ║                                                    ║
+    ║           /\\                                      ║
+    ║          /  \\      CASTLE                        ║
+    ║         /____\\                                    ║
+    ║        /|    |\\                                   ║
+    ║       / | || | \\                                  ║
+    ║      /  |_||_|  \\                                 ║
+    ║     /____________\\                                ║
+    ║    |   |    |   |                                ║
+    ║    |___|____|___|                                ║
+    ║                                                    ║
+    ║     "Explore the Realm of Oltima!"               ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Barren Realms Elite",
+                author: "by Mehul Patel (1989)",
+                year: "Strategic empire building",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║       BARREN REALMS ELITE (B.R.E.)               ║
+    ║                                                    ║
+    ║              ___________                          ║
+    ║             /           \\                         ║
+    ║            /   PLANET    \\                        ║
+    ║           |    .-""-.     |                       ║
+    ║           |   /      \\    |                       ║
+    ║           |  |  o  o  |   |                       ║
+    ║           |   \\      /    |                       ║
+    ║           |    '-__-'     |                       ║
+    ║            \\             /                        ║
+    ║             \\___________/                         ║
+    ║                  | |                              ║
+    ║              [=========]                          ║
+    ║               STARBASE                            ║
+    ║                                                    ║
+    ║           "Build Your Galactic Empire!"          ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "The Pit",
+                author: "by John Dailey (1991)",
+                year: "Brutal gladiator combat",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║              THE PIT                             ║
+    ║                                                    ║
+    ║          ___________________                      ║
+    ║         |                   |                     ║
+    ║         |    o      vs      o|                    ║
+    ║         |   /|\\            /|\\                    ║
+    ║         |   / \\            / \\                    ║
+    ║         |                   |                     ║
+    ║         |___________________|                     ║
+    ║        /|                   |\\                    ║
+    ║       / |    GLADIATORS     | \\                   ║
+    ║      /  |     BATTLE!       |  \\                  ║
+    ║     /   |                   |   \\                 ║
+    ║    /____|___________________|____\\                ║
+    ║                                                    ║
+    ║         "Fight to the Death!"                    ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Usurper",
+                author: "by Jakob Dangarden (1994)",
+                year: "Dark dungeon crawler",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║               USURPER                            ║
+    ║                                                    ║
+    ║          .--.                                     ║
+    ║         /    \\       ___                          ║
+    ║        |  ()  |     /   \\                         ║
+    ║         \\    /     |  Θ  |                        ║
+    ║          '--'       \\_@_/                         ║
+    ║           |           |                           ║
+    ║          /|\\         /|\\                          ║
+    ║         / | \\       / | \\                         ║
+    ║                                                    ║
+    ║         KNIGHT    vs    DEMON                    ║
+    ║                                                    ║
+    ║      "Descend into Darkness, Claim the Throne!"  ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Food Fight",
+                author: "by Sean Griffin (1992)",
+                year: "Cafeteria chaos!",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║             FOOD FIGHT!                          ║
+    ║                                                    ║
+    ║              _____                                ║
+    ║             /     \\      *SPLAT*                  ║
+    ║            |   o   |       ***                    ║
+    ║             \\_____/        *  o                   ║
+    ║                |          /|\\ |                   ║
+    ║               /|\\         / \\/ \\                  ║
+    ║              / | \\                                ║
+    ║                                                    ║
+    ║       🍕  🍔  🌭  🍟  🥤  🌮                    ║
+    ║                                                    ║
+    ║     "Throw Food, Make Friends, Rule School!"     ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "The Clans",
+                author: "by J.P. Hovelmann (1994)",
+                year: "Vampire gang warfare",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║             THE CLANS                            ║
+    ║                                                    ║
+    ║              /\\  /\\                               ║
+    ║             /  \\/  \\      VAMPIRE                 ║
+    ║            |  o  o  |     CLANS                   ║
+    ║            |    ^   |                             ║
+    ║             \\  \\_/  /                             ║
+    ║              \\ --- /                              ║
+    ║               \\   /                               ║
+    ║                | |                                ║
+    ║               /| |\\                               ║
+    ║              / | | \\                              ║
+    ║                                                    ║
+    ║      "Rule the Night, Control the City!"         ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Operation: Overkill II",
+                author: "by Dustin Nulf (1992)",
+                year: "Post-apocalyptic combat RPG",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║       OPERATION: OVERKILL II                     ║
+    ║                                                    ║
+    ║         ___                                       ║
+    ║        |   |  SOLDIER    ☢️                       ║
+    ║        | O |   READY                              ║
+    ║        |___|                                      ║
+    ║         |||                                       ║
+    ║        [===]  <>=======                           ║
+    ║        /|||\\                                      ║
+    ║       / ||| \\                                     ║
+    ║                                                    ║
+    ║    ▓▓▓▓▓▓▓▓ WASTELAND ▓▓▓▓▓▓▓▓                  ║
+    ║                                                    ║
+    ║        "Survive, Scavenge, Dominate!"            ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Planets: TEOS",
+                author: "by Scott Stribrny (1994)",
+                year: "Space colonization strategy",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║          PLANETS: T.E.O.S.                       ║
+    ║                                                    ║
+    ║      *       ___        *                         ║
+    ║         *   /   \\   .       *                     ║
+    ║    .       | O O |        .                       ║
+    ║       *     \\___/    *         .                  ║
+    ║         .     |         .    *                    ║
+    ║    *        [===]   *            .                ║
+    ║       .    /|||||\\       *                        ║
+    ║         *    |||      .       *                   ║
+    ║    .      COLONY         .                        ║
+    ║        *       .    *         .                   ║
+    ║                                                    ║
+    ║      "Colonize Worlds, Build Empire!"            ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Global War",
+                author: "by Joel Bergen (1991)",
+                year: "World domination strategy",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║            GLOBAL WAR                            ║
+    ║                                                    ║
+    ║          _______________                          ║
+    ║         /               \\                         ║
+    ║        /   WORLD  MAP    \\                        ║
+    ║       |    ___  ___  ___  |                       ║
+    ║       |   |▓▓||▓▓||▓▓|   |                       ║
+    ║       |   |▓▓||▓▓||▓▓|   |                       ║
+    ║       |    ‾‾‾  ‾‾‾  ‾‾‾  |                       ║
+    ║        \\                 /                        ║
+    ║         \\_______________ /                        ║
+    ║                                                    ║
+    ║        "Conquer Earth, Rule All!"                ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Solar Realms Elite",
+                author: "by Amit Patel (1991)",
+                year: "Space strategy warfare",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║       SOLAR REALMS ELITE (S.R.E.)                ║
+    ║                                                    ║
+    ║           ☀️     *    .    *                      ║
+    ║      *      SUN      .         *                  ║
+    ║         .        *         .                      ║
+    ║    *        O  o  .  o  O      *                  ║
+    ║       .    PLANETS    *                           ║
+    ║         *        .         .                      ║
+    ║    .        [========]      *                     ║
+    ║         *     FLEET      .                        ║
+    ║      .    *         .         *                   ║
+    ║                                                    ║
+    ║      "Dominate the Solar System!"                ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Murder Motel",
+                author: "by Kevin Price (1993)",
+                year: "Mystery murder solving",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║           MURDER MOTEL                           ║
+    ║                                                    ║
+    ║         ___________________                       ║
+    ║        |  MOTEL  |  MOTEL  |                      ║
+    ║        |  ROOM   |  ROOM   |                      ║
+    ║        |    1    |    2    |                      ║
+    ║        |   ___   |   ___   |                      ║
+    ║        |  |🚪|  |  |🚪|  |                      ║
+    ║        |___|___|___|___|___|                      ║
+    ║              ⚠️ CRIME SCENE ⚠️                    ║
+    ║                                                    ║
+    ║       "Solve the Murder, Catch Killer!"          ║
+    ╚════════════════════════════════════════════════════╝`
+            }
+        ];
+
+        let currentArtIndex = 0;
+
+        function displayArt(index) {
+            const artDisplay = document.getElementById('asciiArtDisplay');
+            const gameInfo = document.getElementById('gameInfo');
+            
+            if (artDisplay && gameInfo) {
+                const game = doorGameArt[index];
+                artDisplay.textContent = game.art;
+                gameInfo.innerHTML = `
+                    <div class="game-title">${game.title}</div>
+                    <div class="game-author">${game.author}</div>
+                    <div class="game-author" style="font-size: 0.85em; margin-top: 5px;">${game.year}</div>
+                `;
+            }
+        }
+
+        function nextArt() {
+            currentArtIndex = (currentArtIndex + 1) % doorGameArt.length;
+            displayArt(currentArtIndex);
+        }
+
+        function previousArt() {
+            currentArtIndex = (currentArtIndex - 1 + doorGameArt.length) % doorGameArt.length;
+            displayArt(currentArtIndex);
+        }
+
+        // Initialize gallery with random art
+        window.addEventListener('DOMContentLoaded', () => {
+            currentArtIndex = Math.floor(Math.random() * doorGameArt.length);
+            displayArt(currentArtIndex);
+        });
+
+        // Guestbook Toggle
+        function toggleGuestbook() {
+            const content = document.getElementById('guestbookContent');
+            const indicator1 = document.getElementById('guestbookIndicator');
+            const indicator2 = document.getElementById('guestbookIndicator2');
+            
+            if (content && indicator1 && indicator2) {
+                content.classList.toggle('collapsed');
+                indicator1.classList.toggle('collapsed');
+                indicator2.classList.toggle('collapsed');
+                
+                // Update indicator text
+                if (content.classList.contains('collapsed')) {
+                    indicator1.textContent = '►';
+                    indicator2.textContent = '◄';
+                } else {
+                    indicator1.textContent = '▼';
+                    indicator2.textContent = '▼';
+                }
+            }
+        }
+
+        // SYSOP Command Detection
+        let typedKeys = '';
+        let sysopTimeout;
+
+        document.addEventListener('keydown', (e) => {
+            // Clear timeout
+            clearTimeout(sysopTimeout);
+            
+            // Add key to buffer
+            typedKeys += e.key.toLowerCase();
+            
+            // Check for SYSOP command
+            if (typedKeys.includes('sysop')) {
+                openSysopPanel();
+                typedKeys = '';
+            }
+            
+            // ESC to close panel
+            if (e.key === 'Escape') {
+                closeSysopPanel();
+            }
+            
+            // Reset buffer after 2 seconds
+            sysopTimeout = setTimeout(() => {
+                typedKeys = '';
+            }, 2000);
+        });
+
+        function openSysopPanel() {
+            const panel = document.getElementById('sysopPanel');
+            if (panel) {
+                panel.classList.add('active');
+            }
+        }
+
+        function closeSysopPanel() {
+            const panel = document.getElementById('sysopPanel');
+            if (panel) {
+                panel.classList.remove('active');
+            }
+        }
+
+        // SYSOP Controls
+        function toggleScanlines() {
+            const toggle = document.getElementById('toggleScanlines');
+            toggle.classList.toggle('on');
+            
+            // Get or create style tag for scanlines
+            let scanlineStyle = document.getElementById('scanline-style');
+            if (!scanlineStyle) {
+                scanlineStyle = document.createElement('style');
+                scanlineStyle.id = 'scanline-style';
+                document.head.appendChild(scanlineStyle);
+            }
+            
+            if (!toggle.classList.contains('on')) {
+                // Disable scanlines
+                scanlineStyle.textContent = `
+                    body::before, 
+                    body::after { 
+                        display: none !important; 
+                    }
+                `;
+            } else {
+                // Enable scanlines
+                scanlineStyle.textContent = '';
+            }
+        }
+
+        function toggleStars() {
+            const toggle = document.getElementById('toggleStars');
+            const stars = document.getElementById('stars');
+            
+            toggle.classList.toggle('on');
+            
+            if (stars) {
+                if (toggle.classList.contains('on')) {
+                    stars.style.display = 'block';
+                } else {
+                    stars.style.display = 'none';
+                }
+            }
+        }
+
+        function toggleMatrixRain() {
+            const toggle = document.getElementById('toggleMatrix');
+            toggle.classList.toggle('on');
+            
+            if (toggle.classList.contains('on')) {
+                startMatrixRain();
+            } else {
+                stopMatrixRain();
+            }
+        }
+
+        function changeColorScheme(scheme) {
+            const colors = {
+                green: '#0f0',
+                amber: '#ffb000',
+                blue: '#00bfff',
+                red: '#ff0040',
+                white: '#ffffff'
+            };
+            
+            const color = colors[scheme];
+            
+            // Create or update color scheme style
+            let colorStyle = document.getElementById('color-scheme-style');
+            if (!colorStyle) {
+                colorStyle = document.createElement('style');
+                colorStyle.id = 'color-scheme-style';
+                document.head.appendChild(colorStyle);
+            }
+            
+            colorStyle.textContent = `
+                body { color: ${color} !important; }
+                .header, .connection-panel, .status-bar, .connection-info, .btn, 
+                .visitor-counter, .sound-toggle, .guestbook-entry, .counter-digit,
+                .ascii-gallery, .pi-symbol {
+                    border-color: ${color} !important;
+                    color: ${color} !important;
+                }
+                .status-indicator, .counter-digit {
+                    background: ${color} !important;
+                    box-shadow: 0 0 10px ${color} !important;
+                }
+                h1, h2, h3, .status-item {
+                    text-shadow: 0 0 10px ${color}, 0 0 20px ${color} !important;
+                }
+                .star {
+                    background: ${color} !important;
+                }
+                body::before {
+                    background: linear-gradient(to bottom, transparent 50%, rgba(${scheme === 'green' ? '0, 255, 0' : scheme === 'amber' ? '255, 176, 0' : scheme === 'blue' ? '0, 191, 255' : scheme === 'red' ? '255, 0, 64' : '255, 255, 255'}, 0.02) 51%) !important;
+                }
+            `;
+        }
+
+        function setCounter() {
+            const input = document.getElementById('counterInput');
+            const value = input.value.padStart(6, '0');
+            
+            if (value && value.length <= 6) {
+                const digits = value.split('');
+                const counterDigits = document.querySelectorAll('.counter-digit');
+                
+                digits.forEach((digit, index) => {
+                    if (counterDigits[index]) {
+                        counterDigits[index].textContent = digit;
+                    }
+                });
+                
+                input.value = '';
+            }
+        }
+
+        function showBroadcast() {
+            const msg = document.createElement('div');
+            msg.className = 'broadcast-message';
+            msg.innerHTML = `
+                ⚡⚡⚡ SYSOP BROADCAST ⚡⚡⚡<br>
+                <span style="font-size: 0.8em; margin-top: 10px; display: block;">
+                SYSTEM MESSAGE: All systems operational.<br>
+                Thank you for visiting The Pantheon BBS!
+                </span>
+            `;
+            document.body.appendChild(msg);
+            
+            setTimeout(() => {
+                msg.style.transition = 'opacity 0.5s';
+                msg.style.opacity = '0';
+                setTimeout(() => msg.remove(), 500);
+            }, 5000);
+        }
+
+        function clearUserData() {
+            if (confirm('Clear all user data and cookies? This will reset your login.')) {
+                // Clear all cookies
+                document.cookie.split(";").forEach(function(c) { 
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+                });
+                
+                // Show confirmation
+                alert('✓ User data cleared! Page will reload.');
+                location.reload();
+            }
+        }
+
+        function systemReboot() {
+            if (confirm('⚠️ Initiate system reboot sequence? ⚠️')) {
+                closeSysopPanel();
+                
+                const reboot = document.createElement('div');
+                reboot.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:999999;display:flex;flex-direction:column;justify-content:center;align-items:center;color:#0f0;font-family:Courier New;';
+                reboot.innerHTML = `
+                    <div style="font-size: 2em; margin-bottom: 20px;">SYSTEM REBOOT INITIATED</div>
+                    <div style="font-size: 1.2em; opacity: 0.8;">Shutting down processes...</div>
+                    <div style="margin-top: 30px; font-size: 0.9em;">
+                        > Closing connections...<br>
+                        > Saving state...<br>
+                        > Powering down...<br>
+                        > <span style="animation: blink 1s infinite;">_</span>
+                    </div>
+                `;
+                document.body.appendChild(reboot);
+                
+                // Force reload after animation
+                setTimeout(() => {
+                    window.location.reload();
+                }, 3000);
+            }
+        }
+
+        // Retro Loading Screen Sequence
+        async function startLoadingSequence() {
+            const screen = document.getElementById('loadingScreen');
+            const terminal = document.getElementById('loadingTerminal');
+            
+            const messages = [
+                { text: 'PANTHEON BBS v2.5', delay: 100 },
+                { text: 'Copyright (c) 1995-2025 Pantheon Systems', delay: 100 },
+                { text: '', delay: 200 },
+                { text: 'Initializing system...', delay: 300 },
+                { text: 'Loading DOS kernel...', delay: 400, progress: true, target: 100 },
+                { text: 'Detecting hardware...', delay: 300 },
+                { text: '  CPU: 486DX2-66MHz', delay: 150 },
+                { text: '  RAM: 8MB', delay: 150 },
+                { text: '  MODEM: US Robotics 28.8k', delay: 150 },
+                { text: '', delay: 200 },
+                { text: 'Loading BBS protocols...', delay: 300, progress: true, target: 100 },
+                { text: 'Initializing terminal emulation...', delay: 400 },
+                { text: 'Loading user database...', delay: 300, progress: true, target: 100 },
+                { text: 'Establishing network connection...', delay: 400, progress: true, target: 100 },
+                { text: '', delay: 200 },
+                { text: 'SYSTEM CHECK COMPLETE', delay: 300 },
+                { text: '', delay: 100 },
+                { text: '✓ All systems operational', delay: 200 },
+                { text: '✓ Connection established', delay: 200 },
+                { text: '✓ Ready for access', delay: 200 },
+                { text: '', delay: 300 },
+            ];
+
+            let skipRequested = false;
+            
+            // Allow skipping with any key
+            const skipHandler = (e) => {
+                skipRequested = true;
+                document.removeEventListener('keydown', skipHandler);
+                document.removeEventListener('click', skipHandler);
+            };
+            
+            document.addEventListener('keydown', skipHandler);
+            document.addEventListener('click', skipHandler);
+
+            for (let i = 0; i < messages.length; i++) {
+                if (skipRequested) break;
+                
+                const msg = messages[i];
+                const line = document.createElement('div');
+                line.className = 'loading-line';
+                
+                if (msg.progress) {
+                    // Create progress bar
+                    const progressContainer = document.createElement('div');
+                    progressContainer.className = 'loading-progress';
+                    progressContainer.innerHTML = `
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill${i}"></div>
+                        </div>
+                        <div class="progress-percent" id="progressPercent${i}">0%</div>
+                    `;
+                    line.appendChild(progressContainer);
+                    terminal.appendChild(line);
+                    
+                    // Animate progress
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                    const fill = document.getElementById(`progressFill${i}`);
+                    const percent = document.getElementById(`progressPercent${i}`);
+                    
+                    for (let p = 0; p <= msg.target; p += 5) {
+                        if (skipRequested) break;
+                        fill.style.width = p + '%';
+                        percent.textContent = p + '%';
+                        await new Promise(resolve => setTimeout(resolve, 20));
+                    }
+                    fill.style.width = '100%';
+                    percent.textContent = '100%';
+                } else {
+                    // Regular text line
+                    line.innerHTML = msg.text + (i === messages.length - 1 ? '' : '<span class="loading-cursor"></span>');
+                    terminal.appendChild(line);
+                }
+                
+                await new Promise(resolve => setTimeout(resolve, msg.delay));
+            }
+
+            if (!skipRequested) {
+                // Show "SYSTEM READY" message
+                const readyLine = document.createElement('div');
+                readyLine.className = 'loading-line system-ready';
+                readyLine.textContent = '═══ SYSTEM READY ═══';
+                terminal.appendChild(readyLine);
+                
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+
+            // Fade out loading screen
+            screen.classList.add('hidden');
+            
+            // Clean up event listeners
+            document.removeEventListener('keydown', skipHandler);
+            document.removeEventListener('click', skipHandler);
+            
+            // Remove from DOM after fade
+            setTimeout(() => {
+                screen.remove();
+                // DOS LOGIN: Show login screen after loading (DELETE THIS LINE to remove)
+                showDOSLogin();
+            }, 500);
+        }
+
+        // Sysop Access (Secret Pi Symbol)
+        function checkSysopAccess(event) {
+            // Must hold Shift and click, OR Ctrl+Shift and click (but not Alt+Shift or other combinations)
+            if (event.shiftKey && !event.altKey && !event.metaKey) {
+                // Open sysop access page in same window
+                window.location.href = 'sysop.html';
+            }
+        }
+
+        async function activateSysopMode() {
+            const overlay = document.getElementById('sysopOverlay');
+            const message = document.getElementById('sysopMessage');
+            const terminal = document.getElementById('sysopTerminal');
+            
+            // Show black overlay
+            overlay.classList.add('active');
+            overlay.style.background = '#000';
+            
+            // Phase 1: Dialing message
+            message.style.display = 'block';
+            message.innerHTML = '🔒 ACCESSING SECURE CHANNEL...<br><span style="font-size:0.7em;">ESTABLISHING ENCRYPTED CONNECTION</span>';
+            
+            // Play modem sound
+            playModemSound();
+            
+            // Wait for modem sound
+            await new Promise((resolve) => {
+                if (modemSound && soundEnabled) {
+                    modemSound.onended = resolve;
+                    setTimeout(resolve, 35000);
+                } else {
+                    setTimeout(resolve, 2000);
+                }
+            });
+            
+            // Phase 2: Loading
+            message.innerHTML = `
+                <div style="margin-bottom: 20px;">✓ CONNECTION ESTABLISHED</div>
+                <div class="xp-loading-container">
+                    <div class="xp-loading-bar">
+                        <div class="xp-loading-fill" id="sysopProgressBar"></div>
+                    </div>
+                    <div class="xp-status-text" id="sysopStatusText">Authenticating...</div>
+                </div>
+            `;
+            
+            // Animate loading
+            await animateSysopProgress();
+            
+            // Phase 3: Access Granted
+            message.innerHTML = `
+                <div style="font-size: 2em; margin-bottom: 10px;">⚠️ SYSOP ACCESS GRANTED ⚠️</div>
+                <div style="font-size: 0.8em; opacity: 0.8;">AUTHORIZED PERSONNEL ONLY</div>
+                <div style="font-size: 0.7em; margin-top: 10px; color: #fc0;">WARNING: ALL ACTIONS ARE LOGGED</div>
+            `;
+            
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // Phase 4: Clear message and show terminal
+            message.style.display = 'none';
+            terminal.classList.add('active');
+            
+            // Load fTelnet in sysop terminal
+            const response = await fetch('connection.json?t=' + new Date().getTime());
+            const data = await response.json();
+
+            var Options = new fTelnetOptions();
+            Options.ProxyHeaders = { "ngrok-skip-browser-warning": "true" };
+            Options.Hostname = "192.168.40.69"; 
+            Options.Port = 23;
+            Options.ProxyHostname = data.proxy_hostname; 
+            Options.ProxyPort = 443; 
+            Options.ProxyPortSecure = 443;
+            Options.ProxyType = "websocket"; 
+
+            var Client = new fTelnetClient('sysopTerminal', Options);
+        }
+
+        async function animateSysopProgress() {
+            const progressBar = document.getElementById('sysopProgressBar');
+            const statusText = document.getElementById('sysopStatusText');
+            
+            const steps = [
+                { percent: 25, text: 'Verifying credentials...', delay: 400 },
+                { percent: 50, text: 'Bypassing security protocols...', delay: 500 },
+                { percent: 75, text: 'Accessing Praetorian system...', delay: 400 },
+                { percent: 100, text: 'Authorization complete!', delay: 300 }
+            ];
+            
+            for (const step of steps) {
+                await new Promise(resolve => setTimeout(resolve, step.delay));
+                if (progressBar) progressBar.style.width = step.percent + '%';
+                if (statusText) statusText.textContent = step.text;
+            }
+            
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
+        // BBS Lingo Guide
+        const bbsLingo = {
+            'BBS': 'Bulletin Board System - A computer system that allowed users to dial in via modem to read messages, play games, and chat before the World Wide Web existed (1980s-1990s).',
+            'Sysop': 'System Operator - The person who runs and maintains the BBS, like a modern-day server administrator.',
+            'Node': 'A phone line connection point. Multi-node BBSes could handle multiple callers simultaneously.',
+            'Door Game': 'An external program that ran "through" the BBS, often RPGs or strategy games like Trade Wars 2002 or Legend of the Red Dragon.',
+            'ANSI': 'American National Standards Institute graphics - Colored text-based art and interfaces used to make BBSes visually appealing.',
+            '56k': 'A modem speed of 56 kilobits per second - considered blazing fast in the dial-up era!',
+            'Handle': 'Your username or alias on a BBS - often creative or mysterious.',
+            'Upload/Download Ratio': 'Many BBSes required users to upload files to earn download credits.',
+            'Warez': 'Pirated software traded on underground BBSes (not on this one!).',
+            'FidoNet': 'A worldwide network that allowed BBSes to exchange mail and messages, predating the internet.',
+            'Dial-up': 'Connecting to a BBS by having your modem dial a phone number - you\'d hear the iconic screeching handshake sound.',
+            'Terminal': 'The program used to connect to a BBS, like Telix, Terminate, or ProComm.',
+            'ASCII Art': 'Pictures made from text characters - a precursor to modern emoji.',
+            'Message Base': 'The discussion forums where users could post and reply to messages.',
+            'File Area': 'Sections of the BBS where users could browse and download files.',
+            '1200 Baud': 'An early modem speed - painfully slow at 1200 bits per second!',
+            'Carrier': 'The connection signal between modems - "NO CARRIER" meant disconnection.',
+            'RTFM': 'Read The Manual - common BBS slang for newbies asking basic questions.',
+            'Logged On': 'Successfully connected to the BBS - you\'d see a welcome screen and menu.',
+            'Offline Reader': 'Software that downloaded messages to read later, saving precious online time.'
+        };
+
+        function initLingoGuide() {
+            const grid = document.getElementById('lingoGrid');
+            if (!grid) return;
+            
+            grid.innerHTML = Object.entries(bbsLingo).map(([term, def]) => `
+                <div class="lingo-item" onclick="showLingoPopup('${term}', \`${def}\`)">
+                    <div class="lingo-item-term">📘 ${term}</div>
+                    <div class="lingo-item-def">${def.substring(0, 60)}...</div>
+                </div>
+            `).join('');
+        }
+
+        function showLingoPopup(term, definition) {
+            const popup = document.createElement('div');
+            popup.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,17,0,0.98);border:3px solid currentColor;padding:30px;z-index:10001;max-width:500px;box-shadow:0 0 30px rgba(0,255,0,0.5);';
+            popup.innerHTML = `
+                <div style="font-size:1.5em;font-weight:bold;margin-bottom:15px;text-align:center;">📘 ${term}</div>
+                <div style="line-height:1.6;margin-bottom:20px;">${definition}</div>
+                <button onclick="this.parentElement.remove()" class="copy-btn" style="width:100%;padding:12px;">GOT IT!</button>
+            `;
+            document.body.appendChild(popup);
+        }
+
+        // Character counter for guestbook
+        function setupCharCounter() {
+            const textarea = document.getElementById('guestMessage');
+            const counter = document.getElementById('charCount');
+            
+            if (textarea && counter) {
+                textarea.addEventListener('input', () => {
+                    counter.textContent = textarea.value.length;
+                });
+            }
+        }
+
+        // Supabase configuration
+        const SUPABASE_URL = 'https://epalhhtnwlvpvlnhdwfd.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_EDY7MwsN-JuyfHCZZkfL_w__5Kb5thO';
+
+        // Guestbook functionality
+        async function submitGuestbookEntry(event) {
+            event.preventDefault();
+            
+            const submitBtn = event.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ SUBMITTING...';
+            
+            const name = document.getElementById('guestName').value.trim();
+            const location = document.getElementById('guestLocation').value.trim();
+            const message = document.getElementById('guestMessage').value.trim();
+            
+            if (!name || !message) {
+                alert('Please fill in your name and message!');
+                submitBtn.disabled = false;
+                submitBtn.textContent = '✍️ SIGN THE GUEST BOOK ✍️';
+                return;
+            }
+            
+            try {
+                // Create entry object
+                const entry = {
+                    name: name,
+                    location: location || 'Unknown Location',
+                    message: message,
+                    created_at: new Date().toISOString()
+                };
+                
+                // Insert into Supabase
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/guestbook`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify(entry)
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.text();
+                    console.error('Supabase error:', errorData);
+                    throw new Error('Failed to save entry');
+                }
+                
+                // Clear form
+                document.getElementById('guestbookForm').reset();
+                document.getElementById('charCount').textContent = '0';
+                
+                // Show success message
+                const successMsg = document.createElement('div');
+                successMsg.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(0,17,0,0.95);border:2px solid currentColor;padding:20px 40px;z-index:10000;text-align:center;box-shadow:0 0 20px rgba(0,255,0,0.5);';
+                successMsg.innerHTML = '✅ ENTRY SAVED! THANK YOU FOR SIGNING IN! ✅';
+                document.body.appendChild(successMsg);
+                
+                setTimeout(() => {
+                    successMsg.style.transition = 'opacity 0.5s';
+                    successMsg.style.opacity = '0';
+                    setTimeout(() => successMsg.remove(), 500);
+                }, 3000);
+                
+                // Reload entries
+                setTimeout(() => loadGuestbookEntries(), 500);
+                
+            } catch (error) {
+                console.error('Guest book error:', error);
+                alert('Error saving entry. Please try again.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '✍️ SIGN THE GUEST BOOK ✍️';
+            }
+        }
+
+        async function loadGuestbookEntries() {
+            const container = document.getElementById('guestbookEntries');
+            if (!container) return;
+            
+            try {
+                // Get entries from Supabase (ordered by newest first)
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/guestbook?select=*&order=created_at.desc`, {
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load entries');
+                }
+                
+                const entries = await response.json();
+                
+                if (entries.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align: center; opacity: 0.5; padding: 40px;">
+                            📭 No entries yet. Be the first to sign the guest book! 📭
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = entries.map(entry => {
+                    const date = new Date(entry.created_at);
+                    const dateStr = date.toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'short', 
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    return `
+                        <div class="guestbook-entry">
+                            <div class="guestbook-entry-header">
+                                <div>
+                                    <span class="guestbook-entry-name">👤 ${escapeHtml(entry.name)}</span>
+                                    ${entry.location ? `<span class="guestbook-entry-location"> • 📍 ${escapeHtml(entry.location)}</span>` : ''}
+                                </div>
+                                <div class="guestbook-entry-date">🕐 ${dateStr}</div>
+                            </div>
+                            <div class="guestbook-entry-message">${escapeHtml(entry.message)}</div>
+                        </div>
+                    `;
+                }).join('');
+                
+            } catch (error) {
+                console.error('Error loading guest book:', error);
+                container.innerHTML = `
+                    <div style="text-align: center; opacity: 0.5; padding: 40px;">
+                        📭 No entries yet. Be the first to sign the guest book! 📭
+                    </div>
+                `;
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Konami Code Easter Egg
+        function initKonamiCode() {
+            const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+            let konamiIndex = 0;
+
+            document.addEventListener('keydown', (e) => {
+                const key = e.key.toLowerCase();
+                
+                if (key === konamiCode[konamiIndex] || e.key === konamiCode[konamiIndex]) {
+                    konamiIndex++;
+                    
+                    if (konamiIndex === konamiCode.length) {
+                        activateEasterEgg();
+                        konamiIndex = 0;
+                    }
+                } else {
+                    konamiIndex = 0;
+                }
+            });
+        }
+
+        function activateEasterEgg() {
+            // Start matrix rain
+            startMatrixRain();
+            
+            // After 10 seconds, switch to Hacker mode
+            setTimeout(() => {
+                stopMatrixRain();
+                document.body.classList.add('hacker-mode');
+                
+                // Show "ACCESS GRANTED" message
+                const msg = document.createElement('div');
+                msg.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.95);border:3px solid #00ffff;padding:40px 60px;z-index:10000;color:#00ffff;font-size:2em;text-align:center;text-shadow:0 0 10px #00ffff, 0 0 20px #00ffff;font-weight:bold;box-shadow:0 0 30px rgba(0,255,255,0.5), inset 0 0 30px rgba(0,255,255,0.1);animation:glitch 0.3s infinite;';
+                msg.innerHTML = '⚡ ACCESS GRANTED ⚡<br><span style="font-size:0.5em;color:#00ff88;text-shadow:0 0 10px #00ff88;">SYSOP PRIVILEGES ENABLED</span><br><span style="font-size:0.4em;color:#0088ff;margin-top:10px;display:block;">WELCOME TO THE MAINFRAME</span>';
+                document.body.appendChild(msg);
+                
+                // Add hacker scenery
+                addHackerScenery();
+                
+                setTimeout(() => {
+                    msg.style.transition = 'opacity 1s';
+                    msg.style.opacity = '0';
+                    setTimeout(() => msg.remove(), 1000);
+                }, 3000);
+            }, 15000);
+        }
+
+        function startMatrixRain() {
+            const canvas = document.getElementById('matrixCanvas');
+            canvas.classList.add('active');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            const chars = 'ﾊﾐﾋｰｳｼﾅﾓﾆｻﾜﾂｵﾘｱﾎﾃﾏｹﾒｴｶｷﾑﾕﾗｾﾈｽﾀﾇﾍ01234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            const fontSize = 14;
+            const columns = canvas.width / fontSize;
+            const drops = Array(Math.floor(columns)).fill(1);
+            
+            canvas.matrixInterval = setInterval(() => {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.fillStyle = '#0f0';
+                ctx.font = fontSize + 'px monospace';
+                
+                for (let i = 0; i < drops.length; i++) {
+                    const text = chars[Math.floor(Math.random() * chars.length)];
+                    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                    
+                    if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                        drops[i] = 0;
+                    }
+                    drops[i]++;
+                }
+            }, 33);
+        }
+
+        function stopMatrixRain() {
+            const canvas = document.getElementById('matrixCanvas');
+            if (canvas.matrixInterval) {
+                clearInterval(canvas.matrixInterval);
+            }
+            canvas.classList.remove('active');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function addHackerScenery() {
+            // Add Hacker CSS overrides as inline style
+            const hackerStyles = document.createElement('style');
+            hackerStyles.id = 'hacker-overrides';
+            hackerStyles.textContent = `
+                @keyframes glitch {
+                    0%, 100% { transform: translate(0); }
+                    20% { transform: translate(-2px, 2px); }
+                    40% { transform: translate(-2px, -2px); }
+                    60% { transform: translate(2px, 2px); }
+                    80% { transform: translate(2px, -2px); }
+                }
+                
+                @keyframes binary-fall {
+                    0% { transform: translateY(-100%); opacity: 0; }
+                    10% { opacity: 1; }
+                    90% { opacity: 1; }
+                    100% { transform: translateY(100vh); opacity: 0; }
+                }
+                
+                @keyframes terminal-blink {
+                    0%, 49% { opacity: 1; }
+                    50%, 100% { opacity: 0.3; }
+                }
+                
+                @keyframes float-window {
+                    0%, 100% { transform: translateY(0px); }
+                    50% { transform: translateY(-10px); }
+                }
+                
+                body.hacker-mode {
+                    background: radial-gradient(ellipse at center, #001a1a 0%, #000000 100%) !important;
+                }
+                
+                body.hacker-mode * {
+                    color: #00ffff !important;
+                }
+                
+                body.hacker-mode .header,
+                body.hacker-mode .connection-panel,
+                body.hacker-mode .status-bar,
+                body.hacker-mode .connection-info,
+                body.hacker-mode .btn,
+                body.hacker-mode #fTelnetContainer,
+                body.hacker-mode .visitor-counter,
+                body.hacker-mode .sound-toggle,
+                body.hacker-mode .guestbook-entry,
+                body.hacker-mode .counter-digit {
+                    border-color: #00ffff !important;
+                    background: rgba(0, 255, 255, 0.1) !important;
+                    box-shadow: 0 0 20px rgba(0, 255, 255, 0.3) !important;
+                }
+                
+                body.hacker-mode h1,
+                body.hacker-mode h2,
+                body.hacker-mode h3 {
+                    color: #00ff88 !important;
+                    text-shadow: 0 0 10px #00ff88, 0 0 20px #00ff88 !important;
+                }
+                
+                body.hacker-mode .btn:hover {
+                    background: rgba(0, 255, 255, 0.2) !important;
+                    box-shadow: 0 0 30px rgba(0, 255, 255, 0.5) !important;
+                }
+                
+                body.hacker-mode .status-indicator {
+                    background: #00ffff !important;
+                    box-shadow: 0 0 15px #00ffff !important;
+                }
+                
+                /* Floating Terminal Windows */
+                .hacker-terminal {
+                    position: fixed !important;
+                    background: rgba(0, 17, 17, 0.9) !important;
+                    border: 2px solid #00ffff !important;
+                    color: #00ffff !important;
+                    font-family: 'Courier New', monospace !important;
+                    font-size: 10px !important;
+                    padding: 10px !important;
+                    pointer-events: none !important;
+                    z-index: 3 !important;
+                    box-shadow: 0 0 20px rgba(0, 255, 255, 0.4), inset 0 0 20px rgba(0, 255, 255, 0.1) !important;
+                    animation: float-window 4s ease-in-out infinite !important;
+                    overflow: hidden !important;
+                    line-height: 1.4 !important;
+                }
+                
+                .terminal-1 { 
+                    top: 10% !important; 
+                    left: 5% !important; 
+                    width: 200px !important; 
+                    height: 120px !important;
+                    animation-delay: 0s !important;
+                }
+                .terminal-2 { 
+                    top: 15% !important; 
+                    right: 8% !important; 
+                    width: 180px !important; 
+                    height: 100px !important;
+                    animation-delay: 1s !important;
+                }
+                .terminal-3 { 
+                    bottom: 15% !important; 
+                    left: 10% !important; 
+                    width: 220px !important; 
+                    height: 110px !important;
+                    animation-delay: 2s !important;
+                }
+                
+                /* Binary Rain */
+                .binary-stream {
+                    position: fixed !important;
+                    top: -100% !important;
+                    font-family: 'Courier New', monospace !important;
+                    font-size: 14px !important;
+                    color: #0088ff !important;
+                    pointer-events: none !important;
+                    z-index: 2 !important;
+                    animation: binary-fall linear infinite !important;
+                    text-shadow: 0 0 5px #0088ff !important;
+                    opacity: 0.6 !important;
+                }
+                
+                /* Glitch Effect Overlay */
+                .glitch-overlay {
+                    position: fixed !important;
+                    top: 0 !important;
+                    left: 0 !important;
+                    width: 100% !important;
+                    height: 100% !important;
+                    background: linear-gradient(90deg, transparent 0%, rgba(0, 255, 255, 0.03) 50%, transparent 100%) !important;
+                    pointer-events: none !important;
+                    z-index: 1 !important;
+                    animation: glitch-sweep 3s ease-in-out infinite !important;
+                }
+                
+                @keyframes glitch-sweep {
+                    0% { transform: translateX(-100%); }
+                    100% { transform: translateX(100%); }
+                }
+                
+                /* Digital Grid Background */
+                .grid-overlay {
+                    position: fixed !important;
+                    top: 0 !important;
+                    left: 0 !important;
+                    width: 100% !important;
+                    height: 100% !important;
+                    background-image: 
+                        linear-gradient(rgba(0, 255, 255, 0.1) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(0, 255, 255, 0.1) 1px, transparent 1px) !important;
+                    background-size: 50px 50px !important;
+                    pointer-events: none !important;
+                    z-index: 0 !important;
+                    opacity: 0.3 !important;
+                }
+            `;
+            document.head.appendChild(hackerStyles);
+            
+            // Add grid overlay
+            const grid = document.createElement('div');
+            grid.className = 'grid-overlay';
+            document.body.appendChild(grid);
+            
+            // Add glitch overlay
+            const glitch = document.createElement('div');
+            glitch.className = 'glitch-overlay';
+            document.body.appendChild(glitch);
+            
+            // Add floating terminal windows
+            const terminalCode = [
+                '> ACCESSING MAINFRAME...\n> DECRYPTING FILES...\n> CONNECTION SECURE\n> ROOT@PANTHEON:~#\n> ls -la /secure/*\n> chmod 777 ACCESS\n> GRANTED',
+                '> SYSTEM STATUS: OK\n> FIREWALLS: DISABLED\n> ENCRYPTION: BYPASSED\n> USER: SYSOP\n> PRIVILEGES: ELEVATED\n> ACCESS LEVEL: MAX',
+                '> ping pantheon.bbs\n> traceroute 192.168.1.1\n> nmap -sV localhost\n> ssh root@server\n> Password: ********\n> Login successful'
+            ];
+            
+            for (let i = 1; i <= 3; i++) {
+                const terminal = document.createElement('div');
+                terminal.className = `hacker-terminal terminal-${i}`;
+                terminal.textContent = terminalCode[i - 1];
+                document.body.appendChild(terminal);
+            }
+            
+            // Add binary rain
+            for (let i = 0; i < 15; i++) {
+                const binary = document.createElement('div');
+                binary.className = 'binary-stream';
+                binary.style.left = (i * 7 + Math.random() * 5) + '%';
+                binary.style.animationDuration = (10 + Math.random() * 10) + 's';
+                binary.style.animationDelay = (Math.random() * 5) + 's';
+                
+                let binaryText = '';
+                for (let j = 0; j < 30; j++) {
+                    binaryText += Math.random() > 0.5 ? '1' : '0';
+                    if (j % 8 === 7) binaryText += '<br>';
+                }
+                binary.innerHTML = binaryText;
+                document.body.appendChild(binary);
+            }
+        }
+
+        // Visitor counter
+        function incrementVisitorCount() {
+            // Get current count from localStorage
+            let count = parseInt(localStorage.getItem('bbsVisitorCount') || '0');
+            count++;
+            localStorage.setItem('bbsVisitorCount', count);
+            
+            // Display the count with leading zeros
+            displayCount(count);
+        }
+
+        function displayCount(count) {
+            const countStr = count.toString().padStart(6, '0');
+            const digits = document.querySelectorAll('.counter-digit');
+            
+            // Animate each digit
+            countStr.split('').forEach((digit, index) => {
+                if (digits[index]) {
+                    // Add a little flip animation
+                    digits[index].style.animation = 'none';
+                    setTimeout(() => {
+                        digits[index].textContent = digit;
+                        digits[index].style.animation = 'digit-flip 0.3s';
+                    }, index * 50);
+                }
+            });
+        }
+
+        /* ============================================
+           TERMINAL SYSTEM - START
+           ============================================ */
+
+        // Session management
+        let terminalSessionId = null;
+
+        function generateSessionId() {
+            return 'TERM_' + Math.random().toString(36).substring(2, 10).toUpperCase();
+        }
+
+        // Simple QR code generator
+        function generateQRCode(text, canvas) {
+            const ctx = canvas.getContext('2d');
+            const size = 200;
+            canvas.width = size;
+            canvas.height = size;
+            
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, size, size);
+            
+            ctx.fillStyle = 'black';
+            const cellSize = 10;
+            const cells = size / cellSize;
+            
+            for (let i = 0; i < text.length; i++) {
+                const code = text.charCodeAt(i);
+                for (let j = 0; j < 5; j++) {
+                    const x = ((code * j) % cells) * cellSize;
+                    const y = ((code + j * 7) % cells) * cellSize;
+                    ctx.fillRect(x, y, cellSize, cellSize);
+                }
+            }
+            
+            const markerSize = cellSize * 3;
+            ctx.fillRect(0, 0, markerSize, markerSize);
+            ctx.fillStyle = 'white';
+            ctx.fillRect(cellSize, cellSize, cellSize, cellSize);
+            ctx.fillStyle = 'black';
+            
+            ctx.fillRect(size - markerSize, 0, markerSize, markerSize);
+            ctx.fillStyle = 'white';
+            ctx.fillRect(size - markerSize + cellSize, cellSize, cellSize, cellSize);
+            ctx.fillStyle = 'black';
+            
+            ctx.fillRect(0, size - markerSize, markerSize, markerSize);
+            ctx.fillStyle = 'white';
+            ctx.fillRect(cellSize, size - markerSize + cellSize, cellSize, cellSize);
+            ctx.fillStyle = 'black';
+            
+            ctx.font = '12px Courier New';
+            ctx.textAlign = 'center';
+            ctx.fillText('Scan to Unlock', size / 2, size - 5);
+        }
+
+        // Initialize QR when SYSOP panel opens
+        function initializeTerminalQR() {
+            if (!terminalSessionId) {
+                terminalSessionId = generateSessionId();
+                const sessionIdSpan = document.getElementById('sessionId');
+                if (sessionIdSpan) {
+                    sessionIdSpan.textContent = terminalSessionId;
+                }
+                
+                const canvas = document.getElementById('qrCodeCanvas');
+                if (canvas) {
+                    const unlockUrl = window.location.origin + '/unlock.html?session=' + terminalSessionId;
+                    generateQRCode(unlockUrl, canvas);
+                }
+                
+                startPollingForUnlock();
+            }
+        }
+
+        // Poll for unlock
+        async function startPollingForUnlock() {
+            const pollInterval = setInterval(async () => {
+                try {
+                    const response = await fetch(`https://epalhhtnwlvpvlnhdwfd.supabase.co/rest/v1/terminal_unlock?session_id=eq.${terminalSessionId}&select=*`, {
+                        headers: {
+                            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVwYWxoaHRud2x2cHZsbmhkd2ZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc5NDIyNTksImV4cCI6MjA1MzUxODI1OX0.EDY7MwsN-JuyfHCZZkfL_w__5Kb5thOwHzO7K38ydDQ',
+                            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVwYWxoaHRud2x2cHZsbmhkd2ZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc5NDIyNTksImV4cCI6MjA1MzUxODI1OX0.EDY7MwsN-JuyfHCZZkfL_w__5Kb5thOwHzO7K38ydDQ'
+                        }
+                    });
+                    
+                    const data = await response.json();
+                    if (data && data.length > 0 && data[0].unlocked) {
+                        clearInterval(pollInterval);
+                        activateTerminal();
+                    }
+                } catch (error) {
+                    console.log('Polling:', error);
+                }
+            }, 2000);
+        }
+
+        // Activate terminal
+        function activateTerminal() {
+            const terminal = document.getElementById('terminalOverlay');
+            if (terminal) {
+                terminal.classList.add('active');
+                const input = document.getElementById('terminalInput');
+                if (input) setTimeout(() => input.focus(), 100);
+                closeSysopPanel();
+                addTerminalLine('✓ Remote access authenticated!', 'success');
+                addTerminalLine('Session: ' + terminalSessionId, 'info');
+                addTerminalLine('');
+            }
+        }
+
+        // Hook into openSysopPanel
+        const _originalOpenSysop = openSysopPanel;
+        openSysopPanel = function() {
+            _originalOpenSysop();
+            setTimeout(initializeTerminalQR, 100);
+        };
+
+        // Terminal output
+        function addTerminalLine(text, type = '') {
+            const output = document.getElementById('terminalOutput');
+            if (output) {
+                const line = document.createElement('div');
+                line.className = 'terminal-line' + (type ? ' terminal-' + type : '');
+                line.textContent = text;
+                output.appendChild(line);
+                output.scrollTop = output.scrollHeight;
+            }
+        }
+
+        // Terminal input handler
+        const terminalInput = document.getElementById('terminalInput');
+        if (terminalInput) {
+            terminalInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    const cmd = terminalInput.value.trim();
+                    if (cmd) {
+                        addTerminalLine('> ' + cmd);
+                        processCommand(cmd);
+                        terminalInput.value = '';
+                    }
+                }
+            });
+        }
+
+        // Command processor
+        function processCommand(cmd) {
+            const parts = cmd.toLowerCase().split(' ');
+            const command = parts[0];
+            const args = parts.slice(1).join(' ');
+
+            switch(command) {
+                case '/?':
+                case '/help':
+                    addTerminalLine('═══ COMMANDS ═══', 'success');
+                    addTerminalLine('/help - Show commands');
+                    addTerminalLine('/clear - Clear screen');
+                    addTerminalLine('/exit - Close terminal');
+                    addTerminalLine('/matrix - Toggle matrix');
+                    addTerminalLine('/hack - Hacker mode');
+                    addTerminalLine('/color [scheme] - Change color');
+                    addTerminalLine('/stars - Toggle stars');
+                    addTerminalLine('/scanlines - Toggle CRT');
+                    addTerminalLine('/whoami - User info');
+                    addTerminalLine('/time - System time');
+                    addTerminalLine('/stats - System stats');
+                    addTerminalLine('/reboot - Reboot');
+                    addTerminalLine('/credits - Credits');
+                    addTerminalLine('');
+                    break;
+                case '/clear':
+                    document.getElementById('terminalOutput').innerHTML = '';
+                    break;
+                case '/exit':
+                    document.getElementById('terminalOverlay').classList.remove('active');
+                    break;
+                case '/matrix':
+                    toggleMatrixRain();
+                    addTerminalLine('✓ Matrix toggled', 'success');
+                    break;
+                case '/hack':
+                    activateEasterEgg();
+                    addTerminalLine('✓ Hacker mode', 'success');
+                    break;
+                case '/color':
+                    if (args) {
+                        changeColorScheme(args);
+                        addTerminalLine('✓ Color: ' + args, 'success');
+                    } else {
+                        addTerminalLine('Usage: /color [green/amber/blue/red/white]', 'error');
+                    }
+                    break;
+                case '/stars':
+                    toggleStars();
+                    addTerminalLine('✓ Stars toggled', 'success');
+                    break;
+                case '/scanlines':
+                    toggleScanlines();
+                    addTerminalLine('✓ Scanlines toggled', 'success');
+                    break;
+                case '/whoami':
+                    addTerminalLine('User: ' + (getCookie('bbsHandle') || 'Guest'), 'info');
+                    addTerminalLine('Session: ' + terminalSessionId, 'info');
+                    break;
+                case '/time':
+                    addTerminalLine('Time: ' + new Date().toLocaleString(), 'info');
+                    break;
+                case '/stats':
+                    const counterDigits = document.querySelectorAll('.counter-digit');
+                    let count = '';
+                    counterDigits.forEach(d => count += d.textContent);
+                    addTerminalLine('Visitors: ' + count, 'info');
+                    addTerminalLine('Uptime: ' + (new Date().getFullYear() - 1995) + ' years', 'info');
+                    break;
+                case '/reboot':
+                    addTerminalLine('✓ Rebooting...', 'success');
+                    setTimeout(() => {
+                        document.getElementById('terminalOverlay').classList.remove('active');
+                        systemReboot();
+                    }, 1000);
+                    break;
+                case '/credits':
+                    addTerminalLine('═══ PANTHEON BBS ═══', 'success');
+                    addTerminalLine('Est. 1995', 'info');
+                    addTerminalLine('Easter Eggs:', 'success');
+                    addTerminalLine('✓ Konami Code', 'info');
+                    addTerminalLine('✓ Pi Symbol', 'info');
+                    addTerminalLine('✓ SYSOP Panel', 'info');
+                    addTerminalLine('✓ QR Terminal', 'info');
+                    addTerminalLine('');
+                    break;
+                default:
+                    addTerminalLine('Unknown: ' + command, 'error');
+                    addTerminalLine('Type /? for help', 'info');
+            }
+        }
+
+        /* TERMINAL SYSTEM - END */
+    </script>
+    <style>
+        @keyframes digit-flip {
+            0% { transform: rotateX(0deg); opacity: 0.5; }
+            50% { transform: rotateX(90deg); opacity: 0.2; }
+            100% { transform: rotateX(0deg); opacity: 1; }
+        }
+
+        /* Windows XP Loading Bar */
+        .xp-loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            gap: 20px;
+        }
+
+        .xp-loading-text {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+
+        .xp-loading-bar {
+            width: 300px;
+            height: 24px;
+            background: #003366;
+            border: 2px solid currentColor;
+            border-radius: 3px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .xp-loading-fill {
+            height: 100%;
+            background: linear-gradient(
+                to right,
+                #0066cc 0%,
+                #3399ff 50%,
+                #0066cc 100%
+            );
+            background-size: 200% 100%;
+            animation: xp-progress 2s linear infinite;
+            width: 0%;
+            transition: width 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .xp-loading-fill::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 50%;
+            background: linear-gradient(
+                to bottom,
+                rgba(255, 255, 255, 0.4),
+                transparent
+            );
+        }
+
+        .xp-loading-fill::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.3),
+                transparent
+            );
+            animation: xp-shimmer 1.5s infinite;
+        }
+
+        @keyframes xp-progress {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 200% 0%; }
+        }
+
+        @keyframes xp-shimmer {
+            0% { left: -100%; }
+            100% { left: 200%; }
+        }
+
+        .xp-status-text {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-top: 10px;
+        }
+
+        /* Matrix rain effect */
+        .matrix-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        .matrix-canvas.active {
+            opacity: 1;
+        }
+
+        /* NES color theme */
+        body.nes-mode {
+            color: #fcfcfc;
+        }
+
+        body.nes-mode .header,
+        body.nes-mode .connection-panel,
+        body.nes-mode .status-bar,
+        body.nes-mode .connection-info,
+        body.nes-mode .btn,
+        body.nes-mode #fTelnetContainer,
+        body.nes-mode .visitor-counter,
+        body.nes-mode .sound-toggle {
+            border-color: #d82800;
+            color: #fcfcfc;
+        }
+
+        body.nes-mode h1,
+        body.nes-mode h2,
+        body.nes-mode .tagline,
+        body.nes-mode .status-item,
+        body.nes-mode .counter-label,
+        body.nes-mode .counter-digit,
+        body.nes-mode .btn {
+            color: #fcfcfc;
+            text-shadow: 0 0 10px #d82800, 0 0 20px #d82800;
+        }
+
+        body.nes-mode .status-indicator {
+            background: #d82800;
+            box-shadow: 0 0 10px #d82800;
+        }
+
+        body.nes-mode .copy-btn {
+            background: #d82800;
+            color: #fcfcfc;
+        }
+
+        body.nes-mode .copy-btn:hover {
+            background: #ff3c1e;
+            box-shadow: 0 0 15px #d82800;
+        }
+
+        body.nes-mode .btn:hover {
+            border-color: #ff3c1e;
+            box-shadow: 0 0 20px rgba(216, 40, 0, 0.5);
+        }
+
+        body.nes-mode .header::before {
+            background: linear-gradient(45deg, #d82800, transparent, #d82800);
+        }
+
+        body.nes-mode .star {
+            background: #fcfcfc;
+        }
+
+        body.nes-mode .connection-panel,
+        body.nes-mode .status-bar,
+        body.nes-mode .header,
+        body.nes-mode .visitor-counter,
+        body.nes-mode .sound-toggle {
+            box-shadow: 0 0 20px rgba(216, 40, 0, 0.3);
+        }
+
+        /* Guestbook styles */
+        .guestbook-entry {
+            border: 1px solid currentColor;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: rgba(0, 17, 0, 0.3);
+            position: relative;
+        }
+
+        body.nes-mode .guestbook-entry {
+            background: rgba(40, 0, 0, 0.3);
+        }
+
+        .guestbook-entry-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid currentColor;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .guestbook-entry-name {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .guestbook-entry-location {
+            opacity: 0.7;
+            font-size: 0.9em;
+        }
+
+        .guestbook-entry-date {
+            opacity: 0.6;
+            font-size: 0.8em;
+        }
+
+        .guestbook-entry-message {
+            line-height: 1.6;
+            word-wrap: break-word;
+        }
+
+        #guestbookEntries::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        #guestbookEntries::-webkit-scrollbar-track {
+            background: #000;
+            border: 1px solid currentColor;
+        }
+
+        #guestbookEntries::-webkit-scrollbar-thumb {
+            background: currentColor;
+        }
+
+        #guestbookEntries::-webkit-scrollbar-thumb:hover {
+            opacity: 0.8;
+        }
+
+        /* BBS Lingo Tooltip */
+        .bbs-term {
+            position: relative;
+            border-bottom: 1px dotted currentColor;
+            cursor: help;
+            display: inline-block;
+        }
+
+        .bbs-term:hover {
+            opacity: 0.8;
+        }
+
+        .bbs-tooltip {
+            visibility: hidden;
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 17, 0, 0.98);
+            border: 2px solid currentColor;
+            padding: 12px 16px;
+            border-radius: 4px;
+            z-index: 10000;
+            width: 280px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+            font-size: 0.9em;
+            line-height: 1.4;
+            pointer-events: none;
+        }
+
+        body.nes-mode .bbs-tooltip {
+            background: rgba(40, 0, 0, 0.98);
+            box-shadow: 0 0 20px rgba(216, 40, 0, 0.5);
+        }
+
+        .bbs-term:hover .bbs-tooltip {
+            visibility: visible;
+            animation: tooltip-appear 0.3s;
+        }
+
+        .bbs-tooltip::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 8px solid transparent;
+            border-top-color: currentColor;
+        }
+
+        @keyframes tooltip-appear {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-5px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        .lingo-panel {
+            background: rgba(0, 17, 0, 0.6);
+            border: 2px solid currentColor;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .lingo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .lingo-item {
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid currentColor;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .lingo-item:hover {
+            background: rgba(0, 255, 0, 0.1);
+            transform: translateX(5px);
+        }
+
+        body.nes-mode .lingo-item:hover {
+            background: rgba(216, 40, 0, 0.1);
+        }
+
+        .lingo-item-term {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .lingo-item-def {
+            font-size: 0.85em;
+            opacity: 0.8;
+            line-height: 1.4;
+        }
+    </style>
+</body>
+</html>

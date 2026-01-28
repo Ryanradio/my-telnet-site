@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal Unlock - Pantheon BBS</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            text-align: center;
+        }
+        
+        .unlock-container {
+            padding: 40px;
+            border: 3px solid #0f0;
+            background: rgba(0, 255, 0, 0.05);
+            max-width: 400px;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.3);
+        }
+        
+        h1 {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px #0f0;
+        }
+        
+        .status {
+            font-size: 1.2em;
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            background: rgba(0, 0, 0, 0.5);
+        }
+        
+        .success {
+            color: #00ff88;
+        }
+        
+        .error {
+            color: #ff0040;
+        }
+        
+        .loading {
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0.3; }
+        }
+        
+        .session-id {
+            font-size: 0.8em;
+            opacity: 0.7;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="unlock-container">
+        <h1>═══ PANTHEON BBS ═══</h1>
+        <h2>Remote Terminal Unlock</h2>
+        
+        <div class="status" id="status">
+            <div class="loading">⚡ Authenticating...</div>
+        </div>
+        
+        <div class="session-id" id="sessionInfo"></div>
+    </div>
+
+    <script>
+        // Get session ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionId = urlParams.get('session');
+        
+        const statusDiv = document.getElementById('status');
+        const sessionInfo = document.getElementById('sessionInfo');
+        
+        if (sessionId) {
+            sessionInfo.textContent = 'Session: ' + sessionId;
+            
+            // Unlock the terminal via Supabase
+            unlockTerminal(sessionId);
+        } else {
+            statusDiv.innerHTML = '<div class="error">✗ Invalid session</div>';
+        }
+        
+        async function unlockTerminal(sessionId) {
+            try {
+                // Write unlock status to Supabase
+                const response = await fetch('https://epalhhtnwlvpvlnhdwfd.supabase.co/rest/v1/terminal_unlock', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVwYWxoaHRud2x2cHZsbmhkd2ZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc5NDIyNTksImV4cCI6MjA1MzUxODI1OX0.EDY7MwsN-JuyfHCZZkfL_w__5Kb5thOwHzO7K38ydDQ',
+                        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVwYWxoaHRud2x2cHZsbmhkd2ZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc5NDIyNTksImV4cCI6MjA1MzUxODI1OX0.EDY7MwsN-JuyfHCZZkfL_w__5Kb5thOwHzO7K38ydDQ',
+                        'Prefer': 'return=representation'
+                    },
+                    body: JSON.stringify({
+                        session_id: sessionId,
+                        unlocked: true,
+                        unlocked_at: new Date().toISOString()
+                    })
+                });
+                
+                if (response.ok) {
+                    statusDiv.innerHTML = '<div class="success">✓ Terminal Unlocked!</div>';
+                    setTimeout(() => {
+                        statusDiv.innerHTML += '<div style="margin-top: 15px; font-size: 0.9em;">Check your PC screen</div>';
+                    }, 1000);
+                } else {
+                    statusDiv.innerHTML = '<div class="error">✗ Unlock failed</div>';
+                }
+            } catch (error) {
+                console.error('Unlock error:', error);
+                statusDiv.innerHTML = '<div class="error">✗ Connection error</div>';
+            }
+        }
+    </script>
+</body>
+</html>
