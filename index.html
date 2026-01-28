@@ -468,6 +468,109 @@
             opacity: 0.4;
         }
 
+        /* Retro Loading Screen */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Courier New', monospace;
+            color: #0f0;
+            padding: 20px;
+            opacity: 1;
+            transition: opacity 0.5s;
+        }
+
+        .loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-terminal {
+            max-width: 800px;
+            width: 100%;
+            text-align: left;
+            font-size: clamp(0.7rem, 2vw, 1rem);
+            line-height: 1.6;
+        }
+
+        .loading-line {
+            margin: 8px 0;
+            opacity: 0;
+            animation: fadeInLine 0.3s forwards;
+        }
+
+        @keyframes fadeInLine {
+            to { opacity: 1; }
+        }
+
+        .loading-progress {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .progress-bar {
+            flex: 1;
+            height: 20px;
+            border: 2px solid #0f0;
+            background: #000;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #0f0;
+            width: 0%;
+            transition: width 0.3s;
+            box-shadow: 0 0 10px #0f0;
+        }
+
+        .progress-percent {
+            min-width: 45px;
+            text-align: right;
+        }
+
+        .loading-cursor {
+            display: inline-block;
+            width: 10px;
+            height: 1em;
+            background: #0f0;
+            animation: blink 1s infinite;
+            margin-left: 5px;
+        }
+
+        @keyframes blink {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+
+        .skip-hint {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.8em;
+            opacity: 0.6;
+            text-align: center;
+        }
+
+        .system-ready {
+            font-size: 1.5em;
+            text-align: center;
+            margin-top: 30px;
+            animation: glow-pulse 2s infinite;
+        }
+
         .ascii-art {
             font-size: 0.6rem;
             line-height: 1;
@@ -517,6 +620,13 @@
     </style>
 </head>
 <body>
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-terminal" id="loadingTerminal">
+            <!-- Loading messages will be inserted here by JavaScript -->
+        </div>
+        <div class="skip-hint">PRESS ANY KEY TO SKIP</div>
+    </div>
+    
     <div class="sysop-overlay" id="sysopOverlay">
         <div class="sysop-message" id="sysopMessage"></div>
         <div class="sysop-terminal" id="sysopTerminal"></div>
@@ -843,8 +953,117 @@
         loadGuestbookEntries();
         setupCharCounter();
         
+        // Start loading screen sequence
+        startLoadingSequence();
+        
         // Auto-refresh connection info every 60 seconds
         setInterval(loadConnectionInfo, 60000);
+
+        // Retro Loading Screen Sequence
+        async function startLoadingSequence() {
+            const screen = document.getElementById('loadingScreen');
+            const terminal = document.getElementById('loadingTerminal');
+            
+            const messages = [
+                { text: 'PANTHEON BBS v2.5', delay: 100 },
+                { text: 'Copyright (c) 1995-2025 Pantheon Systems', delay: 100 },
+                { text: '', delay: 200 },
+                { text: 'Initializing system...', delay: 300 },
+                { text: 'Loading DOS kernel...', delay: 400, progress: true, target: 100 },
+                { text: 'Detecting hardware...', delay: 300 },
+                { text: '  CPU: 486DX2-66MHz', delay: 150 },
+                { text: '  RAM: 8MB', delay: 150 },
+                { text: '  MODEM: US Robotics 28.8k', delay: 150 },
+                { text: '', delay: 200 },
+                { text: 'Loading BBS protocols...', delay: 300, progress: true, target: 100 },
+                { text: 'Initializing terminal emulation...', delay: 400 },
+                { text: 'Loading user database...', delay: 300, progress: true, target: 100 },
+                { text: 'Establishing network connection...', delay: 400, progress: true, target: 100 },
+                { text: '', delay: 200 },
+                { text: 'SYSTEM CHECK COMPLETE', delay: 300 },
+                { text: '', delay: 100 },
+                { text: '✓ All systems operational', delay: 200 },
+                { text: '✓ Connection established', delay: 200 },
+                { text: '✓ Ready for access', delay: 200 },
+                { text: '', delay: 300 },
+            ];
+
+            let skipRequested = false;
+            
+            // Allow skipping with any key
+            const skipHandler = (e) => {
+                skipRequested = true;
+                document.removeEventListener('keydown', skipHandler);
+                document.removeEventListener('click', skipHandler);
+            };
+            
+            document.addEventListener('keydown', skipHandler);
+            document.addEventListener('click', skipHandler);
+
+            for (let i = 0; i < messages.length; i++) {
+                if (skipRequested) break;
+                
+                const msg = messages[i];
+                const line = document.createElement('div');
+                line.className = 'loading-line';
+                
+                if (msg.progress) {
+                    // Create progress bar
+                    const progressContainer = document.createElement('div');
+                    progressContainer.className = 'loading-progress';
+                    progressContainer.innerHTML = `
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill${i}"></div>
+                        </div>
+                        <div class="progress-percent" id="progressPercent${i}">0%</div>
+                    `;
+                    line.appendChild(progressContainer);
+                    terminal.appendChild(line);
+                    
+                    // Animate progress
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                    const fill = document.getElementById(`progressFill${i}`);
+                    const percent = document.getElementById(`progressPercent${i}`);
+                    
+                    for (let p = 0; p <= msg.target; p += 5) {
+                        if (skipRequested) break;
+                        fill.style.width = p + '%';
+                        percent.textContent = p + '%';
+                        await new Promise(resolve => setTimeout(resolve, 20));
+                    }
+                    fill.style.width = '100%';
+                    percent.textContent = '100%';
+                } else {
+                    // Regular text line
+                    line.innerHTML = msg.text + (i === messages.length - 1 ? '' : '<span class="loading-cursor"></span>');
+                    terminal.appendChild(line);
+                }
+                
+                await new Promise(resolve => setTimeout(resolve, msg.delay));
+            }
+
+            if (!skipRequested) {
+                // Show "SYSTEM READY" message
+                const readyLine = document.createElement('div');
+                readyLine.className = 'loading-line system-ready';
+                readyLine.textContent = '═══ SYSTEM READY ═══';
+                terminal.appendChild(readyLine);
+                
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+
+            // Fade out loading screen
+            screen.classList.add('hidden');
+            
+            // Clean up event listeners
+            document.removeEventListener('keydown', skipHandler);
+            document.removeEventListener('click', skipHandler);
+            
+            // Remove from DOM after fade
+            setTimeout(() => {
+                screen.remove();
+            }, 500);
+        }
 
         // Sysop Access (Secret Pi Symbol)
         function checkSysopAccess(event) {
