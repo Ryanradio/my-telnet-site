@@ -1032,10 +1032,10 @@
                 };
                 
                 // Get existing entries from GitHub
-                const response = await fetch('https://api.github.com/repos/ryanradio/pantheon-guestbook-data/contents/guestbook.json', {
+                const response = await fetch('https://api.github.com/repos/Ryanradio/pantheon-guestbook-data/contents/guestbook.json', {
                     headers: {
                         'Accept': 'application/vnd.github.v3+json',
-                        'Authorization': 'Bearer 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'
+                        'Authorization': 'Bearer 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'
                     }
                 });
                 
@@ -1065,10 +1065,10 @@
                 }
                 
                 // Update GitHub
-                const updateResponse = await fetch('https://api.github.com/repos/ryanradio/pantheon-guestbook-data/contents/guestbook.json', {
+                const updateResponse = await fetch('https://api.github.com/repos/Ryanradio/pantheon-guestbook-data/contents/guestbook.json', {
                     method: 'PUT',
                     headers: {
-                        'Authorization': 'Bearer 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',
+                        'Authorization': 'Bearer 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',
                         'Accept': 'application/vnd.github.v3+json',
                         'Content-Type': 'application/json'
                     },
@@ -1115,7 +1115,7 @@
             
             try {
                 // Get entries from GitHub (using raw content URL for faster loading)
-                const response = await fetch('https://raw.githubusercontent.com/ryanradio/pantheon-guestbook-data/main/guestbook.json?t=' + new Date().getTime());
+                const response = await fetch('https://raw.githubusercontent.com/Ryanradio/pantheon-guestbook-data/main/guestbook.json?t=' + new Date().getTime());
                 
                 if (!response.ok) {
                     container.innerHTML = `
