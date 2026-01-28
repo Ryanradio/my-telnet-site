@@ -640,6 +640,7 @@
             align-items: center;
             gap: 10px;
             margin-bottom: 20px;
+            position: relative;
         }
 
         .login-input {
@@ -651,14 +652,18 @@
             outline: none;
             flex: 1;
             text-shadow: 0 0 5px #0f0;
+            caret-color: transparent; /* Hide default cursor */
         }
 
         .login-cursor {
             display: inline-block;
-            width: 12px;
+            width: 10px;
             height: 1.2em;
             background: #0f0;
             animation: blink 1s infinite;
+            vertical-align: text-bottom;
+            margin-left: 2px;
+            transition: margin-left 0.05s;
         }
 
         .login-hint {
@@ -782,6 +787,198 @@
             transform: rotate(-90deg);
         }
 
+        /* SYSOP Admin Panel Styles */
+        .sysop-panel {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 700px;
+            max-height: 80vh;
+            background: rgba(0, 0, 0, 0.95);
+            border: 3px solid #0f0;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.5), inset 0 0 30px rgba(0, 255, 0, 0.1);
+            z-index: 100000;
+            display: none;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+        }
+
+        .sysop-panel.active {
+            display: block;
+            animation: panel-appear 0.3s;
+        }
+
+        @keyframes panel-appear {
+            from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+
+        .sysop-header {
+            background: #0f0;
+            color: #000;
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            position: relative;
+            border-bottom: 2px solid #0f0;
+        }
+
+        .sysop-close {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            font-size: 1.5em;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .sysop-close:hover {
+            color: #f00;
+            transform: translateY(-50%) scale(1.2);
+        }
+
+        .sysop-content {
+            padding: 20px;
+            color: #0f0;
+        }
+
+        .sysop-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            background: rgba(0, 255, 0, 0.05);
+        }
+
+        .sysop-section-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid rgba(0, 255, 0, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sysop-control {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin: 5px 0;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 255, 0, 0.2);
+            transition: all 0.2s;
+        }
+
+        .sysop-control:hover {
+            background: rgba(0, 255, 0, 0.1);
+            border-color: #0f0;
+        }
+
+        .sysop-button {
+            background: #000;
+            border: 2px solid #0f0;
+            color: #0f0;
+            padding: 8px 15px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            transition: all 0.2s;
+            font-size: 0.9em;
+        }
+
+        .sysop-button:hover {
+            background: rgba(0, 255, 0, 0.2);
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+        }
+
+        .sysop-button:active {
+            transform: scale(0.95);
+        }
+
+        .sysop-toggle {
+            width: 50px;
+            height: 25px;
+            background: #000;
+            border: 2px solid #0f0;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .sysop-toggle::after {
+            content: "";
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 18px;
+            height: 18px;
+            background: #f00;
+            transition: all 0.3s;
+        }
+
+        .sysop-toggle.on {
+            background: rgba(0, 255, 0, 0.2);
+        }
+
+        .sysop-toggle.on::after {
+            left: 26px;
+            background: #0f0;
+            box-shadow: 0 0 10px #0f0;
+        }
+
+        .sysop-input {
+            background: #000;
+            border: 1px solid #0f0;
+            color: #0f0;
+            padding: 5px 10px;
+            font-family: 'Courier New', monospace;
+            width: 100px;
+        }
+
+        .sysop-select {
+            background: #000;
+            border: 1px solid #0f0;
+            color: #0f0;
+            padding: 5px 10px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .status-indicator-sysop {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #0f0;
+            box-shadow: 0 0 10px #0f0;
+            animation: pulse 2s infinite;
+        }
+
+        .broadcast-message {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 17, 0, 0.95);
+            border: 3px solid #0f0;
+            padding: 20px 40px;
+            z-index: 99999;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.5);
+            animation: broadcast-flash 0.5s infinite;
+            text-align: center;
+        }
+
+        @keyframes broadcast-flash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
         .ascii-art {
             font-size: 0.6rem;
             line-height: 1;
@@ -885,6 +1082,88 @@
     <button class="sound-toggle" id="soundToggle" onclick="toggleSound()" title="Toggle dial-up sound">🔊</button>
     
     <div class="pi-symbol" onclick="checkSysopAccess(event)" title="π">π</div>
+    
+    <!-- SYSOP Admin Panel -->
+    <div class="sysop-panel" id="sysopPanel">
+        <div class="sysop-header">
+            ⚡ SYSOP CONTROL PANEL ⚡
+            <span class="sysop-close" onclick="closeSysopPanel()">✕</span>
+        </div>
+        <div class="sysop-content">
+            <div style="text-align: center; margin-bottom: 20px; padding: 10px; background: rgba(0, 255, 0, 0.1); border: 1px solid #0f0;">
+                <span class="status-indicator-sysop"></span> ACCESS LEVEL: ADMINISTRATOR <span class="status-indicator-sysop"></span>
+            </div>
+
+            <div class="sysop-section">
+                <div class="sysop-section-title">
+                    <span class="status-indicator-sysop"></span> VISUAL EFFECTS
+                </div>
+                <div class="sysop-control">
+                    <span>CRT Scanlines</span>
+                    <div class="sysop-toggle on" id="toggleScanlines" onclick="toggleScanlines()"></div>
+                </div>
+                <div class="sysop-control">
+                    <span>Background Stars</span>
+                    <div class="sysop-toggle on" id="toggleStars" onclick="toggleStars()"></div>
+                </div>
+                <div class="sysop-control">
+                    <span>Matrix Rain</span>
+                    <div class="sysop-toggle" id="toggleMatrix" onclick="toggleMatrixRain()"></div>
+                </div>
+            </div>
+
+            <div class="sysop-section">
+                <div class="sysop-section-title">
+                    <span class="status-indicator-sysop"></span> COLOR SCHEME
+                </div>
+                <div class="sysop-control">
+                    <span>Terminal Color</span>
+                    <select class="sysop-select" onchange="changeColorScheme(this.value)">
+                        <option value="green">Green (Classic)</option>
+                        <option value="amber">Amber</option>
+                        <option value="blue">Blue</option>
+                        <option value="red">Red</option>
+                        <option value="white">White</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="sysop-section">
+                <div class="sysop-section-title">
+                    <span class="status-indicator-sysop"></span> SYSTEM CONTROLS
+                </div>
+                <div class="sysop-control">
+                    <span>Visitor Counter</span>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="number" class="sysop-input" id="counterInput" placeholder="000000" max="999999">
+                        <button class="sysop-button" onclick="setCounter()">SET</button>
+                    </div>
+                </div>
+                <div class="sysop-control">
+                    <span>Broadcast Message</span>
+                    <button class="sysop-button" onclick="showBroadcast()">📢 SEND</button>
+                </div>
+                <div class="sysop-control">
+                    <span>Clear User Data</span>
+                    <button class="sysop-button" onclick="clearUserData()">🗑️ RESET</button>
+                </div>
+            </div>
+
+            <div class="sysop-section">
+                <div class="sysop-section-title">
+                    <span class="status-indicator-sysop"></span> EMERGENCY
+                </div>
+                <div class="sysop-control">
+                    <span>System Reboot</span>
+                    <button class="sysop-button" onclick="systemReboot()" style="border-color: #f00; color: #f00;">⚠️ REBOOT</button>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 20px; padding: 10px; opacity: 0.6; font-size: 0.8em;">
+                Press ESC to close | SysOp since 1995
+            </div>
+        </div>
+    </div>
     
     <audio id="modemSound" preload="auto">
         <source src="modem.mp3" type="audio/mpeg">
@@ -1298,6 +1577,28 @@
                 // New user - show login prompt
                 loginScreen.classList.remove('hidden');
                 setTimeout(() => handleInput.focus(), 100);
+                
+                // Make cursor follow typing like old terminals
+                const cursor = document.querySelector('.login-cursor');
+                const updateCursor = () => {
+                    // Create a temporary span to measure text width
+                    const temp = document.createElement('span');
+                    temp.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;font-family:Courier New;font-size:' + window.getComputedStyle(handleInput).fontSize;
+                    temp.textContent = handleInput.value || '';
+                    document.body.appendChild(temp);
+                    
+                    // Position cursor after the text
+                    const textWidth = temp.offsetWidth;
+                    cursor.style.marginLeft = (textWidth + 2) + 'px';
+                    
+                    document.body.removeChild(temp);
+                };
+                
+                // Update cursor position on every keystroke
+                handleInput.addEventListener('input', updateCursor);
+                
+                // Initial cursor position
+                updateCursor();
                 
                 // Handle login submission
                 handleInput.addEventListener('keypress', function(e) {
@@ -1958,6 +2259,219 @@
                     indicator1.textContent = '▼';
                     indicator2.textContent = '▼';
                 }
+            }
+        }
+
+        // SYSOP Command Detection
+        let typedKeys = '';
+        let sysopTimeout;
+
+        document.addEventListener('keydown', (e) => {
+            // Clear timeout
+            clearTimeout(sysopTimeout);
+            
+            // Add key to buffer
+            typedKeys += e.key.toLowerCase();
+            
+            // Check for SYSOP command
+            if (typedKeys.includes('sysop')) {
+                openSysopPanel();
+                typedKeys = '';
+            }
+            
+            // ESC to close panel
+            if (e.key === 'Escape') {
+                closeSysopPanel();
+            }
+            
+            // Reset buffer after 2 seconds
+            sysopTimeout = setTimeout(() => {
+                typedKeys = '';
+            }, 2000);
+        });
+
+        function openSysopPanel() {
+            const panel = document.getElementById('sysopPanel');
+            if (panel) {
+                panel.classList.add('active');
+            }
+        }
+
+        function closeSysopPanel() {
+            const panel = document.getElementById('sysopPanel');
+            if (panel) {
+                panel.classList.remove('active');
+            }
+        }
+
+        // SYSOP Controls
+        function toggleScanlines() {
+            const toggle = document.getElementById('toggleScanlines');
+            toggle.classList.toggle('on');
+            
+            // Get or create style tag for scanlines
+            let scanlineStyle = document.getElementById('scanline-style');
+            if (!scanlineStyle) {
+                scanlineStyle = document.createElement('style');
+                scanlineStyle.id = 'scanline-style';
+                document.head.appendChild(scanlineStyle);
+            }
+            
+            if (!toggle.classList.contains('on')) {
+                // Disable scanlines
+                scanlineStyle.textContent = `
+                    body::before, 
+                    body::after { 
+                        display: none !important; 
+                    }
+                `;
+            } else {
+                // Enable scanlines
+                scanlineStyle.textContent = '';
+            }
+        }
+
+        function toggleStars() {
+            const toggle = document.getElementById('toggleStars');
+            const stars = document.getElementById('stars');
+            
+            toggle.classList.toggle('on');
+            
+            if (stars) {
+                if (toggle.classList.contains('on')) {
+                    stars.style.display = 'block';
+                } else {
+                    stars.style.display = 'none';
+                }
+            }
+        }
+
+        function toggleMatrixRain() {
+            const toggle = document.getElementById('toggleMatrix');
+            toggle.classList.toggle('on');
+            
+            if (toggle.classList.contains('on')) {
+                startMatrixRain();
+            } else {
+                stopMatrixRain();
+            }
+        }
+
+        function changeColorScheme(scheme) {
+            const colors = {
+                green: '#0f0',
+                amber: '#ffb000',
+                blue: '#00bfff',
+                red: '#ff0040',
+                white: '#ffffff'
+            };
+            
+            const color = colors[scheme];
+            
+            // Create or update color scheme style
+            let colorStyle = document.getElementById('color-scheme-style');
+            if (!colorStyle) {
+                colorStyle = document.createElement('style');
+                colorStyle.id = 'color-scheme-style';
+                document.head.appendChild(colorStyle);
+            }
+            
+            colorStyle.textContent = `
+                body { color: ${color} !important; }
+                .header, .connection-panel, .status-bar, .connection-info, .btn, 
+                .visitor-counter, .sound-toggle, .guestbook-entry, .counter-digit,
+                .ascii-gallery, .pi-symbol {
+                    border-color: ${color} !important;
+                    color: ${color} !important;
+                }
+                .status-indicator, .counter-digit {
+                    background: ${color} !important;
+                    box-shadow: 0 0 10px ${color} !important;
+                }
+                h1, h2, h3, .status-item {
+                    text-shadow: 0 0 10px ${color}, 0 0 20px ${color} !important;
+                }
+                .star {
+                    background: ${color} !important;
+                }
+                body::before {
+                    background: linear-gradient(to bottom, transparent 50%, rgba(${scheme === 'green' ? '0, 255, 0' : scheme === 'amber' ? '255, 176, 0' : scheme === 'blue' ? '0, 191, 255' : scheme === 'red' ? '255, 0, 64' : '255, 255, 255'}, 0.02) 51%) !important;
+                }
+            `;
+        }
+
+        function setCounter() {
+            const input = document.getElementById('counterInput');
+            const value = input.value.padStart(6, '0');
+            
+            if (value && value.length <= 6) {
+                const digits = value.split('');
+                const counterDigits = document.querySelectorAll('.counter-digit');
+                
+                digits.forEach((digit, index) => {
+                    if (counterDigits[index]) {
+                        counterDigits[index].textContent = digit;
+                    }
+                });
+                
+                input.value = '';
+            }
+        }
+
+        function showBroadcast() {
+            const msg = document.createElement('div');
+            msg.className = 'broadcast-message';
+            msg.innerHTML = `
+                ⚡⚡⚡ SYSOP BROADCAST ⚡⚡⚡<br>
+                <span style="font-size: 0.8em; margin-top: 10px; display: block;">
+                SYSTEM MESSAGE: All systems operational.<br>
+                Thank you for visiting The Pantheon BBS!
+                </span>
+            `;
+            document.body.appendChild(msg);
+            
+            setTimeout(() => {
+                msg.style.transition = 'opacity 0.5s';
+                msg.style.opacity = '0';
+                setTimeout(() => msg.remove(), 500);
+            }, 5000);
+        }
+
+        function clearUserData() {
+            if (confirm('Clear all user data and cookies? This will reset your login.')) {
+                // Clear all cookies
+                document.cookie.split(";").forEach(function(c) { 
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+                });
+                
+                // Show confirmation
+                alert('✓ User data cleared! Page will reload.');
+                location.reload();
+            }
+        }
+
+        function systemReboot() {
+            if (confirm('⚠️ Initiate system reboot sequence? ⚠️')) {
+                closeSysopPanel();
+                
+                const reboot = document.createElement('div');
+                reboot.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:999999;display:flex;flex-direction:column;justify-content:center;align-items:center;color:#0f0;font-family:Courier New;';
+                reboot.innerHTML = `
+                    <div style="font-size: 2em; margin-bottom: 20px;">SYSTEM REBOOT INITIATED</div>
+                    <div style="font-size: 1.2em; opacity: 0.8;">Shutting down processes...</div>
+                    <div style="margin-top: 30px; font-size: 0.9em;">
+                        > Closing connections...<br>
+                        > Saving state...<br>
+                        > Powering down...<br>
+                        > <span style="animation: blink 1s infinite;">_</span>
+                    </div>
+                `;
+                document.body.appendChild(reboot);
+                
+                // Force reload after animation
+                setTimeout(() => {
+                    window.location.reload();
+                }, 3000);
             }
         }
 
