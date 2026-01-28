@@ -4,6 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Pantheon Major BBS</title>
+    
+    <!-- 
+    ═══════════════════════════════════════════════════════════════
+    WELCOME, HACKER!
+    You found the secret developer notes. Nice work!
+    
+    EASTER EGG HINT:
+    Try the classic Konami Code: ↑ ↑ ↓ ↓ ← → ← → B A
+    
+    There's also a mysterious π symbol hidden on the page...
+    (Shift + Click or Ctrl + Shift + Click)
+    
+    Happy exploring! - The Sysop
+    ═══════════════════════════════════════════════════════════════
+    -->
+    
     <link href="ftelnet.css" rel="stylesheet">
     <script src="ftelnet.rip.xfer.min.js" id="fTelnetScript"></script>
     <style>
@@ -775,6 +791,7 @@
                 <div class="counter-digit">0</div>
                 <div class="counter-digit">0</div>
             </div>
+            <div style="font-size: 0.5rem; opacity: 0.3; margin-top: 5px; text-align: center; letter-spacing: 1px;">↑↑↓↓←→←→BA</div>
         </div>
     </div>
 
@@ -1393,19 +1410,19 @@
             // Start matrix rain
             startMatrixRain();
             
-            // After 10 seconds, switch to Mario mode
+            // After 10 seconds, switch to Hacker mode
             setTimeout(() => {
                 stopMatrixRain();
-                document.body.classList.add('nes-mode');
+                document.body.classList.add('hacker-mode');
                 
-                // Optional: Show a message
+                // Show "ACCESS GRANTED" message
                 const msg = document.createElement('div');
-                msg.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fcbc3c;border:5px solid #000000;padding:30px;z-index:10000;color:#f83800;font-size:2em;text-align:center;text-shadow:3px 3px 0 #ffffff;font-weight:bold;box-shadow:8px 8px 0 #000000;';
-                msg.innerHTML = '🍄 SUPER MARIO MODE! 🍄<br><span style="font-size:0.5em;color:#000000;">IT\'S-A ME, YOUR BBS!</span>';
+                msg.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.95);border:3px solid #00ffff;padding:40px 60px;z-index:10000;color:#00ffff;font-size:2em;text-align:center;text-shadow:0 0 10px #00ffff, 0 0 20px #00ffff;font-weight:bold;box-shadow:0 0 30px rgba(0,255,255,0.5), inset 0 0 30px rgba(0,255,255,0.1);animation:glitch 0.3s infinite;';
+                msg.innerHTML = '⚡ ACCESS GRANTED ⚡<br><span style="font-size:0.5em;color:#00ff88;text-shadow:0 0 10px #00ff88;">SYSOP PRIVILEGES ENABLED</span><br><span style="font-size:0.4em;color:#0088ff;margin-top:10px;display:block;">WELCOME TO THE MAINFRAME</span>';
                 document.body.appendChild(msg);
                 
-                // Add Mario blocks and scenery
-                addMarioScenery();
+                // Add hacker scenery
+                addHackerScenery();
                 
                 setTimeout(() => {
                     msg.style.transition = 'opacity 1s';
@@ -1457,211 +1474,205 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
 
-        function addMarioScenery() {
-            // Add Mario CSS overrides as inline style
-            const marioStyles = document.createElement('style');
-            marioStyles.id = 'mario-overrides';
-            marioStyles.textContent = `
-                body.nes-mode {
-                    background: #5c94fc !important;
-                }
-                body.nes-mode * {
-                    color: #ffffff !important;
-                }
-                body.nes-mode .header,
-                body.nes-mode .connection-panel,
-                body.nes-mode .status-bar,
-                body.nes-mode .connection-info,
-                body.nes-mode .btn,
-                body.nes-mode #fTelnetContainer,
-                body.nes-mode .visitor-counter,
-                body.nes-mode .sound-toggle,
-                body.nes-mode .guestbook-entry,
-                body.nes-mode .counter-digit {
-                    border-color: #fc9838 !important;
-                    background: rgba(252, 152, 56, 0.3) !important;
-                }
-                body.nes-mode h1,
-                body.nes-mode h2,
-                body.nes-mode h3 {
-                    color: #f83800 !important;
-                    text-shadow: 3px 3px 0 #000000 !important;
+        function addHackerScenery() {
+            // Add Hacker CSS overrides as inline style
+            const hackerStyles = document.createElement('style');
+            hackerStyles.id = 'hacker-overrides';
+            hackerStyles.textContent = `
+                @keyframes glitch {
+                    0%, 100% { transform: translate(0); }
+                    20% { transform: translate(-2px, 2px); }
+                    40% { transform: translate(-2px, -2px); }
+                    60% { transform: translate(2px, 2px); }
+                    80% { transform: translate(2px, -2px); }
                 }
                 
-                /* Mario Hills */
-                .mario-hill {
+                @keyframes binary-fall {
+                    0% { transform: translateY(-100%); opacity: 0; }
+                    10% { opacity: 1; }
+                    90% { opacity: 1; }
+                    100% { transform: translateY(100vh); opacity: 0; }
+                }
+                
+                @keyframes terminal-blink {
+                    0%, 49% { opacity: 1; }
+                    50%, 100% { opacity: 0.3; }
+                }
+                
+                @keyframes float-window {
+                    0%, 100% { transform: translateY(0px); }
+                    50% { transform: translateY(-10px); }
+                }
+                
+                body.hacker-mode {
+                    background: radial-gradient(ellipse at center, #001a1a 0%, #000000 100%) !important;
+                }
+                
+                body.hacker-mode * {
+                    color: #00ffff !important;
+                }
+                
+                body.hacker-mode .header,
+                body.hacker-mode .connection-panel,
+                body.hacker-mode .status-bar,
+                body.hacker-mode .connection-info,
+                body.hacker-mode .btn,
+                body.hacker-mode #fTelnetContainer,
+                body.hacker-mode .visitor-counter,
+                body.hacker-mode .sound-toggle,
+                body.hacker-mode .guestbook-entry,
+                body.hacker-mode .counter-digit {
+                    border-color: #00ffff !important;
+                    background: rgba(0, 255, 255, 0.1) !important;
+                    box-shadow: 0 0 20px rgba(0, 255, 255, 0.3) !important;
+                }
+                
+                body.hacker-mode h1,
+                body.hacker-mode h2,
+                body.hacker-mode h3 {
+                    color: #00ff88 !important;
+                    text-shadow: 0 0 10px #00ff88, 0 0 20px #00ff88 !important;
+                }
+                
+                body.hacker-mode .btn:hover {
+                    background: rgba(0, 255, 255, 0.2) !important;
+                    box-shadow: 0 0 30px rgba(0, 255, 255, 0.5) !important;
+                }
+                
+                body.hacker-mode .status-indicator {
+                    background: #00ffff !important;
+                    box-shadow: 0 0 15px #00ffff !important;
+                }
+                
+                /* Floating Terminal Windows */
+                .hacker-terminal {
                     position: fixed !important;
-                    bottom: 0 !important;
-                    background: #00d800 !important;
-                    border-radius: 100% 100% 0 0 !important;
+                    background: rgba(0, 17, 17, 0.9) !important;
+                    border: 2px solid #00ffff !important;
+                    color: #00ffff !important;
+                    font-family: 'Courier New', monospace !important;
+                    font-size: 10px !important;
+                    padding: 10px !important;
                     pointer-events: none !important;
-                    z-index: 1 !important;
-                    display: block !important;
+                    z-index: 3 !important;
+                    box-shadow: 0 0 20px rgba(0, 255, 255, 0.4), inset 0 0 20px rgba(0, 255, 255, 0.1) !important;
+                    animation: float-window 4s ease-in-out infinite !important;
+                    overflow: hidden !important;
+                    line-height: 1.4 !important;
                 }
-                .hill-1 { left: 5% !important; width: 200px !important; height: 100px !important; }
-                .hill-2 { right: 15% !important; width: 150px !important; height: 75px !important; }
-                .hill-3 { left: 40% !important; width: 180px !important; height: 90px !important; }
                 
-                /* Mario Clouds */
-                .mario-cloud {
+                .terminal-1 { 
+                    top: 10% !important; 
+                    left: 5% !important; 
+                    width: 200px !important; 
+                    height: 120px !important;
+                    animation-delay: 0s !important;
+                }
+                .terminal-2 { 
+                    top: 15% !important; 
+                    right: 8% !important; 
+                    width: 180px !important; 
+                    height: 100px !important;
+                    animation-delay: 1s !important;
+                }
+                .terminal-3 { 
+                    bottom: 15% !important; 
+                    left: 10% !important; 
+                    width: 220px !important; 
+                    height: 110px !important;
+                    animation-delay: 2s !important;
+                }
+                
+                /* Binary Rain */
+                .binary-stream {
                     position: fixed !important;
-                    background: #ffffff !important;
-                    border-radius: 50% !important;
-                    opacity: 0.9 !important;
+                    top: -100% !important;
+                    font-family: 'Courier New', monospace !important;
+                    font-size: 14px !important;
+                    color: #0088ff !important;
                     pointer-events: none !important;
                     z-index: 2 !important;
-                    display: block !important;
-                    box-shadow: 20px 0 0 #ffffff, 40px 0 0 #ffffff, 10px -10px 0 #ffffff, 30px -10px 0 #ffffff !important;
-                }
-                .cloud-1 { top: 50px !important; left: 10% !important; width: 60px !important; height: 30px !important; animation: cloud-float 30s linear infinite !important; }
-                .cloud-2 { top: 100px !important; left: 60% !important; width: 50px !important; height: 25px !important; animation: cloud-float 40s linear infinite !important; }
-                .cloud-3 { top: 150px !important; left: 85% !important; width: 55px !important; height: 28px !important; animation: cloud-float 35s linear infinite !important; }
-                
-                @keyframes cloud-float {
-                    0% { transform: translateX(0); }
-                    100% { transform: translateX(-100vw); }
+                    animation: binary-fall linear infinite !important;
+                    text-shadow: 0 0 5px #0088ff !important;
+                    opacity: 0.6 !important;
                 }
                 
-                /* Mario Blocks */
-                .mario-blocks {
+                /* Glitch Effect Overlay */
+                .glitch-overlay {
                     position: fixed !important;
-                    bottom: 100px !important;
+                    top: 0 !important;
                     left: 0 !important;
-                    right: 0 !important;
+                    width: 100% !important;
+                    height: 100% !important;
+                    background: linear-gradient(90deg, transparent 0%, rgba(0, 255, 255, 0.03) 50%, transparent 100%) !important;
                     pointer-events: none !important;
-                    z-index: 5 !important;
-                    display: flex !important;
-                    justify-content: space-around !important;
-                    padding: 0 50px !important;
+                    z-index: 1 !important;
+                    animation: glitch-sweep 3s ease-in-out infinite !important;
                 }
                 
-                .mario-block {
-                    width: 40px !important;
-                    height: 40px !important;
-                    background: #fc9838 !important;
-                    border: 3px solid #000000 !important;
-                    position: relative !important;
-                    box-shadow: inset -3px -3px 0 #884400, inset 3px 3px 0 #fcd4a8 !important;
+                @keyframes glitch-sweep {
+                    0% { transform: translateX(-100%); }
+                    100% { transform: translateX(100%); }
                 }
                 
-                .mario-block::before {
-                    content: "" !important;
-                    position: absolute !important;
-                    top: 8px !important;
-                    left: 8px !important;
-                    right: 8px !important;
-                    bottom: 8px !important;
-                    border: 2px solid #000000 !important;
-                }
-                
-                .question-block {
-                    background: #fcbc3c !important;
-                    animation: question-bounce 0.5s infinite !important;
-                }
-                
-                .question-block::after {
-                    content: "?" !important;
-                    position: absolute !important;
-                    top: 50% !important;
-                    left: 50% !important;
-                    transform: translate(-50%, -50%) !important;
-                    font-size: 28px !important;
-                    font-weight: bold !important;
-                    color: #ffffff !important;
-                    text-shadow: 2px 2px 0 #000000 !important;
-                }
-                
-                @keyframes question-bounce {
-                    0%, 100% { transform: translateY(0); }
-                    50% { transform: translateY(-5px); }
-                }
-                
-                /* Mario Sprite */
-                .mario-sprite {
+                /* Digital Grid Background */
+                .grid-overlay {
                     position: fixed !important;
-                    bottom: 150px !important;
-                    width: 48px !important;
-                    height: 48px !important;
-                    z-index: 10000 !important;
-                    display: block !important;
-                    transform: scale(1.5) !important;
-                }
-                
-                /* 8-bit Mario using box shadows */
-                .mario-sprite::before {
-                    content: "" !important;
-                    position: absolute !important;
-                    width: 4px !important;
-                    height: 4px !important;
-                    background: #f83800 !important;
-                    box-shadow:
-                        /* Red hat */
-                        4px 0 0 #f83800, 8px 0 0 #f83800, 12px 0 0 #f83800,
-                        0 4px 0 #f83800, 4px 4px 0 #f83800, 8px 4px 0 #f83800, 12px 4px 0 #f83800, 16px 4px 0 #f83800,
-                        /* Face */
-                        4px 8px 0 #fcbc3c, 8px 8px 0 #fcbc3c, 12px 8px 0 #fcbc3c,
-                        0 12px 0 #fcbc3c, 4px 12px 0 #fcbc3c, 8px 12px 0 #fcbc3c, 12px 12px 0 #fcbc3c,
-                        /* Overalls */
-                        4px 16px 0 #0000fc, 8px 16px 0 #0000fc, 12px 16px 0 #0000fc,
-                        0 20px 0 #0000fc, 4px 20px 0 #0000fc, 8px 20px 0 #0000fc, 12px 20px 0 #0000fc, 16px 20px 0 #0000fc,
-                        /* Legs */
-                        4px 24px 0 #884400, 12px 24px 0 #884400 !important;
+                    top: 0 !important;
+                    left: 0 !important;
+                    width: 100% !important;
+                    height: 100% !important;
+                    background-image: 
+                        linear-gradient(rgba(0, 255, 255, 0.1) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(0, 255, 255, 0.1) 1px, transparent 1px) !important;
+                    background-size: 50px 50px !important;
+                    pointer-events: none !important;
+                    z-index: 0 !important;
+                    opacity: 0.3 !important;
                 }
             `;
-            document.head.appendChild(marioStyles);
+            document.head.appendChild(hackerStyles);
             
-            // Add hills
-            for (let i = 1; i <= 3; i++) {
-                const hill = document.createElement('div');
-                hill.className = `mario-hill hill-${i}`;
-                document.body.appendChild(hill);
-            }
+            // Add grid overlay
+            const grid = document.createElement('div');
+            grid.className = 'grid-overlay';
+            document.body.appendChild(grid);
             
-            // Add clouds
-            for (let i = 1; i <= 3; i++) {
-                const cloud = document.createElement('div');
-                cloud.className = `mario-cloud cloud-${i}`;
-                document.body.appendChild(cloud);
-            }
+            // Add glitch overlay
+            const glitch = document.createElement('div');
+            glitch.className = 'glitch-overlay';
+            document.body.appendChild(glitch);
             
-            // Add Mario sprite with JS animation
-            const mario = document.createElement('div');
-            mario.className = 'mario-sprite';
-            mario.style.left = '-50px';
-            document.body.appendChild(mario);
-            
-            // Animate Mario walking
-            let pos = -50;
-            const walkMario = setInterval(() => {
-                pos += 3;
-                if (pos > window.innerWidth + 50) {
-                    pos = -50;
-                }
-                mario.style.left = pos + 'px';
-            }, 30);
-            
-            // Add blocks container
-            const blocksContainer = document.createElement('div');
-            blocksContainer.className = 'mario-blocks';
-            
-            // Add various blocks
-            const blocks = [
-                'mario-block',
-                'mario-block question-block',
-                'mario-block',
-                'mario-block question-block',
-                'mario-block',
-                'mario-block question-block',
-                'mario-block'
+            // Add floating terminal windows
+            const terminalCode = [
+                '> ACCESSING MAINFRAME...\n> DECRYPTING FILES...\n> CONNECTION SECURE\n> ROOT@PANTHEON:~#\n> ls -la /secure/*\n> chmod 777 ACCESS\n> GRANTED',
+                '> SYSTEM STATUS: OK\n> FIREWALLS: DISABLED\n> ENCRYPTION: BYPASSED\n> USER: SYSOP\n> PRIVILEGES: ELEVATED\n> ACCESS LEVEL: MAX',
+                '> ping pantheon.bbs\n> traceroute 192.168.1.1\n> nmap -sV localhost\n> ssh root@server\n> Password: ********\n> Login successful'
             ];
             
-            blocks.forEach(blockClass => {
-                const block = document.createElement('div');
-                block.className = blockClass;
-                blocksContainer.appendChild(block);
-            });
+            for (let i = 1; i <= 3; i++) {
+                const terminal = document.createElement('div');
+                terminal.className = `hacker-terminal terminal-${i}`;
+                terminal.textContent = terminalCode[i - 1];
+                document.body.appendChild(terminal);
+            }
             
-            document.body.appendChild(blocksContainer);
+            // Add binary rain
+            for (let i = 0; i < 15; i++) {
+                const binary = document.createElement('div');
+                binary.className = 'binary-stream';
+                binary.style.left = (i * 7 + Math.random() * 5) + '%';
+                binary.style.animationDuration = (10 + Math.random() * 10) + 's';
+                binary.style.animationDelay = (Math.random() * 5) + 's';
+                
+                let binaryText = '';
+                for (let j = 0; j < 30; j++) {
+                    binaryText += Math.random() > 0.5 ? '1' : '0';
+                    if (j % 8 === 7) binaryText += '<br>';
+                }
+                binary.innerHTML = binaryText;
+                document.body.appendChild(binary);
+            }
         }
 
         // Visitor counter
