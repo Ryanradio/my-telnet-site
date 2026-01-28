@@ -677,6 +677,111 @@
            DOS LOGIN SCREEN STYLES - END
            ============================================ */
 
+        /* ASCII Art Gallery Styles */
+        .ascii-gallery {
+            background: rgba(0, 17, 0, 0.6);
+            border: 2px solid #0f0;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+        }
+
+        .gallery-header {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: clamp(1rem, 2.5vw, 1.5rem);
+            border-bottom: 1px solid #0f0;
+            padding-bottom: 10px;
+        }
+
+        .ascii-display {
+            background: #000;
+            border: 1px solid #0f0;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: clamp(0.5rem, 1.5vw, 0.75rem);
+            line-height: 1.1;
+            text-align: center;
+            overflow-x: auto;
+            margin-bottom: 15px;
+            white-space: pre;
+        }
+
+        .game-info {
+            text-align: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(0, 255, 0, 0.05);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+        }
+
+        .game-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .game-author {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .gallery-controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .gallery-btn {
+            background: #000;
+            border: 2px solid #0f0;
+            color: #0f0;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .gallery-btn:hover {
+            background: rgba(0, 255, 0, 0.1);
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+            transform: translateY(-2px);
+        }
+
+        /* Collapsible Guestbook */
+        .collapsible-header {
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.3s;
+        }
+
+        .collapsible-header:hover {
+            text-shadow: 0 0 15px currentColor;
+            transform: translateX(5px);
+        }
+
+        .collapsible-content {
+            max-height: 2000px;
+            overflow: hidden;
+            transition: max-height 0.5s ease-out, opacity 0.3s;
+            opacity: 1;
+        }
+
+        .collapsible-content.collapsed {
+            max-height: 0;
+            opacity: 0;
+        }
+
+        .collapse-indicator {
+            display: inline-block;
+            transition: transform 0.3s;
+        }
+
+        .collapse-indicator.collapsed {
+            transform: rotate(-90deg);
+        }
+
         .ascii-art {
             font-size: 0.6rem;
             line-height: 1;
@@ -846,8 +951,31 @@
             </div>
         </div>
 
+        <!-- ASCII Door Games Gallery -->
+        <div class="connection-panel ascii-gallery">
+            <div class="gallery-header">
+                ═══ CLASSIC BBS DOOR GAMES ARCHIVE ═══
+            </div>
+            
+            <div class="ascii-display" id="asciiArtDisplay">
+                <!-- ASCII art will be inserted here -->
+            </div>
+            
+            <div class="game-info" id="gameInfo">
+                <!-- Game info will be inserted here -->
+            </div>
+            
+            <div class="gallery-controls">
+                <button class="gallery-btn" onclick="previousArt()">◄ PREVIOUS</button>
+                <button class="gallery-btn" onclick="nextArt()">NEXT ►</button>
+            </div>
+        </div>
+
         <div class="connection-panel">
-            <h2>▼ GUEST BOOK · SIGN IN ▼</h2>
+            <h2 class="collapsible-header" onclick="toggleGuestbook()">
+                <span class="collapse-indicator" id="guestbookIndicator">▼</span> GUEST BOOK · SIGN IN <span class="collapse-indicator" id="guestbookIndicator2">▼</span>
+            </h2>
+            <div class="collapsible-content" id="guestbookContent">
             <div style="background: #000; border: 1px solid currentColor; padding: 20px; margin-bottom: 20px;">
                 <div style="text-align: center; margin-bottom: 20px; opacity: 0.8; font-size: 0.9em;">
                     📝 Leave your mark on The Pantheon! All messages are welcome. 📝
@@ -890,6 +1018,7 @@
                     </div>
                 </div>
             </div>
+            </div> <!-- End collapsible-content -->
         </div>
 
         <div id="fTelnetContainer"></div>
@@ -1240,6 +1369,597 @@
         /* ============================================
            DOS LOGIN FUNCTIONS - END
            ============================================ */
+
+        // ASCII Art Gallery
+        const doorGameArt = [
+            {
+                title: "Legend of the Red Dragon",
+                author: "by Seth Able Robinson (1989)",
+                year: "The most popular BBS door game ever!",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║    THE LEGEND OF THE RED DRAGON                  ║
+    ║                                                    ║
+    ║              /\\                                    ║
+    ║             /  \\          ,   ,                   ║
+    ║            /____\\        /   /                    ║
+    ║           /      \\      /   /                     ║
+    ║          /  L.O.R.D.   /___/                      ║
+    ║         /              \\                          ║
+    ║        /    /\\          \\                         ║
+    ║       /    /  \\          \\                        ║
+    ║      /    /    \\          \\                       ║
+    ║     /__  /______\\     =====\\====                  ║
+    ║        \\/        \\   /      \\                     ║
+    ║                   \\ /________\\                    ║
+    ║                                                    ║
+    ║        "Slay the Dragon, Save the Realm!"        ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Crossroads of the Elements",
+                author: "by Steve Laskey (1991)",
+                year: "Elemental magic combat",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║      CROSSROADS OF THE ELEMENTS                  ║
+    ║                                                    ║
+    ║           FIRE        AIR                         ║
+    ║             🔥    *    💨                         ║
+    ║              \\    |    /                          ║
+    ║               \\   |   /                           ║
+    ║                \\ | /                             ║
+    ║         ═══════ ╬ ═══════                        ║
+    ║                / | \\                             ║
+    ║               /   |   \\                           ║
+    ║              /    |    \\                          ║
+    ║             💧    |    ⛰️                         ║
+    ║          WATER       EARTH                        ║
+    ║                                                    ║
+    ║      "Master the Elements, Control Destiny!"     ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Tele-Arena 5.6 GOLD",
+                author: "by Joseph Masters III (1988)",
+                year: "Strategic gladiator combat",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║          TELE-ARENA 5.6 GOLD                     ║
+    ║                                                    ║
+    ║     ___________________________________            ║
+    ║    |                                   |           ║
+    ║    |    ⚔️                    ⚔️      |           ║
+    ║    |   /|\\     ARENA        /|\\      |           ║
+    ║    |   / \\      GOLD        / \\      |           ║
+    ║    |                                   |           ║
+    ║    |    🛡️    VS    🛡️                |           ║
+    ║    |___________________________________|           ║
+    ║                                                    ║
+    ║           CROWD: ▓▓▓▓▓▓▓▓▓▓▓▓▓▓                   ║
+    ║                                                    ║
+    ║       "Train, Fight, Become Champion!"           ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Kannons & Katapults",
+                author: "by Scott Skowronski (1993)",
+                year: "Artillery warfare strategy",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║        KANNONS & KATAPULTS                       ║
+    ║                                                    ║
+    ║         ___                                       ║
+    ║        /   \\    *BOOM*                           ║
+    ║       |  O  |    ***     ___                     ║
+    ║        \\___/      **    /   \\                    ║
+    ║         |||        *   |  O  |                   ║
+    ║        [===]          \\___/                     ║
+    ║       /|||||\\          |||                       ║
+    ║      //|||||\\\\        [===]                      ║
+    ║     ///|||||\\\\\\      /|||||\\                    ║
+    ║    ▓▓▓▓▓▓▓▓▓▓▓▓    ▓▓▓▓▓▓▓▓▓                    ║
+    ║                                                    ║
+    ║        "Angle, Power, FIRE!"                     ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Blademaster",
+                author: "by Mike Snyder (1993)",
+                year: "Sword fighting mastery",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║            BLADEMASTER                           ║
+    ║                                                    ║
+    ║              __|__                                ║
+    ║           /--------\\                              ║
+    ║          /          \\                             ║
+    ║         |   SWORD    |                            ║
+    ║         |   MASTER   |                            ║
+    ║          \\          /                             ║
+    ║           \\--------/                              ║
+    ║              ||||                                 ║
+    ║              ||||                                 ║
+    ║              |__|                                 ║
+    ║               ||                                  ║
+    ║                                                    ║
+    ║      "Master the Blade, Become Legend!"          ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Fazuul",
+                author: "by Jason Coleman (1994)",
+                year: "Dark fantasy adventure",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║              FAZUUL                              ║
+    ║                                                    ║
+    ║            _____                                  ║
+    ║           /     \\                                 ║
+    ║          | () () |    DARK                        ║
+    ║          |   ^   |    SORCERER                    ║
+    ║          |  \\_/  |                                ║
+    ║           \\_____/                                 ║
+    ║             |||                                   ║
+    ║            /|||\\                                  ║
+    ║           / ||| \\                                 ║
+    ║             | |                                   ║
+    ║            /   \\                                  ║
+    ║                                                    ║
+    ║       "Face the Dark Lord Fazuul!"               ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Galactic Empire",
+                author: "by Martech Software (1991)",
+                year: "Space conquest strategy",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║         GALACTIC EMPIRE                          ║
+    ║                                                    ║
+    ║      *    .  *    GALAXY   .    *                ║
+    ║   .    *       ___MAP___      *     .            ║
+    ║      *    .   /         \\  .    *                ║
+    ║   .      *   |  O  O  O  |      .    *           ║
+    ║      *       |  O [*] O  |  *        .           ║
+    ║   .     *    |  O  O  O  |      *                ║
+    ║      *    .   \\_________/  .       *             ║
+    ║   .      *         |         *         .         ║
+    ║      *       [==EMPIRE==]        *               ║
+    ║   .     *         ||         .       *           ║
+    ║                                                    ║
+    ║        "Conquer the Galaxy, Rule All!"           ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Mutants!",
+                author: "by Steve Lorenz (1991)",
+                year: "Post-apocalyptic survival",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║             MUTANTS!                             ║
+    ║                                                    ║
+    ║         ___                                       ║
+    ║        /o o\\      WASTELAND                      ║
+    ║       (  ^  )       AHEAD                         ║
+    ║        \\ ~ /                                      ║
+    ║         |||                                       ║
+    ║        /|||\\       ☢️  ☢️  ☢️                    ║
+    ║       / ||| \\                                     ║
+    ║                                                    ║
+    ║      ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓                        ║
+    ║      RADIOACTIVE WASTELAND                        ║
+    ║                                                    ║
+    ║    "Survive the Wasteland, Evolve or Die!"       ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Swords and Sorcery",
+                author: "by Gary Sanders (1992)",
+                year: "Fantasy RPG adventure",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║        SWORDS AND SORCERY                        ║
+    ║                                                    ║
+    ║        ⚔️          ✨                             ║
+    ║       SWORD      MAGIC                            ║
+    ║          \\        /                               ║
+    ║           \\      /                                ║
+    ║            \\    /                                 ║
+    ║             \\  /                                  ║
+    ║              \\/                                   ║
+    ║           [HERO]                                  ║
+    ║            /|\\                                    ║
+    ║           / | \\                                   ║
+    ║                                                    ║
+    ║     "Wield Steel and Spell Together!"            ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Swords of Chaos",
+                author: "by Todd Henschell (1993)",
+                year: "Medieval warfare",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║          SWORDS OF CHAOS                         ║
+    ║                                                    ║
+    ║           ⚔️  ⚔️  ⚔️                             ║
+    ║            \\  |  /                                ║
+    ║             \\ | /                                 ║
+    ║              \\|/                                  ║
+    ║          [WARRIOR]                                ║
+    ║              /|\\                                  ║
+    ║             / | \\                                 ║
+    ║            /  |  \\                                ║
+    ║           🛡️  🛡️  🛡️                             ║
+    ║                                                    ║
+    ║        "Chaos Reigns, Order Falls!"              ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Trade Wars 2002",
+                author: "by Gary Martin (1986)",
+                year: "Epic space trading strategy",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║         TRADE WARS 2002                          ║
+    ║                                                    ║
+    ║              *  .  *    .    *                    ║
+    ║         *        .    *        .                  ║
+    ║     .      *   [===]     *         .             ║
+    ║        *      /=====\\        .                    ║
+    ║    .        </=======\\>    *                      ║
+    ║         *   \\=========/  .        *              ║
+    ║      .       \\=======/        .                   ║
+    ║    *     .    \\====/    *            .           ║
+    ║       .         \\/                                ║
+    ║            *         .    *     .                ║
+    ║   *    .       *         .          *            ║
+    ║                                                    ║
+    ║      "Conquer the Universe, One Sector at a Time" ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "MajorMUD",
+                author: "by Metropolis Inc (1994)",
+                year: "Multi-user dungeon classic",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║             MAJORMUD                             ║
+    ║                                                    ║
+    ║          ___________________                      ║
+    ║         |  DUNGEON ENTRANCE |                     ║
+    ║         |   ___________     |                     ║
+    ║         |  |    ___    |    |                     ║
+    ║         |  |   |🗝️|   |    |                     ║
+    ║         |  |   |___|   |    |                     ║
+    ║         |  |___________|    |                     ║
+    ║         |       ||||        |                     ║
+    ║         |___________________|                     ║
+    ║              ||      ||                           ║
+    ║                                                    ║
+    ║      "Explore, Battle, Loot, Level Up!"          ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "CyberTank",
+                author: "by Noel Cower (1994)",
+                year: "Futuristic tank combat",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║            CYBERTANK                             ║
+    ║                                                    ║
+    ║              [====]                               ║
+    ║             /======\\                              ║
+    ║            |  TANK  |                             ║
+    ║         __/|________|\\__                          ║
+    ║        |  ============  |                         ║
+    ║        |  |▓▓▓▓▓▓▓▓|  |                         ║
+    ║        |__|▓▓▓▓▓▓▓▓|__|                         ║
+    ║         |||          |||                          ║
+    ║        [===]        [===]                         ║
+    ║         |||          |||                          ║
+    ║                                                    ║
+    ║       "Armor Up, Lock On, Destroy!"              ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Oltima 2000",
+                author: "by Mike McQuesten (1991)",
+                year: "Fantasy world exploration",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║            OLTIMA 2000                           ║
+    ║                                                    ║
+    ║           /\\                                      ║
+    ║          /  \\      CASTLE                        ║
+    ║         /____\\                                    ║
+    ║        /|    |\\                                   ║
+    ║       / | || | \\                                  ║
+    ║      /  |_||_|  \\                                 ║
+    ║     /____________\\                                ║
+    ║    |   |    |   |                                ║
+    ║    |___|____|___|                                ║
+    ║                                                    ║
+    ║     "Explore the Realm of Oltima!"               ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Barren Realms Elite",
+                author: "by Mehul Patel (1989)",
+                year: "Strategic empire building",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║       BARREN REALMS ELITE (B.R.E.)               ║
+    ║                                                    ║
+    ║              ___________                          ║
+    ║             /           \\                         ║
+    ║            /   PLANET    \\                        ║
+    ║           |    .-""-.     |                       ║
+    ║           |   /      \\    |                       ║
+    ║           |  |  o  o  |   |                       ║
+    ║           |   \\      /    |                       ║
+    ║           |    '-__-'     |                       ║
+    ║            \\             /                        ║
+    ║             \\___________/                         ║
+    ║                  | |                              ║
+    ║              [=========]                          ║
+    ║               STARBASE                            ║
+    ║                                                    ║
+    ║           "Build Your Galactic Empire!"          ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "The Pit",
+                author: "by John Dailey (1991)",
+                year: "Brutal gladiator combat",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║              THE PIT                             ║
+    ║                                                    ║
+    ║          ___________________                      ║
+    ║         |                   |                     ║
+    ║         |    o      vs      o|                    ║
+    ║         |   /|\\            /|\\                    ║
+    ║         |   / \\            / \\                    ║
+    ║         |                   |                     ║
+    ║         |___________________|                     ║
+    ║        /|                   |\\                    ║
+    ║       / |    GLADIATORS     | \\                   ║
+    ║      /  |     BATTLE!       |  \\                  ║
+    ║     /   |                   |   \\                 ║
+    ║    /____|___________________|____\\                ║
+    ║                                                    ║
+    ║         "Fight to the Death!"                    ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Usurper",
+                author: "by Jakob Dangarden (1994)",
+                year: "Dark dungeon crawler",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║               USURPER                            ║
+    ║                                                    ║
+    ║          .--.                                     ║
+    ║         /    \\       ___                          ║
+    ║        |  ()  |     /   \\                         ║
+    ║         \\    /     |  Θ  |                        ║
+    ║          '--'       \\_@_/                         ║
+    ║           |           |                           ║
+    ║          /|\\         /|\\                          ║
+    ║         / | \\       / | \\                         ║
+    ║                                                    ║
+    ║         KNIGHT    vs    DEMON                    ║
+    ║                                                    ║
+    ║      "Descend into Darkness, Claim the Throne!"  ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Food Fight",
+                author: "by Sean Griffin (1992)",
+                year: "Cafeteria chaos!",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║             FOOD FIGHT!                          ║
+    ║                                                    ║
+    ║              _____                                ║
+    ║             /     \\      *SPLAT*                  ║
+    ║            |   o   |       ***                    ║
+    ║             \\_____/        *  o                   ║
+    ║                |          /|\\ |                   ║
+    ║               /|\\         / \\/ \\                  ║
+    ║              / | \\                                ║
+    ║                                                    ║
+    ║       🍕  🍔  🌭  🍟  🥤  🌮                    ║
+    ║                                                    ║
+    ║     "Throw Food, Make Friends, Rule School!"     ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "The Clans",
+                author: "by J.P. Hovelmann (1994)",
+                year: "Vampire gang warfare",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║             THE CLANS                            ║
+    ║                                                    ║
+    ║              /\\  /\\                               ║
+    ║             /  \\/  \\      VAMPIRE                 ║
+    ║            |  o  o  |     CLANS                   ║
+    ║            |    ^   |                             ║
+    ║             \\  \\_/  /                             ║
+    ║              \\ --- /                              ║
+    ║               \\   /                               ║
+    ║                | |                                ║
+    ║               /| |\\                               ║
+    ║              / | | \\                              ║
+    ║                                                    ║
+    ║      "Rule the Night, Control the City!"         ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Operation: Overkill II",
+                author: "by Dustin Nulf (1992)",
+                year: "Post-apocalyptic combat RPG",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║       OPERATION: OVERKILL II                     ║
+    ║                                                    ║
+    ║         ___                                       ║
+    ║        |   |  SOLDIER    ☢️                       ║
+    ║        | O |   READY                              ║
+    ║        |___|                                      ║
+    ║         |||                                       ║
+    ║        [===]  <>=======                           ║
+    ║        /|||\\                                      ║
+    ║       / ||| \\                                     ║
+    ║                                                    ║
+    ║    ▓▓▓▓▓▓▓▓ WASTELAND ▓▓▓▓▓▓▓▓                  ║
+    ║                                                    ║
+    ║        "Survive, Scavenge, Dominate!"            ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Planets: TEOS",
+                author: "by Scott Stribrny (1994)",
+                year: "Space colonization strategy",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║          PLANETS: T.E.O.S.                       ║
+    ║                                                    ║
+    ║      *       ___        *                         ║
+    ║         *   /   \\   .       *                     ║
+    ║    .       | O O |        .                       ║
+    ║       *     \\___/    *         .                  ║
+    ║         .     |         .    *                    ║
+    ║    *        [===]   *            .                ║
+    ║       .    /|||||\\       *                        ║
+    ║         *    |||      .       *                   ║
+    ║    .      COLONY         .                        ║
+    ║        *       .    *         .                   ║
+    ║                                                    ║
+    ║      "Colonize Worlds, Build Empire!"            ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Global War",
+                author: "by Joel Bergen (1991)",
+                year: "World domination strategy",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║            GLOBAL WAR                            ║
+    ║                                                    ║
+    ║          _______________                          ║
+    ║         /               \\                         ║
+    ║        /   WORLD  MAP    \\                        ║
+    ║       |    ___  ___  ___  |                       ║
+    ║       |   |▓▓||▓▓||▓▓|   |                       ║
+    ║       |   |▓▓||▓▓||▓▓|   |                       ║
+    ║       |    ‾‾‾  ‾‾‾  ‾‾‾  |                       ║
+    ║        \\                 /                        ║
+    ║         \\_______________ /                        ║
+    ║                                                    ║
+    ║        "Conquer Earth, Rule All!"                ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Solar Realms Elite",
+                author: "by Amit Patel (1991)",
+                year: "Space strategy warfare",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║       SOLAR REALMS ELITE (S.R.E.)                ║
+    ║                                                    ║
+    ║           ☀️     *    .    *                      ║
+    ║      *      SUN      .         *                  ║
+    ║         .        *         .                      ║
+    ║    *        O  o  .  o  O      *                  ║
+    ║       .    PLANETS    *                           ║
+    ║         *        .         .                      ║
+    ║    .        [========]      *                     ║
+    ║         *     FLEET      .                        ║
+    ║      .    *         .         *                   ║
+    ║                                                    ║
+    ║      "Dominate the Solar System!"                ║
+    ╚════════════════════════════════════════════════════╝`
+            },
+            {
+                title: "Murder Motel",
+                author: "by Kevin Price (1993)",
+                year: "Mystery murder solving",
+                art: `
+    ╔════════════════════════════════════════════════════╗
+    ║           MURDER MOTEL                           ║
+    ║                                                    ║
+    ║         ___________________                       ║
+    ║        |  MOTEL  |  MOTEL  |                      ║
+    ║        |  ROOM   |  ROOM   |                      ║
+    ║        |    1    |    2    |                      ║
+    ║        |   ___   |   ___   |                      ║
+    ║        |  |🚪|  |  |🚪|  |                      ║
+    ║        |___|___|___|___|___|                      ║
+    ║              ⚠️ CRIME SCENE ⚠️                    ║
+    ║                                                    ║
+    ║       "Solve the Murder, Catch Killer!"          ║
+    ╚════════════════════════════════════════════════════╝`
+            }
+        ];
+
+        let currentArtIndex = 0;
+
+        function displayArt(index) {
+            const artDisplay = document.getElementById('asciiArtDisplay');
+            const gameInfo = document.getElementById('gameInfo');
+            
+            if (artDisplay && gameInfo) {
+                const game = doorGameArt[index];
+                artDisplay.textContent = game.art;
+                gameInfo.innerHTML = `
+                    <div class="game-title">${game.title}</div>
+                    <div class="game-author">${game.author}</div>
+                    <div class="game-author" style="font-size: 0.85em; margin-top: 5px;">${game.year}</div>
+                `;
+            }
+        }
+
+        function nextArt() {
+            currentArtIndex = (currentArtIndex + 1) % doorGameArt.length;
+            displayArt(currentArtIndex);
+        }
+
+        function previousArt() {
+            currentArtIndex = (currentArtIndex - 1 + doorGameArt.length) % doorGameArt.length;
+            displayArt(currentArtIndex);
+        }
+
+        // Initialize gallery with random art
+        window.addEventListener('DOMContentLoaded', () => {
+            currentArtIndex = Math.floor(Math.random() * doorGameArt.length);
+            displayArt(currentArtIndex);
+        });
+
+        // Guestbook Toggle
+        function toggleGuestbook() {
+            const content = document.getElementById('guestbookContent');
+            const indicator1 = document.getElementById('guestbookIndicator');
+            const indicator2 = document.getElementById('guestbookIndicator2');
+            
+            if (content && indicator1 && indicator2) {
+                content.classList.toggle('collapsed');
+                indicator1.classList.toggle('collapsed');
+                indicator2.classList.toggle('collapsed');
+                
+                // Update indicator text
+                if (content.classList.contains('collapsed')) {
+                    indicator1.textContent = '►';
+                    indicator2.textContent = '◄';
+                } else {
+                    indicator1.textContent = '▼';
+                    indicator2.textContent = '▼';
+                }
+            }
+        }
 
         // Retro Loading Screen Sequence
         async function startLoadingSequence() {
