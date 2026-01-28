@@ -3379,7 +3379,7 @@
                     qrContainer.innerHTML = '';
                     
                     // Generate real scannable QR code
-                    const unlockUrl = window.location.origin + '/unlock.html?session=' + terminalSessionId;
+                    const unlockUrl = window.location.origin + '/my-telnet/site/unlock.html?session=' + terminalSessionId;
                     new QRCode(qrContainer, {
                         text: unlockUrl,
                         width: 200,
