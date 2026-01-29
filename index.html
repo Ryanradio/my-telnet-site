@@ -3550,7 +3550,7 @@
                     
                     // Generate real scannable QR code with full path
                     const currentPath = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
-                    const unlockUrl = currentPath + 'unlock.html?session=' + terminalSessionId;
+                    const unlockUrl = currentPath + '/my-telnet-site/unlock.html?session=' + terminalSessionId;
                     new QRCode(qrContainer, {
                         text: unlockUrl,
                         width: 200,
