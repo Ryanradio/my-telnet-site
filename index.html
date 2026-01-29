@@ -1202,6 +1202,70 @@
             display: inline-block;
         }
 
+        /* ============================================
+           FLYING TOASTERS SCREENSAVER - START
+           ============================================ */
+        .screensaver-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 99997;
+            display: none;
+        }
+
+        .screensaver-overlay.active {
+            display: block;
+        }
+
+        .toaster {
+            position: absolute;
+            font-size: 40px;
+            animation: fly-across 8s linear infinite;
+            opacity: 0.9;
+        }
+
+        @keyframes fly-across {
+            0% {
+                left: -100px;
+                transform: translateY(0) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-20px) rotate(5deg);
+            }
+            100% {
+                left: 100%;
+                transform: translateY(0) rotate(0deg);
+            }
+        }
+
+        .toast {
+            position: absolute;
+            font-size: 30px;
+            animation: toast-pop 3s ease-in-out infinite;
+        }
+
+        @keyframes toast-pop {
+            0%, 100% { transform: translateY(0) scale(1); opacity: 0.8; }
+            50% { transform: translateY(-30px) scale(1.2); opacity: 1; }
+        }
+
+        .screensaver-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            font-size: 1.5em;
+            text-align: center;
+            text-shadow: 0 0 10px #0f0;
+            opacity: 0.5;
+        }
+        /* SCREENSAVER - END */
+
         .ascii-art {
             font-size: 0.6rem;
             line-height: 1;
@@ -3816,31 +3880,21 @@
             
             if (terminal && terminal.classList.contains('active')) return true;
             if (sysopPanel && sysopPanel.classList.contains('active')) return true;
-            
-            // Check if fTelnet is actually being used (has iframe AND iframe is visible)
-            if (ftelnet) {
+            // Check if fTelnet iframe is focused or visible
+            if (ftelnet && ftelnet.querySelector('iframe')) {
                 const iframe = ftelnet.querySelector('iframe');
-                // Only block if iframe exists AND has been loaded (has src)
-                if (iframe && iframe.src && iframe.offsetHeight > 0) {
-                    return true;
-                }
+                if (iframe.offsetHeight > 0) return true; // fTelnet is visible
             }
             
             return false;
         }
 
         function startScreensaver() {
-            console.log('Screensaver attempt - Enabled:', screensaverEnabled, 'Engaged:', isUserEngaged());
-            
             if (!screensaverEnabled || isUserEngaged()) return;
             
             const screensaver = document.getElementById('screensaver');
-            if (!screensaver) {
-                console.log('Screensaver element not found!');
-                return;
-            }
+            if (!screensaver) return;
             
-            console.log('Starting screensaver!');
             screensaver.classList.add('active');
             screensaver.innerHTML = ''; // Clear any existing toasters
             
@@ -3866,37 +3920,22 @@
         }
 
         function resetScreensaverTimer() {
-            console.log('Timer reset - screensaver enabled:', screensaverEnabled);
             clearTimeout(screensaverTimeout);
             stopScreensaver();
             userIsActive = true;
             
             // Only set timeout if screensaver is enabled
             if (screensaverEnabled) {
-                console.log('Setting screensaver timeout for 10 seconds...');
                 screensaverTimeout = setTimeout(() => {
                     userIsActive = false;
-                    console.log('Timeout complete, attempting to start screensaver...');
                     startScreensaver();
-                }, 10000); // 10 seconds for testing (change to 120000 for 2 minutes)
+                }, 120000); // 2 minutes
             }
         }
 
-        // Activity detection - less sensitive to movement
-        let lastMouseMove = 0;
-        
-        // Only reset on deliberate actions
-        ['mousedown', 'keypress', 'scroll', 'touchstart', 'click'].forEach(event => {
+        // Activity detection
+        ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'].forEach(event => {
             document.addEventListener(event, resetScreensaverTimer);
-        });
-        
-        // Mouse movement only resets if it's significant (debounced)
-        document.addEventListener('mousemove', (e) => {
-            const now = Date.now();
-            if (now - lastMouseMove > 3000) { // Only reset every 3 seconds of movement
-                lastMouseMove = now;
-                resetScreensaverTimer();
-            }
         });
 
         // Initial timer
