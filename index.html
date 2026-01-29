@@ -485,6 +485,124 @@
             opacity: 0.4;
         }
 
+        /* Clippy Assistant */
+        .clippy-container {
+            position: fixed;
+            bottom: 200px;
+            right: 30px;
+            z-index: 10001;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .clippy {
+            font-size: 4rem;
+            animation: clippy-bounce 2s ease-in-out infinite;
+            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
+        }
+
+        @keyframes clippy-bounce {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-10px) rotate(-5deg); }
+            50% { transform: translateY(0) rotate(0deg); }
+            75% { transform: translateY(-5px) rotate(5deg); }
+        }
+
+        .clippy-container:hover .clippy {
+            animation: clippy-wiggle 0.5s ease-in-out;
+        }
+
+        @keyframes clippy-wiggle {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-15deg) scale(1.1); }
+            75% { transform: rotate(15deg) scale(1.1); }
+        }
+
+        .clippy-bubble {
+            position: absolute;
+            bottom: 80px;
+            right: 0;
+            background: #ffffcc;
+            border: 2px solid #000;
+            border-radius: 10px;
+            padding: 15px 20px;
+            min-width: 250px;
+            max-width: 350px;
+            color: #000;
+            font-family: Arial, sans-serif;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            box-shadow: 4px 4px 8px rgba(0,0,0,0.3);
+            opacity: 0;
+            transform: scale(0.8);
+            pointer-events: none;
+            transition: all 0.3s ease-out;
+        }
+
+        .clippy-bubble.show {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: auto;
+        }
+
+        .clippy-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            right: 20px;
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 10px solid #000;
+        }
+
+        .clippy-bubble::before {
+            content: '';
+            position: absolute;
+            bottom: -7px;
+            right: 22px;
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 8px solid #ffffcc;
+            z-index: 1;
+        }
+
+        /* Flying Toasters Screensaver */
+        .screensaver-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 999998;
+            display: none;
+        }
+
+        .screensaver-overlay.active {
+            display: block;
+        }
+
+        .toaster {
+            position: absolute;
+            font-size: 3rem;
+            animation: fly-across 8s linear infinite;
+        }
+
+        @keyframes fly-across {
+            from {
+                left: -100px;
+                transform: rotate(0deg);
+            }
+            to {
+                left: 100%;
+                transform: rotate(360deg);
+            }
+        }
+
         /* Retro Loading Screen */
         .loading-screen {
             position: fixed;
@@ -1074,6 +1192,157 @@
             display: inline-block;
         }
 
+        /* ============================================
+           CLIPPY ASSISTANT - START
+           ============================================ */
+        .clippy-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 99998;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .clippy-character {
+            font-size: 80px;
+            animation: clippy-bounce 2s ease-in-out infinite;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+        }
+
+        @keyframes clippy-bounce {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-10px) rotate(-5deg); }
+            50% { transform: translateY(0) rotate(0deg); }
+            75% { transform: translateY(-5px) rotate(5deg); }
+        }
+
+        .clippy-character.talking {
+            animation: clippy-talk 0.5s ease-in-out;
+        }
+
+        @keyframes clippy-talk {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.1) rotate(-10deg); }
+            50% { transform: scale(1.05) rotate(10deg); }
+            75% { transform: scale(1.1) rotate(-5deg); }
+        }
+
+        .clippy-bubble {
+            position: absolute;
+            bottom: 100px;
+            right: 0;
+            background: #fffacd;
+            border: 2px solid #000;
+            border-radius: 10px;
+            padding: 15px 20px;
+            max-width: 250px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            font-size: 14px;
+            color: #000;
+            display: none;
+            animation: bubble-pop 0.3s ease-out;
+        }
+
+        .clippy-bubble.show {
+            display: block;
+        }
+
+        .clippy-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -20px;
+            right: 30px;
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 20px solid #fffacd;
+        }
+
+        .clippy-bubble::before {
+            content: '';
+            position: absolute;
+            bottom: -23px;
+            right: 28px;
+            width: 0;
+            height: 0;
+            border-left: 17px solid transparent;
+            border-right: 17px solid transparent;
+            border-top: 23px solid #000;
+        }
+
+        @keyframes bubble-pop {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* ============================================
+           FLYING TOASTERS SCREENSAVER - START
+           ============================================ */
+        .screensaver-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 99997;
+            display: none;
+        }
+
+        .screensaver-overlay.active {
+            display: block;
+        }
+
+        .toaster {
+            position: absolute;
+            font-size: 40px;
+            animation: fly-across 8s linear infinite;
+            opacity: 0.9;
+        }
+
+        @keyframes fly-across {
+            0% {
+                left: -100px;
+                transform: translateY(0) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-20px) rotate(5deg);
+            }
+            100% {
+                left: 100%;
+                transform: translateY(0) rotate(0deg);
+            }
+        }
+
+        .toast {
+            position: absolute;
+            font-size: 30px;
+            animation: toast-pop 3s ease-in-out infinite;
+        }
+
+        @keyframes toast-pop {
+            0%, 100% { transform: translateY(0) scale(1); opacity: 0.8; }
+            50% { transform: translateY(-30px) scale(1.2); opacity: 1; }
+        }
+
+        .screensaver-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            font-size: 1.5em;
+            text-align: center;
+            text-shadow: 0 0 10px #0f0;
+            opacity: 0.5;
+        }
+        /* SCREENSAVER - END */
+
         .ascii-art {
             font-size: 0.6rem;
             line-height: 1;
@@ -1177,6 +1446,17 @@
     <button class="sound-toggle" id="soundToggle" onclick="toggleSound()" title="Toggle dial-up sound">🔊</button>
     
     <div class="pi-symbol" onclick="checkSysopAccess(event)" title="π">π</div>
+    
+    <!-- Clippy Assistant -->
+    <div class="clippy-container" id="clippyContainer" onclick="showClippyMessage()">
+        <div class="clippy">📎</div>
+        <div class="clippy-bubble" id="clippyBubble"></div>
+    </div>
+    
+    <!-- Flying Toasters Screensaver -->
+    <div class="screensaver-overlay" id="screensaver">
+        <!-- Toasters will be added by JavaScript -->
+    </div>
     
     <!-- SYSOP Admin Panel -->
     <div class="sysop-panel" id="sysopPanel">
@@ -1395,6 +1675,22 @@
                 <div class="counter-digit">0</div>
             </div>
             <div style="font-size: 0.5rem; opacity: 0.3; margin-top: 5px; text-align: center; letter-spacing: 1px;">↑↑↓↓←→←→BA</div>
+        </div>
+    </div>
+
+    <!-- Clippy Assistant -->
+    <div class="clippy-container" id="clippyContainer">
+        <div class="clippy-character" id="clippyCharacter">📎</div>
+        <div class="clippy-bubble" id="clippyBubble">
+            <div id="clippyMessage">Hello! I'm Clippy!</div>
+        </div>
+    </div>
+
+    <!-- Flying Toasters Screensaver -->
+    <div class="screensaver-overlay" id="screensaver">
+        <div class="screensaver-text">
+            Press any key or move mouse to continue...<br>
+            <span style="font-size: 0.7em; margin-top: 10px; display: block;">PANTHEON BBS - Idle Mode</span>
         </div>
     </div>
 
@@ -3463,6 +3759,7 @@
                     addTerminalLine('ACTIONS:', 'info');
                     addTerminalLine('  /broadcast [msg] Send broadcast message');
                     addTerminalLine('  /counter [num]   Set visitor counter');
+                    addTerminalLine('  /screensaver     Toggle flying toasters');
                     addTerminalLine('  /reboot          Reboot system');
                     addTerminalLine('');
                     addTerminalLine('SPECIAL:', 'info');
@@ -3576,9 +3873,20 @@
                     addTerminalLine('✓ QR Terminal Access', 'info');
                     addTerminalLine('✓ DOS Login System', 'info');
                     addTerminalLine('✓ 24 Classic Door Games', 'info');
+                    addTerminalLine('✓ Clippy Assistant', 'info');
+                    addTerminalLine('✓ Flying Toasters Screensaver', 'info');
                     addTerminalLine('');
                     addTerminalLine('Preserving BBS culture ❤️', 'success');
                     addTerminalLine('');
+                    break;
+                case '/screensaver':
+                    const newState = toggleScreensaver();
+                    if (newState) {
+                        addTerminalLine('✓ Screensaver enabled', 'success');
+                        addTerminalLine('Flying toasters will appear after 2 min idle', 'info');
+                    } else {
+                        addTerminalLine('✓ Screensaver disabled', 'success');
+                    }
                     break;
                 default:
                     addTerminalLine('Unknown: ' + command, 'error');
@@ -3587,6 +3895,148 @@
         }
 
         /* TERMINAL SYSTEM - END */
+
+        /* ============================================
+           CLIPPY & SCREENSAVER - START
+           ============================================ */
+
+        // Clippy messages
+        const clippyMessages = [
+            "Hello! It looks like you're visiting a website. Can I help?",
+            "I'm Clippy! Your friendly digital assistant since 1997!",
+            "Did you know? You can use your mouse to click on things!",
+            "Tip: The best websites have hidden features... 👀",
+            "I notice you're clicking me. That's exactly what I'm here for!",
+            "Fun fact: This website has SEVERAL hidden features!",
+            "Your click-through rate is impressive! I'm taking notes.",
+            "Have you tried refreshing the page? No? Good, don't.",
+            "I see you're still here! Persistence is key in life.",
+            "Pro tip: Reading is fundamental. So is exploring!",
+            "Did you check the guestbook yet? Social proof matters!",
+            "I'm sensing you might be the curious type...",
+            "You know what? You seem trustworthy. Keep going...",
+            "Getting warmer! Not that there's anything to find... 👀",
+            "Only the REALLY patient people make it this far...",
+            "Okay fine! Try typing SYSOP anywhere on the page...",
+            "Also, there's a mysterious π symbol hidden somewhere...",
+            "The Konami Code works here: ↑↑↓↓←→←→BA",
+            "Type TERMINAL for command line access!",
+            "Shift+Click the π symbol. You're welcome.",
+            "Check the footer for more hints, clever one!",
+            "You've unlocked all my secrets! Now go explore! 🎮"
+        ];
+
+        let clippyIndex = 0;
+
+        function showClippyMessage() {
+            const bubble = document.getElementById('clippyBubble');
+            if (!bubble) return;
+            
+            bubble.textContent = clippyMessages[clippyIndex];
+            bubble.classList.add('show');
+            
+            // Move to next message
+            clippyIndex = (clippyIndex + 1) % clippyMessages.length;
+            
+            // Hide bubble after 5 seconds
+            setTimeout(() => {
+                bubble.classList.remove('show');
+            }, 5000);
+        }
+
+        // Show initial Clippy message after page loads
+        setTimeout(() => {
+            showClippyMessage();
+        }, 3000);
+
+        // Screensaver functionality
+        let screensaverEnabled = true;
+        let screensaverTimeout;
+        let userIsActive = true;
+
+        function isUserEngaged() {
+            // Check if user is in terminal, fTelnet, or other interactive elements
+            const terminal = document.getElementById('terminalOverlay');
+            const sysopPanel = document.getElementById('sysopPanel');
+            const ftelnet = document.getElementById('fTelnetContainer');
+            
+            if (terminal && terminal.classList.contains('active')) return true;
+            if (sysopPanel && sysopPanel.classList.contains('active')) return true;
+            // Check if fTelnet iframe is focused or visible
+            if (ftelnet && ftelnet.querySelector('iframe')) {
+                const iframe = ftelnet.querySelector('iframe');
+                if (iframe.offsetHeight > 0) return true; // fTelnet is visible
+            }
+            
+            return false;
+        }
+
+        function startScreensaver() {
+            if (!screensaverEnabled || isUserEngaged()) return;
+            
+            const screensaver = document.getElementById('screensaver');
+            if (!screensaver) return;
+            
+            screensaver.classList.add('active');
+            screensaver.innerHTML = ''; // Clear any existing toasters
+            
+            // Create flying toasters
+            for (let i = 0; i < 8; i++) {
+                setTimeout(() => {
+                    const toaster = document.createElement('div');
+                    toaster.className = 'toaster';
+                    toaster.textContent = '🍞';
+                    toaster.style.top = (Math.random() * 80 + 10) + '%';
+                    toaster.style.animationDelay = (Math.random() * 3) + 's';
+                    toaster.style.animationDuration = (6 + Math.random() * 4) + 's';
+                    screensaver.appendChild(toaster);
+                }, i * 1000);
+            }
+        }
+
+        function stopScreensaver() {
+            const screensaver = document.getElementById('screensaver');
+            if (screensaver) {
+                screensaver.classList.remove('active');
+                screensaver.innerHTML = '';
+            }
+        }
+
+        function resetScreensaverTimer() {
+            clearTimeout(screensaverTimeout);
+            stopScreensaver();
+            userIsActive = true;
+            
+            // Only set timeout if screensaver is enabled
+            if (screensaverEnabled) {
+                screensaverTimeout = setTimeout(() => {
+                    userIsActive = false;
+                    startScreensaver();
+                }, 120000); // 2 minutes
+            }
+        }
+
+        // Activity detection
+        ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'].forEach(event => {
+            document.addEventListener(event, resetScreensaverTimer);
+        });
+
+        // Initial timer
+        resetScreensaverTimer();
+
+        // Toggle screensaver from terminal
+        function toggleScreensaver() {
+            screensaverEnabled = !screensaverEnabled;
+            if (!screensaverEnabled) {
+                stopScreensaver();
+                clearTimeout(screensaverTimeout);
+            } else {
+                resetScreensaverTimer();
+            }
+            return screensaverEnabled;
+        }
+
+        /* CLIPPY & SCREENSAVER - END */
     </script>
     <style>
         @keyframes digit-flip {
