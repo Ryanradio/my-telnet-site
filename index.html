@@ -15,6 +15,7 @@
     • There's a mysterious π symbol hidden on the page...
       (Shift + Click or Ctrl + Shift + Click)
     • Type "SYSOP" anywhere on the page for admin access
+    • Type "TERMINAL" anywhere to open the command terminal
     
     Happy exploring! - The Sysop
     ═══════════════════════════════════════════════════════════════
@@ -1190,52 +1191,30 @@
 
             <div class="sysop-section">
                 <div class="sysop-section-title">
-                    <span class="status-indicator-sysop"></span> VISUAL EFFECTS
+                    <span class="status-indicator-sysop"></span> REMOTE TERMINAL ACCESS
                 </div>
-                <div class="sysop-control">
-                    <span>CRT Scanlines</span>
-                    <div class="sysop-toggle on" id="toggleScanlines" onclick="toggleScanlines()"></div>
-                </div>
-                <div class="sysop-control">
-                    <span>Background Stars</span>
-                    <div class="sysop-toggle on" id="toggleStars" onclick="toggleStars()"></div>
-                </div>
-                <div class="sysop-control">
-                    <span>Matrix Rain</span>
-                    <div class="sysop-toggle" id="toggleMatrix" onclick="toggleMatrixRain()"></div>
-                </div>
-            </div>
-
-            <div class="sysop-section">
-                <div class="sysop-section-title">
-                    <span class="status-indicator-sysop"></span> COLOR SCHEME
-                </div>
-                <div class="sysop-control">
-                    <span>Terminal Color</span>
-                    <select class="sysop-select" onchange="changeColorScheme(this.value)">
-                        <option value="green">Green (Classic)</option>
-                        <option value="amber">Amber</option>
-                        <option value="blue">Blue</option>
-                        <option value="red">Red</option>
-                        <option value="white">White</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="sysop-section">
-                <div class="sysop-section-title">
-                    <span class="status-indicator-sysop"></span> SYSTEM CONTROLS
-                </div>
-                <div class="sysop-control">
-                    <span>Visitor Counter</span>
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <input type="number" class="sysop-input" id="counterInput" placeholder="000000" max="999999">
-                        <button class="sysop-button" onclick="setCounter()">SET</button>
+                <div class="qr-code-container" id="qrCodeContainer">
+                    <div style="margin-bottom: 10px; font-size: 0.9em;">
+                        📱 Scan with phone to unlock full terminal control
+                    </div>
+                    <div id="qrCodeCanvas" class="qr-code-canvas"></div>
+                    <div style="margin-top: 10px; font-size: 0.8em; opacity: 0.7;">
+                        Session ID: <span id="sessionId">Generating...</span>
+                    </div>
+                    <div style="margin-top: 15px; font-size: 0.85em; padding: 10px; background: rgba(0, 255, 0, 0.05); border: 1px solid rgba(0, 255, 0, 0.2);">
+                        ℹ️ Terminal gives you full control:<br>
+                        Visual effects, colors, system info, and more!
                     </div>
                 </div>
+            </div>
+
+            <div class="sysop-section">
+                <div class="sysop-section-title">
+                    <span class="status-indicator-sysop"></span> QUICK ACTIONS
+                </div>
                 <div class="sysop-control">
-                    <span>Broadcast Message</span>
-                    <button class="sysop-button" onclick="showBroadcast()">📢 SEND</button>
+                    <span>System Reboot</span>
+                    <button class="sysop-button" onclick="systemReboot()" style="border-color: #f00; color: #f00;">⚠️ REBOOT</button>
                 </div>
                 <div class="sysop-control">
                     <span>Clear User Data</span>
@@ -1243,33 +1222,8 @@
                 </div>
             </div>
 
-            <div class="sysop-section">
-                <div class="sysop-section-title">
-                    <span class="status-indicator-sysop"></span> EMERGENCY
-                </div>
-                <div class="sysop-control">
-                    <span>System Reboot</span>
-                    <button class="sysop-button" onclick="systemReboot()" style="border-color: #f00; color: #f00;">⚠️ REBOOT</button>
-                </div>
-            </div>
-
-            <div class="sysop-section">
-                <div class="sysop-section-title">
-                    <span class="status-indicator-sysop"></span> REMOTE TERMINAL ACCESS
-                </div>
-                <div class="qr-code-container" id="qrCodeContainer">
-                    <div style="margin-bottom: 10px; font-size: 0.9em;">
-                        Scan with phone to unlock terminal
-                    </div>
-                    <div id="qrCodeCanvas" class="qr-code-canvas"></div>
-                    <div style="margin-top: 10px; font-size: 0.8em; opacity: 0.7;">
-                        Session ID: <span id="sessionId">Generating...</span>
-                    </div>
-                </div>
-            </div>
-
             <div style="text-align: center; margin-top: 20px; padding: 10px; opacity: 0.6; font-size: 0.8em;">
-                Press ESC to close | SysOp since 1995
+                Press ESC to close | For full control, scan QR code
             </div>
         </div>
     </div>
@@ -1427,7 +1381,7 @@
         <div class="footer">
             <p>Running on authentic Windows XP hardware · <span class="bbs-term">MajorBBS<span class="bbs-tooltip">Galacticomm's MajorBBS - One of the most popular commercial BBS software packages, known for supporting multiple phone lines and advanced features.</span></span> · A piece of computing history</p>
             <p style="margin-top: 10px; font-size: 0.8em;">Established 1995 · Preserving the golden age of dial-up <span class="bbs-term">BBSing<span class="bbs-tooltip">The act of calling and using a BBS - a hobby that peaked in the early 1990s with millions of systems worldwide.</span></span></p>
-            <p style="margin-top: 15px; font-size: 0.6em; opacity: 0.3; letter-spacing: 1px;">[SYSOP]</p>
+            <p style="margin-top: 15px; font-size: 0.6em; opacity: 0.3; letter-spacing: 1px;">[SYSOP] [TERMINAL]</p>
         </div>
         
         <div class="visitor-counter">
@@ -1699,6 +1653,9 @@
                 `;
                 
                 loginScreen.classList.remove('hidden');
+                
+                // Update last login time for next visit
+                setCookie('lastLogin', new Date().toISOString(), 365);
                 
                 // Auto-continue after 2 seconds
                 setTimeout(() => {
@@ -2428,9 +2385,19 @@
                 typedKeys = '';
             }
             
-            // ESC to close panel
+            // Check for TERMINAL command (testing backdoor)
+            if (typedKeys.includes('terminal')) {
+                activateTerminal();
+                typedKeys = '';
+            }
+            
+            // ESC to close panels
             if (e.key === 'Escape') {
                 closeSysopPanel();
+                const terminal = document.getElementById('terminalOverlay');
+                if (terminal) {
+                    terminal.classList.remove('active');
+                }
             }
             
             // Reset buffer after 2 seconds
@@ -3379,7 +3346,7 @@
                     qrContainer.innerHTML = '';
                     
                     // Generate real scannable QR code
-                    const unlockUrl = window.location.origin + '/my-telnet-site/unlock.html?session=' + terminalSessionId;
+                    const unlockUrl = window.location.origin + '/unlock.html?session=' + terminalSessionId;
                     new QRCode(qrContainer, {
                         text: unlockUrl,
                         width: 200,
@@ -3473,20 +3440,33 @@
             switch(command) {
                 case '/?':
                 case '/help':
-                    addTerminalLine('═══ COMMANDS ═══', 'success');
-                    addTerminalLine('/help - Show commands');
-                    addTerminalLine('/clear - Clear screen');
-                    addTerminalLine('/exit - Close terminal');
-                    addTerminalLine('/matrix - Toggle matrix');
-                    addTerminalLine('/hack - Hacker mode');
-                    addTerminalLine('/color [scheme] - Change color');
-                    addTerminalLine('/stars - Toggle stars');
-                    addTerminalLine('/scanlines - Toggle CRT');
-                    addTerminalLine('/whoami - User info');
-                    addTerminalLine('/time - System time');
-                    addTerminalLine('/stats - System stats');
-                    addTerminalLine('/reboot - Reboot');
-                    addTerminalLine('/credits - Credits');
+                    addTerminalLine('═══ TERMINAL COMMANDS ═══', 'success');
+                    addTerminalLine('');
+                    addTerminalLine('NAVIGATION:', 'info');
+                    addTerminalLine('  /? or /help      Show this help');
+                    addTerminalLine('  /clear           Clear screen');
+                    addTerminalLine('  /exit            Close terminal');
+                    addTerminalLine('');
+                    addTerminalLine('VISUAL EFFECTS:', 'info');
+                    addTerminalLine('  /matrix          Toggle matrix rain');
+                    addTerminalLine('  /hack            Activate hacker mode');
+                    addTerminalLine('  /color [name]    Change color scheme');
+                    addTerminalLine('                   (green/amber/blue/red/white)');
+                    addTerminalLine('  /stars           Toggle background stars');
+                    addTerminalLine('  /scanlines       Toggle CRT scanlines');
+                    addTerminalLine('');
+                    addTerminalLine('SYSTEM INFO:', 'info');
+                    addTerminalLine('  /whoami          Show user info');
+                    addTerminalLine('  /time            Show current time');
+                    addTerminalLine('  /stats           Show system stats');
+                    addTerminalLine('');
+                    addTerminalLine('ACTIONS:', 'info');
+                    addTerminalLine('  /broadcast [msg] Send broadcast message');
+                    addTerminalLine('  /counter [num]   Set visitor counter');
+                    addTerminalLine('  /reboot          Reboot system');
+                    addTerminalLine('');
+                    addTerminalLine('SPECIAL:', 'info');
+                    addTerminalLine('  /credits         Show credits & easter eggs');
                     addTerminalLine('');
                     break;
                 case '/clear':
@@ -3519,8 +3499,49 @@
                     toggleScanlines();
                     addTerminalLine('✓ Scanlines toggled', 'success');
                     break;
+                case '/broadcast':
+                    if (args) {
+                        const msg = document.createElement('div');
+                        msg.className = 'broadcast-message';
+                        msg.innerHTML = `
+                            ⚡⚡⚡ SYSOP BROADCAST ⚡⚡⚡<br>
+                            <span style="font-size: 0.8em; margin-top: 10px; display: block;">
+                            ${args}
+                            </span>
+                        `;
+                        document.body.appendChild(msg);
+                        
+                        setTimeout(() => {
+                            msg.style.transition = 'opacity 0.5s';
+                            msg.style.opacity = '0';
+                            setTimeout(() => msg.remove(), 500);
+                        }, 5000);
+                        
+                        addTerminalLine('✓ Broadcast sent: "' + args + '"', 'success');
+                    } else {
+                        addTerminalLine('Usage: /broadcast [your message here]', 'error');
+                    }
+                    break;
+                case '/counter':
+                    if (args && !isNaN(args)) {
+                        const value = args.padStart(6, '0').substring(0, 6);
+                        const digits = value.split('');
+                        const counterDigits = document.querySelectorAll('.counter-digit');
+                        
+                        digits.forEach((digit, index) => {
+                            if (counterDigits[index]) {
+                                counterDigits[index].textContent = digit;
+                            }
+                        });
+                        
+                        addTerminalLine('✓ Counter set to: ' + value, 'success');
+                    } else {
+                        addTerminalLine('Usage: /counter [number]', 'error');
+                    }
+                    break;
                 case '/whoami':
                     addTerminalLine('User: ' + (getCookie('bbsHandle') || 'Guest'), 'info');
+                    addTerminalLine('Access Level: SYSOP', 'info');
                     addTerminalLine('Session: ' + terminalSessionId, 'info');
                     break;
                 case '/time':
@@ -3530,8 +3551,12 @@
                     const counterDigits = document.querySelectorAll('.counter-digit');
                     let count = '';
                     counterDigits.forEach(d => count += d.textContent);
+                    addTerminalLine('═══ SYSTEM STATS ═══', 'success');
                     addTerminalLine('Visitors: ' + count, 'info');
                     addTerminalLine('Uptime: ' + (new Date().getFullYear() - 1995) + ' years', 'info');
+                    addTerminalLine('Door Games: 24', 'info');
+                    addTerminalLine('Session ID: ' + terminalSessionId, 'info');
+                    addTerminalLine('');
                     break;
                 case '/reboot':
                     addTerminalLine('✓ Rebooting...', 'success');
@@ -3542,12 +3567,17 @@
                     break;
                 case '/credits':
                     addTerminalLine('═══ PANTHEON BBS ═══', 'success');
-                    addTerminalLine('Est. 1995', 'info');
-                    addTerminalLine('Easter Eggs:', 'success');
-                    addTerminalLine('✓ Konami Code', 'info');
-                    addTerminalLine('✓ Pi Symbol', 'info');
-                    addTerminalLine('✓ SYSOP Panel', 'info');
-                    addTerminalLine('✓ QR Terminal', 'info');
+                    addTerminalLine('Est. 1995 - Reimagined 2025', 'info');
+                    addTerminalLine('');
+                    addTerminalLine('Easter Eggs Found:', 'success');
+                    addTerminalLine('✓ Konami Code → Matrix → Hacker Mode', 'info');
+                    addTerminalLine('✓ π Symbol (Shift+Click)', 'info');
+                    addTerminalLine('✓ SYSOP Panel (type "SYSOP")', 'info');
+                    addTerminalLine('✓ QR Terminal Access', 'info');
+                    addTerminalLine('✓ DOS Login System', 'info');
+                    addTerminalLine('✓ 24 Classic Door Games', 'info');
+                    addTerminalLine('');
+                    addTerminalLine('Preserving BBS culture ❤️', 'success');
                     addTerminalLine('');
                     break;
                 default:
