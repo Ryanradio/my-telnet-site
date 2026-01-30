@@ -3604,6 +3604,7 @@
                     addTerminalLine('  /broadcast [msg] Send broadcast message');
                     addTerminalLine('  /counter [num]   Set visitor counter');
                     addTerminalLine('  /screensaver     Toggle flying toasters');
+                    addTerminalLine('  /test-screensaver Start screensaver NOW (testing)');
                     addTerminalLine('  /reboot          Reboot system');
                     addTerminalLine('');
                     addTerminalLine('SPECIAL:', 'info');
@@ -3732,6 +3733,13 @@
                         addTerminalLine('✓ Screensaver disabled', 'success');
                     }
                     break;
+                case '/test-screensaver':
+                    addTerminalLine('✓ Starting screensaver NOW for testing...', 'success');
+                    setTimeout(() => {
+                        document.getElementById('terminalOverlay').classList.remove('active');
+                        startScreensaver();
+                    }, 500);
+                    break;
                 default:
                     addTerminalLine('Unknown: ' + command, 'error');
                     addTerminalLine('Type /? for help', 'info');
@@ -3849,10 +3857,14 @@
                 setTimeout(() => {
                     const toaster = document.createElement('div');
                     toaster.className = 'toaster';
+                    toaster.textContent = '🍞🛩️'; // Temporary emoji for testing
+                    toaster.style.fontSize = '80px'; // Make them BIG and visible
                     toaster.style.top = (Math.random() * 80 + 10) + '%';
                     toaster.style.animationDelay = (Math.random() * 3) + 's';
                     toaster.style.animationDuration = (6 + Math.random() * 4) + 's';
+                    toaster.style.zIndex = '999999'; // Make sure they're above everything
                     screensaver.appendChild(toaster);
+                    console.log('Toaster', i, 'created at', toaster.style.top);
                 }, i * 1000);
             }
         }
@@ -3873,12 +3885,13 @@
             
             // Only set timeout if screensaver is enabled
             if (screensaverEnabled) {
-                console.log('Setting screensaver timeout for 10 seconds...');
+                console.log('Setting screensaver timeout for 2 minutes...');
                 screensaverTimeout = setTimeout(() => {
                     userIsActive = false;
                     console.log('Timeout complete, attempting to start screensaver...');
                     startScreensaver();
-                }, 10000); // 10 seconds for testing (change to 120000 for 2 minutes)
+                }, 120000); // 2 minutes
+            }
             }
         }
 
