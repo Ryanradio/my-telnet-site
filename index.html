@@ -3827,7 +3827,8 @@
                 case '/start':
                     addTerminalLine('✓ Opening PANTHEON BBS...', 'success');
                     setTimeout(() => {
-                        window.open(window.location.href, '_blank');
+                        window.location.href = 'sysop.html';
+                        // window.open(window.location.href, '_blank');
                         addTerminalLine('✓ BBS opened in new window', 'info');
                     }, 500);
                     break;
