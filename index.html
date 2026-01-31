@@ -3503,24 +3503,24 @@
 
         // Poll for unlock
         async function startPollingForUnlock() {
-            const pollInterval = setInterval(async () => {
+            const pollInterval = setInterval(() => {
                 try {
-                    const response = await fetch(`https://epalhhtnwlvpvlnhdwfd.supabase.co/rest/v1/terminal_unlock?session_id=eq.${terminalSessionId}&select=*`, {
-                        headers: {
-                            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVwYWxoaHRud2x2cHZsbmhkd2ZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc5NDIyNTksImV4cCI6MjA1MzUxODI1OX0.EDY7MwsN-JuyfHCZZkfL_w__5Kb5thOwHzO7K38ydDQ',
-                            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVwYWxoaHRud2x2cHZsbmhkd2ZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc5NDIyNTksImV4cCI6MjA1MzUxODI1OX0.EDY7MwsN-JuyfHCZZkfL_w__5Kb5thOwHzO7K38ydDQ'
-                        }
-                    });
+                    // Check localStorage for unlock status
+                    const unlockData = localStorage.getItem('terminal_unlock_' + terminalSessionId);
                     
-                    const data = await response.json();
-                    if (data && data.length > 0 && data[0].unlocked) {
-                        clearInterval(pollInterval);
-                        activateTerminal();
+                    if (unlockData) {
+                        const data = JSON.parse(unlockData);
+                        if (data.unlocked) {
+                            clearInterval(pollInterval);
+                            // Clear the unlock flag
+                            localStorage.removeItem('terminal_unlock_' + terminalSessionId);
+                            activateTerminal();
+                        }
                     }
                 } catch (error) {
-                    console.log('Polling:', error);
+                    console.log('Polling error:', error);
                 }
-            }, 2000);
+            }, 1000); // Check every second
         }
 
         // Activate terminal
@@ -3850,28 +3850,109 @@
             
             console.log('Starting screensaver!');
             screensaver.classList.add('active');
-            screensaver.innerHTML = ''; // Clear any existing toasters
+            screensaver.innerHTML = ''; // Clear any existing elements
             
-            // Create flying toasters with real image
-            for (let i = 0; i < 8; i++) {
-                setTimeout(() => {
-                    const toaster = document.createElement('div');
-                    toaster.className = 'toaster';
-                    toaster.textContent = '🍞🛩️'; // Temporary emoji for testing
-                    toaster.style.fontSize = '80px'; // Make them BIG and visible
-                    toaster.style.top = (Math.random() * 80 + 10) + '%';
-                    toaster.style.animationDelay = (Math.random() * 3) + 's';
-                    toaster.style.animationDuration = (6 + Math.random() * 4) + 's';
-                    toaster.style.zIndex = '999999'; // Make sure they're above everything
-                    screensaver.appendChild(toaster);
-                    console.log('Toaster', i, 'created at', toaster.style.top);
-                }, i * 1000);
+            // Create bouncing DVD logos
+            const dvdLogos = [];
+            const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffffff'];
+            
+            for (let i = 0; i < 3; i++) {
+                const logo = document.createElement('div');
+                logo.className = 'dvd-logo';
+                logo.textContent = 'DVD';
+                logo.style.left = Math.random() * 80 + '%';
+                logo.style.top = Math.random() * 80 + '%';
+                logo.style.color = colors[Math.floor(Math.random() * colors.length)];
+                screensaver.appendChild(logo);
+                
+                dvdLogos.push({
+                    element: logo,
+                    x: parseFloat(logo.style.left),
+                    y: parseFloat(logo.style.top),
+                    dx: (Math.random() - 0.5) * 0.3, // Velocity X
+                    dy: (Math.random() - 0.5) * 0.3, // Velocity Y
+                    color: logo.style.color
+                });
             }
+            
+            // Bouncing animation
+            let animationId;
+            function animateDVD() {
+                dvdLogos.forEach(logo => {
+                    // Update position
+                    logo.x += logo.dx;
+                    logo.y += logo.dy;
+                    
+                    // Get screen dimensions
+                    const maxX = 95; // Leave room for logo width
+                    const maxY = 90; // Leave room for logo height
+                    
+                    let bounced = false;
+                    let cornerHit = false;
+                    
+                    // Check X boundaries
+                    if (logo.x <= 0 || logo.x >= maxX) {
+                        logo.dx = -logo.dx;
+                        logo.x = logo.x <= 0 ? 0 : maxX;
+                        bounced = true;
+                        
+                        // Check if also hitting Y boundary (corner!)
+                        if (logo.y <= 0 || logo.y >= maxY) {
+                            cornerHit = true;
+                        }
+                    }
+                    
+                    // Check Y boundaries
+                    if (logo.y <= 0 || logo.y >= maxY) {
+                        logo.dy = -logo.dy;
+                        logo.y = logo.y <= 0 ? 0 : maxY;
+                        bounced = true;
+                        
+                        // Check if also hitting X boundary (corner!)
+                        if (logo.x <= 0 || logo.x >= maxX) {
+                            cornerHit = true;
+                        }
+                    }
+                    
+                    // Change color on bounce
+                    if (bounced) {
+                        logo.color = colors[Math.floor(Math.random() * colors.length)];
+                        logo.element.style.color = logo.color;
+                    }
+                    
+                    // CORNER HIT! CELEBRATE!
+                    if (cornerHit) {
+                        logo.element.style.textShadow = '0 0 30px ' + logo.color + ', 0 0 60px ' + logo.color;
+                        logo.element.style.transform = 'scale(1.5)';
+                        setTimeout(() => {
+                            logo.element.style.textShadow = 'none';
+                            logo.element.style.transform = 'scale(1)';
+                        }, 500);
+                        console.log('🎉 CORNER HIT! 🎉');
+                    }
+                    
+                    // Update element position
+                    logo.element.style.left = logo.x + '%';
+                    logo.element.style.top = logo.y + '%';
+                });
+                
+                animationId = requestAnimationFrame(animateDVD);
+            }
+            
+            // Start animation
+            animateDVD();
+            
+            // Store animation ID to stop it later
+            screensaver.dataset.animationId = animationId;
         }
 
         function stopScreensaver() {
             const screensaver = document.getElementById('screensaver');
             if (screensaver) {
+                // Cancel animation
+                if (screensaver.dataset.animationId) {
+                    cancelAnimationFrame(parseInt(screensaver.dataset.animationId));
+                }
                 screensaver.classList.remove('active');
                 screensaver.innerHTML = '';
             }
