@@ -1564,6 +1564,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     
     <script>
+        // Supabase Configuration - MUST BE FIRST!
+        const SUPABASE_URL = 'https://epalhhtnwlvpvlnhdwfd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVwYWxoaHRud2x2cHZsbmhkd2ZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc5NDIyNTksImV4cCI6MjA1MzUxODI1OX0.EDY7MwsN-JuyfHCZZkfL_w__5Kb5thOwHzO7K38ydDQ';
+
         // Sound control
         let soundEnabled = true;
         const modemSound = document.getElementById('modemSound');
@@ -2995,11 +2999,6 @@
             }
         }
 
-        // Supabase configuration
-        const SUPABASE_URL = 'https://epalhhtnwlvpvlnhdwfd.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVwYWxoaHRud2x2cHZsbmhkd2ZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc5NDIyNTksImV4cCI6MjA1MzUxODI1OX0.EDY7MwsN-JuyfHCZZkfL_w__5Kb5thOwHzO7K38ydDQ';
-        const SUPABASE_KEY = 'sb_publishable_EDY7MwsN-JuyfHCZZkfL_w__5Kb5thO';
-
         // Guestbook functionality
         async function submitGuestbookEntry(event) {
             event.preventDefault();
@@ -3032,8 +3031,8 @@
                 const response = await fetch(`${SUPABASE_URL}/rest/v1/guestbook`, {
                     method: 'POST',
                     headers: {
-                        'apikey': SUPABASE_KEY,
-                        'Authorization': `Bearer ${SUPABASE_KEY}`,
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
                         'Content-Type': 'application/json',
                         'Prefer': 'return=minimal'
                     },
@@ -3082,8 +3081,8 @@
                 // Get entries from Supabase (ordered by newest first)
                 const response = await fetch(`${SUPABASE_URL}/rest/v1/guestbook?select=*&order=created_at.desc`, {
                     headers: {
-                        'apikey': SUPABASE_KEY,
-                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
                     }
                 });
                 
@@ -3839,17 +3838,17 @@
         }
 
         function startScreensaver() {
-            console.log('Screensaver attempt - Enabled:', screensaverEnabled, 'Engaged:', isUserEngaged());
+            // console.log('Screensaver attempt - Enabled:', screensaverEnabled, 'Engaged:', isUserEngaged());
             
             if (!screensaverEnabled || isUserEngaged()) return;
             
             const screensaver = document.getElementById('screensaver');
             if (!screensaver) {
-                console.log('Screensaver element not found!');
+                console.error('Screensaver element not found!');
                 return;
             }
             
-            console.log('Starting screensaver!');
+            // console.log('Starting screensaver!');
             screensaver.classList.add('active');
             screensaver.innerHTML = ''; // Clear any existing elements
             
@@ -3960,17 +3959,17 @@
         }
 
         function resetScreensaverTimer() {
-            console.log('Timer reset - screensaver enabled:', screensaverEnabled);
+            // console.log('Timer reset - screensaver enabled:', screensaverEnabled);
             clearTimeout(screensaverTimeout);
             stopScreensaver();
             userIsActive = true;
             
             // Only set timeout if screensaver is enabled
             if (screensaverEnabled) {
-                console.log('Setting screensaver timeout for 2 minutes...');
+                // console.log('Setting screensaver timeout for 2 minutes...');
                 screensaverTimeout = setTimeout(() => {
                     userIsActive = false;
-                    console.log('Timeout complete, attempting to start screensaver...');
+                    // console.log('Timeout complete, attempting to start screensaver...');
                     startScreensaver();
                 }, 120000); // 2 minutes
             }
