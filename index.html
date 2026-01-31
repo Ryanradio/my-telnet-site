@@ -3968,7 +3968,7 @@
             if (screensaverEnabled) {
                 // console.log('Setting screensaver timeout for 2 minutes...');
                 screensaverTimeout = setTimeout(() => {
-                    userIsActive = false;
+                    userIsActive = true;
                     // console.log('Timeout complete, attempting to start screensaver...');
                     startScreensaver();
                 }, 120000); // 2 minutes
