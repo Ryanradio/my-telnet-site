@@ -2997,6 +2997,7 @@
 
         // Supabase configuration
         const SUPABASE_URL = 'https://epalhhtnwlvpvlnhdwfd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVwYWxoaHRud2x2cHZsbmhkd2ZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc5NDIyNTksImV4cCI6MjA1MzUxODI1OX0.EDY7MwsN-JuyfHCZZkfL_w__5Kb5thOwHzO7K38ydDQ';
         const SUPABASE_KEY = 'sb_publishable_EDY7MwsN-JuyfHCZZkfL_w__5Kb5thO';
 
         // Guestbook functionality
@@ -3503,24 +3504,24 @@
 
         // Poll for unlock
         async function startPollingForUnlock() {
-            const pollInterval = setInterval(() => {
+            const pollInterval = setInterval(async () => {
                 try {
-                    // Check localStorage for unlock status
-                    const unlockData = localStorage.getItem('terminal_unlock_' + terminalSessionId);
-                    
-                    if (unlockData) {
-                        const data = JSON.parse(unlockData);
-                        if (data.unlocked) {
-                            clearInterval(pollInterval);
-                            // Clear the unlock flag
-                            localStorage.removeItem('terminal_unlock_' + terminalSessionId);
-                            activateTerminal();
+                    const response = await fetch(`${SUPABASE_URL}/rest/v1/terminal_unlock?session_id=eq.${terminalSessionId}&select=*`, {
+                        headers: {
+                            'apikey': SUPABASE_ANON_KEY,
+                            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
                         }
+                    });
+                    
+                    const data = await response.json();
+                    if (data && data.length > 0 && data[0].unlocked) {
+                        clearInterval(pollInterval);
+                        activateTerminal();
                     }
                 } catch (error) {
-                    console.log('Polling error:', error);
+                    console.log('Polling:', error);
                 }
-            }, 1000); // Check every second
+            }, 2000); // Check every 2 seconds
         }
 
         // Activate terminal
