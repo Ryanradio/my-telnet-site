@@ -1553,7 +1553,7 @@
         <div class="footer">
             <p>Running on authentic Windows XP hardware · <span class="bbs-term">MajorBBS<span class="bbs-tooltip">Galacticomm's MajorBBS - One of the most popular commercial BBS software packages, known for supporting multiple phone lines and advanced features.</span></span> · A piece of computing history</p>
             <p style="margin-top: 10px; font-size: 0.8em;">Established 1995 · Preserving the golden age of dial-up <span class="bbs-term">BBSing<span class="bbs-tooltip">The act of calling and using a BBS - a hobby that peaked in the early 1990s with millions of systems worldwide.</span></span></p>
-            <p style="margin-top: 15px; font-size: 0.6em; opacity: 0.3; letter-spacing: 1px;">[SYSOP] [TERMINAL]</p>
+            <p style="margin-top: 15px; font-size: 0.6em; opacity: 0.3; letter-spacing: 1px;">[SYSOP] </p>
         </div>
         
         <div class="visitor-counter">
@@ -1599,7 +1599,7 @@
     <script>
         // Supabase Configuration - MUST BE FIRST!
         const SUPABASE_URL = 'https://epalhhtnwlvpvlnhdwfd.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVwYWxoaHRud2x2cHZsbmhkd2ZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc5NDIyNTksImV4cCI6MjA1MzUxODI1OX0.EDY7MwsN-JuyfHCZZkfL_w__5Kb5thOwHzO7K38ydDQ';
+        const SUPABASE_ANON_KEY = 'sb_publishable_EDY7MwsN-JuyfHCZZkfL_w__5Kb5thO';
 
         // Sound control
         let soundEnabled = true;
@@ -2562,10 +2562,10 @@
             }
             
             // Check for TERMINAL command (testing backdoor)
-            if (typedKeys.includes('terminal')) {
-                activateTerminal();
-                typedKeys = '';
-            }
+          //  if (typedKeys.includes('terminal')) {
+            //    activateTerminal();
+              //  typedKeys = '';
+           // }
             
             // ESC to close panels
             if (e.key === 'Escape') {
