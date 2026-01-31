@@ -15,7 +15,7 @@
     • There's a mysterious π symbol hidden on the page...
       (Shift + Click or Ctrl + Shift + Click)
     • Type "SYSOP" anywhere on the page for admin access
-    • 
+    • Type "TERMINAL" anywhere to open the command terminal
     
     Happy exploring! - The Sysop
     ═══════════════════════════════════════════════════════════════
@@ -1248,6 +1248,39 @@
             color: #f00;
             text-align: center;
         }
+
+        /* Snow Effect */
+        .snowflake {
+            position: fixed;
+            top: -10px;
+            z-index: 9999;
+            user-select: none;
+            cursor: default;
+            animation: snowfall linear forwards;
+            color: #fff;
+            text-shadow: 0 0 5px #fff;
+        }
+
+        @keyframes snowfall {
+            to {
+                transform: translateY(100vh);
+            }
+        }
+
+        /* Rainbow Mode */
+        .rainbow-mode .terminal-output .line {
+            animation: rainbow-text 3s linear infinite;
+        }
+
+        @keyframes rainbow-text {
+            0% { color: #ff0000; }
+            16% { color: #ff8000; }
+            33% { color: #ffff00; }
+            50% { color: #00ff00; }
+            66% { color: #00ffff; }
+            83% { color: #0080ff; }
+            100% { color: #ff0000; }
+        }
     </style>
 </head>
 <body>
@@ -1566,7 +1599,7 @@
     <script>
         // Supabase Configuration - MUST BE FIRST!
         const SUPABASE_URL = 'https://epalhhtnwlvpvlnhdwfd.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_EDY7MwsN-JuyfHCZZkfL_w__5Kb5thO';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVwYWxoaHRud2x2cHZsbmhkd2ZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc5NDIyNTksImV4cCI6MjA1MzUxODI1OX0.EDY7MwsN-JuyfHCZZkfL_w__5Kb5thOwHzO7K38ydDQ';
 
         // Sound control
         let soundEnabled = true;
@@ -2529,10 +2562,10 @@
             }
             
             // Check for TERMINAL command (testing backdoor)
-           // if (typedKeys.includes('terminal')) {
-           //    activateTerminal();
-            //    typedKeys = '';
-            // }
+            if (typedKeys.includes('terminal')) {
+                activateTerminal();
+                typedKeys = '';
+            }
             
             // ESC to close panels
             if (e.key === 'Escape') {
@@ -3584,8 +3617,9 @@
                     addTerminalLine('');
                     addTerminalLine('NAVIGATION:', 'info');
                     addTerminalLine('  /? or /help      Show this help');
-                    addTerminalLine('  /clear           Clear screen');
+                    addTerminalLine('  /clear or /cls   Clear screen');
                     addTerminalLine('  /exit            Close terminal');
+                    addTerminalLine('  /start BBS       Open main BBS page');
                     addTerminalLine('');
                     addTerminalLine('VISUAL EFFECTS:', 'info');
                     addTerminalLine('  /matrix          Toggle matrix rain');
@@ -3594,11 +3628,21 @@
                     addTerminalLine('                   (green/amber/blue/red/white)');
                     addTerminalLine('  /stars           Toggle background stars');
                     addTerminalLine('  /scanlines       Toggle CRT scanlines');
+                    addTerminalLine('  /rainbow         Toggle rainbow text mode');
+                    addTerminalLine('  /snow            Toggle falling snow effect');
                     addTerminalLine('');
                     addTerminalLine('SYSTEM INFO:', 'info');
                     addTerminalLine('  /whoami          Show user info');
                     addTerminalLine('  /time            Show current time');
                     addTerminalLine('  /stats           Show system stats');
+                    addTerminalLine('  /sysinfo         Display system specifications');
+                    addTerminalLine('  /status          Show system status');
+                    addTerminalLine('  /weather         Display weather report');
+                    addTerminalLine('');
+                    addTerminalLine('FUN & GAMES:', 'info');
+                    addTerminalLine('  /dice            Roll the dice');
+                    addTerminalLine('  /flip            Flip a coin');
+                    addTerminalLine('  /8ball [?]       Ask the magic 8-ball');
                     addTerminalLine('');
                     addTerminalLine('ACTIONS:', 'info');
                     addTerminalLine('  /broadcast [msg] Send broadcast message');
@@ -3606,6 +3650,7 @@
                     addTerminalLine('  /screensaver     Toggle flying toasters');
                     addTerminalLine('  /test-screensaver Start screensaver NOW (testing)');
                     addTerminalLine('  /reboot          Reboot system');
+                    addTerminalLine('  /logoff          Disconnect from BBS');
                     addTerminalLine('');
                     addTerminalLine('SPECIAL:', 'info');
                     addTerminalLine('  /credits         Show credits & easter eggs');
@@ -3740,6 +3785,129 @@
                         startScreensaver();
                     }, 500);
                     break;
+                case '/cls':
+                    document.getElementById('terminalOutput').innerHTML = '';
+                    break;
+                case '/dice':
+                    const roll1 = Math.floor(Math.random() * 6) + 1;
+                    const roll2 = Math.floor(Math.random() * 6) + 1;
+                    addTerminalLine('🎲 Rolling dice...', 'info');
+                    setTimeout(() => {
+                        addTerminalLine(`Die 1: [${roll1}]  Die 2: [${roll2}]`, 'success');
+                        addTerminalLine(`Total: ${roll1 + roll2}`, 'success');
+                    }, 500);
+                    break;
+                case '/flip':
+                    addTerminalLine('🪙 Flipping coin...', 'info');
+                    setTimeout(() => {
+                        const result = Math.random() < 0.5 ? 'HEADS' : 'TAILS';
+                        addTerminalLine(`Result: ${result}`, 'success');
+                    }, 500);
+                    break;
+                case '/8ball':
+                    const responses = [
+                        'It is certain', 'Without a doubt', 'Yes definitely',
+                        'You may rely on it', 'As I see it, yes', 'Most likely',
+                        'Outlook good', 'Yes', 'Signs point to yes',
+                        'Reply hazy, try again', 'Ask again later', 'Better not tell you now',
+                        'Cannot predict now', 'Concentrate and ask again',
+                        'Don\'t count on it', 'My reply is no', 'My sources say no',
+                        'Outlook not so good', 'Very doubtful'
+                    ];
+                    if (args) {
+                        addTerminalLine('🔮 Consulting the magic 8-ball...', 'info');
+                        setTimeout(() => {
+                            const answer = responses[Math.floor(Math.random() * responses.length)];
+                            addTerminalLine(`8-BALL SAYS: ${answer}`, 'success');
+                        }, 800);
+                    } else {
+                        addTerminalLine('Usage: /8ball [your question]', 'error');
+                    }
+                    break;
+                case '/start':
+                    addTerminalLine('✓ Opening PANTHEON BBS...', 'success');
+                    setTimeout(() => {
+                        window.open(window.location.href, '_blank');
+                        addTerminalLine('✓ BBS opened in new window', 'info');
+                    }, 500);
+                    break;
+                case '/sysinfo':
+                    addTerminalLine('═══ SYSTEM SPECIFICATIONS ═══', 'success');
+                    addTerminalLine('');
+                    addTerminalLine('Processor:  Intel 486 DX2-66 MHz', 'info');
+                    addTerminalLine('Memory:     8 MB RAM', 'info');
+                    addTerminalLine('Storage:    540 MB Hard Disk', 'info');
+                    addTerminalLine('Graphics:   VGA 256 Colors', 'info');
+                    addTerminalLine('Sound:      Sound Blaster 16', 'info');
+                    addTerminalLine('Modem:      US Robotics 28.8k', 'info');
+                    addTerminalLine('OS:         MS-DOS 6.22 / Windows 3.11', 'info');
+                    addTerminalLine('BBS Soft:   RemoteAccess 2.50', 'info');
+                    addTerminalLine('');
+                    break;
+                case '/weather':
+                    addTerminalLine('Downloading weather data...', 'info');
+                    setTimeout(() => {
+                        const temps = [68, 72, 75, 78, 82];
+                        const conditions = ['Sunny', 'Partly Cloudy', 'Cloudy', 'Clear'];
+                        const temp = temps[Math.floor(Math.random() * temps.length)];
+                        const condition = conditions[Math.floor(Math.random() * conditions.length)];
+                        addTerminalLine('═══ WEATHER REPORT ═══', 'success');
+                        addTerminalLine('');
+                        addTerminalLine(`Location:    CYBERSPACE`, 'info');
+                        addTerminalLine(`Temperature: ${temp}°F`, 'info');
+                        addTerminalLine(`Conditions:  ${condition}`, 'info');
+                        addTerminalLine(`Humidity:    ${Math.floor(Math.random() * 40 + 40)}%`, 'info');
+                        addTerminalLine(`Wind:        ${Math.floor(Math.random() * 15 + 5)} mph`, 'info');
+                        addTerminalLine('');
+                        addTerminalLine('Forecast: Perfect for computing! ☀️', 'success');
+                    }, 1000);
+                    break;
+                case '/status':
+                    addTerminalLine('═══ SYSTEM STATUS ═══', 'success');
+                    addTerminalLine('');
+                    addTerminalLine('Power Supply:     OPERATIONAL ✓', 'success');
+                    addTerminalLine('CPU Temperature:  NORMAL ✓', 'success');
+                    addTerminalLine('Hard Disk:        HEALTHY ✓', 'success');
+                    addTerminalLine('Network:          CONNECTED ✓', 'success');
+                    addTerminalLine('BBS Software:     RUNNING ✓', 'success');
+                    addTerminalLine('Door Games:       AVAILABLE ✓', 'success');
+                    addTerminalLine('');
+                    addTerminalLine('All systems operational!', 'success');
+                    break;
+                case '/logoff':
+                    addTerminalLine('');
+                    addTerminalLine('═══════════════════════════════════', 'info');
+                    addTerminalLine('  Thank you for calling PANTHEON BBS', 'success');
+                    addTerminalLine('═══════════════════════════════════', 'info');
+                    addTerminalLine('');
+                    addTerminalLine('Closing connection...', 'info');
+                    setTimeout(() => {
+                        addTerminalLine('Carrier lost... NO CARRIER', 'error');
+                        setTimeout(() => {
+                            document.getElementById('terminalOverlay').classList.remove('active');
+                        }, 1000);
+                    }, 1000);
+                    break;
+                case '/rainbow':
+                    const terminal = document.getElementById('terminalOverlay');
+                    terminal.classList.toggle('rainbow-mode');
+                    if (terminal.classList.contains('rainbow-mode')) {
+                        addTerminalLine('🌈 Rainbow mode ACTIVATED!', 'success');
+                    } else {
+                        addTerminalLine('Rainbow mode deactivated', 'info');
+                    }
+                    break;
+                case '/snow':
+                    const body = document.body;
+                    body.classList.toggle('snow-mode');
+                    if (body.classList.contains('snow-mode')) {
+                        addTerminalLine('❄️ Let it snow!', 'success');
+                        createSnowEffect();
+                    } else {
+                        addTerminalLine('Snow effect stopped', 'info');
+                        stopSnowEffect();
+                    }
+                    break;
                 default:
                     addTerminalLine('Unknown: ' + command, 'error');
                     addTerminalLine('Type /? for help', 'info');
@@ -3747,6 +3915,40 @@
         }
 
         /* TERMINAL SYSTEM - END */
+
+        /* ============================================
+           SNOW EFFECT - START
+           ============================================ */
+        let snowInterval;
+        
+        function createSnowEffect() {
+            // Clear any existing snow
+            stopSnowEffect();
+            
+            snowInterval = setInterval(() => {
+                const snowflake = document.createElement('div');
+                snowflake.className = 'snowflake';
+                snowflake.textContent = '❄';
+                snowflake.style.left = Math.random() * window.innerWidth + 'px';
+                snowflake.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                snowflake.style.opacity = Math.random();
+                snowflake.style.fontSize = (Math.random() * 10 + 10) + 'px';
+                
+                document.body.appendChild(snowflake);
+                
+                setTimeout(() => {
+                    snowflake.remove();
+                }, 5000);
+            }, 200);
+        }
+        
+        function stopSnowEffect() {
+            if (snowInterval) {
+                clearInterval(snowInterval);
+            }
+            document.querySelectorAll('.snowflake').forEach(flake => flake.remove());
+        }
+        /* SNOW EFFECT - END */
 
         /* ============================================
            CLIPPY & SCREENSAVER - START
@@ -3968,7 +4170,7 @@
             if (screensaverEnabled) {
                 // console.log('Setting screensaver timeout for 2 minutes...');
                 screensaverTimeout = setTimeout(() => {
-                    userIsActive = true;
+                    userIsActive = false;
                     // console.log('Timeout complete, attempting to start screensaver...');
                     startScreensaver();
                 }, 120000); // 2 minutes
