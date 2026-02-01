@@ -1,0 +1,2300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚔️ DUNGEON QUEST BBS ⚔️</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-bg: #000080;
+            --secondary-bg: #000000;
+            --text-color: #00FF00;
+            --highlight-color: #FFFF00;
+            --error-color: #FF0000;
+            --border-color: #00FFFF;
+            --menu-color: #FFFFFF;
+        }
+
+        body {
+            background: var(--primary-bg);
+            color: var(--text-color);
+            font-family: 'VT323', monospace;
+            font-size: 20px;
+            line-height: 1.4;
+            overflow-x: hidden;
+        }
+
+        .scanline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                transparent 50%,
+                rgba(0, 0, 0, 0.25) 50%
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 1000;
+            animation: flicker 0.15s infinite;
+        }
+
+        @keyframes flicker {
+            0% { opacity: 0.95; }
+            50% { opacity: 1; }
+            100% { opacity: 0.95; }
+        }
+
+        @keyframes blink {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            border: 3px double var(--border-color);
+            padding: 15px;
+            margin-bottom: 20px;
+            background: var(--secondary-bg);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+        }
+
+        .header h1 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 24px;
+            color: var(--highlight-color);
+            text-shadow: 2px 2px var(--error-color);
+            margin-bottom: 10px;
+            animation: titlePulse 2s infinite;
+        }
+
+        @keyframes titlePulse {
+            0%, 100% { text-shadow: 2px 2px var(--error-color); }
+            50% { text-shadow: 2px 2px var(--error-color), 0 0 10px var(--highlight-color); }
+        }
+
+        .screen {
+            background: var(--secondary-bg);
+            border: 2px solid var(--border-color);
+            padding: 20px;
+            min-height: 400px;
+            margin-bottom: 20px;
+            box-shadow: inset 0 0 50px rgba(0, 255, 0, 0.1);
+        }
+
+        .menu-option {
+            color: var(--menu-color);
+            cursor: pointer;
+            padding: 8px;
+            margin: 5px 0;
+            transition: all 0.1s;
+        }
+
+        .menu-option:hover {
+            background: var(--primary-bg);
+            color: var(--highlight-color);
+            padding-left: 20px;
+        }
+
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            background: rgba(0, 128, 0, 0.1);
+        }
+
+        .stat {
+            color: var(--text-color);
+        }
+
+        .stat-label {
+            color: var(--highlight-color);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: var(--secondary-bg);
+            border: 1px solid var(--border-color);
+            margin: 5px 0;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            transition: width 0.3s;
+        }
+
+        .hp-bar { background: var(--error-color); }
+        .mp-bar { background: #0000FF; }
+        .xp-bar { background: var(--text-color); }
+
+        .message {
+            padding: 10px;
+            margin: 10px 0;
+            border-left: 3px solid var(--border-color);
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .combat-message {
+            color: var(--highlight-color);
+            font-weight: bold;
+        }
+
+        .error-message {
+            color: var(--error-color);
+        }
+
+        .success-message {
+            color: var(--border-color);
+        }
+
+        button {
+            background: var(--secondary-bg);
+            color: var(--text-color);
+            border: 2px solid var(--border-color);
+            padding: 10px 20px;
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.2s;
+        }
+
+        button:hover:not(:disabled) {
+            background: var(--primary-bg);
+            color: var(--highlight-color);
+            box-shadow: 0 0 10px var(--border-color);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        input {
+            background: var(--secondary-bg);
+            color: var(--text-color);
+            border: 2px solid var(--border-color);
+            padding: 10px;
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        .character-select {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .class-card {
+            border: 2px solid var(--border-color);
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--secondary-bg);
+        }
+
+        .class-card:hover {
+            background: var(--primary-bg);
+            box-shadow: 0 0 15px var(--border-color);
+            transform: scale(1.05);
+        }
+
+        .class-card.selected {
+            border-color: var(--highlight-color);
+            background: var(--primary-bg);
+        }
+
+        .inventory-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .item-card {
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            background: rgba(0, 128, 0, 0.05);
+        }
+
+        .equipped {
+            border-color: var(--highlight-color);
+            background: rgba(255, 255, 0, 0.1);
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            height: 20px;
+            background: var(--text-color);
+            animation: blink 1s infinite;
+            margin-left: 5px;
+        }
+
+        .location-header {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 16px;
+            color: var(--border-color);
+            text-align: center;
+            padding: 10px;
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 15px;
+        }
+
+        .enemy-display {
+            text-align: center;
+            padding: 20px;
+            border: 2px solid var(--error-color);
+            margin: 15px 0;
+            background: rgba(255, 0, 0, 0.05);
+        }
+
+        .ascii-art {
+            font-family: monospace;
+            font-size: 14px;
+            line-height: 1.2;
+            white-space: pre;
+            color: var(--text-color);
+        }
+
+        /* SYSOP Terminal Styles */
+        .terminal-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--secondary-bg);
+            border-top: 3px solid var(--error-color);
+            padding: 10px 20px;
+            z-index: 999;
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+            box-shadow: 0 -5px 20px rgba(255, 0, 0, 0.5);
+        }
+
+        .terminal-container.active {
+            display: block;
+            animation: terminalSlideUp 0.3s;
+        }
+
+        @keyframes terminalSlideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        .terminal-header {
+            color: var(--error-color);
+            font-family: 'Press Start 2P', monospace;
+            font-size: 12px;
+            margin-bottom: 10px;
+            text-align: center;
+            border-bottom: 1px solid var(--error-color);
+            padding-bottom: 5px;
+        }
+
+        .terminal-output {
+            max-height: 150px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            color: var(--text-color);
+        }
+
+        .terminal-line {
+            margin: 3px 0;
+        }
+
+        .terminal-error {
+            color: var(--error-color);
+        }
+
+        .terminal-success {
+            color: var(--border-color);
+        }
+
+        .terminal-warning {
+            color: var(--highlight-color);
+        }
+
+        .terminal-input-line {
+            display: flex;
+            align-items: center;
+        }
+
+        .terminal-prompt {
+            color: var(--error-color);
+            margin-right: 10px;
+        }
+
+        .terminal-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-color);
+            font-family: 'VT323', monospace;
+            font-size: 20px;
+            outline: none;
+        }
+
+        .sysop-badge {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: var(--error-color);
+            color: var(--secondary-bg);
+            padding: 5px 10px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            border: 2px solid var(--highlight-color);
+            z-index: 998;
+            display: none;
+            animation: badgePulse 2s infinite;
+        }
+
+        .sysop-badge.active {
+            display: block;
+        }
+
+        @keyframes badgePulse {
+            0%, 100% { box-shadow: 0 0 5px var(--error-color); }
+            50% { box-shadow: 0 0 20px var(--error-color); }
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1001;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--secondary-bg);
+            border: 3px solid var(--error-color);
+            padding: 20px;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 0 30px var(--error-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="scanline"></div>
+    
+    <div class="container">
+        <div class="header">
+            <h1>⚔️ DUNGEON QUEST BBS ⚔️</h1>
+            <div style="color: var(--border-color);">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
+            <div style="color: var(--menu-color); font-size: 16px;">A Classic Text Adventure</div>
+        </div>
+
+        <div class="screen" id="mainScreen">
+            <!-- Content will be dynamically loaded here -->
+        </div>
+    </div>
+
+    <!-- SYSOP Terminal -->
+    <div class="sysop-badge" id="sysopBadge">⚠ SYSOP MODE ⚠</div>
+    <div class="terminal-container" id="terminalContainer">
+        <div class="terminal-header">═══ SYSOP TERMINAL ═══</div>
+        <div class="terminal-output" id="terminalOutput"></div>
+        <div class="terminal-input-line">
+            <span class="terminal-prompt">root@dungeon:~#</span>
+            <input type="text" class="terminal-input" id="terminalInput" autocomplete="off">
+        </div>
+    </div>
+
+    <!-- Modal for forms -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-content" id="modalContent"></div>
+    </div>
+
+    <!-- External Game Data Files -->
+    <script src="monsters.js"></script>
+    <script src="weapons.js"></script>
+    <script src="armor.js"></script>
+    <script src="items.js"></script>
+
+    <script>
+        // Game Data Structures
+        const CLASSES = {
+            warrior: {
+                name: 'Warrior',
+                hp: 120,
+                mp: 20,
+                strength: 15,
+                defense: 12,
+                magic: 3,
+                speed: 7,
+                description: 'Master of melee combat with high HP and defense',
+                startWeapon: 'iron_sword',
+                startArmor: 'leather_armor'
+            },
+            rogue: {
+                name: 'Rogue',
+                hp: 80,
+                mp: 30,
+                strength: 10,
+                defense: 6,
+                magic: 5,
+                speed: 15,
+                description: 'Swift and deadly, strikes first with critical hits',
+                startWeapon: 'dagger',
+                startArmor: 'cloth_armor'
+            },
+            paladin: {
+                name: 'Paladin',
+                hp: 100,
+                mp: 50,
+                strength: 12,
+                defense: 10,
+                magic: 8,
+                speed: 8,
+                description: 'Holy warrior with healing magic and strong defense',
+                startWeapon: 'mace',
+                startArmor: 'chainmail'
+            },
+            mage: {
+                name: 'Mage',
+                hp: 60,
+                mp: 100,
+                strength: 5,
+                defense: 4,
+                magic: 18,
+                speed: 9,
+                description: 'Powerful spellcaster with devastating magic',
+                startWeapon: 'staff',
+                startArmor: 'robes'
+            },
+            cleric: {
+                name: 'Cleric',
+                hp: 90,
+                mp: 70,
+                strength: 8,
+                defense: 8,
+                magic: 12,
+                speed: 7,
+                description: 'Divine healer with support spells and moderate combat',
+                startWeapon: 'mace',
+                startArmor: 'leather_armor'
+            },
+            ranger: {
+                name: 'Ranger',
+                hp: 85,
+                mp: 40,
+                strength: 11,
+                defense: 7,
+                magic: 6,
+                speed: 13,
+                description: 'Skilled archer with nature magic and tracking',
+                startWeapon: 'bow',
+                startArmor: 'leather_armor'
+            }
+        };
+
+        const SPELLS = {
+            heal: { name: 'Heal', mpCost: 15, power: 30, type: 'heal', level: 1, description: 'Restore HP' },
+            fireball: { name: 'Fireball', mpCost: 20, power: 35, type: 'attack', level: 2, description: 'Fiery attack' },
+            lightning: { name: 'Lightning', mpCost: 25, power: 45, type: 'attack', level: 4, description: 'Electric damage' },
+            greater_heal: { name: 'Greater Heal', mpCost: 30, power: 60, type: 'heal', level: 5, description: 'Major healing' },
+            ice_storm: { name: 'Ice Storm', mpCost: 35, power: 55, type: 'attack', level: 6, description: 'Freezing assault' },
+            holy_light: { name: 'Holy Light', mpCost: 20, power: 25, type: 'attack', level: 3, description: 'Divine damage' },
+            meteor: { name: 'Meteor', mpCost: 50, power: 80, type: 'attack', level: 8, description: 'Devastating spell' }
+        };
+
+        const LOCATIONS = {
+            town: {
+                name: 'Silverdale Town',
+                description: 'A peaceful town with shops and an inn. Your adventure begins here.',
+                canRest: true,
+                hasShop: true
+            },
+            forest: {
+                name: 'Whispering Forest',
+                description: 'A dark forest filled with minor creatures.',
+                enemyLevelRange: [1, 3],
+                encounters: ['goblin', 'wolf', 'giant_spider']
+            },
+            plains: {
+                name: 'Endless Plains',
+                description: 'Open grasslands with roaming beasts.',
+                enemyLevelRange: [2, 5],
+                encounters: ['orc', 'dire_wolf', 'bandit']
+            },
+            cave: {
+                name: 'Shadow Cavern',
+                description: 'A dungeon filled with dangerous monsters.',
+                enemyLevelRange: [4, 7],
+                encounters: ['troll', 'skeleton_warrior', 'dark_mage']
+            },
+            crypt: {
+                name: 'Ancient Crypt',
+                description: 'An ancient tomb haunted by the undead.',
+                enemyLevelRange: [6, 9],
+                encounters: ['lich', 'death_knight', 'wraith']
+            },
+            volcano: {
+                name: 'Fire Mountain',
+                description: 'A volcanic peak home to fierce creatures.',
+                enemyLevelRange: [8, 12],
+                encounters: ['fire_elemental', 'red_dragon', 'demon']
+            }
+        };
+
+        // Game State
+        let gameState = {
+            player: null,
+            currentLocation: 'town',
+            combatState: null,
+            combatTimer: null,
+            lastAction: null,
+            sysop: {
+                authenticated: false,
+                username: null,
+                terminalActive: false,
+                commandHistory: []
+            }
+        };
+
+        // ═══════════════════════════════════════════════════════════════
+        // SYSOP TERMINAL SYSTEM
+        // ═══════════════════════════════════════════════════════════════
+
+        const SYSOP_CREDENTIALS = {
+            username: 'sysop',
+            password: 'Radojcsics'
+        };
+
+        // Toggle terminal with ~ key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === '~' || e.key === '`') {
+                e.preventDefault();
+                toggleTerminal();
+            }
+            if (e.key === 'Escape' && gameState.sysop.terminalActive) {
+                toggleTerminal();
+            }
+        });
+
+        function toggleTerminal() {
+            const terminal = document.getElementById('terminalContainer');
+            const input = document.getElementById('terminalInput');
+            
+            gameState.sysop.terminalActive = !gameState.sysop.terminalActive;
+            
+            if (gameState.sysop.terminalActive) {
+                terminal.classList.add('active');
+                input.focus();
+                if (!gameState.sysop.authenticated) {
+                    terminalPrint('Terminal activated. Type /login <username> <password> to authenticate.', 'warning');
+                }
+            } else {
+                terminal.classList.remove('active');
+            }
+        }
+
+        function terminalPrint(message, type = 'normal') {
+            const output = document.getElementById('terminalOutput');
+            const line = document.createElement('div');
+            line.className = `terminal-line ${type === 'error' ? 'terminal-error' : ''} ${type === 'success' ? 'terminal-success' : ''} ${type === 'warning' ? 'terminal-warning' : ''}`;
+            line.textContent = message;
+            output.appendChild(line);
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function clearTerminal() {
+            document.getElementById('terminalOutput').innerHTML = '';
+        }
+
+        // Terminal input handler
+        document.getElementById('terminalInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const input = e.target.value.trim();
+                e.target.value = '';
+                
+                if (input) {
+                    terminalPrint(`root@dungeon:~# ${input}`, 'normal');
+                    gameState.sysop.commandHistory.push(input);
+                    executeCommand(input);
+                }
+            }
+        });
+
+        function executeCommand(input) {
+            const parts = input.split(' ');
+            const command = parts[0].toLowerCase();
+            const args = parts.slice(1);
+
+            // Login command (always available)
+            if (command === '/login') {
+                handleLogin(args);
+                return;
+            }
+
+            // Check authentication for all other commands
+            if (!gameState.sysop.authenticated) {
+                terminalPrint('ERROR: Authentication required. Use /login <username> <password>', 'error');
+                return;
+            }
+
+            // Execute authenticated commands
+            switch(command) {
+                case '/help':
+                    showHelp();
+                    break;
+                case '/logout':
+                    handleLogout();
+                    break;
+                case '/clear':
+                    clearTerminal();
+                    break;
+                case '/give':
+                    handleGive(args);
+                    break;
+                case '/addmonster':
+                    openAddMonsterForm();
+                    break;
+                case '/addweapon':
+                    openAddWeaponForm();
+                    break;
+                case '/addarmor':
+                    openAddArmorForm();
+                    break;
+                case '/additem':
+                    openAddItemForm();
+                    break;
+                case '/listmonsters':
+                    listMonsters();
+                    break;
+                case '/listweapons':
+                    listWeapons();
+                    break;
+                case '/listarmor':
+                    listArmor();
+                    break;
+                case '/listitems':
+                    listItems();
+                    break;
+                case '/setlevel':
+                    handleSetLevel(args);
+                    break;
+                case '/setgold':
+                    handleSetGold(args);
+                    break;
+                case '/heal':
+                    handleHeal();
+                    break;
+                case '/godmode':
+                    handleGodMode(args);
+                    break;
+                case '/teleport':
+                    handleTeleport(args);
+                    break;
+                case '/killmonster':
+                    handleKillMonster();
+                    break;
+                case '/export':
+                    handleExport(args);
+                    break;
+                default:
+                    terminalPrint(`ERROR: Unknown command '${command}'. Type /help for available commands.`, 'error');
+            }
+        }
+
+        function handleLogin(args) {
+            if (args.length < 2) {
+                terminalPrint('ERROR: Usage: /login <username> <password>', 'error');
+                return;
+            }
+
+            const username = args[0];
+            const password = args[1];
+
+            if (username === SYSOP_CREDENTIALS.username && password === SYSOP_CREDENTIALS.password) {
+                gameState.sysop.authenticated = true;
+                gameState.sysop.username = username;
+                document.getElementById('sysopBadge').classList.add('active');
+                terminalPrint('═══════════════════════════════════════', 'success');
+                terminalPrint('  AUTHENTICATION SUCCESSFUL', 'success');
+                terminalPrint('  Welcome, SYSOP ' + username, 'success');
+                terminalPrint('  Type /help for available commands', 'success');
+                terminalPrint('═══════════════════════════════════════', 'success');
+            } else {
+                terminalPrint('ERROR: Authentication failed. Invalid credentials.', 'error');
+            }
+        }
+
+        function handleLogout() {
+            gameState.sysop.authenticated = false;
+            gameState.sysop.username = null;
+            document.getElementById('sysopBadge').classList.remove('active');
+            terminalPrint('Logged out. Terminal locked.', 'warning');
+        }
+
+        function showHelp() {
+            terminalPrint('═══════════════════════════════════════', 'warning');
+            terminalPrint('SYSOP COMMANDS:', 'warning');
+            terminalPrint('═══════════════════════════════════════', 'warning');
+            terminalPrint('');
+            terminalPrint('AUTHENTICATION:');
+            terminalPrint('  /login <user> <pass>  - Authenticate as sysop');
+            terminalPrint('  /logout               - End sysop session');
+            terminalPrint('');
+            terminalPrint('PLAYER COMMANDS:');
+            terminalPrint('  /give <type> <id>     - Give item (weapon/armor/item/spell)');
+            terminalPrint('  /setlevel <level>     - Set player level');
+            terminalPrint('  /setgold <amount>     - Set gold amount');
+            terminalPrint('  /heal                 - Fully heal player');
+            terminalPrint('  /godmode <on/off>     - Toggle invincibility');
+            terminalPrint('');
+            terminalPrint('GAME CONTENT:');
+            terminalPrint('  /addmonster           - Add new monster (opens form)');
+            terminalPrint('  /addweapon            - Add new weapon (opens form)');
+            terminalPrint('  /addarmor             - Add new armor (opens form)');
+            terminalPrint('  /additem              - Add new item (opens form)');
+            terminalPrint('');
+            terminalPrint('LISTING:');
+            terminalPrint('  /listmonsters         - Show all monsters');
+            terminalPrint('  /listweapons          - Show all weapons');
+            terminalPrint('  /listarmor            - Show all armor');
+            terminalPrint('  /listitems            - Show all items');
+            terminalPrint('');
+            terminalPrint('UTILITIES:');
+            terminalPrint('  /teleport <location>  - Teleport to area');
+            terminalPrint('  /killmonster          - Instantly kill current enemy');
+            terminalPrint('  /export <type>        - Export data (monsters/weapons/armor/items)');
+            terminalPrint('  /clear                - Clear terminal output');
+            terminalPrint('═══════════════════════════════════════', 'warning');
+        }
+
+        function handleGive(args) {
+            if (!gameState.player) {
+                terminalPrint('ERROR: No active player character', 'error');
+                return;
+            }
+
+            if (args.length < 2) {
+                terminalPrint('ERROR: Usage: /give <type> <id>', 'error');
+                terminalPrint('Types: weapon, armor, item, spell', 'error');
+                return;
+            }
+
+            const type = args[0].toLowerCase();
+            const id = args[1].toLowerCase();
+
+            switch(type) {
+                case 'weapon':
+                    if (WEAPONS[id]) {
+                        if (!gameState.player.inventory.includes(id)) {
+                            gameState.player.inventory.push(id);
+                        }
+                        terminalPrint(`SUCCESS: Gave weapon '${WEAPONS[id].name}' to player`, 'success');
+                    } else {
+                        terminalPrint(`ERROR: Weapon '${id}' not found`, 'error');
+                    }
+                    break;
+                case 'armor':
+                    if (ARMOR[id]) {
+                        if (!gameState.player.inventory.includes(id)) {
+                            gameState.player.inventory.push(id);
+                        }
+                        terminalPrint(`SUCCESS: Gave armor '${ARMOR[id].name}' to player`, 'success');
+                    } else {
+                        terminalPrint(`ERROR: Armor '${id}' not found`, 'error');
+                    }
+                    break;
+                case 'item':
+                    if (ITEMS[id]) {
+                        if (!gameState.player.inventory.includes(id)) {
+                            gameState.player.inventory.push(id);
+                        }
+                        terminalPrint(`SUCCESS: Gave item '${ITEMS[id].name}' to player`, 'success');
+                    } else {
+                        terminalPrint(`ERROR: Item '${id}' not found`, 'error');
+                    }
+                    break;
+                case 'spell':
+                    if (SPELLS[id]) {
+                        if (!gameState.player.knownSpells.includes(id)) {
+                            gameState.player.knownSpells.push(id);
+                        }
+                        terminalPrint(`SUCCESS: Taught spell '${SPELLS[id].name}' to player`, 'success');
+                    } else {
+                        terminalPrint(`ERROR: Spell '${id}' not found`, 'error');
+                    }
+                    break;
+                default:
+                    terminalPrint(`ERROR: Invalid type '${type}'`, 'error');
+            }
+        }
+
+        function handleSetLevel(args) {
+            if (!gameState.player) {
+                terminalPrint('ERROR: No active player character', 'error');
+                return;
+            }
+
+            const level = parseInt(args[0]);
+            if (isNaN(level) || level < 1 || level > 99) {
+                terminalPrint('ERROR: Invalid level. Use 1-99', 'error');
+                return;
+            }
+
+            gameState.player.level = level;
+            gameState.player.xpToNext = Math.floor(100 * Math.pow(1.5, level - 1));
+            terminalPrint(`SUCCESS: Set player level to ${level}`, 'success');
+        }
+
+        function handleSetGold(args) {
+            if (!gameState.player) {
+                terminalPrint('ERROR: No active player character', 'error');
+                return;
+            }
+
+            const gold = parseInt(args[0]);
+            if (isNaN(gold) || gold < 0) {
+                terminalPrint('ERROR: Invalid gold amount', 'error');
+                return;
+            }
+
+            gameState.player.gold = gold;
+            terminalPrint(`SUCCESS: Set gold to ${gold}`, 'success');
+        }
+
+        function handleHeal() {
+            if (!gameState.player) {
+                terminalPrint('ERROR: No active player character', 'error');
+                return;
+            }
+
+            gameState.player.hp = gameState.player.maxHp;
+            gameState.player.mp = gameState.player.maxMp;
+            terminalPrint('SUCCESS: Player fully healed', 'success');
+        }
+
+        function handleGodMode(args) {
+            if (!gameState.player) {
+                terminalPrint('ERROR: No active player character', 'error');
+                return;
+            }
+
+            const mode = args[0]?.toLowerCase();
+            if (mode === 'on') {
+                gameState.player.godMode = true;
+                terminalPrint('SUCCESS: God Mode ENABLED - Player is invincible', 'success');
+            } else if (mode === 'off') {
+                gameState.player.godMode = false;
+                terminalPrint('SUCCESS: God Mode DISABLED', 'success');
+            } else {
+                terminalPrint('ERROR: Usage: /godmode <on/off>', 'error');
+            }
+        }
+
+        function handleTeleport(args) {
+            if (!gameState.player) {
+                terminalPrint('ERROR: No active player character', 'error');
+                return;
+            }
+
+            const location = args[0]?.toLowerCase();
+            if (LOCATIONS[location]) {
+                gameState.currentLocation = location;
+                if (location === 'town') {
+                    showTown();
+                } else {
+                    exploreLocation(location);
+                }
+                terminalPrint(`SUCCESS: Teleported to ${LOCATIONS[location].name}`, 'success');
+            } else {
+                terminalPrint(`ERROR: Unknown location '${location}'`, 'error');
+                terminalPrint('Available: ' + Object.keys(LOCATIONS).join(', '), 'warning');
+            }
+        }
+
+        function handleKillMonster() {
+            if (!gameState.combatState) {
+                terminalPrint('ERROR: Not in combat', 'error');
+                return;
+            }
+
+            gameState.combatState.enemy.hp = 0;
+            terminalPrint('SUCCESS: Enemy eliminated', 'success');
+            checkCombatEnd();
+        }
+
+        function listMonsters() {
+            terminalPrint('═══ ALL MONSTERS ═══', 'warning');
+            Object.keys(ENEMIES).forEach(key => {
+                const m = ENEMIES[key];
+                terminalPrint(`${key}: ${m.name} (Lv${m.level}, HP:${m.hp}, DMG:${m.damage})`);
+            });
+        }
+
+        function listWeapons() {
+            terminalPrint('═══ ALL WEAPONS ═══', 'warning');
+            Object.keys(WEAPONS).forEach(key => {
+                const w = WEAPONS[key];
+                terminalPrint(`${key}: ${w.name} (Lv${w.level}, DMG:${w.damage}, MAG:${w.magicDamage})`);
+            });
+        }
+
+        function listArmor() {
+            terminalPrint('═══ ALL ARMOR ═══', 'warning');
+            Object.keys(ARMOR).forEach(key => {
+                const a = ARMOR[key];
+                terminalPrint(`${key}: ${a.name} (Lv${a.level}, DEF:${a.defense})`);
+            });
+        }
+
+        function listItems() {
+            terminalPrint('═══ ALL ITEMS ═══', 'warning');
+            Object.keys(ITEMS).forEach(key => {
+                const i = ITEMS[key];
+                terminalPrint(`${key}: ${i.name} (${i.type}, Lv${i.level})`);
+            });
+        }
+
+        function openAddMonsterForm() {
+            const modal = document.getElementById('modalOverlay');
+            const content = document.getElementById('modalContent');
+            
+            content.innerHTML = `
+                <div class="location-header">ADD NEW MONSTER</div>
+                <div style="margin: 20px 0;">
+                    <label style="color: var(--highlight-color);">Monster ID (lowercase, underscores):</label>
+                    <input type="text" id="monsterId" placeholder="fire_dragon">
+                    
+                    <label style="color: var(--highlight-color); margin-top: 10px; display: block;">Display Name:</label>
+                    <input type="text" id="monsterName" placeholder="Fire Dragon">
+                    
+                    <label style="color: var(--highlight-color); margin-top: 10px; display: block;">HP:</label>
+                    <input type="number" id="monsterHp" value="100">
+                    
+                    <label style="color: var(--highlight-color); margin-top: 10px; display: block;">Damage:</label>
+                    <input type="number" id="monsterDamage" value="20">
+                    
+                    <label style="color: var(--highlight-color); margin-top: 10px; display: block;">Defense:</label>
+                    <input type="number" id="monsterDefense" value="10">
+                    
+                    <label style="color: var(--highlight-color); margin-top: 10px; display: block;">XP Reward:</label>
+                    <input type="number" id="monsterXp" value="100">
+                    
+                    <label style="color: var(--highlight-color); margin-top: 10px; display: block;">Gold Reward:</label>
+                    <input type="number" id="monsterGold" value="80">
+                    
+                    <label style="color: var(--highlight-color); margin-top: 10px; display: block;">Level:</label>
+                    <input type="number" id="monsterLevel" value="5">
+                    
+                    <label style="color: var(--highlight-color); margin-top: 10px; display: block;">Description:</label>
+                    <input type="text" id="monsterDesc" placeholder="A fearsome creature">
+                </div>
+                <button onclick="submitAddMonster()">ADD MONSTER</button>
+                <button onclick="closeModal()">CANCEL</button>
+            `;
+            
+            modal.classList.add('active');
+        }
+
+        function submitAddMonster() {
+            const id = document.getElementById('monsterId').value.trim().toLowerCase();
+            const name = document.getElementById('monsterName').value.trim();
+            const hp = parseInt(document.getElementById('monsterHp').value);
+            const damage = parseInt(document.getElementById('monsterDamage').value);
+            const defense = parseInt(document.getElementById('monsterDefense').value);
+            const xp = parseInt(document.getElementById('monsterXp').value);
+            const gold = parseInt(document.getElementById('monsterGold').value);
+            const level = parseInt(document.getElementById('monsterLevel').value);
+            const description = document.getElementById('monsterDesc').value.trim();
+
+            if (!id || !name) {
+                alert('ID and Name are required!');
+                return;
+            }
+
+            ENEMIES[id] = {
+                name: name,
+                hp: hp,
+                damage: damage,
+                defense: defense,
+                xp: xp,
+                gold: gold,
+                level: level,
+                description: description
+            };
+
+            closeModal();
+            terminalPrint(`SUCCESS: Added monster '${name}' with ID '${id}'`, 'success');
+            terminalPrint('Remember to add it to a location\'s encounter list!', 'warning');
+        }
+
+        function openAddWeaponForm() {
+            const modal = document.getElementById('modalOverlay');
+            const content = document.getElementById('modalContent');
+            
+            content.innerHTML = `
+                <div class="location-header">ADD NEW WEAPON</div>
+                <div style="margin: 20px 0;">
+                    <label style="color: var(--highlight-color);">Weapon ID:</label>
+                    <input type="text" id="weaponId" placeholder="flame_sword">
+                    
+                    <label style="color: var(--highlight-color); margin-top: 10px; display: block;">Display Name:</label>
+                    <input type="text" id="weaponName" placeholder="Flame Sword">
+                    
+                    <label style="color: var(--highlight-color); margin-top: 10px; display: block;">Damage:</label>
+                    <input type="number" id="weaponDamage" value="30">
+                    
+                    <label style="color: var(--highlight-color); margin-top: 10px; display: block;">Magic Damage:</label>
+                    <input type="number" id="weaponMagic" value="10">
+                    
+                    <label style="color: var(--highlight-color); margin-top: 10px; display: block;">Cost:</label>
+                    <input type="number" id="weaponCost" value="200">
+                    
+                    <label style="color: var(--highlight-color); margin-top: 10px; display: block;">Level Requirement:</label>
+                    <input type="number" id="weaponLevel" value="5">
+                    
+                    <label style="color: var(--highlight-color); margin-top: 10px; display: block;">Description:</label>
+                    <input type="text" id="weaponDesc" placeholder="A blazing weapon">
+                </div>
+                <button onclick="submitAddWeapon()">ADD WEAPON</button>
+                <button onclick="closeModal()">CANCEL</button>
+            `;
+            
+            modal.classList.add('active');
+        }
+
+        function submitAddWeapon() {
+            const id = document.getElementById('weaponId').value.trim().toLowerCase();
+            const name = document.getElementById('weaponName').value.trim();
+            const damage = parseInt(document.getElementById('weaponDamage').value);
+            const magicDamage = parseInt(document.getElementById('weaponMagic').value);
+            const cost = parseInt(document.getElementById('weaponCost').value);
+            const level = parseInt(document.getElementById('weaponLevel').value);
+            const description = document.getElementById('weaponDesc').value.trim();
+
+            if (!id || !name) {
+                alert('ID and Name are required!');
+                return;
+            }
+
+            WEAPONS[id] = {
+                name: name,
+                damage: damage,
+                magicDamage: magicDamage,
+                cost: cost,
+                level: level,
+                description: description
+            };
+
+            closeModal();
+            terminalPrint(`SUCCESS: Added weapon '${name}' with ID '${id}'`, 'success');
+        }
+
+        function openAddArmorForm() {
+            const modal = document.getElementById('modalOverlay');
+            const content = document.getElementById('modalContent');
+            
+            content.innerHTML = `
+                <div class="location-header">ADD NEW ARMOR</div>
+                <div style="margin: 20px 0;">
+                    <label style="color: var(--highlight-color);">Armor ID:</label>
+                    <input type="text" id="armorId" placeholder="dragon_mail">
+                    
+                    <label style="color: var(--highlight-color); margin-top: 10px; display: block;">Display Name:</label>
+                    <input type="text" id="armorName" placeholder="Dragon Mail">
+                    
+                    <label style="color: var(--highlight-color); margin-top: 10px; display: block;">Defense:</label>
+                    <input type="number" id="armorDefense" value="25">
+                    
+                    <label style="color: var(--highlight-color); margin-top: 10px; display: block;">Magic Bonus:</label>
+                    <input type="number" id="armorMagic" value="0">
+                    
+                    <label style="color: var(--highlight-color); margin-top: 10px; display: block;">Cost:</label>
+                    <input type="number" id="armorCost" value="300">
+                    
+                    <label style="color: var(--highlight-color); margin-top: 10px; display: block;">Level Requirement:</label>
+                    <input type="number" id="armorLevel" value="6">
+                    
+                    <label style="color: var(--highlight-color); margin-top: 10px; display: block;">Description:</label>
+                    <input type="text" id="armorDesc" placeholder="Strong protective armor">
+                </div>
+                <button onclick="submitAddArmor()">ADD ARMOR</button>
+                <button onclick="closeModal()">CANCEL</button>
+            `;
+            
+            modal.classList.add('active');
+        }
+
+        function submitAddArmor() {
+            const id = document.getElementById('armorId').value.trim().toLowerCase();
+            const name = document.getElementById('armorName').value.trim();
+            const defense = parseInt(document.getElementById('armorDefense').value);
+            const magicBonus = parseInt(document.getElementById('armorMagic').value);
+            const cost = parseInt(document.getElementById('armorCost').value);
+            const level = parseInt(document.getElementById('armorLevel').value);
+            const description = document.getElementById('armorDesc').value.trim();
+
+            if (!id || !name) {
+                alert('ID and Name are required!');
+                return;
+            }
+
+            ARMOR[id] = {
+                name: name,
+                defense: defense,
+                magicBonus: magicBonus,
+                cost: cost,
+                level: level,
+                description: description
+            };
+
+            closeModal();
+            terminalPrint(`SUCCESS: Added armor '${name}' with ID '${id}'`, 'success');
+        }
+
+        function openAddItemForm() {
+            const modal = document.getElementById('modalOverlay');
+            const content = document.getElementById('modalContent');
+            
+            content.innerHTML = `
+                <div class="location-header">ADD NEW ITEM</div>
+                <div style="margin: 20px 0;">
+                    <label style="color: var(--highlight-color);">Item ID:</label>
+                    <input type="text" id="itemId" placeholder="super_potion">
+                    
+                    <label style="color: var(--highlight-color); margin-top: 10px; display: block;">Display Name:</label>
+                    <input type="text" id="itemName" placeholder="Super Potion">
+                    
+                    <label style="color: var(--highlight-color); margin-top: 10px; display: block;">Type:</label>
+                    <select id="itemType" style="width: 100%; background: var(--secondary-bg); color: var(--text-color); border: 2px solid var(--border-color); padding: 10px; font-family: 'VT323', monospace; font-size: 18px;">
+                        <option value="consumable">Consumable</option>
+                        <option value="quest">Quest</option>
+                        <option value="permanent">Permanent</option>
+                        <option value="utility">Utility</option>
+                        <option value="passive">Passive</option>
+                    </select>
+                    
+                    <label style="color: var(--highlight-color); margin-top: 10px; display: block;">Subtype:</label>
+                    <input type="text" id="itemSubtype" placeholder="heal_hp">
+                    
+                    <label style="color: var(--highlight-color); margin-top: 10px; display: block;">Power:</label>
+                    <input type="number" id="itemPower" value="50">
+                    
+                    <label style="color: var(--highlight-color); margin-top: 10px; display: block;">Cost:</label>
+                    <input type="number" id="itemCost" value="30">
+                    
+                    <label style="color: var(--highlight-color); margin-top: 10px; display: block;">Level:</label>
+                    <input type="number" id="itemLevel" value="1">
+                    
+                    <label style="color: var(--highlight-color); margin-top: 10px; display: block;">Description:</label>
+                    <input type="text" id="itemDesc" placeholder="Restores HP">
+                    
+                    <label style="color: var(--highlight-color); margin-top: 10px; display: block;">
+                        <input type="checkbox" id="itemStackable" checked> Stackable
+                    </label>
+                </div>
+                <button onclick="submitAddItem()">ADD ITEM</button>
+                <button onclick="closeModal()">CANCEL</button>
+            `;
+            
+            modal.classList.add('active');
+        }
+
+        function submitAddItem() {
+            const id = document.getElementById('itemId').value.trim().toLowerCase();
+            const name = document.getElementById('itemName').value.trim();
+            const type = document.getElementById('itemType').value;
+            const subtype = document.getElementById('itemSubtype').value.trim();
+            const power = parseInt(document.getElementById('itemPower').value);
+            const cost = parseInt(document.getElementById('itemCost').value);
+            const level = parseInt(document.getElementById('itemLevel').value);
+            const description = document.getElementById('itemDesc').value.trim();
+            const stackable = document.getElementById('itemStackable').checked;
+
+            if (!id || !name) {
+                alert('ID and Name are required!');
+                return;
+            }
+
+            ITEMS[id] = {
+                name: name,
+                type: type,
+                subtype: subtype,
+                power: power,
+                cost: cost,
+                level: level,
+                description: description,
+                stackable: stackable
+            };
+
+            closeModal();
+            terminalPrint(`SUCCESS: Added item '${name}' with ID '${id}'`, 'success');
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').classList.remove('active');
+        }
+
+        function handleExport(args) {
+            const type = args[0]?.toLowerCase();
+            let data;
+            let filename;
+
+            switch(type) {
+                case 'monsters':
+                    data = JSON.stringify(ENEMIES, null, 2);
+                    filename = 'monsters.json';
+                    break;
+                case 'weapons':
+                    data = JSON.stringify(WEAPONS, null, 2);
+                    filename = 'weapons.json';
+                    break;
+                case 'armor':
+                    data = JSON.stringify(ARMOR, null, 2);
+                    filename = 'armor.json';
+                    break;
+                case 'items':
+                    data = JSON.stringify(ITEMS, null, 2);
+                    filename = 'items.json';
+                    break;
+                default:
+                    terminalPrint('ERROR: Usage: /export <monsters/weapons/armor/items>', 'error');
+                    return;
+            }
+
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            terminalPrint(`SUCCESS: Exported ${type} to ${filename}`, 'success');
+        }
+
+        // Make functions global for onclick handlers
+        window.submitAddMonster = submitAddMonster;
+        window.submitAddWeapon = submitAddWeapon;
+        window.submitAddArmor = submitAddArmor;
+        window.submitAddItem = submitAddItem;
+        window.closeModal = closeModal;
+
+        // ═══════════════════════════════════════════════════════════════
+        // END SYSOP TERMINAL SYSTEM
+        // ═══════════════════════════════════════════════════════════════
+
+        // Initialize Game
+        function initGame() {
+            showMainMenu();
+        }
+
+        function showMainMenu() {
+            const screen = document.getElementById('mainScreen');
+            screen.innerHTML = `
+                <div class="location-header">MAIN MENU</div>
+                <div style="text-align: center; margin: 30px 0;">
+                    <div class="ascii-art" style="color: var(--highlight-color);">
+    ⚔️ ═══════════════════════════════ ⚔️
+       ╔═══════════════════════════╗
+       ║   DUNGEON QUEST AWAITS!   ║
+       ╚═══════════════════════════╝
+    🗡️ ═══════════════════════════════ 🗡️
+                    </div>
+                </div>
+                <div style="max-width: 400px; margin: 0 auto;">
+                    <div class="menu-option" onclick="newGame()">► NEW GAME</div>
+                    <div class="menu-option" onclick="loadGame()">► LOAD GAME</div>
+                    <div class="menu-option" onclick="showInstructions()">► INSTRUCTIONS</div>
+                </div>
+            `;
+        }
+
+        function showInstructions() {
+            const screen = document.getElementById('mainScreen');
+            screen.innerHTML = `
+                <div class="location-header">INSTRUCTIONS</div>
+                <div class="message">
+                    <p><span class="stat-label">OBJECTIVE:</span> Explore dungeons, defeat monsters, level up, and become legendary!</p>
+                    <br>
+                    <p><span class="stat-label">COMBAT:</span> Combat is turn-based with a timer. Choose your action before time runs out!</p>
+                    <br>
+                    <p><span class="stat-label">EXPLORATION:</span> Travel to different locations, each with stronger monsters.</p>
+                    <br>
+                    <p><span class="stat-label">PROGRESSION:</span> Gain XP, level up, buy better equipment, and learn new spells.</p>
+                    <br>
+                    <p><span class="stat-label">SAVING:</span> Save your game at any time from the town menu.</p>
+                </div>
+                <button onclick="showMainMenu()">BACK TO MENU</button>
+            `;
+        }
+
+        function newGame() {
+            const screen = document.getElementById('mainScreen');
+            screen.innerHTML = `
+                <div class="location-header">CHARACTER CREATION</div>
+                <div class="message">
+                    <p>Enter your character name:</p>
+                    <input type="text" id="playerName" maxlength="20" placeholder="Hero Name">
+                </div>
+                <div class="message">
+                    <p><span class="stat-label">Choose your class:</span></p>
+                </div>
+                <div class="character-select" id="classSelect"></div>
+                <button onclick="createCharacter()" id="createBtn" disabled>CREATE CHARACTER</button>
+                <button onclick="showMainMenu()">CANCEL</button>
+            `;
+
+            const classSelect = document.getElementById('classSelect');
+            let selectedClass = null;
+
+            Object.keys(CLASSES).forEach(classKey => {
+                const classData = CLASSES[classKey];
+                const card = document.createElement('div');
+                card.className = 'class-card';
+                card.innerHTML = `
+                    <div style="color: var(--highlight-color); font-size: 22px; margin-bottom: 10px;">${classData.name}</div>
+                    <div style="font-size: 16px; margin-bottom: 10px;">${classData.description}</div>
+                    <div class="stat">HP: ${classData.hp}</div>
+                    <div class="stat">MP: ${classData.mp}</div>
+                    <div class="stat">STR: ${classData.strength}</div>
+                    <div class="stat">DEF: ${classData.defense}</div>
+                    <div class="stat">MAG: ${classData.magic}</div>
+                    <div class="stat">SPD: ${classData.speed}</div>
+                `;
+                card.onclick = () => {
+                    document.querySelectorAll('.class-card').forEach(c => c.classList.remove('selected'));
+                    card.classList.add('selected');
+                    selectedClass = classKey;
+                    document.getElementById('createBtn').disabled = false;
+                };
+                classSelect.appendChild(card);
+            });
+
+            window.createCharacter = () => {
+                const name = document.getElementById('playerName').value.trim();
+                if (!name) {
+                    alert('Please enter a character name!');
+                    return;
+                }
+                if (!selectedClass) {
+                    alert('Please select a class!');
+                    return;
+                }
+                
+                const classData = CLASSES[selectedClass];
+                gameState.player = {
+                    name: name,
+                    class: selectedClass,
+                    className: classData.name,
+                    level: 1,
+                    xp: 0,
+                    xpToNext: 100,
+                    hp: classData.hp,
+                    maxHp: classData.hp,
+                    mp: classData.mp,
+                    maxMp: classData.mp,
+                    strength: classData.strength,
+                    defense: classData.defense,
+                    magic: classData.magic,
+                    speed: classData.speed,
+                    gold: 100,
+                    weapon: classData.startWeapon,
+                    armor: classData.startArmor,
+                    inventory: [classData.startWeapon, classData.startArmor],
+                    knownSpells: getStartingSpells(selectedClass)
+                };
+
+                gameState.currentLocation = 'town';
+                showTown();
+            };
+        }
+
+        function getStartingSpells(classKey) {
+            const spellMap = {
+                mage: ['fireball'],
+                cleric: ['heal'],
+                paladin: ['heal', 'holy_light'],
+                ranger: [],
+                warrior: [],
+                rogue: []
+            };
+            return spellMap[classKey] || [];
+        }
+
+        function showTown() {
+            const screen = document.getElementById('mainScreen');
+            screen.innerHTML = `
+                <div class="location-header">${LOCATIONS.town.name}</div>
+                ${renderPlayerStats()}
+                <div class="message">
+                    <p>${LOCATIONS.town.description}</p>
+                </div>
+                <div style="margin: 20px 0;">
+                    <div class="menu-option" onclick="showShop()">► VISIT SHOP</div>
+                    <div class="menu-option" onclick="restAtInn()">► REST AT INN (50 Gold)</div>
+                    <div class="menu-option" onclick="showInventory()">► INVENTORY</div>
+                    <div class="menu-option" onclick="showExplore()">► EXPLORE WORLD</div>
+                    <div class="menu-option" onclick="saveGame()">► SAVE GAME</div>
+                    <div class="menu-option" onclick="showMainMenu()">► QUIT TO MENU</div>
+                </div>
+            `;
+        }
+
+        function renderPlayerStats() {
+            const p = gameState.player;
+            const hpPercent = (p.hp / p.maxHp) * 100;
+            const mpPercent = (p.mp / p.maxMp) * 100;
+            const xpPercent = (p.xp / p.xpToNext) * 100;
+
+            return `
+                <div class="stats-bar">
+                    <div>
+                        <span class="stat-label">${p.name}</span> - Level ${p.level} ${p.className}
+                    </div>
+                    <div>
+                        <span class="stat-label">Gold:</span> ${p.gold}
+                    </div>
+                </div>
+                <div class="stats-bar">
+                    <div>
+                        <span class="stat-label">HP:</span> ${p.hp}/${p.maxHp}
+                        <div class="progress-bar">
+                            <div class="progress-fill hp-bar" style="width: ${hpPercent}%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="stat-label">MP:</span> ${p.mp}/${p.maxMp}
+                        <div class="progress-bar">
+                            <div class="progress-fill mp-bar" style="width: ${mpPercent}%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="stat-label">XP:</span> ${p.xp}/${p.xpToNext}
+                        <div class="progress-bar">
+                            <div class="progress-fill xp-bar" style="width: ${xpPercent}%"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function showShop() {
+            const screen = document.getElementById('mainScreen');
+            let shopHtml = `
+                <div class="location-header">MERCHANT SHOP</div>
+                ${renderPlayerStats()}
+                <div class="message">
+                    <p>Welcome to my shop! What can I get for you?</p>
+                </div>
+                <div style="margin: 20px 0;">
+                    <h3 style="color: var(--highlight-color);">WEAPONS</h3>
+                    <div class="inventory-grid">
+            `;
+
+            Object.keys(WEAPONS).forEach(key => {
+                const weapon = WEAPONS[key];
+                if (weapon.level <= gameState.player.level + 2) {
+                    const owned = gameState.player.inventory.includes(key);
+                    const equipped = gameState.player.weapon === key;
+                    const qualityColor = QUALITY_CONFIG[weapon.quality].color;
+                    const qualityName = QUALITY_CONFIG[weapon.quality].name;
+                    const qualityBonus = QUALITY_CONFIG[weapon.quality].bonus;
+                    const totalDmg = weapon.baseDamage + qualityBonus;
+                    const totalMag = weapon.baseMagicDamage + qualityBonus;
+                    
+                    shopHtml += `
+                        <div class="item-card ${equipped ? 'equipped' : ''}">
+                            <div style="color: ${qualityColor};">${weapon.name}</div>
+                            <div style="color: ${qualityColor}; font-size: 14px;">[${qualityName}]</div>
+                            <div>DMG: ${totalDmg} | MAG: ${totalMag}</div>
+                            <div style="font-size: 14px;">Base: ${weapon.baseDamage}/${weapon.baseMagicDamage} +${qualityBonus}</div>
+                            <div>Level: ${weapon.level}</div>
+                            ${owned ? '<div style="color: var(--border-color);">OWNED</div>' : 
+                              `<button onclick="buyItem('weapon', '${key}', ${weapon.cost})">Buy ${weapon.cost}G</button>`}
+                        </div>
+                    `;
+                }
+            });
+
+            shopHtml += `
+                    </div>
+                    <h3 style="color: var(--highlight-color); margin-top: 20px;">ARMOR</h3>
+                    <div class="inventory-grid">
+            `;
+
+            Object.keys(ARMOR).forEach(key => {
+                const armor = ARMOR[key];
+                if (armor.level <= gameState.player.level + 2) {
+                    const owned = gameState.player.inventory.includes(key);
+                    const equipped = gameState.player.armor === key;
+                    const qualityColor = QUALITY_CONFIG[armor.quality].color;
+                    const qualityName = QUALITY_CONFIG[armor.quality].name;
+                    const qualityBonus = QUALITY_CONFIG[armor.quality].bonus;
+                    const totalDef = armor.baseDefense + qualityBonus;
+                    const totalMag = (armor.baseMagicBonus || 0) + (qualityBonus > 0 ? Math.floor(qualityBonus / 2) : 0);
+                    
+                    shopHtml += `
+                        <div class="item-card ${equipped ? 'equipped' : ''}">
+                            <div style="color: ${qualityColor};">${armor.name}</div>
+                            <div style="color: ${qualityColor}; font-size: 14px;">[${qualityName}]</div>
+                            <div>DEF: ${totalDef}</div>
+                            ${totalMag > 0 ? `<div>MAG+: ${totalMag}</div>` : ''}
+                            <div style="font-size: 14px;">Base: ${armor.baseDefense} +${qualityBonus}</div>
+                            <div>Level: ${armor.level}</div>
+                            ${owned ? '<div style="color: var(--border-color);">OWNED</div>' : 
+                              `<button onclick="buyItem('armor', '${key}', ${armor.cost})">Buy ${armor.cost}G</button>`}
+                        </div>
+                    `;
+                }
+            });
+
+            shopHtml += `
+                    </div>
+                </div>
+                <button onclick="showTown()">LEAVE SHOP</button>
+            `;
+
+            screen.innerHTML = shopHtml;
+        }
+
+        function buyItem(type, key, cost) {
+            if (gameState.player.gold < cost) {
+                alert('Not enough gold!');
+                return;
+            }
+            
+            gameState.player.gold -= cost;
+            gameState.player.inventory.push(key);
+            alert(`Purchased ${type === 'weapon' ? WEAPONS[key].name : ARMOR[key].name}!`);
+            showShop();
+        }
+
+        function restAtInn() {
+            if (gameState.player.gold < 50) {
+                alert('Not enough gold!');
+                return;
+            }
+            
+            gameState.player.gold -= 50;
+            gameState.player.hp = gameState.player.maxHp;
+            gameState.player.mp = gameState.player.maxMp;
+            alert('You rest at the inn and recover fully!');
+            showTown();
+        }
+
+        function showInventory() {
+            const p = gameState.player;
+            const screen = document.getElementById('mainScreen');
+            
+            let invHtml = `
+                <div class="location-header">INVENTORY</div>
+                ${renderPlayerStats()}
+                <div style="margin: 20px 0;">
+                    <h3 style="color: var(--highlight-color);">WEAPONS</h3>
+                    <div class="inventory-grid">
+            `;
+
+            p.inventory.filter(item => WEAPONS[item]).forEach(key => {
+                const weapon = WEAPONS[key];
+                const equipped = p.weapon === key;
+                const qualityColor = QUALITY_CONFIG[weapon.quality].color;
+                const qualityName = QUALITY_CONFIG[weapon.quality].name;
+                const qualityBonus = QUALITY_CONFIG[weapon.quality].bonus;
+                const totalDmg = weapon.baseDamage + qualityBonus;
+                const totalMag = weapon.baseMagicDamage + qualityBonus;
+                
+                invHtml += `
+                    <div class="item-card ${equipped ? 'equipped' : ''}">
+                        <div style="color: ${qualityColor};">${weapon.name}</div>
+                        <div style="color: ${qualityColor}; font-size: 14px;">[${qualityName}]</div>
+                        <div>DMG: ${totalDmg} | MAG: ${totalMag}</div>
+                        ${equipped ? '<div style="color: var(--border-color);">EQUIPPED</div>' : 
+                          `<button onclick="equipItem('weapon', '${key}')">EQUIP</button>`}
+                    </div>
+                `;
+            });
+
+            invHtml += `
+                    </div>
+                    <h3 style="color: var(--highlight-color); margin-top: 20px;">ARMOR</h3>
+                    <div class="inventory-grid">
+            `;
+
+            p.inventory.filter(item => ARMOR[item]).forEach(key => {
+                const armor = ARMOR[key];
+                const equipped = p.armor === key;
+                const qualityColor = QUALITY_CONFIG[armor.quality].color;
+                const qualityName = QUALITY_CONFIG[armor.quality].name;
+                const qualityBonus = QUALITY_CONFIG[armor.quality].bonus;
+                const totalDef = armor.baseDefense + qualityBonus;
+                const totalMag = (armor.baseMagicBonus || 0) + (qualityBonus > 0 ? Math.floor(qualityBonus / 2) : 0);
+                
+                invHtml += `
+                    <div class="item-card ${equipped ? 'equipped' : ''}">
+                        <div style="color: ${qualityColor};">${armor.name}</div>
+                        <div style="color: ${qualityColor}; font-size: 14px;">[${qualityName}]</div>
+                        <div>DEF: ${totalDef}</div>
+                        ${totalMag > 0 ? `<div>MAG+: ${totalMag}</div>` : ''}
+                        ${equipped ? '<div style="color: var(--border-color);">EQUIPPED</div>' : 
+                          `<button onclick="equipItem('armor', '${key}')">EQUIP</button>`}
+                    </div>
+                `;
+            });
+
+            invHtml += `
+                    </div>
+                    <h3 style="color: var(--highlight-color); margin-top: 20px;">SPELLS</h3>
+                    <div class="inventory-grid">
+            `;
+
+            if (p.knownSpells.length === 0) {
+                invHtml += '<div class="message">No spells learned yet.</div>';
+            } else {
+                p.knownSpells.forEach(spellKey => {
+                    const spell = SPELLS[spellKey];
+                    invHtml += `
+                        <div class="item-card">
+                            <div style="color: var(--highlight-color);">${spell.name}</div>
+                            <div>MP Cost: ${spell.mpCost}</div>
+                            <div>Power: ${spell.power}</div>
+                            <div>${spell.description}</div>
+                        </div>
+                    `;
+                });
+            }
+
+            invHtml += `
+                    </div>
+                </div>
+                <button onclick="showTown()">BACK</button>
+            `;
+
+            screen.innerHTML = invHtml;
+        }
+
+        function equipItem(type, key) {
+            if (type === 'weapon') {
+                gameState.player.weapon = key;
+            } else {
+                gameState.player.armor = key;
+            }
+            showInventory();
+        }
+
+        function showExplore() {
+            const screen = document.getElementById('mainScreen');
+            
+            let exploreHtml = `
+                <div class="location-header">WORLD MAP</div>
+                ${renderPlayerStats()}
+                <div class="message">
+                    <p>Where would you like to explore?</p>
+                </div>
+                <div style="margin: 20px 0;">
+            `;
+
+            Object.keys(LOCATIONS).forEach(key => {
+                const loc = LOCATIONS[key];
+                if (key !== 'town') {
+                    const levelInfo = loc.enemyLevelRange ? 
+                        ` (Lv ${loc.enemyLevelRange[0]}-${loc.enemyLevelRange[1]})` : '';
+                    exploreHtml += `
+                        <div class="menu-option" onclick="exploreLocation('${key}')">
+                            ► ${loc.name}${levelInfo}
+                        </div>
+                    `;
+                }
+            });
+
+            exploreHtml += `
+                </div>
+                <button onclick="showTown()">RETURN TO TOWN</button>
+            `;
+
+            screen.innerHTML = exploreHtml;
+        }
+
+        function exploreLocation(locKey) {
+            gameState.currentLocation = locKey;
+            const location = LOCATIONS[locKey];
+            
+            // Random encounter
+            if (Math.random() < 0.7) {
+                const enemyKey = location.encounters[Math.floor(Math.random() * location.encounters.length)];
+                startCombat(enemyKey);
+            } else {
+                const screen = document.getElementById('mainScreen');
+                screen.innerHTML = `
+                    <div class="location-header">${location.name}</div>
+                    ${renderPlayerStats()}
+                    <div class="message">
+                        <p>${location.description}</p>
+                        <p style="color: var(--border-color);">You explore the area but find nothing...</p>
+                    </div>
+                    <button onclick="exploreLocation('${locKey}')">CONTINUE EXPLORING</button>
+                    <button onclick="showTown()">RETURN TO TOWN</button>
+                `;
+            }
+        }
+
+        function startCombat(enemyKey) {
+            const enemy = spawnMonsterWithRarity(enemyKey);
+
+            gameState.combatState = {
+                enemy: enemy,
+                turnTimer: 10,
+                playerTurn: gameState.player.speed >= enemy.level * 2,
+                messages: [`A ${getRarityText(enemy.rarity)} ${enemy.name} appears!`]
+            };
+
+            renderCombat();
+            startCombatTimer();
+        }
+
+        // NEW: Spawn monster with rarity system
+        function spawnMonsterWithRarity(enemyKey) {
+            const template = ENEMIES[enemyKey];
+            const rarity = rollRarity();
+            const mult = RARITY_CONFIG[rarity].multiplier;
+            
+            return {
+                key: enemyKey,
+                name: template.name,
+                rarity: rarity,
+                rarityColor: RARITY_CONFIG[rarity].color,
+                hp: Math.floor(template.baseHp * mult),
+                maxHp: Math.floor(template.baseHp * mult),
+                damage: Math.floor(template.baseDamage * mult),
+                defense: Math.floor(template.baseDefense * mult),
+                xp: Math.floor(template.baseXp * mult),
+                gold: Math.floor(template.baseGold * mult),
+                level: template.level,
+                possibleDrops: template.possibleDrops,
+                dropRates: template.dropRates
+            };
+        }
+
+        // NEW: Roll rarity based on weighted chances
+        function rollRarity() {
+            const roll = Math.random() * 100;
+            let cumulative = 0;
+            
+            for (const [rarity, config] of Object.entries(RARITY_CONFIG)) {
+                cumulative += config.spawnWeight;
+                if (roll < cumulative) return rarity;
+            }
+            return 'common';
+        }
+
+        // NEW: Get colored rarity text
+        function getRarityText(rarity) {
+            const color = RARITY_CONFIG[rarity].color;
+            const name = RARITY_CONFIG[rarity].name;
+            return `<span style="color: ${color}; font-weight: bold;">${name}</span>`;
+        }
+
+        function startCombatTimer() {
+            if (gameState.combatTimer) {
+                clearInterval(gameState.combatTimer);
+            }
+
+            gameState.combatTimer = setInterval(() => {
+                if (!gameState.combatState) {
+                    clearInterval(gameState.combatTimer);
+                    return;
+                }
+
+                gameState.combatState.turnTimer--;
+                
+                if (gameState.combatState.turnTimer <= 0) {
+                    // Time's up - enemy attacks
+                    gameState.combatState.messages.push('Time ran out! Enemy attacks!');
+                    enemyAttack();
+                } else {
+                    updateCombatTimer();
+                }
+            }, 1000);
+        }
+
+        function renderCombat() {
+            const screen = document.getElementById('mainScreen');
+            const combat = gameState.combatState;
+            const enemy = combat.enemy;
+            const p = gameState.player;
+
+            const enemyHpPercent = (enemy.hp / enemy.maxHp) * 100;
+
+            let combatHtml = `
+                <div class="location-header">COMBAT</div>
+                ${renderPlayerStats()}
+                
+                <div class="enemy-display">
+                    <div style="font-size: 24px; margin-bottom: 10px;">
+                        <span style="color: ${enemy.rarityColor};">${getRarityText(enemy.rarity)}</span>
+                        <span style="color: var(--error-color);"> ${enemy.name} (Lv ${enemy.level})</span>
+                    </div>
+                    <div style="color: var(--text-color);">
+                        HP: ${enemy.hp}/${enemy.maxHp}
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill hp-bar" style="width: ${enemyHpPercent}%"></div>
+                    </div>
+                </div>
+
+                <div class="message" style="border-color: var(--highlight-color);">
+                    <div style="color: var(--highlight-color); font-size: 20px; margin-bottom: 10px;">
+                        TIME: <span id="combatTimer">${combat.turnTimer}</span> seconds
+                    </div>
+                </div>
+
+                <div style="max-height: 200px; overflow-y: auto; margin: 15px 0;">
+            `;
+
+            combat.messages.forEach((msg, idx) => {
+                combatHtml += `<div class="message combat-message">${msg}</div>`;
+            });
+
+            combatHtml += `
+                </div>
+
+                <div style="margin: 20px 0;">
+                    <h3 style="color: var(--highlight-color);">CHOOSE YOUR ACTION:</h3>
+                    <button onclick="playerAttack()">⚔️ ATTACK</button>
+                    <button onclick="showSpellMenu()">✨ CAST SPELL</button>
+                    <button onclick="playerDefend()">🛡️ DEFEND</button>
+                    <button onclick="attemptFlee()">🏃 FLEE</button>
+                </div>
+            `;
+
+            screen.innerHTML = combatHtml;
+        }
+
+        function updateCombatTimer() {
+            const timerElem = document.getElementById('combatTimer');
+            if (timerElem) {
+                timerElem.textContent = gameState.combatState.turnTimer;
+            }
+        }
+
+        function playerAttack() {
+            clearInterval(gameState.combatTimer);
+            
+            const p = gameState.player;
+            const weapon = WEAPONS[p.weapon];
+            const qualityBonus = QUALITY_CONFIG[weapon.quality].bonus;
+            const weaponDamage = weapon.baseDamage + qualityBonus;
+            const weaponMagic = weapon.baseMagicDamage + qualityBonus;
+            const totalDamage = weaponDamage + p.strength + weaponMagic + Math.floor(p.magic / 2);
+            const actualDamage = Math.max(1, totalDamage - gameState.combatState.enemy.defense);
+            
+            gameState.combatState.enemy.hp -= actualDamage;
+            gameState.combatState.messages.push(`You attack for ${actualDamage} damage!`);
+
+            checkCombatEnd();
+        }
+
+        function showSpellMenu() {
+            const p = gameState.player;
+            if (p.knownSpells.length === 0) {
+                gameState.combatState.messages.push('You have no spells!');
+                renderCombat();
+                startCombatTimer();
+                return;
+            }
+
+            clearInterval(gameState.combatTimer);
+
+            const screen = document.getElementById('mainScreen');
+            const combat = gameState.combatState;
+            
+            let spellHtml = `
+                <div class="location-header">SELECT SPELL</div>
+                ${renderPlayerStats()}
+                <div class="message">Choose a spell to cast:</div>
+                <div class="inventory-grid">
+            `;
+
+            p.knownSpells.forEach(spellKey => {
+                const spell = SPELLS[spellKey];
+                const canCast = p.mp >= spell.mpCost;
+                spellHtml += `
+                    <div class="item-card">
+                        <div style="color: var(--highlight-color);">${spell.name}</div>
+                        <div>MP: ${spell.mpCost}</div>
+                        <div>Power: ${spell.power}</div>
+                        <div>${spell.description}</div>
+                        <button onclick="castSpell('${spellKey}')" ${!canCast ? 'disabled' : ''}>
+                            CAST
+                        </button>
+                    </div>
+                `;
+            });
+
+            spellHtml += `
+                </div>
+                <button onclick="renderCombat(); startCombatTimer();">BACK</button>
+            `;
+
+            screen.innerHTML = spellHtml;
+        }
+
+        function castSpell(spellKey) {
+            const spell = SPELLS[spellKey];
+            const p = gameState.player;
+
+            p.mp -= spell.mpCost;
+
+            if (spell.type === 'heal') {
+                const healAmount = spell.power + Math.floor(p.magic * 1.5);
+                p.hp = Math.min(p.maxHp, p.hp + healAmount);
+                gameState.combatState.messages.push(`You cast ${spell.name} and restore ${healAmount} HP!`);
+            } else {
+                const spellDamage = spell.power + p.magic;
+                const actualDamage = Math.max(1, spellDamage - Math.floor(gameState.combatState.enemy.defense / 2));
+                gameState.combatState.enemy.hp -= actualDamage;
+                gameState.combatState.messages.push(`You cast ${spell.name} for ${actualDamage} damage!`);
+            }
+
+            checkCombatEnd();
+        }
+
+        function playerDefend() {
+            clearInterval(gameState.combatTimer);
+            gameState.combatState.messages.push('You brace for impact!');
+            gameState.combatState.defending = true;
+            enemyAttack();
+        }
+
+        function attemptFlee() {
+            clearInterval(gameState.combatTimer);
+            
+            if (Math.random() < 0.5) {
+                gameState.combatState.messages.push('You successfully fled!');
+                gameState.combatState = null;
+                setTimeout(() => showTown(), 1500);
+            } else {
+                gameState.combatState.messages.push('Failed to escape!');
+                enemyAttack();
+            }
+        }
+
+        function enemyAttack() {
+            const enemy = gameState.combatState.enemy;
+            const p = gameState.player;
+            const armor = ARMOR[p.armor];
+            const qualityBonus = QUALITY_CONFIG[armor.quality].bonus;
+            const armorDefense = armor.baseDefense + qualityBonus;
+            
+            let totalDefense = p.defense + armorDefense;
+            if (gameState.combatState.defending) {
+                totalDefense *= 2;
+                gameState.combatState.defending = false;
+            }
+
+            const actualDamage = Math.max(1, enemy.damage - totalDefense);
+            
+            // God mode check
+            if (p.godMode) {
+                gameState.combatState.messages.push(`${enemy.name} attacks but you are INVINCIBLE!`);
+            } else {
+                p.hp -= actualDamage;
+                gameState.combatState.messages.push(`${enemy.name} attacks for ${actualDamage} damage!`);
+            }
+
+            if (p.hp <= 0 && !p.godMode) {
+                endCombat(false);
+            } else {
+                gameState.combatState.turnTimer = 10;
+                renderCombat();
+                startCombatTimer();
+            }
+        }
+
+        function checkCombatEnd() {
+            if (gameState.combatState.enemy.hp <= 0) {
+                endCombat(true);
+            } else {
+                enemyAttack();
+            }
+        }
+
+        function endCombat(victory) {
+            clearInterval(gameState.combatTimer);
+            const screen = document.getElementById('mainScreen');
+
+            if (victory) {
+                const enemy = gameState.combatState.enemy;
+                gameState.player.xp += enemy.xp;
+                gameState.player.gold += enemy.gold;
+
+                // NEW: Roll for item drops
+                const loot = rollLoot(enemy);
+
+                let resultHtml = `
+                    <div class="location-header">VICTORY!</div>
+                    ${renderPlayerStats()}
+                    <div class="message success-message">
+                        <p>You defeated the ${getRarityText(enemy.rarity)} ${enemy.name}!</p>
+                        <p>Gained ${enemy.xp} XP and ${enemy.gold} Gold!</p>
+                    </div>
+                `;
+
+                // Display loot
+                if (loot.length > 0) {
+                    resultHtml += `<div class="message" style="border-color: var(--highlight-color);">
+                        <p style="color: var(--highlight-color); font-size: 22px;">⚡ LOOT DROPPED ⚡</p>`;
+                    
+                    loot.forEach(itemKey => {
+                        const itemName = getItemName(itemKey);
+                        const itemColor = getItemColor(itemKey);
+                        const qualityText = getItemQualityText(itemKey);
+                        resultHtml += `<p style="color: ${itemColor};">+ ${itemName} ${qualityText}</p>`;
+                        
+                        // Add to inventory
+                        if (!gameState.player.inventory) {
+                            gameState.player.inventory = [];
+                        }
+                        gameState.player.inventory.push(itemKey);
+                    });
+                    
+                    resultHtml += `</div>`;
+                } else {
+                    resultHtml += `<div class="message" style="color: #808080;">
+                        <p>No items dropped...</p>
+                    </div>`;
+                }
+
+                // Check for level up
+                if (gameState.player.xp >= gameState.player.xpToNext) {
+                    levelUp();
+                    resultHtml += `
+                        <div class="message" style="border-color: var(--highlight-color);">
+                            <p style="color: var(--highlight-color); font-size: 24px;">LEVEL UP!</p>
+                            <p>You are now level ${gameState.player.level}!</p>
+                        </div>
+                    `;
+                }
+
+                resultHtml += `
+                    <button onclick="exploreLocation('${gameState.currentLocation}')">CONTINUE EXPLORING</button>
+                    <button onclick="showTown()">RETURN TO TOWN</button>
+                `;
+
+                screen.innerHTML = resultHtml;
+                gameState.combatState = null;
+            } else {
+                screen.innerHTML = `
+                    <div class="location-header">DEFEAT</div>
+                    <div class="message error-message">
+                        <p style="font-size: 24px;">You have been defeated!</p>
+                        <p>You wake up in town with half your gold...</p>
+                    </div>
+                    <button onclick="respawn()">CONTINUE</button>
+                `;
+            }
+        }
+
+        function levelUp() {
+            const p = gameState.player;
+            p.level++;
+            p.xp -= p.xpToNext;
+            p.xpToNext = Math.floor(p.xpToNext * 1.5);
+
+            // Stat increases
+            p.maxHp += 15;
+            p.hp = p.maxHp;
+            p.maxMp += 10;
+            p.mp = p.maxMp;
+            p.strength += 2;
+            p.defense += 2;
+            p.magic += 2;
+            p.speed += 1;
+
+            // Learn new spells
+            const spellLevels = {
+                2: ['fireball', 'heal'],
+                3: ['holy_light'],
+                4: ['lightning'],
+                5: ['greater_heal'],
+                6: ['ice_storm'],
+                8: ['meteor']
+            };
+
+            if (spellLevels[p.level]) {
+                spellLevels[p.level].forEach(spellKey => {
+                    if (!p.knownSpells.includes(spellKey)) {
+                        p.knownSpells.push(spellKey);
+                    }
+                });
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // LOOT DROP SYSTEM (Phase 1)
+        // ═══════════════════════════════════════════════════════════════
+
+        function rollLoot(monster) {
+            const loot = [];
+            const rarityBonus = RARITY_CONFIG[monster.rarity].dropBonus || 0;
+            
+            if (!monster.possibleDrops || monster.possibleDrops.length === 0) {
+                return loot;
+            }
+            
+            monster.possibleDrops.forEach(itemKey => {
+                let dropChance = 0;
+                
+                // Determine base drop chance
+                if (ITEMS[itemKey]) {
+                    // Consumable/sellable items use common drop rate
+                    dropChance = monster.dropRates.common || 0.3;
+                } else if (WEAPONS[itemKey] || ARMOR[itemKey]) {
+                    // Equipment uses quality-based drop rates
+                    const quality = getItemQuality(itemKey);
+                    dropChance = monster.dropRates[quality] || 0.05;
+                }
+                
+                // Apply rarity bonus (higher rarity monsters drop better loot)
+                const adjustedChance = Math.min(0.95, dropChance * (1 + rarityBonus * 0.1));
+                
+                if (Math.random() < adjustedChance) {
+                    loot.push(itemKey);
+                }
+            });
+            
+            // SPECIAL: Magical Butterknife check (Red Dragons only!)
+            if (monster.key === 'red_dragon' && Math.random() < 0.000001) {
+                loot.push('magical_butterknife');
+                // Alert SYSOP terminal if active
+                if (gameState.sysop && gameState.sysop.authenticated) {
+                    terminalPrint('⚠️⚠️⚠️ ULTRA RARE DROP: MAGICAL BUTTERKNIFE! ⚠️⚠️⚠️', 'success');
+                }
+            }
+            
+            return loot;
+        }
+
+        function getItemName(itemKey) {
+            if (WEAPONS[itemKey]) return WEAPONS[itemKey].name;
+            if (ARMOR[itemKey]) return ARMOR[itemKey].name;
+            if (ITEMS[itemKey]) return ITEMS[itemKey].name;
+            if (SPELLS[itemKey]) return SPELLS[itemKey].name;
+            return itemKey;
+        }
+
+        function getItemColor(itemKey) {
+            if (WEAPONS[itemKey]) {
+                return QUALITY_CONFIG[WEAPONS[itemKey].quality].color;
+            }
+            if (ARMOR[itemKey]) {
+                return QUALITY_CONFIG[ARMOR[itemKey].quality].color;
+            }
+            // Default green for items
+            return '#00FF00';
+        }
+
+        function getItemQualityText(itemKey) {
+            if (WEAPONS[itemKey]) {
+                const quality = WEAPONS[itemKey].quality;
+                return `[${QUALITY_CONFIG[quality].name}]`;
+            }
+            if (ARMOR[itemKey]) {
+                const quality = ARMOR[itemKey].quality;
+                return `[${QUALITY_CONFIG[quality].name}]`;
+            }
+            return '';
+        }
+
+        function getItemQuality(itemKey) {
+            if (WEAPONS[itemKey]) return WEAPONS[itemKey].quality;
+            if (ARMOR[itemKey]) return ARMOR[itemKey].quality;
+            return 'normal';
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // END LOOT DROP SYSTEM
+        // ═══════════════════════════════════════════════════════════════
+
+
+        function respawn() {
+            gameState.player.hp = gameState.player.maxHp;
+            gameState.player.mp = gameState.player.maxMp;
+            gameState.player.gold = Math.floor(gameState.player.gold / 2);
+            gameState.combatState = null;
+            showTown();
+        }
+
+        function saveGame() {
+            try {
+                const saveData = {
+                    player: gameState.player,
+                    currentLocation: gameState.currentLocation,
+                    timestamp: new Date().toISOString()
+                };
+                localStorage.setItem('dungeonQuestSave', JSON.stringify(saveData));
+                alert('Game saved successfully!');
+            } catch (e) {
+                alert('Error saving game!');
+            }
+        }
+
+        function loadGame() {
+            try {
+                const saveData = localStorage.getItem('dungeonQuestSave');
+                if (!saveData) {
+                    alert('No saved game found!');
+                    return;
+                }
+
+                const data = JSON.parse(saveData);
+                gameState.player = data.player;
+                gameState.currentLocation = data.currentLocation;
+                showTown();
+            } catch (e) {
+                alert('Error loading game!');
+            }
+        }
+
+        // Start the game
+        initGame();
+    </script>
+</body>
+</html>
