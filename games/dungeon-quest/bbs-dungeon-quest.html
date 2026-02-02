@@ -59,6 +59,26 @@
             50%, 100% { opacity: 0; }
         }
 
+        @keyframes flashOrange {
+            0%, 100% { color: #FF8C00; text-shadow: 0 0 6px #FF8C00; }
+            50%      { color: #FFD700; text-shadow: 0 0 14px #FFD700; }
+        }
+
+        @keyframes flashRed {
+            0%, 100% { color: #FF0000; text-shadow: 0 0 6px #FF0000; }
+            50%      { color: #FF4444; text-shadow: 0 0 14px #FF4444; }
+        }
+
+        .dmg-player {
+            animation: flashOrange 0.6s ease-in-out infinite;
+            font-weight: bold;
+        }
+
+        .dmg-enemy {
+            animation: flashRed 0.6s ease-in-out infinite;
+            font-weight: bold;
+        }
+
         .container {
             max-width: 900px;
             margin: 0 auto;
@@ -593,6 +613,62 @@
                 unlockMessage: 'Defeat your class master in the crypt to unlock this area!'
             }
         };
+
+        // ═══════════════════════════════════════════════════════════════
+        // MODEM SPEED SIMULATION
+        // ═══════════════════════════════════════════════════════════════
+        
+        const MODEM_SPEEDS = {
+            '56k': 7,      // ~7 characters per frame (56k modem)
+            '28.8k': 4,    // ~4 characters per frame (28.8k modem)
+            '14.4k': 2,    // ~2 characters per frame (14.4k modem)
+            'instant': -1  // No delay
+        };
+        
+        let currentModemSpeed = '28.8k'; // Default to 28.8k modem
+        let isStreaming = false;
+        let streamCancelled = false;
+        
+        function streamText(element, html, callback) {
+            if (currentModemSpeed === 'instant') {
+                element.innerHTML = html;
+                if (callback) callback();
+                return;
+            }
+            
+            isStreaming = true;
+            streamCancelled = false;
+            
+            // Strip HTML tags for character counting but keep them for display
+            const charsPerFrame = MODEM_SPEEDS[currentModemSpeed];
+            let currentIndex = 0;
+            
+            const interval = setInterval(() => {
+                if (streamCancelled) {
+                    clearInterval(interval);
+                    element.innerHTML = html;
+                    isStreaming = false;
+                    if (callback) callback();
+                    return;
+                }
+                
+                currentIndex += charsPerFrame;
+                
+                if (currentIndex >= html.length) {
+                    clearInterval(interval);
+                    element.innerHTML = html;
+                    isStreaming = false;
+                    if (callback) callback();
+                } else {
+                    // Display partial HTML up to current index
+                    element.innerHTML = html.substring(0, currentIndex) + '<span style="animation: blink 1s infinite;">_</span>';
+                }
+            }, 16); // ~60fps
+        }
+        
+        function cancelStream() {
+            streamCancelled = true;
+        }
 
         // Game State
         let gameState = {
@@ -1483,16 +1559,56 @@
                 ${renderPlayerStats()}
                 <div class="message">
                     <p>${LOCATIONS.town.description}</p>
+                    <p style="color: var(--border-color); font-size: 14px;">Modem Speed: ${currentModemSpeed}</p>
                 </div>
                 <div style="margin: 20px 0;">
                     <div class="menu-option" onclick="showShop()">► VISIT SHOP</div>
                     <div class="menu-option" onclick="restAtInn()">► REST AT INN (50 Gold)</div>
                     <div class="menu-option" onclick="showInventory()">► INVENTORY</div>
                     <div class="menu-option" onclick="showExplore()">► EXPLORE WORLD</div>
+                    <div class="menu-option" onclick="showModemSettings()">► MODEM SETTINGS</div>
                     <div class="menu-option" onclick="saveGame()">► SAVE GAME</div>
                     <div class="menu-option" onclick="showMainMenu()">► QUIT TO MENU</div>
                 </div>
             `;
+        }
+
+        function showModemSettings() {
+            const screen = document.getElementById('mainScreen');
+            screen.innerHTML = `
+                <div class="location-header">📞 MODEM SETTINGS 📞</div>
+                ${renderPlayerStats()}
+                <div class="message">
+                    <p>Select your connection speed:</p>
+                    <p style="font-size: 14px; color: var(--border-color);">Current: ${currentModemSpeed}</p>
+                </div>
+                <div style="margin: 20px 0;">
+                    <div class="menu-option ${currentModemSpeed === '14.4k' ? 'equipped' : ''}" onclick="setModemSpeed('14.4k')">
+                        ► 14.4k MODEM (Slowest - Most Authentic)
+                    </div>
+                    <div class="menu-option ${currentModemSpeed === '28.8k' ? 'equipped' : ''}" onclick="setModemSpeed('28.8k')">
+                        ► 28.8k MODEM (Slow - Classic BBS Feel)
+                    </div>
+                    <div class="menu-option ${currentModemSpeed === '56k' ? 'equipped' : ''}" onclick="setModemSpeed('56k')">
+                        ► 56k MODEM (Medium - Faster Loading)
+                    </div>
+                    <div class="menu-option ${currentModemSpeed === 'instant' ? 'equipped' : ''}" onclick="setModemSpeed('instant')">
+                        ► INSTANT (No Delay - Modern)
+                    </div>
+                </div>
+                <div class="message" style="border-color: var(--highlight-color);">
+                    <p style="color: var(--highlight-color);">ℹ️ INFO</p>
+                    <p style="font-size: 14px;">Modem speed affects how quickly text appears on screen.</p>
+                    <p style="font-size: 14px;">Lower speeds = more authentic 1990s BBS experience!</p>
+                    <p style="font-size: 14px;">Combat timer won't start until screen finishes loading.</p>
+                </div>
+                <button onclick="showTown()">BACK TO TOWN</button>
+            `;
+        }
+
+        function setModemSpeed(speed) {
+            currentModemSpeed = speed;
+            showModemSettings();
         }
 
         function renderPlayerStats() {
@@ -2125,8 +2241,8 @@
                 messages: [message]
             };
 
+            // Don't start timer here - it will start after renderCombat finishes streaming
             renderCombat();
-            startCombatTimer();
         }
 
         // NEW: Spawn monster with rarity system
@@ -2307,7 +2423,13 @@
                 </div>
             `;
 
-            screen.innerHTML = combatHtml;
+            // Use text streaming effect
+            streamText(screen, combatHtml, () => {
+                // Only start timer after screen is fully displayed
+                if (!gameState.combatTimer) {
+                    startCombatTimer();
+                }
+            });
         }
 
         function selectTarget(index) {
@@ -2347,7 +2469,7 @@
                 `<span style="color: ${enemy.rarityColor};">${enemy.name} #${targetIndex + 1}</span>` :
                 `<span style="color: ${enemy.rarityColor};">${enemy.name}</span>`;
             
-            gameState.combatState.messages.push(`You attack ${targetName} for ${actualDamage} damage!`);
+            gameState.combatState.messages.push(`You attack ${targetName} for <span class="dmg-enemy">${actualDamage} damage!</span>`);
 
             checkCombatEnd();
         }
@@ -2419,7 +2541,7 @@
                     `<span style="color: ${enemy.rarityColor};">${enemy.name} #${targetIndex + 1}</span>` :
                     `<span style="color: ${enemy.rarityColor};">${enemy.name}</span>`;
                 
-                gameState.combatState.messages.push(`You cast ${spell.name} on ${targetName} for ${actualDamage} damage!`);
+                gameState.combatState.messages.push(`You cast ${spell.name} on ${targetName} for <span class="dmg-enemy">${actualDamage} damage!</span>`);
             }
 
             checkCombatEnd();
@@ -2573,7 +2695,7 @@
                     gameState.combatState.messages.push(`${enemyName} attacks but you are INVINCIBLE!`);
                 } else {
                     p.hp -= actualDamage;
-                    gameState.combatState.messages.push(`${enemyName} attacks for ${actualDamage} damage!`);
+                    gameState.combatState.messages.push(`${enemyName} attacks for <span class="dmg-player">${actualDamage} damage!</span>`);
                 }
             });
 
