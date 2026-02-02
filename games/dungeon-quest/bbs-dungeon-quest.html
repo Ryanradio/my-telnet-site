@@ -452,6 +452,7 @@
     <script src="weapons.js"></script>
     <script src="armor.js"></script>
     <script src="items.js"></script>
+    <script src="class-masters.js"></script>
 
     <script>
         // Game Data Structures
@@ -551,31 +552,45 @@
                 name: 'Whispering Forest',
                 description: 'A dark forest filled with minor creatures.',
                 enemyLevelRange: [1, 3],
-                encounters: ['goblin', 'wolf', 'giant_spider']
+                encounters: ['goblin', 'wolf', 'giant_spider'],
+                requiredLevel: 1,
+                locked: false
             },
             plains: {
                 name: 'Endless Plains',
                 description: 'Open grasslands with roaming beasts.',
                 enemyLevelRange: [2, 5],
-                encounters: ['orc', 'dire_wolf', 'bandit']
+                encounters: ['orc', 'dire_wolf', 'bandit'],
+                requiredLevel: 3,
+                locked: true,
+                unlockMessage: 'Defeat your class master in the forest to unlock this area!'
             },
             cave: {
                 name: 'Shadow Cavern',
                 description: 'A dungeon filled with dangerous monsters.',
                 enemyLevelRange: [4, 7],
-                encounters: ['troll', 'skeleton_warrior', 'dark_mage']
+                encounters: ['troll', 'skeleton_warrior', 'dark_mage'],
+                requiredLevel: 6,
+                locked: true,
+                unlockMessage: 'Defeat your class master in the plains to unlock this area!'
             },
             crypt: {
                 name: 'Ancient Crypt',
                 description: 'An ancient tomb haunted by the undead.',
                 enemyLevelRange: [6, 9],
-                encounters: ['lich', 'death_knight', 'wraith']
+                encounters: ['lich', 'death_knight', 'wraith'],
+                requiredLevel: 9,
+                locked: true,
+                unlockMessage: 'Defeat your class master in the cave to unlock this area!'
             },
             volcano: {
                 name: 'Fire Mountain',
                 description: 'A volcanic peak home to fierce creatures.',
                 enemyLevelRange: [8, 12],
-                encounters: ['fire_elemental', 'red_dragon', 'demon']
+                encounters: ['fire_elemental', 'red_dragon', 'demon'],
+                requiredLevel: 12,
+                locked: true,
+                unlockMessage: 'Defeat your class master in the crypt to unlock this area!'
             }
         };
 
@@ -1439,7 +1454,9 @@
                     weapon: classData.startWeapon,
                     armor: classData.startArmor,
                     inventory: [classData.startWeapon, classData.startArmor],
-                    knownSpells: getStartingSpells(selectedClass)
+                    knownSpells: getStartingSpells(selectedClass),
+                    defeatedMasters: [],
+                    unlockedAreas: ['forest']  // Forest is always unlocked
                 };
 
                 gameState.currentLocation = 'town';
@@ -1518,12 +1535,27 @@
 
         function showShop() {
             const screen = document.getElementById('mainScreen');
+            
             let shopHtml = `
                 <div class="location-header">MERCHANT SHOP</div>
                 ${renderPlayerStats()}
                 <div class="message">
-                    <p>Welcome to my shop! What can I get for you?</p>
+                    <p>Welcome to my shop! What can I do for you?</p>
                 </div>
+                <div style="margin: 20px 0;">
+                    <button onclick="showShopBuy()" style="margin-right: 10px;">💰 BUY ITEMS</button>
+                    <button onclick="showShopSell()">💎 SELL ITEMS</button>
+                </div>
+                <div id="shopContent"></div>
+                <button onclick="showTown()">LEAVE SHOP</button>
+            `;
+            
+            screen.innerHTML = shopHtml;
+            showShopBuy(); // Default to buy tab
+        }
+
+        function showShopBuy() {
+            let shopHtml = `
                 <div style="margin: 20px 0;">
                     <h3 style="color: var(--highlight-color);">WEAPONS</h3>
                     <div class="inventory-grid">
@@ -1535,7 +1567,6 @@
                     const owned = gameState.player.inventory.includes(key);
                     const equipped = gameState.player.weapon === key;
                     const qualityColor = QUALITY_CONFIG[weapon.quality].color;
-                    const qualityName = QUALITY_CONFIG[weapon.quality].name;
                     const qualityBonus = QUALITY_CONFIG[weapon.quality].bonus;
                     const totalDmg = weapon.baseDamage + qualityBonus;
                     const totalMag = weapon.baseMagicDamage + qualityBonus;
@@ -1543,9 +1574,7 @@
                     shopHtml += `
                         <div class="item-card ${equipped ? 'equipped' : ''}">
                             <div style="color: ${qualityColor};">${weapon.name}</div>
-                            <div style="color: ${qualityColor}; font-size: 14px;">[${qualityName}]</div>
                             <div>DMG: ${totalDmg} | MAG: ${totalMag}</div>
-                            <div style="font-size: 14px;">Base: ${weapon.baseDamage}/${weapon.baseMagicDamage} +${qualityBonus}</div>
                             <div>Level: ${weapon.level}</div>
                             ${owned ? '<div style="color: var(--border-color);">OWNED</div>' : 
                               `<button onclick="buyItem('weapon', '${key}', ${weapon.cost})">Buy ${weapon.cost}G</button>`}
@@ -1566,7 +1595,6 @@
                     const owned = gameState.player.inventory.includes(key);
                     const equipped = gameState.player.armor === key;
                     const qualityColor = QUALITY_CONFIG[armor.quality].color;
-                    const qualityName = QUALITY_CONFIG[armor.quality].name;
                     const qualityBonus = QUALITY_CONFIG[armor.quality].bonus;
                     const totalDef = armor.baseDefense + qualityBonus;
                     const totalMag = (armor.baseMagicBonus || 0) + (qualityBonus > 0 ? Math.floor(qualityBonus / 2) : 0);
@@ -1574,10 +1602,8 @@
                     shopHtml += `
                         <div class="item-card ${equipped ? 'equipped' : ''}">
                             <div style="color: ${qualityColor};">${armor.name}</div>
-                            <div style="color: ${qualityColor}; font-size: 14px;">[${qualityName}]</div>
                             <div>DEF: ${totalDef}</div>
                             ${totalMag > 0 ? `<div>MAG+: ${totalMag}</div>` : ''}
-                            <div style="font-size: 14px;">Base: ${armor.baseDefense} +${qualityBonus}</div>
                             <div>Level: ${armor.level}</div>
                             ${owned ? '<div style="color: var(--border-color);">OWNED</div>' : 
                               `<button onclick="buyItem('armor', '${key}', ${armor.cost})">Buy ${armor.cost}G</button>`}
@@ -1588,11 +1614,113 @@
 
             shopHtml += `
                     </div>
-                </div>
-                <button onclick="showTown()">LEAVE SHOP</button>
+                    <h3 style="color: var(--highlight-color); margin-top: 20px;">POTIONS</h3>
+                    <div class="inventory-grid">
             `;
 
-            screen.innerHTML = shopHtml;
+            // Add potions to shop
+            const potionsForSale = ['health_potion', 'greater_health_potion', 'superior_health_potion',
+                                   'mana_potion', 'greater_mana_potion', 'superior_mana_potion', 'elixir'];
+            
+            potionsForSale.forEach(key => {
+                if (ITEMS[key]) {
+                    const item = ITEMS[key];
+                    shopHtml += `
+                        <div class="item-card">
+                            <div style="color: var(--highlight-color);">${item.name}</div>
+                            <div>${item.description}</div>
+                            <div>Power: ${item.power || 'Full'}</div>
+                            <button onclick="buyItem('item', '${key}', ${item.cost})">Buy ${item.cost}G</button>
+                        </div>
+                    `;
+                }
+            });
+
+            shopHtml += `
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('shopContent').innerHTML = shopHtml;
+        }
+
+        function showShopSell() {
+            const p = gameState.player;
+            
+            // Get all sellable items
+            const sellableItems = p.inventory.filter(itemKey => {
+                // Items with sellValue
+                if (ITEMS[itemKey] && ITEMS[itemKey].sellValue > 0) return true;
+                // Duplicate weapons/armor (not currently equipped)
+                if (WEAPONS[itemKey] && itemKey !== p.weapon) return true;
+                if (ARMOR[itemKey] && itemKey !== p.armor) return true;
+                return false;
+            });
+            
+            let sellHtml = '<h3 style="color: var(--highlight-color);">YOUR SELLABLE ITEMS</h3>';
+            sellHtml += '<div class="inventory-grid">';
+            
+            if (sellableItems.length === 0) {
+                sellHtml += '<div class="message">You have nothing to sell.</div>';
+            } else {
+                sellableItems.forEach(itemKey => {
+                    let itemName, itemColor, sellValue, itemDesc;
+                    
+                    if (ITEMS[itemKey]) {
+                        const item = ITEMS[itemKey];
+                        itemName = item.name;
+                        itemColor = '#00FF00';
+                        sellValue = item.sellValue;
+                        itemDesc = item.description;
+                    } else if (WEAPONS[itemKey]) {
+                        const weapon = WEAPONS[itemKey];
+                        itemName = weapon.name;
+                        itemColor = QUALITY_CONFIG[weapon.quality].color;
+                        sellValue = Math.floor(weapon.cost * 0.5); // 50% of purchase price
+                        const qualityBonus = QUALITY_CONFIG[weapon.quality].bonus;
+                        itemDesc = `DMG: ${weapon.baseDamage + qualityBonus} | MAG: ${weapon.baseMagicDamage + qualityBonus}`;
+                    } else if (ARMOR[itemKey]) {
+                        const armor = ARMOR[itemKey];
+                        itemName = armor.name;
+                        itemColor = QUALITY_CONFIG[armor.quality].color;
+                        sellValue = Math.floor(armor.cost * 0.5); // 50% of purchase price
+                        const qualityBonus = QUALITY_CONFIG[armor.quality].bonus;
+                        itemDesc = `DEF: ${armor.baseDefense + qualityBonus}`;
+                    }
+                    
+                    sellHtml += `
+                        <div class="item-card">
+                            <div style="color: ${itemColor};">${itemName}</div>
+                            <div style="font-size: 16px;">${itemDesc}</div>
+                            <div style="color: var(--border-color); margin-top: 10px;">Sell for: ${sellValue}G</div>
+                            <button onclick="sellItem('${itemKey}', ${sellValue})">SELL</button>
+                        </div>
+                    `;
+                });
+            }
+            
+            sellHtml += '</div>';
+            document.getElementById('shopContent').innerHTML = sellHtml;
+        }
+
+        function sellItem(itemKey, value) {
+            const index = gameState.player.inventory.indexOf(itemKey);
+            if (index === -1) {
+                alert('Item not found!');
+                return;
+            }
+            
+            // Remove from inventory
+            gameState.player.inventory.splice(index, 1);
+            
+            // Add gold
+            gameState.player.gold += value;
+            
+            const itemName = getItemName(itemKey);
+            alert(`Sold ${itemName} for ${value} gold!`);
+            
+            // Refresh sell screen
+            showShopSell();
         }
 
         function buyItem(type, key, cost) {
@@ -1603,8 +1731,18 @@
             
             gameState.player.gold -= cost;
             gameState.player.inventory.push(key);
-            alert(`Purchased ${type === 'weapon' ? WEAPONS[key].name : ARMOR[key].name}!`);
-            showShop();
+            
+            let itemName;
+            if (type === 'weapon') {
+                itemName = WEAPONS[key].name;
+            } else if (type === 'armor') {
+                itemName = ARMOR[key].name;
+            } else if (type === 'item') {
+                itemName = ITEMS[key].name;
+            }
+            
+            alert(`Purchased ${itemName}!`);
+            showShopBuy();
         }
 
         function restAtInn() {
@@ -1636,7 +1774,6 @@
                 const weapon = WEAPONS[key];
                 const equipped = p.weapon === key;
                 const qualityColor = QUALITY_CONFIG[weapon.quality].color;
-                const qualityName = QUALITY_CONFIG[weapon.quality].name;
                 const qualityBonus = QUALITY_CONFIG[weapon.quality].bonus;
                 const totalDmg = weapon.baseDamage + qualityBonus;
                 const totalMag = weapon.baseMagicDamage + qualityBonus;
@@ -1644,7 +1781,6 @@
                 invHtml += `
                     <div class="item-card ${equipped ? 'equipped' : ''}">
                         <div style="color: ${qualityColor};">${weapon.name}</div>
-                        <div style="color: ${qualityColor}; font-size: 14px;">[${qualityName}]</div>
                         <div>DMG: ${totalDmg} | MAG: ${totalMag}</div>
                         ${equipped ? '<div style="color: var(--border-color);">EQUIPPED</div>' : 
                           `<button onclick="equipItem('weapon', '${key}')">EQUIP</button>`}
@@ -1662,7 +1798,6 @@
                 const armor = ARMOR[key];
                 const equipped = p.armor === key;
                 const qualityColor = QUALITY_CONFIG[armor.quality].color;
-                const qualityName = QUALITY_CONFIG[armor.quality].name;
                 const qualityBonus = QUALITY_CONFIG[armor.quality].bonus;
                 const totalDef = armor.baseDefense + qualityBonus;
                 const totalMag = (armor.baseMagicBonus || 0) + (qualityBonus > 0 ? Math.floor(qualityBonus / 2) : 0);
@@ -1670,7 +1805,6 @@
                 invHtml += `
                     <div class="item-card ${equipped ? 'equipped' : ''}">
                         <div style="color: ${qualityColor};">${armor.name}</div>
-                        <div style="color: ${qualityColor}; font-size: 14px;">[${qualityName}]</div>
                         <div>DEF: ${totalDef}</div>
                         ${totalMag > 0 ? `<div>MAG+: ${totalMag}</div>` : ''}
                         ${equipped ? '<div style="color: var(--border-color);">EQUIPPED</div>' : 
@@ -1703,6 +1837,38 @@
 
             invHtml += `
                     </div>
+                    <h3 style="color: var(--highlight-color); margin-top: 20px;">CONSUMABLES & ITEMS</h3>
+                    <div class="inventory-grid">
+            `;
+
+            // Count and display items
+            const itemCounts = {};
+            p.inventory.filter(item => ITEMS[item]).forEach(key => {
+                itemCounts[key] = (itemCounts[key] || 0) + 1;
+            });
+
+            if (Object.keys(itemCounts).length === 0) {
+                invHtml += '<div class="message">No items.</div>';
+            } else {
+                Object.keys(itemCounts).forEach(itemKey => {
+                    const item = ITEMS[itemKey];
+                    const count = itemCounts[itemKey];
+                    const color = item.type === 'sellable' ? '#FFD700' : 
+                                 item.subtype === 'heal_hp' ? '#FF0000' :
+                                 item.subtype === 'heal_mp' ? '#0000FF' : '#00FF00';
+                    
+                    invHtml += `
+                        <div class="item-card">
+                            <div style="color: ${color};">${item.name} x${count}</div>
+                            <div style="font-size: 16px;">${item.description}</div>
+                            ${item.sellValue ? `<div style="color: var(--border-color);">Value: ${item.sellValue}G</div>` : ''}
+                        </div>
+                    `;
+                });
+            }
+
+            invHtml += `
+                    </div>
                 </div>
                 <button onclick="showTown()">BACK</button>
             `;
@@ -1721,6 +1887,7 @@
 
         function showExplore() {
             const screen = document.getElementById('mainScreen');
+            const p = gameState.player;
             
             let exploreHtml = `
                 <div class="location-header">WORLD MAP</div>
@@ -1736,11 +1903,53 @@
                 if (key !== 'town') {
                     const levelInfo = loc.enemyLevelRange ? 
                         ` (Lv ${loc.enemyLevelRange[0]}-${loc.enemyLevelRange[1]})` : '';
-                    exploreHtml += `
-                        <div class="menu-option" onclick="exploreLocation('${key}')">
-                            ► ${loc.name}${levelInfo}
-                        </div>
-                    `;
+                    
+                    const isUnlocked = p.unlockedAreas.includes(key);
+                    const canChallengeMaster = !isUnlocked && p.level >= loc.requiredLevel;
+                    
+                    if (isUnlocked) {
+                        // Unlocked area - can explore
+                        exploreHtml += `
+                            <div class="menu-option" onclick="exploreLocation('${key}')">
+                                ► ${loc.name}${levelInfo} <span style="color: var(--border-color);">✓ UNLOCKED</span>
+                            </div>
+                        `;
+                        
+                        // Show master challenge option if available
+                        const masterKey = `${p.class}_master_${key}`;
+                        if (CLASS_MASTERS[masterKey] && !p.defeatedMasters.includes(masterKey)) {
+                            const master = CLASS_MASTERS[masterKey];
+                            if (p.level >= master.requiredLevel) {
+                                exploreHtml += `
+                                    <div class="menu-option" onclick="challengeMaster('${masterKey}')" style="border-color: var(--highlight-color); background: rgba(255, 255, 0, 0.1);">
+                                        ⚔️ CHALLENGE MASTER: ${master.name} (Lv ${master.level})
+                                    </div>
+                                `;
+                            }
+                        }
+                    } else {
+                        // Locked area
+                        if (canChallengeMaster) {
+                            // Can challenge master to unlock
+                            const masterKey = getMasterKeyForArea(key);
+                            const master = CLASS_MASTERS[masterKey];
+                            exploreHtml += `
+                                <div class="menu-option" style="opacity: 0.6; cursor: default;" onclick="alert('${loc.unlockMessage}')">
+                                    🔒 ${loc.name}${levelInfo} - LOCKED
+                                </div>
+                                <div class="menu-option" onclick="challengeMaster('${masterKey}')" style="border-color: var(--error-color); background: rgba(255, 0, 0, 0.1);">
+                                    ⚔️ CHALLENGE MASTER: ${master.name} (Lv ${master.level}) TO UNLOCK!
+                                </div>
+                            `;
+                        } else {
+                            // Level too low
+                            exploreHtml += `
+                                <div class="menu-option" style="opacity: 0.6; cursor: default;" onclick="alert('You need to reach level ${loc.requiredLevel} first!')">
+                                    🔒 ${loc.name}${levelInfo} - LOCKED (Need Lv ${loc.requiredLevel})
+                                </div>
+                            `;
+                        }
+                    }
                 }
             });
 
@@ -1752,14 +1961,123 @@
             screen.innerHTML = exploreHtml;
         }
 
+        function getMasterKeyForArea(areaKey) {
+            // Find which area unlocks this one
+            const areaOrder = ['forest', 'plains', 'cave', 'crypt', 'volcano'];
+            const index = areaOrder.indexOf(areaKey);
+            if (index > 0) {
+                const previousArea = areaOrder[index - 1];
+                return `${gameState.player.class}_master_${previousArea}`;
+            }
+            return null;
+        }
+
+        function challengeMaster(masterKey) {
+            const master = CLASS_MASTERS[masterKey];
+            if (!master) {
+                alert('Master not found!');
+                return;
+            }
+            
+            const p = gameState.player;
+            
+            // Check if already defeated
+            if (p.defeatedMasters.includes(masterKey)) {
+                alert('You have already defeated this master!');
+                return;
+            }
+            
+            // Check level requirement
+            if (p.level < master.requiredLevel) {
+                alert(`You need to be level ${master.requiredLevel} to challenge this master!`);
+                return;
+            }
+            
+            // Show master challenge screen
+            const screen = document.getElementById('mainScreen');
+            screen.innerHTML = `
+                <div class="location-header">⚔️ MASTER CHALLENGE ⚔️</div>
+                ${renderPlayerStats()}
+                <div class="message" style="border-color: var(--error-color); background: rgba(255, 0, 0, 0.1);">
+                    <p style="color: var(--highlight-color); font-size: 24px;">${master.name}</p>
+                    <p style="color: var(--text-color); margin: 10px 0;">${master.description}</p>
+                    <p style="color: var(--border-color);">Level: ${master.level} | HP: ${master.baseHp} | Defense: ${master.baseDefense}</p>
+                    <p style="color: var(--error-color); margin-top: 15px;">⚠️ THIS IS A BOSS FIGHT! ⚠️</p>
+                    <p>Defeating this master will unlock: <span style="color: var(--highlight-color);">${LOCATIONS[master.unlocks].name}</span></p>
+                </div>
+                <div class="message" style="border-color: var(--highlight-color);">
+                    <p style="color: var(--highlight-color);">GUARANTEED REWARDS:</p>
+                    ${master.guaranteedDrops.map(item => `<p>• ${getItemName(item)}</p>`).join('')}
+                    <p style="margin-top: 10px;">+ ${master.xp} XP and ${master.gold} Gold</p>
+                </div>
+                <div style="margin: 20px 0;">
+                    <button onclick="startMasterBattle('${masterKey}')" style="background: var(--error-color); font-size: 22px;">⚔️ BEGIN BATTLE ⚔️</button>
+                    <button onclick="showExplore()">RETREAT</button>
+                </div>
+            `;
+        }
+
+        function startMasterBattle(masterKey) {
+            const master = CLASS_MASTERS[masterKey];
+            
+            // Create master as a special monster with epic rarity
+            const masterMonster = {
+                key: masterKey,
+                name: master.name,
+                rarity: 'epic',
+                rarityColor: RARITY_CONFIG.epic.color,
+                hp: master.baseHp,
+                maxHp: master.baseHp,
+                damage: master.baseDamage,
+                defense: master.baseDefense,
+                xp: master.xp,
+                gold: master.gold,
+                level: master.level,
+                possibleDrops: master.possibleDrops,
+                dropRates: master.dropRates,
+                isMaster: true,
+                masterKey: masterKey,
+                guaranteedDrops: master.guaranteedDrops
+            };
+            
+            gameState.combatState = {
+                monsters: [masterMonster],
+                currentTarget: 0,
+                turnTimer: 10,
+                playerTurn: gameState.player.speed >= master.level * 2,
+                messages: [`<span style="color: ${RARITY_CONFIG.epic.color};">${master.name}</span> challenges you to an honorable duel!`],
+                defeatedMonsters: []
+            };
+
+            renderCombat();
+            startCombatTimer();
+        }
+
         function exploreLocation(locKey) {
-            gameState.currentLocation = locKey;
             const location = LOCATIONS[locKey];
+            const p = gameState.player;
+            
+            // Check if area is unlocked
+            if (!p.unlockedAreas.includes(locKey)) {
+                alert(location.unlockMessage || 'This area is locked!');
+                showExplore();
+                return;
+            }
+            
+            gameState.currentLocation = locKey;
             
             // Random encounter
             if (Math.random() < 0.7) {
-                const enemyKey = location.encounters[Math.floor(Math.random() * location.encounters.length)];
-                startCombat(enemyKey);
+                // Roll for number of monsters (1-3)
+                const numMonsters = rollMonsterCount();
+                const enemyKeys = [];
+                
+                for (let i = 0; i < numMonsters; i++) {
+                    const enemyKey = location.encounters[Math.floor(Math.random() * location.encounters.length)];
+                    enemyKeys.push(enemyKey);
+                }
+                
+                startCombat(enemyKeys);
             } else {
                 const screen = document.getElementById('mainScreen');
                 screen.innerHTML = `
@@ -1775,14 +2093,36 @@
             }
         }
 
-        function startCombat(enemyKey) {
-            const enemy = spawnMonsterWithRarity(enemyKey);
+        // NEW: Roll for number of monsters in encounter
+        function rollMonsterCount() {
+            const roll = Math.random() * 100;
+            if (roll < 70) return 1;      // 70% chance for 1 monster
+            if (roll < 95) return 2;      // 25% chance for 2 monsters
+            return 3;                      // 5% chance for 3 monsters
+        }
+
+        function startCombat(enemyKeys) {
+            // Support both single enemy (old) and array (new)
+            if (!Array.isArray(enemyKeys)) {
+                enemyKeys = [enemyKeys];
+            }
+            
+            const monsters = enemyKeys.map(key => spawnMonsterWithRarity(key));
+            
+            let message;
+            if (monsters.length === 1) {
+                message = `A wild <span style="color: ${monsters[0].rarityColor};">${monsters[0].name}</span> appears!`;
+            } else {
+                const monsterNames = monsters.map(m => `<span style="color: ${m.rarityColor};">${m.name}</span>`).join(', ');
+                message = `${monsters.length} enemies appear: ${monsterNames}!`;
+            }
 
             gameState.combatState = {
-                enemy: enemy,
+                monsters: monsters,
+                currentTarget: 0,
                 turnTimer: 10,
-                playerTurn: gameState.player.speed >= enemy.level * 2,
-                messages: [`A ${getRarityText(enemy.rarity)} ${enemy.name} appears!`]
+                playerTurn: gameState.player.speed >= monsters[0].level * 2,
+                messages: [message]
             };
 
             renderCombat();
@@ -1857,28 +2197,72 @@
         function renderCombat() {
             const screen = document.getElementById('mainScreen');
             const combat = gameState.combatState;
-            const enemy = combat.enemy;
+            const monsters = combat.monsters;
             const p = gameState.player;
-
-            const enemyHpPercent = (enemy.hp / enemy.maxHp) * 100;
 
             let combatHtml = `
                 <div class="location-header">COMBAT</div>
                 ${renderPlayerStats()}
-                
-                <div class="enemy-display">
-                    <div style="font-size: 24px; margin-bottom: 10px;">
-                        <span style="color: ${enemy.rarityColor};">${getRarityText(enemy.rarity)}</span>
-                        <span style="color: var(--error-color);"> ${enemy.name} (Lv ${enemy.level})</span>
-                    </div>
-                    <div style="color: var(--text-color);">
-                        HP: ${enemy.hp}/${enemy.maxHp}
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill hp-bar" style="width: ${enemyHpPercent}%"></div>
-                    </div>
-                </div>
+            `;
 
+            // Display all enemies
+            if (monsters.length === 1) {
+                // Single enemy - traditional display
+                const enemy = monsters[0];
+                const enemyHpPercent = (enemy.hp / enemy.maxHp) * 100;
+                
+                combatHtml += `
+                    <div class="enemy-display">
+                        <div style="font-size: 24px; margin-bottom: 10px;">
+                            <span style="color: ${enemy.rarityColor};">${enemy.name}</span>
+                            <span style="color: var(--text-color);"> (Lv ${enemy.level})</span>
+                        </div>
+                        <div style="color: var(--text-color);">
+                            HP: ${enemy.hp}/${enemy.maxHp}
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill hp-bar" style="width: ${enemyHpPercent}%"></div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Multiple enemies - grid display
+                combatHtml += `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; margin: 15px 0;">`;
+                
+                monsters.forEach((enemy, index) => {
+                    const enemyHpPercent = (enemy.hp / enemy.maxHp) * 100;
+                    const isTarget = index === combat.currentTarget;
+                    
+                    combatHtml += `
+                        <div class="enemy-display" style="border: 3px solid ${isTarget ? 'var(--highlight-color)' : 'var(--error-color)'}; cursor: pointer;" onclick="selectTarget(${index})">
+                            <div style="font-size: 18px; margin-bottom: 8px;">
+                                <span style="color: ${isTarget ? 'var(--highlight-color)' : 'var(--text-color)'};">#${index + 1}</span>
+                                <span style="color: ${enemy.rarityColor};"> ${enemy.name}</span>
+                                <span style="color: var(--text-color);"> (Lv ${enemy.level})</span>
+                            </div>
+                            ${isTarget ? '<div style="color: var(--highlight-color); font-size: 14px;">► TARGET ◄</div>' : ''}
+                            <div style="color: var(--text-color); font-size: 16px;">
+                                HP: ${enemy.hp}/${enemy.maxHp}
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill hp-bar" style="width: ${enemyHpPercent}%"></div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                combatHtml += `</div>`;
+                
+                if (monsters.length > 1) {
+                    combatHtml += `
+                        <div class="message" style="border-color: var(--highlight-color); background: rgba(255, 255, 0, 0.1);">
+                            <p style="color: var(--highlight-color);">💡 Click on an enemy to target them, or use the buttons below!</p>
+                        </div>
+                    `;
+                }
+            }
+
+            combatHtml += `
                 <div class="message" style="border-color: var(--highlight-color);">
                     <div style="color: var(--highlight-color); font-size: 20px; margin-bottom: 10px;">
                         TIME: <span id="combatTimer">${combat.turnTimer}</span> seconds
@@ -1897,8 +2281,27 @@
 
                 <div style="margin: 20px 0;">
                     <h3 style="color: var(--highlight-color);">CHOOSE YOUR ACTION:</h3>
+            `;
+
+            // If multiple enemies, show target selection buttons
+            if (monsters.length > 1) {
+                combatHtml += `<div style="margin-bottom: 10px;">`;
+                monsters.forEach((enemy, index) => {
+                    const isTarget = index === combat.currentTarget;
+                    const color = isTarget ? 'var(--highlight-color)' : 'var(--text-color)';
+                    combatHtml += `
+                        <button onclick="selectTarget(${index})" style="background: ${isTarget ? 'var(--primary-bg)' : 'var(--secondary-bg)'}; color: ${color}; border-color: ${color};">
+                            Target #${index + 1}: ${enemy.name}
+                        </button>
+                    `;
+                });
+                combatHtml += `</div>`;
+            }
+
+            combatHtml += `
                     <button onclick="playerAttack()">⚔️ ATTACK</button>
                     <button onclick="showSpellMenu()">✨ CAST SPELL</button>
+                    <button onclick="showPotionMenu()">🧪 USE POTION</button>
                     <button onclick="playerDefend()">🛡️ DEFEND</button>
                     <button onclick="attemptFlee()">🏃 FLEE</button>
                 </div>
@@ -1906,6 +2309,16 @@
 
             screen.innerHTML = combatHtml;
         }
+
+        function selectTarget(index) {
+            if (gameState.combatState && index < gameState.combatState.monsters.length) {
+                gameState.combatState.currentTarget = index;
+                renderCombat();
+            }
+        }
+
+        // Make selectTarget global
+        window.selectTarget = selectTarget;
 
         function updateCombatTimer() {
             const timerElem = document.getElementById('combatTimer');
@@ -1918,15 +2331,23 @@
             clearInterval(gameState.combatTimer);
             
             const p = gameState.player;
+            const targetIndex = gameState.combatState.currentTarget;
+            const enemy = gameState.combatState.monsters[targetIndex];
+            
             const weapon = WEAPONS[p.weapon];
             const qualityBonus = QUALITY_CONFIG[weapon.quality].bonus;
             const weaponDamage = weapon.baseDamage + qualityBonus;
             const weaponMagic = weapon.baseMagicDamage + qualityBonus;
             const totalDamage = weaponDamage + p.strength + weaponMagic + Math.floor(p.magic / 2);
-            const actualDamage = Math.max(1, totalDamage - gameState.combatState.enemy.defense);
+            const actualDamage = Math.max(1, totalDamage - enemy.defense);
             
-            gameState.combatState.enemy.hp -= actualDamage;
-            gameState.combatState.messages.push(`You attack for ${actualDamage} damage!`);
+            enemy.hp -= actualDamage;
+            
+            const targetName = gameState.combatState.monsters.length > 1 ? 
+                `<span style="color: ${enemy.rarityColor};">${enemy.name} #${targetIndex + 1}</span>` :
+                `<span style="color: ${enemy.rarityColor};">${enemy.name}</span>`;
+            
+            gameState.combatState.messages.push(`You attack ${targetName} for ${actualDamage} damage!`);
 
             checkCombatEnd();
         }
@@ -1987,10 +2408,18 @@
                 p.hp = Math.min(p.maxHp, p.hp + healAmount);
                 gameState.combatState.messages.push(`You cast ${spell.name} and restore ${healAmount} HP!`);
             } else {
+                const targetIndex = gameState.combatState.currentTarget;
+                const enemy = gameState.combatState.monsters[targetIndex];
+                
                 const spellDamage = spell.power + p.magic;
-                const actualDamage = Math.max(1, spellDamage - Math.floor(gameState.combatState.enemy.defense / 2));
-                gameState.combatState.enemy.hp -= actualDamage;
-                gameState.combatState.messages.push(`You cast ${spell.name} for ${actualDamage} damage!`);
+                const actualDamage = Math.max(1, spellDamage - Math.floor(enemy.defense / 2));
+                enemy.hp -= actualDamage;
+                
+                const targetName = gameState.combatState.monsters.length > 1 ? 
+                    `<span style="color: ${enemy.rarityColor};">${enemy.name} #${targetIndex + 1}</span>` :
+                    `<span style="color: ${enemy.rarityColor};">${enemy.name}</span>`;
+                
+                gameState.combatState.messages.push(`You cast ${spell.name} on ${targetName} for ${actualDamage} damage!`);
             }
 
             checkCombatEnd();
@@ -2016,8 +2445,110 @@
             }
         }
 
+        // ═══════════════════════════════════════════════════════════════
+        // POTION SYSTEM (Phase 2)
+        // ═══════════════════════════════════════════════════════════════
+
+        function showPotionMenu() {
+            clearInterval(gameState.combatTimer);
+            const screen = document.getElementById('mainScreen');
+            const p = gameState.player;
+            
+            // Find all potions in inventory
+            const potions = {};
+            p.inventory.forEach(itemKey => {
+                if (ITEMS[itemKey] && (
+                    ITEMS[itemKey].subtype === 'heal_hp' ||
+                    ITEMS[itemKey].subtype === 'heal_mp' ||
+                    ITEMS[itemKey].subtype === 'full_restore'
+                )) {
+                    if (!potions[itemKey]) {
+                        potions[itemKey] = { item: ITEMS[itemKey], count: 0, indices: [] };
+                    }
+                    potions[itemKey].count++;
+                    potions[itemKey].indices.push(p.inventory.indexOf(itemKey));
+                }
+            });
+            
+            const potionKeys = Object.keys(potions);
+            
+            if (potionKeys.length === 0) {
+                gameState.combatState.messages.push('You have no potions!');
+                renderCombat();
+                startCombatTimer();
+                return;
+            }
+            
+            let potionHtml = `
+                <div class="location-header">USE POTION</div>
+                ${renderPlayerStats()}
+                <div class="message">Choose a potion to use (Enemy will attack after!):</div>
+                <div class="inventory-grid">
+            `;
+            
+            potionKeys.forEach(potionKey => {
+                const potionData = potions[potionKey];
+                const potion = potionData.item;
+                const color = potion.subtype === 'heal_hp' ? '#FF0000' : 
+                             potion.subtype === 'heal_mp' ? '#0000FF' : '#FFFF00';
+                
+                potionHtml += `
+                    <div class="item-card">
+                        <div style="color: ${color};">${potion.name} x${potionData.count}</div>
+                        <div>${potion.description}</div>
+                        <div>Power: ${potion.power || 'Full Restore'}</div>
+                        <button onclick="usePotion('${potionKey}')">USE</button>
+                    </div>
+                `;
+            });
+            
+            potionHtml += `
+                </div>
+                <button onclick="renderCombat(); startCombatTimer();">BACK</button>
+            `;
+            
+            screen.innerHTML = potionHtml;
+        }
+
+        function usePotion(potionKey) {
+            const potion = ITEMS[potionKey];
+            const p = gameState.player;
+            
+            if (potion.subtype === 'heal_hp') {
+                const healAmount = potion.power;
+                const actualHeal = Math.min(p.maxHp - p.hp, healAmount);
+                p.hp = Math.min(p.maxHp, p.hp + healAmount);
+                gameState.combatState.messages.push(`Used ${potion.name} and restored ${actualHeal} HP!`);
+            } else if (potion.subtype === 'heal_mp') {
+                const manaAmount = potion.power;
+                const actualMana = Math.min(p.maxMp - p.mp, manaAmount);
+                p.mp = Math.min(p.maxMp, p.mp + manaAmount);
+                gameState.combatState.messages.push(`Used ${potion.name} and restored ${actualMana} MP!`);
+            } else if (potion.subtype === 'full_restore') {
+                const hpRestored = p.maxHp - p.hp;
+                const mpRestored = p.maxMp - p.mp;
+                p.hp = p.maxHp;
+                p.mp = p.maxMp;
+                gameState.combatState.messages.push(`Used ${potion.name} - fully restored ${hpRestored} HP and ${mpRestored} MP!`);
+            }
+            
+            // Remove potion from inventory (remove first occurrence)
+            const index = p.inventory.indexOf(potionKey);
+            if (index !== -1) {
+                p.inventory.splice(index, 1);
+            }
+            
+            // Enemy attacks after using potion
+            enemyAttack();
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // END POTION SYSTEM
+        // ═══════════════════════════════════════════════════════════════
+
+
         function enemyAttack() {
-            const enemy = gameState.combatState.enemy;
+            const monsters = gameState.combatState.monsters;
             const p = gameState.player;
             const armor = ARMOR[p.armor];
             const qualityBonus = QUALITY_CONFIG[armor.quality].bonus;
@@ -2029,15 +2560,22 @@
                 gameState.combatState.defending = false;
             }
 
-            const actualDamage = Math.max(1, enemy.damage - totalDefense);
-            
-            // God mode check
-            if (p.godMode) {
-                gameState.combatState.messages.push(`${enemy.name} attacks but you are INVINCIBLE!`);
-            } else {
-                p.hp -= actualDamage;
-                gameState.combatState.messages.push(`${enemy.name} attacks for ${actualDamage} damage!`);
-            }
+            // All monsters attack!
+            monsters.forEach((enemy, index) => {
+                const actualDamage = Math.max(1, enemy.damage - totalDefense);
+                
+                const enemyName = monsters.length > 1 ? 
+                    `<span style="color: ${enemy.rarityColor};">${enemy.name} #${index + 1}</span>` :
+                    `<span style="color: ${enemy.rarityColor};">${enemy.name}</span>`;
+                
+                // God mode check
+                if (p.godMode) {
+                    gameState.combatState.messages.push(`${enemyName} attacks but you are INVINCIBLE!`);
+                } else {
+                    p.hp -= actualDamage;
+                    gameState.combatState.messages.push(`${enemyName} attacks for ${actualDamage} damage!`);
+                }
+            });
 
             if (p.hp <= 0 && !p.godMode) {
                 endCombat(false);
@@ -2049,7 +2587,33 @@
         }
 
         function checkCombatEnd() {
-            if (gameState.combatState.enemy.hp <= 0) {
+            const monsters = gameState.combatState.monsters;
+            const targetIndex = gameState.combatState.currentTarget;
+            
+            // Initialize defeated monsters array if needed
+            if (!gameState.combatState.defeatedMonsters) {
+                gameState.combatState.defeatedMonsters = [];
+            }
+            
+            // Check if targeted monster is dead
+            if (monsters[targetIndex].hp <= 0) {
+                const deadEnemy = monsters[targetIndex];
+                gameState.combatState.messages.push(`<span style="color: ${deadEnemy.rarityColor};">${deadEnemy.name}</span> has been defeated!`);
+                
+                // Store defeated monster for rewards
+                gameState.combatState.defeatedMonsters.push(deadEnemy);
+                
+                // Remove dead monster
+                monsters.splice(targetIndex, 1);
+                
+                // Adjust target if needed
+                if (gameState.combatState.currentTarget >= monsters.length) {
+                    gameState.combatState.currentTarget = Math.max(0, monsters.length - 1);
+                }
+            }
+            
+            // Check if all monsters are dead
+            if (monsters.length === 0) {
                 endCombat(true);
             } else {
                 enemyAttack();
@@ -2061,32 +2625,99 @@
             const screen = document.getElementById('mainScreen');
 
             if (victory) {
-                const enemy = gameState.combatState.enemy;
-                gameState.player.xp += enemy.xp;
-                gameState.player.gold += enemy.gold;
-
-                // NEW: Roll for item drops
-                const loot = rollLoot(enemy);
+                const defeatedMonsters = gameState.combatState.defeatedMonsters || [];
+                
+                // Check if this was a master battle
+                const isMasterBattle = defeatedMonsters.some(m => m.isMaster);
+                let masterData = null;
+                let unlockedArea = null;
+                
+                if (isMasterBattle) {
+                    const master = defeatedMonsters.find(m => m.isMaster);
+                    masterData = CLASS_MASTERS[master.masterKey];
+                    unlockedArea = masterData.unlocks;
+                    
+                    // Record master defeat
+                    if (!gameState.player.defeatedMasters.includes(master.masterKey)) {
+                        gameState.player.defeatedMasters.push(master.masterKey);
+                    }
+                    
+                    // Unlock area
+                    if (!gameState.player.unlockedAreas.includes(unlockedArea)) {
+                        gameState.player.unlockedAreas.push(unlockedArea);
+                    }
+                    
+                    // Add guaranteed drops
+                    masterData.guaranteedDrops.forEach(itemKey => {
+                        defeatedMonsters[0].possibleDrops = defeatedMonsters[0].possibleDrops || [];
+                        if (!defeatedMonsters[0].possibleDrops.includes(itemKey)) {
+                            defeatedMonsters[0].possibleDrops.push(itemKey);
+                        }
+                        // Set 100% drop rate for guaranteed items
+                        defeatedMonsters[0].dropRates = defeatedMonsters[0].dropRates || {};
+                        if (WEAPONS[itemKey] || ARMOR[itemKey]) {
+                            const quality = getItemQuality(itemKey);
+                            defeatedMonsters[0].dropRates[quality] = 1.0;
+                        } else {
+                            defeatedMonsters[0].dropRates.common = 1.0;
+                        }
+                    });
+                }
+                
+                // Calculate total rewards
+                let totalXp = 0;
+                let totalGold = 0;
+                let allLoot = [];
+                
+                defeatedMonsters.forEach(enemy => {
+                    totalXp += enemy.xp;
+                    totalGold += enemy.gold;
+                    const loot = rollLoot(enemy);
+                    allLoot = allLoot.concat(loot);
+                });
+                
+                gameState.player.xp += totalXp;
+                gameState.player.gold += totalGold;
 
                 let resultHtml = `
-                    <div class="location-header">VICTORY!</div>
+                    <div class="location-header">${isMasterBattle ? '⚔️ MASTER DEFEATED! ⚔️' : 'VICTORY!'}</div>
                     ${renderPlayerStats()}
-                    <div class="message success-message">
-                        <p>You defeated the ${getRarityText(enemy.rarity)} ${enemy.name}!</p>
-                        <p>Gained ${enemy.xp} XP and ${enemy.gold} Gold!</p>
-                    </div>
                 `;
+                
+                if (isMasterBattle) {
+                    resultHtml += `
+                        <div class="message" style="border-color: var(--highlight-color); background: rgba(255, 255, 0, 0.2);">
+                            <p style="color: var(--highlight-color); font-size: 26px;">🏆 ${masterData.name} HAS BEEN DEFEATED! 🏆</p>
+                            <p style="color: var(--text-color); margin: 10px 0;">You have proven your worth!</p>
+                            <p style="color: var(--border-color); font-size: 22px;">✨ ${LOCATIONS[unlockedArea].name} IS NOW UNLOCKED! ✨</p>
+                        </div>
+                    `;
+                }
+                
+                resultHtml += `<div class="message success-message">`;
+                
+                if (defeatedMonsters.length === 1) {
+                    const enemy = defeatedMonsters[0];
+                    resultHtml += `<p>You defeated the <span style="color: ${enemy.rarityColor};">${enemy.name}</span>!</p>`;
+                } else {
+                    resultHtml += `<p>You defeated ${defeatedMonsters.length} enemies!</p>`;
+                    defeatedMonsters.forEach((enemy, i) => {
+                        resultHtml += `<p style="font-size: 16px;">• <span style="color: ${enemy.rarityColor};">${enemy.name}</span></p>`;
+                    });
+                }
+                
+                resultHtml += `<p style="color: var(--border-color); font-size: 20px; margin-top: 10px;">Gained ${totalXp} XP and ${totalGold} Gold!</p>`;
+                resultHtml += `</div>`;
 
                 // Display loot
-                if (loot.length > 0) {
+                if (allLoot.length > 0) {
                     resultHtml += `<div class="message" style="border-color: var(--highlight-color);">
                         <p style="color: var(--highlight-color); font-size: 22px;">⚡ LOOT DROPPED ⚡</p>`;
                     
-                    loot.forEach(itemKey => {
+                    allLoot.forEach(itemKey => {
                         const itemName = getItemName(itemKey);
                         const itemColor = getItemColor(itemKey);
-                        const qualityText = getItemQualityText(itemKey);
-                        resultHtml += `<p style="color: ${itemColor};">+ ${itemName} ${qualityText}</p>`;
+                        resultHtml += `<p style="color: ${itemColor};">+ ${itemName}</p>`;
                         
                         // Add to inventory
                         if (!gameState.player.inventory) {
@@ -2114,7 +2745,9 @@
                 }
 
                 resultHtml += `
-                    <button onclick="exploreLocation('${gameState.currentLocation}')">CONTINUE EXPLORING</button>
+                    <button onclick="${isMasterBattle ? 'showExplore()' : `exploreLocation('${gameState.currentLocation}')`}">
+                        ${isMasterBattle ? 'VIEW WORLD MAP' : 'CONTINUE EXPLORING'}
+                    </button>
                     <button onclick="showTown()">RETURN TO TOWN</button>
                 `;
 
