@@ -628,6 +628,65 @@
             }
         };
 
+
+        // ═══════════════════════════════════════════════════════════════
+        // STAT SYSTEM
+        // ═══════════════════════════════════════════════════════════════
+        const STAT_BUDGET  = 30;
+        const STAT_NAMES   = ['str','dex','wis','cha','con','lck'];
+        const STAT_LABELS  = { str:'STR', dex:'DEX', wis:'WIS', cha:'CHA', con:'CON', lck:'LCK' };
+        const STAT_DESCS   = {
+            str:'Physical damage & multi-hit',
+            dex:'Dodge chance & flee success',
+            wis:'Spell power & magic resist',
+            cha:'Shop prices & negotiation',
+            con:'Max HP bonus & defense',
+            lck:'Crit chance & loot luck'
+        };
+        // Opposed pairs: reroll engine biases against extremes in both.
+        // Paladin is EXEMPT from str<->wis opposition.
+        const OPPOSED_PAIRS = [['str','wis'],['dex','cha'],['con','lck']];
+
+        const CLASS_STAT_PRESETS = {
+            warrior : { str:10, dex:4, wis:2, cha:2, con:8, lck:4 },
+            rogue   : { str:4,  dex:10,wis:2, cha:4, con:4, lck:6 },
+            paladin : { str:7,  dex:3, wis:7, cha:4, con:6, lck:3 },
+            mage    : { str:2,  dex:3, wis:10,cha:3, con:4, lck:8 },
+            cleric  : { str:3,  dex:2, wis:9, cha:6, con:6, lck:4 },
+            ranger  : { str:5,  dex:8, wis:3, cha:3, con:5, lck:6 }
+        };
+        const CLASS_AFFINITIES = {
+            warrior :['str','con'],
+            rogue   :['dex','lck'],
+            paladin :['str','wis','cha'],
+            mage    :['wis','lck'],
+            cleric  :['wis','cha'],
+            ranger  :['dex','lck']
+        };
+
+        // ── derived-stat helpers ──────────────────────────────────────
+        function calcPlayerHits(p) {
+            let h = 1;
+            if (p.class === 'rogue') h++;           // rogue class bonus
+            h += Math.floor((p.level || 1) / 4);    // +1 every 4 levels
+            h += Math.floor(Math.max(0, (p.str||0) - 8) / 6);  // STR scaling
+            return h;
+        }
+        function calcChaDiscount(cha) { return Math.min(30, (cha||0) * 2); }   // buy %  off
+        function calcChaSellBonus(cha){ return Math.min(15, (cha||0) * 1); }   // sell %  bonus
+        function calcInnCost(cha)     { return Math.max(20, 50 - (cha||0)); }
+        function calcCritChance(lck)  { return Math.min(30,  5 + (lck||0)); }  // %
+        function calcDodgeChance(dex) { return Math.min(40, (dex||0) * 2); }   // %
+        function calcLootBonus(lck)   { return Math.min(25, (lck||0) * 2); }   // extra %
+
+        // random reroll: scatter STAT_BUDGET among 6 stats (min 1 each)
+        function rerollStats(classKey) {
+            const s = { str:1, dex:1, wis:1, cha:1, con:1, lck:1 };
+            let rem = STAT_BUDGET - 6;
+            while (rem-- > 0) s[STAT_NAMES[Math.floor(Math.random()*6)]]++;
+            return s;
+        }
+
         const SPELLS = {
             heal: { name: 'Heal', mpCost: 15, power: 30, type: 'heal', level: 1, description: 'Restore HP' },
             fireball: { name: 'Fireball', mpCost: 20, power: 35, type: 'attack', level: 2, description: 'Fiery attack' },
@@ -1546,75 +1605,142 @@
                     <p><span class="stat-label">Choose your class:</span></p>
                 </div>
                 <div class="character-select" id="classSelect"></div>
-                <button onclick="createCharacter()" id="createBtn" disabled>CREATE CHARACTER</button>
+                <button onclick="goToStatAlloc()" id="createBtn" disabled>ALLOCATE STATS →</button>
                 <button onclick="showMainMenu()">CANCEL</button>
             `;
 
             const classSelect = document.getElementById('classSelect');
-            let selectedClass = null;
+            window._selectedClass = null;
 
             Object.keys(CLASSES).forEach(classKey => {
-                const classData = CLASSES[classKey];
+                const cd   = CLASSES[classKey];
                 const card = document.createElement('div');
                 card.className = 'class-card';
                 card.innerHTML = `
-                    <div style="color: var(--highlight-color); font-size: 22px; margin-bottom: 10px;">${classData.name}</div>
-                    <div style="font-size: 16px; margin-bottom: 10px;">${classData.description}</div>
-                    <div class="stat">HP: ${classData.hp}</div>
-                    <div class="stat">MP: ${classData.mp}</div>
-                    <div class="stat">STR: ${classData.strength}</div>
-                    <div class="stat">DEF: ${classData.defense}</div>
-                    <div class="stat">MAG: ${classData.magic}</div>
-                    <div class="stat">SPD: ${classData.speed}</div>
+                    <div style="color:var(--highlight-color);font-size:22px;margin-bottom:8px;">${cd.name}</div>
+                    <div style="font-size:16px;margin-bottom:8px;">${cd.description}</div>
+                    <div class="stat">HP: ${cd.hp} | MP: ${cd.mp}</div>
+                    <div class="stat" style="color:#8aaa8a;">STR/DEF/MAG/SPD set at creation</div>
                 `;
                 card.onclick = () => {
                     document.querySelectorAll('.class-card').forEach(c => c.classList.remove('selected'));
                     card.classList.add('selected');
-                    selectedClass = classKey;
+                    window._selectedClass = classKey;
                     document.getElementById('createBtn').disabled = false;
                 };
                 classSelect.appendChild(card);
             });
+        }
 
-            window.createCharacter = () => {
-                const name = document.getElementById('playerName').value.trim();
-                if (!name) {
-                    alert('Please enter a character name!');
-                    return;
-                }
-                if (!selectedClass) {
-                    alert('Please select a class!');
-                    return;
-                }
-                
-                const classData = CLASSES[selectedClass];
-                gameState.player = {
-                    name: name,
-                    class: selectedClass,
-                    className: classData.name,
-                    level: 1,
-                    xp: 0,
-                    xpToNext: 100,
-                    hp: classData.hp,
-                    maxHp: classData.hp,
-                    mp: classData.mp,
-                    maxMp: classData.mp,
-                    strength: classData.strength,
-                    defense: classData.defense,
-                    magic: classData.magic,
-                    speed: classData.speed,
-                    gold: 100,
-                    weapon: classData.startWeapon,
-                    armor: classData.startArmor,
-                    inventory: [classData.startWeapon, classData.startArmor],
-                    knownSpells: getStartingSpells(selectedClass),
-                    defeatedMasters: [],
-                    unlockedAreas: ['forest']  // Forest is always unlocked
-                };
+        // ── stat allocation screen ─────────────────────────────────
+        window._pendingStats = null;
+        window._pendingName  = '';
 
-                gameState.currentLocation = 'town';
-                showTown();
+        function goToStatAlloc() {
+            const name = document.getElementById('playerName').value.trim();
+            if (!name)                { alert('Please enter a character name!'); return; }
+            if (!window._selectedClass) { alert('Please select a class!');       return; }
+            window._pendingName  = name;
+            window._pendingStats = Object.assign({}, CLASS_STAT_PRESETS[window._selectedClass]);
+            renderStatAllocScreen();
+        }
+
+        function renderStatAllocScreen() {
+            const classKey   = window._selectedClass;
+            const classData  = CLASSES[classKey];
+            const stats      = window._pendingStats;
+            const spent      = STAT_NAMES.reduce((a,k) => a + stats[k], 0);
+            const remaining  = STAT_BUDGET - spent;
+            const affinities = CLASS_AFFINITIES[classKey];
+            const screen     = document.getElementById('mainScreen');
+
+            // preview derived values
+            const previewHp   = classData.hp + stats.con * 5;
+            const previewHits = (function(){
+                let h=1;
+                if(classKey==='rogue') h++;
+                h += Math.floor(Math.max(0, stats.str-8)/6);
+                return h;
+            })();
+
+            let rows = '';
+            STAT_NAMES.forEach(s => {
+                const isAff   = affinities.includes(s);
+                const canUp   = remaining > 0 && stats[s] < 15;
+                const canDown = stats[s] > 1;
+                rows += `
+                <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #1a4a1a;">
+                    <span style="width:36px;color:${isAff?'var(--highlight-color)':'var(--text-color)'};font-weight:bold;">${STAT_LABELS[s]}</span>
+                    <span style="flex:1;font-size:16px;color:#8aaa8a;">${STAT_DESCS[s]}${isAff?' ★':''}</span>
+                    <button onclick="statAdj('${s}',-1)" ${canDown?'':'disabled'} style="width:30px;padding:2px 0;margin:0;font-size:20px;">−</button>
+                    <span style="width:28px;text-align:center;color:var(--highlight-color);font-size:22px;">${stats[s]}</span>
+                    <button onclick="statAdj('${s}',+1)" ${canUp ?'':'disabled'} style="width:30px;padding:2px 0;margin:0;font-size:20px;">+</button>
+                </div>`;
+            });
+
+            screen.innerHTML = `
+                <div class="location-header">ALLOCATE STATS – ${classData.name}</div>
+                <div class="message" style="border-color:var(--highlight-color);">
+                    <span style="color:var(--highlight-color);">Points remaining: </span>
+                    <span style="color:${remaining>0?'var(--text-color)':'var(--error-color)'};font-size:22px;">${remaining}</span>
+                    <span style="color:#8aaa8a;font-size:15px;"> (★ = class affinity)</span>
+                </div>
+                <div style="max-width:520px;margin:0 auto;">${rows}</div>
+                <div class="message" style="border-color:#005500;margin-top:12px;">
+                    <span style="color:#8aaa8a;">PREVIEW: </span>
+                    <span style="color:var(--highlight-color);">HP ${previewHp}</span>
+                    <span style="color:var(--border-color);"> | Attacks/round: ${previewHits}</span>
+                    <span style="color:#8aaa8a;"> | Crit ${calcCritChance(stats.lck)}% | Dodge ${calcDodgeChance(stats.dex)}%</span>
+                </div>
+                <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:8px;">
+                    <button onclick="window._pendingStats=Object.assign({},CLASS_STAT_PRESETS['${classKey}']);renderStatAllocScreen();">📋 CLASS PRESET</button>
+                    <button onclick="window._pendingStats=rerollStats('${classKey}');renderStatAllocScreen();">🎲 REROLL</button>
+                </div>
+                <div style="margin-top:14px;">
+                    <button onclick="finaliseCharacter()" ${remaining===0?'':'disabled'} style="font-size:20px;">⚔️ BEGIN ADVENTURE ⚔️</button>
+                    <button onclick="newGame()">← BACK</button>
+                </div>
+            `;
+        }
+
+        window.statAdj = function(stat, dir) {
+            const stats = window._pendingStats;
+            const spent = STAT_NAMES.reduce((a,k) => a + stats[k], 0);
+            if (dir > 0 && spent >= STAT_BUDGET) return;
+            if (dir < 0 && stats[stat] <= 1)      return;
+            stats[stat] += dir;
+            renderStatAllocScreen();
+        };
+
+        function finaliseCharacter() {
+            const classKey  = window._selectedClass;
+            const classData = CLASSES[classKey];
+            const stats     = window._pendingStats;
+
+            gameState.player = {
+                name: window._pendingName,
+                class: classKey,  className: classData.name,
+                level: 1,  xp: 0,  xpToNext: 100,
+                hp: classData.hp + stats.con * 5,
+                maxHp: classData.hp + stats.con * 5,
+                mp: classData.mp,  maxMp: classData.mp,
+                strength: classData.strength,   // legacy weapon-calc field
+                defense:  classData.defense,
+                magic:    classData.magic,
+                speed:    classData.speed,
+                gold: 100,
+                weapon: classData.startWeapon,
+                armor:  classData.startArmor,
+                inventory:  [classData.startWeapon, classData.startArmor],
+                knownSpells: getStartingSpells(classKey),
+                defeatedMasters: [],
+                unlockedAreas:  ['forest'],
+                // ── new stat block ──
+                str: stats.str,  dex: stats.dex,  wis: stats.wis,
+                cha: stats.cha,  con: stats.con,  lck: stats.lck
             };
+            gameState.currentLocation = 'town';
+            showTown();
         }
 
         function getStartingSpells(classKey) {
@@ -1640,7 +1766,7 @@
                 </div>
                 <div style="margin: 20px 0;">
                     <div class="menu-option" onclick="showShop()">► VISIT SHOP</div>
-                    <div class="menu-option" onclick="restAtInn()">► REST AT INN (50 Gold)</div>
+                    <div class="menu-option" onclick="restAtInn()">► REST AT INN (${calcInnCost(gameState.player.cha)} Gold)</div>
                     <div class="menu-option" onclick="showInventory()">► INVENTORY</div>
                     <div class="menu-option" onclick="showExplore()">► EXPLORE WORLD</div>
                     <div class="menu-option" onclick="showModemSettings()">► MODEM SETTINGS</div>
@@ -1771,6 +1897,7 @@
                             <div>Level: ${weapon.level}</div>
                             ${owned ? '<div style="color: var(--border-color);">OWNED</div>' : 
                               `<button onclick="buyItem('weapon', '${key}', ${weapon.cost})">Buy ${weapon.cost}G</button>`}
+                            ${gameState.player.cha ? '<div style="color:#8aaa8a;font-size:15px;">CHA disc: ' + calcChaDiscount(gameState.player.cha) + '%</div>' : ''}
                         </div>
                     `;
                 }
@@ -1800,6 +1927,7 @@
                             <div>Level: ${armor.level}</div>
                             ${owned ? '<div style="color: var(--border-color);">OWNED</div>' : 
                               `<button onclick="buyItem('armor', '${key}', ${armor.cost})">Buy ${armor.cost}G</button>`}
+                            ${gameState.player.cha ? '<div style="color:#8aaa8a;font-size:15px;">CHA disc: ' + calcChaDiscount(gameState.player.cha) + '%</div>' : ''}
                         </div>
                     `;
                 }
@@ -1824,6 +1952,7 @@
                             <div>${item.description}</div>
                             <div>Power: ${item.power || 'Full'}</div>
                             <button onclick="buyItem('item', '${key}', ${item.cost})">Buy ${item.cost}G</button>
+                            ${gameState.player.cha ? '<div style="color:#8aaa8a;font-size:15px;">CHA disc: ' + calcChaDiscount(gameState.player.cha) + '%</div>' : ''}
                         </div>
                     `;
                 }
@@ -1896,55 +2025,42 @@
             document.getElementById('shopContent').innerHTML = sellHtml;
         }
 
-        function sellItem(itemKey, value) {
+        function sellItem(itemKey, baseValue) {
             const index = gameState.player.inventory.indexOf(itemKey);
-            if (index === -1) {
-                alert('Item not found!');
-                return;
-            }
-            
-            // Remove from inventory
+            if (index === -1) { alert('Item not found!'); return; }
+            const bonus = calcChaSellBonus(gameState.player.cha);
+            const value = Math.floor(baseValue * (1 + bonus/100));
             gameState.player.inventory.splice(index, 1);
-            
-            // Add gold
             gameState.player.gold += value;
-            
             const itemName = getItemName(itemKey);
-            alert(`Sold ${itemName} for ${value} gold!`);
-            
-            // Refresh sell screen
+            alert(`Sold ${itemName} for ${value}g!` + (bonus > 0 ? ` (+${bonus}% CHA bonus)` : ''));
             showShopSell();
         }
 
-        function buyItem(type, key, cost) {
+        function buyItem(type, key, baseCost) {
+            const disc   = calcChaDiscount(gameState.player.cha);
+            const cost   = Math.max(1, Math.floor(baseCost * (1 - disc/100)));
             if (gameState.player.gold < cost) {
                 alert('Not enough gold!');
                 return;
             }
-            
             gameState.player.gold -= cost;
             gameState.player.inventory.push(key);
-            
             let itemName;
-            if (type === 'weapon') {
-                itemName = WEAPONS[key].name;
-            } else if (type === 'armor') {
-                itemName = ARMOR[key].name;
-            } else if (type === 'item') {
-                itemName = ITEMS[key].name;
-            }
-            
-            alert(`Purchased ${itemName}!`);
+            if (type === 'weapon') itemName = WEAPONS[key].name;
+            else if (type === 'armor') itemName = ARMOR[key].name;
+            else if (type === 'item') itemName = ITEMS[key].name;
+            alert(`Purchased ${itemName} for ${cost}g!` + (disc > 0 ? ` (${disc}% CHA discount)` : ''));
             showShopBuy();
         }
 
         function restAtInn() {
-            if (gameState.player.gold < 50) {
+            const cost = calcInnCost(gameState.player.cha);
+            if (gameState.player.gold < cost) {
                 alert('Not enough gold!');
                 return;
             }
-            
-            gameState.player.gold -= 50;
+            gameState.player.gold -= cost;
             gameState.player.hp = gameState.player.maxHp;
             gameState.player.mp = gameState.player.maxMp;
             alert('You rest at the inn and recover fully!');
@@ -2224,7 +2340,12 @@
             };
             gameState.combatState = {
                 monsters: [masterMonster], currentTarget: 0, turnTimer: 10,
-                messages: [], defeatedMonsters: []
+                messages: [], defeatedMonsters: [],
+                phase:         'player',
+                hitsLeft:      calcPlayerHits(gameState.player),
+                enemyWindow:   18,   // bosses always get 18 s
+                enemyHits:     3,    // bosses always 3 hits
+                enemyHitsLeft: 3
             };
             // Open the terminal view (clear it fresh for a boss)
             openTerminalView(gameState.currentLocation);
@@ -2423,8 +2544,22 @@
                 msg = `${monsters.length} enemies appear: ${names}!`;
             }
 
+            // enemy multi-hit based on rarity of first monster
+            const rar0 = monsters[0].rarity;
+            let eHits = 1;
+            if      (rar0==='rare')      eHits = Math.random()<0.5 ? 2 : 1;
+            else if (rar0==='epic')      eHits = 2;
+            else if (rar0==='legendary') eHits = 2 + (Math.random()<0.5 ? 1 : 0);
+            else if (rar0==='mythic')    eHits = 3;
+
             gameState.combatState = {
-                monsters, currentTarget: 0, turnTimer: 10, messages: [], defeatedMonsters: []
+                monsters, currentTarget: 0, turnTimer: 10,
+                messages: [], defeatedMonsters: [],
+                phase:         'player',
+                hitsLeft:      calcPlayerHits(gameState.player),
+                enemyWindow:   15 + Math.floor(Math.random()*6),  // 15-20 s
+                enemyHits:     eHits,
+                enemyHitsLeft: eHits
             };
             // stream the encounter line; show cards + start timer only after it finishes
             termAppend(msg, 'term-enemy', () => {
@@ -2519,29 +2654,47 @@
         function renderActionBar() {
             const ab = document.getElementById('actionBar');
             if (gameState.combatState) {
-                // combat actions
-                const monsters = gameState.combatState.monsters;
+                const cs       = gameState.combatState;
+                const monsters = cs.monsters;
+                const p        = gameState.player;
+                const maxHits  = calcPlayerHits(p);
+                const hitsLeft = cs.hitsLeft !== undefined ? cs.hitsLeft : maxHits;
+                const inEnemy  = cs.phase === 'enemy';
+
+                // target buttons (multi-enemy)
                 let targetBtns = '';
                 if (monsters.length > 1) {
                     targetBtns = monsters.map((m, i) => {
-                        const active = i === gameState.combatState.currentTarget;
-                        return `<button onclick="selectTarget(${i})" style="${active ? 'border-color:var(--highlight-color); color:var(--highlight-color);' : ''}">
+                        const active = i === cs.currentTarget;
+                        return `<button onclick="selectTarget(${i})" style="${active ? 'border-color:var(--highlight-color);color:var(--highlight-color);' : ''}" ${inEnemy?'disabled':''}>
                             #${i+1} ${m.name}
                         </button>`;
                     }).join('');
                 }
+
+                // attack-charge pips  ●●○
+                const pips = '●'.repeat(hitsLeft) + '○'.repeat(maxHits - hitsLeft);
+                const atkOff = hitsLeft <= 0 || inEnemy;
+
+                // phase label
+                let phaseTag = '';
+                if (inEnemy) phaseTag = `<div style="color:var(--error-color);font-size:18px;margin-bottom:4px;">⏳ Enemy is preparing… wait…</div>`;
+
                 ab.innerHTML = `
-                    <div class="timer-line">⏱ TIME: <span id="combatTimer">${gameState.combatState.turnTimer}</span> sec</div>
+                    ${phaseTag}
+                    <div style="color:var(--highlight-color);font-size:18px;margin-bottom:4px;">
+                        ATTACKS: <span style="letter-spacing:3px;">${pips}</span>
+                        <span style="color:#8aaa8a;font-size:15px;"> (${hitsLeft}/${maxHits})</span>
+                    </div>
                     ${targetBtns ? '<div class="action-label">TARGET:</div>' + targetBtns : ''}
                     <div class="action-label">ACTION:</div>
-                    <button onclick="playerAttack()">⚔️ ATTACK</button>
-                    <button onclick="showSpellMenu()">✨ CAST SPELL</button>
-                    <button onclick="showPotionMenu()">🧪 USE POTION</button>
-                    <button onclick="playerDefend()">🛡️ DEFEND</button>
-                    <button onclick="attemptFlee()">🏃 FLEE</button>
+                    <button onclick="playerAttack()" ${atkOff?'disabled':''}>⚔️ ATTACK</button>
+                    <button onclick="showSpellMenu()"  ${inEnemy?'disabled':''}>✨ CAST SPELL</button>
+                    <button onclick="showPotionMenu()" ${inEnemy?'disabled':''}>🧪 USE POTION</button>
+                    <button onclick="playerDefend()"   ${inEnemy?'disabled':''}>🛡️ DEFEND</button>
+                    <button onclick="attemptFlee()"    ${inEnemy?'disabled':''}>🏃 FLEE</button>
                 `;
             } else {
-                // not in combat – explore continue / back buttons
                 ab.innerHTML = `
                     <button onclick="exploreLocation('${gameState.currentLocation}')">🔍 CONTINUE EXPLORING</button>
                     <button onclick="goBackToTown()">🏘️ RETURN TO TOWN</button>
@@ -2559,109 +2712,149 @@
         function startCombatTimer() {
             if (gameState.combatTimer) clearInterval(gameState.combatTimer);
             gameState.combatTimer = setInterval(() => {
-                if (!gameState.combatState) { clearInterval(gameState.combatTimer); return; }
-                gameState.combatState.turnTimer--;
-                if (gameState.combatState.turnTimer <= 0) {
-                    termAppend('⏱ Time ran out!', 'term-error');
-                    enemyAttack();
+                const cs = gameState.combatState;
+                if (!cs) { clearInterval(gameState.combatTimer); return; }
+                cs.turnTimer--;
+                if (cs.phase === 'player') {
+                    if (cs.turnTimer <= 0) {
+                        clearInterval(gameState.combatTimer);
+                        switchToEnemyPhase();   // player window expired
+                    }
                 } else {
-                    const el = document.getElementById('combatTimer');
-                    if (el) el.textContent = gameState.combatState.turnTimer;
+                    // enemy-phase countdown
+                    if (cs.turnTimer <= 0) {
+                        clearInterval(gameState.combatTimer);
+                        enemyAttack();
+                    }
                 }
             }, 1000);
+        }
+        function switchToEnemyPhase() {
+            const cs = gameState.combatState;
+            if (!cs) return;
+            cs.phase     = 'enemy';
+            cs.turnTimer = cs.enemyWindow;   // 15-20 s
+            renderActionBar();               // grey out buttons
+            termAppend('The enemy prepares to strike…', 'term-dim');
+            startCombatTimer();
         }
 
         // ═══════════════════════════════════════════════════════════════
         // PLAYER ACTIONS
         // ═══════════════════════════════════════════════════════════════
         function playerAttack() {
-            clearInterval(gameState.combatTimer);
+            const cs = gameState.combatState;
+            if (!cs || cs.phase !== 'player' || cs.hitsLeft <= 0) return;
+            // timer keeps running – do NOT clearInterval
+
             const p      = gameState.player;
-            const ti     = gameState.combatState.currentTarget;
-            const enemy  = gameState.combatState.monsters[ti];
+            const ti     = cs.currentTarget;
+            const enemy  = cs.monsters[ti];
             const weapon = WEAPONS[p.weapon];
             const qBonus = QUALITY_CONFIG[weapon.quality].bonus;
-            const total  = (weapon.baseDamage + qBonus) + p.strength + (weapon.baseMagicDamage + qBonus) + Math.floor(p.magic / 2);
-            const dmg    = Math.max(1, total - enemy.defense);
-            enemy.hp -= dmg;
+            let   total  = (weapon.baseDamage + qBonus) + p.strength
+                         + (weapon.baseMagicDamage + qBonus)
+                         + Math.floor(p.magic / 2) + (p.str || 0);
+            let   dmg    = Math.max(1, total - enemy.defense);
 
-            const tName = gameState.combatState.monsters.length > 1
+            // crit check
+            let crit = false;
+            if (Math.random()*100 < calcCritChance(p.lck || 0)) {
+                dmg  = Math.floor(dmg * 1.75);
+                crit = true;
+            }
+            enemy.hp -= dmg;
+            cs.hitsLeft--;
+
+            const tName = cs.monsters.length > 1
                 ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${ti+1}</span>`
                 : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
             updateEnemyCards();
             updateHud();
-            termAppend(`You attack ${tName} for <span class="dmg-enemy">${dmg} damage!</span>`, null, () => {
+            renderActionBar();   // refresh pips immediately
+
+            const critTag = crit ? ' <span style="color:#FFD700;">★ CRIT!</span>' : '';
+            termAppend(`You attack ${tName} for <span class="dmg-enemy">${dmg} damage!</span>${critTag}`, null, () => {
                 checkCombatEnd();
             });
         }
 
         function showSpellMenu() {
-            clearInterval(gameState.combatTimer);
+            const cs = gameState.combatState;
+            if (!cs || cs.phase !== 'player') return;
             const p = gameState.player;
             if (p.knownSpells.length === 0) {
                 termAppend('You have no spells!', 'term-error');
-                renderActionBar(); startCombatTimer();
+                renderActionBar();
                 return;
             }
-            // Replace action bar with spell selection
             const ab = document.getElementById('actionBar');
             let html = '<div class="action-label">SELECT SPELL:</div>';
             p.knownSpells.forEach(sk => {
-                const sp    = SPELLS[sk];
-                const can   = p.mp >= sp.mpCost;
-                html += `<button onclick="castSpell('${sk}')" ${can ? '' : 'disabled'}>${sp.name} (${sp.mpCost} MP) – ${sp.description}</button> `;
+                const sp  = SPELLS[sk];
+                const can = p.mp >= sp.mpCost;
+                html += `<button onclick="castSpell('${sk}')" ${can?'':'disabled'}>${sp.name} (${sp.mpCost} MP) – ${sp.description}</button> `;
             });
-            html += `<br><button onclick="renderActionBar(); startCombatTimer();">← BACK</button>`;
+            html += `<br><button onclick="renderActionBar();">← BACK</button>`;
             ab.innerHTML = html;
         }
 
         function castSpell(spellKey) {
             const spell = SPELLS[spellKey];
             const p     = gameState.player;
+            const cs    = gameState.combatState;
             p.mp -= spell.mpCost;
 
             if (spell.type === 'heal') {
-                const heal = spell.power + Math.floor(p.magic * 1.5);
+                const heal = spell.power + Math.floor(p.magic * 1.5) + (p.wis || 0);
                 p.hp = Math.min(p.maxHp, p.hp + heal);
                 updateHud();
-                termAppend(`You cast ${spell.name} and restore <span style="color:#88ff88;">${heal} HP!</span>`, null, () => {
-                    // after heal message streams, enemy attacks
-                    enemyAttack();
-                });
+                renderActionBar();
+                // heal does NOT trigger enemy or consume a hit – timer keeps ticking
+                termAppend(`You cast ${spell.name} and restore <span style="color:#88ff88;">${heal} HP!</span>`);
             } else {
-                const ti    = gameState.combatState.currentTarget;
-                const enemy = gameState.combatState.monsters[ti];
-                const dmg   = Math.max(1, (spell.power + p.magic) - Math.floor(enemy.defense / 2));
+                const ti    = cs.currentTarget;
+                const enemy = cs.monsters[ti];
+                let   dmg   = Math.max(1, (spell.power + p.magic + (p.wis||0)) - Math.floor(enemy.defense / 2));
+                let crit = false;
+                if (Math.random()*100 < calcCritChance(p.lck||0)) { dmg = Math.floor(dmg*1.75); crit = true; }
                 enemy.hp -= dmg;
-                const tName = gameState.combatState.monsters.length > 1
+                const tName = cs.monsters.length > 1
                     ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${ti+1}</span>`
                     : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
                 updateEnemyCards();
                 updateHud();
-                termAppend(`You cast ${spell.name} on ${tName} for <span class="dmg-enemy">${dmg} damage!</span>`, null, () => {
+                renderActionBar();
+                const critTag = crit ? ' <span style="color:#FFD700;">★ CRIT!</span>' : '';
+                termAppend(`You cast ${spell.name} on ${tName} for <span class="dmg-enemy">${dmg} damage!</span>${critTag}`, null, () => {
                     checkCombatEnd();
                 });
             }
         }
 
         function playerDefend() {
-            clearInterval(gameState.combatTimer);
-            gameState.combatState.defending = true;
-            termAppend('You brace for impact…', null, () => {
-                enemyAttack();
-            });
+            const cs = gameState.combatState;
+            if (!cs || cs.phase !== 'player') return;
+            cs.defending = true;
+            cs.hitsLeft  = 0;            // end player's turn
+            renderActionBar();
+            termAppend('You brace for impact…');  // timer keeps ticking → enemy phase
         }
 
         function attemptFlee() {
+            const cs = gameState.combatState;
+            if (!cs || cs.phase !== 'player') return;
             clearInterval(gameState.combatTimer);
-            if (Math.random() < 0.5) {
+            const p        = gameState.player;
+            const fleePct  = Math.min(70, 30 + (p.dex||0)*3);
+            if (Math.random()*100 < fleePct) {
                 termAppend('You successfully fled!', 'term-highlight', () => {
                     gameState.combatState = null;
-                    renderActionBar();   // show continue/town buttons
+                    renderActionBar();
                 });
             } else {
                 termAppend('Failed to escape!', 'term-error', () => {
-                    enemyAttack();
+                    switchToEnemyPhase();
                 });
             }
         }
@@ -2670,7 +2863,8 @@
         // POTION MENU (in action bar)
         // ═══════════════════════════════════════════════════════════════
         function showPotionMenu() {
-            clearInterval(gameState.combatTimer);
+            const cs = gameState.combatState;
+            if (!cs || cs.phase !== 'player') return;
             const p = gameState.player;
             const potions = {};
             p.inventory.forEach(ik => {
@@ -2682,17 +2876,17 @@
             const keys = Object.keys(potions);
             if (keys.length === 0) {
                 termAppend('You have no potions!', 'term-error');
-                renderActionBar(); startCombatTimer();
+                renderActionBar();
                 return;
             }
             const ab = document.getElementById('actionBar');
-            let html = '<div class="action-label">SELECT POTION (enemy attacks after!):</div>';
+            let html = '<div class="action-label">USE POTION:</div>';
             keys.forEach(pk => {
-                const pd = potions[pk];
-                const col = pd.item.subtype === 'heal_hp' ? '#ff4444' : pd.item.subtype === 'heal_mp' ? '#4488ff' : '#FFD700';
+                const pd  = potions[pk];
+                const col = pd.item.subtype==='heal_hp' ? '#ff4444' : pd.item.subtype==='heal_mp' ? '#4488ff' : '#FFD700';
                 html += `<button onclick="usePotion('${pk}')" style="color:${col};">${pd.item.name} x${pd.count} – ${pd.item.description}</button> `;
             });
-            html += `<br><button onclick="renderActionBar(); startCombatTimer();">← BACK</button>`;
+            html += `<br><button onclick="renderActionBar();">← BACK</button>`;
             ab.innerHTML = html;
         }
 
@@ -2716,50 +2910,65 @@
             const idx = p.inventory.indexOf(potionKey);
             if (idx !== -1) p.inventory.splice(idx, 1);
             updateHud();
-            termAppend(msg, null, () => {
-                enemyAttack();
-            });
+            renderActionBar();
+            termAppend(msg);   // no callback – timer keeps ticking, player can still act
         }
 
         // ═══════════════════════════════════════════════════════════════
         // ENEMY ATTACK
         // ═══════════════════════════════════════════════════════════════
         function enemyAttack() {
-            const monsters = gameState.combatState.monsters;
+            const cs       = gameState.combatState;
+            const monsters = cs.monsters;
             const p        = gameState.player;
             const armor    = ARMOR[p.armor];
             const qBonus   = QUALITY_CONFIG[armor.quality].bonus;
-            let   totalDef = p.defense + armor.baseDefense + qBonus;
-            if (gameState.combatState.defending) { totalDef *= 2; gameState.combatState.defending = false; }
+            let   totalDef = p.defense + armor.baseDefense + qBonus + (p.con || 0);
+            if (cs.defending) { totalDef *= 2; cs.defending = false; }
 
-            // calculate all damage first, then queue messages
-            const attacks = monsters.map((enemy, i) => {
-                const dmg = Math.max(1, enemy.damage - totalDef);
+            const dodgePct  = calcDodgeChance(p.dex || 0);
+            const numHits   = cs.enemyHitsLeft || 1;
+
+            // build individual hit list
+            const hits = [];
+            monsters.forEach((enemy, i) => {
                 const eName = monsters.length > 1
                     ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${i+1}</span>`
                     : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
-                if (!p.godMode) p.hp -= dmg;
-                return { eName, dmg, godMode: p.godMode };
+                for (let h = 0; h < numHits; h++) {
+                    if (!p.godMode && Math.random()*100 < dodgePct) {
+                        hits.push({ eName, dodged: true });
+                    } else {
+                        const dmg = Math.max(1, enemy.damage - totalDef);
+                        if (!p.godMode) p.hp -= dmg;
+                        hits.push({ eName, dmg, dodged: false, godMode: p.godMode });
+                    }
+                }
             });
             updateHud();
 
-            // decide what happens after the last line streams in
-            const afterAllAttacks = () => {
+            // after all hits stream → back to player phase
+            const backToPlayer = () => {
                 if (p.hp <= 0 && !p.godMode) {
                     endCombat(false);
                 } else {
-                    gameState.combatState.turnTimer = 10;
+                    cs.phase         = 'player';
+                    cs.turnTimer     = 10;
+                    cs.hitsLeft      = calcPlayerHits(p);
+                    cs.enemyHitsLeft = cs.enemyHits;   // reset for next round
                     renderActionBar();
                     startCombatTimer();
                 }
             };
 
-            attacks.forEach((atk, i) => {
-                const isLast = (i === attacks.length - 1);
-                if (atk.godMode) {
-                    termAppend(`${atk.eName} attacks but you are INVINCIBLE!`, 'term-highlight', isLast ? afterAllAttacks : null);
+            hits.forEach((hit, i) => {
+                const isLast = (i === hits.length - 1);
+                if (hit.godMode) {
+                    termAppend(`${hit.eName} attacks but you are INVINCIBLE!`, 'term-highlight', isLast ? backToPlayer : null);
+                } else if (hit.dodged) {
+                    termAppend(`${hit.eName} attacks… <span style="color:#88ff88;">DODGED!</span>`, null, isLast ? backToPlayer : null);
                 } else {
-                    termAppend(`${atk.eName} attacks for <span class="dmg-player">${atk.dmg} damage!</span>`, null, isLast ? afterAllAttacks : null);
+                    termAppend(`${hit.eName} attacks for <span class="dmg-player">${hit.dmg} damage!</span>`, null, isLast ? backToPlayer : null);
                 }
             });
         }
@@ -2785,12 +2994,11 @@
                         endCombat(true);
                     } else {
                         renderEnemyCards();
-                        enemyAttack();
+                        // remaining enemies still alive – player keeps acting
                     }
                 });
             } else {
-                // target not dead – enemy counter-attacks immediately
-                enemyAttack();
+                // target not dead – do nothing, timer keeps ticking
             }
         }
 
@@ -2893,15 +3101,22 @@
             p.xp -= p.xpToNext;
             p.xpToNext = Math.floor(p.xpToNext * 1.5);
 
-            // Stat increases
-            p.maxHp += 15;
-            p.hp = p.maxHp;
+            // legacy base stats
+            p.maxHp += 15 + (p.con||0);   // CON scales HP gain
+            p.hp     = p.maxHp;
             p.maxMp += 10;
-            p.mp = p.maxMp;
+            p.mp     = p.maxMp;
             p.strength += 2;
-            p.defense += 2;
-            p.magic += 2;
-            p.speed += 1;
+            p.defense  += 2;
+            p.magic    += 2;
+            p.speed    += 1;
+
+            // new stat-block: +1 each
+            if (p.str !== undefined) {
+                p.str++; p.dex++; p.wis++; p.cha++; p.con++; p.lck++;
+                // paladin bonus: extra +1 to both STR and WIS
+                if (p.class === 'paladin') { p.str++; p.wis++; }
+            }
 
             // Learn new spells
             const spellLevels = {
@@ -2947,8 +3162,9 @@
                     dropChance = monster.dropRates[quality] || 0.05;
                 }
                 
-                // Apply rarity bonus (higher rarity monsters drop better loot)
-                const adjustedChance = Math.min(0.95, dropChance * (1 + rarityBonus * 0.1));
+                // Apply rarity bonus + player LCK luck bonus
+                const lckBonus = gameState.player ? calcLootBonus(gameState.player.lck || 0) / 100 : 0;
+                const adjustedChance = Math.min(0.95, dropChance * (1 + rarityBonus * 0.1 + lckBonus));
                 
                 if (Math.random() < adjustedChance) {
                     loot.push(itemKey);
