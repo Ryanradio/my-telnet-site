@@ -2339,12 +2339,13 @@
                 guaranteedDrops: master.guaranteedDrops
             };
             gameState.combatState = {
-                monsters: [masterMonster], currentTarget: 0, turnTimer: 10,
+                monsters: [masterMonster], currentTarget: 0,
                 messages: [], defeatedMonsters: [],
-                phase:         'player',
+                playerTimer:   10,
+                enemyTimer:    18,   // bosses always get 18 s
+                enemyDelay:    18,   // base delay for boss
                 hitsLeft:      calcPlayerHits(gameState.player),
-                enemyWindow:   18,   // bosses always get 18 s
-                enemyHits:     3,    // bosses always 3 hits
+                enemyHits:     3,
                 enemyHitsLeft: 3
             };
             // Open the terminal view (clear it fresh for a boss)
@@ -2552,12 +2553,14 @@
             else if (rar0==='legendary') eHits = 2 + (Math.random()<0.5 ? 1 : 0);
             else if (rar0==='mythic')    eHits = 3;
 
+            const enemyDelay = 15 + Math.floor(Math.random()*6);  // 15-20s, fixed for this combat
             gameState.combatState = {
-                monsters, currentTarget: 0, turnTimer: 10,
+                monsters, currentTarget: 0,
                 messages: [], defeatedMonsters: [],
-                phase:         'player',
+                playerTimer:   10,       // current countdown for next player action
+                enemyTimer:    enemyDelay,  // current countdown for next enemy action
+                enemyDelay:    enemyDelay,  // base delay for enemy (reused on reset)
                 hitsLeft:      calcPlayerHits(gameState.player),
-                enemyWindow:   15 + Math.floor(Math.random()*6),  // 15-20 s
                 enemyHits:     eHits,
                 enemyHitsLeft: eHits
             };
@@ -2659,14 +2662,14 @@
                 const p        = gameState.player;
                 const maxHits  = calcPlayerHits(p);
                 const hitsLeft = cs.hitsLeft !== undefined ? cs.hitsLeft : maxHits;
-                const inEnemy  = cs.phase === 'enemy';
+                const canAct   = hitsLeft > 0;
 
                 // target buttons (multi-enemy)
                 let targetBtns = '';
                 if (monsters.length > 1) {
                     targetBtns = monsters.map((m, i) => {
                         const active = i === cs.currentTarget;
-                        return `<button onclick="selectTarget(${i})" style="${active ? 'border-color:var(--highlight-color);color:var(--highlight-color);' : ''}" ${inEnemy?'disabled':''}>
+                        return `<button onclick="selectTarget(${i})" style="${active ? 'border-color:var(--highlight-color);color:var(--highlight-color);' : ''}" ${!canAct?'disabled':''}>
                             #${i+1} ${m.name}
                         </button>`;
                     }).join('');
@@ -2674,14 +2677,14 @@
 
                 // attack-charge pips  ●●○
                 const pips = '●'.repeat(hitsLeft) + '○'.repeat(maxHits - hitsLeft);
-                const atkOff = hitsLeft <= 0 || inEnemy;
+                const atkOff = hitsLeft <= 0;
 
-                // phase label
-                let phaseTag = '';
-                if (inEnemy) phaseTag = `<div style="color:var(--error-color);font-size:18px;margin-bottom:4px;">⏳ Enemy is preparing… wait…</div>`;
+                // status label
+                let statusTag = '';
+                if (hitsLeft === 0) statusTag = `<div style="color:#8aaa8a;font-size:17px;margin-bottom:4px;">⏳ Waiting for enemy attack…</div>`;
 
                 ab.innerHTML = `
-                    ${phaseTag}
+                    ${statusTag}
                     <div style="color:var(--highlight-color);font-size:18px;margin-bottom:4px;">
                         ATTACKS: <span style="letter-spacing:3px;">${pips}</span>
                         <span style="color:#8aaa8a;font-size:15px;"> (${hitsLeft}/${maxHits})</span>
@@ -2689,10 +2692,10 @@
                     ${targetBtns ? '<div class="action-label">TARGET:</div>' + targetBtns : ''}
                     <div class="action-label">ACTION:</div>
                     <button onclick="playerAttack()" ${atkOff?'disabled':''}>⚔️ ATTACK</button>
-                    <button onclick="showSpellMenu()"  ${inEnemy?'disabled':''}>✨ CAST SPELL</button>
-                    <button onclick="showPotionMenu()" ${inEnemy?'disabled':''}>🧪 USE POTION</button>
-                    <button onclick="playerDefend()"   ${inEnemy?'disabled':''}>🛡️ DEFEND</button>
-                    <button onclick="attemptFlee()"    ${inEnemy?'disabled':''}>🏃 FLEE</button>
+                    <button onclick="showSpellMenu()"  ${!canAct?'disabled':''}>✨ CAST SPELL</button>
+                    <button onclick="showPotionMenu()" ${!canAct?'disabled':''}>🧪 USE POTION</button>
+                    <button onclick="playerDefend()"   ${!canAct?'disabled':''}>🛡️ DEFEND</button>
+                    <button onclick="attemptFlee()"    ${!canAct?'disabled':''}>🏃 FLEE</button>
                 `;
             } else {
                 ab.innerHTML = `
@@ -2714,29 +2717,29 @@
             gameState.combatTimer = setInterval(() => {
                 const cs = gameState.combatState;
                 if (!cs) { clearInterval(gameState.combatTimer); return; }
-                cs.turnTimer--;
-                if (cs.phase === 'player') {
-                    if (cs.turnTimer <= 0) {
-                        clearInterval(gameState.combatTimer);
-                        switchToEnemyPhase();   // player window expired
-                    }
-                } else {
-                    // enemy-phase countdown
-                    if (cs.turnTimer <= 0) {
-                        clearInterval(gameState.combatTimer);
-                        enemyAttack();
+                
+                // count down both timers independently
+                if (cs.playerTimer > 0) cs.playerTimer--;
+                if (cs.enemyTimer > 0)  cs.enemyTimer--;
+                
+                // player timer expired: lose 1 charge
+                if (cs.playerTimer <= 0 && cs.hitsLeft > 0) {
+                    cs.hitsLeft--;
+                    cs.playerTimer = 10;  // reset for next charge
+                    renderActionBar();
+                    if (cs.hitsLeft > 0) {
+                        termAppend('<span style="color:#8aaa8a;">Charge expired, next charge ready…</span>', 'term-dim');
+                    } else {
+                        termAppend('<span style="color:#8aaa8a;">All charges expired.</span>', 'term-dim');
                     }
                 }
+                
+                // enemy timer expired: use 1 charge and attack
+                if (cs.enemyTimer <= 0 && cs.enemyHitsLeft > 0) {
+                    clearInterval(gameState.combatTimer);
+                    enemyAttackSingle();  // fire one attack, then reset timer
+                }
             }, 1000);
-        }
-        function switchToEnemyPhase() {
-            const cs = gameState.combatState;
-            if (!cs) return;
-            cs.phase     = 'enemy';
-            cs.turnTimer = cs.enemyWindow;   // 15-20 s
-            renderActionBar();               // grey out buttons
-            termAppend('The enemy prepares to strike…', 'term-dim');
-            startCombatTimer();
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -2744,8 +2747,7 @@
         // ═══════════════════════════════════════════════════════════════
         function playerAttack() {
             const cs = gameState.combatState;
-            if (!cs || cs.phase !== 'player' || cs.hitsLeft <= 0) return;
-            // timer keeps running – do NOT clearInterval
+            if (!cs || cs.hitsLeft <= 0) return;
 
             const p      = gameState.player;
             const ti     = cs.currentTarget;
@@ -2765,13 +2767,14 @@
             }
             enemy.hp -= dmg;
             cs.hitsLeft--;
+            cs.playerTimer = 10;  // reset timer for next charge
 
             const tName = cs.monsters.length > 1
                 ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${ti+1}</span>`
                 : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
             updateEnemyCards();
             updateHud();
-            renderActionBar();   // refresh pips immediately
+            renderActionBar();
 
             const critTag = crit ? ' <span style="color:#FFD700;">★ CRIT!</span>' : '';
             termAppend(`You attack ${tName} for <span class="dmg-enemy">${dmg} damage!</span>${critTag}`, null, () => {
@@ -2781,7 +2784,7 @@
 
         function showSpellMenu() {
             const cs = gameState.combatState;
-            if (!cs || cs.phase !== 'player') return;
+            if (!cs || cs.hitsLeft <= 0) return;
             const p = gameState.player;
             if (p.knownSpells.length === 0) {
                 termAppend('You have no spells!', 'term-error');
@@ -2819,6 +2822,7 @@
                 let crit = false;
                 if (Math.random()*100 < calcCritChance(p.lck||0)) { dmg = Math.floor(dmg*1.75); crit = true; }
                 enemy.hp -= dmg;
+                cs.playerTimer = 10;  // spells don't consume charges but reset timer
                 const tName = cs.monsters.length > 1
                     ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${ti+1}</span>`
                     : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
@@ -2834,7 +2838,7 @@
 
         function playerDefend() {
             const cs = gameState.combatState;
-            if (!cs || cs.phase !== 'player') return;
+            if (!cs || cs.hitsLeft <= 0) return;
             cs.defending = true;
             cs.hitsLeft  = 0;            // end player's turn
             renderActionBar();
@@ -2843,19 +2847,21 @@
 
         function attemptFlee() {
             const cs = gameState.combatState;
-            if (!cs || cs.phase !== 'player') return;
+            if (!cs || cs.hitsLeft <= 0) return;
             clearInterval(gameState.combatTimer);
             const p        = gameState.player;
             const fleePct  = Math.min(70, 30 + (p.dex||0)*3);
             if (Math.random()*100 < fleePct) {
+                gameState.combatState = null;
                 termAppend('You successfully fled!', 'term-highlight', () => {
-                    gameState.combatState = null;
                     renderActionBar();
                 });
             } else {
-                termAppend('Failed to escape!', 'term-error', () => {
-                    switchToEnemyPhase();
-                });
+                cs.hitsLeft--;       // burn one charge
+                cs.playerTimer = 10; // reset
+                renderActionBar();
+                termAppend('Failed to escape!', 'term-error');
+                startCombatTimer();  // resume
             }
         }
 
@@ -2864,7 +2870,7 @@
         // ═══════════════════════════════════════════════════════════════
         function showPotionMenu() {
             const cs = gameState.combatState;
-            if (!cs || cs.phase !== 'player') return;
+            if (!cs || cs.hitsLeft <= 0) return;
             const p = gameState.player;
             const potions = {};
             p.inventory.forEach(ik => {
@@ -2917,7 +2923,8 @@
         // ═══════════════════════════════════════════════════════════════
         // ENEMY ATTACK
         // ═══════════════════════════════════════════════════════════════
-        function enemyAttack() {
+        function enemyAttackSingle() {
+            // Enemy uses ONE charge, attacks once, then resets its own timer
             const cs       = gameState.combatState;
             const monsters = cs.monsters;
             const p        = gameState.player;
@@ -2926,36 +2933,34 @@
             let   totalDef = p.defense + armor.baseDefense + qBonus + (p.con || 0);
             if (cs.defending) { totalDef *= 2; cs.defending = false; }
 
-            const dodgePct  = calcDodgeChance(p.dex || 0);
-            const numHits   = cs.enemyHitsLeft || 1;
+            const dodgePct = calcDodgeChance(p.dex || 0);
 
-            // build individual hit list
+            // Each monster in the pack gets ONE hit
             const hits = [];
             monsters.forEach((enemy, i) => {
                 const eName = monsters.length > 1
                     ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${i+1}</span>`
                     : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
-                for (let h = 0; h < numHits; h++) {
-                    if (!p.godMode && Math.random()*100 < dodgePct) {
-                        hits.push({ eName, dodged: true });
-                    } else {
-                        const dmg = Math.max(1, enemy.damage - totalDef);
-                        if (!p.godMode) p.hp -= dmg;
-                        hits.push({ eName, dmg, dodged: false, godMode: p.godMode });
-                    }
+                
+                if (!p.godMode && Math.random()*100 < dodgePct) {
+                    hits.push({ eName, dodged: true });
+                } else {
+                    const dmg = Math.max(1, enemy.damage - totalDef);
+                    if (!p.godMode) p.hp -= dmg;
+                    hits.push({ eName, dmg, dodged: false, godMode: p.godMode });
                 }
             });
+            
+            cs.enemyHitsLeft--;
             updateHud();
 
-            // after all hits stream → back to player phase
-            const backToPlayer = () => {
+            // after attack messages stream, reset enemy timer and resume
+            const afterAttack = () => {
                 if (p.hp <= 0 && !p.godMode) {
                     endCombat(false);
                 } else {
-                    cs.phase         = 'player';
-                    cs.turnTimer     = 10;
-                    cs.hitsLeft      = calcPlayerHits(p);
-                    cs.enemyHitsLeft = cs.enemyHits;   // reset for next round
+                    // reset enemy timer for next charge (keep using same base delay)
+                    cs.enemyTimer = cs.enemyDelay;
                     renderActionBar();
                     startCombatTimer();
                 }
@@ -2964,11 +2969,11 @@
             hits.forEach((hit, i) => {
                 const isLast = (i === hits.length - 1);
                 if (hit.godMode) {
-                    termAppend(`${hit.eName} attacks but you are INVINCIBLE!`, 'term-highlight', isLast ? backToPlayer : null);
+                    termAppend(`${hit.eName} attacks but you are INVINCIBLE!`, 'term-highlight', isLast ? afterAttack : null);
                 } else if (hit.dodged) {
-                    termAppend(`${hit.eName} attacks… <span style="color:#88ff88;">DODGED!</span>`, null, isLast ? backToPlayer : null);
+                    termAppend(`${hit.eName} attacks… <span style="color:#88ff88;">DODGED!</span>`, null, isLast ? afterAttack : null);
                 } else {
-                    termAppend(`${hit.eName} attacks for <span class="dmg-player">${hit.dmg} damage!</span>`, null, isLast ? backToPlayer : null);
+                    termAppend(`${hit.eName} attacks for <span class="dmg-player">${hit.dmg} damage!</span>`, null, isLast ? afterAttack : null);
                 }
             });
         }
