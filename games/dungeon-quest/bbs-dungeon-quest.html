@@ -597,15 +597,37 @@
             box-shadow: 0 0 15px rgba(255, 255, 0, 0.3);
             transform: scale(1.02);
         }
+
+#persistentUI { margin-bottom: 15px; }
+.stats-panel { background: var(--secondary-bg); border: 3px solid var(--border-color); padding: 15px; margin-top: 15px; box-shadow: 0 0 20px rgba(0, 255, 255, 0.2); }
+.terminal-combat-log { background: var(--secondary-bg); border: 2px solid var(--border-color); height: 300px; overflow-y: auto; padding: 15px; font-family: 'VT323', monospace; font-size: 20px; line-height: 1.5; box-shadow: inset 0 0 30px rgba(0, 255, 0, 0.1); }
+.terminal-combat-log::-webkit-scrollbar { width: 12px; }
+.terminal-combat-log::-webkit-scrollbar-track { background: var(--secondary-bg); border-left: 1px solid var(--border-color); }
+.terminal-combat-log::-webkit-scrollbar-thumb { background: var(--border-color); border: 2px solid var(--secondary-bg); }
+.combat-line { margin: 4px 0; padding: 2px 0; border-left: 3px solid transparent; padding-left: 10px; animation: lineAppear 0.3s ease-out; }
+@keyframes lineAppear { from { opacity: 0; transform: translateY(-10px); border-left-color: var(--highlight-color); } to { opacity: 1; transform: translateY(0); border-left-color: transparent; } }
+.combat-line.player-action { color: var(--highlight-color); text-shadow: 0 0 5px rgba(255, 255, 0, 0.5); }
+.combat-line.enemy-action { color: #FF6666; text-shadow: 0 0 5px rgba(255, 0, 0, 0.3); }
+.combat-line.system { color: var(--border-color); font-style: italic; }
+.combat-line.damage { color: #FF0000; font-weight: bold; text-shadow: 0 0 8px #FF0000; }
+.combat-line.heal { color: #00FF00; font-weight: bold; text-shadow: 0 0 8px #00FF00; }
+.combat-line.victory { color: #FFD700; font-weight: bold; text-shadow: 0 0 10px #FFD700; font-size: 22px; text-align: center; border: 2px solid #FFD700; padding: 10px; margin: 10px 0; background: rgba(255, 215, 0, 0.1); }
+.combat-line.defeat { color: #FF0000; font-weight: bold; text-shadow: 0 0 10px #FF0000; font-size: 22px; text-align: center; border: 2px solid #FF0000; padding: 10px; margin: 10px 0; background: rgba(255, 0, 0, 0.1); }
+#combatTimer { font-family: 'Press Start 2P', monospace; font-size: 20px; transition: all 0.3s; }
+#combatTimer.warning { color: #FF0000; text-shadow: 0 0 15px #FF0000; animation: timerPulse 0.5s infinite; }
+@keyframes timerPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+.enemy-status-compact { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 15px; }
+.enemy-status-box { border: 2px solid var(--error-color); padding: 10px; background: rgba(255, 0, 0, 0.05); transition: all 0.3s; cursor: pointer; }
+.enemy-status-box.targeted { border-color: var(--highlight-color); box-shadow: 0 0 15px rgba(255, 255, 0, 0.3); transform: scale(1.02); }        
     </style>
 </head>
 <body>
     <div class="scanline"></div>
     
     <div class="container">
-        <div id="persistentUI"></div>
+    <div id="persistentUI"></div>
+    <div class="screen" id="mainScreen">
         
-        <div class="screen" id="mainScreen">
             <!-- Content will be dynamically loaded here -->
         </div>
     </div>
@@ -844,22 +866,23 @@
         // ═══════════════════════════════════════════════════════════════
 
         function initPersistentUI() {
-            const container = document.querySelector('.container');
-            
-            if (document.getElementById('persistentUI').children.length > 0) return;
-            
-            const persistentUI = document.getElementById('persistentUI');
-            persistentUI.innerHTML = `
-                <div class="header">
-                    <h1>⚔️ DUNGEON QUEST BBS ⚔️</h1>
-                    <div style="color: var(--border-color);">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
-                    <div style="color: var(--menu-color); font-size: 16px;">A Classic Text Adventure</div>
-                </div>
-                <div id="playerStatsPanel" class="stats-panel" style="display: none;">
-                    ${renderPersistentStats()}
-                </div>
-            `;
-        }
+    const persistentUI = document.getElementById('persistentUI');
+    
+    if (!persistentUI) return;
+    
+    // Only populate if empty
+    if (persistentUI.children.length > 0) return;
+    
+    persistentUI.innerHTML = `
+        <div class="header">
+            <h1>⚔️ DUNGEON QUEST BBS ⚔️</h1>
+            <div style="color: var(--border-color);">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
+            <div style="color: var(--menu-color); font-size: 16px;">A Classic Text Adventure</div>
+        </div>
+        <div id="playerStatsPanel" class="stats-panel" style="display: none;">
+        </div>
+    `;
+}
 
         function renderPersistentStats() {
             if (!gameState.player) return '';
