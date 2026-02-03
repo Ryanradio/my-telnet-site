@@ -108,6 +108,7 @@
             50% { text-shadow: 2px 2px var(--error-color), 0 0 10px var(--highlight-color); }
         }
 
+        /* ─── main screen used by town / shop / menus ─── */
         .screen {
             background: var(--secondary-bg);
             border: 2px solid var(--border-color);
@@ -116,7 +117,6 @@
             margin-bottom: 20px;
             box-shadow: inset 0 0 50px rgba(0, 255, 0, 0.1);
         }
-
         .menu-option {
             color: var(--menu-color);
             cursor: pointer;
@@ -124,13 +124,103 @@
             margin: 5px 0;
             transition: all 0.1s;
         }
-
         .menu-option:hover {
             background: var(--primary-bg);
             color: var(--highlight-color);
             padding-left: 20px;
         }
 
+        /* ─── static HUD ─── */
+        #hud {
+            display: none;
+            background: var(--secondary-bg);
+            border: 2px solid var(--border-color);
+            border-bottom: none;
+            padding: 10px 14px;
+            box-shadow: inset 0 0 30px rgba(0,255,0,0.08);
+        }
+        .hud-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 6px;
+        }
+        .hud-top .hud-name { color: var(--highlight-color); font-size: 22px; }
+        .hud-top .hud-gold { color: #FFD700; font-size: 20px; }
+        .hud-bars {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+        }
+        .hud-bar-group label {
+            color: var(--highlight-color);
+            font-size: 18px;
+            display: block;
+            margin-bottom: 2px;
+        }
+        .hud-bar-group .bar-nums { color: var(--text-color); font-size: 17px; }
+        .progress-bar {
+            width: 100%;
+            height: 18px;
+            background: #111;
+            border: 1px solid var(--border-color);
+            margin-top: 3px;
+        }
+        .progress-fill { height: 100%; transition: width 0.35s ease; }
+        .hp-bar { background: var(--error-color); }
+        .mp-bar { background: #4488ff; }
+        .xp-bar { background: var(--text-color); }
+
+        /* ─── scrolling terminal ─── */
+        #terminalWindow {
+            display: none;
+            background: var(--secondary-bg);
+            border: 2px solid var(--border-color);
+            border-top: 1px solid #333;
+            padding: 12px 14px;
+            height: 360px;
+            overflow-y: auto;
+            box-shadow: inset 0 0 40px rgba(0,255,0,0.07);
+            scroll-behavior: smooth;
+        }
+        .term-line {
+            padding: 3px 0;
+            font-size: 19px;
+            color: var(--text-color);
+            line-height: 1.35;
+        }
+        .term-line.term-dim       { color: #3a7a3a; }
+        .term-line.term-highlight { color: var(--highlight-color); }
+        .term-line.term-enemy     { color: var(--border-color); font-size: 20px; }
+        .term-line.term-victory   { color: var(--border-color); font-size: 22px; }
+        .term-line.term-loot      { color: #FFD700; }
+        .term-line.term-error     { color: var(--error-color); }
+        .term-line.term-separator { border-top: 1px solid #2a5a2a; margin: 6px 0 4px; padding-top: 4px; }
+        .enemy-card {
+            border: 2px solid var(--error-color);
+            padding: 8px 12px;
+            margin: 6px 0;
+            background: rgba(255,0,0,0.05);
+            display: inline-block;
+            min-width: 260px;
+            vertical-align: top;
+        }
+        .enemy-card.is-target { border-color: var(--highlight-color); }
+        .enemy-card .ec-name  { font-size: 21px; margin-bottom: 4px; }
+        .enemy-card .ec-hp    { font-size: 18px; color: var(--text-color); }
+
+        /* ─── action bar ─── */
+        #actionBar {
+            display: none;
+            background: var(--secondary-bg);
+            border: 2px solid var(--border-color);
+            border-top: 1px solid #444;
+            padding: 10px 14px 12px;
+        }
+        #actionBar .action-label { color: var(--highlight-color); font-size: 18px; margin-bottom: 6px; }
+        #actionBar .timer-line   { color: var(--highlight-color); font-size: 19px; margin-bottom: 4px; }
+
+        /* ─── legacy helpers for shop / inventory / town ─── */
         .stats-bar {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -138,59 +228,18 @@
             margin-bottom: 15px;
             padding: 10px;
             border: 1px solid var(--border-color);
-            background: rgba(0, 128, 0, 0.1);
+            background: rgba(0,128,0,0.1);
         }
-
-        .stat {
-            color: var(--text-color);
-        }
-
-        .stat-label {
-            color: var(--highlight-color);
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 20px;
-            background: var(--secondary-bg);
-            border: 1px solid var(--border-color);
-            margin: 5px 0;
-            position: relative;
-        }
-
-        .progress-fill {
-            height: 100%;
-            transition: width 0.3s;
-        }
-
-        .hp-bar { background: var(--error-color); }
-        .mp-bar { background: #0000FF; }
-        .xp-bar { background: var(--text-color); }
-
+        .stat       { color: var(--text-color); }
+        .stat-label { color: var(--highlight-color); }
         .message {
             padding: 10px;
             margin: 10px 0;
             border-left: 3px solid var(--border-color);
-            animation: fadeIn 0.3s;
         }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateX(-10px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        .combat-message {
-            color: var(--highlight-color);
-            font-weight: bold;
-        }
-
-        .error-message {
-            color: var(--error-color);
-        }
-
-        .success-message {
-            color: var(--border-color);
-        }
+        .combat-message  { color: var(--highlight-color); font-weight: bold; }
+        .error-message   { color: var(--error-color); }
+        .success-message { color: var(--border-color); }
 
         button {
             background: var(--secondary-bg);
@@ -449,6 +498,34 @@
         <div class="screen" id="mainScreen">
             <!-- Content will be dynamically loaded here -->
         </div>
+
+        <!-- ── static HUD (hidden except during explore/combat) ── -->
+        <div id="hud">
+            <div class="hud-top">
+                <span class="hud-name" id="hudName">Hero – Lv 1 Warrior</span>
+                <span class="hud-gold" id="hudGold">💰 100 g</span>
+            </div>
+            <div class="hud-bars">
+                <div class="hud-bar-group">
+                    <label>HP <span class="bar-nums" id="hudHpNums">120 / 120</span></label>
+                    <div class="progress-bar"><div class="progress-fill hp-bar" id="hudHpBar" style="width:100%"></div></div>
+                </div>
+                <div class="hud-bar-group">
+                    <label>MP <span class="bar-nums" id="hudMpNums">20 / 20</span></label>
+                    <div class="progress-bar"><div class="progress-fill mp-bar" id="hudMpBar" style="width:100%"></div></div>
+                </div>
+                <div class="hud-bar-group">
+                    <label>XP <span class="bar-nums" id="hudXpNums">0 / 100</span></label>
+                    <div class="progress-bar"><div class="progress-fill xp-bar" id="hudXpBar" style="width:0%"></div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── scrolling terminal log ── -->
+        <div id="terminalWindow"></div>
+
+        <!-- ── action buttons / timer (combat or explore) ── -->
+        <div id="actionBar"></div>
     </div>
 
     <!-- SYSOP Terminal -->
@@ -2135,755 +2212,678 @@
 
         function startMasterBattle(masterKey) {
             const master = CLASS_MASTERS[masterKey];
-            
-            // Create master as a special monster with epic rarity
             const masterMonster = {
-                key: masterKey,
-                name: master.name,
-                rarity: 'epic',
+                key: masterKey, name: master.name, rarity: 'epic',
                 rarityColor: RARITY_CONFIG.epic.color,
-                hp: master.baseHp,
-                maxHp: master.baseHp,
-                damage: master.baseDamage,
-                defense: master.baseDefense,
-                xp: master.xp,
-                gold: master.gold,
-                level: master.level,
-                possibleDrops: master.possibleDrops,
-                dropRates: master.dropRates,
-                isMaster: true,
-                masterKey: masterKey,
+                hp: master.baseHp, maxHp: master.baseHp,
+                damage: master.baseDamage, defense: master.baseDefense,
+                xp: master.xp, gold: master.gold, level: master.level,
+                possibleDrops: master.possibleDrops, dropRates: master.dropRates,
+                isMaster: true, masterKey: masterKey,
                 guaranteedDrops: master.guaranteedDrops
             };
-            
             gameState.combatState = {
-                monsters: [masterMonster],
-                currentTarget: 0,
-                turnTimer: 10,
-                playerTurn: gameState.player.speed >= master.level * 2,
-                messages: [`<span style="color: ${RARITY_CONFIG.epic.color};">${master.name}</span> challenges you to an honorable duel!`],
-                defeatedMonsters: []
+                monsters: [masterMonster], currentTarget: 0, turnTimer: 10,
+                messages: [], defeatedMonsters: []
             };
-
-            renderCombat();
-            startCombatTimer();
+            // Open the terminal view (clear it fresh for a boss)
+            openTerminalView(gameState.currentLocation);
+            // stream the boss-intro line; show cards + start timer only after it finishes
+            termAppend(`<span style="color:${RARITY_CONFIG.epic.color}; font-size:22px;">⚔️ ${master.name} challenges you to an honorable duel! ⚔️</span>`, 'term-highlight', () => {
+                renderEnemyCards();
+                renderActionBar();
+                startCombatTimer();
+            });
         }
 
+        // ═══════════════════════════════════════════════════════════════
+        // HUD – write once, update in place
+        // ═══════════════════════════════════════════════════════════════
+        function initHud() {
+            const p = gameState.player;
+            document.getElementById('hudName').textContent = `${p.name} – Lv ${p.level} ${p.className}`;
+            updateHud();
+        }
+        function updateHud() {
+            const p = gameState.player;
+            document.getElementById('hudName').textContent  = `${p.name} – Lv ${p.level} ${p.className}`;
+            document.getElementById('hudGold').textContent  = `💰 ${p.gold} g`;
+            document.getElementById('hudHpNums').textContent = `${p.hp} / ${p.maxHp}`;
+            document.getElementById('hudMpNums').textContent = `${p.mp} / ${p.maxMp}`;
+            document.getElementById('hudXpNums').textContent = `${p.xp} / ${p.xpToNext}`;
+            document.getElementById('hudHpBar').style.width = ((p.hp / p.maxHp) * 100) + '%';
+            document.getElementById('hudMpBar').style.width = ((p.mp / p.maxMp) * 100) + '%';
+            document.getElementById('hudXpBar').style.width = ((p.xp / p.xpToNext) * 100) + '%';
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // TERMINAL VIEW helpers
+        // ═══════════════════════════════════════════════════════════════
+        function openTerminalView(locKey) {
+            // hide the mainScreen .screen div, show hud + terminal + actionBar
+            document.getElementById('mainScreen').style.display  = 'none';
+            document.getElementById('hud').style.display          = 'block';
+            document.getElementById('terminalWindow').style.display = 'block';
+            document.getElementById('actionBar').style.display    = 'block';
+            initHud();
+            // clear terminal if this is a fresh entry (not mid-explore)
+            if (!gameState._terminalOpen) {
+                document.getElementById('terminalWindow').innerHTML = '';
+                gameState._terminalOpen = true;
+                gameState._currentExploreArea = locKey;
+                // print location header once
+                termAppend(`── ${LOCATIONS[locKey].name} ──`, 'term-separator');
+            }
+        }
+        function closeTerminalView() {
+            document.getElementById('mainScreen').style.display    = 'block';
+            document.getElementById('hud').style.display           = 'none';
+            document.getElementById('terminalWindow').style.display = 'none';
+            document.getElementById('actionBar').style.display     = 'none';
+            gameState._terminalOpen = false;
+            gameState._currentExploreArea = null;
+        }
+        // ── modem-style line queue ────────────────────────────────
+        const termQueue   = [];          // pending { html, extraClass, onDone }
+        let   termBusy    = false;       // true while a line is mid-stream
+
+        function termAppend(html, extraClass, onDone) {
+            termQueue.push({ html, extraClass, onDone: onDone || null });
+            if (!termBusy) termDrain();
+        }
+
+        function termDrain() {
+            if (termQueue.length === 0) { termBusy = false; return; }
+            termBusy = true;
+            const { html, extraClass, onDone } = termQueue.shift();
+
+            const tw   = document.getElementById('terminalWindow');
+            const line = document.createElement('div');
+            line.className = 'term-line' + (extraClass ? ' ' + extraClass : '');
+            tw.appendChild(line);
+            tw.scrollTop = tw.scrollHeight;
+
+            // separator lines & empty lines: instant
+            if (extraClass === 'term-separator' || html === '') {
+                line.innerHTML = html;
+                if (onDone) onDone();
+                termDrain();                // next item
+                return;
+            }
+
+            // instant mode – skip streaming
+            if (currentModemSpeed === 'instant') {
+                line.innerHTML = html;
+                if (onDone) onDone();
+                termDrain();
+                return;
+            }
+
+            // ── stream visible characters one-by-one ──
+            // Walk through the raw HTML but only "count" characters
+            // that are NOT inside a tag.  Tags stay intact; reveal
+            // feels character-accurate to the player.
+            const charsPerTick = MODEM_SPEEDS[currentModemSpeed];   // 2 / 4 / 7
+            let visibleCount   = 0;        // how many visible chars shown so far
+            let totalVisible   = 0;        // total visible chars in the string
+
+            // pre-count total visible chars
+            { let inTag = false;
+              for (let i = 0; i < html.length; i++) {
+                  if   (html[i] === '<') inTag = true;
+                  else if (html[i] === '>') inTag = false;
+                  else if (!inTag) totalVisible++;
+              }
+            }
+
+            function sliceToVisible(n) {
+                // return the shortest prefix of html that contains exactly n visible chars
+                let vis = 0, inTag = false;
+                for (let i = 0; i < html.length; i++) {
+                    if   (html[i] === '<') inTag = true;
+                    else if (html[i] === '>') inTag = false;
+                    else if (!inTag) { vis++; if (vis >= n) return html.slice(0, i + 1); }
+                }
+                return html;   // fallback: whole string
+            }
+
+            const ticker = setInterval(() => {
+                visibleCount += charsPerTick;
+                if (visibleCount >= totalVisible) {
+                    clearInterval(ticker);
+                    line.innerHTML = html;      // final: full html (closes all tags cleanly)
+                    if (onDone) onDone();
+                    termDrain();                // next queued line
+                } else {
+                    // show partial + blinking cursor
+                    line.innerHTML = sliceToVisible(visibleCount) + '<span style="animation:blink 1s infinite;">_</span>';
+                }
+            }, 16);   // ~60 fps tick
+        }
+
+        function termClear() {
+            document.getElementById('terminalWindow').innerHTML = '';
+            termQueue.length = 0;   // also flush any pending lines
+            termBusy = false;
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // EXPLORE
+        // ═══════════════════════════════════════════════════════════════
         function exploreLocation(locKey) {
             const location = LOCATIONS[locKey];
             const p = gameState.player;
-            
-            // Check if area is unlocked
             if (!p.unlockedAreas.includes(locKey)) {
                 alert(location.unlockMessage || 'This area is locked!');
                 showExplore();
                 return;
             }
-            
             gameState.currentLocation = locKey;
-            
-            // Random encounter
+
+            // If we just arrived (from town / map), open the terminal fresh
+            if (!gameState._terminalOpen || gameState._currentExploreArea !== locKey) {
+                gameState._terminalOpen = false;   // force fresh open
+                openTerminalView(locKey);
+            } else {
+                // Already in this area – just add a separator
+                termAppend('', 'term-separator');
+            }
+
             if (Math.random() < 0.7) {
-                // Roll for number of monsters (1-3)
                 const numMonsters = rollMonsterCount();
                 const enemyKeys = [];
-                
                 for (let i = 0; i < numMonsters; i++) {
-                    const enemyKey = location.encounters[Math.floor(Math.random() * location.encounters.length)];
-                    enemyKeys.push(enemyKey);
+                    enemyKeys.push(location.encounters[Math.floor(Math.random() * location.encounters.length)]);
                 }
-                
                 startCombat(enemyKeys);
             } else {
-                const screen = document.getElementById('mainScreen');
-                screen.innerHTML = `
-                    <div class="location-header">${location.name}</div>
-                    ${renderPlayerStats()}
-                    <div class="message">
-                        <p>${location.description}</p>
-                        <p style="color: var(--border-color);">You explore the area but find nothing...</p>
-                    </div>
-                    <button onclick="exploreLocation('${locKey}')">CONTINUE EXPLORING</button>
-                    <button onclick="showTown()">RETURN TO TOWN</button>
-                `;
+                termAppend(`You explore the area… but find nothing.`, 'term-dim');
+                renderActionBar();   // show "Continue / Town" buttons
             }
         }
 
-        // NEW: Roll for number of monsters in encounter
+        // ═══════════════════════════════════════════════════════════════
+        // COMBAT – start / spawn / rarity
+        // ═══════════════════════════════════════════════════════════════
         function rollMonsterCount() {
-            const roll = Math.random() * 100;
-            if (roll < 70) return 1;      // 70% chance for 1 monster
-            if (roll < 95) return 2;      // 25% chance for 2 monsters
-            return 3;                      // 5% chance for 3 monsters
+            const r = Math.random() * 100;
+            if (r < 70) return 1;
+            if (r < 95) return 2;
+            return 3;
         }
-
         function startCombat(enemyKeys) {
-            // Support both single enemy (old) and array (new)
-            if (!Array.isArray(enemyKeys)) {
-                enemyKeys = [enemyKeys];
-            }
-            
-            const monsters = enemyKeys.map(key => spawnMonsterWithRarity(key));
-            
-            let message;
-            if (monsters.length === 1) {
-                message = `A wild <span style="color: ${monsters[0].rarityColor};">${monsters[0].name}</span> appears!`;
-            } else {
-                const monsterNames = monsters.map(m => `<span style="color: ${m.rarityColor};">${m.name}</span>`).join(', ');
-                message = `${monsters.length} enemies appear: ${monsterNames}!`;
+            if (!Array.isArray(enemyKeys)) enemyKeys = [enemyKeys];
+            const monsters = enemyKeys.map(k => spawnMonsterWithRarity(k));
+
+            let msg;
+            if (monsters.length === 1)
+                msg = `A wild <span style="color:${monsters[0].rarityColor};">${monsters[0].name}</span> appears!`;
+            else {
+                const names = monsters.map(m => `<span style="color:${m.rarityColor};">${m.name}</span>`).join(', ');
+                msg = `${monsters.length} enemies appear: ${names}!`;
             }
 
             gameState.combatState = {
-                monsters: monsters,
-                currentTarget: 0,
-                turnTimer: 10,
-                playerTurn: gameState.player.speed >= monsters[0].level * 2,
-                messages: [message]
+                monsters, currentTarget: 0, turnTimer: 10, messages: [], defeatedMonsters: []
             };
-
-            // Don't start timer here - it will start after renderCombat finishes streaming
-            renderCombat();
+            // stream the encounter line; show cards + start timer only after it finishes
+            termAppend(msg, 'term-enemy', () => {
+                renderEnemyCards();
+                renderActionBar();
+                startCombatTimer();
+            });
         }
 
-        // NEW: Spawn monster with rarity system
         function spawnMonsterWithRarity(enemyKey) {
             const template = ENEMIES[enemyKey];
-            const rarity = rollRarity();
-            const mult = RARITY_CONFIG[rarity].multiplier;
-            
+            const rarity   = rollRarity();
+            const mult     = RARITY_CONFIG[rarity].multiplier;
             return {
-                key: enemyKey,
-                name: template.name,
-                rarity: rarity,
-                rarityColor: RARITY_CONFIG[rarity].color,
-                hp: Math.floor(template.baseHp * mult),
-                maxHp: Math.floor(template.baseHp * mult),
-                damage: Math.floor(template.baseDamage * mult),
-                defense: Math.floor(template.baseDefense * mult),
-                xp: Math.floor(template.baseXp * mult),
-                gold: Math.floor(template.baseGold * mult),
-                level: template.level,
-                possibleDrops: template.possibleDrops,
-                dropRates: template.dropRates
+                key: enemyKey, name: template.name, rarity, rarityColor: RARITY_CONFIG[rarity].color,
+                hp: Math.floor(template.baseHp * mult), maxHp: Math.floor(template.baseHp * mult),
+                damage: Math.floor(template.baseDamage * mult), defense: Math.floor(template.baseDefense * mult),
+                xp: Math.floor(template.baseXp * mult), gold: Math.floor(template.baseGold * mult),
+                level: template.level, possibleDrops: template.possibleDrops, dropRates: template.dropRates
             };
         }
-
-        // NEW: Roll rarity based on weighted chances
         function rollRarity() {
             const roll = Math.random() * 100;
-            let cumulative = 0;
-            
+            let cum = 0;
             for (const [rarity, config] of Object.entries(RARITY_CONFIG)) {
-                cumulative += config.spawnWeight;
-                if (roll < cumulative) return rarity;
+                cum += config.spawnWeight;
+                if (roll < cum) return rarity;
             }
             return 'common';
         }
-
-        // NEW: Get colored rarity text
         function getRarityText(rarity) {
-            const color = RARITY_CONFIG[rarity].color;
-            const name = RARITY_CONFIG[rarity].name;
-            return `<span style="color: ${color}; font-weight: bold;">${name}</span>`;
+            return `<span style="color:${RARITY_CONFIG[rarity].color}; font-weight:bold;">${RARITY_CONFIG[rarity].name}</span>`;
         }
 
-        function startCombatTimer() {
-            if (gameState.combatTimer) {
-                clearInterval(gameState.combatTimer);
-            }
+        // ═══════════════════════════════════════════════════════════════
+        // ENEMY CARDS – rendered into terminal, updated in place
+        // ═══════════════════════════════════════════════════════════════
+        function renderEnemyCards() {
+            // Remove any existing enemy-cards block, then append fresh
+            const old = document.getElementById('enemy-cards-block');
+            if (old) old.remove();
 
-            gameState.combatTimer = setInterval(() => {
-                if (!gameState.combatState) {
-                    clearInterval(gameState.combatTimer);
-                    return;
-                }
+            const combat  = gameState.combatState;
+            const tw      = document.getElementById('terminalWindow');
+            const block   = document.createElement('div');
+            block.id      = 'enemy-cards-block';
+            block.style.margin = '8px 0';
 
-                gameState.combatState.turnTimer--;
-                
-                if (gameState.combatState.turnTimer <= 0) {
-                    // Time's up - enemy attacks
-                    gameState.combatState.messages.push('Time ran out! Enemy attacks!');
-                    enemyAttack();
-                } else {
-                    updateCombatTimer();
-                }
-            }, 1000);
-        }
-
-        function renderCombat() {
-            const screen = document.getElementById('mainScreen');
-            const combat = gameState.combatState;
-            const monsters = combat.monsters;
-            const p = gameState.player;
-
-            let combatHtml = `
-                <div class="location-header">COMBAT</div>
-                ${renderPlayerStats()}
-            `;
-
-            // Display all enemies
-            if (monsters.length === 1) {
-                // Single enemy - traditional display
-                const enemy = monsters[0];
-                const enemyHpPercent = (enemy.hp / enemy.maxHp) * 100;
-                
-                combatHtml += `
-                    <div class="enemy-display">
-                        <div style="font-size: 24px; margin-bottom: 10px;">
-                            <span style="color: ${enemy.rarityColor};">${enemy.name}</span>
-                            <span style="color: var(--text-color);"> (Lv ${enemy.level})</span>
-                        </div>
-                        <div style="color: var(--text-color);">
-                            HP: ${enemy.hp}/${enemy.maxHp}
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill hp-bar" style="width: ${enemyHpPercent}%"></div>
-                        </div>
+            combat.monsters.forEach((enemy, i) => {
+                const isTarget = (i === combat.currentTarget);
+                const hpPct    = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
+                const card     = document.createElement('div');
+                card.className = 'enemy-card' + (isTarget ? ' is-target' : '');
+                card.id        = 'enemy-card-' + i;
+                card.onclick   = () => selectTarget(i);
+                card.style.cursor = 'pointer';
+                card.innerHTML = `
+                    <div class="ec-name">
+                        <span style="color:${enemy.rarityColor};">${enemy.name}</span>
+                        <span style="color:#aaa;"> (Lv ${enemy.level})</span>
+                        ${combat.monsters.length > 1 ? `<span style="color:var(--highlight-color);"> #${i+1}</span>` : ''}
+                        ${isTarget && combat.monsters.length > 1 ? ' <span style="color:var(--highlight-color);">◄ TARGET</span>' : ''}
                     </div>
-                `;
-            } else {
-                // Multiple enemies - grid display
-                combatHtml += `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; margin: 15px 0;">`;
-                
-                monsters.forEach((enemy, index) => {
-                    const enemyHpPercent = (enemy.hp / enemy.maxHp) * 100;
-                    const isTarget = index === combat.currentTarget;
-                    
-                    combatHtml += `
-                        <div class="enemy-display" style="border: 3px solid ${isTarget ? 'var(--highlight-color)' : 'var(--error-color)'}; cursor: pointer;" onclick="selectTarget(${index})">
-                            <div style="font-size: 18px; margin-bottom: 8px;">
-                                <span style="color: ${isTarget ? 'var(--highlight-color)' : 'var(--text-color)'};">#${index + 1}</span>
-                                <span style="color: ${enemy.rarityColor};"> ${enemy.name}</span>
-                                <span style="color: var(--text-color);"> (Lv ${enemy.level})</span>
-                            </div>
-                            ${isTarget ? '<div style="color: var(--highlight-color); font-size: 14px;">► TARGET ◄</div>' : ''}
-                            <div style="color: var(--text-color); font-size: 16px;">
-                                HP: ${enemy.hp}/${enemy.maxHp}
-                            </div>
-                            <div class="progress-bar">
-                                <div class="progress-fill hp-bar" style="width: ${enemyHpPercent}%"></div>
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                combatHtml += `</div>`;
-                
-                if (monsters.length > 1) {
-                    combatHtml += `
-                        <div class="message" style="border-color: var(--highlight-color); background: rgba(255, 255, 0, 0.1);">
-                            <p style="color: var(--highlight-color);">💡 Click on an enemy to target them, or use the buttons below!</p>
-                        </div>
-                    `;
-                }
-            }
-
-            combatHtml += `
-                <div class="message" style="border-color: var(--highlight-color);">
-                    <div style="color: var(--highlight-color); font-size: 20px; margin-bottom: 10px;">
-                        TIME: <span id="combatTimer">${combat.turnTimer}</span> seconds
-                    </div>
-                </div>
-
-                <div style="max-height: 200px; overflow-y: auto; margin: 15px 0;">
-            `;
-
-            combat.messages.forEach((msg, idx) => {
-                combatHtml += `<div class="message combat-message">${msg}</div>`;
+                    <div class="ec-hp" id="ec-hp-${i}">HP: ${enemy.hp} / ${enemy.maxHp}</div>
+                    <div class="progress-bar" style="height:14px; margin-top:4px;">
+                        <div class="progress-fill hp-bar" id="ec-bar-${i}" style="width:${hpPct}%"></div>
+                    </div>`;
+                block.appendChild(card);
             });
+            tw.appendChild(block);
+            tw.scrollTop = tw.scrollHeight;
+        }
+        function updateEnemyCards() {
+            const combat = gameState.combatState;
+            combat.monsters.forEach((enemy, i) => {
+                const card  = document.getElementById('enemy-card-' + i);
+                const hp    = document.getElementById('ec-hp-' + i);
+                const bar   = document.getElementById('ec-bar-' + i);
+                if (!card) return;
+                // update target highlight
+                card.className = 'enemy-card' + (i === combat.currentTarget ? ' is-target' : '');
+                // update hp text & bar
+                const hpPct = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
+                hp.textContent  = `HP: ${enemy.hp} / ${enemy.maxHp}`;
+                bar.style.width = hpPct + '%';
+            });
+        }
 
-            combatHtml += `
-                </div>
-
-                <div style="margin: 20px 0;">
-                    <h3 style="color: var(--highlight-color);">CHOOSE YOUR ACTION:</h3>
-            `;
-
-            // If multiple enemies, show target selection buttons
-            if (monsters.length > 1) {
-                combatHtml += `<div style="margin-bottom: 10px;">`;
-                monsters.forEach((enemy, index) => {
-                    const isTarget = index === combat.currentTarget;
-                    const color = isTarget ? 'var(--highlight-color)' : 'var(--text-color)';
-                    combatHtml += `
-                        <button onclick="selectTarget(${index})" style="background: ${isTarget ? 'var(--primary-bg)' : 'var(--secondary-bg)'}; color: ${color}; border-color: ${color};">
-                            Target #${index + 1}: ${enemy.name}
-                        </button>
-                    `;
-                });
-                combatHtml += `</div>`;
-            }
-
-            combatHtml += `
+        // ═══════════════════════════════════════════════════════════════
+        // ACTION BAR – combat buttons / explore buttons / spell & potion menus
+        // ═══════════════════════════════════════════════════════════════
+        function renderActionBar() {
+            const ab = document.getElementById('actionBar');
+            if (gameState.combatState) {
+                // combat actions
+                const monsters = gameState.combatState.monsters;
+                let targetBtns = '';
+                if (monsters.length > 1) {
+                    targetBtns = monsters.map((m, i) => {
+                        const active = i === gameState.combatState.currentTarget;
+                        return `<button onclick="selectTarget(${i})" style="${active ? 'border-color:var(--highlight-color); color:var(--highlight-color);' : ''}">
+                            #${i+1} ${m.name}
+                        </button>`;
+                    }).join('');
+                }
+                ab.innerHTML = `
+                    <div class="timer-line">⏱ TIME: <span id="combatTimer">${gameState.combatState.turnTimer}</span> sec</div>
+                    ${targetBtns ? '<div class="action-label">TARGET:</div>' + targetBtns : ''}
+                    <div class="action-label">ACTION:</div>
                     <button onclick="playerAttack()">⚔️ ATTACK</button>
                     <button onclick="showSpellMenu()">✨ CAST SPELL</button>
                     <button onclick="showPotionMenu()">🧪 USE POTION</button>
                     <button onclick="playerDefend()">🛡️ DEFEND</button>
                     <button onclick="attemptFlee()">🏃 FLEE</button>
-                </div>
-            `;
+                `;
+            } else {
+                // not in combat – explore continue / back buttons
+                ab.innerHTML = `
+                    <button onclick="exploreLocation('${gameState.currentLocation}')">🔍 CONTINUE EXPLORING</button>
+                    <button onclick="goBackToTown()">🏘️ RETURN TO TOWN</button>
+                `;
+            }
+        }
+        function goBackToTown() {
+            closeTerminalView();
+            showTown();
+        }
 
-            // Use text streaming effect
-            streamText(screen, combatHtml, () => {
-                // Only start timer after screen is fully displayed
-                if (!gameState.combatTimer) {
-                    startCombatTimer();
+        // ═══════════════════════════════════════════════════════════════
+        // COMBAT TIMER
+        // ═══════════════════════════════════════════════════════════════
+        function startCombatTimer() {
+            if (gameState.combatTimer) clearInterval(gameState.combatTimer);
+            gameState.combatTimer = setInterval(() => {
+                if (!gameState.combatState) { clearInterval(gameState.combatTimer); return; }
+                gameState.combatState.turnTimer--;
+                if (gameState.combatState.turnTimer <= 0) {
+                    termAppend('⏱ Time ran out!', 'term-error');
+                    enemyAttack();
+                } else {
+                    const el = document.getElementById('combatTimer');
+                    if (el) el.textContent = gameState.combatState.turnTimer;
                 }
-            });
+            }, 1000);
         }
 
-        function selectTarget(index) {
-            if (gameState.combatState && index < gameState.combatState.monsters.length) {
-                gameState.combatState.currentTarget = index;
-                renderCombat();
-            }
-        }
-
-        // Make selectTarget global
-        window.selectTarget = selectTarget;
-
-        function updateCombatTimer() {
-            const timerElem = document.getElementById('combatTimer');
-            if (timerElem) {
-                timerElem.textContent = gameState.combatState.turnTimer;
-            }
-        }
-
+        // ═══════════════════════════════════════════════════════════════
+        // PLAYER ACTIONS
+        // ═══════════════════════════════════════════════════════════════
         function playerAttack() {
             clearInterval(gameState.combatTimer);
-            
-            const p = gameState.player;
-            const targetIndex = gameState.combatState.currentTarget;
-            const enemy = gameState.combatState.monsters[targetIndex];
-            
+            const p      = gameState.player;
+            const ti     = gameState.combatState.currentTarget;
+            const enemy  = gameState.combatState.monsters[ti];
             const weapon = WEAPONS[p.weapon];
-            const qualityBonus = QUALITY_CONFIG[weapon.quality].bonus;
-            const weaponDamage = weapon.baseDamage + qualityBonus;
-            const weaponMagic = weapon.baseMagicDamage + qualityBonus;
-            const totalDamage = weaponDamage + p.strength + weaponMagic + Math.floor(p.magic / 2);
-            const actualDamage = Math.max(1, totalDamage - enemy.defense);
-            
-            enemy.hp -= actualDamage;
-            
-            const targetName = gameState.combatState.monsters.length > 1 ? 
-                `<span style="color: ${enemy.rarityColor};">${enemy.name} #${targetIndex + 1}</span>` :
-                `<span style="color: ${enemy.rarityColor};">${enemy.name}</span>`;
-            
-            gameState.combatState.messages.push(`You attack ${targetName} for <span class="dmg-enemy">${actualDamage} damage!</span>`);
+            const qBonus = QUALITY_CONFIG[weapon.quality].bonus;
+            const total  = (weapon.baseDamage + qBonus) + p.strength + (weapon.baseMagicDamage + qBonus) + Math.floor(p.magic / 2);
+            const dmg    = Math.max(1, total - enemy.defense);
+            enemy.hp -= dmg;
 
-            checkCombatEnd();
+            const tName = gameState.combatState.monsters.length > 1
+                ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${ti+1}</span>`
+                : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
+            updateEnemyCards();
+            updateHud();
+            termAppend(`You attack ${tName} for <span class="dmg-enemy">${dmg} damage!</span>`, null, () => {
+                checkCombatEnd();
+            });
         }
 
         function showSpellMenu() {
+            clearInterval(gameState.combatTimer);
             const p = gameState.player;
             if (p.knownSpells.length === 0) {
-                gameState.combatState.messages.push('You have no spells!');
-                renderCombat();
-                startCombatTimer();
+                termAppend('You have no spells!', 'term-error');
+                renderActionBar(); startCombatTimer();
                 return;
             }
-
-            clearInterval(gameState.combatTimer);
-
-            const screen = document.getElementById('mainScreen');
-            const combat = gameState.combatState;
-            
-            let spellHtml = `
-                <div class="location-header">SELECT SPELL</div>
-                ${renderPlayerStats()}
-                <div class="message">Choose a spell to cast:</div>
-                <div class="inventory-grid">
-            `;
-
-            p.knownSpells.forEach(spellKey => {
-                const spell = SPELLS[spellKey];
-                const canCast = p.mp >= spell.mpCost;
-                spellHtml += `
-                    <div class="item-card">
-                        <div style="color: var(--highlight-color);">${spell.name}</div>
-                        <div>MP: ${spell.mpCost}</div>
-                        <div>Power: ${spell.power}</div>
-                        <div>${spell.description}</div>
-                        <button onclick="castSpell('${spellKey}')" ${!canCast ? 'disabled' : ''}>
-                            CAST
-                        </button>
-                    </div>
-                `;
+            // Replace action bar with spell selection
+            const ab = document.getElementById('actionBar');
+            let html = '<div class="action-label">SELECT SPELL:</div>';
+            p.knownSpells.forEach(sk => {
+                const sp    = SPELLS[sk];
+                const can   = p.mp >= sp.mpCost;
+                html += `<button onclick="castSpell('${sk}')" ${can ? '' : 'disabled'}>${sp.name} (${sp.mpCost} MP) – ${sp.description}</button> `;
             });
-
-            spellHtml += `
-                </div>
-                <button onclick="renderCombat(); startCombatTimer();">BACK</button>
-            `;
-
-            screen.innerHTML = spellHtml;
+            html += `<br><button onclick="renderActionBar(); startCombatTimer();">← BACK</button>`;
+            ab.innerHTML = html;
         }
 
         function castSpell(spellKey) {
             const spell = SPELLS[spellKey];
-            const p = gameState.player;
-
+            const p     = gameState.player;
             p.mp -= spell.mpCost;
 
             if (spell.type === 'heal') {
-                const healAmount = spell.power + Math.floor(p.magic * 1.5);
-                p.hp = Math.min(p.maxHp, p.hp + healAmount);
-                gameState.combatState.messages.push(`You cast ${spell.name} and restore ${healAmount} HP!`);
+                const heal = spell.power + Math.floor(p.magic * 1.5);
+                p.hp = Math.min(p.maxHp, p.hp + heal);
+                updateHud();
+                termAppend(`You cast ${spell.name} and restore <span style="color:#88ff88;">${heal} HP!</span>`, null, () => {
+                    // after heal message streams, enemy attacks
+                    enemyAttack();
+                });
             } else {
-                const targetIndex = gameState.combatState.currentTarget;
-                const enemy = gameState.combatState.monsters[targetIndex];
-                
-                const spellDamage = spell.power + p.magic;
-                const actualDamage = Math.max(1, spellDamage - Math.floor(enemy.defense / 2));
-                enemy.hp -= actualDamage;
-                
-                const targetName = gameState.combatState.monsters.length > 1 ? 
-                    `<span style="color: ${enemy.rarityColor};">${enemy.name} #${targetIndex + 1}</span>` :
-                    `<span style="color: ${enemy.rarityColor};">${enemy.name}</span>`;
-                
-                gameState.combatState.messages.push(`You cast ${spell.name} on ${targetName} for <span class="dmg-enemy">${actualDamage} damage!</span>`);
+                const ti    = gameState.combatState.currentTarget;
+                const enemy = gameState.combatState.monsters[ti];
+                const dmg   = Math.max(1, (spell.power + p.magic) - Math.floor(enemy.defense / 2));
+                enemy.hp -= dmg;
+                const tName = gameState.combatState.monsters.length > 1
+                    ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${ti+1}</span>`
+                    : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
+                updateEnemyCards();
+                updateHud();
+                termAppend(`You cast ${spell.name} on ${tName} for <span class="dmg-enemy">${dmg} damage!</span>`, null, () => {
+                    checkCombatEnd();
+                });
             }
-
-            checkCombatEnd();
         }
 
         function playerDefend() {
             clearInterval(gameState.combatTimer);
-            gameState.combatState.messages.push('You brace for impact!');
             gameState.combatState.defending = true;
-            enemyAttack();
+            termAppend('You brace for impact…', null, () => {
+                enemyAttack();
+            });
         }
 
         function attemptFlee() {
             clearInterval(gameState.combatTimer);
-            
             if (Math.random() < 0.5) {
-                gameState.combatState.messages.push('You successfully fled!');
-                gameState.combatState = null;
-                setTimeout(() => showTown(), 1500);
+                termAppend('You successfully fled!', 'term-highlight', () => {
+                    gameState.combatState = null;
+                    renderActionBar();   // show continue/town buttons
+                });
             } else {
-                gameState.combatState.messages.push('Failed to escape!');
-                enemyAttack();
+                termAppend('Failed to escape!', 'term-error', () => {
+                    enemyAttack();
+                });
             }
         }
 
         // ═══════════════════════════════════════════════════════════════
-        // POTION SYSTEM (Phase 2)
+        // POTION MENU (in action bar)
         // ═══════════════════════════════════════════════════════════════
-
         function showPotionMenu() {
             clearInterval(gameState.combatTimer);
-            const screen = document.getElementById('mainScreen');
             const p = gameState.player;
-            
-            // Find all potions in inventory
             const potions = {};
-            p.inventory.forEach(itemKey => {
-                if (ITEMS[itemKey] && (
-                    ITEMS[itemKey].subtype === 'heal_hp' ||
-                    ITEMS[itemKey].subtype === 'heal_mp' ||
-                    ITEMS[itemKey].subtype === 'full_restore'
-                )) {
-                    if (!potions[itemKey]) {
-                        potions[itemKey] = { item: ITEMS[itemKey], count: 0, indices: [] };
-                    }
-                    potions[itemKey].count++;
-                    potions[itemKey].indices.push(p.inventory.indexOf(itemKey));
+            p.inventory.forEach(ik => {
+                if (ITEMS[ik] && ['heal_hp','heal_mp','full_restore'].includes(ITEMS[ik].subtype)) {
+                    if (!potions[ik]) potions[ik] = { item: ITEMS[ik], count: 0 };
+                    potions[ik].count++;
                 }
             });
-            
-            const potionKeys = Object.keys(potions);
-            
-            if (potionKeys.length === 0) {
-                gameState.combatState.messages.push('You have no potions!');
-                renderCombat();
-                startCombatTimer();
+            const keys = Object.keys(potions);
+            if (keys.length === 0) {
+                termAppend('You have no potions!', 'term-error');
+                renderActionBar(); startCombatTimer();
                 return;
             }
-            
-            let potionHtml = `
-                <div class="location-header">USE POTION</div>
-                ${renderPlayerStats()}
-                <div class="message">Choose a potion to use (Enemy will attack after!):</div>
-                <div class="inventory-grid">
-            `;
-            
-            potionKeys.forEach(potionKey => {
-                const potionData = potions[potionKey];
-                const potion = potionData.item;
-                const color = potion.subtype === 'heal_hp' ? '#FF0000' : 
-                             potion.subtype === 'heal_mp' ? '#0000FF' : '#FFFF00';
-                
-                potionHtml += `
-                    <div class="item-card">
-                        <div style="color: ${color};">${potion.name} x${potionData.count}</div>
-                        <div>${potion.description}</div>
-                        <div>Power: ${potion.power || 'Full Restore'}</div>
-                        <button onclick="usePotion('${potionKey}')">USE</button>
-                    </div>
-                `;
+            const ab = document.getElementById('actionBar');
+            let html = '<div class="action-label">SELECT POTION (enemy attacks after!):</div>';
+            keys.forEach(pk => {
+                const pd = potions[pk];
+                const col = pd.item.subtype === 'heal_hp' ? '#ff4444' : pd.item.subtype === 'heal_mp' ? '#4488ff' : '#FFD700';
+                html += `<button onclick="usePotion('${pk}')" style="color:${col};">${pd.item.name} x${pd.count} – ${pd.item.description}</button> `;
             });
-            
-            potionHtml += `
-                </div>
-                <button onclick="renderCombat(); startCombatTimer();">BACK</button>
-            `;
-            
-            screen.innerHTML = potionHtml;
+            html += `<br><button onclick="renderActionBar(); startCombatTimer();">← BACK</button>`;
+            ab.innerHTML = html;
         }
 
         function usePotion(potionKey) {
             const potion = ITEMS[potionKey];
-            const p = gameState.player;
-            
+            const p      = gameState.player;
+            let msg;
             if (potion.subtype === 'heal_hp') {
-                const healAmount = potion.power;
-                const actualHeal = Math.min(p.maxHp - p.hp, healAmount);
-                p.hp = Math.min(p.maxHp, p.hp + healAmount);
-                gameState.combatState.messages.push(`Used ${potion.name} and restored ${actualHeal} HP!`);
+                const actual = Math.min(p.maxHp - p.hp, potion.power);
+                p.hp = Math.min(p.maxHp, p.hp + potion.power);
+                msg = `Used ${potion.name} – restored <span style="color:#88ff88;">${actual} HP!</span>`;
             } else if (potion.subtype === 'heal_mp') {
-                const manaAmount = potion.power;
-                const actualMana = Math.min(p.maxMp - p.mp, manaAmount);
-                p.mp = Math.min(p.maxMp, p.mp + manaAmount);
-                gameState.combatState.messages.push(`Used ${potion.name} and restored ${actualMana} MP!`);
+                const actual = Math.min(p.maxMp - p.mp, potion.power);
+                p.mp = Math.min(p.maxMp, p.mp + potion.power);
+                msg = `Used ${potion.name} – restored <span style="color:#88ff88;">${actual} MP!</span>`;
             } else if (potion.subtype === 'full_restore') {
-                const hpRestored = p.maxHp - p.hp;
-                const mpRestored = p.maxMp - p.mp;
-                p.hp = p.maxHp;
-                p.mp = p.maxMp;
-                gameState.combatState.messages.push(`Used ${potion.name} - fully restored ${hpRestored} HP and ${mpRestored} MP!`);
+                const hpR = p.maxHp - p.hp, mpR = p.maxMp - p.mp;
+                p.hp = p.maxHp; p.mp = p.maxMp;
+                msg = `Used ${potion.name} – fully restored <span style="color:#88ff88;">${hpR} HP & ${mpR} MP!</span>`;
             }
-            
-            // Remove potion from inventory (remove first occurrence)
-            const index = p.inventory.indexOf(potionKey);
-            if (index !== -1) {
-                p.inventory.splice(index, 1);
-            }
-            
-            // Enemy attacks after using potion
-            enemyAttack();
+            const idx = p.inventory.indexOf(potionKey);
+            if (idx !== -1) p.inventory.splice(idx, 1);
+            updateHud();
+            termAppend(msg, null, () => {
+                enemyAttack();
+            });
         }
 
         // ═══════════════════════════════════════════════════════════════
-        // END POTION SYSTEM
+        // ENEMY ATTACK
         // ═══════════════════════════════════════════════════════════════
-
-
         function enemyAttack() {
             const monsters = gameState.combatState.monsters;
-            const p = gameState.player;
-            const armor = ARMOR[p.armor];
-            const qualityBonus = QUALITY_CONFIG[armor.quality].bonus;
-            const armorDefense = armor.baseDefense + qualityBonus;
-            
-            let totalDefense = p.defense + armorDefense;
-            if (gameState.combatState.defending) {
-                totalDefense *= 2;
-                gameState.combatState.defending = false;
-            }
+            const p        = gameState.player;
+            const armor    = ARMOR[p.armor];
+            const qBonus   = QUALITY_CONFIG[armor.quality].bonus;
+            let   totalDef = p.defense + armor.baseDefense + qBonus;
+            if (gameState.combatState.defending) { totalDef *= 2; gameState.combatState.defending = false; }
 
-            // All monsters attack!
-            monsters.forEach((enemy, index) => {
-                const actualDamage = Math.max(1, enemy.damage - totalDefense);
-                
-                const enemyName = monsters.length > 1 ? 
-                    `<span style="color: ${enemy.rarityColor};">${enemy.name} #${index + 1}</span>` :
-                    `<span style="color: ${enemy.rarityColor};">${enemy.name}</span>`;
-                
-                // God mode check
-                if (p.godMode) {
-                    gameState.combatState.messages.push(`${enemyName} attacks but you are INVINCIBLE!`);
+            // calculate all damage first, then queue messages
+            const attacks = monsters.map((enemy, i) => {
+                const dmg = Math.max(1, enemy.damage - totalDef);
+                const eName = monsters.length > 1
+                    ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${i+1}</span>`
+                    : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
+                if (!p.godMode) p.hp -= dmg;
+                return { eName, dmg, godMode: p.godMode };
+            });
+            updateHud();
+
+            // decide what happens after the last line streams in
+            const afterAllAttacks = () => {
+                if (p.hp <= 0 && !p.godMode) {
+                    endCombat(false);
                 } else {
-                    p.hp -= actualDamage;
-                    gameState.combatState.messages.push(`${enemyName} attacks for <span class="dmg-player">${actualDamage} damage!</span>`);
+                    gameState.combatState.turnTimer = 10;
+                    renderActionBar();
+                    startCombatTimer();
+                }
+            };
+
+            attacks.forEach((atk, i) => {
+                const isLast = (i === attacks.length - 1);
+                if (atk.godMode) {
+                    termAppend(`${atk.eName} attacks but you are INVINCIBLE!`, 'term-highlight', isLast ? afterAllAttacks : null);
+                } else {
+                    termAppend(`${atk.eName} attacks for <span class="dmg-player">${atk.dmg} damage!</span>`, null, isLast ? afterAllAttacks : null);
                 }
             });
-
-            if (p.hp <= 0 && !p.godMode) {
-                endCombat(false);
-            } else {
-                gameState.combatState.turnTimer = 10;
-                renderCombat();
-                startCombatTimer();
-            }
         }
 
+        // ═══════════════════════════════════════════════════════════════
+        // CHECK / END COMBAT
+        // ═══════════════════════════════════════════════════════════════
         function checkCombatEnd() {
             const monsters = gameState.combatState.monsters;
-            const targetIndex = gameState.combatState.currentTarget;
-            
-            // Initialize defeated monsters array if needed
-            if (!gameState.combatState.defeatedMonsters) {
-                gameState.combatState.defeatedMonsters = [];
-            }
-            
-            // Check if targeted monster is dead
-            if (monsters[targetIndex].hp <= 0) {
-                const deadEnemy = monsters[targetIndex];
-                gameState.combatState.messages.push(`<span style="color: ${deadEnemy.rarityColor};">${deadEnemy.name}</span> has been defeated!`);
-                
-                // Store defeated monster for rewards
-                gameState.combatState.defeatedMonsters.push(deadEnemy);
-                
-                // Remove dead monster
-                monsters.splice(targetIndex, 1);
-                
-                // Adjust target if needed
-                if (gameState.combatState.currentTarget >= monsters.length) {
+            const ti       = gameState.combatState.currentTarget;
+            if (!gameState.combatState.defeatedMonsters) gameState.combatState.defeatedMonsters = [];
+
+            if (monsters[ti].hp <= 0) {
+                const dead = monsters[ti];
+                gameState.combatState.defeatedMonsters.push(dead);
+                monsters.splice(ti, 1);
+                if (gameState.combatState.currentTarget >= monsters.length)
                     gameState.combatState.currentTarget = Math.max(0, monsters.length - 1);
-                }
-            }
-            
-            // Check if all monsters are dead
-            if (monsters.length === 0) {
-                endCombat(true);
+
+                // stream the "defeated" line, then decide what's next
+                termAppend(`<span style="color:${dead.rarityColor};">${dead.name}</span> has been defeated!`, 'term-victory', () => {
+                    if (monsters.length === 0) {
+                        endCombat(true);
+                    } else {
+                        renderEnemyCards();
+                        enemyAttack();
+                    }
+                });
             } else {
+                // target not dead – enemy counter-attacks immediately
                 enemyAttack();
             }
         }
 
         function endCombat(victory) {
             clearInterval(gameState.combatTimer);
-            const screen = document.getElementById('mainScreen');
+            gameState.combatTimer = null;
 
-            if (victory) {
-                const defeatedMonsters = gameState.combatState.defeatedMonsters || [];
-                
-                // Check if this was a master battle
-                const isMasterBattle = defeatedMonsters.some(m => m.isMaster);
-                let masterData = null;
-                let unlockedArea = null;
-                
-                if (isMasterBattle) {
-                    const master = defeatedMonsters.find(m => m.isMaster);
-                    masterData = CLASS_MASTERS[master.masterKey];
-                    unlockedArea = masterData.unlocks;
-                    
-                    // Record master defeat
-                    if (!gameState.player.defeatedMasters.includes(master.masterKey)) {
-                        gameState.player.defeatedMasters.push(master.masterKey);
-                    }
-                    
-                    // Unlock area
-                    if (!gameState.player.unlockedAreas.includes(unlockedArea)) {
-                        gameState.player.unlockedAreas.push(unlockedArea);
-                    }
-                    
-                    // Add guaranteed drops
-                    masterData.guaranteedDrops.forEach(itemKey => {
-                        defeatedMonsters[0].possibleDrops = defeatedMonsters[0].possibleDrops || [];
-                        if (!defeatedMonsters[0].possibleDrops.includes(itemKey)) {
-                            defeatedMonsters[0].possibleDrops.push(itemKey);
-                        }
-                        // Set 100% drop rate for guaranteed items
-                        defeatedMonsters[0].dropRates = defeatedMonsters[0].dropRates || {};
-                        if (WEAPONS[itemKey] || ARMOR[itemKey]) {
-                            const quality = getItemQuality(itemKey);
-                            defeatedMonsters[0].dropRates[quality] = 1.0;
-                        } else {
-                            defeatedMonsters[0].dropRates.common = 1.0;
-                        }
-                    });
-                }
-                
-                // Calculate total rewards
-                let totalXp = 0;
-                let totalGold = 0;
-                let allLoot = [];
-                
-                defeatedMonsters.forEach(enemy => {
-                    totalXp += enemy.xp;
-                    totalGold += enemy.gold;
-                    const loot = rollLoot(enemy);
-                    allLoot = allLoot.concat(loot);
-                });
-                
-                gameState.player.xp += totalXp;
-                gameState.player.gold += totalGold;
-
-                let resultHtml = `
-                    <div class="location-header">${isMasterBattle ? '⚔️ MASTER DEFEATED! ⚔️' : 'VICTORY!'}</div>
-                    ${renderPlayerStats()}
-                `;
-                
-                if (isMasterBattle) {
-                    resultHtml += `
-                        <div class="message" style="border-color: var(--highlight-color); background: rgba(255, 255, 0, 0.2);">
-                            <p style="color: var(--highlight-color); font-size: 26px;">🏆 ${masterData.name} HAS BEEN DEFEATED! 🏆</p>
-                            <p style="color: var(--text-color); margin: 10px 0;">You have proven your worth!</p>
-                            <p style="color: var(--border-color); font-size: 22px;">✨ ${LOCATIONS[unlockedArea].name} IS NOW UNLOCKED! ✨</p>
-                        </div>
-                    `;
-                }
-                
-                resultHtml += `<div class="message success-message">`;
-                
-                if (defeatedMonsters.length === 1) {
-                    const enemy = defeatedMonsters[0];
-                    resultHtml += `<p>You defeated the <span style="color: ${enemy.rarityColor};">${enemy.name}</span>!</p>`;
-                } else {
-                    resultHtml += `<p>You defeated ${defeatedMonsters.length} enemies!</p>`;
-                    defeatedMonsters.forEach((enemy, i) => {
-                        resultHtml += `<p style="font-size: 16px;">• <span style="color: ${enemy.rarityColor};">${enemy.name}</span></p>`;
-                    });
-                }
-                
-                resultHtml += `<p style="color: var(--border-color); font-size: 20px; margin-top: 10px;">Gained ${totalXp} XP and ${totalGold} Gold!</p>`;
-                resultHtml += `</div>`;
-
-                // Display loot
-                if (allLoot.length > 0) {
-                    resultHtml += `<div class="message" style="border-color: var(--highlight-color);">
-                        <p style="color: var(--highlight-color); font-size: 22px;">⚡ LOOT DROPPED ⚡</p>`;
-                    
-                    allLoot.forEach(itemKey => {
-                        const itemName = getItemName(itemKey);
-                        const itemColor = getItemColor(itemKey);
-                        resultHtml += `<p style="color: ${itemColor};">+ ${itemName}</p>`;
-                        
-                        // Add to inventory
-                        if (!gameState.player.inventory) {
-                            gameState.player.inventory = [];
-                        }
-                        gameState.player.inventory.push(itemKey);
-                    });
-                    
-                    resultHtml += `</div>`;
-                } else {
-                    resultHtml += `<div class="message" style="color: #808080;">
-                        <p>No items dropped...</p>
-                    </div>`;
-                }
-
-                // Check for level up
-                if (gameState.player.xp >= gameState.player.xpToNext) {
-                    levelUp();
-                    resultHtml += `
-                        <div class="message" style="border-color: var(--highlight-color);">
-                            <p style="color: var(--highlight-color); font-size: 24px;">LEVEL UP!</p>
-                            <p>You are now level ${gameState.player.level}!</p>
-                        </div>
-                    `;
-                }
-
-                resultHtml += `
-                    <button onclick="${isMasterBattle ? 'showExplore()' : `exploreLocation('${gameState.currentLocation}')`}">
-                        ${isMasterBattle ? 'VIEW WORLD MAP' : 'CONTINUE EXPLORING'}
-                    </button>
-                    <button onclick="showTown()">RETURN TO TOWN</button>
-                `;
-
-                screen.innerHTML = resultHtml;
+            if (!victory) {
+                gameState.player.hp   = gameState.player.maxHp;
+                gameState.player.mp   = gameState.player.maxMp;
+                gameState.player.gold = Math.floor(gameState.player.gold / 2);
                 gameState.combatState = null;
+                updateHud();
+                termAppend('You have been defeated… You wake up in town.', 'term-error', () => {
+                    setTimeout(() => { closeTerminalView(); showTown(); }, 1200);
+                });
+                return;
+            }
+
+            // ── victory ──
+            const defeated     = gameState.combatState.defeatedMonsters || [];
+            const isMaster     = defeated.some(m => m.isMaster);
+            let masterData     = null, unlockedArea = null;
+
+            if (isMaster) {
+                const m = defeated.find(d => d.isMaster);
+                masterData  = CLASS_MASTERS[m.masterKey];
+                unlockedArea = masterData.unlocks;
+                if (!gameState.player.defeatedMasters.includes(m.masterKey))
+                    gameState.player.defeatedMasters.push(m.masterKey);
+                if (!gameState.player.unlockedAreas.includes(unlockedArea))
+                    gameState.player.unlockedAreas.push(unlockedArea);
+                // guarantee drops
+                masterData.guaranteedDrops.forEach(ik => {
+                    if (!defeated[0].possibleDrops) defeated[0].possibleDrops = [];
+                    if (!defeated[0].possibleDrops.includes(ik)) defeated[0].possibleDrops.push(ik);
+                    if (!defeated[0].dropRates) defeated[0].dropRates = {};
+                    defeated[0].dropRates[WEAPONS[ik] || ARMOR[ik] ? getItemQuality(ik) : 'common'] = 1.0;
+                });
+            }
+
+            let totalXp = 0, totalGold = 0, allLoot = [];
+            defeated.forEach(e => {
+                totalXp  += e.xp;
+                totalGold += e.gold;
+                allLoot   = allLoot.concat(rollLoot(e));
+            });
+            gameState.player.xp   += totalXp;
+            gameState.player.gold += totalGold;
+
+            // ── print results into terminal ──
+            termAppend('', 'term-separator');
+            if (isMaster) {
+                termAppend(`🏆 ${masterData.name} HAS BEEN DEFEATED! 🏆`, 'term-victory');
+                termAppend(`✨ ${LOCATIONS[unlockedArea].name} IS NOW UNLOCKED! ✨`, 'term-loot');
+            }
+            if (defeated.length === 1)
+                termAppend(`You defeated <span style="color:${defeated[0].rarityColor};">${defeated[0].name}</span>!`, 'term-highlight');
+            else {
+                termAppend(`You defeated ${defeated.length} enemies!`, 'term-highlight');
+                defeated.forEach(e => termAppend(`  • <span style="color:${e.rarityColor};">${e.name}</span>`));
+            }
+            termAppend(`Gained <span style="color:#FFD700;">${totalXp} XP</span> and <span style="color:#FFD700;">${totalGold} Gold</span>!`);
+
+            if (allLoot.length > 0) {
+                termAppend('⚡ LOOT:', 'term-loot');
+                allLoot.forEach(ik => {
+                    gameState.player.inventory.push(ik);
+                    termAppend(`  + <span style="color:${getItemColor(ik)};">${getItemName(ik)}</span>`, 'term-loot');
+                });
             } else {
-                screen.innerHTML = `
-                    <div class="location-header">DEFEAT</div>
-                    <div class="message error-message">
-                        <p style="font-size: 24px;">You have been defeated!</p>
-                        <p>You wake up in town with half your gold...</p>
-                    </div>
-                    <button onclick="respawn()">CONTINUE</button>
-                `;
+                termAppend('No items dropped…', 'term-dim');
+            }
+
+            // level-up check
+            if (gameState.player.xp >= gameState.player.xpToNext) {
+                levelUp();
+                termAppend(`⬆️ LEVEL UP! You are now level ${gameState.player.level}!`, 'term-victory');
+            }
+
+            updateHud();
+            gameState.combatState = null;
+
+            // show continue / town / map buttons
+            const ab = document.getElementById('actionBar');
+            if (isMaster) {
+                ab.innerHTML = `
+                    <button onclick="closeTerminalView(); showExplore();">🗺️ VIEW WORLD MAP</button>
+                    <button onclick="goBackToTown()">🏘️ RETURN TO TOWN</button>`;
+            } else {
+                ab.innerHTML = `
+                    <button onclick="exploreLocation('${gameState.currentLocation}')">🔍 CONTINUE EXPLORING</button>
+                    <button onclick="goBackToTown()">🏘️ RETURN TO TOWN</button>`;
             }
         }
 
