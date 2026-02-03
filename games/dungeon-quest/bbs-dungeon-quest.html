@@ -2722,16 +2722,15 @@
                 if (cs.playerTimer > 0) cs.playerTimer--;
                 if (cs.enemyTimer > 0)  cs.enemyTimer--;
                 
-                // player timer expired: lose 1 charge
-                if (cs.playerTimer <= 0 && cs.hitsLeft > 0) {
-                    cs.hitsLeft--;
-                    cs.playerTimer = 10;  // reset for next charge
-                    renderActionBar();
-                    if (cs.hitsLeft > 0) {
-                        termAppend('<span style="color:#8aaa8a;">Charge expired, next charge ready…</span>', 'term-dim');
-                    } else {
-                        termAppend('<span style="color:#8aaa8a;">All charges expired.</span>', 'term-dim');
+                // player timer expired: RESTORE 1 charge (up to max)
+                if (cs.playerTimer <= 0) {
+                    const maxHits = calcPlayerHits(gameState.player);
+                    if (cs.hitsLeft < maxHits) {
+                        cs.hitsLeft++;
+                        renderActionBar();
+                        termAppend('<span style="color:#88ff88;">⚡ Charge restored!</span>', 'term-dim');
                     }
+                    cs.playerTimer = 10;  // reset timer regardless
                 }
                 
                 // enemy timer expired: use 1 charge and attack
