@@ -2996,6 +2996,14 @@
             closeTerminalView();
             showTown();
         }
+        
+        function selectTarget(index) {
+            const cs = gameState.combatState;
+            if (!cs || !cs.monsters || index < 0 || index >= cs.monsters.length) return;
+            cs.currentTarget = index;
+            updateEnemyCards();
+            renderActionBar();
+        }
 
         // ═══════════════════════════════════════════════════════════════
         // COMBAT TIMER
