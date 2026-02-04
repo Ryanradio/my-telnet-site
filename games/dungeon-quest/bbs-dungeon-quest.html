@@ -484,6 +484,37 @@
             box-shadow: 0 0 30px var(--error-color);
         }
 
+
+        .action-icon-btn {
+            width: 52px;
+            height: 52px;
+            font-size: 24px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--border-color);
+            background: var(--secondary-bg);
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .action-icon-btn:hover:not(:disabled) {
+            background: var(--primary-bg);
+            border-color: var(--highlight-color);
+            transform: scale(1.05);
+        }
+        
+        .action-icon-btn:active:not(:disabled) {
+            transform: scale(0.95);
+        }
+        
+        .action-icon-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
         /* ═══════════════════════════════════════════════════════════════
            RESPONSIVE MOBILE/TABLET DESIGN
            ═══════════════════════════════════════════════════════════════ */
@@ -610,20 +641,7 @@
                 margin: 3px 0;
             }
             
-            /* Enemy cards - more compact */
-            .enemy-card {
-                padding: 8px;
-                margin: 4px 0;
-            }
-            
-            .ec-name {
-                font-size: 18px;
-            }
-            
-            #enemy-cards-block {
-                padding: 6px 0 !important;
-                margin: 0 0 6px 0 !important;
-            }
+            /* Enemy cards removed - info shown in terminal only */
             
             /* Action bar - stack buttons vertically on very small screens */
             #actionBar {
@@ -634,6 +652,12 @@
                 margin: 3px 2px;
                 padding: 8px 10px;
                 font-size: 15px;
+            }
+            
+            .action-icon-btn {
+                width: 48px;
+                height: 48px;
+                font-size: 22px;
             }
             
             .action-label {
@@ -704,25 +728,24 @@
                 grid-template-columns: 1fr;
             }
             
-            /* Action bar buttons - full width */
-            #actionBar button {
-                display: block;
-                width: 100%;
-                margin: 3px 0;
-                padding: 10px;
+            /* Action icon buttons stay as icons on small phones */
+            .action-icon-btn {
+                width: 44px;
+                height: 44px;
+                font-size: 20px;
+            }
+            
+            /* Other action bar buttons (target selection, etc) */
+            #actionBar button:not(.action-icon-btn) {
+                padding: 8px 12px;
+                margin: 3px 2px;
             }
             
             .location-header {
                 font-size: 18px;
             }
             
-            .enemy-card {
-                padding: 6px;
-            }
-            
-            .ec-name {
-                font-size: 16px;
-            }
+            /* Enemy cards removed - info shown in terminal only */
         }
         
         /* Landscape tablets */
@@ -1043,7 +1066,7 @@
             'instant': -1  // No delay
         };
         
-        let currentModemSpeed = '28.8k'; // Default to 28.8k modem
+        let currentModemSpeed = '14.4k'; // Default to 14.4k modem (authentic BBS experience)
         let isStreaming = false;
         let streamCancelled = false;
         
@@ -2668,12 +2691,9 @@
             const p = gameState.player;
             document.getElementById('hudName').textContent  = `${p.name} – Lv ${p.level} ${p.className}`;
             document.getElementById('hudGold').textContent  = `💰 ${p.gold} g`;
-            document.getElementById('hudHpNums').textContent = `${p.hp} / ${p.maxHp}`;
-            document.getElementById('hudMpNums').textContent = `${p.mp} / ${p.maxMp}`;
-            document.getElementById('hudXpNums').textContent = `${p.xp} / ${p.xpToNext}`;
-            document.getElementById('hudHpBar').style.width = ((p.hp / p.maxHp) * 100) + '%';
-            document.getElementById('hudMpBar').style.width = ((p.mp / p.maxMp) * 100) + '%';
-            document.getElementById('hudXpBar').style.width = ((p.xp / p.xpToNext) * 100) + '%';
+            document.getElementById('hudHpNums').textContent = `❤️ HP: ${p.hp} / ${p.maxHp}`;
+            document.getElementById('hudMpNums').textContent = `✨ MP: ${p.mp} / ${p.maxMp}`;
+            document.getElementById('hudXpNums').textContent = `⭐ XP: ${p.xp} / ${p.xpToNext}`;
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -2904,60 +2924,11 @@
         // ENEMY CARDS – rendered into terminal, updated in place
         // ═══════════════════════════════════════════════════════════════
         function renderEnemyCards() {
-            // Remove any existing enemy-cards block, then append fresh
-            const old = document.getElementById('enemy-cards-block');
-            if (old) old.remove();
-
-            const combat  = gameState.combatState;
-            const tw      = document.getElementById('terminalWindow');
-            const block   = document.createElement('div');
-            block.id      = 'enemy-cards-block';
-            block.style.cssText = 'position:sticky; top:0; z-index:10; background:var(--secondary-bg); padding:8px 0; margin:0 0 8px 0; border-bottom:2px solid var(--border-color);';
-
-            combat.monsters.forEach((enemy, i) => {
-                const isTarget = (i === combat.currentTarget);
-                const hpPct    = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
-                let condition  = 'looks healthy';
-                if (hpPct < 75) condition = 'looks injured';
-                if (hpPct < 50) condition = 'looks wounded';
-                if (hpPct < 25) condition = 'looks severely wounded';
-                if (hpPct < 10) condition = 'is barely standing';
-                
-                const card     = document.createElement('div');
-                card.className = 'enemy-card' + (isTarget ? ' is-target' : '');
-                card.id        = 'enemy-card-' + i;
-                card.onclick   = () => selectTarget(i);
-                card.style.cursor = 'pointer';
-                card.innerHTML = `
-                    <div class="ec-name">
-                        <span style="color:${enemy.rarityColor};">${enemy.name}</span>
-                        <span style="color:#aaa;"> (Lv ${enemy.level})</span>
-                        ${combat.monsters.length > 1 ? `<span style="color:var(--highlight-color);"> #${i+1}</span>` : ''}
-                        ${isTarget ? ' <span style="color:var(--highlight-color);">◄ TARGET</span>' : ''}
-                    </div>
-                    <div style="color:#8aaa8a; font-size:18px; margin-top:2px;" id="ec-condition-${i}">${condition}</div>`;
-                block.appendChild(card);
-            });
-            tw.appendChild(block);
-            tw.scrollTop = tw.scrollHeight;
+            // Enemy info is now shown only in terminal messages - no visual cards needed
+            // This function is still called for compatibility but does nothing
         }
         function updateEnemyCards() {
-            const combat = gameState.combatState;
-            combat.monsters.forEach((enemy, i) => {
-                const card      = document.getElementById('enemy-card-' + i);
-                const condition = document.getElementById('ec-condition-' + i);
-                if (!card) return;
-                // update target highlight
-                card.className = 'enemy-card' + (i === combat.currentTarget ? ' is-target' : '');
-                // update condition text
-                const hpPct = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
-                let condText = 'looks healthy';
-                if (hpPct < 75) condText = 'looks injured';
-                if (hpPct < 50) condText = 'looks wounded';
-                if (hpPct < 25) condText = 'looks severely wounded';
-                if (hpPct < 10) condText = 'is barely standing';
-                condition.textContent = condText;
-            });
+            // No longer needed - enemy info shown in terminal only
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -2999,12 +2970,13 @@
                         <span style="color:#8aaa8a;font-size:15px;"> (${hitsLeft}/${maxHits})</span>
                     </div>
                     ${targetBtns ? '<div class="action-label">TARGET:</div>' + targetBtns : ''}
-                    <div class="action-label">ACTION:</div>
-                    <button onclick="playerAttack()" ${atkOff?'disabled':''}>⚔️ ATTACK</button>
-                    <button onclick="showSpellMenu()"  ${!canAct?'disabled':''}>✨ CAST SPELL</button>
-                    <button onclick="showPotionMenu()" ${!canAct?'disabled':''}>🧪 USE POTION</button>
-                    <button onclick="playerDefend()"   ${!canAct?'disabled':''}>🛡️ DEFEND</button>
-                    <button onclick="attemptFlee()"    ${!canAct?'disabled':''}>🏃 FLEE</button>
+                    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">
+                        <button onclick="playerAttack()" ${atkOff?'disabled':''} class="action-icon-btn" title="Attack">⚔️</button>
+                        <button onclick="showSpellMenu()"  ${!canAct?'disabled':''} class="action-icon-btn" title="Cast Spell">✨</button>
+                        <button onclick="showPotionMenu()" ${!canAct?'disabled':''} class="action-icon-btn" title="Use Potion">🧪</button>
+                        <button onclick="playerDefend()"   ${!canAct?'disabled':''} class="action-icon-btn" title="Defend">🛡️</button>
+                        <button onclick="attemptFlee()"    ${!canAct?'disabled':''} class="action-icon-btn" title="Flee">🏃</button>
+                    </div>
                 `;
             } else {
                 ab.innerHTML = `
@@ -3023,6 +2995,8 @@
                 termAppend('<span style="color:var(--error-color);">You are too exhausted to continue! Wait for your charges to restore…</span>', 'term-error');
                 return;
             }
+            // Clear old combat state now that we're starting fresh
+            gameState.combatState = null;
             exploreLocation(locKey);
         }
         
@@ -3031,7 +3005,20 @@
                 termAppend('<span style="color:var(--error-color);">You are too exhausted to travel! Wait for your charges to restore…</span>', 'term-error');
                 return;
             }
+            // Clear combat state now that we're leaving
+            gameState.combatState = null;
             goBackToTown();
+        }
+        
+        function tryViewWorldMap() {
+            if (!isFullyRested()) {
+                termAppend('<span style="color:var(--error-color);">You are too exhausted to travel! Wait for your charges to restore…</span>', 'term-error');
+                return;
+            }
+            // Clear combat state now that we're leaving
+            gameState.combatState = null;
+            closeTerminalView();
+            showExplore();
         }
         
         function selectTarget(index) {
@@ -3077,9 +3064,10 @@
                     // check if fully restored now
                     if (isFullyRested()) {
                         termAppend('<span style="color:var(--highlight-color);">✓ Fully rested! You can continue exploring.</span>', 'term-highlight');
+                        renderActionBar();  // remove exhaustion warning
                     }
-                } else if (!cs.monsters || cs.monsters.length === 0) {
-                    // post-combat, no monsters, just recovering - refresh action bar
+                } else if (cs && (!cs.monsters || cs.monsters.length === 0)) {
+                    // post-combat, no monsters, just recovering - refresh action bar every second
                     renderActionBar();
                 }
                 
@@ -3480,19 +3468,25 @@
             }
 
             updateHud();
-            gameState.combatState = null;
+            
+            // Don't clear combatState - keep pip timers alive for exhaustion recovery
+            // Just clear the monsters to indicate combat is over
+            gameState.combatState.monsters = [];
 
-            // show continue / town / map buttons
+            // show continue / town / map buttons (will be disabled until rested)
             const ab = document.getElementById('actionBar');
             if (isMaster) {
                 ab.innerHTML = `
-                    <button onclick="closeTerminalView(); showExplore();">🗺️ VIEW WORLD MAP</button>
-                    <button onclick="goBackToTown()">🏘️ RETURN TO TOWN</button>`;
+                    <button onclick="tryViewWorldMap()" id="worldMapBtn">🗺️ VIEW WORLD MAP</button>
+                    <button onclick="tryGoBackToTown()" id="returnBtn">🏘️ RETURN TO TOWN</button>`;
             } else {
                 ab.innerHTML = `
-                    <button onclick="exploreLocation('${gameState.currentLocation}')">🔍 CONTINUE EXPLORING</button>
-                    <button onclick="goBackToTown()">🏘️ RETURN TO TOWN</button>`;
+                    <button onclick="tryExploreLocation('${gameState.currentLocation}')" id="continueBtn">🔍 CONTINUE EXPLORING</button>
+                    <button onclick="tryGoBackToTown()" id="returnBtn">🏘️ RETURN TO TOWN</button>`;
             }
+            
+            // Immediately render with exhaustion check
+            renderActionBar();
         }
 
         function levelUp() {
