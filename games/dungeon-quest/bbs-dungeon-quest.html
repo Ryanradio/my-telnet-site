@@ -2620,13 +2620,18 @@
                 isMaster: true, masterKey: masterKey,
                 guaranteedDrops: master.guaranteedDrops
             };
+            const maxHits   = calcPlayerHits(gameState.player);
+            const pipTimers = [];
+            for (let i = 0; i < maxHits; i++) {
+                pipTimers.push(10);
+            }
             gameState.combatState = {
                 monsters: [masterMonster], currentTarget: 0,
                 messages: [], defeatedMonsters: [],
-                playerTimer:   10,
-                enemyTimer:    18,   // bosses always get 18 s
-                enemyDelay:    18,   // base delay for boss
-                hitsLeft:      calcPlayerHits(gameState.player),
+                pipTimers:     pipTimers,
+                pipAvailable:  pipTimers.map(() => true),
+                enemyTimer:    18,
+                enemyDelay:    18,
                 enemyHits:     3,
                 enemyHitsLeft: 3
             };
@@ -2836,13 +2841,18 @@
             else if (rar0==='mythic')    eHits = 3;
 
             const enemyDelay = 15 + Math.floor(Math.random()*6);  // 15-20s, fixed for this combat
+            const maxHits    = calcPlayerHits(gameState.player);
+            const pipTimers  = [];
+            for (let i = 0; i < maxHits; i++) {
+                pipTimers.push(10);  // each pip starts at 10s
+            }
             gameState.combatState = {
                 monsters, currentTarget: 0,
                 messages: [], defeatedMonsters: [],
-                playerTimer:   10,       // current countdown for next player action
-                enemyTimer:    enemyDelay,  // current countdown for next enemy action
-                enemyDelay:    enemyDelay,  // base delay for enemy (reused on reset)
-                hitsLeft:      calcPlayerHits(gameState.player),
+                pipTimers:     pipTimers,    // array of timers, one per pip
+                pipAvailable:  pipTimers.map(() => true),  // which pips are ready
+                enemyTimer:    enemyDelay,
+                enemyDelay:    enemyDelay,
                 enemyHits:     eHits,
                 enemyHitsLeft: eHits
             };
@@ -2948,8 +2958,8 @@
                 const cs       = gameState.combatState;
                 const monsters = cs.monsters;
                 const p        = gameState.player;
-                const maxHits  = calcPlayerHits(p);
-                const hitsLeft = cs.hitsLeft !== undefined ? cs.hitsLeft : maxHits;
+                const maxHits  = cs.pipAvailable ? cs.pipAvailable.length : calcPlayerHits(p);
+                const hitsLeft = cs.pipAvailable ? cs.pipAvailable.filter(x => x).length : maxHits;
                 const canAct   = hitsLeft > 0;
 
                 // target buttons (multi-enemy)
@@ -3014,25 +3024,28 @@
                 const cs = gameState.combatState;
                 if (!cs) { clearInterval(gameState.combatTimer); return; }
                 
-                // count down both timers independently
-                if (cs.playerTimer > 0) cs.playerTimer--;
-                if (cs.enemyTimer > 0)  cs.enemyTimer--;
-                
-                // player timer expired: RESTORE 1 charge (up to max)
-                if (cs.playerTimer <= 0) {
-                    const maxHits = calcPlayerHits(gameState.player);
-                    if (cs.hitsLeft < maxHits) {
-                        cs.hitsLeft++;
-                        renderActionBar();
-                        termAppend('<span style="color:#88ff88;">⚡ Charge restored!</span>', 'term-dim');
+                // count down each pip timer independently
+                let anyRestored = false;
+                for (let i = 0; i < cs.pipTimers.length; i++) {
+                    if (!cs.pipAvailable[i] && cs.pipTimers[i] > 0) {
+                        cs.pipTimers[i]--;
+                        if (cs.pipTimers[i] <= 0) {
+                            cs.pipAvailable[i] = true;  // restore this pip
+                            cs.pipTimers[i] = 10;        // reset to 10s
+                            anyRestored = true;
+                        }
                     }
-                    cs.playerTimer = 10;  // reset timer regardless
+                }
+                if (anyRestored) {
+                    renderActionBar();
+                    termAppend('<span style="color:#88ff88;">⚡ Charge restored!</span>', 'term-dim');
                 }
                 
-                // enemy timer expired: attack
+                // enemy timer countdown
+                if (cs.enemyTimer > 0) cs.enemyTimer--;
                 if (cs.enemyTimer <= 0) {
                     clearInterval(gameState.combatTimer);
-                    enemyAttackSingle();  // fire one attack, then reset timer
+                    enemyAttackSingle();
                 }
             }, 1000);
         }
@@ -3042,7 +3055,17 @@
         // ═══════════════════════════════════════════════════════════════
         function playerAttack() {
             const cs = gameState.combatState;
-            if (!cs || cs.hitsLeft <= 0) return;
+            if (!cs) return;
+            
+            // find first available pip
+            let pipIndex = -1;
+            for (let i = 0; i < cs.pipAvailable.length; i++) {
+                if (cs.pipAvailable[i]) {
+                    pipIndex = i;
+                    break;
+                }
+            }
+            if (pipIndex === -1) return;  // no pips available
 
             const p      = gameState.player;
             const ti     = cs.currentTarget;
@@ -3061,8 +3084,10 @@
                 crit = true;
             }
             enemy.hp -= dmg;
-            cs.hitsLeft--;
-            cs.playerTimer = 10;  // reset timer for next charge
+            
+            // use this pip - mark unavailable and reset its timer
+            cs.pipAvailable[pipIndex] = false;
+            cs.pipTimers[pipIndex] = 10;
 
             const tName = cs.monsters.length > 1
                 ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${ti+1}</span>`
@@ -3088,7 +3113,9 @@
 
         function showSpellMenu() {
             const cs = gameState.combatState;
-            if (!cs || cs.hitsLeft <= 0) return;
+            if (!cs) return;
+            const anyAvail = cs.pipAvailable && cs.pipAvailable.some(x => x);
+            if (!anyAvail) return;
             const p = gameState.player;
             if (p.knownSpells.length === 0) {
                 termAppend('You have no spells!', 'term-error');
@@ -3126,7 +3153,7 @@
                 let crit = false;
                 if (Math.random()*100 < calcCritChance(p.lck||0)) { dmg = Math.floor(dmg*1.75); crit = true; }
                 enemy.hp -= dmg;
-                cs.playerTimer = 10;  // spells don't consume charges but reset timer
+                // spells are free - don't consume pips or reset timers
                 const tName = cs.monsters.length > 1
                     ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${ti+1}</span>`
                     : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
@@ -3160,7 +3187,18 @@
 
         function attemptFlee() {
             const cs = gameState.combatState;
-            if (!cs || cs.hitsLeft <= 0) return;
+            if (!cs) return;
+            
+            // find first available pip
+            let pipIndex = -1;
+            for (let i = 0; i < cs.pipAvailable.length; i++) {
+                if (cs.pipAvailable[i]) {
+                    pipIndex = i;
+                    break;
+                }
+            }
+            if (pipIndex === -1) return;
+
             clearInterval(gameState.combatTimer);
             const p        = gameState.player;
             const fleePct  = Math.min(70, 30 + (p.dex||0)*3);
@@ -3170,11 +3208,11 @@
                     renderActionBar();
                 });
             } else {
-                cs.hitsLeft--;       // burn one charge
-                cs.playerTimer = 10; // reset
+                cs.pipAvailable[pipIndex] = false;
+                cs.pipTimers[pipIndex] = 10;
                 renderActionBar();
                 termAppend('Failed to escape!', 'term-error');
-                startCombatTimer();  // resume
+                startCombatTimer();
             }
         }
 
@@ -3183,7 +3221,9 @@
         // ═══════════════════════════════════════════════════════════════
         function showPotionMenu() {
             const cs = gameState.combatState;
-            if (!cs || cs.hitsLeft <= 0) return;
+            if (!cs) return;
+            const anyAvail = cs.pipAvailable && cs.pipAvailable.some(x => x);
+            if (!anyAvail) return;
             const p = gameState.player;
             const potions = {};
             p.inventory.forEach(ik => {
