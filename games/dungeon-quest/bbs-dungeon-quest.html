@@ -2939,9 +2939,11 @@
                 const pips = '●'.repeat(hitsLeft) + '○'.repeat(maxHits - hitsLeft);
                 const atkOff = hitsLeft <= 0;
 
-                // status label
+                // status label - only show if in active combat with monsters
                 let statusTag = '';
-                if (hitsLeft === 0) statusTag = `<div style="color:#8aaa8a;font-size:17px;margin-bottom:4px;">⏳ Waiting for enemy attack…</div>`;
+                if (hitsLeft === 0 && cs.monsters && cs.monsters.length > 0) {
+                    statusTag = `<div style="color:#8aaa8a;font-size:17px;margin-bottom:4px;">⏳ Waiting for enemy attack…</div>`;
+                }
 
                 ab.innerHTML = `
                     ${statusTag}
@@ -3040,12 +3042,7 @@
                 }
                 if (anyRestored) {
                     renderActionBar();
-                    termAppend('<span style="color:#88ff88;">⚡ Charge restored!</span>', 'term-dim');
-                    // check if fully restored now
-                    if (isFullyRested()) {
-                        termAppend('<span style="color:var(--highlight-color);">✓ Fully rested! You can continue exploring.</span>', 'term-highlight');
-                        renderActionBar();  // remove exhaustion warning
-                    }
+                    // Removed messages - player can see pips and buttons
                 } else if (cs && (!cs.monsters || cs.monsters.length === 0)) {
                     // post-combat, no monsters, just recovering - refresh action bar every second
                     renderActionBar();
@@ -3371,8 +3368,11 @@
         }
 
         function endCombat(victory) {
-            clearInterval(gameState.combatTimer);
-            gameState.combatTimer = null;
+            // Don't clear timer yet if victory - need it for pip restoration
+            if (!victory) {
+                clearInterval(gameState.combatTimer);
+                gameState.combatTimer = null;
+            }
 
             if (!victory) {
                 gameState.player.hp   = gameState.player.maxHp;
@@ -3468,8 +3468,10 @@
             // Immediately render with exhaustion check
             renderActionBar();
             
-            // IMPORTANT: Restart the timer so pips can restore post-combat
-            startCombatTimer();
+            // IMPORTANT: Start/continue the timer so pips can restore post-combat
+            if (!gameState.combatTimer) {
+                startCombatTimer();
+            }
         }
 
         function levelUp() {
