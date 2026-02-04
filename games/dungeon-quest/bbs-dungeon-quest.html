@@ -483,6 +483,288 @@
             overflow-y: auto;
             box-shadow: 0 0 30px var(--error-color);
         }
+
+        /* ═══════════════════════════════════════════════════════════════
+           RESPONSIVE MOBILE/TABLET DESIGN
+           ═══════════════════════════════════════════════════════════════ */
+        
+        @media (max-width: 768px) {
+            body {
+                font-size: 18px;
+                padding: 0;
+                margin: 0;
+            }
+            
+            .container {
+                max-width: 100%;
+                padding: 8px;
+                margin: 0;
+            }
+            
+            .header {
+                padding: 8px;
+                margin-bottom: 8px;
+            }
+            
+            .header h1 {
+                font-size: 18px;
+                margin-bottom: 4px;
+            }
+            
+            .header .subtitle {
+                font-size: 12px;
+            }
+            
+            .screen {
+                padding: 10px;
+                min-height: 300px;
+                margin-bottom: 10px;
+            }
+            
+            .location-header {
+                font-size: 20px;
+                padding: 8px;
+                margin-bottom: 8px;
+            }
+            
+            .stats-bar {
+                font-size: 16px;
+                padding: 8px;
+                margin-bottom: 8px;
+            }
+            
+            .progress-bar {
+                height: 12px;
+            }
+            
+            .menu-option {
+                padding: 10px;
+                font-size: 18px;
+                margin: 6px 0;
+            }
+            
+            button {
+                padding: 10px 15px;
+                font-size: 16px;
+                margin: 4px 2px;
+            }
+            
+            input[type="text"] {
+                font-size: 18px;
+                padding: 10px;
+                width: 100%;
+                box-sizing: border-box;
+            }
+            
+            /* Character select cards - stack vertically */
+            .character-select {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .class-card {
+                padding: 12px;
+            }
+            
+            .class-card div {
+                font-size: 16px !important;
+            }
+            
+            /* Inventory grid - 2 columns on mobile */
+            .inventory-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+            
+            .item-card {
+                padding: 8px;
+                font-size: 15px;
+            }
+            
+            .item-card button {
+                padding: 6px 10px;
+                font-size: 14px;
+            }
+            
+            /* HUD - compact on mobile */
+            #hud {
+                padding: 8px;
+                font-size: 16px;
+            }
+            
+            .hud-stat {
+                margin: 3px 0;
+            }
+            
+            /* Terminal - adjust for mobile screen */
+            #terminalWindow {
+                min-height: 350px;
+                max-height: 350px;
+                padding: 10px;
+                font-size: 17px;
+            }
+            
+            .term-line {
+                font-size: 17px;
+                line-height: 1.3;
+                margin: 3px 0;
+            }
+            
+            /* Enemy cards - more compact */
+            .enemy-card {
+                padding: 8px;
+                margin: 4px 0;
+            }
+            
+            .ec-name {
+                font-size: 18px;
+            }
+            
+            #enemy-cards-block {
+                padding: 6px 0 !important;
+                margin: 0 0 6px 0 !important;
+            }
+            
+            /* Action bar - stack buttons vertically on very small screens */
+            #actionBar {
+                padding: 8px;
+            }
+            
+            #actionBar button {
+                margin: 3px 2px;
+                padding: 8px 10px;
+                font-size: 15px;
+            }
+            
+            .action-label {
+                font-size: 16px;
+                margin: 6px 0 3px 0;
+            }
+            
+            /* Stat allocation screen */
+            #mainScreen > div[style*="max-width:520px"] {
+                max-width: 100% !important;
+            }
+            
+            /* Make tables/grids more compact */
+            .message {
+                padding: 10px;
+                font-size: 17px;
+            }
+            
+            .stat-label {
+                font-size: 17px;
+            }
+            
+            /* ASCII art - smaller on mobile */
+            .ascii-art {
+                font-size: 10px;
+                line-height: 1.1;
+            }
+        }
+        
+        /* Extra small phones */
+        @media (max-width: 480px) {
+            body {
+                font-size: 16px;
+            }
+            
+            .container {
+                padding: 4px;
+            }
+            
+            .header h1 {
+                font-size: 16px;
+            }
+            
+            button {
+                padding: 8px 12px;
+                font-size: 14px;
+                margin: 3px 1px;
+            }
+            
+            .menu-option {
+                padding: 8px;
+                font-size: 16px;
+            }
+            
+            #terminalWindow {
+                min-height: 300px;
+                max-height: 300px;
+                padding: 8px;
+                font-size: 16px;
+            }
+            
+            .term-line {
+                font-size: 16px;
+            }
+            
+            /* Inventory - single column on very small screens */
+            .inventory-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            /* Action bar buttons - full width */
+            #actionBar button {
+                display: block;
+                width: 100%;
+                margin: 3px 0;
+                padding: 10px;
+            }
+            
+            .location-header {
+                font-size: 18px;
+            }
+            
+            .enemy-card {
+                padding: 6px;
+            }
+            
+            .ec-name {
+                font-size: 16px;
+            }
+        }
+        
+        /* Landscape tablets */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .container {
+                max-width: 95%;
+                padding: 15px;
+            }
+            
+            .character-select {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .inventory-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        /* Portrait tablets */
+        @media (min-width: 481px) and (max-width: 768px) and (orientation: portrait) {
+            .character-select {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .inventory-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            #terminalWindow {
+                min-height: 400px;
+                max-height: 400px;
+            }
+        }
+        
+        /* Prevent text selection on double-tap (mobile) */
+        @media (hover: none) and (pointer: coarse) {
+            button, .menu-option, .class-card, .item-card, .enemy-card {
+                -webkit-tap-highlight-color: rgba(0, 255, 0, 0.2);
+                user-select: none;
+                -webkit-user-select: none;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1669,12 +1951,12 @@
                 const canUp   = remaining > 0 && stats[s] < 15;
                 const canDown = stats[s] > 1;
                 rows += `
-                <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #1a4a1a;">
-                    <span style="width:36px;color:${isAff?'var(--highlight-color)':'var(--text-color)'};font-weight:bold;">${STAT_LABELS[s]}</span>
-                    <span style="flex:1;font-size:16px;color:#8aaa8a;">${STAT_DESCS[s]}${isAff?' ★':''}</span>
-                    <button onclick="statAdj('${s}',-1)" ${canDown?'':'disabled'} style="width:30px;padding:2px 0;margin:0;font-size:20px;">−</button>
-                    <span style="width:28px;text-align:center;color:var(--highlight-color);font-size:22px;">${stats[s]}</span>
-                    <button onclick="statAdj('${s}',+1)" ${canUp ?'':'disabled'} style="width:30px;padding:2px 0;margin:0;font-size:20px;">+</button>
+                <div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid #1a4a1a;flex-wrap:wrap;">
+                    <span style="min-width:36px;color:${isAff?'var(--highlight-color)':'var(--text-color)'};font-weight:bold;">${STAT_LABELS[s]}</span>
+                    <span style="flex:1;min-width:120px;font-size:16px;color:#8aaa8a;">${STAT_DESCS[s]}${isAff?' ★':''}</span>
+                    <button onclick="statAdj('${s}',-1)" ${canDown?'':'disabled'} style="width:32px;padding:4px 0;margin:0;font-size:20px;">−</button>
+                    <span style="min-width:28px;text-align:center;color:var(--highlight-color);font-size:22px;">${stats[s]}</span>
+                    <button onclick="statAdj('${s}',+1)" ${canUp ?'':'disabled'} style="width:32px;padding:4px 0;margin:0;font-size:20px;">+</button>
                 </div>`;
             });
 
@@ -1686,11 +1968,11 @@
                     <span style="color:#8aaa8a;font-size:15px;"> (★ = class affinity)</span>
                 </div>
                 <div style="max-width:520px;margin:0 auto;">${rows}</div>
-                <div class="message" style="border-color:#005500;margin-top:12px;">
-                    <span style="color:#8aaa8a;">PREVIEW: </span>
+                <div class="message" style="border-color:#005500;margin-top:12px;font-size:15px;">
+                    <span style="color:#8aaa8a;">PREVIEW:</span><br>
                     <span style="color:var(--highlight-color);">HP ${previewHp}</span>
-                    <span style="color:var(--border-color);"> | Attacks/round: ${previewHits}</span>
-                    <span style="color:#8aaa8a;"> | Crit ${calcCritChance(stats.lck)}% | Dodge ${calcDodgeChance(stats.dex)}%</span>
+                    <span style="color:var(--border-color);"> | ATK/rd: ${previewHits}</span><br>
+                    <span style="color:#8aaa8a;">Crit ${calcCritChance(stats.lck)}% | Dodge ${calcDodgeChance(stats.dex)}%</span>
                 </div>
                 <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:8px;">
                     <button onclick="window._pendingStats=Object.assign({},CLASS_STAT_PRESETS['${classKey}']);renderStatAllocScreen();">📋 CLASS PRESET</button>
@@ -2609,11 +2891,17 @@
             const tw      = document.getElementById('terminalWindow');
             const block   = document.createElement('div');
             block.id      = 'enemy-cards-block';
-            block.style.margin = '8px 0';
+            block.style.cssText = 'position:sticky; top:0; z-index:10; background:var(--secondary-bg); padding:8px 0; margin:0 0 8px 0; border-bottom:2px solid var(--border-color);';
 
             combat.monsters.forEach((enemy, i) => {
                 const isTarget = (i === combat.currentTarget);
                 const hpPct    = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
+                let condition  = 'looks healthy';
+                if (hpPct < 75) condition = 'looks injured';
+                if (hpPct < 50) condition = 'looks wounded';
+                if (hpPct < 25) condition = 'looks severely wounded';
+                if (hpPct < 10) condition = 'is barely standing';
+                
                 const card     = document.createElement('div');
                 card.className = 'enemy-card' + (isTarget ? ' is-target' : '');
                 card.id        = 'enemy-card-' + i;
@@ -2624,12 +2912,9 @@
                         <span style="color:${enemy.rarityColor};">${enemy.name}</span>
                         <span style="color:#aaa;"> (Lv ${enemy.level})</span>
                         ${combat.monsters.length > 1 ? `<span style="color:var(--highlight-color);"> #${i+1}</span>` : ''}
-                        ${isTarget && combat.monsters.length > 1 ? ' <span style="color:var(--highlight-color);">◄ TARGET</span>' : ''}
+                        ${isTarget ? ' <span style="color:var(--highlight-color);">◄ TARGET</span>' : ''}
                     </div>
-                    <div class="ec-hp" id="ec-hp-${i}">HP: ${enemy.hp} / ${enemy.maxHp}</div>
-                    <div class="progress-bar" style="height:14px; margin-top:4px;">
-                        <div class="progress-fill hp-bar" id="ec-bar-${i}" style="width:${hpPct}%"></div>
-                    </div>`;
+                    <div style="color:#8aaa8a; font-size:18px; margin-top:2px;" id="ec-condition-${i}">${condition}</div>`;
                 block.appendChild(card);
             });
             tw.appendChild(block);
@@ -2638,16 +2923,19 @@
         function updateEnemyCards() {
             const combat = gameState.combatState;
             combat.monsters.forEach((enemy, i) => {
-                const card  = document.getElementById('enemy-card-' + i);
-                const hp    = document.getElementById('ec-hp-' + i);
-                const bar   = document.getElementById('ec-bar-' + i);
+                const card      = document.getElementById('enemy-card-' + i);
+                const condition = document.getElementById('ec-condition-' + i);
                 if (!card) return;
                 // update target highlight
                 card.className = 'enemy-card' + (i === combat.currentTarget ? ' is-target' : '');
-                // update hp text & bar
+                // update condition text
                 const hpPct = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
-                hp.textContent  = `HP: ${enemy.hp} / ${enemy.maxHp}`;
-                bar.style.width = hpPct + '%';
+                let condText = 'looks healthy';
+                if (hpPct < 75) condText = 'looks injured';
+                if (hpPct < 50) condText = 'looks wounded';
+                if (hpPct < 25) condText = 'looks severely wounded';
+                if (hpPct < 10) condText = 'is barely standing';
+                condition.textContent = condText;
             });
         }
 
@@ -2733,8 +3021,8 @@
                     cs.playerTimer = 10;  // reset timer regardless
                 }
                 
-                // enemy timer expired: use 1 charge and attack
-                if (cs.enemyTimer <= 0 && cs.enemyHitsLeft > 0) {
+                // enemy timer expired: attack
+                if (cs.enemyTimer <= 0) {
                     clearInterval(gameState.combatTimer);
                     enemyAttackSingle();  // fire one attack, then reset timer
                 }
@@ -2776,7 +3064,16 @@
             renderActionBar();
 
             const critTag = crit ? ' <span style="color:#FFD700;">★ CRIT!</span>' : '';
+            const hpPct = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
+            let condition = 'healthy';
+            if (hpPct < 75) condition = 'injured';
+            if (hpPct < 50) condition = 'wounded';
+            if (hpPct < 25) condition = 'severely wounded';
+            if (hpPct < 10) condition = 'barely standing';
             termAppend(`You attack ${tName} for <span class="dmg-enemy">${dmg} damage!</span>${critTag}`, null, () => {
+                if (enemy.hp > 0) {
+                    termAppend(`→ ${tName} is <span style="color:#8aaa8a;">${condition}</span>`, 'term-dim');
+                }
                 checkCombatEnd();
             });
         }
@@ -2829,7 +3126,16 @@
                 updateHud();
                 renderActionBar();
                 const critTag = crit ? ' <span style="color:#FFD700;">★ CRIT!</span>' : '';
+                const hpPct = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
+                let condition = 'healthy';
+                if (hpPct < 75) condition = 'injured';
+                if (hpPct < 50) condition = 'wounded';
+                if (hpPct < 25) condition = 'severely wounded';
+                if (hpPct < 10) condition = 'barely standing';
                 termAppend(`You cast ${spell.name} on ${tName} for <span class="dmg-enemy">${dmg} damage!</span>${critTag}`, null, () => {
+                    if (enemy.hp > 0) {
+                        termAppend(`→ ${tName} is <span style="color:#8aaa8a;">${condition}</span>`, 'term-dim');
+                    }
                     checkCombatEnd();
                 });
             }
@@ -2950,7 +3256,6 @@
                 }
             });
             
-            cs.enemyHitsLeft--;
             updateHud();
 
             // after attack messages stream, reset enemy timer and resume
@@ -2959,6 +3264,7 @@
                     endCombat(false);
                 } else {
                     // reset enemy timer for next charge (keep using same base delay)
+                    // Don't decrement enemyHitsLeft - enemy attacks indefinitely
                     cs.enemyTimer = cs.enemyDelay;
                     renderActionBar();
                     startCombatTimer();
