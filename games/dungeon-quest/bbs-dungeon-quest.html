@@ -618,13 +618,13 @@
             }
             
             /* HUD - compact on mobile */
-            #hud {
-                padding: 8px;
-                font-size: 16px;
+            #hud > div {
+                padding: 6px !important;
+                font-size: 16px !important;
             }
             
-            .hud-stat {
-                margin: 3px 0;
+            #hud > div > div {
+                gap: 10px !important;
             }
             
             /* Terminal - adjust for mobile screen */
@@ -805,23 +805,14 @@
         </div>
 
         <!-- ── static HUD (hidden except during explore/combat) ── -->
-        <div id="hud">
-            <div class="hud-top">
-                <span class="hud-name" id="hudName">Hero – Lv 1 Warrior</span>
-                <span class="hud-gold" id="hudGold">💰 100 g</span>
-            </div>
-            <div class="hud-bars">
-                <div class="hud-bar-group">
-                    <label>HP <span class="bar-nums" id="hudHpNums">120 / 120</span></label>
-                    <div class="progress-bar"><div class="progress-fill hp-bar" id="hudHpBar" style="width:100%"></div></div>
-                </div>
-                <div class="hud-bar-group">
-                    <label>MP <span class="bar-nums" id="hudMpNums">20 / 20</span></label>
-                    <div class="progress-bar"><div class="progress-fill mp-bar" id="hudMpBar" style="width:100%"></div></div>
-                </div>
-                <div class="hud-bar-group">
-                    <label>XP <span class="bar-nums" id="hudXpNums">0 / 100</span></label>
-                    <div class="progress-bar"><div class="progress-fill xp-bar" id="hudXpBar" style="width:0%"></div></div>
+        <div id="hud" style="display: none;">
+            <div style="padding: 8px; background: var(--secondary-bg); border: 2px solid var(--border-color); margin-bottom: 8px; font-size: 18px;">
+                <div id="hudName" style="margin-bottom: 4px;"></div>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                    <span id="hudGold"></span>
+                    <span id="hudHpNums"></span>
+                    <span id="hudMpNums"></span>
+                    <span id="hudXpNums"></span>
                 </div>
             </div>
         </div>
@@ -2148,21 +2139,12 @@
                 <div class="stats-bar">
                     <div>
                         <span class="stat-label">HP:</span> ${p.hp}/${p.maxHp}
-                        <div class="progress-bar">
-                            <div class="progress-fill hp-bar" style="width: ${hpPercent}%"></div>
-                        </div>
                     </div>
                     <div>
                         <span class="stat-label">MP:</span> ${p.mp}/${p.maxMp}
-                        <div class="progress-bar">
-                            <div class="progress-fill mp-bar" style="width: ${mpPercent}%"></div>
-                        </div>
                     </div>
                     <div>
                         <span class="stat-label">XP:</span> ${p.xp}/${p.xpToNext}
-                        <div class="progress-bar">
-                            <div class="progress-fill xp-bar" style="width: ${xpPercent}%"></div>
-                        </div>
                     </div>
                 </div>
             `;
@@ -2683,8 +2665,6 @@
         // HUD – write once, update in place
         // ═══════════════════════════════════════════════════════════════
         function initHud() {
-            const p = gameState.player;
-            document.getElementById('hudName').textContent = `${p.name} – Lv ${p.level} ${p.className}`;
             updateHud();
         }
         function updateHud() {
@@ -3487,6 +3467,9 @@
             
             // Immediately render with exhaustion check
             renderActionBar();
+            
+            // IMPORTANT: Restart the timer so pips can restore post-combat
+            startCombatTimer();
         }
 
         function levelUp() {
