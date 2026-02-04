@@ -1833,6 +1833,17 @@
         // Initialize Game
         function initGame() {
             showMainMenu();
+            
+            // Warn before leaving page without saving
+            window.addEventListener('beforeunload', function(e) {
+                // Only warn if player exists and has made progress
+                if (gameState.player && gameState.player.level >= 1) {
+                    const message = 'You have unsaved progress! Are you sure you want to leave?';
+                    e.preventDefault();
+                    e.returnValue = message;  // Chrome requires returnValue
+                    return message;           // Some browsers use return value
+                }
+            });
         }
 
         function showMainMenu() {
@@ -2052,7 +2063,7 @@
                     <div class="menu-option" onclick="showInventory()">► INVENTORY</div>
                     <div class="menu-option" onclick="showExplore()">► EXPLORE WORLD</div>
                     <div class="menu-option" onclick="showModemSettings()">► MODEM SETTINGS</div>
-                    <div class="menu-option" onclick="saveGame()">► SAVE GAME</div>
+                    <div class="menu-option" onclick="saveGame()" style="border-color:var(--highlight-color);background:rgba(255,255,0,0.05);">💾 SAVE GAME (recommended!)</div>
                     <div class="menu-option" onclick="showMainMenu()">► QUIT TO MENU</div>
                 </div>
             `;
@@ -3007,6 +3018,22 @@
             showTown();
         }
         
+        function tryExploreLocation(locKey) {
+            if (!isFullyRested()) {
+                termAppend('<span style="color:var(--error-color);">You are too exhausted to continue! Wait for your charges to restore…</span>', 'term-error');
+                return;
+            }
+            exploreLocation(locKey);
+        }
+        
+        function tryGoBackToTown() {
+            if (!isFullyRested()) {
+                termAppend('<span style="color:var(--error-color);">You are too exhausted to travel! Wait for your charges to restore…</span>', 'term-error');
+                return;
+            }
+            goBackToTown();
+        }
+        
         function selectTarget(index) {
             const cs = gameState.combatState;
             if (!cs || !cs.monsters || index < 0 || index >= cs.monsters.length) return;
@@ -3014,6 +3041,14 @@
             updateEnemyCards();
             renderActionBar();
         }
+
+        function isFullyRested() {
+            const cs = gameState.combatState;
+            if (!cs || !cs.pipAvailable) return true;
+            // all pips must be available
+            return cs.pipAvailable.every(x => x);
+        }
+
 
         // ═══════════════════════════════════════════════════════════════
         // COMBAT TIMER
@@ -3039,6 +3074,13 @@
                 if (anyRestored) {
                     renderActionBar();
                     termAppend('<span style="color:#88ff88;">⚡ Charge restored!</span>', 'term-dim');
+                    // check if fully restored now
+                    if (isFullyRested()) {
+                        termAppend('<span style="color:var(--highlight-color);">✓ Fully rested! You can continue exploring.</span>', 'term-highlight');
+                    }
+                } else if (!cs.monsters || cs.monsters.length === 0) {
+                    // post-combat, no monsters, just recovering - refresh action bar
+                    renderActionBar();
                 }
                 
                 // enemy timer countdown
