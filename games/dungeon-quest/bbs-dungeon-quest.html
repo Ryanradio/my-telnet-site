@@ -3503,45 +3503,48 @@
         }
     });
 }
+// ═══════════════════════════════════════════════════════════════
+// CHECK / END COMBAT
+// ═══════════════════════════════════════════════════════════════
+function checkCombatEnd() {
+    const monsters = gameState.combatState.monsters;
+    const ti       = gameState.combatState.currentTarget;
 
-        // ═══════════════════════════════════════════════════════════════
-        // CHECK / END COMBAT
-        // ═══════════════════════════════════════════════════════════════
-        function checkCombatEnd() {
-            const monsters = gameState.combatState.monsters;
-            const ti       = gameState.combatState.currentTarget;
-            if (!gameState.combatState.defeatedMonsters) gameState.combatState.defeatedMonsters = [];
+    if (!gameState.combatState.defeatedMonsters)
+        gameState.combatState.defeatedMonsters = [];
 
-            if (monsters[ti].hp <= 0) {
-                const dead = monsters[ti];
-                gameState.combatState.defeatedMonsters.push(dead);
-                monsters.splice(ti, 1);
-                if (gameState.combatState.currentTarget >= monsters.length)
-                    gameState.combatState.currentTarget = Math.max(0, monsters.length - 1);
+    if (monsters[ti].hp <= 0) {
+        const dead = monsters[ti];
+        gameState.combatState.defeatedMonsters.push(dead);
+        monsters.splice(ti, 1);
 
-                // stream the "defeated" line, then decide what's next
-                termAppend(`<span style="color:${dead.rarityColor};">${dead.name}</span> has been defeated!`, 'term-victory', () => {
-                    if (monsters.length === 0) {
-                        endCombat(true);
-                    } else {
-                        renderEnemyCards();
-                        // remaining enemies still alive – player keeps acting
-                    }
-                });
-            } else {
-                // target not dead – do nothing, timer keeps ticking
+        if (gameState.combatState.currentTarget >= monsters.length)
+            gameState.combatState.currentTarget = Math.max(0, monsters.length - 1);
+
+        termAppend(
+            `<span style="color:${dead.rarityColor};">${dead.name}</span> has been defeated!`,
+            'term-victory',
+            () => {
+                if (monsters.length === 0) {
+                    endCombat(true);
+                } else {
+                    renderEnemyCards();
+                }
             }
-        }
-
-        function endCombat(victory) {
-    // Don't clear timer yet if victory - need it for pip restoration
-    if (!victory) {
-        clearInterval(gameState.combatTimer);
-        gameState.combatTimer = null;
+        );
     }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// END COMBAT
+// ═══════════════════════════════════════════════════════════════
+function endCombat(victory) {
 
     // ── defeat ──
     if (!victory) {
+        clearInterval(gameState.combatTimer);
+        gameState.combatTimer = null;
+
         gameState.player.hp   = gameState.player.maxHp;
         gameState.player.mp   = gameState.player.maxMp;
         gameState.player.gold = Math.floor(gameState.player.gold / 2);
@@ -3550,17 +3553,19 @@
         gameState.postCombatRecovery = false;
 
         updateHud();
-        termAppend('You have been defeated… You wake up in town.', 'term-error', () => {
-            setTimeout(() => { closeTerminalView(); showTown(); }, 1200);
-        });
+        termAppend(
+            'You have been defeated… You wake up in town.',
+            'term-error',
+            () => setTimeout(() => { closeTerminalView(); showTown(); }, 1200)
+        );
         return;
     }
 
     // ── victory ──
-    const defeated     = gameState.combatState.defeatedMonsters || [];
-    const isMaster     = defeated.some(m => m.isMaster);
-    let masterData     = null;
-    let unlockedArea   = null;
+    const defeated   = gameState.combatState.defeatedMonsters || [];
+    const isMaster   = defeated.some(m => m.isMaster);
+    let masterData   = null;
+    let unlockedArea = null;
 
     if (isMaster) {
         const m = defeated.find(d => d.isMaster);
@@ -3573,10 +3578,11 @@
         if (!gameState.player.unlockedAreas.includes(unlockedArea))
             gameState.player.unlockedAreas.push(unlockedArea);
 
-        // guarantee drops
         masterData.guaranteedDrops.forEach(ik => {
             if (!defeated[0].possibleDrops) defeated[0].possibleDrops = [];
-            if (!defeated[0].possibleDrops.includes(ik)) defeated[0].possibleDrops.push(ik);
+            if (!defeated[0].possibleDrops.includes(ik))
+                defeated[0].possibleDrops.push(ik);
+
             if (!defeated[0].dropRates) defeated[0].dropRates = {};
             defeated[0].dropRates[
                 (WEAPONS[ik] || ARMOR[ik]) ? getItemQuality(ik) : 'common'
@@ -3594,7 +3600,7 @@
     gameState.player.xp   += totalXp;
     gameState.player.gold += totalGold;
 
-    // ── print results into terminal ──
+    // ── terminal output ──
     termAppend('', 'term-separator');
 
     if (isMaster) {
@@ -3632,7 +3638,6 @@
         termAppend('No items dropped…', 'term-dim');
     }
 
-    // level-up check
     if (gameState.player.xp >= gameState.player.xpToNext) {
         levelUp();
         termAppend(`⬆️ LEVEL UP! You are now level ${gameState.player.level}!`, 'term-victory');
@@ -3641,32 +3646,39 @@
     updateHud();
 
     // ─────────────────────────────────────────
-    // ✅ FIX: EXIT COMBAT MODE CLEANLY
+    // ✅ EXIT COMBAT, ENTER EXHAUSTION
     // ─────────────────────────────────────────
     gameState.combatState = null;
     gameState.postCombatRecovery = true;
 
-    // show continue / town / map buttons (disabled until rested)
     const ab = document.getElementById('actionBar');
-    if (isMaster) {
-        ab.innerHTML = `
-            <button onclick="tryViewWorldMap()" id="worldMapBtn">🗺️ VIEW WORLD MAP</button>
-            <button onclick="tryGoBackToTown()" id="returnBtn">🏘️ RETURN TO TOWN</button>`;
-    } else {
-        ab.innerHTML = `
-            <button onclick="tryExploreLocation('${gameState.currentLocation}')" id="continueBtn">🔍 CONTINUE EXPLORING</button>
-            <button onclick="tryGoBackToTown()" id="returnBtn">🏘️ RETURN TO TOWN</button>`;
-    }
+    ab.innerHTML = isMaster
+        ? `
+            <button onclick="tryViewWorldMap()">🗺️ VIEW WORLD MAP</button>
+            <button onclick="tryGoBackToTown()">🏘️ RETURN TO TOWN</button>`
+        : `
+            <button onclick="tryExploreLocation('${gameState.currentLocation}')">🔍 CONTINUE EXPLORING</button>
+            <button onclick="tryGoBackToTown()">🏘️ RETURN TO TOWN</button>`;
 
-    // render navigation in exhausted state
     renderActionBar();
 
-    // keep timer running so pips can restore
     if (!gameState.combatTimer) {
         startCombatTimer();
     }
 }
 
+// ═══════════════════════════════════════════════════════════════
+// POST-COMBAT EXHAUSTION CHECK
+// (used by navigation actions)
+// ═══════════════════════════════════════════════════════════════
+function playerIsExhausted() {
+    if (!gameState.postCombatRecovery) return false;
+
+    const cs = gameState.combatState;
+    if (!cs || !cs.pipAvailable) return false;
+
+    return cs.pipAvailable.some(p => !p);
+}
         function levelUp() {
             const p = gameState.player;
             p.level++;
