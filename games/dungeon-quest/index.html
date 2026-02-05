@@ -866,6 +866,24 @@ body.terminal-mode #actionBar {
     <script src="class-masters.js"></script>
 
     <script>
+
+// ─────────────────────────────────────────
+// Direction helpers
+// ─────────────────────────────────────────
+
+const OPPOSITE_DIR = {
+    N: 'South',
+    S: 'North',
+    E: 'West',
+    W: 'East',
+    NE: 'Southwest',
+    NW: 'Southeast',
+    SE: 'Northwest',
+    SW: 'Northeast'
+};
+
+
+
         // Game Data Structures
         const CLASSES = {
             warrior: {
@@ -1154,6 +1172,81 @@ body.terminal-mode #actionBar {
                 toggleTerminal();
             }
         });
+
+function showActionBar() {
+    const ab = document.getElementById('actionBar');
+    if (ab) ab.style.display = 'block';
+}
+
+function hideActionBar() {
+    const ab = document.getElementById('actionBar');
+    if (ab) ab.style.display = 'none';
+}
+
+
+function buildSaveSnapshot() {
+    if (!gameState.player) {
+        console.warn('No player state to save');
+        return null;
+    }
+
+    const snapshot = {
+        characterId: gameState.player.id || 'default', // future-proof
+        timestamp: Date.now(),
+
+        player: {
+            id: gameState.player.id || 'default',
+            name: gameState.player.name,
+            hp: gameState.player.hp,
+            mp: gameState.player.mp,
+            gold: gameState.player.gold,
+            xp: gameState.player.xp,
+            level: gameState.player.level
+        },
+
+        dungeon: gameState.dungeon ? {
+            dungeonKey: gameState.dungeon.dungeonKey,
+            floor: gameState.dungeon.floor,
+            currentRoom: gameState.dungeon.currentRoom,
+            discoveredRooms: [...gameState.dungeon.discoveredRooms],
+
+            activeEnemies: gameState.dungeon.activeEnemies.map(e => ({
+                id: e.id,
+                monsterId: e.monsterId,
+                name: e.name,
+                hp: e.hp,
+                maxHp: e.maxHp,
+                currentRoom: e.currentRoom,
+                leash: e.leash
+                // deliberately NOT saving chase counters
+            }))
+        } : null,
+
+        meta: {
+            inDungeon: !!gameState.dungeon
+        }
+    };
+
+    console.log('SAVE SNAPSHOT:', snapshot);
+    return snapshot;
+}
+
+
+function saveGame() {
+    const snapshot = buildSaveSnapshot();
+    if (!snapshot) return;
+
+    const key = `save_character_${snapshot.characterId}`;
+    localStorage.setItem(key, JSON.stringify(snapshot));
+
+    console.log(`Game saved to ${key}`);
+}
+
+window.addEventListener('beforeunload', () => {
+    saveGame();
+});
+
+
 
         function toggleTerminal() {
             const terminal = document.getElementById('terminalContainer');
@@ -2739,11 +2832,9 @@ function openTerminalView(locKey) {
     hud.style.display = 'block';
     term.style.display = 'block';
 
-    // 🔑 DO NOT hide the action bar here
-    // Dungeon mode controls it explicitly
-    if (gameState.dungeon) {
-        ab.style.display = 'block';
-    }
+  
+// Dungeon always uses the action bar for movement
+ab.style.display = 'block';
 
     initHud();
 
@@ -3020,6 +3111,7 @@ function openTerminalView(locKey) {
         
         function renderActionBar() {
             const ab = document.getElementById('actionBar');
+            showActionBar();
             if (gameState.combatState) {
                 const cs       = gameState.combatState;
                 const monsters = cs.monsters;
@@ -3248,40 +3340,69 @@ function updateDungeonEnemies() {
 
     ds.activeEnemies.forEach(enemy => {
         const enemyRoom = floor.rooms[enemy.currentRoom];
-        const exits = enemyRoom.exits || {};
+        if (!enemyRoom) return;
 
-        let canFollow = false;
-
-        // 🔍 check adjacency
-        for (const dir in exits) {
-            if (exits[dir] === ds.currentRoom) {
-                canFollow = true;
-                break;
-            }
-        }
-
-        // ❌ not adjacent → do nothing
-        if (!canFollow) return;
-
-        // 🔁 re-engage chase if previously exhausted
-        if (enemy.roomsFollowed >= enemy.leash) {
+        // 🧠 START chase ONLY when player enters enemy's room
+        if (!enemy.isChasing && enemy.currentRoom === ds.currentRoom) {
+            enemy.isChasing = true;
             enemy.roomsFollowed = 0;
+
+            //  IF THE ENEMY IS CHASING YOU, PRINT THIS MESSAGE
+         //   termAppend(
+         //       `👁️ <strong>${enemy.name}</strong> begins to pursue you…`,
+         //       'term-warning'
+         //   );
+         //   return;
         }
 
-        // 👣 follow
-        enemy.currentRoom = ds.currentRoom;
-        enemy.roomsFollowed++;
+        // ❌ not chasing → do nothing
+        if (!enemy.isChasing) return;
 
-        termAppend(
-            `👁️ <strong>${enemy.name}</strong> resumes the chase!`,
-            'term-warning'
-        );
+        // 🛑 leash exhausted → STOP and STAY
+        if (enemy.roomsFollowed >= enemy.leash) {
+            enemy.isChasing = false;
+
+            termAppend(
+                `🛑 <strong>${enemy.name}</strong> stops the chase.`,
+                'term-dim'
+            );
+            return; // ⛔ ABSOLUTELY REQUIRED
+        }
+
+        // 👣 follow ONLY while chasing
+        const exits = enemyRoom.exits || {};
+for (const dir in exits) {
+    if (exits[dir] === ds.currentRoom) {
+        enemy.currentRoom = ds.currentRoom;
+enemy.roomsFollowed++;
+enemy.justArrived = true; // 👈 add this
+
+const fromDir = OPPOSITE_DIR[dir] || dir;
+
+termAppend(
+    `⚠️ <strong>${enemy.name}</strong> enters from the <em>${fromDir}</em>.`,
+    'term-warning'
+);
+
+return;
+
+    }
+}
+
     });
 }
 
 
 
+
 function moveInDungeon(direction) {
+
+//if (gameState.inCombat) {
+//    termAppend(`⚔️ You are engaged in combat!`, 'term-dim');
+//    return;
+//}
+
+
     if (!gameState.dungeon) {
         console.warn('Not in a dungeon');
         return;
@@ -3308,27 +3429,27 @@ function moveInDungeon(direction) {
     termAppend(`<strong>${nextRoom.name}</strong>`);
     termAppend(nextRoom.description, 'term-dim');
 
-    // 👁️ enemies already present in this room
+   // 🔥 Spawn encounter (once)
+checkRoomEncounter(nextRoom);
+
+// 👣 Move any active enemies that can follow
+updateDungeonEnemies();
+
+// ⚔️ combat trigger (AFTER enemies move)
+//const enemyHere = getEnemyInRoom(ds.currentRoom);
+//if (enemyHere) {
+//    gameState.inCombat = true; // 👈 HERE
+
+    //termAppend(
+    //    `⚔️ <strong>${enemyHere.name}</strong> confronts you!`,
+    //    'term-warning'
+    // );
+
+    //return;
+// }
+
+// 👁️ enemies already present (no combat)
 checkEnemiesInRoom(nextRoomId);
-
-// ⚔️ combat trigger
-const enemyHere = getEnemyInRoom(nextRoomId);
-if (enemyHere) {
-    termAppend(
-        `⚔️ <strong>${enemyHere.name}</strong> blocks your path!`,
-        'term-warning'
-    );
-
-    // later this will call startCombat(enemyHere)
-    return; // ⛔ stop further movement processing
-}
-
-
-    // 🔥 Spawn encounter (once)
-    checkRoomEncounter(nextRoom);
-
-    // 👣 Move any active enemies that can follow
-    updateDungeonEnemies();
 
     const exits = Object.keys(nextRoom.exits)
         .map(d => d.toUpperCase())
@@ -3355,13 +3476,21 @@ function checkEnemiesInRoom(roomId) {
     if (!ds || !ds.activeEnemies) return;
 
     ds.activeEnemies.forEach(enemy => {
-        if (enemy.currentRoom === roomId) {
-            termAppend(
-                `⚠️ <strong>${enemy.name}</strong> is here, watching you carefully.`,
-                'term-warning'
-            );
+    if (enemy.currentRoom === roomId) {
+
+        // suppress duplicate message if enemy just entered
+        if (enemy.justArrived) {
+            enemy.justArrived = false;
+            return;
         }
-    });
+
+        termAppend(
+            `⚠️ <strong>${enemy.name}</strong> is here, watching you carefully.`,
+            'term-warning'
+        );
+    }
+});
+
 }
 
 
@@ -3384,6 +3513,10 @@ function returnToTown() {
     document.getElementById('hud').style.display = 'none';
 
     document.getElementById('mainScreen').style.display = 'block';
+
+    //ALWAYS RESTORE ACTION BAR FOR WORLD/COMBAT
+    document.getElementById('actionBar').style.display = 'block';
+
 
     gameState._terminalOpen = false;
     gameState._currentExploreArea = null;
@@ -4189,18 +4322,19 @@ function playerIsExhausted() {
         }
 
         function saveGame() {
-            try {
-                const saveData = {
-                    player: gameState.player,
-                    currentLocation: gameState.currentLocation,
-                    timestamp: new Date().toISOString()
-                };
-                localStorage.setItem('dungeonQuestSave', JSON.stringify(saveData));
-                alert('Game saved successfully!');
-            } catch (e) {
-                alert('Error saving game!');
-            }
-        }
+    try {
+        const snapshot = buildSaveSnapshot();
+        if (!snapshot) return;
+
+        const key = `save_character_${snapshot.characterId}`;
+        localStorage.setItem(key, JSON.stringify(snapshot));
+
+        console.log(`Game saved to ${key}`);
+    } catch (e) {
+        console.error('Error saving game:', e);
+    }
+}
+
 
         function loadGame() {
             try {
@@ -4219,8 +4353,83 @@ function playerIsExhausted() {
             }
         }
 
+
+function loadSavedGame() {
+    const key = 'save_character_default';
+    const raw = localStorage.getItem(key);
+
+    if (!raw) {
+        console.log('No saved game found');
+        return null;
+    }
+
+    const data = JSON.parse(raw);
+    console.log('LOADED SAVE:', data);
+    return data;
+}
+
+
+function restoreGameFromSave() {
+    const data = loadSavedGame();
+    if (!data) return;
+
+    console.log('Restoring game from save…');
+
+    // 🧍 Restore player
+    gameState.player = {
+        ...gameState.player,
+        ...data.player
+    };
+
+    // 🏰 Restore dungeon (if saved in dungeon)
+    if (data.meta?.inDungeon && data.dungeon) {
+        gameState.dungeon = {
+            dungeonKey: data.dungeon.dungeonKey,
+            floor: data.dungeon.floor,
+            currentRoom: data.dungeon.currentRoom,
+            discoveredRooms: new Set(data.dungeon.discoveredRooms),
+            activeEnemies: data.dungeon.activeEnemies.map(e => ({
+                ...e,
+                isChasing: false,
+                roomsFollowed: 0
+            }))
+        };
+
+        // Open dungeon UI
+        openTerminalView(data.dungeon.dungeonKey);
+
+        // Render current room
+        const dungeon = DUNGEONS[data.dungeon.dungeonKey];
+        const floor = dungeon.floors[data.dungeon.floor];
+        const room = floor.rooms[data.dungeon.currentRoom];
+
+        termAppend('', 'term-separator');
+        termAppend(`<strong>${room.name}</strong>`);
+        termAppend(room.description, 'term-dim');
+
+        const exits = Object.keys(room.exits)
+            .map(d => d.toUpperCase())
+            .join(', ');
+
+        termAppend(`You see exits: ${exits}.`, 'term-dim');
+
+        // Show enemies already here
+        checkEnemiesInRoom(data.dungeon.currentRoom);
+
+        renderDungeonActionBar();
+    }
+}
+
+
+
+
+
+
         // Start the game
         initGame();
+
+restoreGameFromSave();
+
     </script>
 </body>
 </html>
