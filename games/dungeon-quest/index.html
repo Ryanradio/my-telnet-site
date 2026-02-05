@@ -3103,6 +3103,11 @@
 // ═══════════════════════════════════════════════════════════════
 
 function moveInDungeon(direction) {
+    if (!gameState.dungeon) {
+        console.warn('Not in a dungeon');
+        return;
+    }
+
     const ds = gameState.dungeon;
     const dungeon = DUNGEONS[ds.dungeonKey];
     const floor = dungeon.floors[ds.floor];
@@ -3118,7 +3123,6 @@ function moveInDungeon(direction) {
 
     ds.currentRoom = nextRoomId;
     ds.discoveredRooms.add(nextRoomId);
-
     nextRoom.flags.discovered = true;
 
     termAppend('', 'term-separator');
@@ -3138,30 +3142,14 @@ function moveInDungeon(direction) {
 function testDungeon() {
     gameState.dungeon = {
         dungeonKey: 'whisperingCrypt',
-        floor: 1,                 // 🔴 MUST be 1 (matches data)
+        floor: 1,
         currentRoom: 'R1',
         discoveredRooms: new Set(['R1'])
     };
 
-    const ds = gameState.dungeon;
-    const dungeon = DUNGEONS[ds.dungeonKey];
-
-    if (!dungeon) {
-        console.error('Dungeon not found:', ds.dungeonKey);
-        return;
-    }
-
-    const floor = dungeon.floors[ds.floor];
-    if (!floor) {
-        console.error('Floor not found:', ds.floor, dungeon.floors);
-        return;
-    }
-
-    const room = floor.rooms[ds.currentRoom];
-    if (!room) {
-        console.error('Room not found:', ds.currentRoom);
-        return;
-    }
+    const dungeon = DUNGEONS[gameState.dungeon.dungeonKey];
+    const floor = dungeon.floors[gameState.dungeon.floor];
+    const room = floor.rooms[gameState.dungeon.currentRoom];
 
     termAppend('', 'term-separator');
     termAppend(`<strong>${room.name}</strong>`);
