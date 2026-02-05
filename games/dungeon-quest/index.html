@@ -3137,21 +3137,37 @@ function moveInDungeon(direction) {
 // ─────────────────────────────────────────
 function testDungeon() {
     gameState.dungeon = {
-        dungeonKey: 'yourDungeonKey', // ← MUST match dungeon.js
-        floor: 1,
+        dungeonKey: 'whisperingCrypt',
+        floor: 1,                 // 🔴 MUST be 1 (matches data)
         currentRoom: 'R1',
-        discoveredRooms: new Set(['R1']),
-        doors: {}
+        discoveredRooms: new Set(['R1'])
     };
 
-    const dungeon = DUNGEONS[gameState.dungeon.dungeonKey];
-    const startRoom = dungeon.floors[1].rooms.R1;
+    const ds = gameState.dungeon;
+    const dungeon = DUNGEONS[ds.dungeonKey];
+
+    if (!dungeon) {
+        console.error('Dungeon not found:', ds.dungeonKey);
+        return;
+    }
+
+    const floor = dungeon.floors[ds.floor];
+    if (!floor) {
+        console.error('Floor not found:', ds.floor, dungeon.floors);
+        return;
+    }
+
+    const room = floor.rooms[ds.currentRoom];
+    if (!room) {
+        console.error('Room not found:', ds.currentRoom);
+        return;
+    }
 
     termAppend('', 'term-separator');
-    termAppend(`<strong>${startRoom.name}</strong>`);
-    termAppend(startRoom.description, 'term-dim');
+    termAppend(`<strong>${room.name}</strong>`);
+    termAppend(room.description, 'term-dim');
 
-    const exits = Object.keys(startRoom.exits)
+    const exits = Object.keys(room.exits)
         .map(d => d.toUpperCase())
         .join(', ');
 
