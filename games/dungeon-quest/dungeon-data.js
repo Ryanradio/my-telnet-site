@@ -15,7 +15,8 @@ window.DUNGEONS = {
             exits: { e: 'R2', s: 'R4' },
             contents: {},
             flags: { discovered: false }
-          },          R2: {
+          },          
+          R2: {
             name: 'Broken Antechamber',
             description: 'Chunks of masonry litter the floor. Something growled recently.',
             exits: { W: 'R1', E: 'R3' },
@@ -31,13 +32,20 @@ window.DUNGEONS = {
             flags: { discovered: false }
           },
 
-          R4: {
-            name: 'Dust-Choked Corridor',
-            description: 'The air is thick with ash and old decay.',
-            exits: { N: 'R1', S: 'R7' },
-            contents: { enemies: ['wolf'] },
-            flags: { discovered: false }
-          },
+         R4: {
+    name: 'Dust-Choked Corridor',
+    description: 'The air is thick with ash and old decay.',
+    exits: { N: 'R1', S: 'R7' },
+
+    encounter: {
+        monsterId: 'crypt_guard'
+    },
+
+    contents: { enemies: ['wolf'] },
+    flags: { discovered: false }
+},
+
+
 
           R5: {
             name: 'Locked Gate',

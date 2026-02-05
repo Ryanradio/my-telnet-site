@@ -3205,6 +3205,82 @@ function openTerminalView(locKey) {
 // PLAYER ACTIONS
 // ═══════════════════════════════════════════════════════════════
 
+function checkRoomEncounter(room) {
+    if (!room || !room.encounter) return;
+
+    const ds = gameState.dungeon;
+    if (!ds.activeEnemies) ds.activeEnemies = [];
+
+    // prevent re-triggering
+    if (room.encounter.resolved) return;
+
+    const enemyDef = ENEMIES[room.encounter.monsterId];
+    if (!enemyDef) {
+        console.warn('Enemy not found:', room.encounter.monsterId);
+        return;
+    }
+
+    const enemyInstance = {
+        id: crypto.randomUUID(),
+        monsterId: room.encounter.monsterId,
+        name: enemyDef.name,
+        currentRoom: ds.currentRoom,
+        leash: enemyDef.isBoss ? 6 : 3,
+        roomsFollowed: 0
+    };
+
+    ds.activeEnemies.push(enemyInstance);
+    room.encounter.resolved = true;
+
+    termAppend(
+        `⚠️ <strong>${enemyInstance.name}</strong> steps out of the shadows!`,
+        'term-warning'
+    );
+}
+
+
+function updateDungeonEnemies() {
+    const ds = gameState.dungeon;
+    if (!ds || !ds.activeEnemies) return;
+
+    const dungeon = DUNGEONS[ds.dungeonKey];
+    const floor = dungeon.floors[ds.floor];
+
+    ds.activeEnemies.forEach(enemy => {
+        const enemyRoom = floor.rooms[enemy.currentRoom];
+        const exits = enemyRoom.exits || {};
+
+        let canFollow = false;
+
+        // 🔍 check adjacency
+        for (const dir in exits) {
+            if (exits[dir] === ds.currentRoom) {
+                canFollow = true;
+                break;
+            }
+        }
+
+        // ❌ not adjacent → do nothing
+        if (!canFollow) return;
+
+        // 🔁 re-engage chase if previously exhausted
+        if (enemy.roomsFollowed >= enemy.leash) {
+            enemy.roomsFollowed = 0;
+        }
+
+        // 👣 follow
+        enemy.currentRoom = ds.currentRoom;
+        enemy.roomsFollowed++;
+
+        termAppend(
+            `👁️ <strong>${enemy.name}</strong> resumes the chase!`,
+            'term-warning'
+        );
+    });
+}
+
+
+
 function moveInDungeon(direction) {
     if (!gameState.dungeon) {
         console.warn('Not in a dungeon');
@@ -3232,17 +3308,62 @@ function moveInDungeon(direction) {
     termAppend(`<strong>${nextRoom.name}</strong>`);
     termAppend(nextRoom.description, 'term-dim');
 
+    // 👁️ enemies already present in this room
+checkEnemiesInRoom(nextRoomId);
+
+// ⚔️ combat trigger
+const enemyHere = getEnemyInRoom(nextRoomId);
+if (enemyHere) {
+    termAppend(
+        `⚔️ <strong>${enemyHere.name}</strong> blocks your path!`,
+        'term-warning'
+    );
+
+    // later this will call startCombat(enemyHere)
+    return; // ⛔ stop further movement processing
+}
+
+
+    // 🔥 Spawn encounter (once)
+    checkRoomEncounter(nextRoom);
+
+    // 👣 Move any active enemies that can follow
+    updateDungeonEnemies();
+
     const exits = Object.keys(nextRoom.exits)
         .map(d => d.toUpperCase())
         .join(', ');
 
-   termAppend(`You see exits: ${exits}.`, 'term-dim');
+    termAppend(`You see exits: ${exits}.`, 'term-dim');
 
-// 🔑 update buttons for new room
-renderDungeonActionBar();
-
-
+    // 🔑 update buttons for new room
+    renderDungeonActionBar();
 }
+
+
+function getEnemyInRoom(roomId) {
+    const ds = gameState.dungeon;
+    if (!ds || !ds.activeEnemies) return null;
+
+    return ds.activeEnemies.find(enemy => enemy.currentRoom === roomId) || null;
+}
+
+
+
+function checkEnemiesInRoom(roomId) {
+    const ds = gameState.dungeon;
+    if (!ds || !ds.activeEnemies) return;
+
+    ds.activeEnemies.forEach(enemy => {
+        if (enemy.currentRoom === roomId) {
+            termAppend(
+                `⚠️ <strong>${enemy.name}</strong> is here, watching you carefully.`,
+                'term-warning'
+            );
+        }
+    });
+}
+
 
 // ─────────────────────────────────────────
 // TEMP: DUNGEON TEST HARNESS (SAFE)
@@ -3273,11 +3394,20 @@ function testDungeon() {
     const dungeon = DUNGEONS[dungeonKey];
     const floor = dungeon.floors[1];
 
+    // 🔁 reset encounter flags for testing
+Object.values(floor.rooms).forEach(r => {
+    if (r.encounter) {
+        delete r.encounter.resolved;
+    }
+});
+
+
     gameState.dungeon = {
         dungeonKey,
         floor: 1,
         currentRoom: floor.startRoom,
-        discoveredRooms: new Set([floor.startRoom])
+        discoveredRooms: new Set([floor.startRoom]),
+        activeEnemies: []   // 👈 THIS WAS MISSING
     };
 
     openTerminalView(dungeonKey);

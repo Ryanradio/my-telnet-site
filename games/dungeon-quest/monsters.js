@@ -125,6 +125,21 @@ const ENEMIES = {
     },
 
     // ===== LEVEL 6-9 MONSTERS (Crypt) =====
+    
+    crypt_guard: {
+    name: 'Crypt Guard',
+    baseHp: 90,
+    baseDamage: 24,
+    baseDefense: 10,
+    baseXp: 80,
+    baseGold: 60,
+    level: 6,
+    description: 'An undead sentinel bound to guard the crypt halls.',
+    possibleDrops: [],
+    dropRates: {}
+},
+
+    
     lich: { 
         name: 'Lich', 
         baseHp: 150, 
