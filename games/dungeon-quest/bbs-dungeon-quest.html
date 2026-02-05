@@ -3021,15 +3021,22 @@
 
       function startCombatTimer() {
     if (gameState.combatTimer) clearInterval(gameState.combatTimer);
+
     gameState.combatTimer = setInterval(() => {
         const cs = gameState.combatState;
+
+        // No combat state at all → stop timer
         if (!cs) {
             clearInterval(gameState.combatTimer);
+            gameState.combatTimer = null;
             return;
         }
 
-        // count down each pip timer independently
+        // ─────────────────────────────────────────
+        // PIP RECOVERY (always runs)
+        // ─────────────────────────────────────────
         let anyRestored = false;
+
         for (let i = 0; i < cs.pipTimers.length; i++) {
             if (!cs.pipAvailable[i] && cs.pipTimers[i] > 0) {
                 cs.pipTimers[i]--;
@@ -3043,35 +3050,52 @@
 
         if (anyRestored) {
             renderActionBar();
-        } else if (!cs.monsters || cs.monsters.length === 0) {
-            renderActionBar();
+        }
+
+        // ─────────────────────────────────────────
+        // POST-COMBAT RECOVERY CLEANUP
+        // ─────────────────────────────────────────
+        if (cs.combatOver) {
+            // Once ALL pips are restored, exit recovery
+            if (cs.pipAvailable.every(p => p)) {
+                gameState.postCombatRecovery = false;
+                gameState.combatState = null;
+
+                renderActionBar();
+                clearInterval(gameState.combatTimer);
+                gameState.combatTimer = null;
+            }
+            return; // No enemy actions during recovery
         }
 
         // ─────────────────────────────────────────
         // ENEMY TIMER + INTENT TELEGRAPHING
+        // (only while combat is active)
         // ─────────────────────────────────────────
         if (cs.enemyTimer > 0) cs.enemyTimer--;
 
         // Telegraph intent 1 second before attack
         if (cs.enemyTimer === 1 && !cs.enemyIntent) {
             const enemy = cs.monsters[cs.currentTarget];
-
-            cs.enemyIntent = selectEnemyIntent(enemy);
-
-            termAppend(
-                `<span style="color:${enemy.rarityColor};">${enemy.name}</span> ${cs.enemyIntent.telegraph}`,
-                'term-dim'
-            );
+            if (enemy) {
+                cs.enemyIntent = selectEnemyIntent(enemy);
+                termAppend(
+                    `<span style="color:${enemy.rarityColor};">${enemy.name}</span> ${cs.enemyIntent.telegraph}`,
+                    'term-dim'
+                );
+            }
         }
 
-        // Execute attack
+        // Execute enemy attack
         if (cs.enemyTimer <= 0) {
             clearInterval(gameState.combatTimer);
+            gameState.combatTimer = null;
             enemyAttackSingle();
         }
 
     }, 1000);
 }
+
 
         // ═══════════════════════════════════════════════════════════════
         // PLAYER ACTIONS
@@ -3648,8 +3672,10 @@ function endCombat(victory) {
     // ─────────────────────────────────────────
     // ✅ EXIT COMBAT, ENTER EXHAUSTION
     // ─────────────────────────────────────────
-    gameState.combatState = null;
-    gameState.postCombatRecovery = true;
+  // Mark combat as finished, but keep state for timers & UI
+gameState.combatState.combatOver = true;
+gameState.postCombatRecovery = true;
+
 
     const ab = document.getElementById('actionBar');
     ab.innerHTML = isMaster
