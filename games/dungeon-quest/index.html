@@ -211,12 +211,17 @@
 
         /* ─── action bar ─── */
         #actionBar {
-            display: none;
-            background: var(--secondary-bg);
-            border: 2px solid var(--border-color);
-            border-top: 1px solid #444;
-            padding: 10px 14px 12px;
-        }
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+
+    background: var(--secondary-bg);
+    border: 2px solid var(--border-color);
+    border-top: 1px solid #444;
+    padding: 10px 14px 12px;
+}
+
+
         #actionBar .action-label { color: var(--highlight-color); font-size: 18px; margin-bottom: 6px; }
         #actionBar .timer-line   { color: var(--highlight-color); font-size: 19px; margin-bottom: 4px; }
 
@@ -788,6 +793,18 @@
                 -webkit-user-select: none;
             }
         }
+
+       
+/* ─────────────────────────────────────────
+   TERMINAL MODE – SHOW GAMEPLAY UI
+   ───────────────────────────────────────── */
+body.terminal-mode #terminalWindow,
+body.terminal-mode #hud,
+body.terminal-mode #actionBar {
+    display: block !important;
+}
+
+        
     </style>
 </head>
 <body>
@@ -2074,6 +2091,7 @@
                 </div>
                 <div style="margin: 20px 0;">
                     <div class="menu-option" onclick="showShop()">► VISIT SHOP</div>
+                    <div class="menu-option" onclick="enterDungeons()">🏰 DUNGEONS</div>
                     <div class="menu-option" onclick="restAtInn()">► REST AT INN (${calcInnCost(gameState.player.cha)} Gold)</div>
                     <div class="menu-option" onclick="showInventory()">► INVENTORY</div>
                     <div class="menu-option" onclick="showExplore()">► EXPLORE WORLD</div>
@@ -2171,6 +2189,12 @@
             screen.innerHTML = shopHtml;
             showShopBuy(); // Default to buy tab
         }
+
+        function enterDungeons() {
+    termClear();
+    testDungeon();
+}
+
 
         function showShopBuy() {
             let shopHtml = `
@@ -2669,33 +2693,72 @@
             updateHud();
         }
         function updateHud() {
-            const p = gameState.player;
-            document.getElementById('hudName').textContent  = `${p.name} – Lv ${p.level} ${p.className}`;
-            document.getElementById('hudGold').textContent  = `💰 ${p.gold} g`;
-            document.getElementById('hudHpNums').textContent = `❤️ HP: ${p.hp} / ${p.maxHp}`;
-            document.getElementById('hudMpNums').textContent = `✨ MP: ${p.mp} / ${p.maxMp}`;
-            document.getElementById('hudXpNums').textContent = `⭐ XP: ${p.xp} / ${p.xpToNext}`;
-        }
+    const p = gameState.player;
+
+    // ── HUD may be opened before character exists ──
+    if (!p) {
+        const hudName = document.getElementById('hudName');
+        if (!hudName) return;
+
+        hudName.textContent = '— No Adventurer —';
+        document.getElementById('hudGold').textContent   = '💰 0 g';
+        document.getElementById('hudHpNums').textContent = '❤️ HP: —';
+        document.getElementById('hudMpNums').textContent = '✨ MP: —';
+        document.getElementById('hudXpNums').textContent = '⭐ XP: —';
+        return;
+    }
+
+    document.getElementById('hudName').textContent =
+        `${p.name} – Lv ${p.level} ${p.className}`;
+
+    document.getElementById('hudGold').textContent =
+        `💰 ${p.gold} g`;
+
+    document.getElementById('hudHpNums').textContent =
+        `❤️ HP: ${p.hp} / ${p.maxHp}`;
+
+    document.getElementById('hudMpNums').textContent =
+        `✨ MP: ${p.mp} / ${p.maxMp}`;
+
+    document.getElementById('hudXpNums').textContent =
+        `⭐ XP: ${p.xp} / ${p.xpToNext}`;
+}
+
 
         // ═══════════════════════════════════════════════════════════════
         // TERMINAL VIEW helpers
         // ═══════════════════════════════════════════════════════════════
-        function openTerminalView(locKey) {
-            // hide the mainScreen .screen div, show hud + terminal + actionBar
-            document.getElementById('mainScreen').style.display  = 'none';
-            document.getElementById('hud').style.display          = 'block';
-            document.getElementById('terminalWindow').style.display = 'block';
-            document.getElementById('actionBar').style.display    = 'block';
-            initHud();
-            // clear terminal if this is a fresh entry (not mid-explore)
-            if (!gameState._terminalOpen) {
-                document.getElementById('terminalWindow').innerHTML = '';
-                gameState._terminalOpen = true;
-                gameState._currentExploreArea = locKey;
-                // print location header once
-                termAppend(`── ${LOCATIONS[locKey].name} ──`, 'term-separator');
-            }
+        
+function openTerminalView(locKey) {
+    document.getElementById('mainScreen').style.display = 'none';
+
+    const hud = document.getElementById('hud');
+    const term = document.getElementById('terminalWindow');
+    const ab = document.getElementById('actionBar');
+
+    hud.style.display = 'block';
+    term.style.display = 'block';
+
+    // 🔑 DO NOT hide the action bar here
+    // Dungeon mode controls it explicitly
+    if (gameState.dungeon) {
+        ab.style.display = 'block';
+    }
+
+    initHud();
+
+    if (!gameState._terminalOpen) {
+        term.innerHTML = '';
+        gameState._terminalOpen = true;
+        gameState._currentExploreArea = locKey;
+
+        if (LOCATIONS?.[locKey]) {
+            termAppend(`── ${LOCATIONS[locKey].name} ──`, 'term-separator');
         }
+    }
+}
+
+
         function closeTerminalView() {
             document.getElementById('mainScreen').style.display    = 'block';
             document.getElementById('hud').style.display           = 'none';
@@ -2915,6 +2978,46 @@
         // ═══════════════════════════════════════════════════════════════
         // ACTION BAR – combat buttons / explore buttons / spell & potion menus
         // ═══════════════════════════════════════════════════════════════
+        
+       function renderDungeonActionBar() {
+    const ab = document.getElementById('actionBar');
+
+    // Dungeon owns the action bar
+    ab.innerHTML = '';
+    ab.style.display = 'block';
+
+    const ds = gameState.dungeon;
+    if (!ds) return;
+
+    const dungeon = DUNGEONS[ds.dungeonKey];
+    const floor = dungeon.floors[ds.floor];
+    const room = floor.rooms[ds.currentRoom];
+
+    // Entrance-only exit
+    if (ds.currentRoom === floor.startRoom) {
+        const exitBtn = document.createElement('button');
+        exitBtn.textContent = '⬅ Return to Town';
+        exitBtn.onclick = returnToTown;
+        ab.appendChild(exitBtn);
+    }
+
+    // Directions (data-driven)
+    Object.keys(room.exits).forEach(dir => {
+        const btn = document.createElement('button');
+        btn.textContent = dir.toUpperCase();
+        btn.onclick = () => moveInDungeon(dir);
+        ab.appendChild(btn);
+    });
+}
+
+
+
+
+
+
+
+        
+        
         function renderActionBar() {
             const ab = document.getElementById('actionBar');
             if (gameState.combatState) {
@@ -3133,23 +3236,54 @@ function moveInDungeon(direction) {
         .map(d => d.toUpperCase())
         .join(', ');
 
-    termAppend(`You see exits: ${exits}.`, 'term-dim');
+   termAppend(`You see exits: ${exits}.`, 'term-dim');
+
+// 🔑 update buttons for new room
+renderDungeonActionBar();
+
+
 }
 
 // ─────────────────────────────────────────
 // TEMP: DUNGEON TEST HARNESS (SAFE)
 // ─────────────────────────────────────────
+
+function returnToTown() {
+    console.log('⬅ returnToTown() called');
+
+    gameState.dungeon = null;
+
+    termClear();
+
+    const ab = document.getElementById('actionBar');
+    ab.innerHTML = '';
+    ab.style.display = 'none';
+
+    document.getElementById('terminalWindow').style.display = 'none';
+    document.getElementById('hud').style.display = 'none';
+
+    document.getElementById('mainScreen').style.display = 'block';
+
+    gameState._terminalOpen = false;
+    gameState._currentExploreArea = null;
+}
+
 function testDungeon() {
+    const dungeonKey = 'whisperingCrypt';
+    const dungeon = DUNGEONS[dungeonKey];
+    const floor = dungeon.floors[1];
+
     gameState.dungeon = {
-        dungeonKey: 'whisperingCrypt',
+        dungeonKey,
         floor: 1,
-        currentRoom: 'R1',
-        discoveredRooms: new Set(['R1'])
+        currentRoom: floor.startRoom,
+        discoveredRooms: new Set([floor.startRoom])
     };
 
-    const dungeon = DUNGEONS[gameState.dungeon.dungeonKey];
-    const floor = dungeon.floors[gameState.dungeon.floor];
-    const room = floor.rooms[gameState.dungeon.currentRoom];
+    openTerminalView(dungeonKey);
+
+    const room = floor.rooms[floor.startRoom];
+    room.flags.discovered = true;
 
     termAppend('', 'term-separator');
     termAppend(`<strong>${room.name}</strong>`);
@@ -3160,7 +3294,14 @@ function testDungeon() {
         .join(', ');
 
     termAppend(`You see exits: ${exits}.`, 'term-dim');
+
+    renderDungeonActionBar();
 }
+
+
+
+
+
 
 function selectEnemyIntent(enemy) {
     // Default / basic attack
