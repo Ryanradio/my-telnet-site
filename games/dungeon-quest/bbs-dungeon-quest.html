@@ -3019,104 +3019,213 @@
         }
 
 
-        // ═══════════════════════════════════════════════════════════════
-        // COMBAT TIMER
-        // ═══════════════════════════════════════════════════════════════
-        function startCombatTimer() {
-            if (gameState.combatTimer) clearInterval(gameState.combatTimer);
-            gameState.combatTimer = setInterval(() => {
-                const cs = gameState.combatState;
-                if (!cs) { clearInterval(gameState.combatTimer); return; }
-                
-                // count down each pip timer independently
-                let anyRestored = false;
-                for (let i = 0; i < cs.pipTimers.length; i++) {
-                    if (!cs.pipAvailable[i] && cs.pipTimers[i] > 0) {
-                        cs.pipTimers[i]--;
-                        if (cs.pipTimers[i] <= 0) {
-                            cs.pipAvailable[i] = true;  // restore this pip
-                            cs.pipTimers[i] = 10;        // reset to 10s
-                            anyRestored = true;
-                        }
-                    }
-                }
-                if (anyRestored) {
-                    renderActionBar();
-                    // Removed messages - player can see pips and buttons
-                } else if (cs && (!cs.monsters || cs.monsters.length === 0)) {
-                    // post-combat, no monsters, just recovering - refresh action bar every second
-                    renderActionBar();
-                }
-                
-                // enemy timer countdown
-                if (cs.enemyTimer > 0) cs.enemyTimer--;
-                if (cs.enemyTimer <= 0) {
-                    clearInterval(gameState.combatTimer);
-                    enemyAttackSingle();
-                }
-            }, 1000);
+      function startCombatTimer() {
+    if (gameState.combatTimer) clearInterval(gameState.combatTimer);
+    gameState.combatTimer = setInterval(() => {
+        const cs = gameState.combatState;
+        if (!cs) {
+            clearInterval(gameState.combatTimer);
+            return;
         }
+
+        // count down each pip timer independently
+        let anyRestored = false;
+        for (let i = 0; i < cs.pipTimers.length; i++) {
+            if (!cs.pipAvailable[i] && cs.pipTimers[i] > 0) {
+                cs.pipTimers[i]--;
+                if (cs.pipTimers[i] <= 0) {
+                    cs.pipAvailable[i] = true;
+                    cs.pipTimers[i] = 10;
+                    anyRestored = true;
+                }
+            }
+        }
+
+        if (anyRestored) {
+            renderActionBar();
+        } else if (!cs.monsters || cs.monsters.length === 0) {
+            renderActionBar();
+        }
+
+        // ─────────────────────────────────────────
+        // ENEMY TIMER + INTENT TELEGRAPHING
+        // ─────────────────────────────────────────
+        if (cs.enemyTimer > 0) cs.enemyTimer--;
+
+        // Telegraph intent 1 second before attack
+        if (cs.enemyTimer === 1 && !cs.enemyIntent) {
+            const enemy = cs.monsters[cs.currentTarget];
+
+            cs.enemyIntent = selectEnemyIntent(enemy);
+
+            termAppend(
+                `<span style="color:${enemy.rarityColor};">${enemy.name}</span> ${cs.enemyIntent.telegraph}`,
+                'term-dim'
+            );
+        }
+
+        // Execute attack
+        if (cs.enemyTimer <= 0) {
+            clearInterval(gameState.combatTimer);
+            enemyAttackSingle();
+        }
+
+    }, 1000);
+}
 
         // ═══════════════════════════════════════════════════════════════
         // PLAYER ACTIONS
         // ═══════════════════════════════════════════════════════════════
-        function playerAttack() {
-            const cs = gameState.combatState;
-            if (!cs) return;
-            
-            // find first available pip
-            let pipIndex = -1;
-            for (let i = 0; i < cs.pipAvailable.length; i++) {
-                if (cs.pipAvailable[i]) {
-                    pipIndex = i;
-                    break;
-                }
-            }
-            if (pipIndex === -1) return;  // no pips available
 
-            const p      = gameState.player;
-            const ti     = cs.currentTarget;
-            const enemy  = cs.monsters[ti];
-            const weapon = WEAPONS[p.weapon];
-            const qBonus = QUALITY_CONFIG[weapon.quality].bonus;
-            let   total  = (weapon.baseDamage + qBonus) + p.strength
-                         + (weapon.baseMagicDamage + qBonus)
-                         + Math.floor(p.magic / 2) + (p.str || 0);
-            let   dmg    = Math.max(1, total - enemy.defense);
+        function selectEnemyIntent(enemy) {
+    // Default / basic attack
+    let intent = {
+        type: 'basic',
+        damageMult: 1,
+        armorPiercing: 0,
+        telegraph: 'prepares to strike...'
+    };
 
-            // crit check
-            let crit = false;
-            if (Math.random()*100 < calcCritChance(p.lck || 0)) {
-                dmg  = Math.floor(dmg * 1.75);
-                crit = true;
-            }
-            enemy.hp -= dmg;
-            
-            // use this pip - mark unavailable and reset its timer
-            cs.pipAvailable[pipIndex] = false;
-            cs.pipTimers[pipIndex] = 10;
+    // Bosses and elites sometimes wind up a heavy hit
+    if (enemy.isBoss && Math.random() < 0.4) {
+        intent = {
+            type: 'heavy',
+            damageMult: 1.75,
+            armorPiercing: 0.3,
+            telegraph: 'draws in power for a devastating attack!'
+        };
+    }
 
-            const tName = cs.monsters.length > 1
-                ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${ti+1}</span>`
-                : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
-            updateEnemyCards();
-            updateHud();
-            renderActionBar();
+    return intent;
+}
 
-            const critTag = crit ? ' <span style="color:#FFD700;">★ CRIT!</span>' : '';
-            const hpPct = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
-            let condition = 'healthy';
-            if (hpPct < 75) condition = 'injured';
-            if (hpPct < 50) condition = 'wounded';
-            if (hpPct < 25) condition = 'severely wounded';
-            if (hpPct < 10) condition = 'barely standing';
-            termAppend(`You attack ${tName} for <span class="dmg-enemy">${dmg} damage!</span>${critTag}`, null, () => {
-                if (enemy.hp > 0) {
-                    termAppend(`→ ${tName} is <span style="color:#8aaa8a;">${condition}</span>`, 'term-dim');
-                }
-                checkCombatEnd();
-            });
+
+
+        function calculateDamage({
+  attacker,
+  defender,
+  base,
+  type = 'physical', // 'physical' | 'magic'
+  critChance = 0,
+  critMult = 1.5,
+  dodgeChance = 0,
+  armorPiercing = 0,
+  isSpecial = false
+}) {
+  // Dodge check
+  if (Math.random() < dodgeChance) {
+    return { damage: 0, dodged: true, crit: false };
+  }
+
+  // Base damage roll
+  let damage = base;
+
+  // Defense mitigation
+  let defense =
+    type === 'magic'
+      ? (defender.magicDefense || 0)
+      : (defender.defense || 0);
+
+  defense *= (1 - armorPiercing);
+  damage = Math.max(1, Math.floor(damage - defense));
+
+  // Crit check
+  let crit = false;
+  if (Math.random() < critChance) {
+    damage = Math.floor(damage * critMult);
+    crit = true;
+  }
+
+  return { damage, dodged: false, crit };
+}
+
+        
+       function playerAttack() {
+    const cs = gameState.combatState;
+    if (!cs) return;
+
+    // find first available pip
+    let pipIndex = -1;
+    for (let i = 0; i < cs.pipAvailable.length; i++) {
+        if (cs.pipAvailable[i]) {
+            pipIndex = i;
+            break;
         }
+    }
+    if (pipIndex === -1) return; // no pips available
+
+    const p      = gameState.player;
+    const ti     = cs.currentTarget;
+    const enemy  = cs.monsters[ti];
+    const weapon = WEAPONS[p.weapon];
+    const qBonus = QUALITY_CONFIG[weapon.quality].bonus;
+
+    // ---- DAMAGE BASE CALC (same intent as before) ----
+    const physicalBase =
+        (weapon.baseDamage + qBonus) +
+        (p.strength || 0) +
+        (p.str || 0);
+
+    const magicBase =
+        (weapon.baseMagicDamage + qBonus) +
+        Math.floor((p.magic || 0) / 2);
+
+    const totalBase = physicalBase + magicBase;
+
+    // ---- DAMAGE RESOLUTION ----
+    const result = calculateDamage({
+        attacker: p,
+        defender: enemy,
+        base: totalBase,
+        type: magicBase > physicalBase ? 'magic' : 'physical',
+        critChance: calcCritChance(p.lck || 0) / 100,
+        dodgeChance: enemy.dodge || 0
+    });
+
+    // use this pip - mark unavailable and reset its timer
+    cs.pipAvailable[pipIndex] = false;
+    cs.pipTimers[pipIndex] = 10;
+
+    const tName = cs.monsters.length > 1
+        ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${ti+1}</span>`
+        : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
+
+    updateEnemyCards();
+    updateHud();
+    renderActionBar();
+
+    // ---- LOGGING + EFFECTS ----
+    if (result.dodged) {
+        termAppend(`You attack ${tName}, but it <span style="color:#aaa;">dodges!</span>`, null, () => {
+            checkCombatEnd();
+        });
+        return;
+    }
+
+    enemy.hp -= result.damage;
+
+    const critTag = result.crit
+        ? ' <span style="color:#FFD700;">★ CRIT!</span>'
+        : '';
+
+    const hpPct = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
+    let condition = 'healthy';
+    if (hpPct < 75) condition = 'injured';
+    if (hpPct < 50) condition = 'wounded';
+    if (hpPct < 25) condition = 'severely wounded';
+    if (hpPct < 10) condition = 'barely standing';
+
+    termAppend(
+        `You attack ${tName} for <span class="dmg-enemy">${result.damage} damage!</span>${critTag}`,
+        null,
+        () => {
+            if (enemy.hp > 0) {
+                termAppend(`→ ${tName} is <span style="color:#8aaa8a;">${condition}</span>`, 'term-dim');
+            }
+            checkCombatEnd();
+        }
+    );
+}
 
         function showSpellMenu() {
             const cs = gameState.combatState;
@@ -3283,60 +3392,117 @@
         // ═══════════════════════════════════════════════════════════════
         // ENEMY ATTACK
         // ═══════════════════════════════════════════════════════════════
-        function enemyAttackSingle() {
-            // Enemy uses ONE charge, attacks once, then resets its own timer
-            const cs       = gameState.combatState;
-            const monsters = cs.monsters;
-            const p        = gameState.player;
-            const armor    = ARMOR[p.armor];
-            const qBonus   = QUALITY_CONFIG[armor.quality].bonus;
-            let   totalDef = p.defense + armor.baseDefense + qBonus + (p.con || 0);
-            if (cs.defending) { totalDef *= 2; cs.defending = false; }
+       function enemyAttackSingle() {
+    // Enemy uses ONE charge, attacks once, then resets its own timer
+    const cs       = gameState.combatState;
+    const monsters = cs.monsters;
+    const p        = gameState.player;
 
-            const dodgePct = calcDodgeChance(p.dex || 0);
+    // Defensive stats
+    const armor    = ARMOR[p.armor];
+    const qBonus   = QUALITY_CONFIG[armor.quality].bonus;
+    let totalDef   = p.defense + armor.baseDefense + qBonus + (p.con || 0);
 
-            // Each monster in the pack gets ONE hit
-            const hits = [];
-            monsters.forEach((enemy, i) => {
-                const eName = monsters.length > 1
-                    ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${i+1}</span>`
-                    : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
-                
-                if (!p.godMode && Math.random()*100 < dodgePct) {
-                    hits.push({ eName, dodged: true });
-                } else {
-                    const dmg = Math.max(1, enemy.damage - totalDef);
-                    if (!p.godMode) p.hp -= dmg;
-                    hits.push({ eName, dmg, dodged: false, godMode: p.godMode });
-                }
-            });
-            
-            updateHud();
+    if (cs.defending) {
+        totalDef *= 2;
+        cs.defending = false;
+    }
 
-            // after attack messages stream, reset enemy timer and resume
-            const afterAttack = () => {
-                if (p.hp <= 0 && !p.godMode) {
-                    endCombat(false);
-                } else {
-                    // reset enemy timer for next charge (keep using same base delay)
-                    // Don't decrement enemyHitsLeft - enemy attacks indefinitely
-                    cs.enemyTimer = cs.enemyDelay;
-                    renderActionBar();
-                    startCombatTimer();
-                }
-            };
+    // Pull intent (or fallback)
+    const intent = cs.enemyIntent || {
+        type: 'basic',
+        damageMult: 1,
+        armorPiercing: 0
+    };
 
-            hits.forEach((hit, i) => {
-                const isLast = (i === hits.length - 1);
-                if (hit.godMode) {
-                    termAppend(`${hit.eName} attacks but you are INVINCIBLE!`, 'term-highlight', isLast ? afterAttack : null);
-                } else if (hit.dodged) {
-                    termAppend(`${hit.eName} attacks… <span style="color:#88ff88;">DODGED!</span>`, null, isLast ? afterAttack : null);
-                } else {
-                    termAppend(`${hit.eName} attacks for <span class="dmg-player">${hit.dmg} damage!</span>`, null, isLast ? afterAttack : null);
-                }
-            });
+    // Each monster in the pack gets ONE hit
+    const hits = [];
+
+    monsters.forEach((enemy, i) => {
+        const eName = monsters.length > 1
+            ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${i + 1}</span>`
+            : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
+
+        // God mode bypass
+        if (p.godMode) {
+            hits.push({ eName, godMode: true });
+            return;
         }
+
+        const result = calculateDamage({
+            attacker: enemy,
+            defender: {
+                defense: totalDef,
+                magicDefense: totalDef
+            },
+            base: Math.floor(enemy.damage * intent.damageMult),
+            type: enemy.magicAttack ? 'magic' : 'physical',
+            dodgeChance: calcDodgeChance(p.dex || 0) / 100,
+            armorPiercing: intent.armorPiercing
+        });
+
+        if (result.dodged) {
+            hits.push({ eName, dodged: true });
+            return;
+        }
+
+        p.hp -= result.damage;
+
+        // ── Passive hooks (future-safe) ──
+        // if (enemy.passives?.includes('lifedrain')) {
+        //     enemy.hp = Math.min(enemy.maxHp, enemy.hp + Math.floor(result.damage * 0.3));
+        // }
+
+        hits.push({
+            eName,
+            dmg: result.damage,
+            crit: result.crit
+        });
+    });
+
+    updateHud();
+
+    // After attack messages stream, reset enemy timer and resume
+    const afterAttack = () => {
+        cs.enemyIntent = null; // clear intent after execution
+
+        if (p.hp <= 0 && !p.godMode) {
+            endCombat(false);
+        } else {
+            cs.enemyTimer = cs.enemyDelay;
+            renderActionBar();
+            startCombatTimer();
+        }
+    };
+
+    hits.forEach((hit, i) => {
+        const isLast = (i === hits.length - 1);
+
+        if (hit.godMode) {
+            termAppend(
+                `${hit.eName} attacks but you are <span class="term-highlight">INVINCIBLE!</span>`,
+                null,
+                isLast ? afterAttack : null
+            );
+        } else if (hit.dodged) {
+            termAppend(
+                `${hit.eName} attacks… <span style="color:#88ff88;">DODGED!</span>`,
+                null,
+                isLast ? afterAttack : null
+            );
+        } else {
+            const critTag = hit.crit
+                ? ' <span style="color:#FFD700;">★ CRIT!</span>'
+                : '';
+
+            termAppend(
+                `${hit.eName} attacks for <span class="dmg-player">${hit.dmg} damage!</span>${critTag}`,
+                null,
+                isLast ? afterAttack : null
+            );
+        }
+    });
+}
 
         // ═══════════════════════════════════════════════════════════════
         // CHECK / END COMBAT
@@ -3368,111 +3534,138 @@
         }
 
         function endCombat(victory) {
-            // Don't clear timer yet if victory - need it for pip restoration
-            if (!victory) {
-                clearInterval(gameState.combatTimer);
-                gameState.combatTimer = null;
-            }
+    // Don't clear timer yet if victory - need it for pip restoration
+    if (!victory) {
+        clearInterval(gameState.combatTimer);
+        gameState.combatTimer = null;
+    }
 
-            if (!victory) {
-                gameState.player.hp   = gameState.player.maxHp;
-                gameState.player.mp   = gameState.player.maxMp;
-                gameState.player.gold = Math.floor(gameState.player.gold / 2);
-                gameState.combatState = null;
-                updateHud();
-                termAppend('You have been defeated… You wake up in town.', 'term-error', () => {
-                    setTimeout(() => { closeTerminalView(); showTown(); }, 1200);
-                });
-                return;
-            }
+    // ── defeat ──
+    if (!victory) {
+        gameState.player.hp   = gameState.player.maxHp;
+        gameState.player.mp   = gameState.player.maxMp;
+        gameState.player.gold = Math.floor(gameState.player.gold / 2);
 
-            // ── victory ──
-            const defeated     = gameState.combatState.defeatedMonsters || [];
-            const isMaster     = defeated.some(m => m.isMaster);
-            let masterData     = null, unlockedArea = null;
+        gameState.combatState = null;
+        gameState.postCombatRecovery = false;
 
-            if (isMaster) {
-                const m = defeated.find(d => d.isMaster);
-                masterData  = CLASS_MASTERS[m.masterKey];
-                unlockedArea = masterData.unlocks;
-                if (!gameState.player.defeatedMasters.includes(m.masterKey))
-                    gameState.player.defeatedMasters.push(m.masterKey);
-                if (!gameState.player.unlockedAreas.includes(unlockedArea))
-                    gameState.player.unlockedAreas.push(unlockedArea);
-                // guarantee drops
-                masterData.guaranteedDrops.forEach(ik => {
-                    if (!defeated[0].possibleDrops) defeated[0].possibleDrops = [];
-                    if (!defeated[0].possibleDrops.includes(ik)) defeated[0].possibleDrops.push(ik);
-                    if (!defeated[0].dropRates) defeated[0].dropRates = {};
-                    defeated[0].dropRates[WEAPONS[ik] || ARMOR[ik] ? getItemQuality(ik) : 'common'] = 1.0;
-                });
-            }
+        updateHud();
+        termAppend('You have been defeated… You wake up in town.', 'term-error', () => {
+            setTimeout(() => { closeTerminalView(); showTown(); }, 1200);
+        });
+        return;
+    }
 
-            let totalXp = 0, totalGold = 0, allLoot = [];
-            defeated.forEach(e => {
-                totalXp  += e.xp;
-                totalGold += e.gold;
-                allLoot   = allLoot.concat(rollLoot(e));
-            });
-            gameState.player.xp   += totalXp;
-            gameState.player.gold += totalGold;
+    // ── victory ──
+    const defeated     = gameState.combatState.defeatedMonsters || [];
+    const isMaster     = defeated.some(m => m.isMaster);
+    let masterData     = null;
+    let unlockedArea   = null;
 
-            // ── print results into terminal ──
-            termAppend('', 'term-separator');
-            if (isMaster) {
-                termAppend(`🏆 ${masterData.name} HAS BEEN DEFEATED! 🏆`, 'term-victory');
-                termAppend(`✨ ${LOCATIONS[unlockedArea].name} IS NOW UNLOCKED! ✨`, 'term-loot');
-            }
-            if (defeated.length === 1)
-                termAppend(`You defeated <span style="color:${defeated[0].rarityColor};">${defeated[0].name}</span>!`, 'term-highlight');
-            else {
-                termAppend(`You defeated ${defeated.length} enemies!`, 'term-highlight');
-                defeated.forEach(e => termAppend(`  • <span style="color:${e.rarityColor};">${e.name}</span>`));
-            }
-            termAppend(`Gained <span style="color:#FFD700;">${totalXp} XP</span> and <span style="color:#FFD700;">${totalGold} Gold</span>!`);
+    if (isMaster) {
+        const m = defeated.find(d => d.isMaster);
+        masterData   = CLASS_MASTERS[m.masterKey];
+        unlockedArea = masterData.unlocks;
 
-            if (allLoot.length > 0) {
-                termAppend('⚡ LOOT:', 'term-loot');
-                allLoot.forEach(ik => {
-                    gameState.player.inventory.push(ik);
-                    termAppend(`  + <span style="color:${getItemColor(ik)};">${getItemName(ik)}</span>`, 'term-loot');
-                });
-            } else {
-                termAppend('No items dropped…', 'term-dim');
-            }
+        if (!gameState.player.defeatedMasters.includes(m.masterKey))
+            gameState.player.defeatedMasters.push(m.masterKey);
 
-            // level-up check
-            if (gameState.player.xp >= gameState.player.xpToNext) {
-                levelUp();
-                termAppend(`⬆️ LEVEL UP! You are now level ${gameState.player.level}!`, 'term-victory');
-            }
+        if (!gameState.player.unlockedAreas.includes(unlockedArea))
+            gameState.player.unlockedAreas.push(unlockedArea);
 
-            updateHud();
-            
-            // Don't clear combatState - keep pip timers alive for exhaustion recovery
-            // Just clear the monsters to indicate combat is over
-            gameState.combatState.monsters = [];
+        // guarantee drops
+        masterData.guaranteedDrops.forEach(ik => {
+            if (!defeated[0].possibleDrops) defeated[0].possibleDrops = [];
+            if (!defeated[0].possibleDrops.includes(ik)) defeated[0].possibleDrops.push(ik);
+            if (!defeated[0].dropRates) defeated[0].dropRates = {};
+            defeated[0].dropRates[
+                (WEAPONS[ik] || ARMOR[ik]) ? getItemQuality(ik) : 'common'
+            ] = 1.0;
+        });
+    }
 
-            // show continue / town / map buttons (will be disabled until rested)
-            const ab = document.getElementById('actionBar');
-            if (isMaster) {
-                ab.innerHTML = `
-                    <button onclick="tryViewWorldMap()" id="worldMapBtn">🗺️ VIEW WORLD MAP</button>
-                    <button onclick="tryGoBackToTown()" id="returnBtn">🏘️ RETURN TO TOWN</button>`;
-            } else {
-                ab.innerHTML = `
-                    <button onclick="tryExploreLocation('${gameState.currentLocation}')" id="continueBtn">🔍 CONTINUE EXPLORING</button>
-                    <button onclick="tryGoBackToTown()" id="returnBtn">🏘️ RETURN TO TOWN</button>`;
-            }
-            
-            // Immediately render with exhaustion check
-            renderActionBar();
-            
-            // IMPORTANT: Start/continue the timer so pips can restore post-combat
-            if (!gameState.combatTimer) {
-                startCombatTimer();
-            }
-        }
+    let totalXp = 0, totalGold = 0, allLoot = [];
+    defeated.forEach(e => {
+        totalXp   += e.xp;
+        totalGold += e.gold;
+        allLoot    = allLoot.concat(rollLoot(e));
+    });
+
+    gameState.player.xp   += totalXp;
+    gameState.player.gold += totalGold;
+
+    // ── print results into terminal ──
+    termAppend('', 'term-separator');
+
+    if (isMaster) {
+        termAppend(`🏆 ${masterData.name} HAS BEEN DEFEATED! 🏆`, 'term-victory');
+        termAppend(`✨ ${LOCATIONS[unlockedArea].name} IS NOW UNLOCKED! ✨`, 'term-loot');
+    }
+
+    if (defeated.length === 1) {
+        termAppend(
+            `You defeated <span style="color:${defeated[0].rarityColor};">${defeated[0].name}</span>!`,
+            'term-highlight'
+        );
+    } else {
+        termAppend(`You defeated ${defeated.length} enemies!`, 'term-highlight');
+        defeated.forEach(e =>
+            termAppend(`  • <span style="color:${e.rarityColor};">${e.name}</span>`)
+        );
+    }
+
+    termAppend(
+        `Gained <span style="color:#FFD700;">${totalXp} XP</span> and ` +
+        `<span style="color:#FFD700;">${totalGold} Gold</span>!`
+    );
+
+    if (allLoot.length > 0) {
+        termAppend('⚡ LOOT:', 'term-loot');
+        allLoot.forEach(ik => {
+            gameState.player.inventory.push(ik);
+            termAppend(
+                `  + <span style="color:${getItemColor(ik)};">${getItemName(ik)}</span>`,
+                'term-loot'
+            );
+        });
+    } else {
+        termAppend('No items dropped…', 'term-dim');
+    }
+
+    // level-up check
+    if (gameState.player.xp >= gameState.player.xpToNext) {
+        levelUp();
+        termAppend(`⬆️ LEVEL UP! You are now level ${gameState.player.level}!`, 'term-victory');
+    }
+
+    updateHud();
+
+    // ─────────────────────────────────────────
+    // ✅ FIX: EXIT COMBAT MODE CLEANLY
+    // ─────────────────────────────────────────
+    gameState.combatState = null;
+    gameState.postCombatRecovery = true;
+
+    // show continue / town / map buttons (disabled until rested)
+    const ab = document.getElementById('actionBar');
+    if (isMaster) {
+        ab.innerHTML = `
+            <button onclick="tryViewWorldMap()" id="worldMapBtn">🗺️ VIEW WORLD MAP</button>
+            <button onclick="tryGoBackToTown()" id="returnBtn">🏘️ RETURN TO TOWN</button>`;
+    } else {
+        ab.innerHTML = `
+            <button onclick="tryExploreLocation('${gameState.currentLocation}')" id="continueBtn">🔍 CONTINUE EXPLORING</button>
+            <button onclick="tryGoBackToTown()" id="returnBtn">🏘️ RETURN TO TOWN</button>`;
+    }
+
+    // render navigation in exhausted state
+    renderActionBar();
+
+    // keep timer running so pips can restore
+    if (!gameState.combatTimer) {
+        startCombatTimer();
+    }
+}
 
         function levelUp() {
             const p = gameState.player;
