@@ -3531,25 +3531,38 @@
 // CHECK / END COMBAT
 // ═══════════════════════════════════════════════════════════════
 function checkCombatEnd() {
-    const monsters = gameState.combatState.monsters;
-    const ti       = gameState.combatState.currentTarget;
+    const cs = gameState.combatState;
+    if (!cs || !cs.monsters || cs.monsters.length === 0) return;
 
-    if (!gameState.combatState.defeatedMonsters)
-        gameState.combatState.defeatedMonsters = [];
+    let ti = cs.currentTarget;
 
-    if (monsters[ti].hp <= 0) {
-        const dead = monsters[ti];
-        gameState.combatState.defeatedMonsters.push(dead);
-        monsters.splice(ti, 1);
+    // Clamp target index (important after splicing)
+    if (ti < 0 || ti >= cs.monsters.length) {
+        cs.currentTarget = 0;
+        ti = 0;
+    }
 
-        if (gameState.combatState.currentTarget >= monsters.length)
-            gameState.combatState.currentTarget = Math.max(0, monsters.length - 1);
+    const target = cs.monsters[ti];
+    if (!target) return;
+
+    if (!cs.defeatedMonsters) cs.defeatedMonsters = [];
+
+    if (target.hp <= 0) {
+        const dead = target;
+
+        cs.defeatedMonsters.push(dead);
+        cs.monsters.splice(ti, 1);
+
+        // Adjust target again after removal
+        if (cs.currentTarget >= cs.monsters.length) {
+            cs.currentTarget = Math.max(0, cs.monsters.length - 1);
+        }
 
         termAppend(
             `<span style="color:${dead.rarityColor};">${dead.name}</span> has been defeated!`,
             'term-victory',
             () => {
-                if (monsters.length === 0) {
+                if (cs.monsters.length === 0) {
                     endCombat(true);
                 } else {
                     renderEnemyCards();
