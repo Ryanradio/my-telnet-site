@@ -3097,11 +3097,67 @@
 }
 
 
-        // ═══════════════════════════════════════════════════════════════
-        // PLAYER ACTIONS
-        // ═══════════════════════════════════════════════════════════════
+ // ═══════════════════════════════════════════════════════════════
+// PLAYER ACTIONS
+// ═══════════════════════════════════════════════════════════════
 
-        function selectEnemyIntent(enemy) {
+function moveInDungeon(direction) {
+    const ds = gameState.dungeon;
+    const dungeon = DUNGEONS[ds.dungeonKey];
+    const floor = dungeon.floors[ds.floor];
+    const currentRoom = floor.rooms[ds.currentRoom];
+
+    const nextRoomId = currentRoom.exits[direction];
+    if (!nextRoomId) {
+        termAppend(`You cannot go that way.`, 'term-dim');
+        return;
+    }
+
+    const nextRoom = floor.rooms[nextRoomId];
+
+    ds.currentRoom = nextRoomId;
+    ds.discoveredRooms.add(nextRoomId);
+
+    nextRoom.flags.discovered = true;
+
+    termAppend('', 'term-separator');
+    termAppend(`<strong>${nextRoom.name}</strong>`);
+    termAppend(nextRoom.description, 'term-dim');
+
+    const exits = Object.keys(nextRoom.exits)
+        .map(d => d.toUpperCase())
+        .join(', ');
+
+    termAppend(`You see exits: ${exits}.`, 'term-dim');
+}
+
+// ─────────────────────────────────────────
+// TEMP: DUNGEON TEST HARNESS (SAFE)
+// ─────────────────────────────────────────
+function testDungeon() {
+    gameState.dungeon = {
+        dungeonKey: 'yourDungeonKey', // ← MUST match dungeon.js
+        floor: 1,
+        currentRoom: 'R1',
+        discoveredRooms: new Set(['R1']),
+        doors: {}
+    };
+
+    const dungeon = DUNGEONS[gameState.dungeon.dungeonKey];
+    const startRoom = dungeon.floors[1].rooms.R1;
+
+    termAppend('', 'term-separator');
+    termAppend(`<strong>${startRoom.name}</strong>`);
+    termAppend(startRoom.description, 'term-dim');
+
+    const exits = Object.keys(startRoom.exits)
+        .map(d => d.toUpperCase())
+        .join(', ');
+
+    termAppend(`You see exits: ${exits}.`, 'term-dim');
+}
+
+function selectEnemyIntent(enemy) {
     // Default / basic attack
     let intent = {
         type: 'basic',
