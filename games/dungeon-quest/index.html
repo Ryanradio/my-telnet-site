@@ -906,6 +906,17 @@ body.terminal-mode #actionBar {
 // gameState.hasRestoredGame = false;
 
 
+function updateTerminalSafeArea() {
+    const term = document.getElementById('terminalWindow');
+    const bar  = document.getElementById('actionBar');
+    if (!term || !bar) return;
+
+    const barHeight = bar.offsetHeight;
+    term.style.paddingBottom = barHeight + 'px';
+}
+
+
+
 // ─────────────────────────────────────────
 // Direction helpers
 // ─────────────────────────────────────────
