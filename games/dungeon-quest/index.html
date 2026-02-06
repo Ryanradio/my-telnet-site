@@ -19,7 +19,7 @@
 }
 
 #terminalWindow {
-    padding-bottom: 10px;
+    padding-bottom: 0;
 }
 
 
@@ -2893,6 +2893,9 @@ ab.style.display = 'block';
             termAppend(`── ${LOCATIONS[locKey].name} ──`, 'term-separator');
         }
     }
+
+    updateTerminalSafeArea();
+
 }
 
 
@@ -3134,6 +3137,18 @@ return;
         
        function renderDungeonActionBar() {
     const ab = document.getElementById('actionBar');
+
+
+
+    function updateTerminalSafeArea() {
+    const term = document.getElementById('terminalWindow');
+    const bar  = document.getElementById('actionBar');
+    if (!term || !bar) return;
+
+    const barHeight = bar.offsetHeight;
+    term.style.paddingBottom = barHeight + 'px';
+}
+
 
     // Dungeon owns the action bar
     ab.innerHTML = '';
