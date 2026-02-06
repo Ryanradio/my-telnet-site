@@ -903,7 +903,7 @@ body.terminal-mode #actionBar {
     <script>
 
         // 🔑 Prevent UI reset after restore (mobile fix)
-gameState.hasRestoredGame = false;
+// gameState.hasRestoredGame = false;
 
 
 // ─────────────────────────────────────────
@@ -1191,6 +1191,9 @@ const OPPOSITE_DIR = {
                 commandHistory: []
             }
         };
+
+        // 🔑 Prevent UI reset after restore (mobile fix)
+gameState.hasRestoredGame = false;
 
         // ═══════════════════════════════════════════════════════════════
         // SYSOP TERMINAL SYSTEM
