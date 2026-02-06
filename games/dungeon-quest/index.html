@@ -2913,6 +2913,12 @@ ab.style.display = 'block';
             if (!termBusy) termDrain();
         }
 
+        function scrollTerminalToBottom() {
+    const tw = document.getElementById('terminalWindow');
+    tw.scrollTop = tw.scrollHeight;
+}
+
+
         function termDrain() {
             if (termQueue.length === 0) { termBusy = false; return; }
             termBusy = true;
@@ -2922,22 +2928,26 @@ ab.style.display = 'block';
             const line = document.createElement('div');
             line.className = 'term-line' + (extraClass ? ' ' + extraClass : '');
             tw.appendChild(line);
-            tw.scrollTop = tw.scrollHeight;
+            
 
             // separator lines & empty lines: instant
             if (extraClass === 'term-separator' || html === '') {
                 line.innerHTML = html;
-                if (onDone) onDone();
-                termDrain();                // next item
-                return;
+scrollTerminalToBottom();
+if (onDone) onDone();
+termDrain();
+return;
+
             }
 
             // instant mode – skip streaming
             if (currentModemSpeed === 'instant') {
                 line.innerHTML = html;
-                if (onDone) onDone();
-                termDrain();
-                return;
+scrollTerminalToBottom();
+if (onDone) onDone();
+termDrain();
+return;
+
             }
 
             // ── stream visible characters one-by-one ──
@@ -2971,11 +2981,17 @@ ab.style.display = 'block';
             const ticker = setInterval(() => {
                 visibleCount += charsPerTick;
                 if (visibleCount >= totalVisible) {
-                    clearInterval(ticker);
-                    line.innerHTML = html;      // final: full html (closes all tags cleanly)
-                    if (onDone) onDone();
-                    termDrain();                // next queued line
-                } else {
+    clearInterval(ticker);
+    line.innerHTML = html;      // final: full html (closes all tags cleanly)
+
+    // 📱 FORCE SCROLL AFTER STREAM COMPLETES (mobile fix)
+    const tw = document.getElementById('terminalWindow');
+    tw.scrollTop = tw.scrollHeight;
+
+    if (onDone) onDone();
+    termDrain();                // next queued line
+}
+ else {
                     // show partial + blinking cursor
                     line.innerHTML = sliceToVisible(visibleCount) + '<span style="animation:blink 1s infinite;">_</span>';
                 }
