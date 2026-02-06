@@ -2947,6 +2947,8 @@ ab.style.display = 'block';
             const line = document.createElement('div');
             line.className = 'term-line' + (extraClass ? ' ' + extraClass : '');
             tw.appendChild(line);
+            tw.scrollTop = tw.scrollHeight;
+
             
 
             // separator lines & empty lines: instant
