@@ -23,6 +23,23 @@ const ENEMIES = {
         possibleDrops: ['health_potion', 'dagger', 'cloth_armor', 'small_gem'],
         dropRates: { common: 0.4, uncommon: 0.2, rare: 0.05, epic: 0.01 }
     },
+    
+    poop_slime: { 
+        name: 'Poop slime', 
+        baseHp: 100, 
+        baseDamage: 10, 
+        baseDefense: 1, 
+        baseXp: 250, 
+        baseGold: 1000, 
+        level: 1,
+        description: 'A smelly, slimy creature',
+        possibleDrops: ['health_potion', 'wolf_pelt', 'small_gem'],
+        dropRates: { common: 0.5, uncommon: 0.15, rare: 0.03 }
+    },
+    
+    
+
+
     wolf: { 
         name: 'Wolf', 
         baseHp: 35, 
