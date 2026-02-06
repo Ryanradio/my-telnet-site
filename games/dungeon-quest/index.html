@@ -5,7 +5,17 @@
    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
     <title>⚔️ DUNGEON QUEST  ⚔️</title>
-    <style>
+   
+   
+   <style>
+
+    /* ───────── GLOBAL LAYOUT FIX (PUT THIS FIRST) ───────── */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
 
 
 #actionBar button {
@@ -17,10 +27,30 @@
 
     border-radius: 10px;
 }
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    height: 100%;
+}
+
+#gameWrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;   /* CRITICAL for flex scrolling */
+}
 
 #terminalWindow {
-    padding-bottom: 0;
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;  /*IMPORTANT  for flex scrolling */
 }
+
+
+
 
 
 body {
@@ -106,9 +136,12 @@ body {
         }
 
         .container {
+            height: 100vh;
             max-width: 900px;
             margin: 0 auto;
             padding: 20px;
+            display: flex;
+            flex-direction: column;
         }
 
         .header {
@@ -159,17 +192,15 @@ body {
         /* ─── static HUD ─── */
        /* ─── static HUD ─── */
 #hud {
-    display: none;              /* JS controls visibility */
-    display: flex;              /* ← REQUIRED */
-    flex-direction: column;     /* ← REQUIRED */
-    height: 100vh;              /* ← REQUIRED */
-
+    display: none; /* JS controls visibility */
+    
     background: var(--secondary-bg);
     border: 2px solid var(--border-color);
     border-bottom: none;
     padding: 10px 14px;
     box-shadow: inset 0 0 30px rgba(0,255,0,0.08);
 }
+
 
         .hud-top {
             display: flex;
@@ -243,7 +274,7 @@ body {
 
         /* ─── action bar ─── */
        #actionBar {
-    position: sticky;
+    position: relative;
     bottom: 0;
     left: 0;
     right: 0;
@@ -838,11 +869,16 @@ body {
 /* ─────────────────────────────────────────
    TERMINAL MODE – SHOW GAMEPLAY UI
    ───────────────────────────────────────── */
-body.terminal-mode #terminalWindow,
 body.terminal-mode #hud,
 body.terminal-mode #actionBar {
     display: block !important;
 }
+
+body.terminal-mode #terminalWindow {
+    display: block !important;
+    flex: 1;
+}
+
 
         
     </style>
@@ -860,7 +896,7 @@ body.terminal-mode #actionBar {
         <div class="screen" id="mainScreen">
             <!-- Content will be dynamically loaded here -->
         </div>
-
+<div id="gameWrapper"></div>
         <!-- ── static HUD (hidden except during explore/combat) ── -->
         <div id="hud" style="display: none;">
             <div style="padding: 8px; background: var(--secondary-bg); border: 2px solid var(--border-color); margin-bottom: 8px; font-size: 18px;">
@@ -880,6 +916,7 @@ body.terminal-mode #actionBar {
         <!-- ── action buttons / timer (combat or explore) ── -->
         <div id="actionBar"></div>
     </div>
+</div>    
 
     <!-- SYSOP Terminal -->
     <div class="sysop-badge" id="sysopBadge">⚠ SYSOP MODE ⚠</div>
@@ -1153,11 +1190,19 @@ const OPPOSITE_DIR = {
         let streamCancelled = false;
         
         function streamText(element, html, callback) {
-            if (currentModemSpeed === 'instant') {
-                element.innerHTML = html;
-                if (callback) callback();
-                return;
-            }
+           if (currentModemSpeed === 'instant') {
+    line.innerHTML = html;
+
+    // ✅ STEP 3A: scroll AFTER line is fully rendered
+    if (shouldAutoScroll) {
+        tw.scrollTop = tw.scrollHeight;
+    }
+
+    if (onDone) onDone();
+    termDrain();
+    return;
+}
+
             
             isStreaming = true;
             streamCancelled = false;
@@ -2894,7 +2939,13 @@ function openTerminalView(locKey) {
     hud.style.display = 'block';
     term.style.display = 'block';
 
-  
+  // 🔑 RESET terminal scroll position on open
+requestAnimationFrame(() => {
+    const tw = document.getElementById('terminalWindow');
+    tw.scrollTop = 0;
+});
+
+
 // Dungeon always uses the action bar for movement
 ab.style.display = 'block';
 
@@ -2902,6 +2953,7 @@ ab.style.display = 'block';
 
     if (!gameState._terminalOpen) {
         term.innerHTML = '';
+        term.scrollTop = 0;
        
 
         gameState._terminalOpen = true;
@@ -2940,7 +2992,7 @@ ab.style.display = 'block';
 }
 
 
-        function termDrain() {
+ function termDrain() {
     if (termQueue.length === 0) {
         termBusy = false;
         return;
@@ -2948,23 +3000,23 @@ ab.style.display = 'block';
 
     termBusy = true;
     const { html, extraClass, onDone } = termQueue.shift();
-
     const tw = document.getElementById('terminalWindow');
 
-    const isNearBottom =
+    // ✅ Decide ONCE whether we should auto-scroll
+    const shouldAutoScroll =
+        tw.scrollHeight <= tw.clientHeight + 5 ||
         tw.scrollHeight - tw.scrollTop - tw.clientHeight < 40;
 
     const line = document.createElement('div');
     line.className = 'term-line' + (extraClass ? ' ' + extraClass : '');
     tw.appendChild(line);
 
-    if (isNearBottom) {
-        tw.scrollTop = tw.scrollHeight;
-    }
-
     // separator or empty lines
     if (extraClass === 'term-separator' || html === '') {
         line.innerHTML = html;
+        if (shouldAutoScroll) {
+            tw.scrollTop = tw.scrollHeight;
+        }
         if (onDone) onDone();
         termDrain();
         return;
@@ -2973,6 +3025,9 @@ ab.style.display = 'block';
     // instant mode
     if (currentModemSpeed === 'instant') {
         line.innerHTML = html;
+        if (shouldAutoScroll) {
+            tw.scrollTop = tw.scrollHeight;
+        }
         if (onDone) onDone();
         termDrain();
         return;
@@ -2983,7 +3038,7 @@ ab.style.display = 'block';
     let visibleCount = 0;
     let totalVisible = 0;
 
-    // count visible chars
+    // count visible characters (ignore HTML tags)
     {
         let inTag = false;
         for (let i = 0; i < html.length; i++) {
@@ -2999,53 +3054,48 @@ ab.style.display = 'block';
         if (visibleCount >= totalVisible) {
             clearInterval(ticker);
             line.innerHTML = html;
+
+            // ✅ scroll ONLY after line completes
+            if (shouldAutoScroll) {
+                tw.scrollTop = tw.scrollHeight;
+            }
+
             if (onDone) onDone();
             termDrain();
         } else {
             line.innerHTML =
-                sliceToVisible(visibleCount) +
+                sliceToVisible(html, visibleCount) +
                 '<span style="animation:blink 1s infinite;">_</span>';
         }
     }, 16);
 }
 
 
-            function sliceToVisible(n) {
-                // return the shortest prefix of html that contains exactly n visible chars
-                let vis = 0, inTag = false;
-                for (let i = 0; i < html.length; i++) {
-                    if   (html[i] === '<') inTag = true;
-                    else if (html[i] === '>') inTag = false;
-                    else if (!inTag) { vis++; if (vis >= n) return html.slice(0, i + 1); }
-                }
-                return html;   // fallback: whole string
-            }
 
-            const ticker = setInterval(() => {
-                visibleCount += charsPerTick;
-                if (visibleCount >= totalVisible) {
-    clearInterval(ticker);
-    line.innerHTML = html;      // final: full html (closes all tags cleanly)
+            function sliceToVisible(html, n) {
+    let vis = 0;
+    let inTag = false;
 
-    // 📱 FORCE SCROLL AFTER STREAM COMPLETES (mobile fix)
-    const tw = document.getElementById('terminalWindow');
-    
-
-    if (onDone) onDone();
-    termDrain();                // next queued line
+    for (let i = 0; i < html.length; i++) {
+        if (html[i] === '<') inTag = true;
+        else if (html[i] === '>') inTag = false;
+        else if (!inTag) {
+            vis++;
+            if (vis >= n) return html.slice(0, i + 1);
+        }
+    }
+    return html;
 }
- else {
-                    // show partial + blinking cursor
-                    line.innerHTML = sliceToVisible(visibleCount) + '<span style="animation:blink 1s infinite;">_</span>';
-                }
-            }, 16);   // ~60 fps tick
-        }
 
-        function termClear() {
-            document.getElementById('terminalWindow').innerHTML = '';
-            termQueue.length = 0;   // also flush any pending lines
-            termBusy = false;
-        }
+
+     
+
+       function termClear() {
+    const tw = document.getElementById('terminalWindow');
+    tw.innerHTML = '';
+    tw.scrollTop = 0;  // 🔥 RESET SCROLL TO TOP
+}
+
 
         // ═══════════════════════════════════════════════════════════════
         // EXPLORE
