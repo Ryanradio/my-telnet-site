@@ -16,6 +16,9 @@
     box-sizing: border-box;
 }
 
+* {
+    box-sizing: boarder-box;
+}
 
 
 #actionBar button {
@@ -27,10 +30,15 @@
 
     border-radius: 10px;
 }
+
+
 html, body {
-    height: 100%;
     margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
 }
+
 
 body {
     height: 100%;
@@ -135,14 +143,15 @@ body {
             font-weight: bold;
         }
 
-        .container {
-            height: 100vh;
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-        }
+     .container {
+    height: 100dvh;   /* 🔥 mobile-safe height */
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0;       /* 🔥 remove vertical padding */
+    display: flex;
+    flex-direction: column;
+}
+
 
         .header {
             text-align: center;
@@ -272,13 +281,11 @@ body {
         .enemy-card .ec-name  { font-size: 21px; margin-bottom: 4px; }
         .enemy-card .ec-hp    { font-size: 18px; color: var(--text-color); }
 
-        /* ─── action bar ─── */
-       #actionBar {
-    position: relative;
-    bottom: 0;
-    left: 0;
-    right: 0;
-
+   
+   
+        #actionBar {
+    flex-shrink: 0;              /* prevents it from stretching */
+    
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
@@ -288,9 +295,12 @@ body {
     padding: 12px;
     background: var(--secondary-bg);
     border-top: 2px solid var(--border-color);
-
-    z-index: 10;
 }
+
+#actionbar button {
+    flex: 0 0 auto;
+}
+
 
 
 
@@ -869,14 +879,36 @@ body {
 /* ─────────────────────────────────────────
    TERMINAL MODE – SHOW GAMEPLAY UI
    ───────────────────────────────────────── */
-body.terminal-mode #hud,
-body.terminal-mode #actionBar {
-    display: block !important;
+
+/* Hide menu when in terminal mode */
+body.terminal-mode #mainScreen {
+    display: none;
 }
 
+/* Hide gameplay wrapper when NOT in terminal mode */
+body:not(.terminal-mode) #gameWrapper {
+    display: none;
+}
+
+/* Show gameplay wrapper in terminal mode */
+body.terminal-mode #gameWrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* HUD and action bar should be visible */
+body.terminal-mode #hud,
+body.terminal-mode #actionBar {
+    display: block;
+}
+
+/* Terminal should fill remaining space */
 body.terminal-mode #terminalWindow {
-    display: block !important;
+    display: block;
     flex: 1;
+    min-height: 0;   /* IMPORTANT for flex scroll */
+    overflow-y: auto;
 }
 
 
@@ -893,28 +925,38 @@ body.terminal-mode #terminalWindow {
             <div style="color: var(--menu-color); font-size: 16px;">A Classic Text Adventure</div>
         </div>
 
-        <div class="screen" id="mainScreen">
-            <!-- Content will be dynamically loaded here -->
-        </div>
-<div id="gameWrapper"></div>
-        <!-- ── static HUD (hidden except during explore/combat) ── -->
-        <div id="hud" style="display: none;">
-            <div style="padding: 8px; background: var(--secondary-bg); border: 2px solid var(--border-color); margin-bottom: 8px; font-size: 18px;">
-                <div id="hudName" style="margin-bottom: 4px;"></div>
-                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                    <span id="hudGold"></span>
-                    <span id="hudHpNums"></span>
-                    <span id="hudMpNums"></span>
-                    <span id="hudXpNums"></span>
-                </div>
+  
+  <div class="screen" id="mainScreen">
+    <!-- Menu / town content -->
+</div>
+
+<!-- GAMEPLAY WRAPPER -->
+<div id="gameWrapper">
+
+    <!-- HUD -->
+    <div id="hud">
+        <div class="hud-inner">
+            <div id="hudName"></div>
+            <div class="hud-stats">
+                <span id="hudGold"></span>
+                <span id="hudHpNums"></span>
+                <span id="hudMpNums"></span>
+                <span id="hudXpNums"></span>
             </div>
         </div>
+    </div>
 
-        <!-- ── scrolling terminal log ── -->
-        <div id="terminalWindow"></div>
+    <!-- TERMINAL -->
+    <div id="terminalWindow"></div>
 
-        <!-- ── action buttons / timer (combat or explore) ── -->
-        <div id="actionBar"></div>
+    <!-- ACTION BAR -->
+    <div id="actionBar"></div>
+
+</div>
+
+
+</div>
+
     </div>
 </div>    
 
@@ -2281,6 +2323,7 @@ window.addEventListener('beforeunload', () => {
         }
 
         function showTown() {
+            document.body.classList.remove("terminal-mode");
             const screen = document.getElementById('mainScreen');
             screen.innerHTML = `
                 <div class="location-header">${LOCATIONS.town.name}</div>
@@ -3101,13 +3144,17 @@ ab.style.display = 'block';
         // EXPLORE
         // ═══════════════════════════════════════════════════════════════
         function exploreLocation(locKey) {
+            document.body.classList.add("terminal-mode");
+
             const location = LOCATIONS[locKey];
             const p = gameState.player;
             if (!p.unlockedAreas.includes(locKey)) {
-                alert(location.unlockMessage || 'This area is locked!');
-                showExplore();
-                return;
-            }
+    document.body.classList.remove("terminal-mode"); // 👈 ADD THIS
+    alert(location.unlockMessage || 'This area is locked!');
+    showExplore();
+    return;
+}
+
             gameState.currentLocation = locKey;
 
             // If we just arrived (from town / map), open the terminal fresh
@@ -3666,6 +3713,8 @@ function checkEnemiesInRoom(roomId) {
 // ─────────────────────────────────────────
 
 function returnToTown() {
+    document.body.classList.remove("terminal-mode");
+
     console.log('⬅ returnToTown() called');
 
     gameState.dungeon = null;
@@ -3690,6 +3739,7 @@ function returnToTown() {
 }
 
 function testDungeon() {
+    document.body.classList.add("terminal-mode");
     const dungeonKey = 'whisperingCrypt';
     const dungeon = DUNGEONS[dungeonKey];
     const floor = dungeon.floors[1];
