@@ -902,6 +902,10 @@ body.terminal-mode #actionBar {
 
     <script>
 
+        // 🔑 Prevent UI reset after restore (mobile fix)
+gameState.hasRestoredGame = false;
+
+
 // ─────────────────────────────────────────
 // Direction helpers
 // ─────────────────────────────────────────
@@ -1989,6 +1993,10 @@ window.addEventListener('beforeunload', () => {
         // ═══════════════════════════════════════════════════════════════
         // END SYSOP TERMINAL SYSTEM
         // ═══════════════════════════════════════════════════════════════
+
+
+
+
 
         // Initialize Game
         function initGame() {
