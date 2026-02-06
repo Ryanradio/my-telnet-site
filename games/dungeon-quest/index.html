@@ -45,11 +45,12 @@ body {
 }
 
 #gameWrapper {
-    flex: 1;
+    min-height: 100dvh;   /* dynamic viewport height (FIXES iOS) */
     display: flex;
     flex-direction: column;
-    min-height: 0;   /* CRITICAL for flex scrolling */
+    min-height: 0;
 }
+
 
 #terminalWindow {
     flex: 1;
