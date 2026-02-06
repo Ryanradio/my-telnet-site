@@ -211,16 +211,25 @@
         .enemy-card .ec-hp    { font-size: 18px; color: var(--text-color); }
 
         /* ─── action bar ─── */
-        #actionBar {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
+       #actionBar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
 
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+
+    padding: 12px;
     background: var(--secondary-bg);
-    border: 2px solid var(--border-color);
-    border-top: 1px solid #444;
-    padding: 10px 14px 12px;
+    border-top: 2px solid var(--border-color);
+
+    z-index: 1000;
 }
+
 
 
         #actionBar .action-label { color: var(--highlight-color); font-size: 18px; margin-bottom: 6px; }
