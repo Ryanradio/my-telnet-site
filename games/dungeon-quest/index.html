@@ -2384,6 +2384,10 @@ window.addEventListener('beforeunload', () => {
                     // Auto-load character that was in a dungeon (prevent cheating!)
                     console.log('🏰 Auto-restoring dungeon session:', dungeonChar.name);
                     loadCharacter(dungeonChar.id);
+                    
+                    //Added to reload the terminal window
+                    document.body.classList.add("terminal-mode");
+
                     return;
                 }
                 
@@ -3764,6 +3768,10 @@ ab.style.display = 'block';
         exitBtn.textContent = '⬅ Return to Town';
         exitBtn.onclick = returnToTown;
         ab.appendChild(exitBtn);
+
+//Added to refresh the terminal window
+        document.body.classList.add("terminal-mode");
+
     }
 
     // Directions (data-driven)
@@ -4267,48 +4275,48 @@ function checkEnemiesInRoom(roomId) {
     if (!ds || !ds.activeEnemies) return;
 
     // Find enemy in current room
-    const enemyHere = ds.activeEnemies.find(e => e.currentRoom === roomId);
+   // const enemyHere = ds.activeEnemies.find(e => e.currentRoom === roomId);
     
-    if (enemyHere) {
+    //if (enemyHere) {
         // AUTO-ENGAGE COMBAT!
-        termAppend(
-            `⚔️ <strong>${enemyHere.name}</strong> confronts you!`,
-            'term-warning'
-        );
+      //  termAppend(
+        //    `⚔️ <strong>${enemyHere.name}</strong> confronts you!`,
+          //  'term-warning'
+       // );
         
         // Start combat with this dungeon enemy
-        startDungeonCombat(enemyHere);
-    }
+        //startDungeonCombat(enemyHere);
+   // }
 }
 
-function startDungeonCombat(dungeonEnemy) {
+//function startDungeonCombat(dungeonEnemy) {
     // Get the full enemy definition
-    const enemyDef = ENEMIES[dungeonEnemy.monsterId];
-    if (!enemyDef) {
-        console.error('Enemy definition not found:', dungeonEnemy.monsterId);
-        return;
-    }
+  //  const enemyDef = ENEMIES[dungeonEnemy.monsterId];
+   // if (!enemyDef) {
+     //   console.error('Enemy definition not found:', dungeonEnemy.monsterId);
+       // return;
+   // }
     
     // Create combat monster from dungeon enemy
-    const monster = createMonsterInstance(enemyDef);
+    //const monster = createMonsterInstance(enemyDef);
     
     // Restore any saved HP from dungeon enemy
-    if (dungeonEnemy.hp !== undefined) {
-        monster.hp = dungeonEnemy.hp;
-        monster.maxHp = dungeonEnemy.maxHp || monster.hp;
-    }
+    //if (dungeonEnemy.hp !== undefined) {
+      //  monster.hp = dungeonEnemy.hp;
+        //monster.maxHp = dungeonEnemy.maxHp || monster.hp;
+    //}
     
     // Start normal combat
-    startCombat([dungeonEnemy.monsterId]);
+    //startCombat([dungeonEnemy.monsterId]);
     
     // Link combat to dungeon enemy for persistence
-    if (gameState.combatState) {
-        gameState.combatState.dungeonEnemyId = dungeonEnemy.id;
-    }
+    //if (gameState.combatState) {
+      //  gameState.combatState.dungeonEnemyId = dungeonEnemy.id;
+    //}
     
     // 💾 Save combat state
     saveGame();
-}
+//}
 
 
 // ─────────────────────────────────────────
