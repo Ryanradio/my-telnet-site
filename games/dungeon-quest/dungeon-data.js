@@ -27,7 +27,7 @@ window.DUNGEONS = {
           R3: {
             name: 'Collapsed Shrine',
             description: 'A shattered altar lies buried beneath rubble.',
-            exits: { W: 'R2', S: 'R6' },
+            exits: { W: 'R2', S: 'R6', NE: 'R12' },
             contents: { key: 'cryptKey' },
             flags: { discovered: false }
           },
