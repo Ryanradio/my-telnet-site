@@ -282,6 +282,44 @@ body {
             min-width: 60px;
             min-height: 40px;
         }
+        
+        /* Combat action buttons */
+        .action-icon-btn {
+            flex: 1;
+            min-width: 80px !important;
+            padding: 10px 8px !important;
+            text-align: center;
+        }
+        
+        /* Target selection buttons */
+        .target-btn {
+            flex: 1;
+            min-width: 120px !important;
+            padding: 10px !important;
+            background: linear-gradient(180deg, #0a2a0a 0%, #051505 100%) !important;
+            border-color: var(--text-color) !important;
+        }
+        
+        .target-btn:hover:not(:disabled) {
+            background: linear-gradient(180deg, #0f3f0f 0%, #0a2a0a 100%) !important;
+            border-color: var(--highlight-color) !important;
+            color: var(--highlight-color) !important;
+        }
+        
+        /* Spell selection buttons */
+        .spell-btn {
+            flex: 1;
+            min-width: 100px !important;
+            padding: 10px !important;
+            background: linear-gradient(180deg, #1a1a2a 0%, #0a0a15 100%) !important;
+            border-color: #4488ff !important;
+        }
+        
+        .spell-btn:hover:not(:disabled) {
+            background: linear-gradient(180deg, #2a2a4a 0%, #1a1a2a 100%) !important;
+            border-color: #88bbff !important;
+            color: #88bbff !important;
+        }
         #actionBar button:hover {
             background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%);
             color: var(--highlight-color);
@@ -3432,42 +3470,90 @@ ab.style.display = 'block';
                 const hitsLeft = cs.pipAvailable ? cs.pipAvailable.filter(x => x).length : maxHits;
                 const canAct   = hitsLeft > 0;
 
-                // target buttons (multi-enemy)
-                let targetBtns = '';
-                if (monsters.length > 1) {
-                    targetBtns = monsters.map((m, i) => {
-                        const active = i === cs.currentTarget;
-                        return `<button onclick="selectTarget(${i})" style="${active ? 'border-color:var(--highlight-color);color:var(--highlight-color);' : ''}" ${!canAct?'disabled':''}>
-                            #${i+1} ${m.name}
-                        </button>`;
-                    }).join('');
-                }
-
                 // attack-charge pips  ●●○
                 const pips = '●'.repeat(hitsLeft) + '○'.repeat(maxHits - hitsLeft);
-                const atkOff = hitsLeft <= 0;
 
-                // status label - only show if in active combat with monsters
-                let statusTag = '';
-                if (hitsLeft === 0 && cs.monsters && cs.monsters.length > 0) {
-                    statusTag = `<div style="color:#8aaa8a;font-size:17px;margin-bottom:4px;">⏳ Waiting for enemy attack…</div>`;
+                // Check what menu mode we're in
+                const mode = cs.actionMode || 'main';
+
+                if (mode === 'main') {
+                    // Main combat menu
+                    ab.innerHTML = `
+                        <div style="color:var(--highlight-color);font-size:18px;margin-bottom:6px;">
+                            ATTACKS: <span style="letter-spacing:3px;">${pips}</span>
+                            <span style="color:#8aaa8a;font-size:15px;"> (${hitsLeft}/${maxHits})</span>
+                        </div>
+                        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                            <button onclick="showAttackMenu()" ${!canAct?'disabled':''} class="action-icon-btn" title="Attack">⚔️ Attack</button>
+                            <button onclick="showSpellMenu()"  ${!canAct?'disabled':''} class="action-icon-btn" title="Cast Spell">✨ Spell</button>
+                            <button onclick="showPotionMenu()" ${!canAct?'disabled':''} class="action-icon-btn" title="Use Potion">🧪 Potion</button>
+                            <button onclick="playerDefend()"   ${!canAct?'disabled':''} class="action-icon-btn" title="Defend">🛡️ Defend</button>
+                            <button onclick="attemptFlee()"    ${!canAct?'disabled':''} class="action-icon-btn" title="Flee">🏃 Flee</button>
+                        </div>
+                    `;
+                } else if (mode === 'attack_type') {
+                    // Attack type selection menu
+                    const normalCost = 1;
+                    const heavyCost = 2;
+                    const specialCost = hitsLeft; // Uses all pips
+                    
+                    ab.innerHTML = `
+                        <div style="color:var(--highlight-color);font-size:18px;margin-bottom:6px;">
+                            CHOOSE ATTACK TYPE:
+                        </div>
+                        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                            <button onclick="selectAttackType('normal')" ${hitsLeft < normalCost?'disabled':''} class="action-icon-btn">
+                                ⚔️ Normal<br><span style="font-size:12px;">(1 pip)</span>
+                            </button>
+                            <button onclick="selectAttackType('heavy')" ${hitsLeft < heavyCost?'disabled':''} class="action-icon-btn">
+                                💥 Heavy<br><span style="font-size:12px;">(2 pips)</span>
+                            </button>
+                            <button onclick="selectAttackType('special')" ${hitsLeft < 1?'disabled':''} class="action-icon-btn">
+                                ⭐ Special<br><span style="font-size:12px;">(All pips)</span>
+                            </button>
+                            <button onclick="cancelAction()" class="action-icon-btn">❌ Back</button>
+                        </div>
+                    `;
+                } else if (mode === 'target_attack' || mode === 'target_spell') {
+                    // Target selection menu
+                    const actionName = mode === 'target_spell' ? cs.pendingSpell?.name || 'Spell' : 'Attack';
+                    const targetBtns = monsters.map((m, i) => {
+                        return `<button onclick="executeTargetedAction(${i})" class="target-btn">
+                            #${i+1} ${m.name}<br>
+                            <span style="font-size:12px;">HP: ${m.hp}/${m.maxHp}</span>
+                        </button>`;
+                    }).join('');
+                    
+                    ab.innerHTML = `
+                        <div style="color:var(--highlight-color);font-size:18px;margin-bottom:6px;">
+                            SELECT TARGET FOR ${actionName.toUpperCase()}:
+                        </div>
+                        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                            ${targetBtns}
+                            <button onclick="cancelAction()" class="action-icon-btn">❌ Back</button>
+                        </div>
+                    `;
+                } else if (mode === 'spell_list') {
+                    // Spell selection menu
+                    const spellBtns = p.knownSpells.map(sk => {
+                        const spell = SPELLS[sk];
+                        const canCast = p.mp >= spell.mpCost;
+                        return `<button onclick="selectSpell('${sk}')" ${!canCast?'disabled':''} class="spell-btn">
+                            ${spell.name}<br>
+                            <span style="font-size:12px;">${spell.mpCost} MP</span>
+                        </button>`;
+                    }).join('');
+                    
+                    ab.innerHTML = `
+                        <div style="color:var(--highlight-color);font-size:18px;margin-bottom:6px;">
+                            SELECT SPELL:
+                        </div>
+                        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                            ${spellBtns}
+                            <button onclick="cancelAction()" class="action-icon-btn">❌ Back</button>
+                        </div>
+                    `;
                 }
-
-                ab.innerHTML = `
-                    ${statusTag}
-                    <div style="color:var(--highlight-color);font-size:18px;margin-bottom:4px;">
-                        ATTACKS: <span style="letter-spacing:3px;">${pips}</span>
-                        <span style="color:#8aaa8a;font-size:15px;"> (${hitsLeft}/${maxHits})</span>
-                    </div>
-                    ${targetBtns ? '<div class="action-label">TARGET:</div>' + targetBtns : ''}
-                    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">
-                        <button onclick="playerAttack()" ${atkOff?'disabled':''} class="action-icon-btn" title="Attack">⚔️</button>
-                        <button onclick="showSpellMenu()"  ${!canAct?'disabled':''} class="action-icon-btn" title="Cast Spell">✨</button>
-                        <button onclick="showPotionMenu()" ${!canAct?'disabled':''} class="action-icon-btn" title="Use Potion">🧪</button>
-                        <button onclick="playerDefend()"   ${!canAct?'disabled':''} class="action-icon-btn" title="Defend">🛡️</button>
-                        <button onclick="attemptFlee()"    ${!canAct?'disabled':''} class="action-icon-btn" title="Flee">🏃</button>
-                    </div>
-                `;
             } else {
                 ab.innerHTML = `
                     <button onclick="exploreLocation('${gameState.currentLocation}')">🔍 CONTINUE EXPLORING</button>
@@ -3480,6 +3566,73 @@ ab.style.display = 'block';
             showTown();
         }
         
+        // ═══════════════════════════════════════════════════════════════
+        // NEW DYNAMIC COMBAT MENU SYSTEM
+        // ═══════════════════════════════════════════════════════════════
+        
+        function showAttackMenu() {
+            const cs = gameState.combatState;
+            if (!cs) return;
+            cs.actionMode = 'attack_type';
+            renderActionBar();
+        }
+        
+        function selectAttackType(type) {
+            const cs = gameState.combatState;
+            if (!cs) return;
+            
+            cs.pendingAttackType = type;
+            cs.actionMode = 'target_attack';
+            renderActionBar();
+        }
+        
+        function cancelAction() {
+            const cs = gameState.combatState;
+            if (!cs) return;
+            cs.actionMode = 'main';
+            cs.pendingAttackType = null;
+            cs.pendingSpell = null;
+            renderActionBar();
+        }
+        
+        function executeTargetedAction(targetIndex) {
+            const cs = gameState.combatState;
+            if (!cs) return;
+            
+            cs.currentTarget = targetIndex;
+            
+            if (cs.actionMode === 'target_attack') {
+                executeAttack(cs.pendingAttackType);
+            } else if (cs.actionMode === 'target_spell') {
+                castSpellOnTarget(cs.pendingSpell);
+            }
+            
+            // Reset to main menu
+            cs.actionMode = 'main';
+            cs.pendingAttackType = null;
+            cs.pendingSpell = null;
+        }
+        
+        function selectSpell(spellKey) {
+            const cs = gameState.combatState;
+            if (!cs) return;
+            
+            cs.pendingSpell = SPELLS[spellKey];
+            cs.pendingSpellKey = spellKey;
+            cs.actionMode = 'target_spell';
+            renderActionBar();
+        }
+        
+        // Update showSpellMenu to use the new system
+        function showSpellMenuOld() {
+            const cs = gameState.combatState;
+            if (!cs) return;
+            
+            cs.actionMode = 'spell_list';
+            renderActionBar();
+        }
+        
+
         function tryExploreLocation(locKey) {
             if (!isFullyRested()) {
                 termAppend('<span style="color:var(--error-color);">You are too exhausted to continue! Wait for your charges to restore…</span>', 'term-error');
@@ -3944,91 +4097,102 @@ function selectEnemyIntent(enemy) {
 }
 
         
-       function playerAttack() {
+       function executeAttack(attackType) {
     const cs = gameState.combatState;
     if (!cs) return;
 
-    // find first available pip
-    let pipIndex = -1;
-    for (let i = 0; i < cs.pipAvailable.length; i++) {
-        if (cs.pipAvailable[i]) {
-            pipIndex = i;
-            break;
-        }
-    }
-    if (pipIndex === -1) return; // no pips available
-
-    const p      = gameState.player;
-    const ti     = cs.currentTarget;
-    const enemy  = cs.monsters[ti];
+    const p = gameState.player;
+    const ti = cs.currentTarget;
+    const enemy = cs.monsters[ti];
     const weapon = WEAPONS[p.weapon];
     const qBonus = QUALITY_CONFIG[weapon.quality].bonus;
 
-    // ---- DAMAGE BASE CALC (same intent as before) ----
-    const physicalBase =
-        (weapon.baseDamage + qBonus) +
-        (p.strength || 0) +
-        (p.str || 0);
+    // Determine pip cost and damage multiplier
+    let pipCost = 1;
+    let damageMultiplier = 1;
+    let attackName = 'attacks';
+    let armorPiercing = 0;
+    
+    if (attackType === 'normal') {
+        pipCost = 1;
+        damageMultiplier = 1;
+        attackName = 'attacks';
+    } else if (attackType === 'heavy') {
+        pipCost = 2;
+        damageMultiplier = 1.75;
+        attackName = 'unleashes a <span style="color:#FF8800;">HEAVY STRIKE</span>';
+        armorPiercing = 0.2;
+    } else if (attackType === 'special') {
+        // Use all available pips
+        const availablePips = cs.pipAvailable.filter(x => x).length;
+        pipCost = availablePips;
+        damageMultiplier = 1 + (availablePips * 0.5); // Scales with pips used
+        attackName = `unleashes a <span style="color:#FFD700;">⭐ SPECIAL ATTACK ⭐</span> (${availablePips} pips)`;
+        armorPiercing = 0.3;
+    }
 
-    const magicBase =
-        (weapon.baseMagicDamage + qBonus) +
-        Math.floor((p.magic || 0) / 2);
+    // Check if we have enough pips
+    const availablePips = cs.pipAvailable.filter(x => x).length;
+    if (availablePips < pipCost) {
+        termAppend('Not enough attack charges!', 'term-error');
+        return;
+    }
 
-    const totalBase = physicalBase + magicBase;
+    // Consume pips
+    let consumed = 0;
+    for (let i = 0; i < cs.pipAvailable.length && consumed < pipCost; i++) {
+        if (cs.pipAvailable[i]) {
+            cs.pipAvailable[i] = false;
+            cs.pipTimers[i] = 10;
+            consumed++;
+        }
+    }
 
-    // ---- DAMAGE RESOLUTION ----
+    // Calculate base damage
+    const physicalBase = (weapon.baseDamage + qBonus) + (p.strength || 0) + (p.str || 0);
+    const magicBase = (weapon.baseMagicDamage + qBonus) + Math.floor((p.magic || 0) / 2);
+    const totalBase = Math.floor((physicalBase + magicBase) * damageMultiplier);
+
+    // Damage resolution
     const result = calculateDamage({
         attacker: p,
         defender: enemy,
         base: totalBase,
         type: magicBase > physicalBase ? 'magic' : 'physical',
         critChance: calcCritChance(p.lck || 0) / 100,
-        dodgeChance: enemy.dodge || 0
+        dodgeChance: enemy.dodge || 0,
+        armorPiercing: armorPiercing
     });
-
-    // use this pip - mark unavailable and reset its timer
-    cs.pipAvailable[pipIndex] = false;
-    cs.pipTimers[pipIndex] = 10;
 
     const tName = cs.monsters.length > 1
         ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${ti+1}</span>`
         : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
 
+    if (result.dodged) {
+        termAppend(`You ${attackName} but ${tName} <span style="color:#88ff88;">DODGES!</span>`);
+    } else {
+        const critTag = result.crit ? ' <span style="color:#FFD700;">★ CRITICAL HIT!</span>' : '';
+        enemy.hp -= result.damage;
+        termAppend(
+            `You ${attackName} ${tName} for <span class="dmg-enemy">${result.damage} damage!</span>${critTag}`,
+            null,
+            () => {
+                checkCombatEnd();
+                updateEnemyCards();
+                updateHud();
+                renderActionBar();
+            }
+        );
+    }
+
     updateEnemyCards();
     updateHud();
     renderActionBar();
+}
 
-    // ---- LOGGING + EFFECTS ----
-    if (result.dodged) {
-        termAppend(`You attack ${tName}, but it <span style="color:#aaa;">dodges!</span>`, null, () => {
-            checkCombatEnd();
-        });
-        return;
-    }
-
-    enemy.hp -= result.damage;
-
-    const critTag = result.crit
-        ? ' <span style="color:#FFD700;">★ CRIT!</span>'
-        : '';
-
-    const hpPct = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
-    let condition = 'healthy';
-    if (hpPct < 75) condition = 'injured';
-    if (hpPct < 50) condition = 'wounded';
-    if (hpPct < 25) condition = 'severely wounded';
-    if (hpPct < 10) condition = 'barely standing';
-
-    termAppend(
-        `You attack ${tName} for <span class="dmg-enemy">${result.damage} damage!</span>${critTag}`,
-        null,
-        () => {
-            if (enemy.hp > 0) {
-                termAppend(`→ ${tName} is <span style="color:#8aaa8a;">${condition}</span>`, 'term-dim');
-            }
-            checkCombatEnd();
-        }
-    );
+       // Legacy function kept for compatibility
+       function playerAttack() {
+    executeAttack('normal');
 }
 
         function showSpellMenu() {
@@ -4042,21 +4206,21 @@ function selectEnemyIntent(enemy) {
                 renderActionBar();
                 return;
             }
-            const ab = document.getElementById('actionBar');
-            let html = '<div class="action-label">SELECT SPELL:</div>';
-            p.knownSpells.forEach(sk => {
-                const sp  = SPELLS[sk];
-                const can = p.mp >= sp.mpCost;
-                html += `<button onclick="castSpell('${sk}')" ${can?'':'disabled'}>${sp.name} (${sp.mpCost} MP) – ${sp.description}</button> `;
-            });
-            html += `<br><button onclick="renderActionBar();">← BACK</button>`;
-            ab.innerHTML = html;
+            
+            cs.actionMode = 'spell_list';
+            renderActionBar();
         }
 
-        function castSpell(spellKey) {
-            const spell = SPELLS[spellKey];
-            const p     = gameState.player;
-            const cs    = gameState.combatState;
+        function castSpellOnTarget(spell) {
+            const p  = gameState.player;
+            const cs = gameState.combatState;
+            const spellKey = cs.pendingSpellKey;
+            
+            if (p.mp < spell.mpCost) {
+                termAppend('Not enough MP!', 'term-error');
+                return;
+            }
+            
             p.mp -= spell.mpCost;
 
             if (spell.type === 'heal') {
@@ -4064,7 +4228,6 @@ function selectEnemyIntent(enemy) {
                 p.hp = Math.min(p.maxHp, p.hp + heal);
                 updateHud();
                 renderActionBar();
-                // heal does NOT trigger enemy or consume a hit – timer keeps ticking
                 termAppend(`You cast ${spell.name} and restore <span style="color:#88ff88;">${heal} HP!</span>`);
             } else {
                 const ti    = cs.currentTarget;
@@ -4073,7 +4236,7 @@ function selectEnemyIntent(enemy) {
                 let crit = false;
                 if (Math.random()*100 < calcCritChance(p.lck||0)) { dmg = Math.floor(dmg*1.75); crit = true; }
                 enemy.hp -= dmg;
-                // spells are free - don't consume pips or reset timers
+                
                 const tName = cs.monsters.length > 1
                     ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${ti+1}</span>`
                     : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
@@ -4094,6 +4257,12 @@ function selectEnemyIntent(enemy) {
                     checkCombatEnd();
                 });
             }
+        }
+
+        // Legacy function for backward compatibility
+        function castSpell(spellKey) {
+            const spell = SPELLS[spellKey];
+            castSpellOnTarget(spell);
         }
 
         function playerDefend() {
