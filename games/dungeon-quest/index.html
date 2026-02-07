@@ -16,59 +16,13 @@
     box-sizing: border-box;
 }
 
-* {
-    box-sizing: boarder-box;
-}
-
-
-#actionBar button {
-    min-width: 64px;
-    min-height: 44px;
-
-    padding: 10px 14px;
-    font-size: 16px;
-
-    border-radius: 10px;
-}
-
-
 html, body {
     margin: 0;
     padding: 0;
+    width: 100%;
     height: 100%;
     overflow: hidden; /* prevents whole-page scrolling */
 }
-
-
-
-body {
-    height: 100%;
-}
-
-#gameWrapper {
-    height: 100dvh;   /* dynamic viewport height (fixes iOS) */
-    display: flex;
-    flex-direction: column;
-    overflow: hidden; /* prevents internal overflow bugs */
-}
-
-
-
-#terminalWindow {
-    flex: 1 1 auto;
-    min-height: 0;          /* REQUIRED for flex scrolling */
-    overflow-y: auto;
-
-    background: var(--secondary-bg);
-    border: 2px solid var(--border-color);
-    padding: 12px 14px;
-}
-
-
-
-
-
-
 
 body {
     -webkit-user-select: none;
@@ -76,15 +30,24 @@ body {
     touch-action: manipulation;
 }
 
+#gameWrapper {
+    height: 100vh;
+    height: 100dvh;   /* dynamic viewport height (fixes iOS) */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    width: 100%;
+}
 
+#actionBar button {
+    min-width: 64px;
+    min-height: 44px;
+    padding: 10px 14px;
+    font-size: 16px;
+    border-radius: 10px;
+}
 
         @import url('https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap');
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
 
         :root {
             --primary-bg: #000080;
@@ -102,7 +65,6 @@ body {
             font-family: 'VT323', monospace;
             font-size: 20px;
             line-height: 1.4;
-            overflow-x: hidden;
         }
 
         .scanline {
@@ -153,16 +115,18 @@ body {
         }
 
      .container {
-    height: 100dvh;   /* 🔥 mobile-safe height */
+    height: 100%;
     max-width: 900px;
     margin: 0 auto;
-    padding: 0;       /* 🔥 remove vertical padding */
+    padding: 0;
     display: flex;
     flex-direction: column;
+    overflow: hidden; /* prevent container overflow */
 }
 
 
         .header {
+            flex-shrink: 0; /* prevent header from shrinking */
             text-align: center;
             border: 3px double var(--border-color);
             padding: 15px;
@@ -187,13 +151,18 @@ body {
 
         /* ─── main screen used by town / shop / menus ─── */
         .screen {
+            flex: 1 1 auto; /* allow screen to grow/shrink */
+            min-height: 0; /* critical for flex scrolling */
+            overflow-y: auto; /* enable scrolling */
+            -webkit-overflow-scrolling: touch; /* smooth scrolling on iOS */
+            
             background: var(--secondary-bg);
             border: 2px solid var(--border-color);
             padding: 20px;
-            min-height: 400px;
             margin-bottom: 20px;
             box-shadow: inset 0 0 50px rgba(0, 255, 0, 0.1);
         }
+        
         .menu-option {
             color: var(--menu-color);
             cursor: pointer;
@@ -208,9 +177,9 @@ body {
         }
 
         /* ─── static HUD ─── */
-       /* ─── static HUD ─── */
 #hud {
     display: none; /* JS controls visibility */
+    flex-shrink: 0; /* prevent HUD from shrinking */
     
     background: var(--secondary-bg);
     border: 2px solid var(--border-color);
@@ -253,17 +222,21 @@ body {
         .xp-bar { background: var(--text-color); }
 
         /* ─── scrolling terminal ─── */
-        #terminalWindow {
-            display: none;
-            background: var(--secondary-bg);
-            border: 2px solid var(--border-color);
-            border-top: 1px solid #333;
-            padding: 12px 14px;
-           
-            overflow-y: auto;
-            box-shadow: inset 0 0 40px rgba(0,255,0,0.07);
-            scroll-behavior: smooth;
-        }
+#terminalWindow {
+    display: none;
+    flex: 1 1 auto;
+    min-height: 0; /* REQUIRED for flex scrolling */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch; /* smooth scrolling on iOS */
+    
+    background: var(--secondary-bg);
+    border: 2px solid var(--border-color);
+    border-top: 1px solid #333;
+    padding: 12px 14px;
+    box-shadow: inset 0 0 40px rgba(0,255,0,0.07);
+    scroll-behavior: smooth;
+}
+
         .term-line {
             padding: 3px 0;
             font-size: 19px;
@@ -273,6 +246,73 @@ body {
         .term-line.term-dim       { color: #3a7a3a; }
         .term-line.term-highlight { color: var(--highlight-color); }
         .term-line.term-enemy     { color: var(--border-color); font-size: 20px; }
+        .term-line.term-loot      { font-size: 20px; }
+        .term-line.term-system    { color: #888; font-style: italic; }
+        .term-line.term-separator { margin-top: 10px; padding-top: 10px; border-top: 1px solid #2a4a2a; }
+
+        /* ─── action bar at bottom ─── */
+#actionBar {
+    flex-shrink: 0; /* prevent action bar from shrinking */
+    display: none;
+    background: var(--secondary-bg);
+    border: 2px solid var(--border-color);
+    border-top: 1px solid #444;
+    padding: 10px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+        #actionBar button {
+            background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%);
+            color: var(--text-color);
+            border: 2px solid var(--border-color);
+            padding: 10px 16px;
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.15s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+        }
+        #actionBar button:hover {
+            background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%);
+            color: var(--highlight-color);
+            border-color: var(--highlight-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 255, 0, 0.3);
+        }
+        #actionBar button:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+        }
+        #actionBar button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 18px;
+            }
+            
+            .header p {
+                font-size: 16px;
+            }
+            
+            .hud-bars {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+            
+            #actionBar button {
+                font-size: 16px;
+                padding: 8px 12px;
+            }
+        }
+
         .term-line.term-victory   { color: var(--border-color); font-size: 22px; }
         .term-line.term-loot      { color: #FFD700; }
         .term-line.term-error     { color: var(--error-color); }
