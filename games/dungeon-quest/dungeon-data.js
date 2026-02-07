@@ -13,13 +13,15 @@ window.DUNGEONS = {
             name: 'Entrance Hall',
             description: 'Cold stone walls loom overhead. Dust hangs in the air.',
             exits: { e: 'R2', s: 'R4' },
+            map: { x: 0, y: 2 },
             contents: {},
             flags: { discovered: false }
           },          
           R2: {
             name: 'Broken Antechamber',
             description: 'Chunks of masonry litter the floor. Something growled recently.',
-            exits: { W: 'R1', E: 'R3' },
+            exits: { w: 'R1', e: 'R3', s: 'R5' },
+            map: { x: 1, y: 2 },
             contents: { enemies: ['wolf'] },
             flags: { discovered: false }
           },
@@ -27,7 +29,8 @@ window.DUNGEONS = {
           R3: {
             name: 'Collapsed Shrine',
             description: 'A shattered altar lies buried beneath rubble.',
-            exits: { W: 'R2', S: 'R6', NE: 'R12' },
+            exits: { w: 'R2', s: 'R6', ne: 'R12' },
+            map: { x: 2, y: 2 },
             contents: { key: 'cryptKey' },
             flags: { discovered: false }
           },
@@ -35,7 +38,8 @@ window.DUNGEONS = {
          R4: {
     name: 'Dust-Choked Corridor',
     description: 'The air is thick with ash and old decay.',
-    exits: { N: 'R1', S: 'R7', E: 'R5' },
+    exits: { n: 'R1', s: 'R7', e: 'R5' },
+    map: { x: 0, y: 3 },
 
     encounter: {
         monsterId: 'crypt_guard'
@@ -50,7 +54,8 @@ window.DUNGEONS = {
           R5: {
             name: 'Locked Gate',
             description: 'An iron gate blocks the passage. A heavy lock bars the way.',
-            exits: { W: 'R4', E: 'R6' },
+            exits: { w: 'R4', e: 'R6', n: 'R2' },
+            map: { x: 1, y: 3 },
             contents: {
               door: {
                 id: 'cryptDoor',
@@ -64,7 +69,8 @@ window.DUNGEONS = {
           R6: {
             name: 'Hall of Echoes',
             description: 'Every sound bounces endlessly through the chamber.',
-            exits: { N: 'R3', W: 'R5', S: 'R11' },
+            exits: { n: 'R3', w: 'R5', s: 'R11' },
+            map: { x: 2, y: 3 },
             contents: { enemies: ['direWolf'] },
             flags: { discovered: false }
           },
@@ -72,7 +78,8 @@ window.DUNGEONS = {
           R7: {
             name: 'Bone-Strewn Alcove',
             description: 'Bleached bones crunch underfoot.',
-            exits: { N: 'R4', E: 'R8' },
+            exits: { n: 'R4', e: 'R8' },
+            map: { x: 0, y: 4 },
             contents: {},
             flags: { discovered: false }
           },
@@ -80,7 +87,8 @@ window.DUNGEONS = {
           R8: {
             name: 'Forgotten Watch Post',
             description: 'A ruined barricade suggests someone once stood guard here.',
-            exits: { W: 'R7', S: 'R9', E: 'R11' },
+            exits: { w: 'R7', e: 'R11', s: 'R9' },
+            map: { x: 1, y: 4 },
             contents: { enemies: ['wolf'] },
             flags: { discovered: false }
           },
@@ -88,7 +96,8 @@ window.DUNGEONS = {
           R9: {
             name: 'Deep Crypt Chamber',
             description: 'The walls are etched with names long forgotten.',
-            exits: { N: 'R8', S: 'R10' },
+            exits: { n: 'R8', s: 'R10' },
+            map: { x: 0, y: 5 },
             contents: {},
             flags: { discovered: false }
           },
@@ -96,7 +105,8 @@ window.DUNGEONS = {
           R10: {
             name: 'Lower Descent',
             description: 'A dark ladder descends into the depths below.',
-            exits: { N: 'R9' },
+            exits: { n: 'R9' },
+            map: { x: 0, y: 6 },
             contents: {
               ladder: {
                 direction: 'down',
@@ -109,7 +119,8 @@ window.DUNGEONS = {
           R11: {
             name: 'Dark Chamber',
             description: 'The walls are etched with names long forgotten.',
-            exits: { N: 'R6', W: 'R8' },
+            exits: { n: 'R6', w: 'R8' },
+            map: { x: 2, y: 4 },
             contents: {},
             flags: { discovered: false }
           },
@@ -118,8 +129,8 @@ window.DUNGEONS = {
           R12: {
             name: "Starfall Balcony",
             description: "A shattered balcony opens to a sky that should not exist underground.",
-            map: { x: 3, y: -1 },
-            exits: { SW: "R3", NW: "R13" },
+            exits: { sw: 'R3', nw: 'R13' },
+            map: { x: 3, y: 1 },
             contents: {},
             flags: { discovered: false }
           },
@@ -128,8 +139,8 @@ window.DUNGEONS = {
           R13: {
             name: "Astral Observatory",
             description: "Dust-covered lenses point toward constellations that drift and breathe.",
-            map: { x: 2, y: -2 },
-            exits: { SE: "R12" },
+            exits: { se: 'R12' },
+            map: { x: 2, y: 0 },
             contents: {},
             flags: { discovered: false }
           }

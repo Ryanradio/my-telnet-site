@@ -3633,6 +3633,9 @@ window.addEventListener('beforeunload', () => {
         // ═══════════════════════════════════════════════════════════════
         
 function openTerminalView(locKey) {
+    // Add terminal-mode class to body
+    document.body.classList.add('terminal-mode');
+    
     document.getElementById('mainScreen').style.display = 'none';
 
     const hud = document.getElementById('hud');
@@ -3932,6 +3935,171 @@ ab.style.display = 'block';
         // ACTION BAR – combat buttons / explore buttons / spell & potion menus
         // ═══════════════════════════════════════════════════════════════
         
+       // ═══════════════════════════════════════════════════════════════
+       // DUNGEON MAP SYSTEM
+       // ═══════════════════════════════════════════════════════════════
+       
+       function showDungeonMap() {
+           const ds = gameState.dungeon;
+           if (!ds) return;
+           
+           if (typeof DUNGEONS === 'undefined') {
+               alert('Dungeon data not loaded!');
+               return;
+           }
+           
+           const dungeon = DUNGEONS[ds.dungeonKey];
+           const floor = dungeon.floors[ds.floor];
+           
+           // Build ASCII map
+           const mapAscii = generateAsciiMap(floor, ds.currentRoom, ds.discoveredRooms);
+           
+           // Show map in terminal
+           const term = document.getElementById('terminalWindow');
+           term.innerHTML = `
+               <div style="font-family: monospace; white-space: pre; line-height: 1.2; color: var(--text-color);">
+                   <div style="text-align: center; margin-bottom: 10px; color: var(--highlight-color);">
+                       === ${dungeon.name} - Floor ${ds.floor} ===
+                   </div>
+                   <div style="text-align: center; margin-bottom: 15px; color: #8aaa8a; font-size: 14px;">
+                       Legend: [@] = You | [ ] = Room | [?] = Undiscovered
+                   </div>
+${mapAscii}
+               </div>
+           `;
+           
+           // Update action bar
+           const ab = document.getElementById('actionBar');
+           ab.innerHTML = '<button onclick="hideDungeonMap()">⬅ BACK TO DUNGEON</button>';
+       }
+       
+       function hideDungeonMap() {
+           const ds = gameState.dungeon;
+           if (!ds) return;
+           
+           termClear();
+           
+           // Redraw current room
+           const dungeon = DUNGEONS[ds.dungeonKey];
+           const floor = dungeon.floors[ds.floor];
+           const room = floor.rooms[ds.currentRoom];
+           
+           termAppend('', 'term-separator');
+           termAppend(`<strong>${room.name}</strong>`);
+           termAppend(room.description, 'term-dim');
+           
+           const exits = Object.keys(room.exits).map(d => d.toUpperCase()).join(', ');
+           termAppend(`You see exits: ${exits}.`, 'term-dim');
+           
+           renderDungeonActionBar();
+       }
+       
+       function generateAsciiMap(floor, currentRoom, discoveredRooms) {
+           const rooms = floor.rooms;
+           
+           // Find map bounds
+           let minX = Infinity, maxX = -Infinity;
+           let minY = Infinity, maxY = -Infinity;
+           
+           Object.keys(rooms).forEach(roomId => {
+               const room = rooms[roomId];
+               if (room.map && discoveredRooms.has(roomId)) {
+                   minX = Math.min(minX, room.map.x);
+                   maxX = Math.max(maxX, room.map.x);
+                   minY = Math.min(minY, room.map.y);
+                   maxY = Math.max(maxY, room.map.y);
+               }
+           });
+           
+           // Create grid (each room takes 4 chars wide, 2 chars tall for spacing)
+           const cellWidth = 4;
+           const cellHeight = 2;
+           const width = (maxX - minX + 1) * cellWidth + 1;
+           const height = (maxY - minY + 1) * cellHeight + 1;
+           const grid = Array(height).fill(null).map(() => Array(width).fill(' '));
+           
+           // Helper to get grid position
+           const toGridX = (mapX) => (mapX - minX) * cellWidth;
+           const toGridY = (mapY) => (mapY - minY) * cellHeight;
+           
+           // First pass: Draw all connections
+           Object.keys(rooms).forEach(roomId => {
+               const room = rooms[roomId];
+               if (!room.map || !discoveredRooms.has(roomId)) return;
+               
+               const x = toGridX(room.map.x);
+               const y = toGridY(room.map.y);
+               
+               // Draw connections to discovered rooms
+               Object.keys(room.exits).forEach(dir => {
+                   const targetId = room.exits[dir];
+                   const targetRoom = rooms[targetId];
+                   
+                   if (!targetRoom || !targetRoom.map || !discoveredRooms.has(targetId)) return;
+                   
+                   const direction = dir.toLowerCase();
+                   
+                   if (direction === 'n') {
+                       grid[y - 1][x + 1] = '|';
+                   } else if (direction === 's') {
+                       grid[y + 2][x + 1] = '|';
+                   } else if (direction === 'e') {
+                       grid[y + 1][x + 3] = '-';
+                   } else if (direction === 'w') {
+                       grid[y + 1][x - 1] = '-';
+                   } else if (direction === 'ne') {
+                       grid[y][x + 2] = '/';
+                   } else if (direction === 'nw') {
+                       grid[y][x] = '\\';
+                   } else if (direction === 'se') {
+                       grid[y + 2][x + 2] = '\\';
+                   } else if (direction === 'sw') {
+                       grid[y + 2][x] = '/';
+                   }
+               });
+           });
+           
+           // Second pass: Draw rooms (overwrites connections at room positions)
+           Object.keys(rooms).forEach(roomId => {
+               const room = rooms[roomId];
+               if (!room.map || !discoveredRooms.has(roomId)) return;
+               
+               const x = toGridX(room.map.x);
+               const y = toGridY(room.map.y);
+               
+               // Draw room
+               const isPlayer = roomId === currentRoom;
+               if (isPlayer) {
+                   grid[y + 1][x] = '[';
+                   grid[y + 1][x + 1] = '@';
+                   grid[y + 1][x + 2] = ']';
+               } else {
+                   grid[y + 1][x] = '[';
+                   grid[y + 1][x + 1] = ' ';
+                   grid[y + 1][x + 2] = ']';
+               }
+           });
+           
+           // Convert grid to string with proper coloring
+           let result = '';
+           for (let y = 0; y < height; y++) {
+               let line = '';
+               for (let x = 0; x < width; x++) {
+                   const char = grid[y][x];
+                   if (char === '@') {
+                       line += `<span style="color:var(--highlight-color);">${char}</span>`;
+                   } else if (char === '[' || char === ']') {
+                       line += `<span style="color:var(--border-color);">${char}</span>`;
+                   } else {
+                       line += char;
+                   }
+               }
+               result += line + '\n';
+           }
+           
+           return result;
+       }
+
        function renderDungeonActionBar() {
     const ab = document.getElementById('actionBar');
 
@@ -3975,6 +4143,13 @@ ab.style.display = 'block';
         exitBtn.onclick = returnToTown;
         ab.appendChild(exitBtn);
     }
+    
+    // MAP button (always available in dungeon)
+    const mapBtn = document.createElement('button');
+    mapBtn.textContent = '🗺️ MAP';
+    mapBtn.onclick = showDungeonMap;
+    mapBtn.style.borderColor = 'var(--highlight-color)';
+    ab.appendChild(mapBtn);
 
     // Directions (data-driven)
     Object.keys(room.exits).forEach(dir => {
