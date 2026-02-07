@@ -180,6 +180,15 @@ body {
             color: var(--highlight-color);
             padding-left: 20px;
         }
+        .menu-option.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            color: #666;
+        }
+        .menu-option.disabled:hover {
+            background: transparent;
+            padding-left: 8px;
+        }
 
         /* ─── static HUD ─── */
 #hud {
@@ -1471,26 +1480,72 @@ function buildSaveSnapshot() {
         return null;
     }
 
+    const p = gameState.player;
+    
     const snapshot = {
-        characterId: gameState.player.id || 'default', // future-proof
+        version: 1,
+        characterId: p.id || 'default',
+        characterName: p.name,
         timestamp: Date.now(),
+        lastSaved: new Date().toLocaleString(),
 
         player: {
-            id: gameState.player.id || 'default',
-            name: gameState.player.name,
-            hp: gameState.player.hp,
-            mp: gameState.player.mp,
-            gold: gameState.player.gold,
-            xp: gameState.player.xp,
-            level: gameState.player.level
+            // Identity
+            id: p.id || 'default',
+            name: p.name,
+            class: p.class,
+            
+            // Core stats
+            level: p.level,
+            xp: p.xp,
+            xpToNext: p.xpToNext,
+            
+            // Resources
+            hp: p.hp,
+            maxHp: p.maxHp,
+            mp: p.mp,
+            maxMp: p.maxMp,
+            gold: p.gold,
+            
+            // Legacy base stats
+            strength: p.strength,
+            defense: p.defense,
+            magic: p.magic,
+            speed: p.speed,
+            
+            // New stat block (if exists)
+            str: p.str,
+            dex: p.dex,
+            con: p.con,
+            wis: p.wis,
+            cha: p.cha,
+            lck: p.lck,
+            
+            // Equipment
+            weapon: p.weapon,
+            armor: p.armor,
+            
+            // Inventory & spells
+            inventory: [...(p.inventory || [])],
+            knownSpells: [...(p.knownSpells || [])],
+            
+            // Progression
+            defeatedMasters: [...(p.defeatedMasters || [])],
+            unlockedAreas: [...(p.unlockedAreas || [])],
+            
+            // Special flags
+            godMode: p.godMode || false
         },
 
+        // Current location/state
+        currentLocation: gameState.currentLocation,
+
+        // Dungeon state (if in dungeon)
         dungeon: gameState.dungeon ? {
             dungeonKey: gameState.dungeon.dungeonKey,
             floor: gameState.dungeon.floor,
             currentRoom: gameState.dungeon.currentRoom,
             discoveredRooms: [...gameState.dungeon.discoveredRooms],
-
             activeEnemies: gameState.dungeon.activeEnemies.map(e => ({
                 id: e.id,
                 monsterId: e.monsterId,
@@ -1499,7 +1554,6 @@ function buildSaveSnapshot() {
                 maxHp: e.maxHp,
                 currentRoom: e.currentRoom,
                 leash: e.leash
-                // deliberately NOT saving chase counters
             }))
         } : null,
 
@@ -1508,21 +1562,91 @@ function buildSaveSnapshot() {
         }
     };
 
-    console.log('SAVE SNAPSHOT:', snapshot);
     return snapshot;
 }
 
 
 function saveGame() {
-    const snapshot = buildSaveSnapshot();
-    if (!snapshot) return;
+    try {
+        const snapshot = buildSaveSnapshot();
+        if (!snapshot) return;
 
-    const key = `save_character_${snapshot.characterId}`;
-    localStorage.setItem(key, JSON.stringify(snapshot));
+        const key = `dq_save_${snapshot.characterId}`;
+        localStorage.setItem(key, JSON.stringify(snapshot));
+        
+        // Also update character list
+        updateCharacterList(snapshot);
 
-    console.log(`Game saved to ${key}`);
+        console.log(`✅ Game saved: ${snapshot.characterName} (${snapshot.lastSaved})`);
+        
+        // Show brief save confirmation
+        const hud = document.getElementById('hud');
+        if (hud && hud.style.display !== 'none') {
+            const saveMsg = document.createElement('div');
+            saveMsg.style.cssText = 'position:fixed;top:10px;right:10px;background:#0a0a0a;border:2px solid var(--text-color);padding:8px 12px;color:var(--text-color);font-size:14px;z-index:9999;';
+            saveMsg.textContent = '💾 Game Saved';
+            document.body.appendChild(saveMsg);
+            setTimeout(() => saveMsg.remove(), 2000);
+        }
+    } catch (e) {
+        console.error('Error saving game:', e);
+    }
 }
 
+function updateCharacterList(snapshot) {
+    try {
+        let charList = JSON.parse(localStorage.getItem('dq_character_list') || '[]');
+        
+        // Remove old entry for this character if exists
+        charList = charList.filter(c => c.id !== snapshot.characterId);
+        
+        // Add new entry
+        charList.push({
+            id: snapshot.characterId,
+            name: snapshot.characterName,
+            level: snapshot.player.level,
+            class: snapshot.player.class,
+            timestamp: snapshot.timestamp,
+            lastSaved: snapshot.lastSaved
+        });
+        
+        // Sort by most recent
+        charList.sort((a, b) => b.timestamp - a.timestamp);
+        
+        localStorage.setItem('dq_character_list', JSON.stringify(charList));
+    } catch (e) {
+        console.error('Error updating character list:', e);
+    }
+}
+
+function getAllCharacters() {
+    try {
+        return JSON.parse(localStorage.getItem('dq_character_list') || '[]');
+    } catch (e) {
+        console.error('Error getting character list:', e);
+        return [];
+    }
+}
+
+function deleteCharacter(characterId) {
+    try {
+        // Remove save data
+        localStorage.removeItem(`dq_save_${characterId}`);
+        
+        // Remove from character list
+        let charList = getAllCharacters();
+        charList = charList.filter(c => c.id !== characterId);
+        localStorage.setItem('dq_character_list', JSON.stringify(charList));
+        
+        console.log(`🗑️ Deleted character: ${characterId}`);
+        return true;
+    } catch (e) {
+        console.error('Error deleting character:', e);
+        return false;
+    }
+}
+
+// Auto-save on page unload
 window.addEventListener('beforeunload', () => {
     saveGame();
 });
@@ -2242,6 +2366,36 @@ window.addEventListener('beforeunload', () => {
 
         // Initialize Game
         function initGame() {
+            // Try to auto-restore character (especially important for dungeons!)
+            const characters = getAllCharacters();
+            
+            if (characters.length > 0) {
+                // Check if any character is currently in a dungeon
+                const dungeonChar = characters.find(char => {
+                    const saveData = localStorage.getItem(`dq_save_${char.id}`);
+                    if (saveData) {
+                        const data = JSON.parse(saveData);
+                        return data.meta?.inDungeon === true;
+                    }
+                    return false;
+                });
+                
+                if (dungeonChar) {
+                    // Auto-load character that was in a dungeon (prevent cheating!)
+                    console.log('🏰 Auto-restoring dungeon session:', dungeonChar.name);
+                    loadCharacter(dungeonChar.id);
+                    return;
+                }
+                
+                // If single character and not in dungeon, auto-load for convenience
+                if (characters.length === 1) {
+                    console.log('Auto-loading single character:', characters[0].name);
+                    loadCharacter(characters[0].id);
+                    return;
+                }
+            }
+            
+            // Otherwise show main menu
             showMainMenu();
             
             // Warn before leaving page without saving
@@ -2258,6 +2412,9 @@ window.addEventListener('beforeunload', () => {
 
         function showMainMenu() {
             const screen = document.getElementById('mainScreen');
+            const characters = getAllCharacters();
+            const hasCharacters = characters.length > 0;
+            
             screen.innerHTML = `
                 <div class="location-header">MAIN MENU</div>
                 <div style="text-align: center; margin: 30px 0;">
@@ -2271,10 +2428,154 @@ window.addEventListener('beforeunload', () => {
                 </div>
                 <div style="max-width: 400px; margin: 0 auto;">
                     <div class="menu-option" onclick="newGame()">► NEW GAME</div>
-                    <div class="menu-option" onclick="loadGame()">► LOAD GAME</div>
+                    <div class="menu-option ${!hasCharacters?'disabled':''}" onclick="${hasCharacters?'showCharacterSelect()':''}">
+                        ► CONTINUE ${hasCharacters?`(${characters.length} character${characters.length>1?'s':''})`:' (No saves)'}
+                    </div>
                     <div class="menu-option" onclick="showInstructions()">► INSTRUCTIONS</div>
                 </div>
             `;
+        }
+
+        function showCharacterSelect() {
+            const characters = getAllCharacters();
+            if (characters.length === 0) {
+                alert('No saved characters found!');
+                return;
+            }
+            
+            const screen = document.getElementById('mainScreen');
+            screen.innerHTML = `
+                <div class="location-header">SELECT CHARACTER</div>
+                <div id="characterList" style="max-width: 600px; margin: 20px auto;"></div>
+                <button onclick="showMainMenu()">← BACK TO MENU</button>
+            `;
+            
+            const charList = document.getElementById('characterList');
+            
+            characters.forEach(char => {
+                const card = document.createElement('div');
+                card.className = 'character-card';
+                card.style.cssText = `
+                    background: var(--secondary-bg);
+                    border: 2px solid var(--border-color);
+                    padding: 15px;
+                    margin-bottom: 15px;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                `;
+                
+                card.innerHTML = `
+                    <div style="flex: 1;">
+                        <div style="color: var(--highlight-color); font-size: 22px; margin-bottom: 5px;">
+                            ${char.name}
+                        </div>
+                        <div style="color: var(--text-color); font-size: 16px;">
+                            Level ${char.level} ${char.class || 'Adventurer'}
+                        </div>
+                        <div style="color: #8aaa8a; font-size: 14px; margin-top: 5px;">
+                            Last played: ${char.lastSaved}
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="event.stopPropagation(); loadCharacter('${char.id}')" 
+                                style="padding: 8px 16px; background: #0a3a0a; border: 2px solid var(--text-color);">
+                            ▶ PLAY
+                        </button>
+                        <button onclick="event.stopPropagation(); confirmDeleteCharacter('${char.id}', '${char.name}')" 
+                                style="padding: 8px 16px; background: #3a0a0a; border: 2px solid var(--error-color); color: var(--error-color);">
+                            🗑️ DELETE
+                        </button>
+                    </div>
+                `;
+                
+                card.addEventListener('mouseenter', () => {
+                    card.style.background = 'var(--primary-bg)';
+                    card.style.borderColor = 'var(--highlight-color)';
+                });
+                
+                card.addEventListener('mouseleave', () => {
+                    card.style.background = 'var(--secondary-bg)';
+                    card.style.borderColor = 'var(--border-color)';
+                });
+                
+                charList.appendChild(card);
+            });
+        }
+
+        function confirmDeleteCharacter(charId, charName) {
+            if (confirm(`Are you sure you want to DELETE ${charName}? This cannot be undone!`)) {
+                if (deleteCharacter(charId)) {
+                    showCharacterSelect(); // Refresh the list
+                } else {
+                    alert('Error deleting character!');
+                }
+            }
+        }
+
+        function loadCharacter(characterId) {
+            try {
+                const saveData = localStorage.getItem(`dq_save_${characterId}`);
+                if (!saveData) {
+                    alert('Save file not found!');
+                    return;
+                }
+
+                const data = JSON.parse(saveData);
+                
+                // Restore complete player state
+                gameState.player = {
+                    ...data.player,
+                    // Ensure all arrays are properly restored
+                    inventory: data.player.inventory || [],
+                    knownSpells: data.player.knownSpells || [],
+                    defeatedMasters: data.player.defeatedMasters || [],
+                    unlockedAreas: data.player.unlockedAreas || []
+                };
+                
+                gameState.currentLocation = data.currentLocation || 'silverdale';
+                
+                // Restore dungeon state if applicable
+                if (data.meta?.inDungeon && data.dungeon) {
+                    gameState.dungeon = {
+                        dungeonKey: data.dungeon.dungeonKey,
+                        floor: data.dungeon.floor,
+                        currentRoom: data.dungeon.currentRoom,
+                        discoveredRooms: new Set(data.dungeon.discoveredRooms),
+                        activeEnemies: data.dungeon.activeEnemies.map(e => ({
+                            ...e,
+                            isChasing: false,
+                            roomsFollowed: 0
+                        }))
+                    };
+                    
+                    // Open dungeon UI
+                    openTerminalView(data.dungeon.dungeonKey);
+                    
+                    const dungeon = DUNGEONS[data.dungeon.dungeonKey];
+                    const floor = dungeon.floors[data.dungeon.floor];
+                    const room = floor.rooms[data.dungeon.currentRoom];
+                    
+                    termAppend('', 'term-separator');
+                    termAppend(`<strong>${room.name}</strong>`);
+                    termAppend(room.description, 'term-dim');
+                    
+                    const exits = Object.keys(room.exits).map(d => d.toUpperCase()).join(', ');
+                    termAppend(`You see exits: ${exits}.`, 'term-dim');
+                    
+                    checkEnemiesInRoom(data.dungeon.currentRoom);
+                    renderDungeonActionBar();
+                } else {
+                    showTown();
+                }
+                
+                console.log(`✅ Character loaded: ${data.characterName}`);
+            } catch (e) {
+                console.error('Error loading character:', e);
+                alert('Error loading save file!');
+            }
         }
 
         function showInstructions() {
@@ -2420,7 +2721,11 @@ window.addEventListener('beforeunload', () => {
             const classData = CLASSES[classKey];
             const stats     = window._pendingStats;
 
+            // Generate unique character ID
+            const charId = 'char_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+
             gameState.player = {
+                id: charId,  // Unique character ID
                 name: window._pendingName,
                 class: classKey,  className: classData.name,
                 level: 1,  xp: 0,  xpToNext: 100,
@@ -2443,6 +2748,10 @@ window.addEventListener('beforeunload', () => {
                 cha: stats.cha,  con: stats.con,  lck: stats.lck
             };
             gameState.currentLocation = 'town';
+            
+            // Auto-save new character
+            saveGame();
+            
             showTown();
         }
 
@@ -2736,6 +3045,10 @@ window.addEventListener('beforeunload', () => {
             gameState.player.gold += value;
             const itemName = getItemName(itemKey);
             alert(`Sold ${itemName} for ${value}g!` + (bonus > 0 ? ` (+${bonus}% CHA bonus)` : ''));
+            
+            // 💾 AUTO-SAVE after selling
+            saveGame();
+            
             showShopSell();
         }
 
@@ -2753,6 +3066,10 @@ window.addEventListener('beforeunload', () => {
             else if (type === 'armor') itemName = ARMOR[key].name;
             else if (type === 'item') itemName = ITEMS[key].name;
             alert(`Purchased ${itemName} for ${cost}g!` + (disc > 0 ? ` (${disc}% CHA discount)` : ''));
+            
+            // 💾 AUTO-SAVE after buying
+            saveGame();
+            
             showShopBuy();
         }
 
@@ -2893,6 +3210,10 @@ window.addEventListener('beforeunload', () => {
             } else {
                 gameState.player.armor = key;
             }
+            
+            // 💾 AUTO-SAVE after equipping
+            saveGame();
+            
             showInventory();
         }
 
@@ -3411,19 +3732,22 @@ ab.style.display = 'block';
        function renderDungeonActionBar() {
     const ab = document.getElementById('actionBar');
 
-
-
     function updateTerminalSafeArea() {
-    const term = document.getElementById('terminalWindow');
-    const bar  = document.getElementById('actionBar');
-    if (!term || !bar) return;
+        const term = document.getElementById('terminalWindow');
+        const bar  = document.getElementById('actionBar');
+        if (!term || !bar) return;
 
-    const barHeight = bar.offsetHeight;
-    term.style.paddingBottom = barHeight + 'px';
-}
+        const barHeight = bar.offsetHeight;
+        term.style.paddingBottom = barHeight + 'px';
+    }
 
+    // If in combat, use the regular combat action bar
+    if (gameState.combatState) {
+        renderActionBar();
+        return;
+    }
 
-    // Dungeon owns the action bar
+    // Dungeon navigation owns the action bar when not in combat
     ab.innerHTML = '';
     ab.style.display = 'block';
 
@@ -3861,12 +4185,11 @@ return;
 
 
 function moveInDungeon(direction) {
-
-//if (gameState.inCombat) {
-//    termAppend(`⚔️ You are engaged in combat!`, 'term-dim');
-//    return;
-//}
-
+    // Prevent movement during combat
+    if (gameState.combatState) {
+        termAppend(`⚔️ You are engaged in combat!`, 'term-error');
+        return;
+    }
 
     if (!gameState.dungeon) {
         console.warn('Not in a dungeon');
@@ -3922,6 +4245,9 @@ checkEnemiesInRoom(nextRoomId);
 
     termAppend(`You see exits: ${exits}.`, 'term-dim');
 
+    // 💾 AUTO-SAVE after moving in dungeon (prevent cheating!)
+    saveGame();
+
     // 🔑 update buttons for new room
     renderDungeonActionBar();
 }
@@ -3940,22 +4266,48 @@ function checkEnemiesInRoom(roomId) {
     const ds = gameState.dungeon;
     if (!ds || !ds.activeEnemies) return;
 
-    ds.activeEnemies.forEach(enemy => {
-    if (enemy.currentRoom === roomId) {
-
-        // suppress duplicate message if enemy just entered
-        if (enemy.justArrived) {
-            enemy.justArrived = false;
-            return;
-        }
-
+    // Find enemy in current room
+    const enemyHere = ds.activeEnemies.find(e => e.currentRoom === roomId);
+    
+    if (enemyHere) {
+        // AUTO-ENGAGE COMBAT!
         termAppend(
-            `⚠️ <strong>${enemy.name}</strong> is here, watching you carefully.`,
+            `⚔️ <strong>${enemyHere.name}</strong> confronts you!`,
             'term-warning'
         );
+        
+        // Start combat with this dungeon enemy
+        startDungeonCombat(enemyHere);
     }
-});
+}
 
+function startDungeonCombat(dungeonEnemy) {
+    // Get the full enemy definition
+    const enemyDef = ENEMIES[dungeonEnemy.monsterId];
+    if (!enemyDef) {
+        console.error('Enemy definition not found:', dungeonEnemy.monsterId);
+        return;
+    }
+    
+    // Create combat monster from dungeon enemy
+    const monster = createMonsterInstance(enemyDef);
+    
+    // Restore any saved HP from dungeon enemy
+    if (dungeonEnemy.hp !== undefined) {
+        monster.hp = dungeonEnemy.hp;
+        monster.maxHp = dungeonEnemy.maxHp || monster.hp;
+    }
+    
+    // Start normal combat
+    startCombat([dungeonEnemy.monsterId]);
+    
+    // Link combat to dungeon enemy for persistence
+    if (gameState.combatState) {
+        gameState.combatState.dungeonEnemyId = dungeonEnemy.id;
+    }
+    
+    // 💾 Save combat state
+    saveGame();
 }
 
 
@@ -4025,6 +4377,9 @@ Object.values(floor.rooms).forEach(r => {
         .join(', ');
 
     termAppend(`You see exits: ${exits}.`, 'term-dim');
+
+    // 💾 AUTO-SAVE when entering dungeon (track dungeon state!)
+    saveGame();
 
     renderDungeonActionBar();
 }
@@ -4586,6 +4941,15 @@ function endCombat(victory) {
     gameState.player.xp   += totalXp;
     gameState.player.gold += totalGold;
 
+    // ── Remove defeated dungeon enemy ──
+    if (gameState.dungeon && gameState.combatState?.dungeonEnemyId) {
+        const dungeonEnemyId = gameState.combatState.dungeonEnemyId;
+        gameState.dungeon.activeEnemies = gameState.dungeon.activeEnemies.filter(
+            e => e.id !== dungeonEnemyId
+        );
+        console.log(`🗑️ Removed dungeon enemy: ${dungeonEnemyId}`);
+    }
+
     // ── terminal output ──
     termAppend('', 'term-separator');
 
@@ -4630,6 +4994,9 @@ function endCombat(victory) {
     }
 
     updateHud();
+    
+    // 💾 AUTO-SAVE after victory
+    saveGame();
 
     // ─────────────────────────────────────────
     // ✅ EXIT COMBAT, ENTER EXHAUSTION
@@ -4640,13 +5007,21 @@ gameState.postCombatRecovery = true;
 
 
     const ab = document.getElementById('actionBar');
-    ab.innerHTML = isMaster
-        ? `
+    
+    // Check if we're in a dungeon
+    if (gameState.dungeon) {
+        ab.innerHTML = `
+            <button onclick="continueDungeonExploration()">🔍 CONTINUE EXPLORING</button>
+            <button onclick="returnToTown()">🏘️ RETURN TO TOWN</button>`;
+    } else if (isMaster) {
+        ab.innerHTML = `
             <button onclick="tryViewWorldMap()">🗺️ VIEW WORLD MAP</button>
-            <button onclick="tryGoBackToTown()">🏘️ RETURN TO TOWN</button>`
-        : `
+            <button onclick="tryGoBackToTown()">🏘️ RETURN TO TOWN</button>`;
+    } else {
+        ab.innerHTML = `
             <button onclick="tryExploreLocation('${gameState.currentLocation}')">🔍 CONTINUE EXPLORING</button>
             <button onclick="tryGoBackToTown()">🏘️ RETURN TO TOWN</button>`;
+    }
 
     renderActionBar();
 
@@ -4659,6 +5034,17 @@ gameState.postCombatRecovery = true;
 // POST-COMBAT EXHAUSTION CHECK
 // (used by navigation actions)
 // ═══════════════════════════════════════════════════════════════
+function continueDungeonExploration() {
+    if (!isFullyRested()) {
+        termAppend('<span style="color:var(--error-color);">You are too exhausted to continue! Wait for your charges to restore…</span>', 'term-error');
+        return;
+    }
+    // Clear combat state and return to dungeon navigation
+    gameState.combatState = null;
+    gameState.postCombatRecovery = false;
+    renderDungeonActionBar();
+}
+
 function playerIsExhausted() {
     if (!gameState.postCombatRecovery) return false;
 
@@ -4805,109 +5191,6 @@ function playerIsExhausted() {
             showTown();
         }
 
-        function saveGame() {
-    try {
-        const snapshot = buildSaveSnapshot();
-        if (!snapshot) return;
-
-        const key = `save_character_${snapshot.characterId}`;
-        localStorage.setItem(key, JSON.stringify(snapshot));
-
-        console.log(`Game saved to ${key}`);
-    } catch (e) {
-        console.error('Error saving game:', e);
-    }
-}
-
-
-        function loadGame() {
-            try {
-                const saveData = localStorage.getItem('dungeonQuestSave');
-                if (!saveData) {
-                    alert('No saved game found!');
-                    return;
-                }
-
-                const data = JSON.parse(saveData);
-                gameState.player = data.player;
-                gameState.currentLocation = data.currentLocation;
-                showTown();
-            } catch (e) {
-                alert('Error loading game!');
-            }
-        }
-
-
-function loadSavedGame() {
-    const key = 'save_character_default';
-    const raw = localStorage.getItem(key);
-
-    if (!raw) {
-        console.log('No saved game found');
-        return null;
-    }
-
-    const data = JSON.parse(raw);
-    console.log('LOADED SAVE:', data);
-    return data;
-}
-
-
-function restoreGameFromSave() {
-    const data = loadSavedGame();
-    if (!data) return;
-
-    console.log('Restoring game from save…');
-
-    // 🧍 Restore player
-    gameState.player = {
-        ...gameState.player,
-        ...data.player
-    };
-
-    // 🏰 Restore dungeon (if saved in dungeon)
-    if (data.meta?.inDungeon && data.dungeon) {
-        gameState.dungeon = {
-            dungeonKey: data.dungeon.dungeonKey,
-            floor: data.dungeon.floor,
-            currentRoom: data.dungeon.currentRoom,
-            discoveredRooms: new Set(data.dungeon.discoveredRooms),
-            activeEnemies: data.dungeon.activeEnemies.map(e => ({
-                ...e,
-                isChasing: false,
-                roomsFollowed: 0
-            }))
-        };
-
-        // Open dungeon UI
-        openTerminalView(data.dungeon.dungeonKey);
-
-        // Render current room
-        const dungeon = DUNGEONS[data.dungeon.dungeonKey];
-        const floor = dungeon.floors[data.dungeon.floor];
-        const room = floor.rooms[data.dungeon.currentRoom];
-
-        termAppend('', 'term-separator');
-        termAppend(`<strong>${room.name}</strong>`);
-        termAppend(room.description, 'term-dim');
-
-        const exits = Object.keys(room.exits)
-            .map(d => d.toUpperCase())
-            .join(', ');
-
-        termAppend(`You see exits: ${exits}.`, 'term-dim');
-
-        // Show enemies already here
-        checkEnemiesInRoom(data.dungeon.currentRoom);
-
-        renderDungeonActionBar();
-    }
-}
-
-
-
-
-restoreGameFromSave();
 
         // Start the game
         initGame();
