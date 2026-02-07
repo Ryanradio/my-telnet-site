@@ -129,19 +129,24 @@ body {
             flex-shrink: 0; /* prevent header from shrinking */
             text-align: center;
             border: 3px double var(--border-color);
-            padding: 15px;
-            margin-bottom: 20px;
+            padding: 8px;
+            margin-bottom: 8px;
             background: var(--secondary-bg);
             box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
         }
 
         .header h1 {
             font-family: 'Press Start 2P', monospace;
-            font-size: 24px;
+            font-size: 20px;
             color: var(--highlight-color);
             text-shadow: 2px 2px var(--error-color);
-            margin-bottom: 10px;
+            margin-bottom: 5px;
             animation: titlePulse 2s infinite;
+        }
+        
+        .header p {
+            margin: 0;
+            font-size: 16px;
         }
 
         @keyframes titlePulse {
@@ -158,8 +163,8 @@ body {
             
             background: var(--secondary-bg);
             border: 2px solid var(--border-color);
-            padding: 20px;
-            margin-bottom: 20px;
+            padding: 12px;
+            margin-bottom: 8px;
             box-shadow: inset 0 0 50px rgba(0, 255, 0, 0.1);
         }
         
@@ -184,7 +189,7 @@ body {
     background: var(--secondary-bg);
     border: 2px solid var(--border-color);
     border-bottom: none;
-    padding: 10px 14px;
+    padding: 6px 10px;
     box-shadow: inset 0 0 30px rgba(0,255,0,0.08);
 }
 
@@ -193,28 +198,28 @@ body {
             display: flex;
             justify-content: space-between;
             align-items: baseline;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
-        .hud-top .hud-name { color: var(--highlight-color); font-size: 22px; }
-        .hud-top .hud-gold { color: #FFD700; font-size: 20px; }
+        .hud-top .hud-name { color: var(--highlight-color); font-size: 18px; }
+        .hud-top .hud-gold { color: #FFD700; font-size: 16px; }
         .hud-bars {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
-            gap: 12px;
+            gap: 8px;
         }
         .hud-bar-group label {
             color: var(--highlight-color);
-            font-size: 18px;
+            font-size: 14px;
             display: block;
             margin-bottom: 2px;
         }
-        .hud-bar-group .bar-nums { color: var(--text-color); font-size: 17px; }
+        .hud-bar-group .bar-nums { color: var(--text-color); font-size: 14px; }
         .progress-bar {
             width: 100%;
-            height: 18px;
+            height: 12px;
             background: #111;
             border: 1px solid var(--border-color);
-            margin-top: 3px;
+            margin-top: 2px;
         }
         .progress-fill { height: 100%; transition: width 0.35s ease; }
         .hp-bar { background: var(--error-color); }
@@ -232,23 +237,23 @@ body {
     background: var(--secondary-bg);
     border: 2px solid var(--border-color);
     border-top: 1px solid #333;
-    padding: 12px 14px;
+    padding: 8px 10px;
     box-shadow: inset 0 0 40px rgba(0,255,0,0.07);
     scroll-behavior: smooth;
 }
 
         .term-line {
-            padding: 3px 0;
-            font-size: 19px;
+            padding: 2px 0;
+            font-size: 16px;
             color: var(--text-color);
-            line-height: 1.35;
+            line-height: 1.3;
         }
         .term-line.term-dim       { color: #3a7a3a; }
         .term-line.term-highlight { color: var(--highlight-color); }
-        .term-line.term-enemy     { color: var(--border-color); font-size: 20px; }
-        .term-line.term-loot      { font-size: 20px; }
+        .term-line.term-enemy     { color: var(--border-color); font-size: 17px; }
+        .term-line.term-loot      { font-size: 17px; }
         .term-line.term-system    { color: #888; font-style: italic; }
-        .term-line.term-separator { margin-top: 10px; padding-top: 10px; border-top: 1px solid #2a4a2a; }
+        .term-line.term-separator { margin-top: 6px; padding-top: 6px; border-top: 1px solid #2a4a2a; }
 
         /* ─── action bar at bottom ─── */
 #actionBar {
@@ -257,9 +262,9 @@ body {
     background: var(--secondary-bg);
     border: 2px solid var(--border-color);
     border-top: 1px solid #444;
-    padding: 10px;
+    padding: 6px;
     display: flex;
-    gap: 8px;
+    gap: 6px;
     flex-wrap: wrap;
     justify-content: center;
 }
@@ -268,12 +273,14 @@ body {
             background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%);
             color: var(--text-color);
             border: 2px solid var(--border-color);
-            padding: 10px 16px;
+            padding: 8px 12px;
             font-family: 'VT323', monospace;
-            font-size: 18px;
+            font-size: 16px;
             cursor: pointer;
             transition: all 0.15s;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+            min-width: 60px;
+            min-height: 40px;
         }
         #actionBar button:hover {
             background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%);
@@ -294,22 +301,63 @@ body {
 
         /* Mobile adjustments */
         @media (max-width: 600px) {
+            .header {
+                padding: 6px;
+                margin-bottom: 6px;
+            }
+            
             .header h1 {
-                font-size: 18px;
+                font-size: 16px;
+                margin-bottom: 3px;
             }
             
             .header p {
-                font-size: 16px;
+                font-size: 14px;
             }
+            
+            #hud {
+                padding: 4px 8px;
+            }
+            
+            .hud-top .hud-name { font-size: 16px; }
+            .hud-top .hud-gold { font-size: 14px; }
             
             .hud-bars {
                 grid-template-columns: 1fr;
-                gap: 8px;
+                gap: 4px;
+            }
+            
+            .hud-bar-group label {
+                font-size: 13px;
+            }
+            
+            .hud-bar-group .bar-nums {
+                font-size: 13px;
+            }
+            
+            .progress-bar {
+                height: 10px;
+            }
+            
+            #terminalWindow {
+                padding: 6px 8px;
+            }
+            
+            .term-line {
+                font-size: 15px;
+                line-height: 1.25;
+            }
+            
+            #actionBar {
+                padding: 5px;
+                gap: 5px;
             }
             
             #actionBar button {
-                font-size: 16px;
-                padding: 8px 12px;
+                font-size: 14px;
+                padding: 6px 10px;
+                min-width: 56px;
+                min-height: 38px;
             }
         }
 
