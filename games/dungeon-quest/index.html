@@ -133,6 +133,7 @@ body {
             margin-bottom: 8px;
             background: var(--secondary-bg);
             box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+            transition: all 0.3s ease;
         }
 
         .header h1 {
@@ -142,11 +143,30 @@ body {
             text-shadow: 2px 2px var(--error-color);
             margin-bottom: 5px;
             animation: titlePulse 2s infinite;
+            transition: all 0.3s ease;
         }
         
         .header p {
             margin: 0;
             font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        /* Compact header during gameplay */
+        body.terminal-mode .header {
+            padding: 4px;
+            margin-bottom: 4px;
+            border-width: 2px;
+        }
+        
+        body.terminal-mode .header h1 {
+            font-size: 12px;
+            margin-bottom: 2px;
+            animation: none; /* disable pulse during gameplay */
+        }
+        
+        body.terminal-mode .header > div {
+            display: none; /* hide decorative lines and subtitle */
         }
 
         @keyframes titlePulse {
@@ -362,6 +382,18 @@ body {
                 font-size: 14px;
             }
             
+            /* Even more compact header during gameplay on mobile */
+            body.terminal-mode .header {
+                padding: 3px;
+                margin-bottom: 3px;
+                border-width: 1px;
+            }
+            
+            body.terminal-mode .header h1 {
+                font-size: 10px;
+                margin-bottom: 0;
+            }
+            
             #hud {
                 padding: 4px 8px;
             }
@@ -396,15 +428,20 @@ body {
             }
             
             #actionBar {
-                padding: 5px;
-                gap: 5px;
+                padding: 4px;
+                gap: 3px;
             }
             
             #actionBar button {
-                font-size: 14px;
-                padding: 6px 10px;
-                min-width: 56px;
-                min-height: 38px;
+                font-size: 12px;
+                padding: 5px 6px;
+                min-width: 40px;
+                min-height: 36px;
+            }
+            
+            /* Compact dungeon navigation on mobile */
+            #actionBar > div {
+                gap: 3px;
             }
         }
 
@@ -1661,6 +1698,7 @@ function buildSaveSnapshot() {
             mp: p.mp,
             maxMp: p.maxMp,
             gold: p.gold,
+            bankGold: p.bankGold || 0,  // Bank storage
             
             // Legacy base stats
             strength: p.strength,
@@ -2504,7 +2542,47 @@ window.addEventListener('beforeunload', () => {
             terminalPrint(`SUCCESS: Exported ${type} to ${filename}`, 'success');
         }
 
-        // Make functions global for onclick handlers
+        // ═══════════════════════════════════════════════════════════════
+        // CLASS-SPECIFIC XP TABLES (Levels 1-25)
+        // ═══════════════════════════════════════════════════════════════
+        const XP_TABLES = {
+            acolyte: [0, 1150, 3490, 9625, 20640, 42200, 78200, 134300, 216900, 333500, 492000, 701800, 972800, 1315900, 1742800],
+            necrolyte: [0, 1150, 3490, 9625, 20640, 42200, 78200, 134300, 216900, 333500, 492000, 701800, 972800, 1315900, 1742800],
+            archer: [0, 1125, 3240, 8025, 17890, 36000, 66300, 113400, 182600, 280200, 413000, 588700, 815600, 1102800, 1460100],
+            druid: [0, 1180, 3800, 10290, 24160, 50000, 93000, 161400, 261500, 402700, 595000, 849600, 1178400, 1594900, 2113200],
+            sorceror: [0, 1180, 3800, 10290, 24160, 50000, 93000, 161400, 261500, 402700, 595000, 849600, 1178400, 1594900, 2113200],
+            hunter: [0, 1125, 3240, 8025, 17890, 36000, 66300, 113400, 182600, 280200, 413000, 588700, 815600, 1102800, 1460100],
+            rogue: [0, 1120, 3200, 7860, 17440, 35000, 64400, 109000, 177000, 271500, 400000, 570100, 789600, 1067600, 1413500],
+            warrior: [0, 1125, 3240, 8025, 17890, 36000, 66300, 113400, 182600, 280200, 413000, 588700, 815600, 1102800, 1460100],
+            paladin: [0, 1125, 3240, 8025, 17890, 36000, 66300, 113400, 182600, 280200, 413000, 588700, 815600, 1102800, 1460100]
+        };
+        
+        // Extend to level 25 (levels 16-25)
+        XP_TABLES.acolyte.push(2266200, 2895900, 3657600, 4555300, 5609100, 6836000, 8254100, 9882100, 11739900, 13048000);
+        XP_TABLES.necrolyte.push(2266200, 2895900, 3657600, 4555300, 5609100, 6836000, 8254100, 9882100, 11739900, 13048000);
+        XP_TABLES.archer.push(1898300, 2428600, 3063100, 3814700, 4696900, 5724000, 6911200, 8274200, 9829700, 11594700);
+        XP_TABLES.druid.push(2748800, 3518100, 4438700, 5529300, 6809500, 8300000, 10022900, 12001000, 14258400, 16820200);
+        XP_TABLES.sorceror.push(2748800, 3518100, 4438700, 5529300, 6809500, 8300000, 10022900, 12001000, 14258400, 16820200);
+        XP_TABLES.hunter.push(1898300, 2428600, 3063100, 3814700, 4696900, 5724000, 6911200, 8274200, 9829700, 11594700);
+        XP_TABLES.rogue.push(1637500, 2350000, 2964800, 3692200, 4546000, 5540000, 6689000, 8008000, 9513300, 11221500);
+        XP_TABLES.warrior.push(1898300, 2428600, 3063100, 3814700, 4696900, 5724000, 6911200, 8274200, 9829700, 11594700);
+        XP_TABLES.paladin.push(1898300, 2428600, 3063100, 3814700, 4696900, 5724000, 6911200, 8274200, 9829700, 11594700);
+        
+        function getXpForLevel(playerClass, level) {
+            const table = XP_TABLES[playerClass] || XP_TABLES.warrior;
+            if (level < 1) return 0;
+            if (level > 25) return table[24]; // Max at level 25
+            return table[level - 1];
+        }
+        
+        function getXpToNextLevel(playerClass, currentLevel) {
+            if (currentLevel >= 25) return 999999999; // Max level
+            return getXpForLevel(playerClass, currentLevel + 1);
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // END XP TABLES
+        // ═══════════════════════════════════════════════════════════════
         window.submitAddMonster = submitAddMonster;
         window.submitAddWeapon = submitAddWeapon;
         window.submitAddArmor = submitAddArmor;
@@ -2521,36 +2599,71 @@ window.addEventListener('beforeunload', () => {
 
         // Initialize Game
         function initGame() {
-            // Try to auto-restore character (especially important for dungeons!)
-            const characters = getAllCharacters();
-            
-            if (characters.length > 0) {
-                // Check if any character is currently in a dungeon
-                const dungeonChar = characters.find(char => {
-                    const saveData = localStorage.getItem(`dq_save_${char.id}`);
-                    if (saveData) {
-                        const data = JSON.parse(saveData);
-                        return data.meta?.inDungeon === true;
+            try {
+                // Try to auto-restore character (especially important for dungeons!)
+                const characters = getAllCharacters();
+                
+                if (characters.length > 0) {
+                    // Check if any character is currently in a dungeon
+                    let dungeonChar = null;
+                    try {
+                        dungeonChar = characters.find(char => {
+                            try {
+                                const saveData = localStorage.getItem(`dq_save_${char.id}`);
+                                if (saveData) {
+                                    const data = JSON.parse(saveData);
+                                    return data.meta?.inDungeon === true;
+                                }
+                            } catch (e) {
+                                console.error(`Corrupted save for ${char.id}:`, e);
+                                // Delete corrupted save
+                                localStorage.removeItem(`dq_save_${char.id}`);
+                            }
+                            return false;
+                        });
+                    } catch (e) {
+                        console.error('Error checking for dungeon characters:', e);
                     }
-                    return false;
-                });
-                
-                if (dungeonChar) {
-                    // Auto-load character that was in a dungeon (prevent cheating!)
-                    console.log('🏰 Auto-restoring dungeon session:', dungeonChar.name);
-                    loadCharacter(dungeonChar.id);
-                    return;
+                    
+                    if (dungeonChar) {
+                        // Auto-load character that was in a dungeon (prevent cheating!)
+                        console.log('🏰 Auto-restoring dungeon session:', dungeonChar.name);
+                        try {
+                            loadCharacter(dungeonChar.id);
+                            return;
+                        } catch (e) {
+                            console.error('Failed to load dungeon character:', e);
+                            alert('⚠️ Your dungeon save was corrupted. Returning to main menu.');
+                            // Delete corrupted save and continue to main menu
+                            deleteCharacter(dungeonChar.id);
+                        }
+                    }
+                    
+                    // If single character and not in dungeon, auto-load for convenience
+                    if (characters.length === 1) {
+                        console.log('Auto-loading single character:', characters[0].name);
+                        try {
+                            loadCharacter(characters[0].id);
+                            return;
+                        } catch (e) {
+                            console.error('Failed to load character:', e);
+                            alert('⚠️ Your save was corrupted. Returning to main menu.');
+                            // Delete corrupted save and continue to main menu
+                            deleteCharacter(characters[0].id);
+                        }
+                    }
                 }
-                
-                // If single character and not in dungeon, auto-load for convenience
-                if (characters.length === 1) {
-                    console.log('Auto-loading single character:', characters[0].name);
-                    loadCharacter(characters[0].id);
-                    return;
+            } catch (e) {
+                console.error('Critical error in initGame:', e);
+                // Clear potentially corrupted data
+                try {
+                    localStorage.removeItem('dq_character_list');
+                } catch (clearError) {
+                    console.error('Could not clear character list:', clearError);
                 }
             }
             
-            // Otherwise show main menu
+            // Always fall back to main menu if anything goes wrong
             showMainMenu();
             
             // Warn before leaving page without saving
@@ -2675,11 +2788,18 @@ window.addEventListener('beforeunload', () => {
             try {
                 const saveData = localStorage.getItem(`dq_save_${characterId}`);
                 if (!saveData) {
-                    alert('Save file not found!');
+                    console.error('Save file not found:', characterId);
+                    alert('⚠️ Save file not found!');
+                    showMainMenu();
                     return;
                 }
 
                 const data = JSON.parse(saveData);
+                
+                // Validate save data structure
+                if (!data.player) {
+                    throw new Error('Invalid save data: missing player data');
+                }
                 
                 // Restore complete player state
                 gameState.player = {
@@ -2688,7 +2808,9 @@ window.addEventListener('beforeunload', () => {
                     inventory: data.player.inventory || [],
                     knownSpells: data.player.knownSpells || [],
                     defeatedMasters: data.player.defeatedMasters || [],
-                    unlockedAreas: data.player.unlockedAreas || []
+                    unlockedAreas: data.player.unlockedAreas || [],
+                    // Ensure bankGold exists (for old saves)
+                    bankGold: data.player.bankGold || 0
                 };
                 
                 gameState.currentLocation = data.currentLocation || 'silverdale';
@@ -2698,7 +2820,8 @@ window.addEventListener('beforeunload', () => {
                     // Check if DUNGEONS is loaded
                     if (typeof DUNGEONS === 'undefined') {
                         console.error('⚠️ DUNGEONS not loaded! Check dungeon-data.js for syntax errors.');
-                        alert('Error: Dungeon data failed to load. Please check the console for errors.');
+                        alert('⚠️ Dungeon data failed to load. Returning to town.');
+                        gameState.dungeon = null;
                         showTown();
                         return;
                     }
@@ -2711,14 +2834,13 @@ window.addEventListener('beforeunload', () => {
                     // Migrate old dungeon keys if needed
                     if (!DUNGEONS[dungeonKey]) {
                         console.warn(`⚠️ Dungeon "${dungeonKey}" not found. Attempting migration...`);
-                        // If there's only one dungeon available, use it
                         const availableDungeons = Object.keys(DUNGEONS);
                         if (availableDungeons.length > 0) {
                             dungeonKey = availableDungeons[0];
                             console.log(`✅ Migrated to dungeon: ${dungeonKey}`);
                         } else {
                             console.error('❌ No dungeons available!');
-                            alert('Error: No dungeons found. Returning to town.');
+                            alert('⚠️ Dungeon not found. Returning to town.');
                             gameState.dungeon = null;
                             showTown();
                             return;
@@ -2745,7 +2867,7 @@ window.addEventListener('beforeunload', () => {
                     const floor = dungeon.floors[data.dungeon.floor];
                     if (!floor) {
                         console.error(`⚠️ Floor ${data.dungeon.floor} not found!`);
-                        alert('Error: Invalid dungeon floor. Returning to town.');
+                        alert('⚠️ Invalid dungeon floor. Returning to town.');
                         gameState.dungeon = null;
                         showTown();
                         return;
@@ -2754,7 +2876,7 @@ window.addEventListener('beforeunload', () => {
                     const room = floor.rooms[data.dungeon.currentRoom];
                     if (!room) {
                         console.error(`⚠️ Room ${data.dungeon.currentRoom} not found!`);
-                        alert('Error: Invalid dungeon room. Returning to town.');
+                        alert('⚠️ Invalid dungeon room. Returning to town.');
                         gameState.dungeon = null;
                         showTown();
                         return;
@@ -2776,7 +2898,22 @@ window.addEventListener('beforeunload', () => {
                 console.log(`✅ Character loaded: ${data.characterName}`);
             } catch (e) {
                 console.error('Error loading character:', e);
-                alert('Error loading save file!');
+                alert('⚠️ Failed to load save file. The data may be corrupted. Returning to main menu.');
+                
+                // Clean up corrupted state
+                gameState.player = null;
+                gameState.dungeon = null;
+                gameState.combatState = null;
+                
+                // Try to delete corrupted save
+                try {
+                    deleteCharacter(characterId);
+                } catch (deleteError) {
+                    console.error('Could not delete corrupted save:', deleteError);
+                }
+                
+                // Always return to main menu on error
+                showMainMenu();
             }
         }
 
@@ -2930,7 +3067,7 @@ window.addEventListener('beforeunload', () => {
                 id: charId,  // Unique character ID
                 name: window._pendingName,
                 class: classKey,  className: classData.name,
-                level: 1,  xp: 0,  xpToNext: 100,
+                level: 1,  xp: 0,  xpToNext: getXpToNextLevel(classKey, 1),
                 hp: classData.hp + stats.con * 5,
                 maxHp: classData.hp + stats.con * 5,
                 mp: classData.mp,  maxMp: classData.mp,
@@ -2939,6 +3076,7 @@ window.addEventListener('beforeunload', () => {
                 magic:    classData.magic,
                 speed:    classData.speed,
                 gold: 100,
+                bankGold: 0,  // Bank storage starts empty
                 weapon: classData.startWeapon,
                 armor:  classData.startArmor,
                 inventory:  [classData.startWeapon, classData.startArmor],
@@ -2981,6 +3119,7 @@ window.addEventListener('beforeunload', () => {
                 </div>
                 <div style="margin: 20px 0;">
                     <div class="menu-option" onclick="showShop()">► VISIT SHOP</div>
+                    <div class="menu-option" onclick="showBank()">🏦 BANK (${gameState.player.bankGold || 0}g stored)</div>
                     <div class="menu-option" onclick="enterDungeons()">🏰 DUNGEONS</div>
                     <div class="menu-option" onclick="restAtInn()">► REST AT INN (${calcInnCost(gameState.player.cha)} Gold)</div>
                     <div class="menu-option" onclick="showInventory()">► INVENTORY</div>
@@ -2991,6 +3130,80 @@ window.addEventListener('beforeunload', () => {
                     <div class="menu-option" onclick="showMainMenu()">► QUIT TO MENU</div>
                 </div>
             `;
+        }
+
+        function showBank() {
+            const screen = document.getElementById('mainScreen');
+            const p = gameState.player;
+            screen.innerHTML = `
+                <div class="location-header">🏦 TOWN BANK</div>
+                ${renderPlayerStats()}
+                <div class="message" style="border-color:var(--highlight-color);">
+                    <p><strong style="color:var(--highlight-color);">💰 YOUR VAULT IS SAFE</strong></p>
+                    <p style="color:#8aaa8a;">Gold stored in the bank is protected from death penalties in dungeons!</p>
+                </div>
+                <div class="message">
+                    <p><span class="stat-label">Carried Gold:</span> <span style="color:#FFD700;">${p.gold}g</span></p>
+                    <p><span class="stat-label">Bank Vault:</span> <span style="color:#00FF00;">${p.bankGold || 0}g</span></p>
+                </div>
+                <div style="margin: 20px 0;">
+                    <div class="message">
+                        <p><span class="stat-label">Deposit Gold:</span></p>
+                        <input type="number" id="depositAmount" min="1" max="${p.gold}" value="${Math.min(100, p.gold)}" 
+                               style="width:150px;padding:8px;background:var(--secondary-bg);color:var(--text-color);border:2px solid var(--border-color);font-family:'Courier New',monospace;font-size:16px;">
+                        <button onclick="depositGold()" style="margin-left:10px;">💰 DEPOSIT</button>
+                    </div>
+                    <div class="message">
+                        <p><span class="stat-label">Withdraw Gold:</span></p>
+                        <input type="number" id="withdrawAmount" min="1" max="${p.bankGold || 0}" value="${Math.min(100, p.bankGold || 0)}" 
+                               style="width:150px;padding:8px;background:var(--secondary-bg);color:var(--text-color);border:2px solid var(--border-color);font-family:'Courier New',monospace;font-size:16px;">
+                        <button onclick="withdrawGold()" style="margin-left:10px;">💵 WITHDRAW</button>
+                    </div>
+                </div>
+                <button onclick="showTown()">← BACK TO TOWN</button>
+            `;
+        }
+
+        function depositGold() {
+            const amount = parseInt(document.getElementById('depositAmount').value);
+            const p = gameState.player;
+            
+            if (isNaN(amount) || amount <= 0) {
+                alert('Invalid amount!');
+                return;
+            }
+            
+            if (amount > p.gold) {
+                alert('You don\'t have that much gold!');
+                return;
+            }
+            
+            p.gold -= amount;
+            p.bankGold = (p.bankGold || 0) + amount;
+            
+            saveGame();
+            showBank();
+        }
+
+        function withdrawGold() {
+            const amount = parseInt(document.getElementById('withdrawAmount').value);
+            const p = gameState.player;
+            
+            if (isNaN(amount) || amount <= 0) {
+                alert('Invalid amount!');
+                return;
+            }
+            
+            if (amount > (p.bankGold || 0)) {
+                alert('You don\'t have that much gold in the bank!');
+                return;
+            }
+            
+            p.bankGold -= amount;
+            p.gold += amount;
+            
+            saveGame();
+            showBank();
         }
 
         function showModemSettings() {
@@ -3977,6 +4190,9 @@ ${mapAscii}
            const ds = gameState.dungeon;
            if (!ds) return;
            
+           // Store combat state before clearing
+           const wasInCombat = !!gameState.combatState;
+           
            termClear();
            
            // Redraw current room
@@ -3990,6 +4206,14 @@ ${mapAscii}
            
            const exits = Object.keys(room.exits).map(d => d.toUpperCase()).join(', ');
            termAppend(`You see exits: ${exits}.`, 'term-dim');
+           
+           // If there was combat before viewing map, show enemy cards again
+           if (wasInCombat) {
+               renderEnemyCards();
+           } else {
+               // Check for enemies in room (if not already in combat)
+               checkEnemiesInRoom(ds.currentRoom);
+           }
            
            renderDungeonActionBar();
        }
@@ -4112,13 +4336,7 @@ ${mapAscii}
         term.style.paddingBottom = barHeight + 'px';
     }
 
-    // If in combat, use the regular combat action bar
-    if (gameState.combatState) {
-        renderActionBar();
-        return;
-    }
-
-    // Dungeon navigation owns the action bar when not in combat
+    // Clear action bar
     ab.innerHTML = '';
     ab.style.display = 'block';
 
@@ -4136,28 +4354,142 @@ ${mapAscii}
     const floor = dungeon.floors[ds.floor];
     const room = floor.rooms[ds.currentRoom];
 
-    // Entrance-only exit
+    const cs = gameState.combatState;
+    
+    // ═══ COMBAT BUTTONS (if in combat) ═══
+    if (cs) {
+        const maxHits  = cs.pipAvailable ? cs.pipAvailable.length : calcPlayerHits(gameState.player);
+        const hitsLeft = cs.pipAvailable ? cs.pipAvailable.filter(x => x).length : maxHits;
+        const canAct   = hitsLeft > 0;
+        const pips = '●'.repeat(hitsLeft) + '○'.repeat(maxHits - hitsLeft);
+        const mode = cs.actionMode || 'main';
+
+        const combatDiv = document.createElement('div');
+        combatDiv.style.cssText = 'border-bottom: 1px solid var(--border-color); padding-bottom: 6px; margin-bottom: 6px;';
+        
+        if (mode === 'main') {
+            combatDiv.innerHTML = `
+                <div style="color:var(--highlight-color);font-size:16px;margin-bottom:4px;text-align:center;">
+                    ⚔️ <span style="letter-spacing:2px;">${pips}</span> <span style="color:#8aaa8a;font-size:13px;">(${hitsLeft}/${maxHits})</span>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;">
+                    <button onclick="showAttackMenu()" ${!canAct?'disabled':''} style="min-width:50px;padding:6px;font-size:13px;">⚔️</button>
+                    <button onclick="showSpellMenu()"  ${!canAct?'disabled':''} style="min-width:50px;padding:6px;font-size:13px;">✨</button>
+                    <button onclick="showPotionMenu()" ${!canAct?'disabled':''} style="min-width:50px;padding:6px;font-size:13px;">🧪</button>
+                    <button onclick="playerDefend()"   ${!canAct?'disabled':''} style="min-width:50px;padding:6px;font-size:13px;">🛡️</button>
+                    <button onclick="attemptFlee()"    ${!canAct?'disabled':''} style="min-width:50px;padding:6px;font-size:13px;">🏃</button>
+                </div>
+            `;
+        } else if (mode === 'attack_type') {
+            const normalCost = 1;
+            const heavyCost = 2;
+            combatDiv.innerHTML = `
+                <div style="color:var(--highlight-color);font-size:14px;margin-bottom:4px;text-align:center;">ATTACK TYPE:</div>
+                <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;">
+                    <button onclick="selectAttackType('normal')" ${hitsLeft < normalCost?'disabled':''} style="min-width:65px;padding:6px;font-size:12px;">⚔️ Normal<br>(1 pip)</button>
+                    <button onclick="selectAttackType('heavy')" ${hitsLeft < heavyCost?'disabled':''} style="min-width:65px;padding:6px;font-size:12px;">💥 Heavy<br>(2 pips)</button>
+                    <button onclick="selectAttackType('special')" ${hitsLeft < 1?'disabled':''} style="min-width:65px;padding:6px;font-size:12px;">⭐ Special<br>(All)</button>
+                    <button onclick="cancelAction()" style="min-width:50px;padding:6px;font-size:13px;">❌</button>
+                </div>
+            `;
+        } else if (mode === 'target_attack' || mode === 'target_spell') {
+            const monsters = cs.monsters;
+            const targetBtns = monsters.map((m, i) => {
+                return `<button onclick="executeTargetedAction(${i})" style="min-width:80px;padding:6px;font-size:12px;background:linear-gradient(135deg,#0a3a0a,#0a2a0a);">
+                    #${i+1} ${m.name}<br><span style="font-size:11px;">HP: ${m.hp}/${m.maxHp}</span>
+                </button>`;
+            }).join('');
+            combatDiv.innerHTML = `
+                <div style="color:var(--highlight-color);font-size:14px;margin-bottom:4px;text-align:center;">TARGET:</div>
+                <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;">
+                    ${targetBtns}
+                    <button onclick="cancelAction()" style="min-width:50px;padding:6px;font-size:13px;">❌</button>
+                </div>
+            `;
+        } else if (mode === 'spell_list') {
+            const spells = gameState.player.knownSpells || [];
+            const spellBtns = spells.map(sk => {
+                const spell = SPELLS[sk];
+                return `<button onclick="selectSpell('${sk}')" ${!canAct || gameState.player.mp < spell.cost ? 'disabled' : ''} style="min-width:70px;padding:6px;font-size:12px;">
+                    ${spell.name}<br><span style="font-size:11px;">${spell.cost} MP</span>
+                </button>`;
+            }).join('');
+            combatDiv.innerHTML = `
+                <div style="color:var(--highlight-color);font-size:14px;margin-bottom:4px;text-align:center;">SPELL:</div>
+                <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;">
+                    ${spellBtns}
+                    <button onclick="cancelAction()" style="min-width:50px;padding:6px;font-size:13px;">❌</button>
+                </div>
+            `;
+        }
+        
+        ab.appendChild(combatDiv);
+    }
+
+    // ═══ NAVIGATION BUTTONS (always visible) ═══
+    const canMove = !cs || !cs.pipAvailable || cs.pipAvailable.every(x => x);
+    
+    // Show pip status if in combat/recovery
+    if (cs && cs.pipAvailable && !canMove) {
+        const available = cs.pipAvailable.filter(x => x).length;
+        const total = cs.pipAvailable.length;
+        const pips = '●'.repeat(available) + '○'.repeat(total - available);
+        
+        const statusDiv = document.createElement('div');
+        statusDiv.style.cssText = 'color:#8aaa8a;font-size:12px;margin-bottom:4px;text-align:center;';
+        statusDiv.innerHTML = `⏳ Resting to move: ${pips} (${available}/${total})`;
+        ab.appendChild(statusDiv);
+    }
+
+    // Create compact button container
+    const btnContainer = document.createElement('div');
+    btnContainer.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;justify-content:center;';
+
+    // Entrance exit button (always enabled)
     if (ds.currentRoom === floor.startRoom) {
         const exitBtn = document.createElement('button');
-        exitBtn.textContent = '⬅ Return to Town';
+        exitBtn.textContent = '⬅ Town';
         exitBtn.onclick = returnToTown;
-        ab.appendChild(exitBtn);
+        exitBtn.style.cssText = 'min-width:55px;padding:6px 8px;font-size:13px;';
+        btnContainer.appendChild(exitBtn);
     }
     
-    // MAP button (always available in dungeon)
+    // MAP button (always enabled)
     const mapBtn = document.createElement('button');
-    mapBtn.textContent = '🗺️ MAP';
+    mapBtn.textContent = '🗺️';
     mapBtn.onclick = showDungeonMap;
-    mapBtn.style.borderColor = 'var(--highlight-color)';
-    ab.appendChild(mapBtn);
+    mapBtn.style.cssText = 'min-width:40px;padding:6px 8px;font-size:13px;border-color:var(--highlight-color);';
+    btnContainer.appendChild(mapBtn);
 
-    // Directions (data-driven)
-    Object.keys(room.exits).forEach(dir => {
-        const btn = document.createElement('button');
-        btn.textContent = dir.toUpperCase();
-        btn.onclick = () => moveInDungeon(dir);
-        ab.appendChild(btn);
+    // Direction buttons (can be disabled)
+    const directionOrder = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw'];
+    const directionLabels = {
+        'n': 'N',
+        'ne': 'NE', 
+        'e': 'E',
+        'se': 'SE',
+        's': 'S',
+        'sw': 'SW',
+        'w': 'W',
+        'nw': 'NW'
+    };
+    
+    directionOrder.forEach(dir => {
+        if (room.exits[dir]) {
+            const btn = document.createElement('button');
+            btn.textContent = directionLabels[dir];
+            btn.onclick = () => moveInDungeon(dir);
+            btn.disabled = !canMove;
+            btn.style.cssText = 'min-width:42px;padding:6px 4px;font-size:13px;font-weight:bold;';
+            if (!canMove) {
+                btn.style.opacity = '0.4';
+                btn.style.cursor = 'not-allowed';
+            }
+            btnContainer.appendChild(btn);
+        }
     });
+
+    ab.appendChild(btnContainer);
 }
 
 
@@ -4171,6 +4503,13 @@ ${mapAscii}
         function renderActionBar() {
             const ab = document.getElementById('actionBar');
             showActionBar();
+            
+            // If in dungeon, always use dungeon action bar with combat overlay
+            if (gameState.dungeon) {
+                renderDungeonActionBar();
+                return;
+            }
+            
             if (gameState.combatState) {
                 const cs       = gameState.combatState;
                 const monsters = cs.monsters;
@@ -4570,10 +4909,16 @@ return;
 
 
 function moveInDungeon(direction) {
-    // Prevent movement during combat
-    if (gameState.combatState) {
-        termAppend(`⚔️ You are engaged in combat!`, 'term-error');
-        return;
+    // Check if player has full pips (required for movement)
+    const cs = gameState.combatState;
+    if (cs && cs.pipAvailable) {
+        const hasFullPips = cs.pipAvailable.every(x => x);
+        if (!hasFullPips) {
+            const available = cs.pipAvailable.filter(x => x).length;
+            const total = cs.pipAvailable.length;
+            termAppend(`⚡ You're too exhausted to move! (${available}/${total} pips restored)`, 'term-error');
+            return;
+        }
     }
 
     if (!gameState.dungeon) {
@@ -4667,28 +5012,28 @@ function checkEnemiesInRoom(roomId) {
 }
 
 function startDungeonCombat(dungeonEnemy) {
-    // Get the full enemy definition
-    const enemyDef = ENEMIES[dungeonEnemy.monsterId];
-    if (!enemyDef) {
-        console.error('Enemy definition not found:', dungeonEnemy.monsterId);
+    // Use the enemy's monsterId to start combat
+    if (!dungeonEnemy.monsterId) {
+        console.error('Dungeon enemy missing monsterId:', dungeonEnemy);
         return;
     }
     
-    // Create combat monster from dungeon enemy
-    const monster = createMonsterInstance(enemyDef);
-    
-    // Restore any saved HP from dungeon enemy
-    if (dungeonEnemy.hp !== undefined) {
-        monster.hp = dungeonEnemy.hp;
-        monster.maxHp = dungeonEnemy.maxHp || monster.hp;
-    }
-    
-    // Start normal combat
+    // Start normal combat using the monsterId
     startCombat([dungeonEnemy.monsterId]);
     
     // Link combat to dungeon enemy for persistence
     if (gameState.combatState) {
         gameState.combatState.dungeonEnemyId = dungeonEnemy.id;
+        
+        // If this enemy has saved HP, restore it to the combat monster
+        if (dungeonEnemy.hp !== undefined && dungeonEnemy.hp < dungeonEnemy.maxHp) {
+            const monster = gameState.combatState.monsters[0];
+            if (monster) {
+                monster.hp = dungeonEnemy.hp;
+                monster.maxHp = dungeonEnemy.maxHp;
+                console.log(`Restored dungeon enemy HP: ${monster.hp}/${monster.maxHp}`);
+            }
+        }
     }
     
     // 💾 Save combat state
@@ -5271,19 +5616,113 @@ function endCombat(victory) {
         clearInterval(gameState.combatTimer);
         gameState.combatTimer = null;
 
-        gameState.player.hp   = gameState.player.maxHp;
-        gameState.player.mp   = gameState.player.maxMp;
-        gameState.player.gold = Math.floor(gameState.player.gold / 2);
+        const p = gameState.player;
+        const inDungeon = !!gameState.dungeon;
 
-        gameState.combatState = null;
-        gameState.postCombatRecovery = false;
+        // Restore HP/MP
+        p.hp = p.maxHp;
+        p.mp = p.maxMp;
 
-        updateHud();
-        termAppend(
-            'You have been defeated… You wake up in town.',
-            'term-error',
-            () => setTimeout(() => { closeTerminalView(); showTown(); }, 1200)
-        );
+        if (inDungeon) {
+            // ═══════════════════════════════════════
+            // HARSH DUNGEON DEATH PENALTY
+            // ═══════════════════════════════════════
+            
+            // Lose 10% of TOTAL XP earned
+            const currentLevelXp = getXpForLevel(p.class, p.level);
+            const totalXpEarned = currentLevelXp + p.xp;
+            const xpLost = Math.floor(totalXpEarned * 0.10);
+            
+            // Calculate new total XP
+            let newTotalXp = totalXpEarned - xpLost;
+            if (newTotalXp < 0) newTotalXp = 0;
+            
+            // Find new level based on XP
+            let newLevel = 1;
+            for (let lvl = 25; lvl >= 1; lvl--) {
+                if (newTotalXp >= getXpForLevel(p.class, lvl)) {
+                    newLevel = lvl;
+                    break;
+                }
+            }
+            
+            const levelsLost = p.level - newLevel;
+            
+            // Apply level loss
+            if (levelsLost > 0) {
+                for (let i = 0; i < levelsLost; i++) {
+                    p.level--;
+                    
+                    // Reduce stats from level loss
+                    p.maxHp = Math.max(20, p.maxHp - 15 - (p.con || 0));
+                    p.maxMp = Math.max(10, p.maxMp - 10);
+                    p.strength = Math.max(1, p.strength - 2);
+                    p.defense = Math.max(1, p.defense - 2);
+                    p.magic = Math.max(1, p.magic - 2);
+                    p.speed = Math.max(1, p.speed - 1);
+                    
+                    if (p.str !== undefined) {
+                        p.str = Math.max(1, p.str - 1);
+                        p.dex = Math.max(1, p.dex - 1);
+                        p.wis = Math.max(1, p.wis - 1);
+                        p.cha = Math.max(1, p.cha - 1);
+                        p.con = Math.max(1, p.con - 1);
+                        p.lck = Math.max(1, p.lck - 1);
+                    }
+                }
+            }
+            
+            // Set XP to remainder after new level
+            const newLevelBaseXp = getXpForLevel(p.class, newLevel);
+            p.xp = newTotalXp - newLevelBaseXp;
+            p.xpToNext = getXpToNextLevel(p.class, newLevel);
+            
+            // Ensure XP doesn't go negative
+            if (p.xp < 0) p.xp = 0;
+            
+            // Lose ALL carried gold (bank is safe)
+            const goldLost = p.gold;
+            p.gold = 0;
+            
+            // Clear dungeon state - you're kicked out
+            gameState.dungeon = null;
+            
+            gameState.combatState = null;
+            gameState.postCombatRecovery = false;
+
+            updateHud();
+            
+            // Dramatic death message
+            let deathMsg = `<span style="color:var(--error-color);font-size:20px;">💀 YOU HAVE DIED 💀</span><br><br>`;
+            deathMsg += `<span style="color:#ff6666;">XP Lost: ${xpLost.toLocaleString()}</span><br>`;
+            if (levelsLost > 0) {
+                deathMsg += `<span style="color:#ff3333;">LEVELS LOST: ${levelsLost}!</span><br>`;
+            }
+            deathMsg += `<span style="color:#ffaa00;">Gold Lost: ${goldLost} (Bank is safe)</span><br><br>`;
+            deathMsg += `<span style="color:#888;">You wake up in town, broken and defeated...</span>`;
+            
+            termAppend(deathMsg, 'term-error', () => {
+                setTimeout(() => { 
+                    closeTerminalView(); 
+                    showTown();
+                    // Auto-save the harsh penalty
+                    saveGame();
+                }, 3000);
+            });
+        } else {
+            // Standard overworld death - just lose 50% gold
+            p.gold = Math.floor(p.gold / 2);
+            
+            gameState.combatState = null;
+            gameState.postCombatRecovery = false;
+
+            updateHud();
+            termAppend(
+                'You have been defeated… You wake up in town.',
+                'term-error',
+                () => setTimeout(() => { closeTerminalView(); showTown(); }, 1200)
+            );
+        }
         return;
     }
 
@@ -5373,9 +5812,16 @@ function endCombat(victory) {
         termAppend('No items dropped…', 'term-dim');
     }
 
-    if (gameState.player.xp >= gameState.player.xpToNext) {
+    // Check for level-up (possibly multiple levels)
+    while (gameState.player.xp >= gameState.player.xpToNext && gameState.player.level < 25) {
         levelUp();
         termAppend(`⬆️ LEVEL UP! You are now level ${gameState.player.level}!`, 'term-victory');
+    }
+    
+    // Max level message
+    if (gameState.player.level >= 25 && gameState.player.xp >= gameState.player.xpToNext) {
+        termAppend(`🌟 You have reached MAX LEVEL! (25)`, 'term-victory');
+        gameState.player.xp = gameState.player.xpToNext; // Cap XP
     }
 
     updateHud();
@@ -5395,20 +5841,19 @@ gameState.postCombatRecovery = true;
     
     // Check if we're in a dungeon
     if (gameState.dungeon) {
-        ab.innerHTML = `
-            <button onclick="continueDungeonExploration()">🔍 CONTINUE EXPLORING</button>
-            <button onclick="returnToTown()">🏘️ RETURN TO TOWN</button>`;
+        // Dungeon handles its own buttons - just render them
+        renderDungeonActionBar();
     } else if (isMaster) {
         ab.innerHTML = `
             <button onclick="tryViewWorldMap()">🗺️ VIEW WORLD MAP</button>
             <button onclick="tryGoBackToTown()">🏘️ RETURN TO TOWN</button>`;
+        renderActionBar();
     } else {
         ab.innerHTML = `
             <button onclick="tryExploreLocation('${gameState.currentLocation}')">🔍 CONTINUE EXPLORING</button>
             <button onclick="tryGoBackToTown()">🏘️ RETURN TO TOWN</button>`;
+        renderActionBar();
     }
-
-    renderActionBar();
 
     if (!gameState.combatTimer) {
         startCombatTimer();
@@ -5420,13 +5865,17 @@ gameState.postCombatRecovery = true;
 // (used by navigation actions)
 // ═══════════════════════════════════════════════════════════════
 function continueDungeonExploration() {
-    if (!isFullyRested()) {
-        termAppend('<span style="color:var(--error-color);">You are too exhausted to continue! Wait for your charges to restore…</span>', 'term-error');
-        return;
-    }
-    // Clear combat state and return to dungeon navigation
+    // Clear combat state and show dungeon navigation
     gameState.combatState = null;
     gameState.postCombatRecovery = false;
+    
+    // Clear combat timer
+    if (gameState.combatTimer) {
+        clearInterval(gameState.combatTimer);
+        gameState.combatTimer = null;
+    }
+    
+    // Return to dungeon navigation
     renderDungeonActionBar();
 }
 
@@ -5440,9 +5889,18 @@ function playerIsExhausted() {
 }
         function levelUp() {
             const p = gameState.player;
+            
+            // Cap at level 25
+            if (p.level >= 25) {
+                p.xp = p.xpToNext; // Keep at max
+                return;
+            }
+            
             p.level++;
             p.xp -= p.xpToNext;
-            p.xpToNext = Math.floor(p.xpToNext * 1.5);
+            
+            // Update xpToNext using class-specific table
+            p.xpToNext = getXpToNextLevel(p.class, p.level);
 
             // legacy base stats
             p.maxHp += 15 + (p.con||0);   // CON scales HP gain
