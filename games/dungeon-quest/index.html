@@ -2384,10 +2384,6 @@ window.addEventListener('beforeunload', () => {
                     // Auto-load character that was in a dungeon (prevent cheating!)
                     console.log('🏰 Auto-restoring dungeon session:', dungeonChar.name);
                     loadCharacter(dungeonChar.id);
-                    
-                    //Added to reload the terminal window
-                    document.body.classList.add("terminal-mode");
-
                     return;
                 }
                 
@@ -2543,12 +2539,44 @@ window.addEventListener('beforeunload', () => {
                 
                 // Restore dungeon state if applicable
                 if (data.meta?.inDungeon && data.dungeon) {
+                    // Check if DUNGEONS is loaded
+                    if (typeof DUNGEONS === 'undefined') {
+                        console.error('⚠️ DUNGEONS not loaded! Check dungeon-data.js for syntax errors.');
+                        alert('Error: Dungeon data failed to load. Please check the console for errors.');
+                        showTown();
+                        return;
+                    }
+                    
+                    console.log('🔍 Loading dungeon:', data.dungeon.dungeonKey);
+                    console.log('📦 Available dungeons:', Object.keys(DUNGEONS));
+                    
+                    let dungeonKey = data.dungeon.dungeonKey;
+                    
+                    // Migrate old dungeon keys if needed
+                    if (!DUNGEONS[dungeonKey]) {
+                        console.warn(`⚠️ Dungeon "${dungeonKey}" not found. Attempting migration...`);
+                        // If there's only one dungeon available, use it
+                        const availableDungeons = Object.keys(DUNGEONS);
+                        if (availableDungeons.length > 0) {
+                            dungeonKey = availableDungeons[0];
+                            console.log(`✅ Migrated to dungeon: ${dungeonKey}`);
+                        } else {
+                            console.error('❌ No dungeons available!');
+                            alert('Error: No dungeons found. Returning to town.');
+                            gameState.dungeon = null;
+                            showTown();
+                            return;
+                        }
+                    }
+                    
+                    const dungeon = DUNGEONS[dungeonKey];
+                    
                     gameState.dungeon = {
-                        dungeonKey: data.dungeon.dungeonKey,
+                        dungeonKey: dungeonKey,
                         floor: data.dungeon.floor,
                         currentRoom: data.dungeon.currentRoom,
                         discoveredRooms: new Set(data.dungeon.discoveredRooms),
-                        activeEnemies: data.dungeon.activeEnemies.map(e => ({
+                        activeEnemies: (data.dungeon.activeEnemies || []).map(e => ({
                             ...e,
                             isChasing: false,
                             roomsFollowed: 0
@@ -2556,11 +2584,25 @@ window.addEventListener('beforeunload', () => {
                     };
                     
                     // Open dungeon UI
-                    openTerminalView(data.dungeon.dungeonKey);
+                    openTerminalView(dungeonKey);
                     
-                    const dungeon = DUNGEONS[data.dungeon.dungeonKey];
                     const floor = dungeon.floors[data.dungeon.floor];
+                    if (!floor) {
+                        console.error(`⚠️ Floor ${data.dungeon.floor} not found!`);
+                        alert('Error: Invalid dungeon floor. Returning to town.');
+                        gameState.dungeon = null;
+                        showTown();
+                        return;
+                    }
+                    
                     const room = floor.rooms[data.dungeon.currentRoom];
+                    if (!room) {
+                        console.error(`⚠️ Room ${data.dungeon.currentRoom} not found!`);
+                        alert('Error: Invalid dungeon room. Returning to town.');
+                        gameState.dungeon = null;
+                        showTown();
+                        return;
+                    }
                     
                     termAppend('', 'term-separator');
                     termAppend(`<strong>${room.name}</strong>`);
@@ -3758,6 +3800,13 @@ ab.style.display = 'block';
     const ds = gameState.dungeon;
     if (!ds) return;
 
+    // Safety check for DUNGEONS
+    if (typeof DUNGEONS === 'undefined') {
+        console.error('⚠️ DUNGEONS not loaded!');
+        ab.innerHTML = '<button onclick="returnToTown()">⚠️ ERROR - Return to Town</button>';
+        return;
+    }
+
     const dungeon = DUNGEONS[ds.dungeonKey];
     const floor = dungeon.floors[ds.floor];
     const room = floor.rooms[ds.currentRoom];
@@ -3768,10 +3817,6 @@ ab.style.display = 'block';
         exitBtn.textContent = '⬅ Return to Town';
         exitBtn.onclick = returnToTown;
         ab.appendChild(exitBtn);
-
-//Added to refresh the terminal window
-        document.body.classList.add("terminal-mode");
-
     }
 
     // Directions (data-driven)
@@ -4275,48 +4320,48 @@ function checkEnemiesInRoom(roomId) {
     if (!ds || !ds.activeEnemies) return;
 
     // Find enemy in current room
-   // const enemyHere = ds.activeEnemies.find(e => e.currentRoom === roomId);
+    const enemyHere = ds.activeEnemies.find(e => e.currentRoom === roomId);
     
-    //if (enemyHere) {
+    if (enemyHere) {
         // AUTO-ENGAGE COMBAT!
-      //  termAppend(
-        //    `⚔️ <strong>${enemyHere.name}</strong> confronts you!`,
-          //  'term-warning'
-       // );
+        termAppend(
+            `⚔️ <strong>${enemyHere.name}</strong> confronts you!`,
+            'term-warning'
+        );
         
         // Start combat with this dungeon enemy
-        //startDungeonCombat(enemyHere);
-   // }
+        startDungeonCombat(enemyHere);
+    }
 }
 
-//function startDungeonCombat(dungeonEnemy) {
+function startDungeonCombat(dungeonEnemy) {
     // Get the full enemy definition
-  //  const enemyDef = ENEMIES[dungeonEnemy.monsterId];
-   // if (!enemyDef) {
-     //   console.error('Enemy definition not found:', dungeonEnemy.monsterId);
-       // return;
-   // }
+    const enemyDef = ENEMIES[dungeonEnemy.monsterId];
+    if (!enemyDef) {
+        console.error('Enemy definition not found:', dungeonEnemy.monsterId);
+        return;
+    }
     
     // Create combat monster from dungeon enemy
-    //const monster = createMonsterInstance(enemyDef);
+    const monster = createMonsterInstance(enemyDef);
     
     // Restore any saved HP from dungeon enemy
-    //if (dungeonEnemy.hp !== undefined) {
-      //  monster.hp = dungeonEnemy.hp;
-        //monster.maxHp = dungeonEnemy.maxHp || monster.hp;
-    //}
+    if (dungeonEnemy.hp !== undefined) {
+        monster.hp = dungeonEnemy.hp;
+        monster.maxHp = dungeonEnemy.maxHp || monster.hp;
+    }
     
     // Start normal combat
-    //startCombat([dungeonEnemy.monsterId]);
+    startCombat([dungeonEnemy.monsterId]);
     
     // Link combat to dungeon enemy for persistence
-    //if (gameState.combatState) {
-      //  gameState.combatState.dungeonEnemyId = dungeonEnemy.id;
-    //}
+    if (gameState.combatState) {
+        gameState.combatState.dungeonEnemyId = dungeonEnemy.id;
+    }
     
     // 💾 Save combat state
     saveGame();
-//}
+}
 
 
 // ─────────────────────────────────────────
