@@ -5688,11 +5688,11 @@ function consumePips(cs, amount, cooldown) {
 }
 
         
-       function executeAttack(attackType) {
+     function executeAttack(attackType) {
     const cs = gameState.combatState;
     if (!cs) return;
 
-    const p = gameState.player;
+    const p  = gameState.player;
     const ti = cs.currentTarget;
     const enemy = cs.monsters[ti];
     const weapon = WEAPONS[p.weapon];
@@ -5703,10 +5703,9 @@ function consumePips(cs, amount, cooldown) {
     let damageMultiplier = 1;
     let attackName = 'attacks';
     let armorPiercing = 0;
-    
+
     if (attackType === 'normal') {
         pipCost = 1;
-        damageMultiplier = 1;
     } 
     else if (attackType === 'heavy') {
         pipCost = 2;
@@ -5729,20 +5728,21 @@ function consumePips(cs, amount, cooldown) {
         return;
     }
 
-    // Consume melee pips
+    // Consume pips
     consumePips(cs, pipCost, getPipCooldown(p));
 
     // Calculate base damage
     let weaponDamage = weapon.baseDamage + qBonus;
-    
+
     if (p.level <= 5) {
         weaponDamage = Math.floor(
             weaponDamage * DAMAGE_SCALING.playerStarterWeaponMult
         );
     }
-    
+
     const physicalBase =
         weaponDamage + (p.strength || 0) + (p.str || 0);
+
     const magicBase =
         (weapon.baseMagicDamage + qBonus) +
         Math.floor((p.magic || 0) / 2);
@@ -5770,28 +5770,51 @@ function consumePips(cs, amount, cooldown) {
         : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
 
     if (result.dodged) {
-        termAppend(`You ${attackName} but ${tName} <span style="color:#88ff88;">DODGES!</span>`);
-    } else {
+        termAppend(
+            `You ${attackName} but ${tName} <span style="color:#88ff88;">DODGES!</span>`
+        );
+    } 
+    else {
         const critTag = result.crit
             ? ' <span style="color:#FFD700;">★ CRITICAL HIT!</span>'
             : '';
+
         enemy.hp -= result.damage;
+
+        // Calculate condition text
+        const hpPct = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
+        let condition = 'healthy';
+        if (hpPct < 75) condition = 'injured';
+        if (hpPct < 50) condition = 'wounded';
+        if (hpPct < 25) condition = 'severely wounded';
+        if (hpPct < 10) condition = 'barely standing';
+
         termAppend(
             `You ${attackName} ${tName} for <span class="dmg-enemy">${result.damage} damage!</span>${critTag}`,
             null,
             () => {
-                checkCombatEnd();
+
+                if (enemy.hp > 0) {
+                    termAppend(
+                        `→ ${tName} is <span style="color:#8aaa8a;">${condition}</span>`,
+                        'term-dim'
+                    );
+                }
+
                 updateEnemyCards();
                 updateHud();
                 renderActionBar();
+                checkCombatEnd();
             }
         );
     }
 
+    // Immediate UI update for responsiveness
     updateEnemyCards();
     updateHud();
     renderActionBar();
 }
+
 
 
        // Legacy function kept for compatibility
@@ -5864,9 +5887,7 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 const tName = cs.monsters.length > 1
                     ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${ti+1}</span>`
                     : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
-                updateEnemyCards();
-                updateHud();
-                renderActionBar();
+              
                 const critTag = crit ? ' <span style="color:#FFD700;">★ CRIT!</span>' : '';
                 const hpPct = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
                 let condition = 'healthy';
@@ -5881,6 +5902,10 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                     checkCombatEnd();
                 });
             }
+              updateEnemyCards();
+                updateHud();
+                renderActionBar();
+            
             cs.pendingSpellKey = null;
         }
 
