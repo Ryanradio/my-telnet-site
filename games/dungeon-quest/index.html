@@ -1356,65 +1356,73 @@ const OPPOSITE_DIR = {
         };
 
         const LOCATIONS = {
-            town: {
-                name: 'Silverdale Town',
-                description: 'A peaceful town with shops and an inn. Your adventure begins here.',
-                canRest: true,
-                hasShop: true
-            },
-            forest: {
-                name: 'Whispering Forest',
-                description: 'A dark forest filled with minor creatures.',
-                enemyLevelRange: [1, 5],
-                encounters: ['goblin', 'wolf', 'giant_spider'],
-                requiredLevel: 1,
-                locked: false
-            },
-            plains: {
-                name: 'Endless Plains',
-                description: 'Open grasslands with roaming beasts.',
-                enemyLevelRange: [6, 10],
-                encounters: ['orc', 'dire_wolf', 'bandit'],
-                requiredLevel: 6,
-                locked: true,
-                unlockMessage: 'Defeat your class master in the forest to unlock this area!'
-            },
-            cave: {
-                name: 'Shadow Cavern',
-                description: 'A dungeon filled with dangerous monsters.',
-                enemyLevelRange: [11, 15],
-                encounters: ['troll', 'skeleton_warrior', 'dark_mage'],
-                requiredLevel: 11,
-                locked: true,
-                unlockMessage: 'Defeat your class master in the plains to unlock this area!'
-            },
-            crypt: {
-                name: 'Ancient Crypt',
-                description: 'An ancient tomb haunted by the undead.',
-                enemyLevelRange: [16, 20],
-                encounters: ['lich', 'death_knight', 'wraith'],
-                requiredLevel: 16,
-                locked: true,
-                unlockMessage: 'Defeat your class master in the cave to unlock this area!'
-            },
-            volcano: {
-                name: 'Volcanic Wastes',
-                description: 'A scorched wasteland of fire and ash.',
-                enemyLevelRange: [21, 25],
-                encounters: ['fire_elemental', 'lava_golem', 'phoenix'],
-                requiredLevel: 21,
-                locked: true,
-                unlockMessage: 'Defeat your class master in the crypt to unlock this area!'
-            }
-                name: 'Fire Mountain',
-                description: 'A volcanic peak home to fierce creatures.',
-                enemyLevelRange: [8, 12],
-                encounters: ['fire_elemental', 'red_dragon', 'demon'],
-                requiredLevel: 12,
-                locked: true,
-                unlockMessage: 'Defeat your class master in the crypt to unlock this area!'
-            }
-        };
+    town: {
+        name: 'Silverdale Town',
+        description: 'A peaceful town with shops and an inn. Your adventure begins here.',
+        canRest: true,
+        hasShop: true
+    },
+
+    forest: {
+        name: 'Whispering Forest',
+        description: 'A dark forest filled with minor creatures.',
+        enemyLevelRange: [1, 5],
+        encounters: ['goblin', 'wolf', 'giant_spider'],
+        requiredLevel: 1,
+        locked: false
+    },
+
+    plains: {
+        name: 'Endless Plains',
+        description: 'Open grasslands with roaming beasts.',
+        enemyLevelRange: [6, 10],
+        encounters: ['orc', 'dire_wolf', 'bandit'],
+        requiredLevel: 6,
+        locked: true,
+        unlockMessage: 'Defeat your class master in the forest to unlock this area!'
+    },
+
+    cave: {
+        name: 'Shadow Cavern',
+        description: 'A dungeon filled with dangerous monsters.',
+        enemyLevelRange: [11, 15],
+        encounters: ['troll', 'skeleton_warrior', 'dark_mage'],
+        requiredLevel: 11,
+        locked: true,
+        unlockMessage: 'Defeat your class master in the plains to unlock this area!'
+    },
+
+    crypt: {
+        name: 'Ancient Crypt',
+        description: 'An ancient tomb haunted by the undead.',
+        enemyLevelRange: [16, 20],
+        encounters: ['lich', 'death_knight', 'wraith'],
+        requiredLevel: 16,
+        locked: true,
+        unlockMessage: 'Defeat your class master in the cave to unlock this area!'
+    },
+
+    volcano: {
+        name: 'Volcanic Wastes',
+        description: 'A scorched wasteland of fire and ash.',
+        enemyLevelRange: [21, 25],
+        encounters: ['fire_elemental', 'lava_golem', 'phoenix'],
+        requiredLevel: 21,
+        locked: true,
+        unlockMessage: 'Defeat your class master in the crypt to unlock this area!'
+    },
+
+    fireMountain: {
+        name: 'Fire Mountain',
+        description: 'A volcanic peak home to fierce creatures.',
+        enemyLevelRange: [8, 12],
+        encounters: ['fire_elemental', 'red_dragon', 'demon'],
+        requiredLevel: 12,
+        locked: true,
+        unlockMessage: 'Defeat your class master in the crypt to unlock this area!'
+    }
+};
+
 
         // ═══════════════════════════════════════════════════════════════
         // MODEM SPEED SIMULATION
@@ -2167,7 +2175,8 @@ window.addEventListener('beforeunload', () => {
             terminalPrint('');
             terminalPrint('PLAYER COMMANDS:');
             terminalPrint('  /give <type> <id>     - Give item (weapon/armor/item/spell)');
-            terminalPrint('  /setlevel <level>     - Set player level');
+            terminalPrint('  /setlevel <level>     - Set player level (1-25)');
+            terminalPrint('                          ⚡ Level 20 triggers class evolution!');
             terminalPrint('  /setgold <amount>     - Set gold amount');
             terminalPrint('  /heal                 - Fully heal player');
             terminalPrint('  /godmode <on/off>     - Toggle invincibility');
@@ -2259,15 +2268,82 @@ window.addEventListener('beforeunload', () => {
                 return;
             }
 
-            const level = parseInt(args[0]);
-            if (isNaN(level) || level < 1 || level > 99) {
-                terminalPrint('ERROR: Invalid level. Use 1-99', 'error');
+            const targetLevel = parseInt(args[0]);
+            if (isNaN(targetLevel) || targetLevel < 1 || targetLevel > 25) {
+                terminalPrint('ERROR: Invalid level. Use 1-25', 'error');
                 return;
             }
 
-            gameState.player.level = level;
-            gameState.player.xpToNext = Math.floor(100 * Math.pow(1.5, level - 1));
-            terminalPrint(`SUCCESS: Set player level to ${level}`, 'success');
+            const p = gameState.player;
+            const currentLevel = p.level;
+            
+            // Calculate how many levels to add
+            const levelsToAdd = targetLevel - currentLevel;
+            
+            if (levelsToAdd === 0) {
+                terminalPrint(`Player is already level ${targetLevel}`, 'info');
+                return;
+            }
+            
+            // Apply level-ups manually
+            for (let i = 0; i < Math.abs(levelsToAdd); i++) {
+                if (levelsToAdd > 0) {
+                    // Level up
+                    p.level++;
+                    p.maxHp += 15 + (p.con || 0);
+                    p.hp = p.maxHp;
+                    p.maxMp += 10;
+                    p.mp = p.maxMp;
+                    p.strength += 2;
+                    p.defense += 2;
+                    p.magic += 2;
+                    p.speed += 1;
+                    
+                    if (p.str !== undefined) {
+                        p.str++; p.dex++; p.wis++; p.cha++; p.con++; p.lck++;
+                        if (p.class === 'paladin' || p.baseClass === 'paladin') { 
+                            p.str++; p.wis++; 
+                        }
+                    }
+                    
+                    // Check for class evolution at 20
+                    if (p.level === 20 && evolveClass(p)) {
+                        const evolution = ADVANCED_CLASSES[p.baseClass];
+                        terminalPrint(`⚡ CLASS EVOLUTION! ${evolution.announcement}`, 'success');
+                    }
+                } else {
+                    // Level down
+                    p.level--;
+                    p.maxHp = Math.max(20, p.maxHp - 15 - (p.con || 0));
+                    p.hp = Math.min(p.hp, p.maxHp);
+                    p.maxMp = Math.max(10, p.maxMp - 10);
+                    p.mp = Math.min(p.mp, p.maxMp);
+                    p.strength = Math.max(1, p.strength - 2);
+                    p.defense = Math.max(1, p.defense - 2);
+                    p.magic = Math.max(1, p.magic - 2);
+                    p.speed = Math.max(1, p.speed - 1);
+                    
+                    if (p.str !== undefined) {
+                        p.str = Math.max(1, p.str - 1);
+                        p.dex = Math.max(1, p.dex - 1);
+                        p.wis = Math.max(1, p.wis - 1);
+                        p.cha = Math.max(1, p.cha - 1);
+                        p.con = Math.max(1, p.con - 1);
+                        p.lck = Math.max(1, p.lck - 1);
+                    }
+                }
+            }
+            
+            // Update XP to next
+            p.xpToNext = getXpToNextLevel(p.baseClass || p.class, p.level);
+            p.xp = 0; // Reset XP within level
+            
+            updateHud();
+            terminalPrint(`SUCCESS: Set player level to ${targetLevel}`, 'success');
+            
+            if (p.hasEvolved) {
+                terminalPrint(`Player is now a ${getAdvancedClassName(p)} with ${getClassDamageMultiplier(p)}x damage!`, 'info');
+            }
         }
 
         function handleSetGold(args) {
@@ -3414,11 +3490,16 @@ window.addEventListener('beforeunload', () => {
             const hpPercent = (p.hp / p.maxHp) * 100;
             const mpPercent = (p.mp / p.maxMp) * 100;
             const xpPercent = (p.xp / p.xpToNext) * 100;
+            
+            // Show advanced class name if evolved
+            const displayClass = p.hasEvolved 
+                ? `<span style="color:#FF00FF;font-weight:bold;">${getAdvancedClassName(p)}</span>`
+                : p.className;
 
             return `
                 <div class="stats-bar">
                     <div>
-                        <span class="stat-label">${p.name}</span> - Level ${p.level} ${p.className}
+                        <span class="stat-label">${p.name}</span> - Level ${p.level} ${displayClass}
                     </div>
                     <div>
                         <span class="stat-label">Gold:</span> ${p.gold}
@@ -5507,7 +5588,11 @@ function selectEnemyIntent(enemy) {
     
     const physicalBase = weaponDamage + (p.strength || 0) + (p.str || 0);
     const magicBase = (weapon.baseMagicDamage + qBonus) + Math.floor((p.magic || 0) / 2);
-    const totalBase = Math.floor((physicalBase + magicBase) * damageMultiplier);
+    let totalBase = Math.floor((physicalBase + magicBase) * damageMultiplier);
+    
+    // Apply advanced class damage multiplier (2x+ at level 20)
+    const classMult = getClassDamageMultiplier(p);
+    totalBase = Math.floor(totalBase * classMult);
 
     // Damage resolution
     const result = calculateDamage({
@@ -6089,6 +6174,16 @@ function endCombat(victory) {
     while (gameState.player.xp >= gameState.player.xpToNext && gameState.player.level < 25) {
         levelUp();
         termAppend(`⬆️ LEVEL UP! You are now level ${gameState.player.level}!`, 'term-victory');
+        
+        // Check for class evolution announcement
+        if (gameState.player._justEvolved) {
+            termAppend('', 'term-separator');
+            termAppend(`<span style="color:#FF00FF;font-size:24px;font-weight:bold;">⚡ CLASS EVOLUTION! ⚡</span>`, 'term-victory');
+            termAppend(gameState.player._evolutionMessage, 'term-victory');
+            termAppend(`<span style="color:#FFD700;">Your power has DOUBLED!</span>`, 'term-loot');
+            gameState.player._justEvolved = false;
+            gameState.player._evolutionMessage = null;
+        }
     }
     
     // Max level message
@@ -6163,6 +6258,158 @@ function playerIsExhausted() {
 
     return cs.pipAvailable.some(p => !p);
 }
+        // ═══════════════════════════════════════════════════════════════
+        // ADVANCED CLASS EVOLUTION (Level 20)
+        // ═══════════════════════════════════════════════════════════════
+        const ADVANCED_CLASSES = {
+            warrior: {
+                advancedClass: 'warlord',
+                advancedName: 'Warlord',
+                description: 'Master of all weapons and combat. Unstoppable in battle.',
+                damageMultiplier: 2.0,
+                bonusStats: { str: 10, con: 10, dex: 5 },
+                newSpells: ['battle_fury', 'titan_strike'],
+                announcement: '⚔️ You have mastered the art of war! You are now a WARLORD!'
+            },
+            rogue: {
+                advancedClass: 'shadowmaster',
+                advancedName: 'Shadowmaster',
+                description: 'Master assassin who strikes from the void itself.',
+                damageMultiplier: 2.5,
+                bonusStats: { dex: 15, lck: 10, str: 5 },
+                newSpells: ['shadow_strike', 'void_step'],
+                announcement: '🗡️ You have become one with the shadows! You are now a SHADOWMASTER!'
+            },
+            acolyte: {
+                advancedClass: 'high_priest',
+                advancedName: 'High Priest',
+                description: 'Chosen of the divine, wielding ultimate holy power.',
+                damageMultiplier: 2.0,
+                bonusStats: { wis: 15, cha: 10, con: 5 },
+                newSpells: ['divine_judgment', 'mass_resurrection', 'holy_nova'],
+                announcement: '✨ The gods have chosen you! You are now a HIGH PRIEST!'
+            },
+            necrolyte: {
+                advancedClass: 'lich',
+                advancedName: 'Lich',
+                description: 'Immortal master of death itself. Reality bends to your will.',
+                damageMultiplier: 2.0,
+                bonusStats: { wis: 15, magic: 10, con: 5 },
+                newSpells: ['death_wave', 'summon_undead_army', 'soul_drain'],
+                announcement: '💀 You have transcended mortality! You are now a LICH!'
+            },
+            archer: {
+                advancedClass: 'deadeye',
+                advancedName: 'Deadeye',
+                description: 'Perfect marksman whose arrows never miss their mark.',
+                damageMultiplier: 2.3,
+                bonusStats: { dex: 15, lck: 10, str: 5 },
+                newSpells: ['piercing_shot', 'rain_of_arrows'],
+                announcement: '🏹 Your aim is now perfect! You are now a DEADEYE!'
+            },
+            druid: {
+                advancedClass: 'archdruid',
+                advancedName: 'Archdruid',
+                description: 'Master of nature and the primal forces of creation.',
+                damageMultiplier: 2.0,
+                bonusStats: { wis: 15, con: 10, str: 5 },
+                newSpells: ['natures_wrath', 'wild_shape', 'earthquake'],
+                announcement: '🌿 Nature itself answers your call! You are now an ARCHDRUID!'
+            },
+            sorceror: {
+                advancedClass: 'archmage',
+                advancedName: 'Archmage',
+                description: 'Master of all magic. Reality itself obeys your command.',
+                damageMultiplier: 2.5,
+                bonusStats: { wis: 20, magic: 15, cha: 5 },
+                newSpells: ['apocalypse', 'time_stop', 'disintegrate'],
+                announcement: '🔮 You have mastered all magic! You are now an ARCHMAGE!'
+            },
+            hunter: {
+                advancedClass: 'beastlord',
+                advancedName: 'Beastlord',
+                description: 'Master of beasts and the wild. Animals bow to your command.',
+                damageMultiplier: 2.2,
+                bonusStats: { dex: 12, str: 8, con: 8, wis: 5 },
+                newSpells: ['beast_stampede', 'primal_bond'],
+                announcement: '🐺 All beasts obey you! You are now a BEASTLORD!'
+            },
+            rogue: {
+                advancedClass: 'shadowmaster',
+                advancedName: 'Shadowmaster',
+                description: 'Master assassin who strikes from the void itself.',
+                damageMultiplier: 2.5,
+                bonusStats: { dex: 15, lck: 10, str: 5 },
+                newSpells: ['shadow_strike', 'void_step'],
+                announcement: '🗡️ You have become one with the shadows! You are now a SHADOWMASTER!'
+            },
+            paladin: {
+                advancedClass: 'crusader',
+                advancedName: 'Crusader',
+                description: 'Holy warrior blessed by the gods themselves.',
+                damageMultiplier: 2.2,
+                bonusStats: { str: 10, wis: 10, con: 8, cha: 5 },
+                newSpells: ['holy_crusade', 'divine_shield', 'smite_evil'],
+                announcement: '⚡ The heavens bless your crusade! You are now a CRUSADER!'
+            }
+        };
+
+        function evolveClass(player) {
+            if (player.level !== 20) return false;
+            if (player.hasEvolved) return false; // Already evolved
+            
+            const baseClass = player.class;
+            const evolution = ADVANCED_CLASSES[baseClass];
+            
+            if (!evolution) return false;
+            
+            // Store original class
+            player.baseClass = baseClass;
+            player.class = evolution.advancedClass;
+            player.className = evolution.advancedName;
+            player.hasEvolved = true;
+            
+            // Apply bonus stats
+            Object.keys(evolution.bonusStats).forEach(stat => {
+                if (player[stat] !== undefined) {
+                    player[stat] += evolution.bonusStats[stat];
+                }
+            });
+            
+            // Apply damage multiplier
+            player.advancedClassMultiplier = evolution.damageMultiplier;
+            
+            // Add new spells
+            evolution.newSpells.forEach(spell => {
+                if (!player.knownSpells.includes(spell)) {
+                    player.knownSpells.push(spell);
+                }
+            });
+            
+            // Heal to full and boost HP/MP
+            player.maxHp = Math.floor(player.maxHp * 1.5);
+            player.maxMp = Math.floor(player.maxMp * 1.5);
+            player.hp = player.maxHp;
+            player.mp = player.maxMp;
+            
+            return true;
+        }
+
+        function getAdvancedClassName(player) {
+            if (player.hasEvolved && ADVANCED_CLASSES[player.baseClass]) {
+                return ADVANCED_CLASSES[player.baseClass].advancedName;
+            }
+            return player.className || player.class;
+        }
+
+        function getClassDamageMultiplier(player) {
+            return player.advancedClassMultiplier || 1.0;
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // END ADVANCED CLASS SYSTEM
+        // ═══════════════════════════════════════════════════════════════
+
         function levelUp() {
             const p = gameState.player;
             
@@ -6176,7 +6423,7 @@ function playerIsExhausted() {
             p.xp -= p.xpToNext;
             
             // Update xpToNext using class-specific table
-            p.xpToNext = getXpToNextLevel(p.class, p.level);
+            p.xpToNext = getXpToNextLevel(p.baseClass || p.class, p.level);
 
             // legacy base stats
             p.maxHp += 15 + (p.con||0);   // CON scales HP gain
@@ -6192,7 +6439,17 @@ function playerIsExhausted() {
             if (p.str !== undefined) {
                 p.str++; p.dex++; p.wis++; p.cha++; p.con++; p.lck++;
                 // paladin bonus: extra +1 to both STR and WIS
-                if (p.class === 'paladin') { p.str++; p.wis++; }
+                if (p.class === 'paladin' || p.baseClass === 'paladin') { p.str++; p.wis++; }
+            }
+            
+            // ═══════════════════════════════════════════════════════════════
+            // CHECK FOR CLASS EVOLUTION AT LEVEL 20
+            // ═══════════════════════════════════════════════════════════════
+            if (p.level === 20 && evolveClass(p)) {
+                const evolution = ADVANCED_CLASSES[p.baseClass];
+                // Evolution message will be shown in endCombat
+                p._justEvolved = true;
+                p._evolutionMessage = evolution.announcement;
             }
 
             // Learn new spells
