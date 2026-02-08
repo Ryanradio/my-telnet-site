@@ -4471,7 +4471,7 @@ function stabilizeTerminalLayout() {
             // ═══════════════════════════════════════════════════════════════
             if (typeof rollForAdventure !== 'undefined') {
                 const adventureRoll = Math.random();
-                const adventureThreshold = location.adventureChance = 1; // FORCE 100% FOR TESTING
+                const adventureThreshold = location.adventureChance = .05; // FORCE 100% = 1 FOR TESTING
                 
                 if (adventureRoll < adventureThreshold) {
                     const adventure = rollForAdventure(p.level);
