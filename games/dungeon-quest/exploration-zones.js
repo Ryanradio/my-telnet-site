@@ -21,7 +21,7 @@ const EXPLORATION_ZONES = {
         enemyLevelRange: [2, 6],
         encounters: ['river_troll', 'swamp_lurker', 'giant_frog', 'water_snake'],
         requiredLevel: 2,
-        locked: false,
+        locked: false, // Auto-unlocks at level 2
         adventureChance: 0.04
     },
 
@@ -45,7 +45,7 @@ const EXPLORATION_ZONES = {
         enemyLevelRange: [7, 11],
         encounters: ['zombie', 'ghoul', 'skeleton', 'wraith', 'grave_robber'],
         requiredLevel: 7,
-        locked: true,
+        locked: false, // Auto-unlocks at level 7
         unlockMessage: 'Available after reaching level 7',
         adventureChance: 0.07
     },
@@ -70,7 +70,7 @@ const EXPLORATION_ZONES = {
         enemyLevelRange: [12, 16],
         encounters: ['swamp_hag', 'plague_zombie', 'giant_leech', 'bog_beast', 'corrupted_treant'],
         requiredLevel: 12,
-        locked: true,
+        locked: false, // Auto-unlocks at level 12
         unlockMessage: 'Available after reaching level 12',
         adventureChance: 0.08
     },
@@ -81,7 +81,7 @@ const EXPLORATION_ZONES = {
         enemyLevelRange: [13, 17],
         encounters: ['cursed_knight', 'shadow_stalker', 'ruin_guardian', 'spectral_warrior', 'dark_priest'],
         requiredLevel: 13,
-        locked: true,
+        locked: false, // Auto-unlocks at level 13
         unlockMessage: 'Available after reaching level 13',
         adventureChance: 0.09
     },
@@ -106,7 +106,7 @@ const EXPLORATION_ZONES = {
         enemyLevelRange: [17, 21],
         encounters: ['lesser_demon', 'hellhound', 'imp_swarm', 'pit_fiend', 'demon_lord'],
         requiredLevel: 17,
-        locked: true,
+        locked: false, // Auto-unlocks at level 17
         unlockMessage: 'Available after reaching level 17',
         adventureChance: 0.10
     },
@@ -117,7 +117,7 @@ const EXPLORATION_ZONES = {
         enemyLevelRange: [18, 22],
         encounters: ['fallen_angel', 'corrupted_paladin', 'dark_oracle', 'abomination', 'void_priest'],
         requiredLevel: 18,
-        locked: true,
+        locked: false, // Auto-unlocks at level 18
         unlockMessage: 'Available after reaching level 18',
         adventureChance: 0.11
     },
@@ -142,7 +142,7 @@ const EXPLORATION_ZONES = {
         enemyLevelRange: [22, 25],
         encounters: ['frost_giant', 'ice_drake', 'yeti', 'frozen_revenant', 'frost_wyrm'],
         requiredLevel: 22,
-        locked: true,
+        locked: false, // Auto-unlocks at level 22
         unlockMessage: 'Available after reaching level 22',
         adventureChance: 0.12
     },
@@ -153,7 +153,7 @@ const EXPLORATION_ZONES = {
         enemyLevelRange: [23, 25],
         encounters: ['void_walker', 'reality_tear', 'entropy_beast', 'nihil_spawn', 'void_lord'],
         requiredLevel: 23,
-        locked: true,
+        locked: false, // Auto-unlocks at level 23
         unlockMessage: 'Available after reaching level 23',
         adventureChance: 0.13
     },
@@ -164,7 +164,7 @@ const EXPLORATION_ZONES = {
         enemyLevelRange: [24, 25],
         encounters: ['celestial_guardian', 'arch_angel', 'divine_champion', 'seraphim', 'god_avatar'],
         requiredLevel: 24,
-        locked: true,
+        locked: false, // Auto-unlocks at level 24
         unlockMessage: 'Available after reaching level 24',
         adventureChance: 0.15
     }

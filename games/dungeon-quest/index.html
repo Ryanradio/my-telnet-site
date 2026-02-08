@@ -3984,6 +3984,16 @@ window.addEventListener('beforeunload', () => {
             const screen = document.getElementById('mainScreen');
             const p = gameState.player;
             
+            // Auto-unlock zones that don't require masters (just level requirement)
+            Object.keys(LOCATIONS).forEach(key => {
+                const loc = LOCATIONS[key];
+                if (key !== 'town' && !loc.locked && loc.requiredLevel && p.level >= loc.requiredLevel) {
+                    if (!p.unlockedAreas.includes(key)) {
+                        p.unlockedAreas.push(key);
+                    }
+                }
+            });
+            
             let exploreHtml = `
                 <div class="location-header">WORLD MAP</div>
                 ${renderPlayerStats()}
@@ -4028,14 +4038,24 @@ window.addEventListener('beforeunload', () => {
                             // Can challenge master to unlock
                             const masterKey = getMasterKeyForArea(key);
                             const master = CLASS_MASTERS[masterKey];
-                            exploreHtml += `
-                                <div class="menu-option" style="opacity: 0.6; cursor: default;" onclick="alert('${loc.unlockMessage}')">
-                                    🔒 ${loc.name}${levelInfo} - LOCKED
-                                </div>
-                                <div class="menu-option" onclick="challengeMaster('${masterKey}')" style="border-color: var(--error-color); background: rgba(255, 0, 0, 0.1);">
-                                    ⚔️ CHALLENGE MASTER: ${master.name} (Lv ${master.level}) TO UNLOCK!
-                                </div>
-                            `;
+                            
+                            if (master) {
+                                exploreHtml += `
+                                    <div class="menu-option" style="opacity: 0.6; cursor: default;" onclick="alert('${loc.unlockMessage}')">
+                                        🔒 ${loc.name}${levelInfo} - LOCKED
+                                    </div>
+                                    <div class="menu-option" onclick="challengeMaster('${masterKey}')" style="border-color: var(--error-color); background: rgba(255, 0, 0, 0.1);">
+                                        ⚔️ CHALLENGE MASTER: ${master.name} (Lv ${master.level}) TO UNLOCK!
+                                    </div>
+                                `;
+                            } else {
+                                // No master for this zone, just show locked
+                                exploreHtml += `
+                                    <div class="menu-option" style="opacity: 0.6; cursor: default;" onclick="alert('${loc.unlockMessage || 'Reach level ' + loc.requiredLevel + ' to unlock this area!'}')">
+                                        🔒 ${loc.name}${levelInfo} - LOCKED (Need Lv ${loc.requiredLevel})
+                                    </div>
+                                `;
+                            }
                         } else {
                             // Level too low
                             exploreHtml += `
