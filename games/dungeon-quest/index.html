@@ -3145,6 +3145,37 @@ window.addEventListener('beforeunload', () => {
                     bankGold: data.player.bankGold || 0
                 };
                 
+                // ═══════════════════════════════════════════════════════════════
+                // EQUIPMENT MIGRATION (fix old save data with missing weapons/armor)
+                // ═══════════════════════════════════════════════════════════════
+                const p = gameState.player;
+                
+                // Check if weapon exists
+                if (!WEAPONS[p.weapon]) {
+                    console.warn(`⚠️ Weapon '${p.weapon}' not found. Migrating to default weapon...`);
+                    // Try to find a suitable replacement based on class
+                    const classDefaults = {
+                        warrior: 'iron_sword',
+                        rogue: 'rusty_dagger',
+                        acolyte: 'bent_staff',
+                        necrolyte: 'bent_staff',
+                        paladin: 'worn_mace',
+                        hunter: 'cracked_bow',
+                        archer: 'cracked_bow',
+                        druid: 'bent_staff',
+                        sorceror: 'bent_staff'
+                    };
+                    p.weapon = classDefaults[p.class] || 'iron_sword';
+                    console.log(`✅ Migrated weapon to: ${p.weapon}`);
+                }
+                
+                // Check if armor exists
+                if (!ARMOR[p.armor]) {
+                    console.warn(`⚠️ Armor '${p.armor}' not found. Migrating to default armor...`);
+                    p.armor = 'leather_vest'; // Universal default
+                    console.log(`✅ Migrated armor to: ${p.armor}`);
+                }
+                
                 gameState.currentLocation = data.currentLocation || 'silverdale';
                 
                 // Restore dungeon state if applicable
@@ -3232,6 +3263,7 @@ window.addEventListener('beforeunload', () => {
                 }
                 
                 console.log(`✅ Character loaded: ${data.characterName}`);
+                console.log(`   Weapon: ${gameState.player.weapon} | Armor: ${gameState.player.armor}`);
             } catch (e) {
                 console.error('Error loading character:', e);
                 alert('⚠️ Failed to load save file. The data may be corrupted. Returning to main menu.');
@@ -5085,9 +5117,17 @@ if (cs) {
 
 
                     `;
-                } else if (mode === 'target_attack' || mode === 'target_spell') {
+                } else if (mode === 'target_attack' || mode === 'target_spell' || mode === 'target_staff_melee') {
                     // Target selection menu
-                    const actionName = mode === 'target_spell' ? cs.pendingSpell?.name || 'Spell' : 'Attack';
+                    let actionName;
+                    if (mode === 'target_spell') {
+                        actionName = cs.pendingSpell?.name || 'Spell';
+                    } else if (mode === 'target_staff_melee') {
+                        actionName = 'Staff Melee';
+                    } else {
+                        actionName = 'Attack';
+                    }
+                    
                     const targetBtns = monsters.map((m, i) => {
     return `<button onclick="executeTargetedAction(${i})"
         class="target-btn">
@@ -5116,12 +5156,24 @@ if (cs) {
                         </button>`;
                     }).join('');
                     
+                    // Check if player has a staff weapon
+                    const weapon = WEAPONS[p.weapon];
+                    const hasStaff = weapon && (weapon.name.toLowerCase().includes('staff') || weapon.baseMagicDamage > 0);
+                    
+                    // Add melee attack option if player has staff (can bonk enemies with it!)
+                    const meleeOption = hasStaff ? 
+                        `<button onclick="staffMeleeAttack()" class="spell-btn" style="border-color:#FF8800;">
+                            ⚔️ Staff Melee<br>
+                            <span style="font-size:12px;">Bonk! (No MP)</span>
+                        </button>` : '';
+                    
                     ab.innerHTML = `
                         <div style="color:var(--highlight-color);font-size:10px;margin-bottom:6px;">
                             SELECT SPELL:
                         </div>
                         <div style="display:flex;flex-wrap:wrap;gap:6px;">
                             ${spellBtns}
+                            ${meleeOption}
                             <button onclick="cancelAction()" class="action-icon-btn">❌ Back</button>
                         </div>
                     `;
@@ -5167,6 +5219,82 @@ if (cs) {
             renderActionBar();
         }
         
+        // ═══════════════════════════════════════════════════════════════
+        // STAFF MELEE ATTACK (for mages out of MP)
+        // ═══════════════════════════════════════════════════════════════
+        function staffMeleeAttack() {
+            const cs = gameState.combatState;
+            if (!cs) return;
+            
+            // Switch to target selection for staff melee
+            cs.actionMode = 'target_staff_melee';
+            renderActionBar();
+        }
+        
+        function executeStaffMelee(targetIndex) {
+            const cs = gameState.combatState;
+            if (!cs) return;
+            
+            const p = gameState.player;
+            const enemy = cs.monsters[targetIndex];
+            const weapon = WEAPONS[p.weapon];
+            
+            // Consume 1 pip
+            const consumed = consumePips(cs, 1, getPipCooldown(p));
+            if (consumed < 1) {
+                termAppend('Not enough action points!', 'term-error');
+                return;
+            }
+            
+            // Staff melee does reduced damage (50% of normal + small magic bonus)
+            // Formula: (weapon base damage × 0.5) + (STR × 0.3) + (magic damage × 0.3)
+            let baseDamage = Math.floor((weapon.baseDamage || 1) * 0.5);
+            const strBonus = Math.floor((p.str || p.strength || 0) * 0.3);
+            const magicBonus = Math.floor((weapon.baseMagicDamage || 0) * 0.3);
+            
+            // Total damage
+            let totalDamage = baseDamage + strBonus + magicBonus;
+            
+            // Apply class damage multiplier (if evolved)
+            const classMult = getClassDamageMultiplier(p);
+            totalDamage = Math.floor(totalDamage * classMult);
+            
+            // Calculate final damage with enemy defense
+            const result = calculateDamage({
+                attacker: p,
+                defender: enemy,
+                base: totalDamage,
+                type: 'physical',
+                critChance: calcCritChance(p.lck || 0) / 100,
+                dodgeChance: enemy.dodge || 0,
+                armorPiercing: 0
+            });
+            
+            const tName = cs.monsters.length > 1
+                ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${targetIndex+1}</span>`
+                : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
+            
+            if (result.dodged) {
+                termAppend(`You swing your staff at ${tName} but they <span style="color:#88ff88;">DODGE!</span>`);
+            } else {
+                const critTag = result.crit ? ' <span style="color:#FFD700;">★ CRITICAL HIT!</span>' : '';
+                enemy.hp -= result.damage;
+                termAppend(
+                    `You <span style="color:#FF8800;">BONK</span> ${tName} with your staff for <span class="dmg-enemy">${result.damage} damage!</span>${critTag}`,
+                    null,
+                    () => {
+                        checkCombatEnd();
+                        updateEnemyCards();
+                        updateHud();
+                    }
+                );
+            }
+            
+            // Return to main combat menu
+            cs.actionMode = 'main';
+            renderActionBar();
+        }
+        
         function executeTargetedAction(targetIndex) {
             const cs = gameState.combatState;
             if (!cs) return;
@@ -5177,6 +5305,8 @@ if (cs) {
                 executeAttack(cs.pendingAttackType);
             } else if (cs.actionMode === 'target_spell') {
                 castSpellOnTarget(cs.pendingSpell);
+            } else if (cs.actionMode === 'target_staff_melee') {
+                executeStaffMelee(targetIndex);
             }
             
             // Reset to main menu
@@ -5762,7 +5892,19 @@ function consumePips(cs, amount, cooldown) {
     const p  = gameState.player;
     const ti = cs.currentTarget;
     const enemy = cs.monsters[ti];
-    const weapon = WEAPONS[p.weapon];
+    let weapon = WEAPONS[p.weapon];
+    
+    // Safety check: if weapon doesn't exist, use a default weapon
+    if (!weapon) {
+        console.error(`❌ Weapon '${p.weapon}' not found in WEAPONS! Using default weapon.`);
+        p.weapon = 'iron_sword'; // Default to iron sword
+        weapon = WEAPONS[p.weapon];
+        if (!weapon) {
+            termAppend('ERROR: No weapons available! Please contact sysop.', 'term-error');
+            return;
+        }
+    }
+    
     const qBonus = QUALITY_CONFIG[weapon.quality].bonus;
 
     // Determine pip cost and damage multiplier
@@ -6089,7 +6231,19 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
     const p        = gameState.player;
 
     // Defensive stats
-    const armor    = ARMOR[p.armor];
+    let armor = ARMOR[p.armor];
+    
+    // Safety check: if armor doesn't exist, use default armor
+    if (!armor) {
+        console.error(`❌ Armor '${p.armor}' not found in ARMOR! Using default armor.`);
+        p.armor = 'leather_vest'; // Default to leather vest
+        armor = ARMOR[p.armor];
+        if (!armor) {
+            console.error('❌ CRITICAL: No armor available!');
+            armor = { baseDefense: 0, quality: 'poor' }; // Emergency fallback
+        }
+    }
+    
     const qBonus   = QUALITY_CONFIG[armor.quality].bonus;
     let totalDef   = p.defense + armor.baseDefense + qBonus + (p.con || 0);
 
