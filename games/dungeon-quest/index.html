@@ -1737,53 +1737,58 @@ line.innerHTML =
         // ═══════════════════════════════════════════════════════════════
         
         function startMpRegen(isTown = false) {
-            // MP regenerates immediately and continuously
-            // Town: 10% every 10s (50% slower)
-            // Dungeon/Exploration: 10% every 5s (normal)
-            if (gameState.restState.mpRegenTimer) {
-                clearInterval(gameState.restState.mpRegenTimer);
+    if (gameState.restState.mpRegenTimer) {
+        clearInterval(gameState.restState.mpRegenTimer);
+        gameState.restState.mpRegenTimer = null;
+    }
+
+    // ⏳ Wait 30 seconds before MP regen begins
+    setTimeout(() => {
+
+        // If combat started or player gone, abort
+        if (gameState.combatState) return;
+        if (!gameState.player) return;
+
+        const regenInterval = isTown ? 10000 : 5000;
+
+        gameState.restState.mpRegenTimer = setInterval(() => {
+            const p = gameState.player;
+
+            if (!p || p.mp >= p.maxMp || gameState.combatState) {
+                if (p && p.mp >= p.maxMp) {
+                    p.mp = p.maxMp;
+                    updateHud();
+                }
+                return;
             }
-            
-            const regenInterval = isTown ? 10000 : 5000; // Town is 2x slower
-            
-            gameState.restState.mpRegenTimer = setInterval(() => {
-                const p = gameState.player;
-                if (!p || p.mp >= p.maxMp) {
-                    // Stop if no player or MP full
-                    if (p && p.mp >= p.maxMp) {
-                        p.mp = p.maxMp;
-                        updateHud();
-                    }
-                    return;
+
+            const mpRestore = Math.ceil(p.maxMp * 0.10);
+            p.mp = Math.min(p.maxMp, p.mp + mpRestore);
+            updateHud();
+
+            // Visual feedback (dungeon only)
+            if (gameState.currentLocation !== 'town') {
+                const hudMp = document.querySelector('#hud');
+                if (hudMp) {
+                    hudMp.style.animation = 'none';
+                    setTimeout(() => {
+                        hudMp.style.animation = 'flash-blue 0.3s ease';
+                    }, 10);
                 }
-                
-                // Restore 10% of max MP
-                const mpRestore = Math.ceil(p.maxMp * 0.10);
-                p.mp = Math.min(p.maxMp, p.mp + mpRestore);
-                updateHud();
-                
-                // Visual feedback
-                if (gameState.currentLocation !== 'town' && !gameState.combatState) {
-                    // Only show in exploration/dungeon, not in town or combat
-                    const hudMp = document.querySelector('#hud');
-                    if (hudMp) {
-                        hudMp.style.animation = 'none';
-                        setTimeout(() => {
-                            hudMp.style.animation = 'flash-blue 0.3s ease';
-                        }, 10);
-                    }
-                }
-            }, regenInterval);
-        }
+            }
+
+        }, regenInterval);
+
+    }, 30000); // 🔥 30 second delay
+}
         
         function startResting(isTown = false) {
             const p = gameState.player;
             if (!p) return;
             
             // Can't rest in combat
-            if (gameState.combatState) {
-                return;
-            }
+            if (!gameState.restState.isResting || gameState.combatState) return;
+
             
             // Already at full HP? No need to rest
             if (p.hp >= p.maxHp) {
