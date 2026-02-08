@@ -296,17 +296,23 @@ body {
 
         /* ─── action bar at bottom ─── */
 #actionBar {
-    flex-shrink: 0; /* prevent action bar from shrinking */
-    display: none;
+    flex: 0 0 110px;
+    height: 110px;
+
     background: var(--secondary-bg);
     border: 2px solid var(--border-color);
     border-top: 1px solid #444;
-    padding: 6px;
+
     display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
     justify-content: center;
+    align-items: center;
+
+    gap: 6px;
+    padding: 6px;
+
+    box-sizing: border-box;
 }
+
 
         #actionBar button {
             background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%);
@@ -1346,14 +1352,71 @@ const OPPOSITE_DIR = {
         }
 
         const SPELLS = {
-            heal: { name: 'Heal', mpCost: 15, power: 30, type: 'heal', level: 1, description: 'Restore HP' },
-            fireball: { name: 'Fireball', mpCost: 20, power: 35, type: 'attack', level: 2, description: 'Fiery attack' },
-            lightning: { name: 'Lightning', mpCost: 25, power: 45, type: 'attack', level: 4, description: 'Electric damage' },
-            greater_heal: { name: 'Greater Heal', mpCost: 30, power: 60, type: 'heal', level: 5, description: 'Major healing' },
-            ice_storm: { name: 'Ice Storm', mpCost: 35, power: 55, type: 'attack', level: 6, description: 'Freezing assault' },
-            holy_light: { name: 'Holy Light', mpCost: 20, power: 25, type: 'attack', level: 3, description: 'Divine damage' },
-            meteor: { name: 'Meteor', mpCost: 50, power: 80, type: 'attack', level: 8, description: 'Devastating spell' }
-        };
+    heal: {
+        name: 'Heal',
+        mpCost: 15,
+        pipCost: 1,
+        power: 30,
+        type: 'heal',
+        level: 1,
+        description: 'Restore HP'
+    },
+    fireball: {
+        name: 'Fireball',
+        mpCost: 20,
+        pipCost: 1,
+        power: 35,
+        type: 'attack',
+        level: 2,
+        description: 'Fiery attack'
+    },
+    lightning: {
+        name: 'Lightning',
+        mpCost: 25,
+        pipCost: 2,
+        power: 45,
+        type: 'attack',
+        level: 4,
+        description: 'Electric damage'
+    },
+    greater_heal: {
+        name: 'Greater Heal',
+        mpCost: 30,
+        pipCost: 2,
+        power: 60,
+        type: 'heal',
+        level: 5,
+        description: 'Major healing'
+    },
+    ice_storm: {
+        name: 'Ice Storm',
+        mpCost: 35,
+        pipCost: 2,
+        power: 55,
+        type: 'attack',
+        level: 6,
+        description: 'Freezing assault'
+    },
+    holy_light: {
+        name: 'Holy Light',
+        mpCost: 20,
+        pipCost: 1,
+        power: 25,
+        type: 'attack',
+        level: 3,
+        description: 'Divine damage'
+    },
+    meteor: {
+        name: 'Meteor',
+        mpCost: 50,
+        pipCost: 3,
+        power: 80,
+        type: 'attack',
+        level: 8,
+        description: 'Devastating spell'
+    }
+};
+
 
         const LOCATIONS = {
     town: {
@@ -1447,6 +1510,11 @@ const OPPOSITE_DIR = {
     if (shouldAutoScroll) {
         tw.scrollTop = tw.scrollHeight;
     }
+
+line.innerHTML =
+    sliceToVisible(html, visibleCount) +
+    '<span style="animation:blink 1s infinite;">_</span>';
+
 
     if (onDone) onDone();
     termDrain();
@@ -4107,6 +4175,8 @@ function openTerminalView(locKey) {
   // 🔑 RESET terminal scroll position on open
 requestAnimationFrame(() => {
     const tw = document.getElementById('terminalWindow');
+    tw.style.display = 'block';
+    tw.offsetHeight;
     tw.scrollTop = 0;
 });
 
@@ -4134,6 +4204,20 @@ ab.style.display = 'block';
 }
 
 
+function stabilizeTerminalLayout() {
+    const tw = document.getElementById('terminalWindow');
+    if (!tw) return;
+
+    // Force flexbox to resolve height again
+    tw.style.display = 'block';
+    tw.offsetHeight;
+
+    // Reassert scrolling
+    tw.style.overflowY = 'auto';
+}
+
+
+
         function closeTerminalView() {
             document.getElementById('mainScreen').style.display    = 'block';
             document.getElementById('hud').style.display           = 'none';
@@ -4146,6 +4230,8 @@ ab.style.display = 'block';
         const termQueue   = [];          // pending { html, extraClass, onDone }
         let   termBusy    = false;       // true while a line is mid-stream
 
+
+
         function termAppend(html, extraClass, onDone) {
             termQueue.push({ html, extraClass, onDone: onDone || null });
             if (!termBusy) termDrain();
@@ -4153,6 +4239,9 @@ ab.style.display = 'block';
 
         function scrollTerminalToBottom() {
     const tw = document.getElementById('terminalWindow');
+    if (!tw) return;
+
+    tw.scrollTop = tw.scrollHeight;
     
 }
 
@@ -5451,6 +5540,15 @@ Object.values(floor.rooms).forEach(r => {
 
 
 
+const BASE_PIP_COOLDOWN = 10;
+const MIN_PIP_COOLDOWN = 3;
+
+function getPipCooldown(player){
+    return Math.max(
+        MIN_PIP_COOLDOWN,
+        Math.floor(BASE_PIP_COOLDOWN - (player.speed || 0) * 0.25)
+    );
+}
 
 
 
@@ -5475,6 +5573,20 @@ function selectEnemyIntent(enemy) {
 
     return intent;
 }
+
+
+function consumePips(cs, amount, cooldown) {
+    let used = 0;
+
+    for (let i = 0; i < cs.pipAvailable.length && used < amount; i++) {
+        if (cs.pipAvailable[i]) {
+            cs.pipAvailable[i] = false;
+            cs.pipTimers[i] = cooldown;
+            used++;
+        }
+    }
+}
+
 
 
 
@@ -5529,6 +5641,8 @@ function selectEnemyIntent(enemy) {
         
        function executeAttack(attackType) {
     const cs = gameState.combatState;
+    const spell = SPELLS(spellId);
+
     if (!cs) return;
 
     const p = gameState.player;
@@ -5539,7 +5653,7 @@ function selectEnemyIntent(enemy) {
 
     // Determine pip cost and damage multiplier
     let pipCost = 1;
-    let damageMultiplier = 1;
+    let damageMultiplier = 1 + (spell.pipCost * 0.4);
     let attackName = 'attacks';
     let armorPiercing = 0;
     
@@ -5568,15 +5682,18 @@ function selectEnemyIntent(enemy) {
         return;
     }
 
-    // Consume pips
-    let consumed = 0;
-    for (let i = 0; i < cs.pipAvailable.length && consumed < pipCost; i++) {
-        if (cs.pipAvailable[i]) {
-            cs.pipAvailable[i] = false;
-            cs.pipTimers[i] = 10;
-            consumed++;
-        }
-    }
+if (availablePips < spell.pipCost) {
+    termAppend('Not enough spell charges!', 'term-error');
+    return;
+}
+
+consumePips(cs, pipCost, getPipCooldown(p));
+
+
+consumePips(cs, spell.pipCost, getPipCooldown(p));
+
+
+
 
     // Calculate base damage
     let weaponDamage = weapon.baseDamage + qBonus;
@@ -5636,7 +5753,10 @@ function selectEnemyIntent(enemy) {
     executeAttack('normal');
 }
 
-        function showSpellMenu() {
+        
+
+
+            function showSpellMenu() {
             const cs = gameState.combatState;
             if (!cs) return;
             const anyAvail = cs.pipAvailable && cs.pipAvailable.some(x => x);
@@ -5652,7 +5772,10 @@ function selectEnemyIntent(enemy) {
             renderActionBar();
         }
 
-        function castSpellOnTarget(spell) {
+
+
+
+            function castSpellOnTarget(spell) {
             const p  = gameState.player;
             const cs = gameState.combatState;
             const spellKey = cs.pendingSpellKey;
@@ -5662,6 +5785,20 @@ function selectEnemyIntent(enemy) {
                 return;
             }
             
+
+// --- Pip check for spells ---
+const availablePips = cs.pipAvailable.filter(x => x).length;
+
+if (availablePips < (spell.pipCost || 1)) {
+    termAppend('Not enough spell charges!', 'term-error');
+    return;
+}
+
+// Consume spell pips
+consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
+
+
+
             p.mp -= spell.mpCost;
 
             if (spell.type === 'heal') {
@@ -5698,6 +5835,7 @@ function selectEnemyIntent(enemy) {
                     checkCombatEnd();
                 });
             }
+            cs.pendingSpellKey = null;
         }
 
         // Legacy function for backward compatibility
@@ -6224,6 +6362,8 @@ gameState.postCombatRecovery = true;
             <button onclick="tryExploreLocation('${gameState.currentLocation}')">🔍 CONTINUE EXPLORING</button>
             <button onclick="tryGoBackToTown()">🏘️ RETURN TO TOWN</button>`;
         renderActionBar();
+
+        stabilizeTerminalLayout();
     }
 
     if (!gameState.combatTimer) {
