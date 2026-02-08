@@ -173,6 +173,16 @@ body {
             0%, 100% { text-shadow: 2px 2px var(--error-color); }
             50% { text-shadow: 2px 2px var(--error-color), 0 0 10px var(--highlight-color); }
         }
+        
+        @keyframes flash-green {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.3) hue-rotate(10deg); }
+        }
+        
+        @keyframes flash-blue {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.2) hue-rotate(-20deg); }
+        }
 
         /* ─── main screen used by town / shop / menus ─── */
         .screen {
@@ -1355,7 +1365,7 @@ const OPPOSITE_DIR = {
             forest: {
                 name: 'Whispering Forest',
                 description: 'A dark forest filled with minor creatures.',
-                enemyLevelRange: [1, 3],
+                enemyLevelRange: [1, 5],
                 encounters: ['goblin', 'wolf', 'giant_spider'],
                 requiredLevel: 1,
                 locked: false
@@ -1363,31 +1373,39 @@ const OPPOSITE_DIR = {
             plains: {
                 name: 'Endless Plains',
                 description: 'Open grasslands with roaming beasts.',
-                enemyLevelRange: [2, 5],
+                enemyLevelRange: [6, 10],
                 encounters: ['orc', 'dire_wolf', 'bandit'],
-                requiredLevel: 3,
+                requiredLevel: 6,
                 locked: true,
                 unlockMessage: 'Defeat your class master in the forest to unlock this area!'
             },
             cave: {
                 name: 'Shadow Cavern',
                 description: 'A dungeon filled with dangerous monsters.',
-                enemyLevelRange: [4, 7],
+                enemyLevelRange: [11, 15],
                 encounters: ['troll', 'skeleton_warrior', 'dark_mage'],
-                requiredLevel: 6,
+                requiredLevel: 11,
                 locked: true,
                 unlockMessage: 'Defeat your class master in the plains to unlock this area!'
             },
             crypt: {
                 name: 'Ancient Crypt',
                 description: 'An ancient tomb haunted by the undead.',
-                enemyLevelRange: [6, 9],
+                enemyLevelRange: [16, 20],
                 encounters: ['lich', 'death_knight', 'wraith'],
-                requiredLevel: 9,
+                requiredLevel: 16,
                 locked: true,
                 unlockMessage: 'Defeat your class master in the cave to unlock this area!'
             },
             volcano: {
+                name: 'Volcanic Wastes',
+                description: 'A scorched wasteland of fire and ash.',
+                enemyLevelRange: [21, 25],
+                encounters: ['fire_elemental', 'lava_golem', 'phoenix'],
+                requiredLevel: 21,
+                locked: true,
+                unlockMessage: 'Defeat your class master in the crypt to unlock this area!'
+            }
                 name: 'Fire Mountain',
                 description: 'A volcanic peak home to fierce creatures.',
                 enemyLevelRange: [8, 12],
@@ -1624,6 +1642,12 @@ const OPPOSITE_DIR = {
             combatState: null,
             combatTimer: null,
             lastAction: null,
+            restState: {
+                isResting: false,
+                restStartTime: null,
+                hpRegenTimer: null,
+                mpRegenTimer: null
+            },
             sysop: {
                 authenticated: false,
                 username: null,
@@ -1631,6 +1655,137 @@ const OPPOSITE_DIR = {
                 commandHistory: []
             }
         };
+
+        // ═══════════════════════════════════════════════════════════════
+        // PASSIVE REGENERATION SYSTEM
+        // ═══════════════════════════════════════════════════════════════
+        
+        function startMpRegen(isTown = false) {
+            // MP regenerates immediately and continuously
+            // Town: 10% every 10s (50% slower)
+            // Dungeon/Exploration: 10% every 5s (normal)
+            if (gameState.restState.mpRegenTimer) {
+                clearInterval(gameState.restState.mpRegenTimer);
+            }
+            
+            const regenInterval = isTown ? 10000 : 5000; // Town is 2x slower
+            
+            gameState.restState.mpRegenTimer = setInterval(() => {
+                const p = gameState.player;
+                if (!p || p.mp >= p.maxMp) {
+                    // Stop if no player or MP full
+                    if (p && p.mp >= p.maxMp) {
+                        p.mp = p.maxMp;
+                        updateHud();
+                    }
+                    return;
+                }
+                
+                // Restore 10% of max MP
+                const mpRestore = Math.ceil(p.maxMp * 0.10);
+                p.mp = Math.min(p.maxMp, p.mp + mpRestore);
+                updateHud();
+                
+                // Visual feedback
+                if (gameState.currentLocation !== 'town' && !gameState.combatState) {
+                    // Only show in exploration/dungeon, not in town or combat
+                    const hudMp = document.querySelector('#hud');
+                    if (hudMp) {
+                        hudMp.style.animation = 'none';
+                        setTimeout(() => {
+                            hudMp.style.animation = 'flash-blue 0.3s ease';
+                        }, 10);
+                    }
+                }
+            }, regenInterval);
+        }
+        
+        function startResting(isTown = false) {
+            const p = gameState.player;
+            if (!p) return;
+            
+            // Can't rest in combat
+            if (gameState.combatState) {
+                return;
+            }
+            
+            // Already at full HP? No need to rest
+            if (p.hp >= p.maxHp) {
+                gameState.restState.isResting = false;
+                return;
+            }
+            
+            gameState.restState.isResting = true;
+            gameState.restState.restStartTime = Date.now();
+            
+            // Wait 30 seconds before HP regen starts (same for town and dungeon)
+            setTimeout(() => {
+                // Check if still resting (not interrupted by combat)
+                if (!gameState.restState.isResting || gameState.combatState) {
+                    return;
+                }
+                
+                // Start HP regeneration
+                // Town: 5% every 20s (50% slower)
+                // Dungeon/Exploration: 5% every 10s (normal)
+                if (gameState.restState.hpRegenTimer) {
+                    clearInterval(gameState.restState.hpRegenTimer);
+                }
+                
+                const regenInterval = isTown ? 20000 : 10000; // Town is 2x slower
+                
+                gameState.restState.hpRegenTimer = setInterval(() => {
+                    const player = gameState.player;
+                    if (!player || player.hp >= player.maxHp || !gameState.restState.isResting || gameState.combatState) {
+                        // Stop regen if HP full, no longer resting, or combat started
+                        if (player && player.hp >= player.maxHp) {
+                            player.hp = player.maxHp;
+                            updateHud();
+                        }
+                        stopResting();
+                        return;
+                    }
+                    
+                    // Restore 5% of max HP
+                    const hpRestore = Math.ceil(player.maxHp * 0.05);
+                    player.hp = Math.min(player.maxHp, player.hp + hpRestore);
+                    updateHud();
+                    
+                    // Visual feedback
+                    const hudHp = document.querySelector('#hud');
+                    if (hudHp) {
+                        hudHp.style.animation = 'none';
+                        setTimeout(() => {
+                            hudHp.style.animation = 'flash-green 0.3s ease';
+                        }, 10);
+                    }
+                }, regenInterval);
+                
+            }, 30000); // 30 second delay before HP regen
+        }
+        
+        function stopResting() {
+            gameState.restState.isResting = false;
+            gameState.restState.restStartTime = null;
+            
+            if (gameState.restState.hpRegenTimer) {
+                clearInterval(gameState.restState.hpRegenTimer);
+                gameState.restState.hpRegenTimer = null;
+            }
+        }
+        
+        function stopAllRegen() {
+            stopResting();
+            
+            if (gameState.restState.mpRegenTimer) {
+                clearInterval(gameState.restState.mpRegenTimer);
+                gameState.restState.mpRegenTimer = null;
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // END REGENERATION SYSTEM
+        // ═══════════════════════════════════════════════════════════════
 
         // 🔑 Prevent UI reset after restore (mobile fix)
 gameState.hasRestoredGame = false;
@@ -2891,6 +3046,10 @@ window.addEventListener('beforeunload', () => {
                     
                     checkEnemiesInRoom(data.dungeon.currentRoom);
                     renderDungeonActionBar();
+                    
+                    // Start regeneration in dungeon (normal speed)
+                    startMpRegen(false);
+                    startResting(false);
                 } else {
                     showTown();
                 }
@@ -3109,6 +3268,12 @@ window.addEventListener('beforeunload', () => {
 
         function showTown() {
             document.body.classList.remove("terminal-mode");
+            
+            // Start MP regeneration (slower in town)
+            startMpRegen(true);
+            // Start resting for HP regen (slower in town)
+            startResting(true);
+            
             const screen = document.getElementById('mainScreen');
             screen.innerHTML = `
                 <div class="location-header">${LOCATIONS.town.name}</div>
@@ -4032,6 +4197,10 @@ ab.style.display = 'block';
 }
 
             gameState.currentLocation = locKey;
+            
+            // Start regeneration when exploring (normal speed)
+            startMpRegen(false);
+            startResting(false);
 
             // If we just arrived (from town / map), open the terminal fresh
             if (!gameState._terminalOpen || gameState._currentExploreArea !== locKey) {
@@ -4065,8 +4234,11 @@ ab.style.display = 'block';
             return 3;
         }
         function startCombat(enemyKeys) {
+            // Stop resting when combat starts
+            stopResting();
+            
             if (!Array.isArray(enemyKeys)) enemyKeys = [enemyKeys];
-            const monsters = enemyKeys.map(k => spawnMonsterWithRarity(k));
+            const monsters = enemyKeys.map(k => spawnMonsterWithRarity(k, true)); // true = use zone level
 
             let msg;
             if (monsters.length === 1)
@@ -4108,18 +4280,84 @@ ab.style.display = 'block';
             });
         }
 
-        function spawnMonsterWithRarity(enemyKey) {
+        function spawnMonsterWithRarity(enemyKey, zoneLevel = null) {
             const template = ENEMIES[enemyKey];
             const rarity   = rollRarity();
             const mult     = RARITY_CONFIG[rarity].multiplier;
-            return {
-                key: enemyKey, name: template.name, rarity, rarityColor: RARITY_CONFIG[rarity].color,
-                hp: Math.floor(template.baseHp * mult), maxHp: Math.floor(template.baseHp * mult),
-                damage: Math.floor(template.baseDamage * mult), defense: Math.floor(template.baseDefense * mult),
-                xp: Math.floor(template.baseXp * mult), gold: Math.floor(template.baseGold * mult),
-                level: template.level, possibleDrops: template.possibleDrops, dropRates: template.dropRates
+            
+            // Determine monster level (use zone level if provided, otherwise template level)
+            let monsterLevel = template.level;
+            if (zoneLevel !== null) {
+                // Random level within zone range
+                const location = LOCATIONS[gameState.currentLocation];
+                if (location && location.enemyLevelRange) {
+                    const [minLvl, maxLvl] = location.enemyLevelRange;
+                    monsterLevel = minLvl + Math.floor(Math.random() * (maxLvl - minLvl + 1));
+                }
+            }
+            
+            // Scale stats based on monster level
+            const levelMult = 1 + (monsterLevel - 1) * 0.15; // 15% increase per level
+            
+            const monster = {
+                key: enemyKey, 
+                name: template.name, 
+                rarity, 
+                rarityColor: RARITY_CONFIG[rarity].color,
+                hp: Math.floor(template.baseHp * mult * levelMult), 
+                maxHp: Math.floor(template.baseHp * mult * levelMult),
+                damage: Math.floor(template.baseDamage * mult * levelMult), 
+                defense: Math.floor(template.baseDefense * mult * levelMult),
+                xp: Math.floor(template.baseXp * mult * levelMult), // Base XP, will be scaled on defeat
+                gold: Math.floor(template.baseGold * mult * levelMult),
+                level: monsterLevel, 
+                possibleDrops: template.possibleDrops, 
+                dropRates: template.dropRates
             };
+            
+            return monster;
         }
+        
+        function calculateXpReward(monster, playerLevel) {
+            // Dynamic XP based on level difference and rarity
+            const levelDiff = monster.level - playerLevel;
+            
+            // Base XP from monster
+            let xp = monster.xp;
+            
+            // Level difference multiplier
+            // Same level: 100%
+            // 1 level higher: 120%
+            // 2 levels higher: 140%
+            // 1 level lower: 80%
+            // 5+ levels lower: 10%
+            let levelMult = 1.0;
+            
+            if (levelDiff >= 5) {
+                levelMult = 2.0; // Huge bonus for fighting much stronger enemies
+            } else if (levelDiff >= 3) {
+                levelMult = 1.6;
+            } else if (levelDiff >= 1) {
+                levelMult = 1.0 + (levelDiff * 0.2);
+            } else if (levelDiff === 0) {
+                levelMult = 1.0;
+            } else if (levelDiff >= -2) {
+                levelMult = 1.0 + (levelDiff * 0.1); // 90%, 80%
+            } else if (levelDiff >= -5) {
+                levelMult = 0.5;
+            } else {
+                levelMult = 0.1; // Killing gray mobs gives almost nothing
+            }
+            
+            // Rarity bonus (already in base XP, but add a small extra)
+            const rarityBonus = RARITY_CONFIG[monster.rarity].multiplier * 0.1;
+            
+            xp = Math.floor(xp * levelMult * (1 + rarityBonus));
+            
+            // Minimum 1 XP
+            return Math.max(1, xp);
+        }
+        
         function rollRarity() {
             const roll = Math.random() * 100;
             let cum = 0;
@@ -5046,33 +5284,49 @@ function startDungeonCombat(dungeonEnemy) {
 // ─────────────────────────────────────────
 
 function returnToTown() {
-    document.body.classList.remove("terminal-mode");
-
     console.log('⬅ returnToTown() called');
 
+    // Clear dungeon state
     gameState.dungeon = null;
+    gameState.combatState = null;
+    gameState.postCombatRecovery = false;
+    
+    // Clear combat timer
+    if (gameState.combatTimer) {
+        clearInterval(gameState.combatTimer);
+        gameState.combatTimer = null;
+    }
 
+    // Clear terminal mode and content
+    document.body.classList.remove("terminal-mode");
     termClear();
 
+    // Hide terminal elements
+    document.getElementById('terminalWindow').style.display = 'none';
+    document.getElementById('hud').style.display = 'none';
+    
     const ab = document.getElementById('actionBar');
     ab.innerHTML = '';
     ab.style.display = 'none';
-
-    document.getElementById('terminalWindow').style.display = 'none';
-    document.getElementById('hud').style.display = 'none';
-
+    
+    // CRITICAL: Show mainScreen
     document.getElementById('mainScreen').style.display = 'block';
 
-    //ALWAYS RESTORE ACTION BAR FOR WORLD/COMBAT
-    document.getElementById('actionBar').style.display = 'block';
-
-
+    // Reset terminal state
     gameState._terminalOpen = false;
     gameState._currentExploreArea = null;
+    
+    // Show town menu
+    showTown();
 }
 
 function testDungeon() {
     document.body.classList.add("terminal-mode");
+    
+    // Start regeneration in dungeon (normal speed)
+    startMpRegen(false);
+    startResting(false);
+    
     const dungeonKey = 'whisperingCrypt';
     const dungeon = DUNGEONS[dungeonKey];
     const floor = dungeon.floors[1];
@@ -5142,6 +5396,16 @@ function selectEnemyIntent(enemy) {
 }
 
 
+
+        // ═══════════════════════════════════════════════════════════════
+        // DAMAGE SCALING (Rebalanced for harder early game)
+        // ═══════════════════════════════════════════════════════════════
+        const DAMAGE_SCALING = {
+            // Reduce player starting damage by 30%
+            playerStarterWeaponMult: 0.7,
+            // Increase monster damage by 30%
+            monsterDamageMult: 1.3
+        };
 
         function calculateDamage({
   attacker,
@@ -5234,7 +5498,14 @@ function selectEnemyIntent(enemy) {
     }
 
     // Calculate base damage
-    const physicalBase = (weapon.baseDamage + qBonus) + (p.strength || 0) + (p.str || 0);
+    let weaponDamage = weapon.baseDamage + qBonus;
+    
+    // Apply starter weapon penalty (70% damage for early game balance)
+    if (p.level <= 5) {
+        weaponDamage = Math.floor(weaponDamage * DAMAGE_SCALING.playerStarterWeaponMult);
+    }
+    
+    const physicalBase = weaponDamage + (p.strength || 0) + (p.str || 0);
     const magicBase = (weapon.baseMagicDamage + qBonus) + Math.floor((p.magic || 0) / 2);
     const totalBase = Math.floor((physicalBase + magicBase) * damageMultiplier);
 
@@ -5493,7 +5764,7 @@ function selectEnemyIntent(enemy) {
                 defense: totalDef,
                 magicDefense: totalDef
             },
-            base: Math.floor(enemy.damage * intent.damageMult),
+            base: Math.floor(enemy.damage * intent.damageMult * DAMAGE_SCALING.monsterDamageMult),
             type: enemy.magicAttack ? 'magic' : 'physical',
             dodgeChance: calcDodgeChance(p.dex || 0) / 100,
             armorPiercing: intent.armorPiercing
@@ -5757,7 +6028,9 @@ function endCombat(victory) {
 
     let totalXp = 0, totalGold = 0, allLoot = [];
     defeated.forEach(e => {
-        totalXp   += e.xp;
+        // Calculate XP based on level difference and rarity
+        const xpReward = calculateXpReward(e, gameState.player.level);
+        totalXp   += xpReward;
         totalGold += e.gold;
         allLoot    = allLoot.concat(rollLoot(e));
     });
@@ -5836,6 +6109,9 @@ function endCombat(victory) {
 gameState.combatState.combatOver = true;
 gameState.postCombatRecovery = true;
 
+    // Resume regeneration after combat (normal speed - you're still in the field)
+    startMpRegen(false);
+    startResting(false);
 
     const ab = document.getElementById('actionBar');
     
