@@ -28,6 +28,215 @@ const ENEMIES = {
         dropRates: { common: 0.5, uncommon: 0.3, rare: 0.15, epic: 0.05 }
     },
     
+    feral_dog: {
+        name: 'Feral Dog',
+        baseHp: 34,
+        baseDamage: 11,
+        baseDefense: 2,
+        baseXp: 26,
+        baseGold: 10,
+        level: 2,
+        description: 'A starving dog driven mad by hunger',
+        possibleDrops: ['health_potion', 'small_gem'],
+        dropRates: { common: 0.55, uncommon: 0.15, rare: 0.03 }
+    },
+
+    cave_bat: {
+        name: 'Cave Bat',
+        baseHp: 28,
+        baseDamage: 9,
+        baseDefense: 2,
+        baseXp: 22,
+        baseGold: 8,
+        level: 2,
+        description: 'A shrieking bat that attacks in darkness',
+        possibleDrops: ['health_potion', 'bat_wing', 'small_gem'],
+        dropRates: { common: 0.6, uncommon: 0.15, rare: 0.03 }
+    },
+
+    rogue_scout: {
+        name: 'Rogue Scout',
+        baseHp: 45,
+        baseDamage: 14,
+        baseDefense: 4,
+        baseXp: 38,
+        baseGold: 30,
+        level: 3,
+        description: 'A lightly armored thief watching the roads',
+        possibleDrops: ['health_potion', 'dagger', 'small_gem'],
+        dropRates: { common: 0.4, uncommon: 0.25, rare: 0.08 }
+    },
+
+    mud_slime: {
+        name: 'Mud Slime',
+        baseHp: 50,
+        baseDamage: 10,
+        baseDefense: 5,
+        baseXp: 35,
+        baseGold: 12,
+        level: 3,
+        description: 'A thick slime that slows movement',
+        possibleDrops: ['health_potion', 'slime_gel', 'small_gem'],
+        dropRates: { common: 0.5, uncommon: 0.2, rare: 0.05 }
+    },
+
+    forest_shade: {
+        name: 'Forest Shade',
+        baseHp: 42,
+        baseDamage: 15,
+        baseDefense: 3,
+        baseXp: 40,
+        baseGold: 25,
+        level: 3,
+        description: 'A shadow that moves between the trees',
+        possibleDrops: ['mana_potion', 'shadow_essence', 'small_gem'],
+        dropRates: { common: 0.45, uncommon: 0.25, rare: 0.08 }
+    },
+
+    skeleton_scout: {
+        name: 'Skeleton Scout',
+        baseHp: 48,
+        baseDamage: 14,
+        baseDefense: 6,
+        baseXp: 42,
+        baseGold: 20,
+        level: 3,
+        description: 'A reanimated skeleton with a rusted blade',
+        possibleDrops: ['health_potion', 'bone_dust', 'rusty_sword', 'small_gem'],
+        dropRates: { common: 0.45, uncommon: 0.2, rare: 0.06 }
+    },
+
+    cave_crawler: {
+        name: 'Cave Crawler',
+        baseHp: 55,
+        baseDamage: 16,
+        baseDefense: 4,
+        baseXp: 45,
+        baseGold: 18,
+        level: 4,
+        description: 'A pale insectoid that skitters along cave walls',
+        possibleDrops: ['health_potion', 'crawler_chitin', 'small_gem'],
+        dropRates: { common: 0.45, uncommon: 0.25, rare: 0.08 }
+    },
+
+    highwayman: {
+        name: 'Highwayman',
+        baseHp: 60,
+        baseDamage: 18,
+        baseDefense: 6,
+        baseXp: 55,
+        baseGold: 50,
+        level: 4,
+        description: 'A masked criminal lying in wait on the road',
+        possibleDrops: ['health_potion', 'dagger', 'gold_coins', 'medium_gem'],
+        dropRates: { common: 0.35, uncommon: 0.3, rare: 0.12 }
+    },
+
+    corrupted_wolf: {
+        name: 'Corrupted Wolf',
+        baseHp: 65,
+        baseDamage: 20,
+        baseDefense: 5,
+        baseXp: 58,
+        baseGold: 18,
+        level: 4,
+        description: 'A wolf twisted by dark magic',
+        possibleDrops: ['health_potion', 'wolf_pelt', 'dark_essence', 'small_gem'],
+        dropRates: { common: 0.4, uncommon: 0.25, rare: 0.1 }
+    },
+
+    wandering_mage: {
+        name: 'Wandering Mage',
+        baseHp: 52,
+        baseDamage: 22,
+        baseDefense: 4,
+        baseXp: 60,
+        baseGold: 45,
+        level: 4,
+        description: 'A reckless spellcaster practicing forbidden magic',
+        possibleDrops: ['mana_potion', 'spell_scroll', 'small_gem'],
+        dropRates: { common: 0.35, uncommon: 0.3, rare: 0.12 }
+    },
+
+    grave_scarab: {
+        name: 'Grave Scarab',
+        baseHp: 58,
+        baseDamage: 17,
+        baseDefense: 7,
+        baseXp: 48,
+        baseGold: 15,
+        level: 4,
+        description: 'A beetle feeding on necrotic energy',
+        possibleDrops: ['health_potion', 'scarab_shell', 'small_gem'],
+        dropRates: { common: 0.5, uncommon: 0.2, rare: 0.05 }
+    },
+
+    marsh_hunter: {
+        name: 'Marsh Hunter',
+        baseHp: 70,
+        baseDamage: 21,
+        baseDefense: 6,
+        baseXp: 65,
+        baseGold: 35,
+        level: 5,
+        description: 'A skilled predator adapted to wetlands',
+        possibleDrops: ['health_potion', 'leather_armor', 'medium_gem'],
+        dropRates: { common: 0.35, uncommon: 0.3, rare: 0.12 }
+    },
+
+    cult_initiate: {
+        name: 'Cult Initiate',
+        baseHp: 62,
+        baseDamage: 23,
+        baseDefense: 5,
+        baseXp: 68,
+        baseGold: 40,
+        level: 5,
+        description: 'A hooded worshipper of dark powers',
+        possibleDrops: ['mana_potion', 'dark_essence', 'medium_gem'],
+        dropRates: { common: 0.35, uncommon: 0.3, rare: 0.15 }
+    },
+
+    animated_armor: {
+        name: 'Animated Armor',
+        baseHp: 85,
+        baseDamage: 19,
+        baseDefense: 12,
+        baseXp: 72,
+        baseGold: 30,
+        level: 5,
+        description: 'An empty suit of armor moving on its own',
+        possibleDrops: ['health_potion', 'iron_scraps', 'medium_gem'],
+        dropRates: { common: 0.4, uncommon: 0.25, rare: 0.1 }
+    },
+
+    bone_hound: {
+        name: 'Bone Hound',
+        baseHp: 78,
+        baseDamage: 22,
+        baseDefense: 7,
+        baseXp: 70,
+        baseGold: 22,
+        level: 5,
+        description: 'A skeletal beast that hunts the living',
+        possibleDrops: ['health_potion', 'bone_dust', 'medium_gem'],
+        dropRates: { common: 0.45, uncommon: 0.25, rare: 0.1 }
+    },
+
+    swamp_brute: {
+        name: 'Swamp Brute',
+        baseHp: 95,
+        baseDamage: 24,
+        baseDefense: 9,
+        baseXp: 80,
+        baseGold: 45,
+        level: 5,
+        description: 'A hulking creature born of the mire',
+        possibleDrops: ['health_potion', 'swamp_essence', 'medium_gem'],
+        dropRates: { common: 0.35, uncommon: 0.3, rare: 0.12 }
+    },
+
+
     goblin: { 
         name: 'Goblin', 
         baseHp: 30, 

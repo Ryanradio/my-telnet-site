@@ -72,6 +72,240 @@ const ADVENTURES = {
         ]
     },
 
+
+
+    // ═══════════════════════════════════════════════════════════════
+// Common Weathered Shack
+// ═══════════════════════════════════════════════════════════════
+
+weathered_shack: {
+    id: 'weathered_shack',
+    name: 'Old Weathered Shack',
+    rarity: 'common',
+    description: 'A crooked, aging shack sits alone among the trees.',
+    intro: 'You come across an old weathered shack. The wood is splintered, the windows cracked, and the air around it feels strangely still.',
+
+    choices: [
+        {
+            text: 'Enter through the front door',
+            outcomes: [
+                {
+                    weight: 100,
+                    text: 'The door creaks open loudly. Inside are three rooms. You may only search one.',
+                    nextChoices: [
+                        {
+                            text: 'Search the left room',
+                            outcomes: [
+                                {
+                                    weight: 100,
+                                    text: 'Under a loose floorboard, you find a small stash of gold!',
+                                    rewards: { gold: 250, xp: 100 }
+                                }
+                            ]
+                        },
+                        {
+                            text: 'Search the middle room',
+                            outcomes: [
+                                {
+                                    weight: 100,
+                                    text: 'You find an old but usable weapon leaning against the wall.',
+                                    rewards: { items: ['rusty_dagger'], xp: 100 }
+                                }
+                            ]
+                        },
+                        {
+                            text: 'Search the right room',
+                            outcomes: [
+                                {
+                                    weight: 100,
+                                    text: 'The moment you step inside, a hidden warrior lunges at you!',
+                                    combat: ['orc']
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            text: 'Sneak around to the back of the shack',
+            outcomes: [
+                {
+                    weight: 100,
+                    text: 'Behind the shack, you notice disturbed dirt near a broken fence post. After digging for several minutes, you uncover a buried chest filled with gold!',
+                    rewards: { gold: 1000, xp: 200 }
+                }
+            ]
+        },
+        {
+            text: 'Leave the shack alone',
+            outcomes: [
+                {
+                    weight: 100,
+                    text: 'You decide it’s not worth the risk and continue on your journey.',
+                    rewards: { xp: 50 }
+                }
+            ]
+        }
+    ]
+},
+
+
+// ═══════════════════════════════════════════════════════════════
+// Common Adventure: Whispering Lights
+// ═══════════════════════════════════════════════════════════════
+
+whispering_lights: {
+    id: 'whispering_lights',
+    name: 'Whispering Lights',
+    rarity: 'common',
+    description: 'Strange lights flicker between the trees as night falls.',
+    intro: 'As dusk settles, faint glowing lights drift between the trees ahead. They pulse softly, almost as if beckoning you closer.',
+
+    choices: [
+        {
+            text: 'Follow the lights deeper into the woods',
+            outcomes: [
+                {
+                    weight: 100,
+                    text: 'You follow the lights into a small forest clearing. Four paths reveal themselves.',
+                    nextChoices: [
+                        {
+                            text: 'Approach a glowing stone altar',
+                            outcomes: [
+                                {
+                                    weight: 60,
+                                    text: 'The altar hums warmly. You feel empowered.',
+                                    rewards: { xp: 200 }
+                                },
+                                {
+                                    weight: 40,
+                                    text: 'The altar flares violently — a guardian spirit attacks!',
+                                    combat: ['forest_imp']
+                                }
+                            ]
+                        },
+                        {
+                            text: 'Investigate a flickering campfire',
+                            outcomes: [
+                                {
+                                    weight: 70,
+                                    text: 'You find coins scattered near the ashes.',
+                                    rewards: { gold: 300 }
+                                },
+                                {
+                                    weight: 30,
+                                    text: 'A lurking bandit leaps from the shadows!',
+                                    combat: ['water_snake']
+                                }
+                            ]
+                        },
+                        {
+                            text: 'Examine a glowing tree',
+                            outcomes: [
+                                {
+                                    weight: 50,
+                                    text: 'You harvest rare glowing sap and sell it later.',
+                                    rewards: { gold: 200, xp: 100 }
+                                },
+                                {
+                                    weight: 50,
+                                    text: 'The tree comes alive and attacks!',
+                                    combat: ['water_snake']
+                                }
+                            ]
+                        },
+                        {
+                            text: 'Touch the floating lights',
+                            outcomes: [
+                                {
+                                    weight: 80,
+                                    text: 'The lights swirl around you and fade, leaving a reward behind.',
+                                    rewards: { gold: 150, xp: 150 }
+                                },
+                                {
+                                    weight: 20,
+                                    text: 'The lights scream — illusions vanish as monsters appear!',
+                                    combat: ['forest_imp']
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            text: 'Try to trap one of the lights',
+            outcomes: [
+                {
+                    weight: 100,
+                    text: 'You set a crude trap near where the lights drift. Soon, something takes the bait.',
+                    nextChoices: [
+                        {
+                            text: 'Check the trap immediately',
+                            outcomes: [
+                                {
+                                    weight: 60,
+                                    text: 'You catch a glowing critter and sell it to a collector.',
+                                    rewards: { gold: 400 }
+                                },
+                                {
+                                    weight: 40,
+                                    text: 'The trap snaps shut on a hostile creature!',
+                                    combat: ['forest_imp']
+                                }
+                            ]
+                        },
+                        {
+                            text: 'Wait and observe from hiding',
+                            outcomes: [
+                                {
+                                    weight: 70,
+                                    text: 'You learn more about the lights and gain insight.',
+                                    rewards: { xp: 250 }
+                                },
+                                {
+                                    weight: 30,
+                                    text: 'You wait too long — something notices you first!',
+                                    combat: ['forest_imp']
+                                }
+                            ]
+                        },
+                        {
+                            text: 'Reinforce the trap',
+                            outcomes: [
+                                {
+                                    weight: 50,
+                                    text: 'The reinforced trap catches something valuable.',
+                                    rewards: { gold: 350, xp: 100 }
+                                },
+                                {
+                                    weight: 50,
+                                    text: 'The trap breaks loudly, drawing enemies!',
+                                    combat: ['bandit']
+                                }
+                            ]
+                        },
+                        {
+                            text: 'Abandon the trap and leave',
+                            outcomes: [
+                                {
+                                    weight: 100,
+                                    text: 'You decide the lights aren’t worth the risk and move on.',
+                                    rewards: { xp: 75 }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+},
+
+
+
+
     // ═══════════════════════════════════════════════════════════════
     // MYSTERIOUS STRANGER ADVENTURES
     // ═══════════════════════════════════════════════════════════════
@@ -555,34 +789,35 @@ const ADVENTURE_ENEMIES = {
 
 // Rarity chances
 const ADVENTURE_RARITY_CHANCES = {
-    legendary: 0.0001,  // 0.01%
-    rare: 0.005,        // 0.5%
-    uncommon: 0.01,     // 1%
-    common: 0.05        // 5%
+    legendary: 0.01,  // 0.01% = 0.0001
+    rare: 0.01,        // 0.5% = 0.005
+    uncommon: 0.01,     // 1% = 0.01
+    common: 1        // 5% = 0.05
 };
 
 // Helper function to roll for random adventure
 function rollForAdventure(playerLevel) {
-    // Roll for adventure chance
     const roll = Math.random();
-    
-    let eligibleAdventures = [];
-    
-    // Check each rarity tier
+    let cumulative = 0;
+
     for (const [rarity, chance] of Object.entries(ADVENTURE_RARITY_CHANCES)) {
-        if (roll < chance) {
-            // Get adventures of this rarity
-            eligibleAdventures = Object.values(ADVENTURES)
+        cumulative += chance;
+
+        if (roll < cumulative) {
+            const eligibleAdventures = Object.values(ADVENTURES)
                 .filter(adv => adv.rarity === rarity);
-            break;
+
+            if (!eligibleAdventures.length) return null;
+
+            return eligibleAdventures[
+                Math.floor(Math.random() * eligibleAdventures.length)
+            ];
         }
     }
-    
-    if (eligibleAdventures.length === 0) return null;
-    
-    // Pick random adventure from eligible ones
-    return eligibleAdventures[Math.floor(Math.random() * eligibleAdventures.length)];
+
+    return null;
 }
+
 
 // Export
 if (typeof module !== 'undefined' && module.exports) {

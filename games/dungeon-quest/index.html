@@ -4471,7 +4471,7 @@ function stabilizeTerminalLayout() {
             // ═══════════════════════════════════════════════════════════════
             if (typeof rollForAdventure !== 'undefined') {
                 const adventureRoll = Math.random();
-                const adventureThreshold = location.adventureChance || 0.05;
+                const adventureThreshold = location.adventureChance = 1; // FORCE 100% FOR TESTING
                 
                 if (adventureRoll < adventureThreshold) {
                     const adventure = rollForAdventure(p.level);
@@ -7004,24 +7004,29 @@ function playerIsExhausted() {
         // ═══════════════════════════════════════════════════════════════
         
         function startAdventure(adventure) {
-            gameState.currentAdventure = adventure;
-            
-            termAppend('', 'term-separator');
-            termAppend(`<span style="color:#FFD700;font-size:20px;">✨ ${adventure.name}! ✨</span>`, 'term-highlight');
-            termAppend('', 'term-separator');
-            termAppend(adventure.intro, 'term-dim');
-            termAppend('', 'term-separator');
-            termAppend('<span style="color:var(--highlight-color);">What do you do?</span>');
-            termAppend('', 'term-separator');
-            
-            // Show choices
-            adventure.choices.forEach((choice, index) => {
-                termAppend(`<span style="color:var(--highlight-color);">${index + 1}.</span> ${choice.text}`, 'term-highlight');
-            });
-            
-            // Render adventure action bar
-            renderAdventureActionBar();
-        }
+    // Deep clone so we don't mutate ADVENTURES template
+    gameState.currentAdventure = JSON.parse(JSON.stringify(adventure));
+    const current = gameState.currentAdventure;
+    
+    termAppend('', 'term-separator');
+    termAppend(`<span style="color:#FFD700;font-size:20px;">✨ ${current.name}! ✨</span>`, 'term-highlight');
+    termAppend('', 'term-separator');
+    termAppend(current.intro, 'term-dim');
+    termAppend('', 'term-separator');
+    termAppend('<span style="color:var(--highlight-color);">What do you do?</span>');
+    termAppend('', 'term-separator');
+    
+    // Show choices
+    current.choices.forEach((choice, index) => {
+        termAppend(
+            `<span style="color:var(--highlight-color);">${index + 1}.</span> ${choice.text}`,
+            'term-highlight'
+        );
+    });
+    
+    renderAdventureActionBar();
+}
+
         
         function renderAdventureActionBar() {
             const adventure = gameState.currentAdventure;
@@ -7041,52 +7046,77 @@ function playerIsExhausted() {
             });
         }
         
-        function chooseAdventurePath(choiceIndex) {
-            const adventure = gameState.currentAdventure;
-            if (!adventure) return;
-            
-            const choice = adventure.choices[choiceIndex];
-            
-            termAppend('', 'term-separator');
-            termAppend(`<span style="color:var(--text-color);">► You choose: ${choice.text}</span>`, 'term-highlight');
-            termAppend('', 'term-separator');
-            
-            // Roll for outcome
-            let totalWeight = 0;
-            choice.outcomes.forEach(o => totalWeight += o.weight);
-            
-            let roll = Math.random() * totalWeight;
-            let selectedOutcome = choice.outcomes[0];
-            
-            for (const outcome of choice.outcomes) {
-                roll -= outcome.weight;
-                if (roll <= 0) {
-                    selectedOutcome = outcome;
-                    break;
-                }
-            }
-            
-            // Show outcome
-            termAppend(selectedOutcome.text, 'term-highlight');
-            
-            // Apply rewards
-            if (selectedOutcome.rewards) {
-                applyAdventureRewards(selectedOutcome.rewards);
-            }
-            
-            // Start combat if needed
-            if (selectedOutcome.combat) {
-                termAppend('', 'term-separator');
-                gameState.currentAdventure = null;
-                startCombat(selectedOutcome.combat);
-                return;
-            }
-            
-            // Adventure over, return to exploration
-            gameState.currentAdventure = null;
-            termAppend('', 'term-separator');
-            renderActionBar();
+       function chooseAdventurePath(choiceIndex) {
+    const adventure = gameState.currentAdventure;
+    if (!adventure || !adventure.choices) return;
+
+    const choice = adventure.choices[choiceIndex];
+    if (!choice) return;
+
+    termAppend('', 'term-separator');
+    termAppend(
+        `<span style="color:var(--text-color);">► You choose: ${choice.text}</span>`,
+        'term-highlight'
+    );
+    termAppend('', 'term-separator');
+
+    // Roll weighted outcome
+    let totalWeight = 0;
+    choice.outcomes.forEach(o => totalWeight += o.weight);
+
+    let roll = Math.random() * totalWeight;
+    let selectedOutcome = choice.outcomes[0];
+
+    for (const outcome of choice.outcomes) {
+        roll -= outcome.weight;
+        if (roll <= 0) {
+            selectedOutcome = outcome;
+            break;
         }
+    }
+
+    // Show outcome text
+    if (selectedOutcome.text) {
+        termAppend(selectedOutcome.text, 'term-highlight');
+    }
+
+    // Apply rewards
+    if (selectedOutcome.rewards) {
+        applyAdventureRewards(selectedOutcome.rewards);
+    }
+
+    // Combat immediately ends the adventure
+    if (selectedOutcome.combat) {
+        termAppend('', 'term-separator');
+        gameState.currentAdventure = null;
+        startCombat(selectedOutcome.combat);
+        return;
+    }
+
+    // ✅ Handle nested choices correctly
+    if (selectedOutcome.nextChoices && selectedOutcome.nextChoices.length) {
+        adventure.choices = selectedOutcome.nextChoices;
+
+        termAppend('', 'term-separator');
+        termAppend(
+            '<span style="color:var(--highlight-color);">What do you do?</span>',
+            'term-highlight'
+        );
+        termAppend('', 'term-separator');
+
+        // Re-render adventure buttons (NOT normal action bar)
+        renderAdventureActionBar();
+        return;
+    }
+
+    // Adventure ends normally
+    gameState.currentAdventure = null;
+    termAppend('', 'term-separator');
+    renderActionBar();
+}
+
+
+
         
         function applyAdventureRewards(rewards) {
             const p = gameState.player;
