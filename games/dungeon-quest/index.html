@@ -4770,74 +4770,113 @@ ${mapAscii}
     const cs = gameState.combatState;
     
     // ═══ COMBAT BUTTONS (if in combat) ═══
-    if (cs) {
-        const maxHits  = cs.pipAvailable ? cs.pipAvailable.length : calcPlayerHits(gameState.player);
-        const hitsLeft = cs.pipAvailable ? cs.pipAvailable.filter(x => x).length : maxHits;
-        const canAct   = hitsLeft > 0;
-        const pips = '●'.repeat(hitsLeft) + '○'.repeat(maxHits - hitsLeft);
-        const mode = cs.actionMode || 'main';
+if (cs) {
+    const maxHits  = cs.pipAvailable
+        ? cs.pipAvailable.length
+        : calcPlayerHits(gameState.player);
 
-        const combatDiv = document.createElement('div');
-        combatDiv.style.cssText = 'border-bottom: 1px solid var(--border-color); padding-bottom: 6px; margin-bottom: 6px;';
-        
-        if (mode === 'main') {
-            combatDiv.innerHTML = `
-                <div style="color:var(--highlight-color);font-size:16px;margin-bottom:4px;text-align:center;">
-                    ⚔️ <span style="letter-spacing:2px;">${pips}</span> <span style="color:#8aaa8a;font-size:13px;">(${hitsLeft}/${maxHits})</span>
-                </div>
-                <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;">
-                    <button onclick="showAttackMenu()" ${!canAct?'disabled':''} style="min-width:50px;padding:6px;font-size:13px;">⚔️</button>
-                    <button onclick="showSpellMenu()"  ${!canAct?'disabled':''} style="min-width:50px;padding:6px;font-size:13px;">✨</button>
-                    <button onclick="showPotionMenu()" ${!canAct?'disabled':''} style="min-width:50px;padding:6px;font-size:13px;">🧪</button>
-                    <button onclick="playerDefend()"   ${!canAct?'disabled':''} style="min-width:50px;padding:6px;font-size:13px;">🛡️</button>
-                    <button onclick="attemptFlee()"    ${!canAct?'disabled':''} style="min-width:50px;padding:6px;font-size:13px;">🏃</button>
-                </div>
-            `;
-        } else if (mode === 'attack_type') {
-            const normalCost = 1;
-            const heavyCost = 2;
-            combatDiv.innerHTML = `
-                <div style="color:var(--highlight-color);font-size:14px;margin-bottom:4px;text-align:center;">ATTACK TYPE:</div>
-                <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;">
-                    <button onclick="selectAttackType('normal')" ${hitsLeft < normalCost?'disabled':''} style="min-width:65px;padding:6px;font-size:12px;">⚔️ Normal<br>(1 pip)</button>
-                    <button onclick="selectAttackType('heavy')" ${hitsLeft < heavyCost?'disabled':''} style="min-width:65px;padding:6px;font-size:12px;">💥 Heavy<br>(2 pips)</button>
-                    <button onclick="selectAttackType('special')" ${hitsLeft < 1?'disabled':''} style="min-width:65px;padding:6px;font-size:12px;">⭐ Special<br>(All)</button>
-                    <button onclick="cancelAction()" style="min-width:50px;padding:6px;font-size:13px;">❌</button>
-                </div>
-            `;
-        } else if (mode === 'target_attack' || mode === 'target_spell') {
-            const monsters = cs.monsters;
-            const targetBtns = monsters.map((m, i) => {
-                return `<button onclick="executeTargetedAction(${i})" style="min-width:80px;padding:6px;font-size:12px;background:linear-gradient(135deg,#0a3a0a,#0a2a0a);">
-                    #${i+1} ${m.name}<br><span style="font-size:11px;">HP: ${m.hp}/${m.maxHp}</span>
-                </button>`;
-            }).join('');
-            combatDiv.innerHTML = `
-                <div style="color:var(--highlight-color);font-size:14px;margin-bottom:4px;text-align:center;">TARGET:</div>
-                <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;">
-                    ${targetBtns}
-                    <button onclick="cancelAction()" style="min-width:50px;padding:6px;font-size:13px;">❌</button>
-                </div>
-            `;
-        } else if (mode === 'spell_list') {
-            const spells = gameState.player.knownSpells || [];
-            const spellBtns = spells.map(sk => {
-                const spell = SPELLS[sk];
-                return `<button onclick="selectSpell('${sk}')" ${!canAct || gameState.player.mp < spell.cost ? 'disabled' : ''} style="min-width:70px;padding:6px;font-size:12px;">
-                    ${spell.name}<br><span style="font-size:11px;">${spell.cost} MP</span>
-                </button>`;
-            }).join('');
-            combatDiv.innerHTML = `
-                <div style="color:var(--highlight-color);font-size:14px;margin-bottom:4px;text-align:center;">SPELL:</div>
-                <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;">
-                    ${spellBtns}
-                    <button onclick="cancelAction()" style="min-width:50px;padding:6px;font-size:13px;">❌</button>
-                </div>
-            `;
-        }
-        
-        ab.appendChild(combatDiv);
+    const hitsLeft = cs.pipAvailable
+        ? cs.pipAvailable.filter(x => x).length
+        : maxHits;
+
+    const canAct = hitsLeft > 0;
+    const pips = '●'.repeat(hitsLeft) + '○'.repeat(maxHits - hitsLeft);
+    const mode = cs.actionMode || 'main';
+
+    const combatDiv = document.createElement('div');
+    combatDiv.style.cssText =
+        'border-bottom:1px solid var(--border-color);padding-bottom:6px;margin-bottom:6px;';
+
+    /* ───────── MAIN COMBAT MENU ───────── */
+    if (mode === 'main') {
+        combatDiv.innerHTML = `
+            <div style="color:var(--highlight-color);font-size:16px;margin-bottom:4px;text-align:center;">
+                ⚔️ <span style="letter-spacing:2px;">${pips}</span>
+                <span style="color:#8aaa8a;font-size:13px;">(${hitsLeft}/${maxHits})</span>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;">
+                <button onclick="showAttackMenu()" ${!canAct ? 'disabled' : ''}>⚔️</button>
+                <button onclick="showSpellMenu()"  ${!canAct ? 'disabled' : ''}>✨</button>
+                <button onclick="showPotionMenu()" ${!canAct ? 'disabled' : ''}>🧪</button>
+                <button onclick="playerDefend()"   ${!canAct ? 'disabled' : ''}>🛡️</button>
+                <button onclick="attemptFlee()"    ${!canAct ? 'disabled' : ''}>🏃</button>
+            </div>
+        `;
     }
+
+    /* ───────── ATTACK TYPE MENU ───────── */
+    else if (mode === 'attack_type') {
+        const normalCost = 1;
+        const heavyCost  = 2;
+
+        combatDiv.innerHTML = `
+            <div style="color:var(--highlight-color);font-size:14px;margin-bottom:4px;text-align:center;">
+                ATTACK TYPE
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;">
+                <button onclick="selectAttackType('normal')" ${hitsLeft < normalCost ? 'disabled' : ''}>
+                    ⚔️ Normal
+                </button>
+                <button onclick="selectAttackType('heavy')" ${hitsLeft < heavyCost ? 'disabled' : ''}>
+                    💥 Heavy
+                </button>
+                <button onclick="selectAttackType('special')" ${hitsLeft < 1 ? 'disabled' : ''}>
+                    ⭐ Special
+                </button>
+                <button onclick="cancelAction()">❌</button>
+            </div>
+        `;
+    }
+
+    /* ───────── TARGET SELECTION ───────── */
+    else if (mode === 'target_attack' || mode === 'target_spell') {
+        const targetBtns = cs.monsters.map((m, i) => `
+            <button onclick="executeTargetedAction(${i})">
+                #${i + 1} ${m.name}<br>
+                <span style="font-size:11px;">HP ${m.hp}/${m.maxHp}</span>
+            </button>
+        `).join('');
+
+        combatDiv.innerHTML = `
+            <div style="color:var(--highlight-color);font-size:14px;margin-bottom:4px;text-align:center;">
+                TARGET
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;">
+                ${targetBtns}
+                <button onclick="cancelAction()">❌</button>
+            </div>
+        `;
+    }
+
+    /* ───────── SPELL LIST ───────── */
+    else if (mode === 'spell_list') {
+        const spells = gameState.player.knownSpells || [];
+
+        const spellBtns = spells.map(sk => {
+            const spell = SPELLS[sk];
+            const disabled = !canAct || gameState.player.mp < spell.mpCost;
+            return `
+                <button onclick="selectSpell('${sk}')" ${disabled ? 'disabled' : ''}>
+                    ${spell.name}<br>
+                    <span style="font-size:11px;">${spell.mpCost} MP</span>
+                </button>
+            `;
+        }).join('');
+
+        combatDiv.innerHTML = `
+            <div style="color:var(--highlight-color);font-size:14px;margin-bottom:4px;text-align:center;">
+                SPELL
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;">
+                ${spellBtns}
+                <button onclick="cancelAction()">❌</button>
+            </div>
+        `;
+    }
+
+    actionBar.appendChild(combatDiv);
+}
+
 
     // ═══ NAVIGATION BUTTONS (always visible) ═══
     const canMove = !cs || !cs.pipAvailable || cs.pipAvailable.every(x => x);
@@ -4959,31 +4998,36 @@ ${mapAscii}
                     const specialCost = hitsLeft; // Uses all pips
                     
                     ab.innerHTML = `
-                        <div style="color:var(--highlight-color);font-size:18px;margin-bottom:6px;">
-                            CHOOSE ATTACK TYPE:
-                        </div>
-                        <div style="display:flex;flex-wrap:wrap;gap:6px;">
-                            <button onclick="selectAttackType('normal')" ${hitsLeft < normalCost?'disabled':''} class="action-icon-btn">
-                                ⚔️ Normal<br><span style="font-size:12px;">(1 pip)</span>
-                            </button>
-                            <button onclick="selectAttackType('heavy')" ${hitsLeft < heavyCost?'disabled':''} class="action-icon-btn">
-                                💥 Heavy<br><span style="font-size:12px;">(2 pips)</span>
-                            </button>
-                            <button onclick="selectAttackType('special')" ${hitsLeft < 1?'disabled':''} class="action-icon-btn">
-                                ⭐ Special<br><span style="font-size:12px;">(All pips)</span>
-                            </button>
-                            <button onclick="cancelAction()" class="action-icon-btn">❌ Back</button>
-                        </div>
+    <div style="color:var(--highlight-color);font-size:18px;margin-bottom:6px;">
+        CHOOSE ATTACK TYPE:
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        <button onclick="selectAttackType('normal')" ${hitsLeft < normalCost ? 'disabled' : ''} class="action-icon-btn">
+            ⚔️ Normal
+        </button>
+        <button onclick="selectAttackType('heavy')" ${hitsLeft < heavyCost ? 'disabled' : ''} class="action-icon-btn">
+            💥 Heavy
+        </button>
+        <button onclick="selectAttackType('special')" ${hitsLeft < 1 ? 'disabled' : ''} class="action-icon-btn">
+            ⭐ Special
+        </button>
+        <button onclick="cancelAction()" class="action-icon-btn">
+            ❌ Back
+        </button>
+    </div>
+
+
                     `;
                 } else if (mode === 'target_attack' || mode === 'target_spell') {
                     // Target selection menu
                     const actionName = mode === 'target_spell' ? cs.pendingSpell?.name || 'Spell' : 'Attack';
                     const targetBtns = monsters.map((m, i) => {
-                        return `<button onclick="executeTargetedAction(${i})" class="target-btn">
-                            #${i+1} ${m.name}<br>
-                            <span style="font-size:12px;">HP: ${m.hp}/${m.maxHp}</span>
-                        </button>`;
-                    }).join('');
+    return `<button onclick="executeTargetedAction(${i})"
+        class="target-btn">
+        #${i + 1} ${m.name}
+    </button>`;
+}).join('');
+
                     
                     ab.innerHTML = `
                         <div style="color:var(--highlight-color);font-size:10px;margin-bottom:6px;">
