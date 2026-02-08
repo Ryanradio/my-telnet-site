@@ -1181,6 +1181,8 @@ body.terminal-mode #terminalWindow {
     <script src="armor.js"></script>
     <script src="items.js"></script>
     <script src="class-masters.js"></script>
+    <script src="exploration-zones.js"></script>
+    <script src="adventures.js"></script>
 
     <script>
 
@@ -1485,6 +1487,32 @@ const OPPOSITE_DIR = {
         unlockMessage: 'Defeat your class master in the crypt to unlock this area!'
     }
 };
+
+// ═══════════════════════════════════════════════════════════════
+// MERGE EXPANDED ZONES (if exploration-zones.js is loaded)
+// ═══════════════════════════════════════════════════════════════
+if (typeof EXPLORATION_ZONES !== 'undefined') {
+    // Merge new zones while keeping custom zones
+    Object.assign(LOCATIONS, EXPLORATION_ZONES);
+    console.log('✅ Loaded expanded exploration zones');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MERGE ZONE MONSTERS (if exploration-zones.js is loaded)
+// ═══════════════════════════════════════════════════════════════
+if (typeof ZONE_MONSTERS !== 'undefined') {
+    Object.assign(ENEMIES, ZONE_MONSTERS);
+    console.log('✅ Loaded zone-specific monsters');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MERGE ADVENTURE ENEMIES (if adventures.js is loaded)
+// ═══════════════════════════════════════════════════════════════
+if (typeof ADVENTURE_ENEMIES !== 'undefined') {
+    Object.assign(ENEMIES, ADVENTURE_ENEMIES);
+    console.log('✅ Loaded adventure enemies');
+}
+
 
 
         // ═══════════════════════════════════════════════════════════════
@@ -4386,6 +4414,25 @@ function stabilizeTerminalLayout() {
                 termAppend('', 'term-separator');
             }
 
+            // ═══════════════════════════════════════════════════════════════
+            // ROLL FOR RANDOM ADVENTURE (if adventure system is loaded)
+            // ═══════════════════════════════════════════════════════════════
+            if (typeof rollForAdventure !== 'undefined') {
+                const adventureRoll = Math.random();
+                const adventureThreshold = location.adventureChance || 0.05;
+                
+                if (adventureRoll < adventureThreshold) {
+                    const adventure = rollForAdventure(p.level);
+                    if (adventure) {
+                        startAdventure(adventure);
+                        return; // Adventure takes over, no normal combat
+                    }
+                }
+            }
+
+            // ═══════════════════════════════════════════════════════════════
+            // NORMAL COMBAT ENCOUNTER
+            // ═══════════════════════════════════════════════════════════════
             if (Math.random() < 0.7) {
                 const numMonsters = rollMonsterCount();
                 const enemyKeys = [];
@@ -6776,6 +6823,166 @@ function playerIsExhausted() {
             gameState.player.gold = Math.floor(gameState.player.gold / 2);
             gameState.combatState = null;
             showTown();
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // ADVENTURE SYSTEM (Choose-Your-Own-Adventure encounters)
+        // ═══════════════════════════════════════════════════════════════
+        
+        function startAdventure(adventure) {
+            gameState.currentAdventure = adventure;
+            
+            termAppend('', 'term-separator');
+            termAppend(`<span style="color:#FFD700;font-size:20px;">✨ ${adventure.name}! ✨</span>`, 'term-highlight');
+            termAppend('', 'term-separator');
+            termAppend(adventure.intro, 'term-dim');
+            termAppend('', 'term-separator');
+            termAppend('<span style="color:var(--highlight-color);">What do you do?</span>');
+            termAppend('', 'term-separator');
+            
+            // Show choices
+            adventure.choices.forEach((choice, index) => {
+                termAppend(`<span style="color:var(--highlight-color);">${index + 1}.</span> ${choice.text}`, 'term-highlight');
+            });
+            
+            // Render adventure action bar
+            renderAdventureActionBar();
+        }
+        
+        function renderAdventureActionBar() {
+            const adventure = gameState.currentAdventure;
+            if (!adventure) return;
+            
+            const ab = document.getElementById('actionBar');
+            ab.style.display = 'flex';
+            ab.innerHTML = '';
+            
+            adventure.choices.forEach((choice, index) => {
+                const btn = document.createElement('button');
+                btn.textContent = `${index + 1}. ${choice.text.substring(0, 30)}${choice.text.length > 30 ? '...' : ''}`;
+                btn.style.fontSize = '12px';
+                btn.style.padding = '6px';
+                btn.onclick = () => chooseAdventurePath(index);
+                ab.appendChild(btn);
+            });
+        }
+        
+        function chooseAdventurePath(choiceIndex) {
+            const adventure = gameState.currentAdventure;
+            if (!adventure) return;
+            
+            const choice = adventure.choices[choiceIndex];
+            
+            termAppend('', 'term-separator');
+            termAppend(`<span style="color:var(--text-color);">► You choose: ${choice.text}</span>`, 'term-highlight');
+            termAppend('', 'term-separator');
+            
+            // Roll for outcome
+            let totalWeight = 0;
+            choice.outcomes.forEach(o => totalWeight += o.weight);
+            
+            let roll = Math.random() * totalWeight;
+            let selectedOutcome = choice.outcomes[0];
+            
+            for (const outcome of choice.outcomes) {
+                roll -= outcome.weight;
+                if (roll <= 0) {
+                    selectedOutcome = outcome;
+                    break;
+                }
+            }
+            
+            // Show outcome
+            termAppend(selectedOutcome.text, 'term-highlight');
+            
+            // Apply rewards
+            if (selectedOutcome.rewards) {
+                applyAdventureRewards(selectedOutcome.rewards);
+            }
+            
+            // Start combat if needed
+            if (selectedOutcome.combat) {
+                termAppend('', 'term-separator');
+                gameState.currentAdventure = null;
+                startCombat(selectedOutcome.combat);
+                return;
+            }
+            
+            // Adventure over, return to exploration
+            gameState.currentAdventure = null;
+            termAppend('', 'term-separator');
+            renderActionBar();
+        }
+        
+        function applyAdventureRewards(rewards) {
+            const p = gameState.player;
+            
+            if (rewards.gold) {
+                p.gold = Math.max(0, p.gold + rewards.gold);
+                if (rewards.gold > 0) {
+                    termAppend(`<span style="color:#FFD700;">💰 +${rewards.gold} Gold!</span>`, 'term-loot');
+                } else {
+                    termAppend(`<span style="color:#FF6666;">💰 ${rewards.gold} Gold (paid)</span>`, 'term-error');
+                }
+            }
+            
+            if (rewards.xp) {
+                p.xp += rewards.xp;
+                termAppend(`<span style="color:#88FF88;">⭐ +${rewards.xp} XP!</span>`, 'term-loot');
+                
+                // Check for level up
+                while (p.xp >= p.xpToNext && p.level < 25) {
+                    levelUp();
+                    termAppend(`⬆️ LEVEL UP! You are now level ${p.level}!`, 'term-victory');
+                    
+                    // Check for class evolution
+                    if (p._justEvolved) {
+                        termAppend('', 'term-separator');
+                        termAppend(`<span style="color:#FF00FF;font-size:24px;font-weight:bold;">⚡ CLASS EVOLUTION! ⚡</span>`, 'term-victory');
+                        termAppend(p._evolutionMessage, 'term-victory');
+                        termAppend(`<span style="color:#FFD700;">Your power has DOUBLED!</span>`, 'term-loot');
+                        p._justEvolved = false;
+                        p._evolutionMessage = null;
+                    }
+                }
+            }
+            
+            if (rewards.damage) {
+                p.hp -= rewards.damage;
+                termAppend(`<span style="color:#FF6666;">💔 Took ${rewards.damage} damage!</span>`, 'term-error');
+                if (p.hp <= 0) {
+                    p.hp = 1; // Can't die from adventure damage
+                    termAppend(`<span style="color:#FFAA00;">You barely survive!</span>`, 'term-warning');
+                }
+            }
+            
+            if (rewards.heal === 'full') {
+                p.hp = p.maxHp;
+                p.mp = p.maxMp;
+                termAppend(`<span style="color:#00FF00;">✨ Fully restored!</span>`, 'term-victory');
+            }
+            
+            if (rewards.items) {
+                rewards.items.forEach(itemKey => {
+                    p.inventory.push(itemKey);
+                    const item = ITEMS[itemKey] || WEAPONS[itemKey] || ARMOR[itemKey];
+                    if (item) {
+                        termAppend(`<span style="color:#00FFFF;">🎁 Received: ${item.name}!</span>`, 'term-loot');
+                    } else {
+                        termAppend(`<span style="color:#00FFFF;">🎁 Received: ${itemKey}!</span>`, 'term-loot');
+                    }
+                });
+            }
+            
+            if (rewards.spell) {
+                if (!p.knownSpells.includes(rewards.spell)) {
+                    p.knownSpells.push(rewards.spell);
+                    termAppend(`<span style="color:#FF00FF;">📖 Learned spell: ${rewards.spell}!</span>`, 'term-victory');
+                }
+            }
+            
+            updateHud();
+            saveGame();
         }
 
 

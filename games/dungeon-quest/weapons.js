@@ -1,260 +1,374 @@
-// weapons.js - Weapon Database
-// Add new weapons here to expand the game!
+// weapons.js - Weapon Database (REBALANCED)
+// Weapons now use BASE damage ranges + stat scaling
 
 // QUALITY TIERS:
-// poor (grey): -2 to all stats
-// normal (green): base stats
-// rare (blue): +2 to all stats
-// epic (purple): +5 to all stats
-// legendary (orange): +10 to all stats
-// godly (red): +20 to all stats
+// poor (grey): +0 damage
+// normal (green): +2 damage  
+// rare (blue): +5 damage
+// epic (purple): +10 damage
+// legendary (orange): +20 damage
+// godly (red): +50 damage
 
 const WEAPONS = {
-    // ===== STARTER WEAPONS (Level 1) =====
-    dagger: { 
+    // ===== LEVEL 1 STARTER WEAPONS =====
+    rusty_dagger: { 
         name: 'Rusty Dagger', 
-        baseDamage: 8, 
+        baseDamage: 1,        // Will do 1 + STR damage
         baseMagicDamage: 0, 
         cost: 0, 
         level: 1,
         quality: 'poor',
-        description: 'A worn blade, barely sharp enough to cut'
+        slot: 'weapon',
+        description: 'A worn blade, barely sharp. (1 + STR damage)'
     },
     iron_sword: { 
         name: 'Iron Sword', 
-        baseDamage: 12, 
+        baseDamage: 2, 
         baseMagicDamage: 0, 
         cost: 0, 
         level: 1,
         quality: 'normal',
-        description: 'A standard warrior\'s blade'
+        slot: 'weapon',
+        description: 'A standard warrior blade. (2 + STR damage)'
     },
-    staff: { 
+    wooden_staff: { 
         name: 'Wooden Staff', 
-        baseDamage: 5, 
-        baseMagicDamage: 15, 
+        baseDamage: 1, 
+        baseMagicDamage: 3, 
         cost: 0, 
         level: 1,
         quality: 'normal',
-        description: 'A simple staff imbued with basic magic'
+        slot: 'weapon',
+        description: 'Basic magical focus. (1 + STR, 3 + WIS damage)'
     },
-    mace: { 
-        name: 'Iron Mace', 
-        baseDamage: 10, 
-        baseMagicDamage: 5, 
-        cost: 0, 
-        level: 1,
-        quality: 'normal',
-        description: 'A heavy flanged weapon of divine power'
-    },
-    bow: { 
-        name: 'Short Bow', 
-        baseDamage: 10, 
+    training_bow: { 
+        name: 'Training Bow', 
+        baseDamage: 2, 
         baseMagicDamage: 0, 
         cost: 0, 
         level: 1,
         quality: 'normal',
-        description: 'A basic hunting bow'
+        slot: 'weapon',
+        description: 'A simple hunting bow. (2 + DEX damage)'
     },
 
-    // ===== TIER 2 WEAPONS (Level 3-4) =====
-    steel_sword: { 
-        name: 'Steel Sword', 
-        baseDamage: 20, 
-        baseMagicDamage: 0, 
-        cost: 150, 
-        level: 3,
+    // ===== LEVEL 2 WEAPONS =====
+    short_sword: {
+        name: 'Short Sword',
+        baseDamage: 3,
+        baseMagicDamage: 0,
+        cost: 50,
+        level: 2,
         quality: 'normal',
-        description: 'A finely crafted blade of quality steel'
+        slot: 'weapon',
+        description: 'Quick and nimble. (3 + STR damage)'
     },
-    flame_staff: { 
-        name: 'Flame Staff', 
-        baseDamage: 8, 
-        baseMagicDamage: 28, 
-        cost: 200, 
+    apprentice_staff: {
+        name: 'Apprentice Staff',
+        baseDamage: 1,
+        baseMagicDamage: 4,
+        cost: 60,
+        level: 2,
+        quality: 'normal',
+        slot: 'weapon',
+        description: 'For learning mages. (1 + STR, 4 + WIS damage)'
+    },
+
+    // ===== LEVEL 4 WEAPONS =====
+    steel_sword: {
+        name: 'Steel Sword',
+        baseDamage: 5,
+        baseMagicDamage: 0,
+        cost: 150,
+        level: 4,
+        quality: 'normal',
+        slot: 'weapon',
+        description: 'Quality steel blade. (5 + STR damage)'
+    },
+    battlemace: {
+        name: 'Battlemace',
+        baseDamage: 6,
+        baseMagicDamage: 2,
+        cost: 180,
+        level: 4,
+        quality: 'normal',
+        slot: 'weapon',
+        description: 'Holy weapon. (6 + STR, 2 + WIS damage)'
+    },
+    longbow: {
+        name: 'Longbow',
+        baseDamage: 5,
+        baseMagicDamage: 0,
+        cost: 160,
+        level: 4,
+        quality: 'normal',
+        slot: 'weapon',
+        description: 'Extended range. (5 + DEX damage)'
+    },
+    flame_staff: {
+        name: 'Flame Staff',
+        baseDamage: 2,
+        baseMagicDamage: 7,
+        cost: 200,
         level: 4,
         quality: 'rare',
-        description: 'A staff crackling with elemental fire'
-    },
-    holy_mace: { 
-        name: 'Holy Mace', 
-        baseDamage: 18, 
-        baseMagicDamage: 15, 
-        cost: 180, 
-        level: 3,
-        quality: 'rare',
-        description: 'A blessed weapon that smites evil'
-    },
-    longbow: { 
-        name: 'Longbow', 
-        baseDamage: 22, 
-        baseMagicDamage: 0, 
-        cost: 160, 
-        level: 3,
-        quality: 'normal',
-        description: 'A powerful bow with extended range'
-    },
-    warhammer: {
-        name: 'Warhammer',
-        baseDamage: 24,
-        baseMagicDamage: 0,
-        cost: 170,
-        level: 3,
-        quality: 'normal',
-        description: 'A massive two-handed hammer'
-    },
-    poison_dagger: {
-        name: 'Poison Dagger',
-        baseDamage: 16,
-        baseMagicDamage: 8,
-        cost: 140,
-        level: 3,
-        quality: 'rare',
-        description: 'A blade coated in toxic venom'
+        slot: 'weapon',
+        description: 'Elemental fire. (2 + STR, 7 + WIS damage)'
     },
 
-    // ===== TIER 3 WEAPONS (Level 5-7) =====
+    // ===== LEVEL 6 WEAPONS =====
     bastard_sword: {
         name: 'Bastard Sword',
-        baseDamage: 30,
+        baseDamage: 8,
         baseMagicDamage: 0,
-        cost: 300,
-        level: 5,
+        cost: 350,
+        level: 6,
         quality: 'normal',
-        description: 'A versatile blade that can be wielded one or two-handed'
+        slot: 'weapon',
+        description: 'Versatile blade. (8 + STR damage)'
     },
     ice_staff: {
         name: 'Ice Staff',
-        baseDamage: 10,
-        baseMagicDamage: 38,
-        cost: 350,
-        level: 6,
-        quality: 'rare',
-        description: 'A staff of frozen crystal'
-    },
-    divine_hammer: {
-        name: 'Divine Hammer',
-        baseDamage: 28,
-        baseMagicDamage: 20,
-        cost: 320,
-        level: 5,
-        quality: 'epic',
-        description: 'A holy weapon blessed by the gods'
-    },
-    elven_bow: {
-        name: 'Elven Bow',
-        baseDamage: 32,
-        baseMagicDamage: 5,
-        cost: 310,
-        level: 5,
-        quality: 'rare',
-        description: 'An elegant bow crafted by elven artisans'
-    },
-
-    // ===== LEGENDARY WEAPONS (Level 8+) =====
-    excalibur: { 
-        name: 'Excalibur', 
-        baseDamage: 40, 
-        baseMagicDamage: 20, 
-        cost: 500, 
-        level: 8,
-        quality: 'legendary',
-        description: 'The legendary sword of kings'
-    },
-    archmage_staff: { 
-        name: 'Archmage Staff', 
-        baseDamage: 15, 
-        baseMagicDamage: 50, 
-        cost: 600, 
-        level: 9,
-        quality: 'legendary',
-        description: 'A staff of ultimate magical power'
-    },
-    mjolnir: {
-        name: 'Mjolnir',
-        baseDamage: 45,
-        baseMagicDamage: 25,
-        cost: 650,
-        level: 9,
-        quality: 'legendary',
-        description: 'The hammer of the thunder god'
-    },
-    shadowblade: {
-        name: 'Shadowblade',
-        baseDamage: 38,
-        baseMagicDamage: 22,
-        cost: 580,
-        level: 8,
-        quality: 'epic',
-        description: 'A blade forged in the void between worlds'
-    },
-    dragonslayer: {
-        name: 'Dragonslayer',
-        baseDamage: 50,
-        baseMagicDamage: 15,
-        cost: 700,
-        level: 10,
-        quality: 'legendary',
-        description: 'A massive sword designed to slay dragons'
-    },
-    staff_of_eternity: {
-        name: 'Staff of Eternity',
-        baseDamage: 20,
-        baseMagicDamage: 60,
-        cost: 800,
-        level: 11,
-        quality: 'legendary',
-        description: 'A staff containing infinite cosmic power'
-    },
-    godbow: {
-        name: 'Godbow',
-        baseDamage: 48,
-        baseMagicDamage: 20,
-        cost: 750,
-        level: 10,
-        quality: 'legendary',
-        description: 'A bow that never misses its target'
-    },
-
-    // ===== CRAFTABLE/DROP WEAPONS =====
-    cursed_sword: {
-        name: 'Cursed Sword',
-        baseDamage: 35,
+        baseDamage: 2,
         baseMagicDamage: 10,
         cost: 400,
         level: 6,
-        quality: 'epic',
-        description: 'A blade cursed with dark magic'
+        quality: 'rare',
+        slot: 'weapon',
+        description: 'Frozen crystal. (2 + STR, 10 + WIS damage)'
     },
-    fire_blade: {
-        name: 'Fire Blade',
-        baseDamage: 42,
-        baseMagicDamage: 30,
-        cost: 650,
-        level: 9,
-        quality: 'epic',
-        description: 'A sword wreathed in eternal flames'
-    },
-    vampire_blade: {
-        name: 'Vampire Blade',
-        baseDamage: 40,
-        baseMagicDamage: 15,
-        cost: 550,
-        level: 8,
-        quality: 'epic',
-        description: 'A blade that drains life force'
-    },
-    demonic_blade: {
-        name: 'Demonic Blade',
-        baseDamage: 48,
-        baseMagicDamage: 25,
-        cost: 700,
-        level: 10,
-        quality: 'legendary',
-        description: 'A weapon forged in the depths of hell'
+    elven_bow: {
+        name: 'Elven Bow',
+        baseDamage: 9,
+        baseMagicDamage: 1,
+        cost: 380,
+        level: 6,
+        quality: 'rare',
+        slot: 'weapon',
+        description: 'Elven craftsmanship. (9 + DEX, 1 + WIS damage)'
     },
 
-    // ===== THE ULTIMATE WEAPON =====
+    // ===== LEVEL 8 WEAPONS =====
+    greatsword: {
+        name: 'Greatsword',
+        baseDamage: 12,
+        baseMagicDamage: 0,
+        cost: 600,
+        level: 8,
+        quality: 'normal',
+        slot: 'weapon',
+        description: 'Massive two-hander. (12 + STR damage)'
+    },
+    lightning_staff: {
+        name: 'Lightning Staff',
+        baseDamage: 3,
+        baseMagicDamage: 14,
+        cost: 650,
+        level: 8,
+        quality: 'rare',
+        slot: 'weapon',
+        description: 'Crackling power. (3 + STR, 14 + WIS damage)'
+    },
+    shadowblade: {
+        name: 'Shadowblade',
+        baseDamage: 11,
+        baseMagicDamage: 5,
+        cost: 700,
+        level: 8,
+        quality: 'epic',
+        slot: 'weapon',
+        description: 'Void forged. (11 + DEX, 5 + WIS damage)'
+    },
+
+    // ===== LEVEL 10 WEAPONS =====
+    excalibur: {
+        name: 'Excalibur',
+        baseDamage: 15,
+        baseMagicDamage: 5,
+        cost: 1000,
+        level: 10,
+        quality: 'epic',
+        slot: 'weapon',
+        description: 'Legendary blade. (15 + STR, 5 + WIS damage)'
+    },
+    archmage_staff: {
+        name: 'Archmage Staff',
+        baseDamage: 4,
+        baseMagicDamage: 18,
+        cost: 1100,
+        level: 10,
+        quality: 'epic',
+        slot: 'weapon',
+        description: 'Ultimate magic. (4 + STR, 18 + WIS damage)'
+    },
+    dragonslayer_bow: {
+        name: 'Dragonslayer Bow',
+        baseDamage: 16,
+        baseMagicDamage: 3,
+        cost: 1050,
+        level: 10,
+        quality: 'epic',
+        slot: 'weapon',
+        description: 'Slay dragons. (16 + DEX, 3 + WIS damage)'
+    },
+
+    // ===== LEVEL 12 WEAPONS =====
+    runic_blade: {
+        name: 'Runic Blade',
+        baseDamage: 18,
+        baseMagicDamage: 8,
+        cost: 1500,
+        level: 12,
+        quality: 'epic',
+        slot: 'weapon',
+        description: 'Inscribed with power. (18 + STR, 8 + WIS damage)'
+    },
+    void_staff: {
+        name: 'Void Staff',
+        baseDamage: 5,
+        baseMagicDamage: 22,
+        cost: 1600,
+        level: 12,
+        quality: 'epic',
+        slot: 'weapon',
+        description: 'Consumes reality. (5 + STR, 22 + WIS damage)'
+    },
+
+    // ===== LEVEL 14 WEAPONS =====
+    titanforged_sword: {
+        name: 'Titanforged Sword',
+        baseDamage: 22,
+        baseMagicDamage: 10,
+        cost: 2200,
+        level: 14,
+        quality: 'legendary',
+        slot: 'weapon',
+        description: 'Forged by titans. (22 + STR, 10 + WIS damage)'
+    },
+    celestial_staff: {
+        name: 'Celestial Staff',
+        baseDamage: 6,
+        baseMagicDamage: 26,
+        cost: 2400,
+        level: 14,
+        quality: 'legendary',
+        slot: 'weapon',
+        description: 'Starlight incarnate. (6 + STR, 26 + WIS damage)'
+    },
+    phantom_bow: {
+        name: 'Phantom Bow',
+        baseDamage: 24,
+        baseMagicDamage: 8,
+        cost: 2300,
+        level: 14,
+        quality: 'legendary',
+        slot: 'weapon',
+        description: 'Ethereal arrows. (24 + DEX, 8 + WIS damage)'
+    },
+
+    // ===== LEVEL 16 WEAPONS =====
+    godslayer: {
+        name: 'Godslayer',
+        baseDamage: 26,
+        baseMagicDamage: 12,
+        cost: 3000,
+        level: 16,
+        quality: 'legendary',
+        slot: 'weapon',
+        description: 'Deicide blade. (26 + STR, 12 + WIS damage)'
+    },
+    eternity_staff: {
+        name: 'Staff of Eternity',
+        baseDamage: 8,
+        baseMagicDamage: 30,
+        cost: 3200,
+        level: 16,
+        quality: 'legendary',
+        slot: 'weapon',
+        description: 'Infinite power. (8 + STR, 30 + WIS damage)'
+    },
+
+    // ===== LEVEL 18 WEAPONS =====
+    demonic_blade: {
+        name: 'Demonic Blade',
+        baseDamage: 30,
+        baseMagicDamage: 15,
+        cost: 4000,
+        level: 18,
+        quality: 'legendary',
+        slot: 'weapon',
+        description: 'Hellforged weapon. (30 + STR, 15 + WIS damage)'
+    },
+    apocalypse_staff: {
+        name: 'Apocalypse Staff',
+        baseDamage: 10,
+        baseMagicDamage: 35,
+        cost: 4200,
+        level: 18,
+        quality: 'legendary',
+        slot: 'weapon',
+        description: 'End all things. (10 + STR, 35 + WIS damage)'
+    },
+
+    // ===== LEVEL 20 WEAPONS =====
+    worldbreaker: {
+        name: 'Worldbreaker',
+        baseDamage: 35,
+        baseMagicDamage: 18,
+        cost: 5500,
+        level: 20,
+        quality: 'legendary',
+        slot: 'weapon',
+        description: 'Shatter reality. (35 + STR, 18 + WIS damage)'
+    },
+    cosmic_staff: {
+        name: 'Cosmic Staff',
+        baseDamage: 12,
+        baseMagicDamage: 40,
+        cost: 6000,
+        level: 20,
+        quality: 'legendary',
+        slot: 'weapon',
+        description: 'Universe bends. (12 + STR, 40 + WIS damage)'
+    },
+
+    // ===== LEVEL 22 WEAPONS =====
+    infinity_blade: {
+        name: 'Infinity Blade',
+        baseDamage: 40,
+        baseMagicDamage: 20,
+        cost: 7500,
+        level: 22,
+        quality: 'legendary',
+        slot: 'weapon',
+        description: 'Endless edge. (40 + STR, 20 + WIS damage)'
+    },
+
+    // ===== LEVEL 24 WEAPONS =====
+    primordial_weapon: {
+        name: 'Primordial Weapon',
+        baseDamage: 45,
+        baseMagicDamage: 25,
+        cost: 10000,
+        level: 24,
+        quality: 'legendary',
+        slot: 'weapon',
+        description: 'First weapon ever made. (45 + STR, 25 + WIS damage)'
+    },
+
+    // ===== LEVEL 25 ULTIMATE WEAPONS =====
+    genesis: {
+        name: 'Genesis',
+        baseDamage: 50,
+        baseMagicDamage: 30,
+        cost: 15000,
+        level: 25,
+        quality: 'godly',
+        slot: 'weapon',
+        description: 'Creation itself. (50 + STR, 30 + WIS damage)'
+    },
+
+    // ===== THE MEME WEAPON =====
     magical_butterknife: {
         name: 'Magical Butterknife',
         baseDamage: 9999,
@@ -262,22 +376,22 @@ const WEAPONS = {
         cost: 0,
         level: 1,
         quality: 'godly',
-        description: '⚠ THE ULTIMATE WEAPON ⚠ One-shots everything. Even gods fear the butter.'
+        slot: 'weapon',
+        description: '⚠️ THE ULTIMATE WEAPON ⚠️ Even gods fear the butter.'
     }
 };
 
 // Quality configuration
 const QUALITY_CONFIG = {
-    poor: { bonus: -2, color: '#808080', name: 'Poor' },
-    normal: { bonus: 0, color: '#00FF00', name: 'Normal' },
-    rare: { bonus: 2, color: '#0099FF', name: 'Rare' },
-    epic: { bonus: 5, color: '#9933FF', name: 'Epic' },
-    legendary: { bonus: 10, color: '#FF9900', name: 'Legendary' },
-    godly: { bonus: 20, color: '#FF0000', name: 'Godly' }
+    poor: { bonus: 0, color: '#808080', name: 'Poor' },
+    normal: { bonus: 2, color: '#00FF00', name: 'Normal' },
+    rare: { bonus: 5, color: '#0099FF', name: 'Rare' },
+    epic: { bonus: 10, color: '#9933FF', name: 'Epic' },
+    legendary: { bonus: 20, color: '#FF9900', name: 'Legendary' },
+    godly: { bonus: 50, color: '#FF0000', name: 'Godly' }
 };
 
 // Export for use in other files
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { WEAPONS, QUALITY_CONFIG };
 }
-
