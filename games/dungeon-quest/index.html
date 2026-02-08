@@ -5646,8 +5646,6 @@ function consumePips(cs, amount, cooldown) {
         
        function executeAttack(attackType) {
     const cs = gameState.combatState;
-  
-
     if (!cs) return;
 
     const p = gameState.player;
@@ -5658,65 +5656,61 @@ function consumePips(cs, amount, cooldown) {
 
     // Determine pip cost and damage multiplier
     let pipCost = 1;
-    let damageMultiplier = 1 + (spell.pipCost * 0.4);
+    let damageMultiplier = 1;
     let attackName = 'attacks';
     let armorPiercing = 0;
     
     if (attackType === 'normal') {
         pipCost = 1;
         damageMultiplier = 1;
-        attackName = 'attacks';
-    } else if (attackType === 'heavy') {
+    } 
+    else if (attackType === 'heavy') {
         pipCost = 2;
         damageMultiplier = 1.75;
         attackName = 'unleashes a <span style="color:#FF8800;">HEAVY STRIKE</span>';
         armorPiercing = 0.2;
-    } else if (attackType === 'special') {
-        // Use all available pips
+    } 
+    else if (attackType === 'special') {
         const availablePips = cs.pipAvailable.filter(x => x).length;
         pipCost = availablePips;
-        damageMultiplier = 1 + (availablePips * 0.5); // Scales with pips used
+        damageMultiplier = 1 + (availablePips * 0.5);
         attackName = `unleashes a <span style="color:#FFD700;">⭐ SPECIAL ATTACK ⭐</span> (${availablePips} pips)`;
         armorPiercing = 0.3;
     }
 
-    // Check if we have enough pips
+    // Check pip availability
     const availablePips = cs.pipAvailable.filter(x => x).length;
     if (availablePips < pipCost) {
         termAppend('Not enough attack charges!', 'term-error');
         return;
     }
 
-if (availablePips < spell.pipCost) {
-    termAppend('Not enough spell charges!', 'term-error');
-    return;
-}
-
-consumePips(cs, pipCost, getPipCooldown(p));
-
-
-consumePips(cs, spell.pipCost, getPipCooldown(p));
-
-
-
+    // Consume melee pips
+    consumePips(cs, pipCost, getPipCooldown(p));
 
     // Calculate base damage
     let weaponDamage = weapon.baseDamage + qBonus;
     
-    // Apply starter weapon penalty (70% damage for early game balance)
     if (p.level <= 5) {
-        weaponDamage = Math.floor(weaponDamage * DAMAGE_SCALING.playerStarterWeaponMult);
+        weaponDamage = Math.floor(
+            weaponDamage * DAMAGE_SCALING.playerStarterWeaponMult
+        );
     }
     
-    const physicalBase = weaponDamage + (p.strength || 0) + (p.str || 0);
-    const magicBase = (weapon.baseMagicDamage + qBonus) + Math.floor((p.magic || 0) / 2);
-    let totalBase = Math.floor((physicalBase + magicBase) * damageMultiplier);
-    
-    // Apply advanced class damage multiplier (2x+ at level 20)
+    const physicalBase =
+        weaponDamage + (p.strength || 0) + (p.str || 0);
+    const magicBase =
+        (weapon.baseMagicDamage + qBonus) +
+        Math.floor((p.magic || 0) / 2);
+
+    let totalBase = Math.floor(
+        (physicalBase + magicBase) * damageMultiplier
+    );
+
     const classMult = getClassDamageMultiplier(p);
     totalBase = Math.floor(totalBase * classMult);
 
-    // Damage resolution
+    // Resolve damage
     const result = calculateDamage({
         attacker: p,
         defender: enemy,
@@ -5724,17 +5718,19 @@ consumePips(cs, spell.pipCost, getPipCooldown(p));
         type: magicBase > physicalBase ? 'magic' : 'physical',
         critChance: calcCritChance(p.lck || 0) / 100,
         dodgeChance: enemy.dodge || 0,
-        armorPiercing: armorPiercing
+        armorPiercing
     });
 
     const tName = cs.monsters.length > 1
-        ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${ti+1}</span>`
+        ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${ti + 1}</span>`
         : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
 
     if (result.dodged) {
         termAppend(`You ${attackName} but ${tName} <span style="color:#88ff88;">DODGES!</span>`);
     } else {
-        const critTag = result.crit ? ' <span style="color:#FFD700;">★ CRITICAL HIT!</span>' : '';
+        const critTag = result.crit
+            ? ' <span style="color:#FFD700;">★ CRITICAL HIT!</span>'
+            : '';
         enemy.hp -= result.damage;
         termAppend(
             `You ${attackName} ${tName} for <span class="dmg-enemy">${result.damage} damage!</span>${critTag}`,
@@ -5752,6 +5748,7 @@ consumePips(cs, spell.pipCost, getPipCooldown(p));
     updateHud();
     renderActionBar();
 }
+
 
        // Legacy function kept for compatibility
        function playerAttack() {
