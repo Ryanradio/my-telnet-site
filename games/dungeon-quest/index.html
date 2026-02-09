@@ -1243,7 +1243,7 @@ const OPPOSITE_DIR = {
                 speed: 15,
                 description: 'Swift and deadly, strikes first with critical hits',
                 startWeapon: 'dagger',
-                startArmor: 'cloth_armor'
+                startArmor: 'leather_vest'
             },
             paladin: {
                 name: 'Paladin',
@@ -1255,7 +1255,7 @@ const OPPOSITE_DIR = {
                 speed: 8,
                 description: 'Holy warrior with healing magic and strong defense',
                 startWeapon: 'mace',
-                startArmor: 'chainmail'
+                startArmor: 'chain_mail'
             },
             mage: {
                 name: 'Mage',
@@ -1267,7 +1267,7 @@ const OPPOSITE_DIR = {
                 speed: 9,
                 description: 'Powerful spellcaster with devastating magic',
                 startWeapon: 'staff',
-                startArmor: 'robes'
+                startArmor: 'cloth_robes'
             },
             cleric: {
                 name: 'Cleric',
@@ -1303,7 +1303,7 @@ const OPPOSITE_DIR = {
                 speed: 8,
                 description: 'Dark mage who drains life from enemies with shadow magic',
                 startWeapon: 'staff',
-                startArmor: 'robes'
+                startArmor: 'cloth_robes'
             }
         };
 
@@ -3246,14 +3246,18 @@ window.addEventListener('beforeunload', () => {
                     // Try to find a suitable replacement based on class
                     const classDefaults = {
                         warrior: 'iron_sword',
-                        rogue: 'rusty_dagger',
-                        acolyte: 'bent_staff',
-                        necrolyte: 'bent_staff',
-                        paladin: 'worn_mace',
-                        hunter: 'cracked_bow',
-                        archer: 'cracked_bow',
-                        druid: 'bent_staff',
-                        sorceror: 'bent_staff'
+                        rogue: 'dagger',
+                        acolyte: 'staff',
+                        cleric: 'mace',
+                        necrolyte: 'staff',
+                        paladin: 'mace',
+                        hunter: 'bow',
+                        archer: 'bow',
+                        ranger: 'bow',
+                        druid: 'staff',
+                        mage: 'staff',
+                        sorceror: 'staff',
+                        warlock: 'staff'
                     };
                     p.weapon = classDefaults[p.class] || 'iron_sword';
                     console.log(`✅ Migrated weapon to: ${p.weapon}`);
@@ -3262,7 +3266,20 @@ window.addEventListener('beforeunload', () => {
                 // Check if armor exists
                 if (!ARMOR[p.armor]) {
                     console.warn(`⚠️ Armor '${p.armor}' not found. Migrating to default armor...`);
-                    p.armor = 'leather_vest'; // Universal default
+                    // Class-based armor defaults
+                    const armorDefaults = {
+                        warrior: 'leather_armor',
+                        rogue: 'leather_vest',
+                        paladin: 'chain_mail',
+                        cleric: 'leather_armor',
+                        acolyte: 'cloth_robes',
+                        mage: 'cloth_robes',
+                        warlock: 'cloth_robes',
+                        ranger: 'leather_armor',
+                        hunter: 'leather_armor',
+                        archer: 'leather_vest'
+                    };
+                    p.armor = armorDefaults[p.class] || 'leather_vest';
                     console.log(`✅ Migrated armor to: ${p.armor}`);
                 }
                 
@@ -3873,53 +3890,72 @@ window.addEventListener('beforeunload', () => {
         function showShopSell() {
             const p = gameState.player;
             
-            // Get all sellable items
-            const sellableItems = p.inventory.filter(itemKey => {
+            // Group items by key and count them
+            const itemCounts = {};
+            
+            p.inventory.forEach(itemKey => {
                 // Items with sellValue
-                if (ITEMS[itemKey] && ITEMS[itemKey].sellValue > 0) return true;
+                if (ITEMS[itemKey] && ITEMS[itemKey].sellValue > 0) {
+                    if (!itemCounts[itemKey]) itemCounts[itemKey] = { type: 'item', count: 0 };
+                    itemCounts[itemKey].count++;
+                }
                 // Duplicate weapons/armor (not currently equipped)
-                if (WEAPONS[itemKey] && itemKey !== p.weapon) return true;
-                if (ARMOR[itemKey] && itemKey !== p.armor) return true;
-                return false;
+                else if (WEAPONS[itemKey] && itemKey !== p.weapon) {
+                    if (!itemCounts[itemKey]) itemCounts[itemKey] = { type: 'weapon', count: 0 };
+                    itemCounts[itemKey].count++;
+                }
+                else if (ARMOR[itemKey] && itemKey !== p.armor) {
+                    if (!itemCounts[itemKey]) itemCounts[itemKey] = { type: 'armor', count: 0 };
+                    itemCounts[itemKey].count++;
+                }
             });
             
             let sellHtml = '<h3 style="color: var(--highlight-color);">YOUR SELLABLE ITEMS</h3>';
             sellHtml += '<div class="inventory-grid">';
             
-            if (sellableItems.length === 0) {
+            const itemKeys = Object.keys(itemCounts);
+            if (itemKeys.length === 0) {
                 sellHtml += '<div class="message">You have nothing to sell.</div>';
             } else {
-                sellableItems.forEach(itemKey => {
+                itemKeys.forEach(itemKey => {
+                    const data = itemCounts[itemKey];
                     let itemName, itemColor, sellValue, itemDesc;
                     
-                    if (ITEMS[itemKey]) {
+                    if (data.type === 'item') {
                         const item = ITEMS[itemKey];
                         itemName = item.name;
                         itemColor = '#00FF00';
                         sellValue = item.sellValue;
                         itemDesc = item.description;
-                    } else if (WEAPONS[itemKey]) {
+                    } else if (data.type === 'weapon') {
                         const weapon = WEAPONS[itemKey];
                         itemName = weapon.name;
                         itemColor = QUALITY_CONFIG[weapon.quality].color;
-                        sellValue = Math.floor(weapon.cost * 0.5); // 50% of purchase price
+                        sellValue = Math.floor(weapon.cost * 0.5);
                         const qualityBonus = QUALITY_CONFIG[weapon.quality].bonus;
                         itemDesc = `DMG: ${weapon.baseDamage + qualityBonus} | MAG: ${weapon.baseMagicDamage + qualityBonus}`;
-                    } else if (ARMOR[itemKey]) {
+                    } else if (data.type === 'armor') {
                         const armor = ARMOR[itemKey];
                         itemName = armor.name;
                         itemColor = QUALITY_CONFIG[armor.quality].color;
-                        sellValue = Math.floor(armor.cost * 0.5); // 50% of purchase price
+                        sellValue = Math.floor(armor.cost * 0.5);
                         const qualityBonus = QUALITY_CONFIG[armor.quality].bonus;
                         itemDesc = `DEF: ${armor.baseDefense + qualityBonus}`;
                     }
                     
                     sellHtml += `
                         <div class="item-card">
-                            <div style="color: ${itemColor};">${itemName}</div>
+                            <div style="color: ${itemColor};">${itemName} ${data.count > 1 ? `<span style="color:#FFD700;">x${data.count}</span>` : ''}</div>
                             <div style="font-size: 16px;">${itemDesc}</div>
-                            <div style="color: var(--border-color); margin-top: 10px;">Sell for: ${sellValue}G</div>
-                            <button onclick="sellItem('${itemKey}', ${sellValue})">SELL</button>
+                            <div style="color: var(--border-color); margin-top: 10px;">
+                                ${sellValue}g each
+                                ${data.count > 1 ? `<br><span style="color:#FFD700;">Total: ${sellValue * data.count}g</span>` : ''}
+                            </div>
+                            ${data.count > 1 ? `
+                                <button onclick="showSellQuantityPrompt('${itemKey}', ${sellValue}, ${data.count})">SELL (${data.count})</button>
+                            ` : `
+                                <button onclick="sellItem('${itemKey}', ${sellValue}, 1)">SELL</button>
+                            `}
                         </div>
                     `;
                 });
@@ -3928,16 +3964,64 @@ window.addEventListener('beforeunload', () => {
             sellHtml += '</div>';
             document.getElementById('shopContent').innerHTML = sellHtml;
         }
-
-        function sellItem(itemKey, baseValue) {
-            const index = gameState.player.inventory.indexOf(itemKey);
-            if (index === -1) { alert('Item not found!'); return; }
-            const bonus = calcChaSellBonus(gameState.player.cha);
-            const value = Math.floor(baseValue * (1 + bonus/100));
-            gameState.player.inventory.splice(index, 1);
-            gameState.player.gold += value;
+        
+        function showSellQuantityPrompt(itemKey, unitPrice, totalCount) {
             const itemName = getItemName(itemKey);
-            alert(`Sold ${itemName} for ${value}g!` + (bonus > 0 ? ` (+${bonus}% CHA bonus)` : ''));
+            const bonus = calcChaSellBonus(gameState.player.cha);
+            const actualPrice = Math.floor(unitPrice * (1 + bonus/100));
+            
+            const quantity = prompt(
+                `How many ${itemName} do you want to sell?\n\n` +
+                `You have: ${totalCount}\n` +
+                `Price: ${actualPrice}g each${bonus > 0 ? ` (+${bonus}% CHA bonus)` : ''}\n\n` +
+                `Enter quantity (1-${totalCount}) or "all":`,
+                totalCount
+            );
+            
+            if (!quantity || quantity === '' || quantity === null) return;
+            
+            let amount;
+            if (quantity.toLowerCase() === 'all') {
+                amount = totalCount;
+            } else {
+                amount = parseInt(quantity);
+                if (isNaN(amount) || amount < 1 || amount > totalCount) {
+                    alert('Invalid quantity!');
+                    return;
+                }
+            }
+            
+            sellItem(itemKey, unitPrice, amount);
+        }
+
+        function sellItem(itemKey, baseValue, quantity = 1) {
+            const p = gameState.player;
+            
+            // Remove items from inventory
+            let removed = 0;
+            for (let i = p.inventory.length - 1; i >= 0 && removed < quantity; i--) {
+                if (p.inventory[i] === itemKey) {
+                    p.inventory.splice(i, 1);
+                    removed++;
+                }
+            }
+            
+            if (removed === 0) {
+                alert('Item not found!');
+                return;
+            }
+            
+            const bonus = calcChaSellBonus(p.cha);
+            const unitValue = Math.floor(baseValue * (1 + bonus/100));
+            const totalValue = unitValue * removed;
+            
+            p.gold += totalValue;
+            
+            const itemName = getItemName(itemKey);
+            const quantityText = removed > 1 ? ` x${removed}` : '';
+            const bonusText = bonus > 0 ? ` (+${bonus}% CHA bonus)` : '';
+            
+            alert(`Sold ${itemName}${quantityText} for ${totalValue}g!${bonusText}`);
             
             // 💾 AUTO-SAVE after selling
             saveGame();
@@ -4111,11 +4195,21 @@ window.addEventListener('beforeunload', () => {
                                  item.subtype === 'heal_hp' ? '#FF0000' :
                                  item.subtype === 'heal_mp' ? '#0000FF' : '#00FF00';
                     
+                    // Show total value if sellable and multiple
+                    let valueDisplay = '';
+                    if (item.sellValue) {
+                        if (count > 1) {
+                            valueDisplay = `<div style="color: var(--border-color);">${item.sellValue}g each | <span style="color:#FFD700;">Total: ${item.sellValue * count}g</span></div>`;
+                        } else {
+                            valueDisplay = `<div style="color: var(--border-color);">Value: ${item.sellValue}g</div>`;
+                        }
+                    }
+                    
                     invHtml += `
                         <div class="item-card">
-                            <div style="color: ${color};">${item.name} x${count}</div>
+                            <div style="color: ${color};">${item.name} ${count > 1 ? `<span style="color:#FFD700;">x${count}</span>` : ''}</div>
                             <div style="font-size: 16px;">${item.description}</div>
-                            ${item.sellValue ? `<div style="color: var(--border-color);">Value: ${item.sellValue}G</div>` : ''}
+                            ${valueDisplay}
                         </div>
                     `;
                 });
@@ -5309,13 +5403,17 @@ if (cs) {
                     // Spell selection menu
                     const spellBtns = p.knownSpells.map(sk => {
                         const spell = SPELLS[sk];
+                        if (!spell) {
+                            console.warn(`⚠️ Spell '${sk}' not found in SPELLS object`);
+                            return ''; // Skip this spell
+                        }
                         const canCast = p.mp >= spell.mpCost;
                         const aoeTag = spell.type === 'aoe_damage' ? ' <span style="color:#FF8800;">AOE</span>' : '';
                         return `<button onclick="selectSpell('${sk}')" ${!canCast?'disabled':''} class="spell-btn">
                             ${spell.name}${aoeTag}<br>
                             <span style="font-size:12px;">${spell.mpCost} MP</span>
                         </button>`;
-                    }).join('');
+                    }).filter(Boolean).join('');
                     
                     // Check if player has a staff weapon
                     const weapon = WEAPONS[p.weapon];
@@ -5340,8 +5438,10 @@ if (cs) {
                     `;
                 }
             } else {
+                // Out of combat - exploring
                 ab.innerHTML = `
                     <button onclick="exploreLocation('${gameState.currentLocation}')">🔍 CONTINUE EXPLORING</button>
+                    <button onclick="showPotionMenuExplore()" style="border-color:#00FF00;">🧪 POTIONS</button>
                     <button onclick="goBackToTown()">🏘️ RETURN TO TOWN</button>
                 `;
             }
@@ -6461,6 +6561,113 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
             updateHud();
             renderActionBar();
             termAppend(msg);   // no callback – timer keeps ticking, player can still act
+        }
+        
+        // ═══════════════════════════════════════════════════════════════
+        // POTION MENU - EXPLORATION (Out of Combat)
+        // ═══════════════════════════════════════════════════════════════
+        function showPotionMenuExplore() {
+            const p = gameState.player;
+            const ab = document.getElementById('actionBar');
+            
+            // Count potions
+            const potions = {};
+            p.inventory.forEach(ik => {
+                if (ITEMS[ik] && ['heal_hp','heal_mp','full_restore'].includes(ITEMS[ik].subtype)) {
+                    if (!potions[ik]) potions[ik] = { item: ITEMS[ik], count: 0 };
+                    potions[ik].count++;
+                }
+            });
+            
+            const keys = Object.keys(potions);
+            if (keys.length === 0) {
+                ab.innerHTML = `
+                    <div style="color:var(--error-color);margin-bottom:10px;">You have no potions!</div>
+                    <button onclick="renderActionBar()">← BACK</button>
+                `;
+                return;
+            }
+            
+            let html = `
+                <div style="color:var(--highlight-color);font-size:10px;margin-bottom:6px;">
+                    USE POTION (HP: ${p.hp}/${p.maxHp} | MP: ${p.mp}/${p.maxMp}):
+                </div>
+                <div style="display:flex;flex-direction:column;gap:6px;">
+            `;
+            
+            keys.forEach(pk => {
+                const pd  = potions[pk];
+                const col = pd.item.subtype==='heal_hp' ? '#FF4444' : 
+                           pd.item.subtype==='heal_mp' ? '#4488FF' : '#FFD700';
+                const icon = pd.item.subtype==='heal_hp' ? '❤️' : 
+                            pd.item.subtype==='heal_mp' ? '💙' : '✨';
+                
+                // Check if at full HP/MP
+                const atFull = (pd.item.subtype === 'heal_hp' && p.hp >= p.maxHp) ||
+                              (pd.item.subtype === 'heal_mp' && p.mp >= p.maxMp) ||
+                              (pd.item.subtype === 'full_restore' && p.hp >= p.maxHp && p.mp >= p.maxMp);
+                
+                html += `
+                    <button onclick="usePotionExplore('${pk}')" 
+                            ${atFull ? 'disabled' : ''} 
+                            style="color:${col};text-align:left;padding:8px;">
+                        ${icon} <strong>${pd.item.name}</strong> x${pd.count} 
+                        <span style="font-size:12px;color:#8aaa8a;"> - ${pd.item.description}</span>
+                        ${atFull ? '<span style="color:#666;"> (Already Full)</span>' : ''}
+                    </button>
+                `;
+            });
+            
+            html += `
+                </div>
+                <button onclick="renderActionBar()" style="margin-top:10px;">← BACK</button>
+            `;
+            
+            ab.innerHTML = html;
+        }
+        
+        function usePotionExplore(potionKey) {
+            const potion = ITEMS[potionKey];
+            const p = gameState.player;
+            
+            let msg;
+            if (potion.subtype === 'heal_hp') {
+                const actual = Math.min(p.maxHp - p.hp, potion.power);
+                if (actual === 0) {
+                    msg = `You're already at full HP!`;
+                } else {
+                    p.hp = Math.min(p.maxHp, p.hp + potion.power);
+                    msg = `Used ${potion.name} – restored <span style="color:#88ff88;">${actual} HP!</span>`;
+                }
+            } else if (potion.subtype === 'heal_mp') {
+                const actual = Math.min(p.maxMp - p.mp, potion.power);
+                if (actual === 0) {
+                    msg = `You're already at full MP!`;
+                } else {
+                    p.mp = Math.min(p.maxMp, p.mp + potion.power);
+                    msg = `Used ${potion.name} – restored <span style="color:#88ff88;">${actual} MP!</span>`;
+                }
+            } else if (potion.subtype === 'full_restore') {
+                const hpR = p.maxHp - p.hp;
+                const mpR = p.maxMp - p.mp;
+                if (hpR === 0 && mpR === 0) {
+                    msg = `You're already fully restored!`;
+                } else {
+                    p.hp = p.maxHp;
+                    p.mp = p.maxMp;
+                    msg = `Used ${potion.name} – fully restored <span style="color:#88ff88;">${hpR} HP & ${mpR} MP!</span>`;
+                }
+            }
+            
+            // Remove potion from inventory
+            const idx = p.inventory.indexOf(potionKey);
+            if (idx !== -1) p.inventory.splice(idx, 1);
+            
+            updateHud();
+            termAppend(msg);
+            
+            // Refresh potion menu to show updated counts
+            showPotionMenuExplore();
         }
 
         // ═══════════════════════════════════════════════════════════════
