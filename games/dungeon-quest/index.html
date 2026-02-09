@@ -1509,6 +1509,63 @@ const OPPOSITE_DIR = {
     }
 };
 
+// ═══════════════════════════════════════════════════════════════
+// SPELL HELPER - Dynamically add spells from CLASS_SPELL_TREES
+// ═══════════════════════════════════════════════════════════════
+function ensureSpellExists(spellKey) {
+    // If spell already exists, return it
+    if (SPELLS[spellKey]) return SPELLS[spellKey];
+    
+    // Try to find it in CLASS_SPELL_TREES
+    if (typeof CLASS_SPELL_TREES === 'undefined') return null;
+    
+    for (const classKey in CLASS_SPELL_TREES) {
+        const classTree = CLASS_SPELL_TREES[classKey];
+        if (classTree.spellTree && classTree.spellTree[spellKey]) {
+            const spell = classTree.spellTree[spellKey];
+            // Add it to SPELLS with pipCost
+            SPELLS[spellKey] = {
+                ...spell,
+                pipCost: 1 // Default pip cost
+            };
+            console.log(`✅ Dynamically added spell '${spellKey}' to SPELLS`);
+            return SPELLS[spellKey];
+        }
+    }
+    
+    return null;
+}
+
+// Load all spells from CLASS_SPELL_TREES into SPELLS
+function loadAllClassSpells() {
+    if (typeof CLASS_SPELL_TREES === 'undefined') {
+        console.warn('⚠️ CLASS_SPELL_TREES not loaded yet');
+        return;
+    }
+    
+    let count = 0;
+    for (const classKey in CLASS_SPELL_TREES) {
+        const classTree = CLASS_SPELL_TREES[classKey];
+        if (classTree.spellTree) {
+            for (const spellKey in classTree.spellTree) {
+                if (!SPELLS[spellKey]) {
+                    const spell = classTree.spellTree[spellKey];
+                    SPELLS[spellKey] = {
+                        ...spell,
+                        pipCost: 1
+                    };
+                    count++;
+                }
+            }
+        }
+    }
+    
+    if (count > 0) {
+        console.log(`✅ Loaded ${count} class spells into SPELLS object`);
+    }
+}
+
+
 
         const LOCATIONS = {
     town: {
@@ -1610,9 +1667,11 @@ if (typeof ADVENTURE_ENEMIES !== 'undefined') {
         // ═══════════════════════════════════════════════════════════════
         
         const MODEM_SPEEDS = {
-            '56k': 7,      // ~7 characters per frame (56k modem)
-            '28.8k': 4,    // ~4 characters per frame (28.8k modem)
-            '14.4k': 2,    // ~2 characters per frame (14.4k modem)
+            '56k': 7,      // ~7 characters per frame (56k modem - fast)
+            '28.8k': 4,    // ~4 characters per frame (28.8k modem - medium)
+            '14.4k': 2,    // ~2 characters per frame (14.4k modem - slow)
+            '9600': 1,     // ~1 character per frame (9600 baud - very slow)
+            '4800': 0.5,   // ~0.5 characters per frame (4800 baud - ultra slow)
             'instant': -1  // No delay
         };
         
@@ -3698,17 +3757,23 @@ window.addEventListener('beforeunload', () => {
                     <p style="font-size: 14px; color: var(--border-color);">Current: ${currentModemSpeed}</p>
                 </div>
                 <div style="margin: 20px 0;">
+                    <div class="menu-option ${currentModemSpeed === '4800' ? 'equipped' : ''}" onclick="setModemSpeed('4800')">
+                        ► 4800 BAUD (Ultra Slow - Maximum Nostalgia)
+                    </div>
+                    <div class="menu-option ${currentModemSpeed === '9600' ? 'equipped' : ''}" onclick="setModemSpeed('9600')">
+                        ► 9600 BAUD (Very Slow - Early 90s)
+                    </div>
                     <div class="menu-option ${currentModemSpeed === '14.4k' ? 'equipped' : ''}" onclick="setModemSpeed('14.4k')">
-                        ► 14.4k MODEM (Slowest - Most Authentic)
+                        ► 14.4k MODEM (Slow - Classic BBS Feel)
                     </div>
                     <div class="menu-option ${currentModemSpeed === '28.8k' ? 'equipped' : ''}" onclick="setModemSpeed('28.8k')">
-                        ► 28.8k MODEM (Slow - Classic BBS Feel)
+                        ► 28.8k MODEM (Medium - Mid 90s Standard)
                     </div>
                     <div class="menu-option ${currentModemSpeed === '56k' ? 'equipped' : ''}" onclick="setModemSpeed('56k')">
-                        ► 56k MODEM (Medium - Faster Loading)
+                        ► 56k MODEM (Fast - Late 90s)
                     </div>
                     <div class="menu-option ${currentModemSpeed === 'instant' ? 'equipped' : ''}" onclick="setModemSpeed('instant')">
-                        ► INSTANT (No Delay - Modern)
+                        ► INSTANT (No Delay - Modern Broadband)
                     </div>
                 </div>
                 <div class="message" style="border-color: var(--highlight-color);">
@@ -4161,7 +4226,11 @@ window.addEventListener('beforeunload', () => {
                 invHtml += '<div class="message">No spells learned yet.</div>';
             } else {
                 p.knownSpells.forEach(spellKey => {
-                    const spell = SPELLS[spellKey];
+                    const spell = ensureSpellExists(spellKey) || SPELLS[spellKey];
+                    if (!spell) {
+                        console.warn(`⚠️ Spell '${spellKey}' not found in SPELLS object (inventory display)`);
+                        return; // Skip this spell
+                    }
                     invHtml += `
                         <div class="item-card">
                             <div style="color: var(--highlight-color);">${spell.name}</div>
@@ -5402,7 +5471,7 @@ if (cs) {
                 } else if (mode === 'spell_list') {
                     // Spell selection menu
                     const spellBtns = p.knownSpells.map(sk => {
-                        const spell = SPELLS[sk];
+                        const spell = ensureSpellExists(sk) || SPELLS[sk];
                         if (!spell) {
                             console.warn(`⚠️ Spell '${sk}' not found in SPELLS object`);
                             return ''; // Skip this spell
@@ -7989,6 +8058,12 @@ function playerIsExhausted() {
 
 
         // Start the game
+        
+        // Load all class spells from CLASS_SPELL_TREES
+        if (typeof CLASS_SPELL_TREES !== 'undefined') {
+            loadAllClassSpells();
+        }
+        
         initGame();
 
 
