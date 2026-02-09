@@ -10,7 +10,7 @@ const CLASS_SPELL_TREES = {
     mage: {
         startingSpell: 'fireball_1',
         spellTree: {
-            // FIREBALL LINE (Primary Damage)
+            // FIREBALL LINE (Single Target - High Damage)
             fireball_1: {
                 name: 'Fireball',
                 level: 1,
@@ -107,6 +107,104 @@ const CLASS_SPELL_TREES = {
                 cost: 50000,
                 description: 'Ultimate fire magic - rebirth through flame',
                 requires: 'fireball_8'
+            },
+            
+            // FLAME WAVE LINE (AOE - Lower Per-Target Damage, Hits All Enemies)
+            flame_wave_1: {
+                name: 'Ember Spray',
+                level: 2,
+                mpCost: 18,
+                power: 12,
+                type: 'aoe_damage',
+                cost: 300,
+                description: 'Spray embers at all enemies (60% damage per target)'
+            },
+            flame_wave_2: {
+                name: 'Fire Sweep',
+                level: 5,
+                mpCost: 24,
+                power: 20,
+                type: 'aoe_damage',
+                cost: 900,
+                description: 'A sweeping wave of fire hits all foes',
+                upgradesTo: 'flame_wave_3',
+                requires: 'flame_wave_1'
+            },
+            flame_wave_3: {
+                name: 'Flame Cascade',
+                level: 8,
+                mpCost: 32,
+                power: 32,
+                type: 'aoe_damage',
+                cost: 2200,
+                description: 'Cascading flames engulf the battlefield',
+                upgradesTo: 'flame_wave_4',
+                requires: 'flame_wave_2'
+            },
+            flame_wave_4: {
+                name: 'Firestorm',
+                level: 11,
+                mpCost: 42,
+                power: 48,
+                type: 'aoe_damage',
+                cost: 4000,
+                description: 'A raging storm of fire consumes all',
+                upgradesTo: 'flame_wave_5',
+                requires: 'flame_wave_3'
+            },
+            flame_wave_5: {
+                name: 'Infernal Wave',
+                level: 14,
+                mpCost: 54,
+                power: 65,
+                type: 'aoe_damage',
+                cost: 8000,
+                description: 'A wave of hellfire washes over your enemies',
+                upgradesTo: 'flame_wave_6',
+                requires: 'flame_wave_4'
+            },
+            flame_wave_6: {
+                name: 'Meteor Storm',
+                level: 17,
+                mpCost: 68,
+                power: 85,
+                type: 'aoe_damage',
+                cost: 13000,
+                description: 'Rain burning meteors upon all foes',
+                upgradesTo: 'flame_wave_7',
+                requires: 'flame_wave_5'
+            },
+            flame_wave_7: {
+                name: 'Flamestrike',
+                level: 20,
+                mpCost: 84,
+                power: 110,
+                type: 'aoe_damage',
+                cost: 21000,
+                description: 'Pillars of flame strike down all enemies',
+                upgradesTo: 'flame_wave_8',
+                requires: 'flame_wave_6'
+            },
+            flame_wave_8: {
+                name: 'Pyroclastic Flow',
+                level: 23,
+                mpCost: 102,
+                power: 145,
+                type: 'aoe_damage',
+                cost: 36000,
+                description: 'Volcanic devastation engulfs the battlefield',
+                upgradesTo: 'flame_wave_9',
+                requires: 'flame_wave_7'
+            },
+            flame_wave_9: {
+                name: 'Armageddon',
+                level: 25,
+                mpCost: 125,
+                power: 200,
+                type: 'aoe_damage',
+                cost: 50000,
+                description: 'End all life with apocalyptic fire',
+                requires: 'flame_wave_8'
             }
         }
     },

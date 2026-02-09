@@ -5166,8 +5166,9 @@ if (cs) {
                     const spellBtns = p.knownSpells.map(sk => {
                         const spell = SPELLS[sk];
                         const canCast = p.mp >= spell.mpCost;
+                        const aoeTag = spell.type === 'aoe_damage' ? ' <span style="color:#FF8800;">AOE</span>' : '';
                         return `<button onclick="selectSpell('${sk}')" ${!canCast?'disabled':''} class="spell-btn">
-                            ${spell.name}<br>
+                            ${spell.name}${aoeTag}<br>
                             <span style="font-size:12px;">${spell.mpCost} MP</span>
                         </button>`;
                     }).join('');
@@ -5335,10 +5336,21 @@ if (cs) {
             const cs = gameState.combatState;
             if (!cs) return;
             
-            cs.pendingSpell = SPELLS[spellKey];
+            const spell = SPELLS[spellKey];
+            cs.pendingSpell = spell;
             cs.pendingSpellKey = spellKey;
-            cs.actionMode = 'target_spell';
-            renderActionBar();
+            
+            // AOE spells don't need target selection - cast immediately
+            if (spell && spell.type === 'aoe_damage') {
+                castSpellOnTarget(spell);
+                cs.actionMode = 'main';
+                cs.pendingSpell = null;
+                cs.pendingSpellKey = null;
+            } else {
+                // Regular spells need target selection
+                cs.actionMode = 'target_spell';
+                renderActionBar();
+            }
         }
         
         // Update showSpellMenu to use the new system
@@ -6101,6 +6113,42 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 updateHud();
                 renderActionBar();
                 termAppend(`You cast ${spell.name} and restore <span style="color:#88ff88;">${heal} HP!</span>`);
+            } else if (spell.type === 'aoe_damage') {
+                // AOE DAMAGE - Hit all enemies for reduced damage each
+                const monsters = cs.monsters;
+                let totalDamage = 0;
+                let hitCount = 0;
+                
+                termAppend(`You cast ${spell.name}!`, 'term-highlight');
+                termAppend(`<span style="color:#FF8800;">🔥 AREA OF EFFECT! 🔥</span>`, 'term-victory');
+                
+                monsters.forEach((enemy, i) => {
+                    if (enemy.hp > 0) {
+                        let dmg = Math.max(1, (spell.power + p.magic + (p.wis || 0)) - Math.floor(enemy.defense / 2));
+                        let crit = false;
+                        if (Math.random() * 100 < calcCritChance(p.lck || 0)) { 
+                            dmg = Math.floor(dmg * 1.75); 
+                            crit = true; 
+                        }
+                        
+                        enemy.hp -= dmg;
+                        totalDamage += dmg;
+                        hitCount++;
+                        
+                        const tName = monsters.length > 1
+                            ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${i+1}</span>`
+                            : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
+                        
+                        const critTag = crit ? ' <span style="color:#FFD700;">★ CRIT!</span>' : '';
+                        termAppend(`→ ${tName} takes <span class="dmg-enemy">${dmg} damage!</span>${critTag}`);
+                    }
+                });
+                
+                termAppend(`<span style="color:#FFD700;">Total: ${totalDamage} damage to ${hitCount} ${hitCount === 1 ? 'enemy' : 'enemies'}!</span>`, 'term-loot');
+                checkCombatEnd();
+                updateEnemyCards();
+                updateHud();
+                renderActionBar();
             } else if (spell.type === 'lifesteal') {
                 // LIFESTEAL - damage enemy and heal yourself
                 const ti = cs.currentTarget;
@@ -7524,9 +7572,10 @@ function playerIsExhausted() {
                 html += `<div class="message" style="border-color:#00FF00;"><h3 style="color:#00FF00;">Your Known Spells</h3>`;
                 currentSpells.forEach(({ key, spell }) => {
                     const typeColor = spell.type === 'heal' || spell.type === 'lifesteal' ? '#00FF00' : '#FF6666';
-                    const typeIcon = spell.type === 'heal' ? '💚' : spell.type === 'lifesteal' ? '🩸' : '💥';
+                    const typeIcon = spell.type === 'heal' ? '💚' : spell.type === 'lifesteal' ? '🩸' : spell.type === 'aoe_damage' ? '🔥' : '💥';
                     const lifestealInfo = spell.lifestealPercent ? ` (${spell.lifestealPercent}%)` : '';
-                    html += `<p>${typeIcon} <strong>${spell.name}</strong> - <span style="color:${typeColor};">${spell.power} ${spell.type === 'heal' ? 'HP' : 'DMG'}${lifestealInfo}</span> (${spell.mpCost} MP)${spell.upgradesTo ? `<br><span style="color:#FFD700;font-size:12px;">→ Upgrade available</span>` : ''}</p>`;
+                    const aoeTag = spell.type === 'aoe_damage' ? ' <span style="color:#FF8800;">[AOE]</span>' : '';
+                    html += `<p>${typeIcon} <strong>${spell.name}${aoeTag}</strong> - <span style="color:${typeColor};">${spell.power} ${spell.type === 'heal' ? 'HP' : 'DMG'}${lifestealInfo}</span> (${spell.mpCost} MP)${spell.upgradesTo ? `<br><span style="color:#FFD700;font-size:12px;">→ Upgrade available</span>` : ''}</p>`;
                 });
                 html += `</div>`;
             }
@@ -7536,11 +7585,12 @@ function playerIsExhausted() {
                 html += `<div class="message" style="border-color:#FFD700;"><h3 style="color:#FFD700;">Available Training</h3>`;
                 availableSpells.forEach(({ key, spell, canAfford }) => {
                     const typeColor = spell.type === 'heal' || spell.type === 'lifesteal' ? '#00FF00' : '#FF6666';
-                    const typeIcon = spell.type === 'heal' ? '💚' : spell.type === 'lifesteal' ? '🩸' : '💥';
+                    const typeIcon = spell.type === 'heal' ? '💚' : spell.type === 'lifesteal' ? '🩸' : spell.type === 'aoe_damage' ? '🔥' : '💥';
                     const lifestealInfo = spell.lifestealPercent ? ` (${spell.lifestealPercent}% lifesteal)` : '';
+                    const aoeTag = spell.type === 'aoe_damage' ? ' <span style="color:#FF8800;">[AOE]</span>' : '';
                     const isUpgrade = spell.requires && p.knownSpells.includes(spell.requires);
                     
-                    html += `<div style="margin:10px 0;padding:10px;border:1px solid ${canAfford ? '#FFD700' : '#666'};"><p>${typeIcon} <strong style="color:${typeColor};">${spell.name}</strong> ${isUpgrade ? '(Upgrade)' : '(New)'}<br><span style="font-size:12px;">${spell.description}</span><br><span style="color:${typeColor};">${spell.power} ${spell.type === 'heal' ? 'HP' : 'DMG'}${lifestealInfo}</span> | ${spell.mpCost} MP | Level ${spell.level}<br><span style="color:#FFD700;">Cost: ${spell.cost}g</span></p>${canAfford ? `<button onclick="learnSpell('${key}')" style="border-color:#FFD700;">💰 Learn (${spell.cost}g)</button>` : `<button disabled style="opacity:0.5;">Need ${spell.cost - p.gold}g more</button>`}</div>`;
+                    html += `<div style="margin:10px 0;padding:10px;border:1px solid ${canAfford ? '#FFD700' : '#666'};"><p>${typeIcon} <strong style="color:${typeColor};">${spell.name}${aoeTag}</strong> ${isUpgrade ? '(Upgrade)' : '(New)'}<br><span style="font-size:12px;">${spell.description}</span><br><span style="color:${typeColor};">${spell.power} ${spell.type === 'heal' ? 'HP' : 'DMG'}${lifestealInfo}</span> | ${spell.mpCost} MP | Level ${spell.level}<br><span style="color:#FFD700;">Cost: ${spell.cost}g</span></p>${canAfford ? `<button onclick="learnSpell('${key}')" style="border-color:#FFD700;">💰 Learn (${spell.cost}g)</button>` : `<button disabled style="opacity:0.5;">Need ${spell.cost - p.gold}g more</button>`}</div>`;
                 });
                 html += `</div>`;
             } else {
