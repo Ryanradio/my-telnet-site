@@ -1354,6 +1354,81 @@ const OPPOSITE_DIR = {
             return h;
         }
         function calcChaDiscount(cha) { return Math.min(30, (cha||0) * 2); }   // buy %  off
+        
+        // ═══════════════════════════════════════════════════════════════
+        // CLASS EQUIPMENT RESTRICTIONS
+        // ═══════════════════════════════════════════════════════════════
+        
+        function canUseWeapon(playerClass, weapon) {
+            // If weapon has allowedClasses, check it
+            if (weapon.allowedClasses) {
+                return weapon.allowedClasses.includes(playerClass);
+            }
+            
+            // Default restrictions based on weapon type/name
+            const weaponName = weapon.name.toLowerCase();
+            
+            // Staffs - magic users only
+            if (weaponName.includes('staff') || weapon.baseMagicDamage > weapon.baseDamage) {
+                return ['mage', 'warlock', 'cleric', 'acolyte', 'necrolyte', 'druid'].includes(playerClass);
+            }
+            
+            // Bows - rangers and archers only
+            if (weaponName.includes('bow')) {
+                return ['ranger', 'archer', 'hunter'].includes(playerClass);
+            }
+            
+            // Daggers - rogues primarily, but others can use
+            if (weaponName.includes('dagger')) {
+                return ['rogue', 'ranger', 'hunter'].includes(playerClass);
+            }
+            
+            // Maces - paladins and clerics
+            if (weaponName.includes('mace')) {
+                return ['paladin', 'cleric', 'acolyte'].includes(playerClass);
+            }
+            
+            // Swords and axes - warriors and melee classes
+            if (weaponName.includes('sword') || weaponName.includes('axe') || weaponName.includes('hammer')) {
+                return ['warrior', 'paladin', 'rogue'].includes(playerClass);
+            }
+            
+            // Default: everyone can use
+            return true;
+        }
+        
+        function canUseArmor(playerClass, armor) {
+            // If armor has allowedClasses, check it
+            if (armor.allowedClasses) {
+                return armor.allowedClasses.includes(playerClass);
+            }
+            
+            // Default restrictions based on armor type/name
+            const armorName = armor.name.toLowerCase();
+            
+            // Robes - magic users only
+            if (armorName.includes('robe')) {
+                return ['mage', 'warlock', 'cleric', 'acolyte', 'necrolyte', 'druid', 'sorceror'].includes(playerClass);
+            }
+            
+            // Plate armor - heavy fighters only
+            if (armorName.includes('plate')) {
+                return ['warrior', 'paladin'].includes(playerClass);
+            }
+            
+            // Chainmail - medium armor users
+            if (armorName.includes('chain')) {
+                return ['warrior', 'paladin', 'cleric', 'ranger'].includes(playerClass);
+            }
+            
+            // Leather - light armor, most classes
+            if (armorName.includes('leather')) {
+                return ['warrior', 'rogue', 'ranger', 'hunter', 'cleric', 'paladin'].includes(playerClass);
+            }
+            
+            // Cloth - everyone can wear
+            return true;
+        }
         function calcChaSellBonus(cha){ return Math.min(15, (cha||0) * 1); }   // sell %  bonus
         function calcInnCost(cha)     { return Math.max(20, 50 - (cha||0)); }
         function calcCritChance(lck)  { return Math.min(30,  5 + (lck||0)); }  // %
@@ -3696,6 +3771,9 @@ window.addEventListener('beforeunload', () => {
 
 
         function showShopBuy() {
+            const p = gameState.player;
+            const playerClass = p.baseClass || p.class;
+            
             let shopHtml = `
                 <div style="margin: 20px 0;">
                     <h3 style="color: var(--highlight-color);">WEAPONS</h3>
@@ -3704,9 +3782,11 @@ window.addEventListener('beforeunload', () => {
 
             Object.keys(WEAPONS).forEach(key => {
                 const weapon = WEAPONS[key];
-                if (weapon.level <= gameState.player.level + 2) {
-                    const owned = gameState.player.inventory.includes(key);
-                    const equipped = gameState.player.weapon === key;
+                
+                // Filter by level and class
+                if (weapon.level <= p.level + 2 && canUseWeapon(playerClass, weapon)) {
+                    const owned = p.inventory.includes(key);
+                    const equipped = p.weapon === key;
                     const qualityColor = QUALITY_CONFIG[weapon.quality].color;
                     const qualityBonus = QUALITY_CONFIG[weapon.quality].bonus;
                     const totalDmg = weapon.baseDamage + qualityBonus;
@@ -3719,7 +3799,7 @@ window.addEventListener('beforeunload', () => {
                             <div>Level: ${weapon.level}</div>
                             ${owned ? '<div style="color: var(--border-color);">OWNED</div>' : 
                               `<button onclick="buyItem('weapon', '${key}', ${weapon.cost})">Buy ${weapon.cost}G</button>`}
-                            ${gameState.player.cha ? '<div style="color:#8aaa8a;font-size:15px;">CHA disc: ' + calcChaDiscount(gameState.player.cha) + '%</div>' : ''}
+                            ${p.cha ? '<div style="color:#8aaa8a;font-size:15px;">CHA disc: ' + calcChaDiscount(p.cha) + '%</div>' : ''}
                         </div>
                     `;
                 }
@@ -3733,9 +3813,11 @@ window.addEventListener('beforeunload', () => {
 
             Object.keys(ARMOR).forEach(key => {
                 const armor = ARMOR[key];
-                if (armor.level <= gameState.player.level + 2) {
-                    const owned = gameState.player.inventory.includes(key);
-                    const equipped = gameState.player.armor === key;
+                
+                // Filter by level and class
+                if (armor.level <= p.level + 2 && canUseArmor(playerClass, armor)) {
+                    const owned = p.inventory.includes(key);
+                    const equipped = p.armor === key;
                     const qualityColor = QUALITY_CONFIG[armor.quality].color;
                     const qualityBonus = QUALITY_CONFIG[armor.quality].bonus;
                     const totalDef = armor.baseDefense + qualityBonus;
@@ -3749,7 +3831,7 @@ window.addEventListener('beforeunload', () => {
                             <div>Level: ${armor.level}</div>
                             ${owned ? '<div style="color: var(--border-color);">OWNED</div>' : 
                               `<button onclick="buyItem('armor', '${key}', ${armor.cost})">Buy ${armor.cost}G</button>`}
-                            ${gameState.player.cha ? '<div style="color:#8aaa8a;font-size:15px;">CHA disc: ' + calcChaDiscount(gameState.player.cha) + '%</div>' : ''}
+                            ${p.cha ? '<div style="color:#8aaa8a;font-size:15px;">CHA disc: ' + calcChaDiscount(p.cha) + '%</div>' : ''}
                         </div>
                     `;
                 }
@@ -3864,14 +3946,40 @@ window.addEventListener('beforeunload', () => {
         }
 
         function buyItem(type, key, baseCost) {
-            const disc   = calcChaDiscount(gameState.player.cha);
+            const p = gameState.player;
+            const playerClass = p.baseClass || p.class;
+            
+            // Validate class restrictions
+            if (type === 'weapon') {
+                const weapon = WEAPONS[key];
+                if (!canUseWeapon(playerClass, weapon)) {
+                    alert(`Your class (${playerClass}) cannot use ${weapon.name}!`);
+                    return;
+                }
+                if (weapon.level > p.level) {
+                    alert(`You must be level ${weapon.level} to buy ${weapon.name}!`);
+                    return;
+                }
+            } else if (type === 'armor') {
+                const armor = ARMOR[key];
+                if (!canUseArmor(playerClass, armor)) {
+                    alert(`Your class (${playerClass}) cannot use ${armor.name}!`);
+                    return;
+                }
+                if (armor.level > p.level) {
+                    alert(`You must be level ${armor.level} to buy ${armor.name}!`);
+                    return;
+                }
+            }
+            
+            const disc   = calcChaDiscount(p.cha);
             const cost   = Math.max(1, Math.floor(baseCost * (1 - disc/100)));
-            if (gameState.player.gold < cost) {
+            if (p.gold < cost) {
                 alert('Not enough gold!');
                 return;
             }
-            gameState.player.gold -= cost;
-            gameState.player.inventory.push(key);
+            p.gold -= cost;
+            p.inventory.push(key);
             let itemName;
             if (type === 'weapon') itemName = WEAPONS[key].name;
             else if (type === 'armor') itemName = ARMOR[key].name;
@@ -3899,6 +4007,7 @@ window.addEventListener('beforeunload', () => {
 
         function showInventory() {
             const p = gameState.player;
+            const playerClass = p.baseClass || p.class;
             const screen = document.getElementById('mainScreen');
             
             let invHtml = `
@@ -3909,7 +4018,10 @@ window.addEventListener('beforeunload', () => {
                     <div class="inventory-grid">
             `;
 
-            p.inventory.filter(item => WEAPONS[item]).forEach(key => {
+            p.inventory.filter(item => {
+                const weapon = WEAPONS[item];
+                return weapon && canUseWeapon(playerClass, weapon);
+            }).forEach(key => {
                 const weapon = WEAPONS[key];
                 const equipped = p.weapon === key;
                 const qualityColor = QUALITY_CONFIG[weapon.quality].color;
@@ -3933,7 +4045,10 @@ window.addEventListener('beforeunload', () => {
                     <div class="inventory-grid">
             `;
 
-            p.inventory.filter(item => ARMOR[item]).forEach(key => {
+            p.inventory.filter(item => {
+                const armor = ARMOR[item];
+                return armor && canUseArmor(playerClass, armor);
+            }).forEach(key => {
                 const armor = ARMOR[key];
                 const equipped = p.armor === key;
                 const qualityColor = QUALITY_CONFIG[armor.quality].color;
@@ -4016,10 +4131,39 @@ window.addEventListener('beforeunload', () => {
         }
 
         function equipItem(type, key) {
+            const p = gameState.player;
+            const playerClass = p.baseClass || p.class;
+            
             if (type === 'weapon') {
-                gameState.player.weapon = key;
+                const weapon = WEAPONS[key];
+                if (!weapon) {
+                    alert('Invalid weapon!');
+                    return;
+                }
+                if (!canUseWeapon(playerClass, weapon)) {
+                    alert(`Your class (${playerClass}) cannot use ${weapon.name}!`);
+                    return;
+                }
+                if (weapon.level > p.level) {
+                    alert(`You must be level ${weapon.level} to equip ${weapon.name}!`);
+                    return;
+                }
+                p.weapon = key;
             } else {
-                gameState.player.armor = key;
+                const armor = ARMOR[key];
+                if (!armor) {
+                    alert('Invalid armor!');
+                    return;
+                }
+                if (!canUseArmor(playerClass, armor)) {
+                    alert(`Your class (${playerClass}) cannot use ${armor.name}!`);
+                    return;
+                }
+                if (armor.level > p.level) {
+                    alert(`You must be level ${armor.level} to equip ${armor.name}!`);
+                    return;
+                }
+                p.armor = key;
             }
             
             // 💾 AUTO-SAVE after equipping
