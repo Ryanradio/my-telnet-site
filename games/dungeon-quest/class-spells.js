@@ -7,7 +7,7 @@ const CLASS_SPELL_TREES = {
     // ═══════════════════════════════════════════════════════════════
     // MAGE - FIRE DAMAGE SPELLS
     // ═══════════════════════════════════════════════════════════════
-    sorceror: {
+    mage: {
         startingSpell: 'fireball_1',
         spellTree: {
             // FIREBALL LINE (Primary Damage)
@@ -309,6 +309,209 @@ const CLASS_SPELL_TREES = {
     // ACOLYTE/CLERIC - HOLY DAMAGE + POWERFUL HEALING
     // ═══════════════════════════════════════════════════════════════
     acolyte: {
+        startingSpell: 'holy_bolt_1',
+        spellTree: {
+            // HOLY DAMAGE LINE
+            holy_bolt_1: {
+                name: 'Holy Bolt',
+                level: 1,
+                mpCost: 12,
+                power: 16,
+                type: 'damage',
+                cost: 0,
+                description: 'A bolt of pure holy energy',
+                upgradesTo: 'holy_bolt_2'
+            },
+            holy_bolt_2: {
+                name: 'Sacred Lance',
+                level: 4,
+                mpCost: 18,
+                power: 30,
+                type: 'damage',
+                cost: 500,
+                description: 'Pierce enemies with holy light',
+                upgradesTo: 'holy_bolt_3',
+                requires: 'holy_bolt_1'
+            },
+            holy_bolt_3: {
+                name: 'Consecration',
+                level: 7,
+                mpCost: 26,
+                power: 48,
+                type: 'damage',
+                cost: 1500,
+                description: 'Consecrate the ground with holy fire',
+                upgradesTo: 'holy_bolt_4',
+                requires: 'holy_bolt_2'
+            },
+            holy_bolt_4: {
+                name: 'Divine Storm',
+                level: 10,
+                mpCost: 36,
+                power: 70,
+                type: 'damage',
+                cost: 3500,
+                description: 'Storm of divine retribution',
+                upgradesTo: 'holy_bolt_5',
+                requires: 'holy_bolt_3'
+            },
+            holy_bolt_5: {
+                name: 'Sanctified Wrath',
+                level: 13,
+                mpCost: 48,
+                power: 95,
+                type: 'damage',
+                cost: 7000,
+                description: 'Righteous anger made manifest',
+                upgradesTo: 'holy_bolt_6',
+                requires: 'holy_bolt_4'
+            },
+            holy_bolt_6: {
+                name: 'Purifying Flame',
+                level: 16,
+                mpCost: 62,
+                power: 130,
+                type: 'damage',
+                cost: 12000,
+                description: 'Flames that purify the wicked',
+                upgradesTo: 'holy_bolt_7',
+                requires: 'holy_bolt_5'
+            },
+            holy_bolt_7: {
+                name: 'Seraphic Blast',
+                level: 19,
+                mpCost: 78,
+                power: 170,
+                type: 'damage',
+                cost: 20000,
+                description: 'Angelic power unleashed',
+                upgradesTo: 'holy_bolt_8',
+                requires: 'holy_bolt_6'
+            },
+            holy_bolt_8: {
+                name: 'Celestial Annihilation',
+                level: 22,
+                mpCost: 98,
+                power: 220,
+                type: 'damage',
+                cost: 35000,
+                description: 'The heavens themselves strike down your foe',
+                upgradesTo: 'holy_bolt_9',
+                requires: 'holy_bolt_7'
+            },
+            holy_bolt_9: {
+                name: 'Rapture',
+                level: 25,
+                mpCost: 120,
+                power: 300,
+                type: 'damage',
+                cost: 50000,
+                description: 'Ultimate divine judgment',
+                requires: 'holy_bolt_8'
+            },
+            
+            // POWERFUL HEALING LINE
+            cleric_heal_1: {
+                name: 'Minor Heal',
+                level: 2,
+                mpCost: 8,
+                power: 30,
+                type: 'heal',
+                cost: 200,
+                description: 'Basic healing prayer'
+            },
+            cleric_heal_2: {
+                name: 'Greater Heal',
+                level: 5,
+                mpCost: 14,
+                power: 55,
+                type: 'heal',
+                cost: 800,
+                description: 'More powerful healing',
+                upgradesTo: 'cleric_heal_3',
+                requires: 'cleric_heal_1'
+            },
+            cleric_heal_3: {
+                name: 'Mass Healing',
+                level: 8,
+                mpCost: 22,
+                power: 85,
+                type: 'heal',
+                cost: 2000,
+                description: 'Powerful restorative magic',
+                upgradesTo: 'cleric_heal_4',
+                requires: 'cleric_heal_2'
+            },
+            cleric_heal_4: {
+                name: 'Divine Restoration',
+                level: 11,
+                mpCost: 32,
+                power: 120,
+                type: 'heal',
+                cost: 4500,
+                description: 'Restore vast amounts of health',
+                upgradesTo: 'cleric_heal_5',
+                requires: 'cleric_heal_3'
+            },
+            cleric_heal_5: {
+                name: 'Benediction',
+                level: 14,
+                mpCost: 44,
+                power: 165,
+                type: 'heal',
+                cost: 8500,
+                description: 'A powerful blessing of healing',
+                upgradesTo: 'cleric_heal_6',
+                requires: 'cleric_heal_4'
+            },
+            cleric_heal_6: {
+                name: 'Holy Sanctuary',
+                level: 17,
+                mpCost: 58,
+                power: 220,
+                type: 'heal',
+                cost: 14000,
+                description: 'Create a sanctuary of healing light',
+                upgradesTo: 'cleric_heal_7',
+                requires: 'cleric_heal_5'
+            },
+            cleric_heal_7: {
+                name: 'Regeneration',
+                level: 20,
+                mpCost: 74,
+                power: 290,
+                type: 'heal',
+                cost: 22000,
+                description: 'Rapid regeneration of wounds',
+                upgradesTo: 'cleric_heal_8',
+                requires: 'cleric_heal_6'
+            },
+            cleric_heal_8: {
+                name: 'Divine Intervention',
+                level: 23,
+                mpCost: 92,
+                power: 380,
+                type: 'heal',
+                cost: 38000,
+                description: 'The gods themselves intervene to heal you',
+                upgradesTo: 'cleric_heal_9',
+                requires: 'cleric_heal_7'
+            },
+            cleric_heal_9: {
+                name: 'Rebirth',
+                level: 25,
+                mpCost: 110,
+                power: 500,
+                type: 'heal',
+                cost: 50000,
+                description: 'Complete restoration - as if reborn',
+                requires: 'cleric_heal_8'
+            }
+        }
+    },
+
+    // Cleric uses same tree as acolyte
+    cleric: {
         startingSpell: 'holy_bolt_1',
         spellTree: {
             // HOLY DAMAGE LINE
