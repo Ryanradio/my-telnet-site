@@ -1181,6 +1181,7 @@ body.terminal-mode #terminalWindow {
     <script src="armor.js"></script>
     <script src="items.js"></script>
     <script src="class-masters.js"></script>
+    <script src="class-spells.js"></script>
     <script src="exploration-zones.js"></script>
     <script src="adventures.js"></script>
 
@@ -3464,15 +3465,14 @@ window.addEventListener('beforeunload', () => {
         }
 
         function getStartingSpells(classKey) {
-            const spellMap = {
-                mage: ['fireball'],
-                cleric: ['heal'],
-                paladin: ['heal', 'holy_light'],
-                ranger: [],
-                warrior: [],
-                rogue: []
-            };
-            return spellMap[classKey] || [];
+            // Use CLASS_SPELL_TREES to get starting spell
+            if (typeof CLASS_SPELL_TREES !== 'undefined' && CLASS_SPELL_TREES[classKey]) {
+                const startingSpell = CLASS_SPELL_TREES[classKey].startingSpell;
+                return startingSpell ? [startingSpell] : [];
+            }
+            
+            // Fallback for classes without spell trees (warriors, rogues, etc.)
+            return [];
         }
 
         function showTown() {
@@ -3494,6 +3494,8 @@ window.addEventListener('beforeunload', () => {
                 <div style="margin: 20px 0;">
                     <div class="menu-option" onclick="showShop()">► VISIT SHOP</div>
                     <div class="menu-option" onclick="showBank()">🏦 BANK (${gameState.player.bankGold || 0}g stored)</div>
+                    <div class="menu-option" onclick="showCharacterStats()">📊 CHARACTER STATS</div>
+                    <div class="menu-option" onclick="showTemple()">⛪ TEMPLE OF REBIRTH</div>
                     <div class="menu-option" onclick="enterDungeons()">🏰 DUNGEONS</div>
                     <div class="menu-option" onclick="restAtInn()">► REST AT INN (${calcInnCost(gameState.player.cha)} Gold)</div>
                     <div class="menu-option" onclick="showInventory()">► INVENTORY</div>
@@ -4471,7 +4473,7 @@ function stabilizeTerminalLayout() {
             // ═══════════════════════════════════════════════════════════════
             if (typeof rollForAdventure !== 'undefined') {
                 const adventureRoll = Math.random();
-                const adventureThreshold = location.adventureChance = .05; // FORCE 100% = 1 FOR TESTING
+                const adventureThreshold = location.adventureChance || 0.05;
                 
                 if (adventureRoll < adventureThreshold) {
                     const adventure = rollForAdventure(p.level);
@@ -6085,7 +6087,41 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 updateHud();
                 renderActionBar();
                 termAppend(`You cast ${spell.name} and restore <span style="color:#88ff88;">${heal} HP!</span>`);
+            } else if (spell.type === 'lifesteal') {
+                // LIFESTEAL - damage enemy and heal yourself
+                const ti = cs.currentTarget;
+                const enemy = cs.monsters[ti];
+                let dmg = Math.max(1, (spell.power + p.magic + (p.wis || 0)) - Math.floor(enemy.defense / 2));
+                let crit = false;
+                if (Math.random() * 100 < calcCritChance(p.lck || 0)) { dmg = Math.floor(dmg * 1.75); crit = true; }
+                
+                enemy.hp -= dmg;
+                
+                // Heal based on lifesteal percentage
+                const lifestealPercent = spell.lifestealPercent || 50;
+                const healAmount = Math.floor(dmg * (lifestealPercent / 100));
+                p.hp = Math.min(p.maxHp, p.hp + healAmount);
+                
+                const tName = cs.monsters.length > 1
+                    ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${ti+1}</span>`
+                    : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
+                
+                const critTag = crit ? ' <span style="color:#FFD700;">★ CRIT!</span>' : '';
+                termAppend(`You cast ${spell.name} on ${tName} for <span class="dmg-enemy">${dmg} damage!</span>${critTag}`, null, () => {
+                    termAppend(`<span style="color:#00FF00;">🩸 Drained ${healAmount} HP!</span>`, 'term-loot');
+                    if (enemy.hp > 0) {
+                        const hpPct = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
+                        let condition = 'healthy';
+                        if (hpPct < 75) condition = 'injured';
+                        if (hpPct < 50) condition = 'wounded';
+                        if (hpPct < 25) condition = 'severely wounded';
+                        if (hpPct < 10) condition = 'barely standing';
+                        termAppend(`→ ${tName} is <span style="color:#8aaa8a;">${condition}</span>`, 'term-dim');
+                    }
+                    checkCombatEnd();
+                });
             } else {
+                // REGULAR DAMAGE SPELL
                 const ti    = cs.currentTarget;
                 const enemy = cs.monsters[ti];
                 let   dmg   = Math.max(1, (spell.power + p.magic + (p.wis||0)) - Math.floor(enemy.defense / 2));
@@ -6604,6 +6640,7 @@ function endCombat(victory) {
     while (gameState.player.xp >= gameState.player.xpToNext && gameState.player.level < 25) {
         levelUp();
         termAppend(`⬆️ LEVEL UP! You are now level ${gameState.player.level}!`, 'term-victory');
+        termAppend(`<span style="color:#00FFFF;">+3 Stat Points! Visit the Stats menu in town to allocate them.</span>`, 'term-loot');
         
         // Check for class evolution announcement
         if (gameState.player._justEvolved) {
@@ -6857,21 +6894,33 @@ function playerIsExhausted() {
             // Update xpToNext using class-specific table
             p.xpToNext = getXpToNextLevel(p.baseClass || p.class, p.level);
 
-            // legacy base stats
+            // HP/MP increases (CON scaling for HP)
             p.maxHp += 15 + (p.con||0);   // CON scales HP gain
             p.hp     = p.maxHp;
             p.maxMp += 10;
             p.mp     = p.maxMp;
+            
+            // Legacy stats still auto-increase for backwards compatibility
             p.strength += 2;
             p.defense  += 2;
             p.magic    += 2;
             p.speed    += 1;
 
-            // new stat-block: +1 each
+            // ═══════════════════════════════════════════════════════════════
+            // NEW STAT POINT SYSTEM (3 points per level to allocate)
+            // ═══════════════════════════════════════════════════════════════
+            if (p.statPoints === undefined) {
+                p.statPoints = 0; // Initialize if not present (old saves)
+            }
+            p.statPoints += 3; // Give 3 stat points per level
+            
+            // Auto-allocate 1 point to each stat (base progression)
             if (p.str !== undefined) {
                 p.str++; p.dex++; p.wis++; p.cha++; p.con++; p.lck++;
-                // paladin bonus: extra +1 to both STR and WIS
-                if (p.class === 'paladin' || p.baseClass === 'paladin') { p.str++; p.wis++; }
+                // Paladin bonus: extra +1 to both STR and WIS
+                if (p.class === 'paladin' || p.baseClass === 'paladin') { 
+                    p.str++; p.wis++; 
+                }
             }
             
             // ═══════════════════════════════════════════════════════════════
@@ -6883,24 +6932,8 @@ function playerIsExhausted() {
                 p._justEvolved = true;
                 p._evolutionMessage = evolution.announcement;
             }
-
-            // Learn new spells
-            const spellLevels = {
-                2: ['fireball', 'heal'],
-                3: ['holy_light'],
-                4: ['lightning'],
-                5: ['greater_heal'],
-                6: ['ice_storm'],
-                8: ['meteor']
-            };
-
-            if (spellLevels[p.level]) {
-                spellLevels[p.level].forEach(spellKey => {
-                    if (!p.knownSpells.includes(spellKey)) {
-                        p.knownSpells.push(spellKey);
-                    }
-                });
-            }
+            
+            // Spells are no longer auto-learned - must be purchased at temple!
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -7004,29 +7037,24 @@ function playerIsExhausted() {
         // ═══════════════════════════════════════════════════════════════
         
         function startAdventure(adventure) {
-    // Deep clone so we don't mutate ADVENTURES template
-    gameState.currentAdventure = JSON.parse(JSON.stringify(adventure));
-    const current = gameState.currentAdventure;
-    
-    termAppend('', 'term-separator');
-    termAppend(`<span style="color:#FFD700;font-size:20px;">✨ ${current.name}! ✨</span>`, 'term-highlight');
-    termAppend('', 'term-separator');
-    termAppend(current.intro, 'term-dim');
-    termAppend('', 'term-separator');
-    termAppend('<span style="color:var(--highlight-color);">What do you do?</span>');
-    termAppend('', 'term-separator');
-    
-    // Show choices
-    current.choices.forEach((choice, index) => {
-        termAppend(
-            `<span style="color:var(--highlight-color);">${index + 1}.</span> ${choice.text}`,
-            'term-highlight'
-        );
-    });
-    
-    renderAdventureActionBar();
-}
-
+            gameState.currentAdventure = adventure;
+            
+            termAppend('', 'term-separator');
+            termAppend(`<span style="color:#FFD700;font-size:20px;">✨ ${adventure.name}! ✨</span>`, 'term-highlight');
+            termAppend('', 'term-separator');
+            termAppend(adventure.intro, 'term-dim');
+            termAppend('', 'term-separator');
+            termAppend('<span style="color:var(--highlight-color);">What do you do?</span>');
+            termAppend('', 'term-separator');
+            
+            // Show choices
+            adventure.choices.forEach((choice, index) => {
+                termAppend(`<span style="color:var(--highlight-color);">${index + 1}.</span> ${choice.text}`, 'term-highlight');
+            });
+            
+            // Render adventure action bar
+            renderAdventureActionBar();
+        }
         
         function renderAdventureActionBar() {
             const adventure = gameState.currentAdventure;
@@ -7046,77 +7074,52 @@ function playerIsExhausted() {
             });
         }
         
-       function chooseAdventurePath(choiceIndex) {
-    const adventure = gameState.currentAdventure;
-    if (!adventure || !adventure.choices) return;
-
-    const choice = adventure.choices[choiceIndex];
-    if (!choice) return;
-
-    termAppend('', 'term-separator');
-    termAppend(
-        `<span style="color:var(--text-color);">► You choose: ${choice.text}</span>`,
-        'term-highlight'
-    );
-    termAppend('', 'term-separator');
-
-    // Roll weighted outcome
-    let totalWeight = 0;
-    choice.outcomes.forEach(o => totalWeight += o.weight);
-
-    let roll = Math.random() * totalWeight;
-    let selectedOutcome = choice.outcomes[0];
-
-    for (const outcome of choice.outcomes) {
-        roll -= outcome.weight;
-        if (roll <= 0) {
-            selectedOutcome = outcome;
-            break;
+        function chooseAdventurePath(choiceIndex) {
+            const adventure = gameState.currentAdventure;
+            if (!adventure) return;
+            
+            const choice = adventure.choices[choiceIndex];
+            
+            termAppend('', 'term-separator');
+            termAppend(`<span style="color:var(--text-color);">► You choose: ${choice.text}</span>`, 'term-highlight');
+            termAppend('', 'term-separator');
+            
+            // Roll for outcome
+            let totalWeight = 0;
+            choice.outcomes.forEach(o => totalWeight += o.weight);
+            
+            let roll = Math.random() * totalWeight;
+            let selectedOutcome = choice.outcomes[0];
+            
+            for (const outcome of choice.outcomes) {
+                roll -= outcome.weight;
+                if (roll <= 0) {
+                    selectedOutcome = outcome;
+                    break;
+                }
+            }
+            
+            // Show outcome
+            termAppend(selectedOutcome.text, 'term-highlight');
+            
+            // Apply rewards
+            if (selectedOutcome.rewards) {
+                applyAdventureRewards(selectedOutcome.rewards);
+            }
+            
+            // Start combat if needed
+            if (selectedOutcome.combat) {
+                termAppend('', 'term-separator');
+                gameState.currentAdventure = null;
+                startCombat(selectedOutcome.combat);
+                return;
+            }
+            
+            // Adventure over, return to exploration
+            gameState.currentAdventure = null;
+            termAppend('', 'term-separator');
+            renderActionBar();
         }
-    }
-
-    // Show outcome text
-    if (selectedOutcome.text) {
-        termAppend(selectedOutcome.text, 'term-highlight');
-    }
-
-    // Apply rewards
-    if (selectedOutcome.rewards) {
-        applyAdventureRewards(selectedOutcome.rewards);
-    }
-
-    // Combat immediately ends the adventure
-    if (selectedOutcome.combat) {
-        termAppend('', 'term-separator');
-        gameState.currentAdventure = null;
-        startCombat(selectedOutcome.combat);
-        return;
-    }
-
-    // ✅ Handle nested choices correctly
-    if (selectedOutcome.nextChoices && selectedOutcome.nextChoices.length) {
-        adventure.choices = selectedOutcome.nextChoices;
-
-        termAppend('', 'term-separator');
-        termAppend(
-            '<span style="color:var(--highlight-color);">What do you do?</span>',
-            'term-highlight'
-        );
-        termAppend('', 'term-separator');
-
-        // Re-render adventure buttons (NOT normal action bar)
-        renderAdventureActionBar();
-        return;
-    }
-
-    // Adventure ends normally
-    gameState.currentAdventure = null;
-    termAppend('', 'term-separator');
-    renderActionBar();
-}
-
-
-
         
         function applyAdventureRewards(rewards) {
             const p = gameState.player;
@@ -7187,6 +7190,377 @@ function playerIsExhausted() {
             
             updateHud();
             saveGame();
+        }
+
+
+        // ═══════════════════════════════════════════════════════════════
+        // CHARACTER STATS & STAT ALLOCATION
+        // ═══════════════════════════════════════════════════════════════
+        
+        function showCharacterStats() {
+            const p = gameState.player;
+            const screen = document.getElementById('mainScreen');
+            
+            // Initialize stat points if not present (old saves)
+            if (p.statPoints === undefined) p.statPoints = 0;
+            
+            const hasPoints = p.statPoints > 0;
+            
+            screen.innerHTML = `
+                <div class="location-header">📊 CHARACTER STATS</div>
+                ${renderPlayerStats()}
+                
+                <div class="message" style="border-color:${hasPoints ? '#FFD700' : 'var(--border-color)'};">
+                    <p><strong style="color:${hasPoints ? '#FFD700' : 'var(--highlight-color)'};">Available Stat Points: ${p.statPoints}</strong></p>
+                    ${hasPoints ? '<p style="color:#00FF00;">You have unspent stat points! Allocate them below.</p>' : '<p style="color:#888;">You gain 3 stat points per level up.</p>'}
+                </div>
+                
+                <div class="message">
+                    <h3 style="color:var(--highlight-color);">Core Stats</h3>
+                    ${renderStatRow('STR (Strength)', p.str, 'Increases physical damage')}
+                    ${renderStatRow('DEX (Dexterity)', p.dex, 'Increases dodge, accuracy, crit chance')}
+                    ${renderStatRow('CON (Constitution)', p.con, 'Increases HP gain per level')}
+                    ${renderStatRow('WIS (Wisdom)', p.wis, 'Increases spell damage and magic defense')}
+                    ${renderStatRow('CHA (Charisma)', p.cha, 'Reduces shop prices and inn costs')}
+                    ${renderStatRow('LCK (Luck)', p.lck, 'Increases crit chance and rare drops')}
+                </div>
+                
+                <div class="message">
+                    <h3 style="color:var(--highlight-color);">Derived Stats</h3>
+                    <p><span class="stat-label">Level:</span> ${p.level}</p>
+                    <p><span class="stat-label">XP:</span> ${p.xp} / ${p.xpToNext}</p>
+                    <p><span class="stat-label">HP:</span> ${p.hp} / ${p.maxHp}</p>
+                    <p><span class="stat-label">MP:</span> ${p.mp} / ${p.maxMp}</p>
+                    <p><span class="stat-label">Physical Damage:</span> ${calculatePhysicalDamage()}</p>
+                    <p><span class="stat-label">Magic Damage:</span> ${calculateMagicDamage()}</p>
+                    <p><span class="stat-label">Defense:</span> ${calculateTotalDefense()}</p>
+                    <p><span class="stat-label">Crit Chance:</span> ${calcCritChance(p.lck)}%</p>
+                </div>
+                
+                ${hasPoints ? `
+                    <div class="message" style="border-color:#FFD700;">
+                        <h3 style="color:#FFD700;">Allocate Stat Points (${p.statPoints} remaining)</h3>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
+                            <button onclick="allocateStat('str')">+1 STR</button>
+                            <button onclick="allocateStat('dex')">+1 DEX</button>
+                            <button onclick="allocateStat('con')">+1 CON</button>
+                            <button onclick="allocateStat('wis')">+1 WIS</button>
+                            <button onclick="allocateStat('cha')">+1 CHA</button>
+                            <button onclick="allocateStat('lck')">+1 LCK</button>
+                        </div>
+                    </div>
+                ` : ''}
+                
+                <button onclick="showTown()">← BACK TO TOWN</button>
+            `;
+        }
+        
+        function renderStatRow(name, value, description) {
+            return `
+                <p>
+                    <span class="stat-label">${name}:</span> 
+                    <span style="color:#FFD700;">${value}</span>
+                    <span style="color:#888;font-size:12px;"> - ${description}</span>
+                </p>
+            `;
+        }
+        
+        function calculatePhysicalDamage() {
+            const p = gameState.player;
+            const weapon = WEAPONS[p.weapon] || { baseDamage: 1, quality: 'poor' };
+            const qBonus = QUALITY_CONFIG[weapon.quality].bonus;
+            let weaponDamage = weapon.baseDamage + qBonus;
+            if (p.level <= 5) weaponDamage = Math.floor(weaponDamage * 0.7);
+            return weaponDamage + (p.str || 0);
+        }
+        
+        function calculateMagicDamage() {
+            const p = gameState.player;
+            const weapon = WEAPONS[p.weapon] || { baseMagicDamage: 0, quality: 'poor' };
+            const qBonus = QUALITY_CONFIG[weapon.quality].bonus;
+            return (weapon.baseMagicDamage + qBonus) + (p.wis || 0);
+        }
+        
+        function calculateTotalDefense() {
+            const p = gameState.player;
+            const armor = ARMOR[p.armor] || { baseDefense: 0, quality: 'poor' };
+            const qBonus = QUALITY_CONFIG[armor.quality].bonus;
+            return p.defense + armor.baseDefense + qBonus + (p.con || 0);
+        }
+        
+        function allocateStat(statName) {
+            const p = gameState.player;
+            
+            if (p.statPoints <= 0) {
+                alert('No stat points available!');
+                return;
+            }
+            
+            p[statName]++;
+            p.statPoints--;
+            
+            // Update max HP if CON was increased
+            if (statName === 'con') {
+                p.maxHp += 1; // Small bonus for increasing CON
+                p.hp = Math.min(p.hp, p.maxHp);
+            }
+            
+            saveGame();
+            showCharacterStats(); // Refresh display
+        }
+        
+        // ═══════════════════════════════════════════════════════════════
+        // TEMPLE OF REBIRTH (Stat Reset)
+        // ═══════════════════════════════════════════════════════════════
+        
+        function showTemple() {
+            const p = gameState.player;
+            const screen = document.getElementById('mainScreen');
+            
+            // Calculate total stat points that have been allocated
+            const totalAllocated = calculateTotalAllocatedPoints();
+            const respecCost = calculateRespecCost(p.level);
+            
+            screen.innerHTML = `
+                <div class="location-header">⛪ TEMPLE OF REBIRTH</div>
+                ${renderPlayerStats()}
+                
+                <div class="message">
+                    <p style="color:var(--highlight-color);font-size:16px;">
+                        <strong>Welcome to the Temple of Rebirth</strong>
+                    </p>
+                    <p>
+                        Here, the priests offer spiritual services: spell training and personal rebirth.
+                    </p>
+                </div>
+                
+                <div style="margin: 20px 0;">
+                    <div class="menu-option" onclick="showSpellShop()">📖 SPELL TRAINING</div>
+                    <div class="menu-option" onclick="showRespec()">🔄 STAT RESPEC (${respecCost}g)</div>
+                    <button onclick="showTown()">← BACK TO TOWN</button>
+                </div>
+            `;
+        }
+        
+        function showRespec() {
+            const p = gameState.player;
+            const screen = document.getElementById('mainScreen');
+            
+            const totalAllocated = calculateTotalAllocatedPoints();
+            const respecCost = calculateRespecCost(p.level);
+            
+            screen.innerHTML = `
+                <div class="location-header">🔄 STAT RESPEC</div>
+                ${renderPlayerStats()}
+                
+                <div class="message" style="border-color:#8aaa8a;">
+                    <p>Refund all allocated stat points to rebuild your character.</p>
+                </div>
+                
+                <div class="message" style="border-color:#FFD700;">
+                    <h3 style="color:#FFD700;">Respec Info</h3>
+                    <p><span class="stat-label">Level:</span> ${p.level}</p>
+                    <p><span class="stat-label">Allocated:</span> ${totalAllocated}</p>
+                    <p><span class="stat-label">Available:</span> ${p.statPoints || 0}</p>
+                    <p><span class="stat-label">Cost:</span> <span style="color:#FFD700;">${respecCost}g</span></p>
+                </div>
+                
+                <div class="message" style="border-color:var(--error-color);">
+                    <p style="color:var(--error-color);"><strong>⚠️ Warning:</strong> This resets ALL stat points.</p>
+                </div>
+                
+                <div style="margin: 20px 0;">
+                    ${p.gold >= respecCost ? `<button onclick="confirmRespec()" style="border-color:#FFD700;">💰 RESPEC (${respecCost}g)</button>` : `<button disabled>Need ${respecCost - p.gold}g more</button>`}
+                    <button onclick="showTemple()">← BACK</button>
+                </div>
+            `;
+        }
+        
+        function calculateTotalAllocatedPoints() {
+            const p = gameState.player;
+            // Each level gives 3 points, so total available = level * 3
+            const totalAvailable = (p.level - 1) * 3; // -1 because level 1 has no points yet
+            const remaining = p.statPoints || 0;
+            return totalAvailable - remaining;
+        }
+        
+        function calculateRespecCost(level) {
+            // Cost scales with level: 1000g per level
+            return level * 1000;
+        }
+        
+        function confirmRespec() {
+            const p = gameState.player;
+            const cost = calculateRespecCost(p.level);
+            
+            if (p.gold < cost) {
+                alert('Not enough gold!');
+                return;
+            }
+            
+            if (!confirm(`Are you sure you want to respec for ${cost} gold? This will refund all your allocated stat points.`)) {
+                return;
+            }
+            
+            performRespec();
+        }
+        
+        function performRespec() {
+            const p = gameState.player;
+            const cost = calculateRespecCost(p.level);
+            
+            // Deduct gold
+            p.gold -= cost;
+            
+            // Calculate how many points were manually allocated
+            const totalLevelPoints = (p.level - 1) * 3;
+            
+            // Reset stats to base (level 1 + auto-gains)
+            // Auto-gains: +1 to each stat per level (except paladin gets +2 str/wis)
+            const baseLevels = p.level - 1; // Levels gained beyond 1
+            
+            p.str = 10 + baseLevels; // Base 10 + 1 per level
+            p.dex = 10 + baseLevels;
+            p.wis = 10 + baseLevels;
+            p.cha = 10 + baseLevels;
+            p.con = 10 + baseLevels;
+            p.lck = 10 + baseLevels;
+            
+            // Paladin bonus (gets extra str/wis each level)
+            if (p.class === 'paladin' || p.baseClass === 'paladin') {
+                p.str += baseLevels;
+                p.wis += baseLevels;
+            }
+            
+            // Refund all allocated points
+            p.statPoints = totalLevelPoints;
+            
+            // Recalculate HP based on new CON
+            p.maxHp = 100 + (p.level - 1) * 15 + ((p.level - 1) * (p.con - 10)); // Base + level gains + con bonus
+            p.hp = Math.min(p.hp, p.maxHp);
+            
+            saveGame();
+            
+            alert(`Respec complete! You have ${p.statPoints} stat points to reallocate.`);
+            showCharacterStats();
+        }
+        
+        // ═══════════════════════════════════════════════════════════════
+        // SPELL SHOP - Temple Spell Training
+        // ═══════════════════════════════════════════════════════════════
+        
+        function showSpellShop() {
+            const p = gameState.player;
+            const screen = document.getElementById('mainScreen');
+            
+            // Get class spell tree
+            const classKey = p.baseClass || p.class;
+            const spellTree = CLASS_SPELL_TREES[classKey];
+            
+            if (!spellTree) {
+                screen.innerHTML = `
+                    <div class="location-header">📖 SPELL TRAINING</div>
+                    ${renderPlayerStats()}
+                    <div class="message" style="border-color:var(--error-color);">
+                        <p>Your class (${classKey}) does not have spell training available.</p>
+                    </div>
+                    <button onclick="showTemple()">← BACK TO TEMPLE</button>
+                `;
+                return;
+            }
+            
+            // Get available spells
+            const availableSpells = [];
+            const currentSpells = [];
+            
+            Object.entries(spellTree.spellTree).forEach(([key, spell]) => {
+                const hasSpell = p.knownSpells.includes(key);
+                const canAfford = p.gold >= spell.cost;
+                const levelReq = p.level >= spell.level;
+                const meetsRequirement = !spell.requires || p.knownSpells.includes(spell.requires);
+                
+                if (hasSpell) {
+                    currentSpells.push({ key, spell });
+                } else if (levelReq && meetsRequirement) {
+                    availableSpells.push({ key, spell, canAfford });
+                }
+            });
+            
+            let html = `
+                <div class="location-header">📖 SPELL TRAINING</div>
+                ${renderPlayerStats()}
+                
+                <div class="message">
+                    <p style="color:var(--highlight-color);"><strong>The priests offer to teach you the sacred arts</strong></p>
+                    <p style="color:#8aaa8a;">Learn new spells or upgrade existing ones</p>
+                </div>
+            `;
+            
+            // Show current spells
+            if (currentSpells.length > 0) {
+                html += `<div class="message" style="border-color:#00FF00;"><h3 style="color:#00FF00;">Your Known Spells</h3>`;
+                currentSpells.forEach(({ key, spell }) => {
+                    const typeColor = spell.type === 'heal' || spell.type === 'lifesteal' ? '#00FF00' : '#FF6666';
+                    const typeIcon = spell.type === 'heal' ? '💚' : spell.type === 'lifesteal' ? '🩸' : '💥';
+                    const lifestealInfo = spell.lifestealPercent ? ` (${spell.lifestealPercent}%)` : '';
+                    html += `<p>${typeIcon} <strong>${spell.name}</strong> - <span style="color:${typeColor};">${spell.power} ${spell.type === 'heal' ? 'HP' : 'DMG'}${lifestealInfo}</span> (${spell.mpCost} MP)${spell.upgradesTo ? `<br><span style="color:#FFD700;font-size:12px;">→ Upgrade available</span>` : ''}</p>`;
+                });
+                html += `</div>`;
+            }
+            
+            // Show available spells
+            if (availableSpells.length > 0) {
+                html += `<div class="message" style="border-color:#FFD700;"><h3 style="color:#FFD700;">Available Training</h3>`;
+                availableSpells.forEach(({ key, spell, canAfford }) => {
+                    const typeColor = spell.type === 'heal' || spell.type === 'lifesteal' ? '#00FF00' : '#FF6666';
+                    const typeIcon = spell.type === 'heal' ? '💚' : spell.type === 'lifesteal' ? '🩸' : '💥';
+                    const lifestealInfo = spell.lifestealPercent ? ` (${spell.lifestealPercent}% lifesteal)` : '';
+                    const isUpgrade = spell.requires && p.knownSpells.includes(spell.requires);
+                    
+                    html += `<div style="margin:10px 0;padding:10px;border:1px solid ${canAfford ? '#FFD700' : '#666'};"><p>${typeIcon} <strong style="color:${typeColor};">${spell.name}</strong> ${isUpgrade ? '(Upgrade)' : '(New)'}<br><span style="font-size:12px;">${spell.description}</span><br><span style="color:${typeColor};">${spell.power} ${spell.type === 'heal' ? 'HP' : 'DMG'}${lifestealInfo}</span> | ${spell.mpCost} MP | Level ${spell.level}<br><span style="color:#FFD700;">Cost: ${spell.cost}g</span></p>${canAfford ? `<button onclick="learnSpell('${key}')" style="border-color:#FFD700;">💰 Learn (${spell.cost}g)</button>` : `<button disabled style="opacity:0.5;">Need ${spell.cost - p.gold}g more</button>`}</div>`;
+                });
+                html += `</div>`;
+            } else {
+                html += `<div class="message"><p style="color:#888;">No new spells available at your level.</p></div>`;
+            }
+            
+            html += `<button onclick="showTemple()">← BACK</button>`;
+            screen.innerHTML = html;
+        }
+        
+        function learnSpell(spellKey) {
+            const p = gameState.player;
+            const classKey = p.baseClass || p.class;
+            const spell = CLASS_SPELL_TREES[classKey].spellTree[spellKey];
+            
+            if (!spell || p.gold < spell.cost || p.level < spell.level) {
+                alert('Cannot learn this spell!');
+                return;
+            }
+            
+            if (spell.requires && !p.knownSpells.includes(spell.requires)) {
+                alert('Learn previous spell first!');
+                return;
+            }
+            
+            p.gold -= spell.cost;
+            
+            // Remove old spell if upgrade
+            if (spell.requires) {
+                const idx = p.knownSpells.indexOf(spell.requires);
+                if (idx > -1) p.knownSpells.splice(idx, 1);
+            }
+            
+            p.knownSpells.push(spellKey);
+            
+            // Add to SPELLS if not present
+            if (!SPELLS[spellKey]) {
+                SPELLS[spellKey] = { ...spell, pipCost: 1 };
+            }
+            
+            saveGame();
+            alert(`Learned ${spell.name}!`);
+            showSpellShop();
         }
 
 
