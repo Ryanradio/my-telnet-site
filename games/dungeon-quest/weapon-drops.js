@@ -13,8 +13,8 @@ const WEAPON_DROP_CONFIG = {
     rarityMultipliers: {
         common: 1.0,
         uncommon: 1.5,
-        rare: 2.0,
-        epic: 3.0,
+        rare: 1.5,
+        epic: 2.5,
         boss: 5.0
     },
     
@@ -225,19 +225,19 @@ function generateWeaponDescription(weaponType, quality, modifiers) {
  * Calculate weapon sell value based on stats
  */
 function calculateWeaponValue(level, quality, modifiers) {
-    let baseValue = level * 100;
+    let baseValue = level * 40;
     
     const qualityMults = {
         poor: 0.5,
         normal: 1.0,
-        rare: 2.0,
+        rare: 1.5,
         epic: 4.0,
         legendary: 8.0,
-        godly: 15.0
+        godly: 10.0
     };
     
     baseValue *= qualityMults[quality] || 1.0;
-    baseValue += modifiers.length * 200;
+    baseValue += modifiers.length * 100;
     
     return Math.floor(baseValue);
 }
