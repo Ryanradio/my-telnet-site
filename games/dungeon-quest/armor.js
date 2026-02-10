@@ -28,7 +28,7 @@ const ARMOR = {
         name: 'Chain Mail',
         baseDefense: 8,
         baseMagicBonus: 0,
-        cost: 200,
+        cost: 500,
         level: 4,
         quality: 'normal',
         slot: 'armor'
@@ -37,7 +37,7 @@ const ARMOR = {
         name: 'Mage Robes',
         baseDefense: 4,
         baseMagicBonus: 6,
-        cost: 220,
+        cost: 600,
         level: 4,
         quality: 'rare',
         slot: 'armor'
@@ -48,7 +48,7 @@ const ARMOR = {
         name: 'Plate Armor',
         baseDefense: 18,
         baseMagicBonus: 0,
-        cost: 800,
+        cost: 2200,
         level: 8,
         quality: 'normal',
         slot: 'armor'
@@ -57,7 +57,7 @@ const ARMOR = {
         name: 'Archmage Robes',
         baseDefense: 10,
         baseMagicBonus: 15,
-        cost: 900,
+        cost: 2500,
         level: 8,
         quality: 'epic',
         slot: 'armor'
@@ -68,7 +68,7 @@ const ARMOR = {
         name: 'Dragon Scale Armor',
         baseDefense: 30,
         baseMagicBonus: 5,
-        cost: 2000,
+        cost: 6000,
         level: 12,
         quality: 'epic',
         slot: 'armor'
@@ -79,7 +79,7 @@ const ARMOR = {
         name: 'Divine Plate',
         baseDefense: 45,
         baseMagicBonus: 10,
-        cost: 4000,
+        cost: 13000,
         level: 16,
         quality: 'legendary',
         slot: 'armor'
@@ -90,7 +90,7 @@ const ARMOR = {
         name: 'Armor of the Gods',
         baseDefense: 65,
         baseMagicBonus: 20,
-        cost: 8000,
+        cost: 28000,
         level: 20,
         quality: 'legendary',
         slot: 'armor'
@@ -101,7 +101,7 @@ const ARMOR = {
         name: 'Genesis Plate',
         baseDefense: 100,
         baseMagicBonus: 50,
-        cost: 20000,
+        cost: 60000,
         level: 25,
         quality: 'godly',
         slot: 'armor'

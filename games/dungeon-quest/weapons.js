@@ -70,7 +70,7 @@ const WEAPONS = {
         baseDamage: 5,
         maxDamage: 8,
         baseMagicDamage: 0,
-        cost: 50,
+        cost: 11000,
         level: 2,
         quality: 'normal',
         slot: 'weapon'
@@ -80,7 +80,7 @@ const WEAPONS = {
         baseDamage: 2,
         maxDamage: 4,
         baseMagicDamage: 5,
-        cost: 60,
+        cost: 500,
         level: 2,
         quality: 'normal',
         slot: 'weapon'
@@ -94,7 +94,7 @@ const WEAPONS = {
         baseDamage: 10,
         maxDamage: 15,
         baseMagicDamage: 0,
-        cost: 150,
+        cost: 11000,
         level: 4,
         quality: 'normal',
         slot: 'weapon'
@@ -104,7 +104,7 @@ const WEAPONS = {
         baseDamage: 12,
         maxDamage: 18,
         baseMagicDamage: 3,
-        cost: 180,
+        cost: 500,
         level: 4,
         quality: 'normal',
         slot: 'weapon'
@@ -114,7 +114,7 @@ const WEAPONS = {
         baseDamage: 11,
         maxDamage: 16,
         baseMagicDamage: 0,
-        cost: 160,
+        cost: 450,
         level: 4,
         quality: 'normal',
         slot: 'weapon'
@@ -124,7 +124,7 @@ const WEAPONS = {
         baseDamage: 4,
         maxDamage: 7,
         baseMagicDamage: 10,
-        cost: 200,
+        cost: 550,
         level: 4,
         quality: 'rare',
         slot: 'weapon'
@@ -138,7 +138,7 @@ const WEAPONS = {
         baseDamage: 16,
         maxDamage: 24,
         baseMagicDamage: 0,
-        cost: 350,
+        cost: 900,
         level: 6,
         quality: 'normal',
         slot: 'weapon'
@@ -148,7 +148,7 @@ const WEAPONS = {
         baseDamage: 5,
         maxDamage: 9,
         baseMagicDamage: 14,
-        cost: 400,
+        cost: 11000,
         level: 6,
         quality: 'rare',
         slot: 'weapon'
@@ -158,7 +158,7 @@ const WEAPONS = {
         baseDamage: 18,
         maxDamage: 27,
         baseMagicDamage: 2,
-        cost: 380,
+        cost: 2800,
         level: 6,
         quality: 'rare',
         slot: 'weapon'
@@ -172,7 +172,7 @@ const WEAPONS = {
         baseDamage: 24,
         maxDamage: 36,
         baseMagicDamage: 0,
-        cost: 600,
+        cost: 5000,
         level: 8,
         quality: 'normal',
         slot: 'weapon'
@@ -182,7 +182,7 @@ const WEAPONS = {
         baseDamage: 7,
         maxDamage: 12,
         baseMagicDamage: 20,
-        cost: 650,
+        cost: 1800,
         level: 8,
         quality: 'rare',
         slot: 'weapon'
@@ -192,7 +192,7 @@ const WEAPONS = {
         baseDamage: 22,
         maxDamage: 33,
         baseMagicDamage: 8,
-        cost: 700,
+        cost: 2000,
         level: 8,
         quality: 'epic',
         slot: 'weapon'
@@ -206,7 +206,7 @@ const WEAPONS = {
         baseDamage: 30,
         maxDamage: 45,
         baseMagicDamage: 10,
-        cost: 1000,
+        cost: 2800,
         level: 10,
         quality: 'epic',
         slot: 'weapon'
@@ -216,7 +216,7 @@ const WEAPONS = {
         baseDamage: 10,
         maxDamage: 16,
         baseMagicDamage: 28,
-        cost: 1100,
+        cost: 11000,
         level: 10,
         quality: 'epic',
         slot: 'weapon'
@@ -226,7 +226,7 @@ const WEAPONS = {
         baseDamage: 32,
         maxDamage: 48,
         baseMagicDamage: 6,
-        cost: 1050,
+        cost: 35000,
         level: 10,
         quality: 'epic',
         slot: 'weapon'
@@ -240,7 +240,7 @@ const WEAPONS = {
         baseDamage: 36,
         maxDamage: 54,
         baseMagicDamage: 12,
-        cost: 1500,
+        cost: 4500,
         level: 12,
         quality: 'epic',
         slot: 'weapon'
@@ -250,7 +250,7 @@ const WEAPONS = {
         baseDamage: 12,
         maxDamage: 20,
         baseMagicDamage: 35,
-        cost: 1600,
+        cost: 5000,
         level: 12,
         quality: 'epic',
         slot: 'weapon'
@@ -264,7 +264,7 @@ const WEAPONS = {
         baseDamage: 44,
         maxDamage: 66,
         baseMagicDamage: 15,
-        cost: 2200,
+        cost: 7000,
         level: 14,
         quality: 'legendary',
         slot: 'weapon'
@@ -274,7 +274,7 @@ const WEAPONS = {
         baseDamage: 14,
         maxDamage: 24,
         baseMagicDamage: 42,
-        cost: 2400,
+        cost: 8000,
         level: 14,
         quality: 'legendary',
         slot: 'weapon'
@@ -284,7 +284,7 @@ const WEAPONS = {
         baseDamage: 48,
         maxDamage: 72,
         baseMagicDamage: 12,
-        cost: 2300,
+        cost: 28000,
         level: 14,
         quality: 'legendary',
         slot: 'weapon'
@@ -298,7 +298,7 @@ const WEAPONS = {
         baseDamage: 52,
         maxDamage: 78,
         baseMagicDamage: 18,
-        cost: 3000,
+        cost: 35000,
         level: 16,
         quality: 'legendary',
         slot: 'weapon'
@@ -308,7 +308,7 @@ const WEAPONS = {
         baseDamage: 18,
         maxDamage: 30,
         baseMagicDamage: 50,
-        cost: 3200,
+        cost: 11000,
         level: 16,
         quality: 'legendary',
         slot: 'weapon'
@@ -322,7 +322,7 @@ const WEAPONS = {
         baseDamage: 60,
         maxDamage: 90,
         baseMagicDamage: 22,
-        cost: 4000,
+        cost: 14000,
         level: 18,
         quality: 'legendary',
         slot: 'weapon'
@@ -332,7 +332,7 @@ const WEAPONS = {
         baseDamage: 22,
         maxDamage: 36,
         baseMagicDamage: 58,
-        cost: 4200,
+        cost: 50000,
         level: 18,
         quality: 'legendary',
         slot: 'weapon'
@@ -346,7 +346,7 @@ const WEAPONS = {
         baseDamage: 70,
         maxDamage: 105,
         baseMagicDamage: 28,
-        cost: 5500,
+        cost: 20000,
         level: 20,
         quality: 'legendary',
         slot: 'weapon'
@@ -356,7 +356,7 @@ const WEAPONS = {
         baseDamage: 26,
         maxDamage: 42,
         baseMagicDamage: 66,
-        cost: 6000,
+        cost: 22000,
         level: 20,
         quality: 'legendary',
         slot: 'weapon'
@@ -370,7 +370,7 @@ const WEAPONS = {
         baseDamage: 80,
         maxDamage: 120,
         baseMagicDamage: 32,
-        cost: 7500,
+        cost: 28000,
         level: 22,
         quality: 'legendary',
         slot: 'weapon'
@@ -384,7 +384,7 @@ const WEAPONS = {
         baseDamage: 90,
         maxDamage: 135,
         baseMagicDamage: 38,
-        cost: 10000,
+        cost: 35000,
         level: 24,
         quality: 'legendary',
         slot: 'weapon'
@@ -398,7 +398,7 @@ const WEAPONS = {
         baseDamage: 100,
         maxDamage: 150,
         baseMagicDamage: 50,
-        cost: 15000,
+        cost: 50000,
         level: 25,
         quality: 'godly',
         slot: 'weapon'

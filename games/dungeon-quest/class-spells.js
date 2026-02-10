@@ -29,7 +29,7 @@ const CLASS_SPELL_TREES = {
                 minPower: 10,
                 maxPower: 35,
                 type: 'damage',
-                cost: 500,
+                cost: 4500,
                 description: 'An explosive burst of fire',
                 upgradesTo: 'fireball_3',
                 requires: 'fireball_1'
@@ -41,7 +41,7 @@ const CLASS_SPELL_TREES = {
                 minPower: 18,
                 maxPower: 55,
                 type: 'damage',
-                cost: 1500,
+                cost: 4500,
                 description: 'Summon a raging inferno',
                 upgradesTo: 'fireball_4',
                 requires: 'fireball_2'
@@ -54,7 +54,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 200,
                 type: 'damage',
-                cost: 3500,
+                cost: 10500,
                 description: 'Volcanic eruption of pure flame',
                 upgradesTo: 'fireball_5',
                 requires: 'fireball_3'
@@ -67,7 +67,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 275,
                 type: 'damage',
-                cost: 7000,
+                cost: 63000,
                 description: 'Flames from the depths of hell',
                 upgradesTo: 'fireball_6',
                 requires: 'fireball_4'
@@ -80,7 +80,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 362,
                 type: 'damage',
-                cost: 12000,
+                cost: 108000,
                 description: 'Consume your enemy in eternal fire',
                 upgradesTo: 'fireball_7',
                 requires: 'fireball_5'
@@ -93,7 +93,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 475,
                 type: 'damage',
-                cost: 20000,
+                cost: 180000,
                 description: 'A storm of burning cinders',
                 upgradesTo: 'fireball_8',
                 requires: 'fireball_6'
@@ -106,7 +106,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 625,
                 type: 'damage',
-                cost: 35000,
+                cost: 105000,
                 description: 'Breathe fire like an ancient dragon',
                 upgradesTo: 'fireball_9',
                 requires: 'fireball_7'
@@ -119,7 +119,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 875,
                 type: 'damage',
-                cost: 50000,
+                cost: 150000,
                 description: 'Ultimate fire magic - rebirth through flame',
                 requires: 'fireball_8'
             },
@@ -132,7 +132,7 @@ const CLASS_SPELL_TREES = {
                 minPower: 8,
                 maxPower: 16,
                 type: 'aoe_damage',
-                cost: 300,
+                cost: 2700,
                 description: 'Spray embers at all enemies (60% damage per target)'
             },
             flame_wave_2: {
@@ -142,7 +142,7 @@ const CLASS_SPELL_TREES = {
                 minPower: 14,
                 maxPower: 26,
                 type: 'aoe_damage',
-                cost: 900,
+                cost: 2700,
                 description: 'A sweeping wave of fire hits all foes',
                 upgradesTo: 'flame_wave_3',
                 requires: 'flame_wave_1'
@@ -154,7 +154,7 @@ const CLASS_SPELL_TREES = {
                 minPower: 22,
                 maxPower: 42,
                 type: 'aoe_damage',
-                cost: 2200,
+                cost: 6600,
                 description: 'Cascading flames engulf the battlefield',
                 upgradesTo: 'flame_wave_4',
                 requires: 'flame_wave_2'
@@ -167,7 +167,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 120,
                 type: 'aoe_damage',
-                cost: 4000,
+                cost: 108000,
                 description: 'A raging storm of fire consumes all',
                 upgradesTo: 'flame_wave_5',
                 requires: 'flame_wave_3'
@@ -180,7 +180,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 162,
                 type: 'aoe_damage',
-                cost: 8000,
+                cost: 24000,
                 description: 'A wave of hellfire washes over your enemies',
                 upgradesTo: 'flame_wave_6',
                 requires: 'flame_wave_4'
@@ -193,7 +193,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 212,
                 type: 'aoe_damage',
-                cost: 13000,
+                cost: 39000,
                 description: 'Rain burning meteors upon all foes',
                 upgradesTo: 'flame_wave_7',
                 requires: 'flame_wave_5'
@@ -206,7 +206,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 275,
                 type: 'aoe_damage',
-                cost: 21000,
+                cost: 63000,
                 description: 'Pillars of flame strike down all enemies',
                 upgradesTo: 'flame_wave_8',
                 requires: 'flame_wave_6'
@@ -219,7 +219,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 362,
                 type: 'aoe_damage',
-                cost: 36000,
+                cost: 108000,
                 description: 'Volcanic devastation engulfs the battlefield',
                 upgradesTo: 'flame_wave_9',
                 requires: 'flame_wave_7'
@@ -232,7 +232,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 500,
                 type: 'aoe_damage',
-                cost: 50000,
+                cost: 150000,
                 description: 'End all life with apocalyptic fire',
                 requires: 'flame_wave_8'
             }
@@ -264,7 +264,7 @@ const CLASS_SPELL_TREES = {
                 minPower: 10,
                 maxPower: 32,
                 type: 'damage',
-                cost: 500,
+                cost: 4500,
                 description: 'Channel the fury of the heavens',
                 upgradesTo: 'smite_3',
                 requires: 'smite_1'
@@ -276,7 +276,7 @@ const CLASS_SPELL_TREES = {
                 minPower: 18,
                 maxPower: 52,
                 type: 'damage',
-                cost: 1500,
+                cost: 4500,
                 description: 'A blow blessed by the gods',
                 upgradesTo: 'smite_4',
                 requires: 'smite_2'
@@ -289,7 +289,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 180,
                 type: 'damage',
-                cost: 3500,
+                cost: 10500,
                 description: 'Divine judgment upon the wicked',
                 upgradesTo: 'smite_5',
                 requires: 'smite_3'
@@ -302,7 +302,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 250,
                 type: 'damage',
-                cost: 7000,
+                cost: 63000,
                 description: 'The gods demand retribution',
                 upgradesTo: 'smite_6',
                 requires: 'smite_4'
@@ -315,7 +315,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 337,
                 type: 'damage',
-                cost: 12000,
+                cost: 108000,
                 description: 'Blinding light that punishes evil',
                 upgradesTo: 'smite_7',
                 requires: 'smite_5'
@@ -328,7 +328,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 437,
                 type: 'damage',
-                cost: 20000,
+                cost: 180000,
                 description: 'Bring forth the end of days',
                 upgradesTo: 'smite_8',
                 requires: 'smite_6'
@@ -341,7 +341,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 575,
                 type: 'damage',
-                cost: 35000,
+                cost: 105000,
                 description: 'The full wrath of the divine',
                 upgradesTo: 'smite_9',
                 requires: 'smite_7'
@@ -354,7 +354,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 800,
                 type: 'damage',
-                cost: 50000,
+                cost: 150000,
                 description: 'Smite with the power of a god',
                 requires: 'smite_8'
             },
@@ -368,7 +368,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 62,
                 type: 'heal',
-                cost: 300,
+                cost: 2700,
                 description: 'Touch of divine healing'
             },
             heal_2: {
@@ -379,7 +379,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 112,
                 type: 'heal',
-                cost: 1000,
+                cost: 9000,
                 description: 'Bathe in holy light',
                 upgradesTo: 'heal_3',
                 requires: 'heal_1'
@@ -405,7 +405,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 250,
                 type: 'heal',
-                cost: 5000,
+                cost: 45000,
                 description: 'Holy power mends your wounds',
                 upgradesTo: 'heal_5',
                 requires: 'heal_3'
@@ -431,7 +431,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 475,
                 type: 'heal',
-                cost: 15000,
+                cost: 45000,
                 description: 'Completely renewed by divine power',
                 upgradesTo: 'heal_7',
                 requires: 'heal_5'
@@ -444,7 +444,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 625,
                 type: 'heal',
-                cost: 25000,
+                cost: 225000,
                 description: 'Healing so powerful it could raise the dead',
                 upgradesTo: 'heal_8',
                 requires: 'heal_6'
@@ -457,7 +457,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 2497,
                 type: 'heal',
-                cost: 40000,
+                cost: 120000,
                 description: 'Restore yourself to perfect health',
                 requires: 'heal_7'
             }
@@ -491,7 +491,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 75,
                 type: 'damage',
-                cost: 500,
+                cost: 4500,
                 description: 'Pierce enemies with holy light',
                 upgradesTo: 'holy_bolt_3',
                 requires: 'holy_bolt_1'
@@ -504,7 +504,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 120,
                 type: 'damage',
-                cost: 1500,
+                cost: 4500,
                 description: 'Consecrate the ground with holy fire',
                 upgradesTo: 'holy_bolt_4',
                 requires: 'holy_bolt_2'
@@ -517,7 +517,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 175,
                 type: 'damage',
-                cost: 3500,
+                cost: 10500,
                 description: 'Storm of divine retribution',
                 upgradesTo: 'holy_bolt_5',
                 requires: 'holy_bolt_3'
@@ -530,7 +530,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 237,
                 type: 'damage',
-                cost: 7000,
+                cost: 63000,
                 description: 'Righteous anger made manifest',
                 upgradesTo: 'holy_bolt_6',
                 requires: 'holy_bolt_4'
@@ -543,7 +543,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 325,
                 type: 'damage',
-                cost: 12000,
+                cost: 108000,
                 description: 'Flames that purify the wicked',
                 upgradesTo: 'holy_bolt_7',
                 requires: 'holy_bolt_5'
@@ -556,7 +556,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 425,
                 type: 'damage',
-                cost: 20000,
+                cost: 180000,
                 description: 'Angelic power unleashed',
                 upgradesTo: 'holy_bolt_8',
                 requires: 'holy_bolt_6'
@@ -569,7 +569,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 550,
                 type: 'damage',
-                cost: 35000,
+                cost: 105000,
                 description: 'The heavens themselves strike down your foe',
                 upgradesTo: 'holy_bolt_9',
                 requires: 'holy_bolt_7'
@@ -582,7 +582,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 750,
                 type: 'damage',
-                cost: 50000,
+                cost: 150000,
                 description: 'Ultimate divine judgment',
                 requires: 'holy_bolt_8'
             },
@@ -596,7 +596,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 75,
                 type: 'heal',
-                cost: 200,
+                cost: 600,
                 description: 'Basic healing prayer'
             },
             cleric_heal_2: {
@@ -620,7 +620,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 212,
                 type: 'heal',
-                cost: 2000,
+                cost: 6000,
                 description: 'Powerful restorative magic',
                 upgradesTo: 'cleric_heal_4',
                 requires: 'cleric_heal_2'
@@ -698,7 +698,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 1250,
                 type: 'heal',
-                cost: 50000,
+                cost: 150000,
                 description: 'Complete restoration - as if reborn',
                 requires: 'cleric_heal_8'
             }
@@ -730,7 +730,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 75,
                 type: 'damage',
-                cost: 500,
+                cost: 4500,
                 description: 'Pierce enemies with holy light',
                 upgradesTo: 'holy_bolt_3',
                 requires: 'holy_bolt_1'
@@ -743,7 +743,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 120,
                 type: 'damage',
-                cost: 1500,
+                cost: 4500,
                 description: 'Consecrate the ground with holy fire',
                 upgradesTo: 'holy_bolt_4',
                 requires: 'holy_bolt_2'
@@ -756,7 +756,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 175,
                 type: 'damage',
-                cost: 3500,
+                cost: 10500,
                 description: 'Storm of divine retribution',
                 upgradesTo: 'holy_bolt_5',
                 requires: 'holy_bolt_3'
@@ -769,7 +769,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 237,
                 type: 'damage',
-                cost: 7000,
+                cost: 63000,
                 description: 'Righteous anger made manifest',
                 upgradesTo: 'holy_bolt_6',
                 requires: 'holy_bolt_4'
@@ -782,7 +782,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 325,
                 type: 'damage',
-                cost: 12000,
+                cost: 108000,
                 description: 'Flames that purify the wicked',
                 upgradesTo: 'holy_bolt_7',
                 requires: 'holy_bolt_5'
@@ -795,7 +795,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 425,
                 type: 'damage',
-                cost: 20000,
+                cost: 180000,
                 description: 'Angelic power unleashed',
                 upgradesTo: 'holy_bolt_8',
                 requires: 'holy_bolt_6'
@@ -808,7 +808,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 550,
                 type: 'damage',
-                cost: 35000,
+                cost: 105000,
                 description: 'The heavens themselves strike down your foe',
                 upgradesTo: 'holy_bolt_9',
                 requires: 'holy_bolt_7'
@@ -821,7 +821,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 750,
                 type: 'damage',
-                cost: 50000,
+                cost: 150000,
                 description: 'Ultimate divine judgment',
                 requires: 'holy_bolt_8'
             },
@@ -835,7 +835,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 75,
                 type: 'heal',
-                cost: 200,
+                cost: 600,
                 description: 'Basic healing prayer'
             },
             cleric_heal_2: {
@@ -859,7 +859,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 212,
                 type: 'heal',
-                cost: 2000,
+                cost: 6000,
                 description: 'Powerful restorative magic',
                 upgradesTo: 'cleric_heal_4',
                 requires: 'cleric_heal_2'
@@ -937,7 +937,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 1250,
                 type: 'heal',
-                cost: 50000,
+                cost: 150000,
                 description: 'Complete restoration - as if reborn',
                 requires: 'cleric_heal_8'
             }
@@ -969,7 +969,7 @@ const CLASS_SPELL_TREES = {
                 minPower: 9,
                 maxPower: 32,
                 type: 'damage',
-                cost: 500,
+                cost: 4500,
                 description: 'A missile of pure darkness',
                 upgradesTo: 'shadow_bolt_3',
                 requires: 'shadow_bolt_1'
@@ -981,7 +981,7 @@ const CLASS_SPELL_TREES = {
                 minPower: 16,
                 maxPower: 50,
                 type: 'damage',
-                cost: 1500,
+                cost: 4500,
                 description: 'Strike from the void itself',
                 upgradesTo: 'shadow_bolt_4',
                 requires: 'shadow_bolt_2'
@@ -994,7 +994,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 190,
                 type: 'damage',
-                cost: 3500,
+                cost: 10500,
                 description: 'Blast of death energy',
                 upgradesTo: 'shadow_bolt_5',
                 requires: 'shadow_bolt_3'
@@ -1007,7 +1007,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 262,
                 type: 'damage',
-                cost: 7000,
+                cost: 63000,
                 description: 'Inflict terrible suffering',
                 upgradesTo: 'shadow_bolt_6',
                 requires: 'shadow_bolt_4'
@@ -1020,7 +1020,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 350,
                 type: 'damage',
-                cost: 12000,
+                cost: 108000,
                 description: 'Shatter the enemy\'s soul',
                 upgradesTo: 'shadow_bolt_7',
                 requires: 'shadow_bolt_5'
@@ -1033,7 +1033,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 462,
                 type: 'damage',
-                cost: 20000,
+                cost: 180000,
                 description: 'Eternal damnation for your foes',
                 upgradesTo: 'shadow_bolt_8',
                 requires: 'shadow_bolt_6'
@@ -1046,7 +1046,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 612,
                 type: 'damage',
-                cost: 35000,
+                cost: 105000,
                 description: 'Send them to oblivion',
                 upgradesTo: 'shadow_bolt_9',
                 requires: 'shadow_bolt_7'
@@ -1059,7 +1059,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 850,
                 type: 'damage',
-                cost: 50000,
+                cost: 150000,
                 description: 'Bring about the end of all things',
                 requires: 'shadow_bolt_8'
             },
@@ -1074,7 +1074,7 @@ const CLASS_SPELL_TREES = {
                 maxPower: 37,
                 type: 'lifesteal',
                 lifestealPercent: 50,
-                cost: 300,
+                cost: 2700,
                 description: 'Drain enemy life force (50% returned as HP)'
             },
             drain_2: {
@@ -1086,7 +1086,7 @@ const CLASS_SPELL_TREES = {
                 maxPower: 70,
                 type: 'lifesteal',
                 lifestealPercent: 60,
-                cost: 1000,
+                cost: 9000,
                 description: 'Steal life from your enemy (60% returned)',
                 upgradesTo: 'drain_3',
                 requires: 'drain_1'
@@ -1114,7 +1114,7 @@ const CLASS_SPELL_TREES = {
                 maxPower: 162,
                 type: 'lifesteal',
                 lifestealPercent: 75,
-                cost: 5000,
+                cost: 45000,
                 description: 'Pact with death itself (75% returned)',
                 upgradesTo: 'drain_5',
                 requires: 'drain_3'
@@ -1142,7 +1142,7 @@ const CLASS_SPELL_TREES = {
                 maxPower: 300,
                 type: 'lifesteal',
                 lifestealPercent: 85,
-                cost: 15000,
+                cost: 45000,
                 description: 'Consume the enemy\'s essence (85% returned)',
                 upgradesTo: 'drain_7',
                 requires: 'drain_5'
@@ -1156,7 +1156,7 @@ const CLASS_SPELL_TREES = {
                 maxPower: 400,
                 type: 'lifesteal',
                 lifestealPercent: 90,
-                cost: 25000,
+                cost: 225000,
                 description: 'Harvest abundant life energy (90% returned)',
                 upgradesTo: 'drain_8',
                 requires: 'drain_6'
@@ -1170,7 +1170,7 @@ const CLASS_SPELL_TREES = {
                 maxPower: 525,
                 type: 'lifesteal',
                 lifestealPercent: 95,
-                cost: 40000,
+                cost: 120000,
                 description: 'Drain the very essence of life (95% returned)',
                 upgradesTo: 'drain_9',
                 requires: 'drain_7'
@@ -1184,7 +1184,7 @@ const CLASS_SPELL_TREES = {
                 maxPower: 700,
                 type: 'lifesteal',
                 lifestealPercent: 100,
-                cost: 50000,
+                cost: 150000,
                 description: 'Feed eternally on life itself (100% returned)',
                 requires: 'drain_8'
             }
