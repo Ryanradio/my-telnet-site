@@ -1182,6 +1182,8 @@ body.terminal-mode #terminalWindow {
     <script src="items.js"></script>
     <script src="class-masters.js"></script>
     <script src="class-spells.js"></script>
+    <script src="status-effects.js"></script>
+    <script src="weapon-drops.js"></script>
     <script src="exploration-zones.js"></script>
     <script src="adventures.js"></script>
 
@@ -3342,6 +3344,12 @@ window.addEventListener('beforeunload', () => {
                     console.log(`✅ Migrated armor to: ${p.armor}`);
                 }
                 
+                // Ensure className exists (for old saves)
+                if (!p.className && p.class && CLASSES[p.class]) {
+                    p.className = CLASSES[p.class].name;
+                    console.log(`✅ Added className: ${p.className}`);
+                }
+                
                 gameState.currentLocation = data.currentLocation || 'silverdale';
                 
                 // Restore dungeon state if applicable
@@ -3797,10 +3805,21 @@ window.addEventListener('beforeunload', () => {
             const mpPercent = (p.mp / p.maxMp) * 100;
             const xpPercent = (p.xp / p.xpToNext) * 100;
             
-            // Show advanced class name if evolved
-            const displayClass = p.hasEvolved 
-                ? `<span style="color:#FF00FF;font-weight:bold;">${getAdvancedClassName(p)}</span>`
-                : p.className;
+            // Get display class name
+            let displayClass;
+            if (p.hasEvolved) {
+                // Show advanced class name if evolved
+                displayClass = `<span style="color:#FF00FF;font-weight:bold;">${getAdvancedClassName(p)}</span>`;
+            } else if (p.className) {
+                // Use stored className
+                displayClass = p.className;
+            } else if (p.class && CLASSES[p.class]) {
+                // Fallback: get from CLASSES object
+                displayClass = CLASSES[p.class].name;
+            } else {
+                // Last resort: capitalize the class key
+                displayClass = p.class ? p.class.charAt(0).toUpperCase() + p.class.slice(1) : 'Adventurer';
+            }
 
             return `
                 <div class="stats-bar">
@@ -3874,10 +3893,24 @@ window.addEventListener('beforeunload', () => {
                     const totalDmg = weapon.baseDamage + qualityBonus;
                     const totalMag = weapon.baseMagicDamage + qualityBonus;
                     
+                    // Build modifier display
+                    let modifierHtml = '';
+                    if (weapon.modifiers && weapon.modifiers.length > 0) {
+                        modifierHtml = '<div style="margin-top:3px;font-size:11px;">';
+                        weapon.modifiers.forEach(modKey => {
+                            const mod = WEAPON_MODIFIERS[modKey];
+                            if (mod) {
+                                modifierHtml += `<div style="color:${mod.color};">• ${mod.name}</div>`;
+                            }
+                        });
+                        modifierHtml += '</div>';
+                    }
+                    
                     shopHtml += `
                         <div class="item-card ${equipped ? 'equipped' : ''}">
                             <div style="color: ${qualityColor};">${weapon.name}</div>
-                            <div>DMG: ${totalDmg} | MAG: ${totalMag}</div>
+                            <div>DMG: ${weapon.maxDamage ? `${totalDmg}-${weapon.maxDamage}` : totalDmg}${totalMag > 0 ? ` | MAG: ${totalMag}` : ''}</div>
+                            ${modifierHtml}
                             <div>Level: ${weapon.level}</div>
                             ${owned ? '<div style="color: var(--border-color);">OWNED</div>' : 
                               `<button onclick="buyItem('weapon', '${key}', ${weapon.cost})">Buy ${weapon.cost}G</button>`}
@@ -4178,10 +4211,28 @@ window.addEventListener('beforeunload', () => {
                 const totalDmg = weapon.baseDamage + qualityBonus;
                 const totalMag = weapon.baseMagicDamage + qualityBonus;
                 
+                // Build modifier display
+                let modifierHtml = '';
+                if (weapon.modifiers && weapon.modifiers.length > 0) {
+                    modifierHtml = '<div style="margin-top:5px;font-size:12px;">';
+                    weapon.modifiers.forEach(modKey => {
+                        const mod = WEAPON_MODIFIERS[modKey];
+                        if (mod) {
+                            modifierHtml += `<div style="color:${mod.color};">• ${mod.name}`;
+                            if (mod.minDamage) {
+                                modifierHtml += ` (${mod.minDamage}-${mod.maxDamage})`;
+                            }
+                            modifierHtml += `</div>`;
+                        }
+                    });
+                    modifierHtml += '</div>';
+                }
+                
                 invHtml += `
                     <div class="item-card ${equipped ? 'equipped' : ''}">
                         <div style="color: ${qualityColor};">${weapon.name}</div>
-                        <div>DMG: ${totalDmg} | MAG: ${totalMag}</div>
+                        <div>DMG: ${weapon.maxDamage ? `${totalDmg}-${weapon.maxDamage}` : totalDmg}${totalMag > 0 ? ` | MAG: ${totalMag}` : ''}</div>
+                        ${modifierHtml}
                         ${equipped ? '<div style="color: var(--border-color);">EQUIPPED</div>' : 
                           `<button onclick="equipItem('weapon', '${key}')">EQUIP</button>`}
                     </div>
@@ -4830,12 +4881,209 @@ function stabilizeTerminalLayout() {
             if (r < 95) return 2;
             return 3;
         }
+        // ═══════════════════════════════════════════════════════════════
+        // STATUS EFFECTS SYSTEM
+        // ═══════════════════════════════════════════════════════════════
+        
+        function cleanupCombatStatusEffects() {
+            const cs = gameState.combatState;
+            if (!cs) return;
+            
+            // Clear all DOT timers
+            for (const timerKey in cs.dotTimers) {
+                clearInterval(cs.dotTimers[timerKey]);
+            }
+            cs.dotTimers = {};
+            cs.playerStatusEffects = [];
+            cs.monsterStatusEffects = {};
+        }
+        
+        function applyStatusEffect(target, statusKey, isPlayer = false) {
+            const cs = gameState.combatState;
+            if (!cs) return;
+            
+            const statusDef = STATUS_EFFECTS[statusKey];
+            if (!statusDef) return;
+            
+            // Get target's status effects array
+            let effects;
+            if (isPlayer) {
+                effects = cs.playerStatusEffects;
+            } else {
+                if (!cs.monsterStatusEffects[target.index]) {
+                    cs.monsterStatusEffects[target.index] = [];
+                }
+                effects = cs.monsterStatusEffects[target.index];
+            }
+            
+            // Check if already has this status
+            if (effects.find(e => e.type === statusKey)) {
+                return; // Don't stack same status
+            }
+            
+            // Add status effect
+            const effect = {
+                type: statusKey,
+                startTime: Date.now(),
+                duration: statusDef.duration
+            };
+            effects.push(effect);
+            
+            // Show message
+            const targetName = isPlayer ? 'You' : target.name;
+            termAppend(statusDef.message(targetName), 'term-warning');
+            
+            // Start DOT ticks if applicable
+            if (statusDef.type === 'dot') {
+                startDOTTicks(target, statusKey, isPlayer);
+            }
+            
+            // Auto-remove after duration
+            setTimeout(() => {
+                removeStatusEffect(target, statusKey, isPlayer);
+            }, statusDef.duration);
+        }
+        
+        function removeStatusEffect(target, statusKey, isPlayer = false) {
+            const cs = gameState.combatState;
+            if (!cs) return;
+            
+            let effects;
+            if (isPlayer) {
+                effects = cs.playerStatusEffects;
+            } else {
+                effects = cs.monsterStatusEffects[target.index] || [];
+            }
+            
+            const index = effects.findIndex(e => e.type === statusKey);
+            if (index > -1) {
+                effects.splice(index, 1);
+                
+                // Stop DOT timer if exists
+                const timerKey = isPlayer ? `player_${statusKey}` : `monster_${target.index}_${statusKey}`;
+                if (cs.dotTimers[timerKey]) {
+                    clearInterval(cs.dotTimers[timerKey]);
+                    delete cs.dotTimers[timerKey];
+                }
+            }
+        }
+        
+        function startDOTTicks(target, statusKey, isPlayer = false) {
+            const cs = gameState.combatState;
+            if (!cs) return;
+            
+            const statusDef = STATUS_EFFECTS[statusKey];
+            if (!statusDef || statusDef.type !== 'dot') return;
+            
+            const timerKey = isPlayer ? `player_${statusKey}` : `monster_${target.index}_${statusKey}`;
+            
+            // Don't start if already ticking
+            if (cs.dotTimers[timerKey]) return;
+            
+            cs.dotTimers[timerKey] = setInterval(() => {
+                if (!cs || !gameState.combatState) {
+                    clearInterval(cs.dotTimers[timerKey]);
+                    return;
+                }
+                
+                const damage = statusDef.damagePerTick;
+                target.hp -= damage;
+                
+                const targetName = isPlayer ? 'You' : target.name;
+                termAppend(statusDef.message(targetName, damage), 'term-warning');
+                
+                updateHud();
+                updateEnemyCards();
+                
+                // Check if target died from DOT
+                if (target.hp <= 0) {
+                    if (!isPlayer) {
+                        termAppend(`${target.name} succumbs to ${statusDef.name}!`, 'term-victory');
+                        checkCombatEnd();
+                    } else {
+                        gameState.player.hp = 0;
+                        checkCombatEnd();
+                    }
+                }
+            }, statusDef.tickInterval);
+        }
+        
+        function hasStatusEffect(target, statusKey, isPlayer = false) {
+            const cs = gameState.combatState;
+            if (!cs) return false;
+            
+            const effects = isPlayer ? cs.playerStatusEffects : (cs.monsterStatusEffects[target.index] || []);
+            return effects.some(e => e.type === statusKey);
+        }
+        
+        function getStatusEffectIcons(target, isPlayer = false) {
+            const cs = gameState.combatState;
+            if (!cs) return '';
+            
+            const effects = isPlayer ? cs.playerStatusEffects : (cs.monsterStatusEffects[target.index] || []);
+            if (effects.length === 0) return '';
+            
+            return effects.map(effect => {
+                const def = STATUS_EFFECTS[effect.type];
+                return `<span title="${def.description}" style="color:${def.color};">${def.icon}</span>`;
+            }).join(' ');
+        }
+        
+        function applyWeaponModifiers(attacker, target, baseDamage, weapon) {
+            if (!weapon.modifiers || weapon.modifiers.length === 0) {
+                return { totalDamage: baseDamage, messages: [] };
+            }
+            
+            let totalDamage = baseDamage;
+            const messages = [];
+            
+            weapon.modifiers.forEach(modKey => {
+                const mod = WEAPON_MODIFIERS[modKey];
+                if (!mod) return;
+                
+                // Add elemental/bonus damage
+                if (mod.minDamage !== undefined) {
+                    const bonusDmg = Math.floor(Math.random() * (mod.maxDamage - mod.minDamage + 1)) + mod.minDamage;
+                    totalDamage += bonusDmg;
+                    messages.push(`<span style="color:${mod.color};">+${bonusDmg} ${mod.name} damage</span>`);
+                }
+                
+                // Apply status effect chance
+                if (mod.statusEffect && Math.random() < mod.statusChance) {
+                    applyStatusEffect(target, mod.statusEffect, false);
+                }
+                
+                // Apply lifesteal
+                if (mod.lifestealPercent) {
+                    const heal = Math.floor(totalDamage * (mod.lifestealPercent / 100));
+                    attacker.hp = Math.min(attacker.maxHp, attacker.hp + heal);
+                    messages.push(`<span style="color:#00FF00;">+${heal} HP (Lifesteal)</span>`);
+                }
+                
+                // Apply crit bonus
+                if (mod.critBonus) {
+                    // This will be used in the attack calculation
+                    // Store for now (handled in executeAttack)
+                }
+            });
+            
+            return { totalDamage, messages };
+        }
+        
+        // ═══════════════════════════════════════════════════════════════
+        // COMBAT FUNCTIONS
+        // ═══════════════════════════════════════════════════════════════
+        
         function startCombat(enemyKeys) {
             // Stop resting when combat starts
             stopResting();
             
             if (!Array.isArray(enemyKeys)) enemyKeys = [enemyKeys];
-            const monsters = enemyKeys.map(k => spawnMonsterWithRarity(k, true)); // true = use zone level
+            const monsters = enemyKeys.map((k, index) => {
+                const monster = spawnMonsterWithRarity(k, true); // true = use zone level
+                monster.index = index; // Add index for status effect tracking
+                return monster;
+            });
 
             let msg;
             if (monsters.length === 1)
@@ -4867,7 +5115,13 @@ function stabilizeTerminalLayout() {
                 enemyTimer:    enemyDelay,
                 enemyDelay:    enemyDelay,
                 enemyHits:     eHits,
-                enemyHitsLeft: eHits
+                enemyHitsLeft: eHits,
+                // ═══════════════════════════════════════════════════════════
+                // STATUS EFFECTS SYSTEM
+                // ═══════════════════════════════════════════════════════════
+                playerStatusEffects: [], // Active status effects on player
+                monsterStatusEffects: {}, // Active status effects per monster (by index)
+                dotTimers: {} // DOT tick interval IDs
             };
             // stream the encounter line; show cards + start timer only after it finishes
             termAppend(msg, 'term-enemy', () => {
@@ -5408,7 +5662,7 @@ if (cs) {
                         <div style="display:flex;flex-wrap:wrap;gap:6px;">
                             <button onclick="showAttackMenu()" ${!canAct?'disabled':''} class="action-icon-btn" title="Attack">⚔️ Attack</button>
                             <button onclick="showSpellMenu()"  ${!canAct?'disabled':''} class="action-icon-btn" title="Cast Spell">✨ Spell</button>
-                            <button onclick="showPotionMenu()" ${!canAct?'disabled':''} class="action-icon-btn" title="Use Potion">🧪 Potion</button>
+                            <button onclick="showPotionMenu()" class="action-icon-btn" title="Use Potion" style="border-color:#00FF00;">🧪 Potion</button>
                             <button onclick="playerDefend()"   ${!canAct?'disabled':''} class="action-icon-btn" title="Defend">🛡️ Defend</button>
                             <button onclick="attemptFlee()"    ${!canAct?'disabled':''} class="action-icon-btn" title="Flee">🏃 Flee</button>
                         </div>
@@ -6329,7 +6583,11 @@ function consumePips(cs, amount, cooldown) {
             ? ' <span style="color:#FFD700;">★ CRITICAL HIT!</span>'
             : '';
 
-        enemy.hp -= result.damage;
+        // Apply weapon modifiers (elemental damage, status effects, lifesteal)
+        const modifierResult = applyWeaponModifiers(p, enemy, result.damage, weapon);
+        const finalDamage = modifierResult.totalDamage;
+        
+        enemy.hp -= finalDamage;
 
         // Calculate condition text
         const hpPct = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
@@ -6340,9 +6598,13 @@ function consumePips(cs, amount, cooldown) {
         if (hpPct < 10) condition = 'barely standing';
 
         termAppend(
-            `You ${attackName} ${tName} for <span class="dmg-enemy">${result.damage} damage!</span>${critTag}`,
+            `You ${attackName} ${tName} for <span class="dmg-enemy">${finalDamage} damage!</span>${critTag}`,
             null,
             () => {
+                // Show modifier messages
+                modifierResult.messages.forEach(msg => {
+                    termAppend(`→ ${msg}`, 'term-loot');
+                });
 
                 if (enemy.hp > 0) {
                     termAppend(
@@ -6435,6 +6697,12 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 termAppend(`You cast ${spell.name}!`, 'term-highlight');
                 termAppend(`<span style="color:#FF8800;">🔥 AREA OF EFFECT! 🔥</span>`, 'term-victory');
                 
+                // Check if fire spell for burning
+                const spellName = spell.name.toLowerCase();
+                const isFire = spellName.includes('fire') || spellName.includes('flame') || 
+                               spellName.includes('burn') || spellName.includes('pyro') || 
+                               spellName.includes('inferno') || spellName.includes('ember');
+                
                 monsters.forEach((enemy, i) => {
                     if (enemy.hp > 0) {
                         let dmg = Math.max(1, (spell.power + p.magic + (p.wis || 0)) - Math.floor(enemy.defense / 2));
@@ -6454,6 +6722,11 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                         
                         const critTag = crit ? ' <span style="color:#FFD700;">★ CRIT!</span>' : '';
                         termAppend(`→ ${tName} takes <span class="dmg-enemy">${dmg} damage!</span>${critTag}`);
+                        
+                        // Apply burning to each enemy hit (AOE fire spells)
+                        if (isFire && Math.random() < 0.5 && enemy.hp > 0) { // 50% chance per target
+                            applyStatusEffect(enemy, 'burning', false);
+                        }
                     }
                 });
                 
@@ -6504,6 +6777,21 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 if (Math.random()*100 < calcCritChance(p.lck||0)) { dmg = Math.floor(dmg*1.75); crit = true; }
                 enemy.hp -= dmg;
                 
+                // Check for spell status effects (burning from fire spells, etc.)
+                const spellName = spell.name.toLowerCase();
+                if ((spellName.includes('fire') || spellName.includes('flame') || spellName.includes('burn') || 
+                     spellName.includes('pyro') || spellName.includes('inferno') || spellName.includes('ember')) && 
+                    Math.random() < 0.5) { // 50% chance
+                    enemy.statusToApply = 'burning';
+                } else if ((spellName.includes('ice') || spellName.includes('frost') || spellName.includes('frozen')) && 
+                           Math.random() < 0.4) { // 40% chance
+                    enemy.statusToApply = 'frozen';
+                } else if (spellName.includes('lightning') && Math.random() < 0.2) { // 20% chance
+                    enemy.statusToApply = 'stunned';
+                } else if (spellName.includes('shadow') && Math.random() < 0.3) { // 30% chance
+                    enemy.statusToApply = 'blinded';
+                }
+                
                 const tName = cs.monsters.length > 1
                     ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${ti+1}</span>`
                     : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
@@ -6516,6 +6804,12 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 if (hpPct < 25) condition = 'severely wounded';
                 if (hpPct < 10) condition = 'barely standing';
                 termAppend(`You cast ${spell.name} on ${tName} for <span class="dmg-enemy">${dmg} damage!</span>${critTag}`, null, () => {
+                    // Apply status effect if flagged
+                    if (enemy.statusToApply && enemy.hp > 0) {
+                        applyStatusEffect(enemy, enemy.statusToApply, false);
+                        enemy.statusToApply = null;
+                    }
+                    
                     if (enemy.hp > 0) {
                         termAppend(`→ ${tName} is <span style="color:#8aaa8a;">${condition}</span>`, 'term-dim');
                     }
@@ -6524,9 +6818,11 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
             }
               updateEnemyCards();
                 updateHud();
-                renderActionBar();
             
+            // Reset to main combat menu after spell cast
+            cs.actionMode = 'main';
             cs.pendingSpellKey = null;
+            renderActionBar();
         }
 
         // Legacy function for backward compatibility
@@ -6581,8 +6877,7 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
         function showPotionMenu() {
             const cs = gameState.combatState;
             if (!cs) return;
-            const anyAvail = cs.pipAvailable && cs.pipAvailable.some(x => x);
-            if (!anyAvail) return;
+            // REMOVED: pip check - potions can be used even with no pips!
             const p = gameState.player;
             const potions = {};
             p.inventory.forEach(ik => {
@@ -6597,14 +6892,20 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 renderActionBar();
                 return;
             }
+            
+            // Set action mode for potion menu
+            cs.actionMode = 'potion_list';
+            
             const ab = document.getElementById('actionBar');
-            let html = '<div class="action-label">USE POTION:</div>';
+            let html = '<div style="color:var(--highlight-color);font-size:10px;margin-bottom:6px;">USE POTION (No pip cost!):</div>';
+            html += '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
             keys.forEach(pk => {
                 const pd  = potions[pk];
                 const col = pd.item.subtype==='heal_hp' ? '#ff4444' : pd.item.subtype==='heal_mp' ? '#4488ff' : '#FFD700';
-                html += `<button onclick="usePotion('${pk}')" style="color:${col};">${pd.item.name} x${pd.count} – ${pd.item.description}</button> `;
+                html += `<button onclick="usePotion('${pk}')" style="color:${col};border-color:${col};" class="action-icon-btn">${pd.item.name} x${pd.count}<br><span style="font-size:12px;">${pd.item.description}</span></button>`;
             });
-            html += `<br><button onclick="renderActionBar();">← BACK</button>`;
+            html += `<button onclick="renderActionBar();" class="action-icon-btn">❌ Back</button>`;
+            html += '</div>';
             ab.innerHTML = html;
         }
 
@@ -6628,6 +6929,13 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
             const idx = p.inventory.indexOf(potionKey);
             if (idx !== -1) p.inventory.splice(idx, 1);
             updateHud();
+            
+            // Reset to main combat menu after using potion
+            const cs = gameState.combatState;
+            if (cs) {
+                cs.actionMode = 'main';
+            }
+            
             renderActionBar();
             termAppend(msg);   // no callback – timer keeps ticking, player can still act
         }
@@ -7117,6 +7425,54 @@ function endCombat(victory) {
     } else {
         termAppend('No items dropped…', 'term-dim');
     }
+    
+    // ═══════════════════════════════════════════════════════════
+    // WEAPON DROPS! 🗡️
+    // ═══════════════════════════════════════════════════════════
+    defeated.forEach((monster, index) => {
+        const weaponDrop = generateWeaponDrop(
+            gameState.player, 
+            monster.level, 
+            monster.rarity || 'common'
+        );
+        
+        if (weaponDrop) {
+            // Add to WEAPONS object
+            WEAPONS[weaponDrop.id] = weaponDrop;
+            
+            // Add to player inventory
+            gameState.player.inventory.push(weaponDrop.id);
+            
+            // Show drop message with quality color
+            const qualityColor = QUALITY_CONFIG[weaponDrop.quality].color;
+            termAppend('', 'term-separator');
+            termAppend(`💎 <span style="color:${qualityColor};font-size:18px;font-weight:bold;">WEAPON DROP!</span>`, 'term-victory');
+            termAppend(`<span style="color:${qualityColor};">${weaponDrop.name}</span>`, 'term-loot');
+            termAppend(`<span style="color:#8aaa8a;">Level ${weaponDrop.level} ${weaponDrop.quality} ${weaponDrop.type}</span>`, 'term-dim');
+            termAppend(`<span style="color:#FFD700;">DMG: ${weaponDrop.baseDamage}-${weaponDrop.maxDamage}</span>`);
+            
+            // Show modifiers
+            if (weaponDrop.modifiers && weaponDrop.modifiers.length > 0) {
+                termAppend('<span style="color:#00FFFF;">Special Properties:</span>');
+                weaponDrop.modifiers.forEach(modKey => {
+                    const mod = WEAPON_MODIFIERS[modKey];
+                    if (mod) {
+                        let modText = `  • <span style="color:${mod.color};">${mod.name}`;
+                        if (mod.minDamage) {
+                            modText += ` (${mod.minDamage}-${mod.maxDamage} dmg)`;
+                        }
+                        if (mod.statusEffect) {
+                            const status = STATUS_EFFECTS[mod.statusEffect];
+                            modText += ` - ${Math.floor(mod.statusChance * 100)}% ${status.icon} ${status.name}`;
+                        }
+                        modText += `</span>`;
+                        termAppend(modText, 'term-loot');
+                    }
+                });
+            }
+            termAppend('', 'term-separator');
+        }
+    });
 
     // Check for level-up (possibly multiple levels)
     while (gameState.player.xp >= gameState.player.xpToNext && gameState.player.level < 25) {
@@ -7150,6 +7506,7 @@ function endCombat(victory) {
     // ✅ EXIT COMBAT, ENTER EXHAUSTION
     // ─────────────────────────────────────────
   // Mark combat as finished, but keep state for timers & UI
+  cleanupCombatStatusEffects(); // Clear all DOT timers and status effects
 gameState.combatState.combatOver = true;
 gameState.postCombatRecovery = true;
 
