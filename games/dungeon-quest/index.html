@@ -6881,8 +6881,12 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
             const p = gameState.player;
             const potions = {};
             p.inventory.forEach(ik => {
-                if (ITEMS[ik] && ['heal_hp','heal_mp','full_restore'].includes(ITEMS[ik].subtype)) {
-                    if (!potions[ik]) potions[ik] = { item: ITEMS[ik], count: 0 };
+                const item = ITEMS[ik];
+                if (item && (
+                    ['heal_hp','heal_mp','full_restore'].includes(item.subtype) ||
+                    item.subtype?.startsWith('buff_')
+                )) {
+                    if (!potions[ik]) potions[ik] = { item: item, count: 0 };
                     potions[ik].count++;
                 }
             });
@@ -6898,13 +6902,72 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
             
             const ab = document.getElementById('actionBar');
             let html = '<div style="color:var(--highlight-color);font-size:10px;margin-bottom:6px;">USE POTION (No pip cost!):</div>';
-            html += '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
+            html += '<div style="display:flex;flex-wrap:wrap;gap:6px;max-width:100%;">';
             keys.forEach(pk => {
                 const pd  = potions[pk];
-                const col = pd.item.subtype==='heal_hp' ? '#ff4444' : pd.item.subtype==='heal_mp' ? '#4488ff' : '#FFD700';
-                html += `<button onclick="usePotion('${pk}')" style="color:${col};border-color:${col};" class="action-icon-btn">${pd.item.name} x${pd.count}<br><span style="font-size:12px;">${pd.item.description}</span></button>`;
+                const item = pd.item;
+                
+                // Color based on potion type
+                let col = '#00FF00';
+                if (item.subtype === 'heal_hp') col = '#ff4444';
+                else if (item.subtype === 'heal_mp') col = '#4488ff';
+                else if (item.subtype === 'full_restore') col = '#FFD700';
+                else if (item.subtype === 'buff_str') col = '#FF8800';
+                else if (item.subtype === 'buff_def') col = '#00AAFF';
+                else if (item.subtype === 'buff_xp') col = '#FFD700';
+                else if (item.subtype === 'buff_gold') col = '#FFD700';
+                else if (item.subtype === 'buff_magic') col = '#8888FF';
+                else if (item.subtype === 'buff_damage') col = '#FF0000';
+                else if (item.subtype === 'buff_invuln') col = '#AAAAAA';
+                else if (item.subtype === 'buff_luck') col = '#FFAA00';
+                else if (item.subtype === 'buff_regen') col = '#00FF88';
+                else if (item.subtype === 'buff_speed') col = '#00FF00';
+                else if (item.subtype === 'buff_crit') col = '#FF00FF';
+                
+                // Icon based on potion type
+                let icon = '🧪';
+                if (item.subtype === 'heal_hp') icon = '❤️';
+                else if (item.subtype === 'heal_mp') icon = '💙';
+                else if (item.subtype === 'full_restore') icon = '✨';
+                else if (item.subtype === 'buff_str') icon = '💪';
+                else if (item.subtype === 'buff_def') icon = '🛡️';
+                else if (item.subtype === 'buff_xp') icon = '⭐';
+                else if (item.subtype === 'buff_gold') icon = '💰';
+                else if (item.subtype === 'buff_magic') icon = '🔮';
+                else if (item.subtype === 'buff_damage') icon = '⚔️';
+                else if (item.subtype === 'buff_invuln') icon = '🗿';
+                else if (item.subtype === 'buff_luck') icon = '🍀';
+                else if (item.subtype === 'buff_regen') icon = '💚';
+                else if (item.subtype === 'buff_speed') icon = '⚡';
+                else if (item.subtype === 'buff_crit') icon = '🎯';
+                
+                html += `<button onclick="usePotion('${pk}')" style="
+                    color:${col};
+                    border-color:${col};
+                    background:var(--secondary-bg);
+                    padding:8px 12px;
+                    min-width:120px;
+                    max-width:160px;
+                    height:auto;
+                    font-size:14px;
+                    text-align:left;
+                    cursor:pointer;
+                    border:2px solid ${col};
+                    flex:1 1 120px;
+                ">
+                    <div style="font-weight:bold;">${icon} ${item.name}</div>
+                    <div style="font-size:11px;color:#888;">x${pd.count}</div>
+                </button>`;
             });
-            html += `<button onclick="renderActionBar();" class="action-icon-btn">❌ Back</button>`;
+            html += `<button onclick="renderActionBar();" style="
+                padding:8px 12px;
+                min-width:80px;
+                background:var(--secondary-bg);
+                border:2px solid var(--border-color);
+                color:var(--text-color);
+                cursor:pointer;
+                font-size:14px;
+            ">❌ Back</button>`;
             html += '</div>';
             ab.innerHTML = html;
         }
@@ -6925,6 +6988,50 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 const hpR = p.maxHp - p.hp, mpR = p.maxMp - p.mp;
                 p.hp = p.maxHp; p.mp = p.maxMp;
                 msg = `Used ${potion.name} – fully restored <span style="color:#88ff88;">${hpR} HP & ${mpR} MP!</span>`;
+            } else if (potion.subtype === 'buff_xp') {
+                // XP Boost buff
+                applyBuff(p, 'xp_boost', potion.duration || 900000, potion.power); // 15 min default
+                msg = `Used ${potion.name} – <span style="color:#FFD700;">+${potion.power}% XP for ${(potion.duration/60000)} minutes!</span>`;
+            } else if (potion.subtype === 'buff_str') {
+                // Strength buff
+                applyBuff(p, 'strength_boost', potion.duration || 300000, potion.power); // 5 min default
+                msg = `Used ${potion.name} – <span style="color:#FF8800;">+${potion.power} Strength for ${(potion.duration/60000)} minutes!</span>`;
+            } else if (potion.subtype === 'buff_def') {
+                // Defense buff
+                applyBuff(p, 'defense_boost', potion.duration || 300000, potion.power); // 5 min default
+                msg = `Used ${potion.name} – <span style="color:#00AAFF;">+${potion.power} Defense for ${(potion.duration/60000)} minutes!</span>`;
+            } else if (potion.subtype === 'buff_crit') {
+                // Crit chance buff
+                applyBuff(p, 'crit_boost', potion.duration || 300000, potion.power); // 5 min default
+                msg = `Used ${potion.name} – <span style="color:#FFD700;">+${potion.power}% Crit Chance for ${(potion.duration/60000)} minutes!</span>`;
+            } else if (potion.subtype === 'buff_speed') {
+                // Speed buff (faster pip regen)
+                applyBuff(p, 'speed_boost', potion.duration || 300000, potion.power); // 5 min default
+                msg = `Used ${potion.name} – <span style="color:#00FF00;">+${potion.power}% Attack Speed for ${(potion.duration/60000)} minutes!</span>`;
+            } else if (potion.subtype === 'buff_gold') {
+                // Gold boost buff
+                applyBuff(p, 'gold_boost', potion.duration || 900000, potion.power);
+                msg = `Used ${potion.name} – <span style="color:#FFD700;">+${potion.power}% Gold for ${(potion.duration/60000)} minutes!</span>`;
+            } else if (potion.subtype === 'buff_magic') {
+                // Magic buff
+                applyBuff(p, 'magic_boost', potion.duration || 300000, potion.power);
+                msg = `Used ${potion.name} – <span style="color:#8888FF;">+${potion.power} Magic for ${(potion.duration/60000)} minutes!</span>`;
+            } else if (potion.subtype === 'buff_damage') {
+                // Damage boost buff
+                applyBuff(p, 'damage_boost', potion.duration || 180000, potion.power);
+                msg = `Used ${potion.name} – <span style="color:#FF0000;">+${potion.power}% Damage for ${(potion.duration/60000)} minutes!</span>`;
+            } else if (potion.subtype === 'buff_invuln') {
+                // Damage reduction buff
+                applyBuff(p, 'damage_reduction', potion.duration || 120000, potion.power);
+                msg = `Used ${potion.name} – <span style="color:#AAAAAA;">+${potion.power}% Damage Resist for ${(potion.duration/60000)} minutes!</span>`;
+            } else if (potion.subtype === 'buff_luck') {
+                // Luck buff
+                applyBuff(p, 'luck_boost', potion.duration || 600000, potion.power);
+                msg = `Used ${potion.name} – <span style="color:#FFD700;">+${potion.power} Luck for ${(potion.duration/60000)} minutes!</span>`;
+            } else if (potion.subtype === 'buff_regen') {
+                // Regeneration buff
+                applyBuff(p, 'regen_boost', potion.duration || 300000, potion.power);
+                msg = `Used ${potion.name} – <span style="color:#00FF88;">+${potion.power} HP/sec for ${(potion.duration/60000)} minutes!</span>`;
             }
             const idx = p.inventory.indexOf(potionKey);
             if (idx !== -1) p.inventory.splice(idx, 1);
@@ -6938,6 +7045,42 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
             
             renderActionBar();
             termAppend(msg);   // no callback – timer keeps ticking, player can still act
+        }
+        
+        // ═══════════════════════════════════════════════════════════════
+        // BUFF SYSTEM - Temporary stat boosts from potions
+        // ═══════════════════════════════════════════════════════════════
+        function applyBuff(player, buffType, duration, power) {
+            if (!player.activeBuffs) player.activeBuffs = {};
+            
+            // If buff already active, extend duration and stack power
+            if (player.activeBuffs[buffType]) {
+                const existing = player.activeBuffs[buffType];
+                clearTimeout(existing.timer);
+                existing.power = Math.min(existing.power + power, power * 3); // Cap at 3x
+                existing.endTime = Date.now() + duration;
+            } else {
+                player.activeBuffs[buffType] = {
+                    power: power,
+                    endTime: Date.now() + duration
+                };
+            }
+            
+            // Set timer to remove buff
+            player.activeBuffs[buffType].timer = setTimeout(() => {
+                delete player.activeBuffs[buffType];
+                termAppend(`<span style="color:#888;">Your ${buffType.replace('_', ' ')} has worn off.</span>`, 'term-dim');
+            }, duration);
+        }
+        
+        function getActiveBuff(player, buffType) {
+            if (!player.activeBuffs || !player.activeBuffs[buffType]) return 0;
+            const buff = player.activeBuffs[buffType];
+            if (Date.now() > buff.endTime) {
+                delete player.activeBuffs[buffType];
+                return 0;
+            }
+            return buff.power;
         }
         
         // ═══════════════════════════════════════════════════════════════
