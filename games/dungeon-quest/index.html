@@ -1941,7 +1941,7 @@ line.innerHTML =
                 return;
             }
 
-            const mpRestore = Math.ceil(p.maxMp * 0.10);
+            const mpRestore = Math.ceil(p.maxMp * 0.05); // 5% MP per tick (was 10%)
             p.mp = Math.min(p.maxMp, p.mp + mpRestore);
             updateHud();
 
@@ -4416,7 +4416,13 @@ window.addEventListener('beforeunload', () => {
                         ` (Lv ${loc.enemyLevelRange[0]}-${loc.enemyLevelRange[1]})` : '';
                     
                     const isUnlocked = p.unlockedAreas.includes(key);
-                    const canChallengeMaster = !isUnlocked && p.level >= loc.requiredLevel;
+                    const meetsLevelReq = p.level >= loc.requiredLevel;
+                    
+                    // ONLY SHOW if: unlocked OR meets level requirement
+                    // This hides future zones completely until player is high enough level
+                    if (!isUnlocked && !meetsLevelReq) {
+                        return; // Skip this zone entirely - player can't see it yet
+                    }
                     
                     if (isUnlocked) {
                         // Unlocked area - can explore
@@ -4439,34 +4445,24 @@ window.addEventListener('beforeunload', () => {
                             }
                         }
                     } else {
-                        // Locked area
-                        if (canChallengeMaster) {
-                            // Can challenge master to unlock
-                            const masterKey = getMasterKeyForArea(key);
-                            const master = CLASS_MASTERS[masterKey];
-                            
-                            if (master) {
-                                exploreHtml += `
-                                    <div class="menu-option" style="opacity: 0.6; cursor: default;" onclick="alert('${loc.unlockMessage}')">
-                                        🔒 ${loc.name}${levelInfo} - LOCKED
-                                    </div>
-                                    <div class="menu-option" onclick="challengeMaster('${masterKey}')" style="border-color: var(--error-color); background: rgba(255, 0, 0, 0.1);">
-                                        ⚔️ CHALLENGE MASTER: ${master.name} (Lv ${master.level}) TO UNLOCK!
-                                    </div>
-                                `;
-                            } else {
-                                // No master for this zone, just show locked
-                                exploreHtml += `
-                                    <div class="menu-option" style="opacity: 0.6; cursor: default;" onclick="alert('${loc.unlockMessage || 'Reach level ' + loc.requiredLevel + ' to unlock this area!'}')">
-                                        🔒 ${loc.name}${levelInfo} - LOCKED (Need Lv ${loc.requiredLevel})
-                                    </div>
-                                `;
-                            }
-                        } else {
-                            // Level too low
+                        // Locked but meets level requirement - show as discoverable
+                        const masterKey = getMasterKeyForArea(key);
+                        const master = CLASS_MASTERS[masterKey];
+                        
+                        if (master) {
                             exploreHtml += `
-                                <div class="menu-option" style="opacity: 0.6; cursor: default;" onclick="alert('You need to reach level ${loc.requiredLevel} first!')">
-                                    🔒 ${loc.name}${levelInfo} - LOCKED (Need Lv ${loc.requiredLevel})
+                                <div class="menu-option" style="opacity: 0.6; cursor: default;" onclick="alert('${loc.unlockMessage}')">
+                                    🔒 ${loc.name}${levelInfo} - LOCKED
+                                </div>
+                                <div class="menu-option" onclick="challengeMaster('${masterKey}')" style="border-color: var(--error-color); background: rgba(255, 0, 0, 0.1);">
+                                    ⚔️ CHALLENGE MASTER: ${master.name} (Lv ${master.level}) TO UNLOCK!
+                                </div>
+                            `;
+                        } else {
+                            // No master for this zone, just show locked
+                            exploreHtml += `
+                                <div class="menu-option" style="opacity: 0.6; cursor: default;" onclick="alert('${loc.unlockMessage || 'Complete the previous area to unlock!'}')">
+                                    🔒 ${loc.name}${levelInfo} - LOCKED
                                 </div>
                             `;
                         }
@@ -5101,7 +5097,7 @@ function stabilizeTerminalLayout() {
             else if (rar0==='legendary') eHits = 2 + (Math.random()<0.5 ? 1 : 0);
             else if (rar0==='mythic')    eHits = 3;
 
-            const enemyDelay = 15 + Math.floor(Math.random()*6);  // 15-20s, fixed for this combat
+            const enemyDelay = 12 + Math.floor(Math.random()*4);  // 12-15s, fixed for this combat
             const maxHits    = calcPlayerHits(gameState.player);
             const pipTimers  = [];
             for (let i = 0; i < maxHits; i++) {
@@ -6441,6 +6437,32 @@ function consumePips(cs, amount, cooldown) {
             monsterDamageMult: 1.3
         };
 
+        // ═══════════════════════════════════════════════════════════════
+        // ENEMY DODGE CALCULATION - Based on level difference
+        // ═══════════════════════════════════════════════════════════════
+        function calculateEnemyDodge(playerLevel, enemyLevel) {
+            const levelDiff = enemyLevel - playerLevel;
+            
+            // Base dodge: 5% when levels are equal
+            let dodgeChance = 0.05;
+            
+            if (levelDiff > 0) {
+                // Enemy is higher level: +5% dodge per level difference
+                dodgeChance += (levelDiff * 0.05);
+            } else if (levelDiff < 0) {
+                // Player is higher level: -1% dodge per level difference
+                dodgeChance += (levelDiff * 0.01); // levelDiff is negative, so this subtracts
+            }
+            
+            // Cap at 0% minimum (can't go negative)
+            dodgeChance = Math.max(0, dodgeChance);
+            
+            // Cap at 50% maximum (so it's not impossible to hit)
+            dodgeChance = Math.min(0.50, dodgeChance);
+            
+            return dodgeChance;
+        }
+        
         function calculateDamage({
   attacker,
   defender,
@@ -6535,8 +6557,11 @@ function consumePips(cs, amount, cooldown) {
     // Consume pips
     consumePips(cs, pipCost, getPipCooldown(p));
 
-    // Calculate base damage
-    let weaponDamage = weapon.baseDamage + qBonus;
+    // Calculate base damage WITH RANGE ROLLING
+    // Roll between baseDamage and maxDamage
+    const minDmg = weapon.baseDamage + qBonus;
+    const maxDmg = (weapon.maxDamage || weapon.baseDamage) + qBonus;
+    let weaponDamage = Math.floor(Math.random() * (maxDmg - minDmg + 1)) + minDmg;
 
     if (p.level <= 5) {
         weaponDamage = Math.floor(
@@ -6558,6 +6583,9 @@ function consumePips(cs, amount, cooldown) {
     const classMult = getClassDamageMultiplier(p);
     totalBase = Math.floor(totalBase * classMult);
 
+    // Calculate enemy dodge chance based on level difference
+    const enemyDodgeChance = calculateEnemyDodge(p.level, enemy.level);
+
     // Resolve damage
     const result = calculateDamage({
         attacker: p,
@@ -6565,7 +6593,7 @@ function consumePips(cs, amount, cooldown) {
         base: totalBase,
         type: magicBase > physicalBase ? 'magic' : 'physical',
         critChance: calcCritChance(p.lck || 0) / 100,
-        dodgeChance: enemy.dodge || 0,
+        dodgeChance: enemyDodgeChance, // Use level-based dodge
         armorPiercing
     });
 
@@ -6705,7 +6733,25 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 
                 monsters.forEach((enemy, i) => {
                     if (enemy.hp > 0) {
-                        let dmg = Math.max(1, (spell.power + p.magic + (p.wis || 0)) - Math.floor(enemy.defense / 2));
+                        // Calculate enemy dodge chance
+                        const enemyDodgeChance = calculateEnemyDodge(p.level, enemy.level);
+                        
+                        const tName = monsters.length > 1
+                            ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${i+1}</span>`
+                            : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
+                        
+                        // Check if enemy dodges
+                        if (Math.random() < enemyDodgeChance) {
+                            termAppend(`→ ${tName} <span style="color:#88ff88;">DODGES!</span>`);
+                            return; // Skip this enemy
+                        }
+                        
+                        // SPELL DAMAGE WITH WIDE RANGE ROLLING (each enemy rolls independently!)
+                        const minPower = spell.minPower || spell.power;
+                        const maxPower = spell.maxPower || spell.power;
+                        const spellRoll = Math.floor(Math.random() * (maxPower - minPower + 1)) + minPower;
+                        
+                        let dmg = Math.max(1, (spellRoll + p.magic + (p.wis || 0)) - Math.floor(enemy.defense / 2));
                         let crit = false;
                         if (Math.random() * 100 < calcCritChance(p.lck || 0)) { 
                             dmg = Math.floor(dmg * 1.75); 
@@ -6715,10 +6761,6 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                         enemy.hp -= dmg;
                         totalDamage += dmg;
                         hitCount++;
-                        
-                        const tName = monsters.length > 1
-                            ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${i+1}</span>`
-                            : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
                         
                         const critTag = crit ? ' <span style="color:#FFD700;">★ CRIT!</span>' : '';
                         termAppend(`→ ${tName} takes <span class="dmg-enemy">${dmg} damage!</span>${critTag}`);
@@ -6739,7 +6781,31 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 // LIFESTEAL - damage enemy and heal yourself
                 const ti = cs.currentTarget;
                 const enemy = cs.monsters[ti];
-                let dmg = Math.max(1, (spell.power + p.magic + (p.wis || 0)) - Math.floor(enemy.defense / 2));
+                
+                // Calculate enemy dodge chance
+                const enemyDodgeChance = calculateEnemyDodge(p.level, enemy.level);
+                
+                const tName = cs.monsters.length > 1
+                    ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${ti+1}</span>`
+                    : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
+                
+                // Check if enemy dodges
+                if (Math.random() < enemyDodgeChance) {
+                    termAppend(`You cast ${spell.name} but ${tName} <span style="color:#88ff88;">DODGES!</span>`);
+                    updateEnemyCards();
+                    updateHud();
+                    cs.actionMode = 'main';
+                    cs.pendingSpellKey = null;
+                    renderActionBar();
+                    return;
+                }
+                
+                // SPELL DAMAGE WITH WIDE RANGE ROLLING
+                const minPower = spell.minPower || spell.power;
+                const maxPower = spell.maxPower || spell.power;
+                const spellRoll = Math.floor(Math.random() * (maxPower - minPower + 1)) + minPower;
+                
+                let dmg = Math.max(1, (spellRoll + p.magic + (p.wis || 0)) - Math.floor(enemy.defense / 2));
                 let crit = false;
                 if (Math.random() * 100 < calcCritChance(p.lck || 0)) { dmg = Math.floor(dmg * 1.75); crit = true; }
                 
@@ -6749,10 +6815,6 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 const lifestealPercent = spell.lifestealPercent || 50;
                 const healAmount = Math.floor(dmg * (lifestealPercent / 100));
                 p.hp = Math.min(p.maxHp, p.hp + healAmount);
-                
-                const tName = cs.monsters.length > 1
-                    ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${ti+1}</span>`
-                    : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
                 
                 const critTag = crit ? ' <span style="color:#FFD700;">★ CRIT!</span>' : '';
                 termAppend(`You cast ${spell.name} on ${tName} for <span class="dmg-enemy">${dmg} damage!</span>${critTag}`, null, () => {
@@ -6772,7 +6834,30 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 // REGULAR DAMAGE SPELL
                 const ti    = cs.currentTarget;
                 const enemy = cs.monsters[ti];
-                let   dmg   = Math.max(1, (spell.power + p.magic + (p.wis||0)) - Math.floor(enemy.defense / 2));
+                
+                // Calculate enemy dodge chance based on level difference
+                const enemyDodgeChance = calculateEnemyDodge(p.level, enemy.level);
+                
+                // Check if enemy dodges the spell
+                if (Math.random() < enemyDodgeChance) {
+                    const tName = cs.monsters.length > 1
+                        ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${ti+1}</span>`
+                        : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
+                    termAppend(`You cast ${spell.name} but ${tName} <span style="color:#88ff88;">DODGES!</span>`);
+                    updateEnemyCards();
+                    updateHud();
+                    cs.actionMode = 'main';
+                    cs.pendingSpellKey = null;
+                    renderActionBar();
+                    return;
+                }
+                
+                // SPELL DAMAGE WITH WIDE RANGE ROLLING
+                const minPower = spell.minPower || spell.power;
+                const maxPower = spell.maxPower || spell.power;
+                const spellRoll = Math.floor(Math.random() * (maxPower - minPower + 1)) + minPower;
+                
+                let   dmg   = Math.max(1, (spellRoll + p.magic + (p.wis||0)) - Math.floor(enemy.defense / 2));
                 let crit = false;
                 if (Math.random()*100 < calcCritChance(p.lck||0)) { dmg = Math.floor(dmg*1.75); crit = true; }
                 enemy.hp -= dmg;
@@ -7879,6 +7964,7 @@ function playerIsExhausted() {
                 return;
             }
             
+            const oldLevel = p.level;
             p.level++;
             p.xp -= p.xpToNext;
             
@@ -7913,6 +7999,20 @@ function playerIsExhausted() {
                     p.str++; p.wis++; 
                 }
             }
+            
+            // ═══════════════════════════════════════════════════════════════
+            // CHECK FOR NEW ZONE DISCOVERY
+            // ═══════════════════════════════════════════════════════════════
+            Object.keys(LOCATIONS).forEach(key => {
+                const loc = LOCATIONS[key];
+                if (key !== 'town' && loc.requiredLevel === p.level) {
+                    // Just reached the level for this zone!
+                    termAppend('', 'term-separator');
+                    termAppend(`<span style="color:#00FFFF;font-size:18px;">🗺️ NEW AREA DISCOVERED!</span>`, 'term-victory');
+                    termAppend(`<span style="color:#FFD700;">${loc.name} is now visible on the world map!</span>`, 'term-loot');
+                    termAppend(`<span style="color:#8aaa8a;">Check "Explore World" to visit this area.</span>`, 'term-dim');
+                }
+            });
             
             // ═══════════════════════════════════════════════════════════════
             // CHECK FOR CLASS EVOLUTION AT LEVEL 20
