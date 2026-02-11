@@ -1147,6 +1147,19 @@ body.terminal-mode #terminalWindow {
     <!-- TERMINAL -->
     <div id="terminalWindow"></div>
 
+    <!-- BOTTOM HUD (shows when terminal is open) -->
+    <div id="bottomHud" style="display:none;">
+        <div style="background:var(--secondary-bg);border:2px solid var(--border-color);border-bottom:none;padding:4px 8px;font-size:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+                <span id="bottomHudName" style="color:var(--highlight-color);font-weight:bold;"></span>
+                <span id="bottomHudGold" style="color:#FFD700;"></span>
+                <span id="bottomHudHp" style="color:#ff6666;"></span>
+                <span id="bottomHudMp" style="color:#4488ff;"></span>
+                <span id="bottomHudXp" style="color:var(--text-color);"></span>
+            </div>
+        </div>
+    </div>
+
     <!-- ACTION BAR -->
     <div id="actionBar"></div>
 
@@ -4590,6 +4603,16 @@ window.addEventListener('beforeunload', () => {
         document.getElementById('hudHpNums').textContent = '❤️ HP: —';
         document.getElementById('hudMpNums').textContent = '✨ MP: —';
         document.getElementById('hudXpNums').textContent = '⭐ XP: —';
+        
+        // Update bottom HUD too
+        const bottomName = document.getElementById('bottomHudName');
+        if (bottomName) {
+            bottomName.textContent = '— No Adventurer —';
+            document.getElementById('bottomHudGold').textContent = '💰 0 g';
+            document.getElementById('bottomHudHp').textContent = '❤️ —';
+            document.getElementById('bottomHudMp').textContent = '✨ —';
+            document.getElementById('bottomHudXp').textContent = '⭐ —';
+        }
         return;
     }
 
@@ -4607,6 +4630,16 @@ window.addEventListener('beforeunload', () => {
 
     document.getElementById('hudXpNums').textContent =
         `⭐ XP: ${p.xp} / ${p.xpToNext}`;
+        
+    // Update bottom HUD if it exists
+    const bottomName = document.getElementById('bottomHudName');
+    if (bottomName) {
+        bottomName.textContent = `${p.name} – Lv ${p.level} ${p.className}`;
+        document.getElementById('bottomHudGold').textContent = `💰 ${p.gold}g`;
+        document.getElementById('bottomHudHp').textContent = `❤️ ${p.hp}/${p.maxHp}`;
+        document.getElementById('bottomHudMp').textContent = `✨ ${p.mp}/${p.maxMp}`;
+        document.getElementById('bottomHudXp').textContent = `⭐ ${p.xp}/${p.xpToNext}`;
+    }
 }
 
 
@@ -4621,11 +4654,15 @@ function openTerminalView(locKey) {
     document.getElementById('mainScreen').style.display = 'none';
 
     const hud = document.getElementById('hud');
+    const bottomHud = document.getElementById('bottomHud');
     const term = document.getElementById('terminalWindow');
     const ab = document.getElementById('actionBar');
 
-    hud.style.display = 'block';
+    hud.style.display = 'none';  // Hide top HUD
+    bottomHud.style.display = 'block';  // Show bottom HUD
     term.style.display = 'block';
+    
+    updateHud();  // Update both HUDs
 
   // 🔑 RESET terminal scroll position on open
 requestAnimationFrame(() => {
@@ -4676,6 +4713,7 @@ function stabilizeTerminalLayout() {
         function closeTerminalView() {
             document.getElementById('mainScreen').style.display    = 'block';
             document.getElementById('hud').style.display           = 'none';
+            document.getElementById('bottomHud').style.display     = 'none';
             document.getElementById('terminalWindow').style.display = 'none';
             document.getElementById('actionBar').style.display     = 'none';
             gameState._terminalOpen = false;
@@ -6986,8 +7024,8 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
             cs.actionMode = 'potion_list';
             
             const ab = document.getElementById('actionBar');
-            let html = '<div style="color:var(--highlight-color);font-size:10px;margin-bottom:6px;">USE POTION (No pip cost!):</div>';
-            html += '<div style="display:flex;flex-wrap:wrap;gap:6px;max-width:100%;">';
+            let html = '<div style="color:var(--highlight-color);font-size:10px;margin-bottom:4px;">USE POTION (No pip cost!):</div>';
+            html += '<div style="display:flex;flex-wrap:wrap;gap:4px;max-width:100%;justify-content:flex-start;">';
             keys.forEach(pk => {
                 const pd  = potions[pk];
                 const item = pd.item;
@@ -7030,28 +7068,31 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                     color:${col};
                     border-color:${col};
                     background:var(--secondary-bg);
-                    padding:8px 12px;
-                    min-width:120px;
-                    max-width:160px;
+                    padding:4px 6px;
+                    min-width:70px;
+                    max-width:90px;
                     height:auto;
-                    font-size:14px;
-                    text-align:left;
+                    font-size:11px;
+                    text-align:center;
                     cursor:pointer;
-                    border:2px solid ${col};
-                    flex:1 1 120px;
+                    border:1px solid ${col};
+                    flex:0 0 auto;
+                    white-space:nowrap;
+                    overflow:hidden;
+                    text-overflow:ellipsis;
                 ">
-                    <div style="font-weight:bold;">${icon} ${item.name}</div>
-                    <div style="font-size:11px;color:#888;">x${pd.count}</div>
+                    ${icon} ${item.name.substring(0, 12)}${item.name.length > 12 ? '...' : ''} x${pd.count}
                 </button>`;
             });
             html += `<button onclick="renderActionBar();" style="
-                padding:8px 12px;
-                min-width:80px;
+                padding:4px 8px;
+                min-width:60px;
                 background:var(--secondary-bg);
-                border:2px solid var(--border-color);
+                border:1px solid var(--border-color);
                 color:var(--text-color);
                 cursor:pointer;
-                font-size:14px;
+                font-size:11px;
+                flex:0 0 auto;
             ">❌ Back</button>`;
             html += '</div>';
             ab.innerHTML = html;
@@ -7424,25 +7465,50 @@ function checkCombatEnd() {
     if (target.hp <= 0) {
         const dead = target;
 
+        // Calculate rewards for THIS enemy immediately
+        const baseXp = dead.xp || (dead.level * 10);
+        const baseGold = dead.gold || (dead.level * 5);
+        
+        termAppend(
+            `<span style="color:${dead.rarityColor};">${dead.name}</span> has been defeated!`,
+            'term-victory'
+        );
+        
+        // Show individual rewards immediately
+        termAppend(`Gained <span style="color:#FFD700;">${baseXp} XP</span> and <span style="color:#FFD700;">${baseGold} Gold!</span>`, 'term-loot');
+        
+        // Apply rewards immediately
+        const p = gameState.player;
+        p.xp += baseXp;
+        p.gold += baseGold;
+        
+        // Check for level up
+        if (p.xp >= p.xpToNext) {
+            levelUp();
+            termAppend(`<span style="color:var(--highlight-color);font-size:18px;">⬆️ LEVEL UP! You are now level ${p.level}!</span>`, 'term-victory');
+            termAppend(`<span style="color:#FFD700;">+3 Stat Points!</span>`, 'term-loot');
+        }
+        
+        // Add to defeated list and remove from active combat
         cs.defeatedMonsters.push(dead);
         cs.monsters.splice(ti, 1);
 
-        // Adjust target again after removal
+        // Adjust target after removal
         if (cs.currentTarget >= cs.monsters.length) {
             cs.currentTarget = Math.max(0, cs.monsters.length - 1);
         }
 
-        termAppend(
-            `<span style="color:${dead.rarityColor};">${dead.name}</span> has been defeated!`,
-            'term-victory',
-            () => {
-                if (cs.monsters.length === 0) {
-                    endCombat(true);
-                } else {
-                    renderEnemyCards();
-                }
-            }
-        );
+        // Update cards and HUD immediately
+        updateEnemyCards();
+        updateHud();
+        
+        // Check if all enemies dead
+        if (cs.monsters.length === 0) {
+            // All enemies dead - end combat
+            // Don't give rewards again in endCombat
+            cs.rewardsAlreadyGiven = true;
+            endCombat(true);
+        }
     }
 }
 
@@ -7568,6 +7634,7 @@ function endCombat(victory) {
 
     // ── victory ──
     const defeated   = gameState.combatState.defeatedMonsters || [];
+    const cs = gameState.combatState;
     const isMaster   = defeated.some(m => m.isMaster);
     let masterData   = null;
     let unlockedArea = null;
@@ -7595,17 +7662,29 @@ function endCombat(victory) {
         });
     }
 
+    // Check if rewards were already given during combat (multi-enemy)
+    const rewardsAlreadyGiven = cs.rewardsAlreadyGiven;
+    
     let totalXp = 0, totalGold = 0, allLoot = [];
-    defeated.forEach(e => {
-        // Calculate XP based on level difference and rarity
-        const xpReward = calculateXpReward(e, gameState.player.level);
-        totalXp   += xpReward;
-        totalGold += e.gold;
-        allLoot    = allLoot.concat(rollLoot(e));
-    });
+    
+    // Only calculate if NOT already given
+    if (!rewardsAlreadyGiven) {
+        defeated.forEach(e => {
+            // Calculate XP based on level difference and rarity
+            const xpReward = calculateXpReward(e, gameState.player.level);
+            totalXp   += xpReward;
+            totalGold += e.gold;
+            allLoot    = allLoot.concat(rollLoot(e));
+        });
 
-    gameState.player.xp   += totalXp;
-    gameState.player.gold += totalGold;
+        gameState.player.xp   += totalXp;
+        gameState.player.gold += totalGold;
+    } else {
+        // Still roll for loot even if XP/gold already given
+        defeated.forEach(e => {
+            allLoot = allLoot.concat(rollLoot(e));
+        });
+    }
 
     // ── Remove defeated dungeon enemy ──
     if (gameState.dungeon && gameState.combatState?.dungeonEnemyId) {
@@ -7636,10 +7715,13 @@ function endCombat(victory) {
         );
     }
 
-    termAppend(
-        `Gained <span style="color:#FFD700;">${totalXp} XP</span> and ` +
-        `<span style="color:#FFD700;">${totalGold} Gold</span>!`
-    );
+    // Only show total XP/Gold if NOT already shown during combat
+    if (!rewardsAlreadyGiven) {
+        termAppend(
+            `Gained <span style="color:#FFD700;">${totalXp} XP</span> and ` +
+            `<span style="color:#FFD700;">${totalGold} Gold</span>!`
+        );
+    }
 
     if (allLoot.length > 0) {
         termAppend('⚡ LOOT:', 'term-loot');
@@ -8203,6 +8285,26 @@ function playerIsExhausted() {
                 termAppend('', 'term-separator');
                 gameState.currentAdventure = null;
                 startCombat(selectedOutcome.combat);
+                return;
+            }
+            
+            // Check if this outcome leads to another choice
+            if (selectedOutcome.nextChoices && selectedOutcome.nextChoices.length > 0) {
+                // Continue the adventure with new choices
+                termAppend('', 'term-separator');
+                termAppend('<span style="color:var(--highlight-color);">What do you do?</span>');
+                termAppend('', 'term-separator');
+                
+                // Update adventure choices
+                adventure.choices = selectedOutcome.nextChoices;
+                
+                // Show new choices
+                adventure.choices.forEach((choice, index) => {
+                    termAppend(`<span style="color:var(--highlight-color);">${index + 1}.</span> ${choice.text}`, 'term-highlight');
+                });
+                
+                // Render new choice buttons
+                renderAdventureActionBar();
                 return;
             }
             
