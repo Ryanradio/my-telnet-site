@@ -5694,6 +5694,7 @@ if (cs) {
                             <span style="color:#8aaa8a;font-size:15px;"> (${hitsLeft}/${maxHits})</span>
                         </div>
                         <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                            <button onclick="showPlayerStats()" class="action-icon-btn" title="View Stats" style="border-color:#FFD700;">📊 Stats</button>
                             <button onclick="showAttackMenu()" ${!canAct?'disabled':''} class="action-icon-btn" title="Attack">⚔️ Attack</button>
                             <button onclick="showSpellMenu()"  ${!canAct?'disabled':''} class="action-icon-btn" title="Cast Spell">✨ Spell</button>
                             <button onclick="showPotionMenu()" class="action-icon-btn" title="Use Potion" style="border-color:#00FF00;">🧪 Potion</button>
@@ -5797,6 +5798,7 @@ if (cs) {
             } else {
                 // Out of combat - exploring
                 ab.innerHTML = `
+                    <button onclick="showPlayerStats()">📊 STATS</button>
                     <button onclick="exploreLocation('${gameState.currentLocation}')">🔍 CONTINUE EXPLORING</button>
                     <button onclick="showPotionMenuExplore()" style="border-color:#00FF00;">🧪 POTIONS</button>
                     <button onclick="goBackToTown()">🏘️ RETURN TO TOWN</button>
@@ -6961,6 +6963,109 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
             cs.hitsLeft  = 0;            // end player's turn
             renderActionBar();
             termAppend('You brace for impact…');  // timer keeps ticking → enemy phase
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // SHOW PLAYER STATS
+        // ═══════════════════════════════════════════════════════════════
+        function showPlayerStats() {
+            const p = gameState.player;
+            if (!p) return;
+            
+            termAppend('', 'term-separator');
+            termAppend('═══════════════════════════════════════════════════', 'term-highlight');
+            termAppend(`📊 CHARACTER STATS - ${p.name.toUpperCase()}`, 'term-highlight');
+            termAppend('═══════════════════════════════════════════════════', 'term-highlight');
+            termAppend('');
+            
+            // Basic Info
+            const className = p.hasEvolved ? getAdvancedClassName(p) : (p.className || p.class);
+            termAppend(`<span style="color:var(--highlight-color);">Name:</span> ${p.name}`);
+            termAppend(`<span style="color:var(--highlight-color);">Class:</span> ${className} ${p.hasEvolved ? '<span style="color:#FFD700;">⚡ (Evolved)</span>' : ''}`);
+            termAppend(`<span style="color:var(--highlight-color);">Level:</span> ${p.level}`);
+            termAppend('');
+            
+            // Resources
+            termAppend(`<span style="color:#ff6666;">❤️  HP:</span> ${p.hp} / ${p.maxHp}`);
+            termAppend(`<span style="color:#4488ff;">✨ MP:</span> ${p.mp} / ${p.maxMp}`);
+            termAppend(`<span style="color:#FFD700;">💰 Gold:</span> ${p.gold}g`);
+            termAppend(`<span style="color:var(--text-color);">⭐ XP:</span> ${p.xp} / ${p.xpToNext} (${Math.floor((p.xp / p.xpToNext) * 100)}%)`);
+            termAppend('');
+            
+            // Combat Stats
+            termAppend('<span style="color:var(--highlight-color);">═══ COMBAT STATS ═══</span>');
+            
+            // Primary Stats (D&D style if they exist)
+            if (p.str !== undefined) {
+                termAppend(`<span style="color:#FF8800;">STR:</span> ${p.str} (Strength)`);
+                termAppend(`<span style="color:#00FF88;">DEX:</span> ${p.dex} (Dexterity)`);
+                termAppend(`<span style="color:#8888FF;">WIS:</span> ${p.wis} (Wisdom)`);
+                termAppend(`<span style="color:#FF88FF;">CHA:</span> ${p.cha} (Charisma)`);
+                termAppend(`<span style="color:#FFAA00;">CON:</span> ${p.con} (Constitution)`);
+                termAppend(`<span style="color:#FFD700;">LCK:</span> ${p.lck} (Luck)`);
+                termAppend('');
+            }
+            
+            // Legacy stats
+            if (p.strength !== undefined) {
+                termAppend(`<span style="color:#FF8800;">Strength:</span> ${p.strength}`);
+                termAppend(`<span style="color:#00AAFF;">Defense:</span> ${p.defense}`);
+                termAppend(`<span style="color:#8888FF;">Magic:</span> ${p.magic}`);
+                termAppend(`<span style="color:#00FF88;">Speed:</span> ${p.speed}`);
+                termAppend('');
+            }
+            
+            // Derived Stats
+            const weapon = WEAPONS[p.weapon];
+            const armor = ARMOR[p.armor];
+            const weaponDmg = weapon ? `${weapon.baseDamage}-${weapon.maxDamage || weapon.baseDamage}` : '0';
+            const weaponMag = weapon && weapon.baseMagicDamage ? `+${weapon.baseMagicDamage}` : '';
+            const armorDef = armor ? armor.baseDefense : 0;
+            
+            termAppend(`<span style="color:#FF4444;">⚔️  Weapon Damage:</span> ${weaponDmg} ${weaponMag}`);
+            termAppend(`<span style="color:#4444FF;">🛡️  Armor Defense:</span> ${armorDef}`);
+            termAppend(`<span style="color:#FFD700;">🎯 Crit Chance:</span> ${calcCritChance(p.lck || 0)}%`);
+            
+            // Class damage multiplier if evolved
+            if (p.hasEvolved) {
+                const dmgMult = getClassDamageMultiplier(p);
+                termAppend(`<span style="color:#FFD700;">⚡ Damage Multiplier:</span> ${dmgMult}x (Class Evolution)`);
+            }
+            
+            termAppend('');
+            
+            // Equipment
+            termAppend('<span style="color:var(--highlight-color);">═══ EQUIPMENT ═══</span>');
+            termAppend(`<span style="color:#FFD700;">Weapon:</span> ${weapon ? weapon.name : 'None'}`);
+            termAppend(`<span style="color:#4488FF;">Armor:</span> ${armor ? armor.name : 'None'}`);
+            termAppend('');
+            
+            // Active Buffs
+            if (p.activeBuffs && Object.keys(p.activeBuffs).length > 0) {
+                termAppend('<span style="color:var(--highlight-color);">═══ ACTIVE BUFFS ═══</span>');
+                for (const [buffType, buff] of Object.entries(p.activeBuffs)) {
+                    if (Date.now() < buff.endTime) {
+                        const timeLeft = Math.ceil((buff.endTime - Date.now()) / 1000);
+                        const minutes = Math.floor(timeLeft / 60);
+                        const seconds = timeLeft % 60;
+                        const timeStr = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+                        
+                        let buffName = buffType.replace('buff_', '').toUpperCase();
+                        termAppend(`<span style="color:#00FF88;">✨ ${buffName}:</span> +${buff.power} (${timeStr})`);
+                    }
+                }
+                termAppend('');
+            }
+            
+            // Progress
+            termAppend('<span style="color:var(--highlight-color);">═══ PROGRESSION ═══</span>');
+            termAppend(`<span style="color:#FFD700;">Defeated Masters:</span> ${p.defeatedMasters?.length || 0}`);
+            termAppend(`<span style="color:#4488FF;">Unlocked Areas:</span> ${p.unlockedAreas?.length || 0}`);
+            termAppend(`<span style="color:#FF8800;">Known Spells:</span> ${p.knownSpells?.length || 0}`);
+            termAppend(`<span style="color:#00FF88;">Inventory Items:</span> ${p.inventory?.length || 0}`);
+            
+            termAppend('');
+            termAppend('═══════════════════════════════════════════════════', 'term-highlight');
         }
 
         function attemptFlee() {
