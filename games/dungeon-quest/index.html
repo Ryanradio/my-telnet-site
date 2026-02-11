@@ -4352,6 +4352,26 @@ window.addEventListener('beforeunload', () => {
                                  item.subtype === 'heal_hp' ? '#FF0000' :
                                  item.subtype === 'heal_mp' ? '#0000FF' : '#00FF00';
                     
+                    // Check if it's a usable potion
+                    const isPotion = item.subtype === 'heal_hp' || 
+                                    item.subtype === 'heal_mp' || 
+                                    item.subtype === 'full_restore' ||
+                                    item.subtype?.startsWith('buff_');
+                    
+                    // Check if at full HP/MP for healing potions
+                    let canUse = true;
+                    let disabledReason = '';
+                    if (item.subtype === 'heal_hp' && p.hp >= p.maxHp) {
+                        canUse = false;
+                        disabledReason = '(Already at full HP)';
+                    } else if (item.subtype === 'heal_mp' && p.mp >= p.maxMp) {
+                        canUse = false;
+                        disabledReason = '(Already at full MP)';
+                    } else if (item.subtype === 'full_restore' && p.hp >= p.maxHp && p.mp >= p.maxMp) {
+                        canUse = false;
+                        disabledReason = '(Already fully restored)';
+                    }
+                    
                     // Show total value if sellable and multiple
                     let valueDisplay = '';
                     if (item.sellValue) {
@@ -4362,11 +4382,20 @@ window.addEventListener('beforeunload', () => {
                         }
                     }
                     
+                    // Add USE button for potions
+                    let buttonHtml = '';
+                    if (isPotion) {
+                        buttonHtml = canUse ? 
+                            `<button onclick="useInventoryPotion('${itemKey}')">USE</button>` :
+                            `<div style="color:#666;font-size:12px;">${disabledReason}</div>`;
+                    }
+                    
                     invHtml += `
                         <div class="item-card">
                             <div style="color: ${color};">${item.name} ${count > 1 ? `<span style="color:#FFD700;">x${count}</span>` : ''}</div>
                             <div style="font-size: 16px;">${item.description}</div>
                             ${valueDisplay}
+                            ${buttonHtml}
                         </div>
                     `;
                 });
@@ -4421,6 +4450,105 @@ window.addEventListener('beforeunload', () => {
             saveGame();
             
             showInventory();
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // USE POTION FROM INVENTORY
+        // ═══════════════════════════════════════════════════════════════
+        function useInventoryPotion(potionKey) {
+            const potion = ITEMS[potionKey];
+            const p = gameState.player;
+            
+            if (!potion) {
+                alert('Invalid potion!');
+                return;
+            }
+            
+            let msg = '';
+            let used = false;
+            
+            // Handle different potion types
+            if (potion.subtype === 'heal_hp') {
+                if (p.hp >= p.maxHp) {
+                    alert("You're already at full HP!");
+                    return;
+                }
+                const actual = Math.min(p.maxHp - p.hp, potion.power);
+                p.hp = Math.min(p.maxHp, p.hp + potion.power);
+                msg = `Used ${potion.name} – restored ${actual} HP!`;
+                used = true;
+            } 
+            else if (potion.subtype === 'heal_mp') {
+                if (p.mp >= p.maxMp) {
+                    alert("You're already at full MP!");
+                    return;
+                }
+                const actual = Math.min(p.maxMp - p.mp, potion.power);
+                p.mp = Math.min(p.maxMp, p.mp + potion.power);
+                msg = `Used ${potion.name} – restored ${actual} MP!`;
+                used = true;
+            } 
+            else if (potion.subtype === 'full_restore') {
+                if (p.hp >= p.maxHp && p.mp >= p.maxMp) {
+                    alert("You're already fully restored!");
+                    return;
+                }
+                const hpR = p.maxHp - p.hp;
+                const mpR = p.maxMp - p.mp;
+                p.hp = p.maxHp;
+                p.mp = p.maxMp;
+                msg = `Used ${potion.name} – fully restored ${hpR} HP & ${mpR} MP!`;
+                used = true;
+            }
+            else if (potion.subtype?.startsWith('buff_')) {
+                // Apply buff
+                const buffType = potion.subtype;
+                const duration = potion.duration || 300000; // 5 minutes default
+                
+                if (!p.activeBuffs) p.activeBuffs = {};
+                
+                // Check if buff is already active
+                if (p.activeBuffs[buffType] && Date.now() < p.activeBuffs[buffType].endTime) {
+                    // Check if we can stack
+                    const currentStacks = p.activeBuffs[buffType].stacks || 1;
+                    if (currentStacks >= 3) {
+                        alert(`${potion.name} is already at maximum stacks (3x)!`);
+                        return;
+                    }
+                    // Stack the buff
+                    p.activeBuffs[buffType].stacks = currentStacks + 1;
+                    p.activeBuffs[buffType].power = potion.power * (currentStacks + 1);
+                    p.activeBuffs[buffType].endTime = Date.now() + duration;
+                    msg = `Used ${potion.name} – buff stacked! (${currentStacks + 1}x)`;
+                } else {
+                    // New buff
+                    p.activeBuffs[buffType] = {
+                        power: potion.power,
+                        endTime: Date.now() + duration,
+                        stacks: 1
+                    };
+                    msg = `Used ${potion.name} – buff activated!`;
+                }
+                used = true;
+            }
+            
+            if (used) {
+                // Remove potion from inventory
+                const idx = p.inventory.indexOf(potionKey);
+                if (idx !== -1) {
+                    p.inventory.splice(idx, 1);
+                }
+                
+                // Update HUD
+                updateHud();
+                
+                // Save game
+                saveGame();
+                
+                // Show message and refresh inventory
+                alert(msg);
+                showInventory();
+            }
         }
 
         function showExplore() {
