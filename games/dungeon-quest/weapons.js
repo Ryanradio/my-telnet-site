@@ -416,6 +416,288 @@ const WEAPONS = {
         level: 1,
         quality: 'godly',
         slot: 'weapon'
+    },
+    
+    // ═══════════════════════════════════════════════════════════════
+    // ROGUE DAGGERS (DUAL-WIELD EXCLUSIVE)
+    // ═══════════════════════════════════════════════════════════════
+    rusty_shiv: {
+        name: 'Rusty Shiv',
+        baseDamage: 1,
+        maxDamage: 2,
+        baseMagicDamage: 0,
+        cost: 0,
+        level: 1,
+        quality: 'poor',
+        slot: 'weapon',
+        classRestriction: 'rogue'
+    },
+    iron_dagger: {
+        name: 'Iron Dagger',
+        baseDamage: 2,
+        maxDamage: 4,
+        baseMagicDamage: 0,
+        cost: 150,
+        level: 1,
+        quality: 'normal',
+        slot: 'weapon',
+        classRestriction: 'rogue'
+    },
+    steel_stiletto: {
+        name: 'Steel Stiletto',
+        baseDamage: 6,
+        maxDamage: 9,
+        baseMagicDamage: 0,
+        cost: 400,
+        level: 3,
+        quality: 'normal',
+        slot: 'weapon',
+        classRestriction: 'rogue'
+    },
+    throwing_knife: {
+        name: 'Throwing Knife',
+        baseDamage: 7,
+        maxDamage: 11,
+        baseMagicDamage: 0,
+        cost: 500,
+        level: 4,
+        quality: 'normal',
+        slot: 'weapon',
+        classRestriction: 'rogue'
+    },
+    assassin_blade: {
+        name: "Assassin's Blade",
+        baseDamage: 9,
+        maxDamage: 14,
+        baseMagicDamage: 0,
+        cost: 700,
+        level: 5,
+        quality: 'rare',
+        slot: 'weapon',
+        classRestriction: 'rogue'
+    },
+    shadow_fang: {
+        name: 'Shadow Fang',
+        baseDamage: 12,
+        maxDamage: 18,
+        baseMagicDamage: 0,
+        cost: 1100,
+        level: 6,
+        quality: 'rare',
+        slot: 'weapon',
+        classRestriction: 'rogue'
+    },
+    venom_spike: {
+        name: 'Venom Spike',
+        baseDamage: 14,
+        maxDamage: 21,
+        baseMagicDamage: 0,
+        cost: 1500,
+        level: 7,
+        quality: 'rare',
+        slot: 'weapon',
+        classRestriction: 'rogue',
+        poisonChance: 0.3
+    },
+    midnight_dirk: {
+        name: 'Midnight Dirk',
+        baseDamage: 16,
+        maxDamage: 24,
+        baseMagicDamage: 0,
+        cost: 2000,
+        level: 8,
+        quality: 'rare',
+        slot: 'weapon',
+        classRestriction: 'rogue'
+    },
+    blacksteel_dagger: {
+        name: 'Blacksteel Dagger',
+        baseDamage: 18,
+        maxDamage: 27,
+        baseMagicDamage: 0,
+        cost: 2500,
+        level: 9,
+        quality: 'epic',
+        slot: 'weapon',
+        classRestriction: 'rogue'
+    },
+    phantom_edge: {
+        name: 'Phantom Edge',
+        baseDamage: 22,
+        maxDamage: 33,
+        baseMagicDamage: 0,
+        cost: 3200,
+        level: 10,
+        quality: 'epic',
+        slot: 'weapon',
+        classRestriction: 'rogue'
+    },
+    soul_piercer: {
+        name: 'Soul Piercer',
+        baseDamage: 24,
+        maxDamage: 36,
+        baseMagicDamage: 0,
+        cost: 5000,
+        level: 11,
+        quality: 'epic',
+        slot: 'weapon',
+        classRestriction: 'rogue'
+    },
+    serpent_tooth: {
+        name: "Serpent's Tooth",
+        baseDamage: 28,
+        maxDamage: 42,
+        baseMagicDamage: 0,
+        cost: 6000,
+        level: 12,
+        quality: 'epic',
+        slot: 'weapon',
+        classRestriction: 'rogue',
+        poisonChance: 0.4
+    },
+    eclipse_blade: {
+        name: 'Eclipse Blade',
+        baseDamage: 32,
+        maxDamage: 48,
+        baseMagicDamage: 0,
+        cost: 7500,
+        level: 13,
+        quality: 'epic',
+        slot: 'weapon',
+        classRestriction: 'rogue'
+    },
+    nightfall: {
+        name: 'Nightfall',
+        baseDamage: 36,
+        maxDamage: 54,
+        baseMagicDamage: 0,
+        cost: 9000,
+        level: 14,
+        quality: 'legendary',
+        slot: 'weapon',
+        classRestriction: 'rogue'
+    },
+    shadow_reaver: {
+        name: 'Shadow Reaver',
+        baseDamage: 40,
+        maxDamage: 60,
+        baseMagicDamage: 0,
+        cost: 11000,
+        level: 15,
+        quality: 'legendary',
+        slot: 'weapon',
+        classRestriction: 'rogue'
+    },
+    void_stiletto: {
+        name: 'Void Stiletto',
+        baseDamage: 46,
+        maxDamage: 69,
+        baseMagicDamage: 0,
+        cost: 14000,
+        level: 16,
+        quality: 'legendary',
+        slot: 'weapon',
+        classRestriction: 'rogue'
+    },
+    death_whisper: {
+        name: "Death's Whisper",
+        baseDamage: 52,
+        maxDamage: 78,
+        baseMagicDamage: 0,
+        cost: 18000,
+        level: 17,
+        quality: 'legendary',
+        slot: 'weapon',
+        classRestriction: 'rogue'
+    },
+    oblivion_shard: {
+        name: 'Oblivion Shard',
+        baseDamage: 58,
+        maxDamage: 87,
+        baseMagicDamage: 0,
+        cost: 22000,
+        level: 18,
+        quality: 'legendary',
+        slot: 'weapon'
+,
+        classRestriction: 'rogue'
+    },
+    reaper_kiss: {
+        name: "Reaper's Kiss",
+        baseDamage: 64,
+        maxDamage: 96,
+        baseMagicDamage: 0,
+        cost: 28000,
+        level: 19,
+        quality: 'legendary',
+        slot: 'weapon',
+        classRestriction: 'rogue'
+    },
+    bloodmoon_fang: {
+        name: 'Bloodmoon Fang',
+        baseDamage: 70,
+        maxDamage: 105,
+        baseMagicDamage: 0,
+        cost: 35000,
+        level: 20,
+        quality: 'legendary',
+        slot: 'weapon',
+        classRestriction: 'rogue'
+    },
+    eternal_night: {
+        name: 'Eternal Night',
+        baseDamage: 76,
+        maxDamage: 114,
+        baseMagicDamage: 0,
+        cost: 42000,
+        level: 21,
+        quality: 'legendary',
+        slot: 'weapon',
+        classRestriction: 'rogue'
+    },
+    shadowbane_dagger: {
+        name: 'Shadowbane',
+        baseDamage: 84,
+        maxDamage: 126,
+        baseMagicDamage: 0,
+        cost: 50000,
+        level: 22,
+        quality: 'legendary',
+        slot: 'weapon',
+        classRestriction: 'rogue'
+    },
+    silencer: {
+        name: 'Silencer',
+        baseDamage: 92,
+        maxDamage: 138,
+        baseMagicDamage: 0,
+        cost: 60000,
+        level: 23,
+        quality: 'legendary',
+        slot: 'weapon',
+        classRestriction: 'rogue'
+    },
+    abyssal_thorn: {
+        name: 'Abyssal Thorn',
+        baseDamage: 100,
+        maxDamage: 150,
+        baseMagicDamage: 0,
+        cost: 75000,
+        level: 24,
+        quality: 'legendary',
+        slot: 'weapon',
+        classRestriction: 'rogue'
+    },
+    omega_blade: {
+        name: 'Omega Blade',
+        baseDamage: 110,
+        maxDamage: 165,
+        baseMagicDamage: 0,
+        cost: 100000,
+        level: 25,
+        quality: 'godly',
+        slot: 'weapon',
+        classRestriction: 'rogue'
     }
 };
 

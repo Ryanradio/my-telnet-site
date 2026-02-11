@@ -1362,8 +1362,20 @@ const OPPOSITE_DIR = {
 
         // ── derived-stat helpers ──────────────────────────────────────
         function calcPlayerHits(p) {
+            const baseClass = p.baseClass || p.class;
+            
+            // ROGUE: Dual-wield specialist with progressive pip scaling
+            if (baseClass === 'rogue') {
+                if (p.level >= 20) return 7;
+                if (p.level >= 15) return 6;
+                if (p.level >= 10) return 5;
+                if (p.level >= 5) return 4;
+                if (p.level >= 3) return 3;
+                return 2; // Level 1-2: Dual wield
+            }
+            
+            // OTHER CLASSES: Standard progression
             let h = 1;
-            if (p.class === 'rogue') h++;           // rogue class bonus
             h += Math.floor((p.level || 1) / 4);    // +1 every 4 levels
             h += Math.floor(Math.max(0, (p.str||0) - 8) / 6);  // STR scaling
             return h;
@@ -1446,7 +1458,19 @@ const OPPOSITE_DIR = {
         }
         function calcChaSellBonus(cha){ return Math.min(15, (cha||0) * 1); }   // sell %  bonus
         function calcInnCost(cha)     { return Math.max(20, 50 - (cha||0)); }
-        function calcCritChance(lck)  { return Math.min(30,  5 + (lck||0)); }  // %
+        function calcCritChance(lck, player)  { 
+            let baseCrit = 5 + (lck || 0);  // 5% base + 1% per LCK
+            
+            // ROGUE: Double LCK scaling + 10% class bonus
+            if (player) {
+                const baseClass = player.baseClass || player.class;
+                if (baseClass === 'rogue') {
+                    baseCrit = 10 + ((lck || 0) * 2);  // 10% base + 2% per LCK
+                }
+            }
+            
+            return Math.min(95, baseCrit);  // Cap at 95%
+        }  // %
         function calcDodgeChance(dex) { return Math.min(40, (dex||0) * 2); }   // %
         function calcLootBonus(lck)   { return Math.min(25, (lck||0) * 2); }   // extra %
 
@@ -5885,7 +5909,7 @@ if (cs) {
                 defender: enemy,
                 base: totalDamage,
                 type: 'physical',
-                critChance: calcCritChance(p.lck || 0) / 100,
+                critChance: calcCritChance(p.lck || 0, p) / 100,
                 dodgeChance: enemy.dodge || 0,
                 armorPiercing: 0
             });
@@ -6596,6 +6620,25 @@ function consumePips(cs, amount, cooldown) {
 
     // Consume pips
     consumePips(cs, pipCost, getPipCooldown(p));
+    
+    // ═══════════════════════════════════════════════════════════════
+    // ROGUE: SHADOW STRIKE - Guaranteed crit from stealth
+    // ═══════════════════════════════════════════════════════════════
+    let shadowStrike = false;
+    const baseClass = p.baseClass || p.class;
+    if (baseClass === 'rogue' && p.shadowStrikeReady) {
+        shadowStrike = true;
+        p.shadowStrikeReady = false;
+        
+        // Clear the timer
+        if (p.shadowStrikeTimer) {
+            clearTimeout(p.shadowStrikeTimer);
+            p.shadowStrikeTimer = null;
+        }
+        
+        termAppend('', 'term-separator');
+        termAppend('⚫ <span style="color:#8888FF;font-weight:bold;">You leap from the shadows!</span> ⚫', 'term-highlight');
+    }
 
     // Calculate base damage WITH RANGE ROLLING
     // Roll between baseDamage and maxDamage
@@ -6632,7 +6675,7 @@ function consumePips(cs, amount, cooldown) {
         defender: enemy,
         base: totalBase,
         type: magicBase > physicalBase ? 'magic' : 'physical',
-        critChance: calcCritChance(p.lck || 0) / 100,
+        critChance: shadowStrike ? 1.0 : (calcCritChance(p.lck || 0, p) / 100),  // 100% crit if Shadow Strike
         dodgeChance: enemyDodgeChance, // Use level-based dodge
         armorPiercing
     });
@@ -6656,6 +6699,12 @@ function consumePips(cs, amount, cooldown) {
         const finalDamage = modifierResult.totalDamage;
         
         enemy.hp -= finalDamage;
+        
+        // Check for poison chance on daggers (Venom Spike, Serpent's Tooth, etc.)
+        if (weapon.poisonChance && Math.random() < weapon.poisonChance && enemy.hp > 0) {
+            applyStatusEffect(enemy, 'poisoned', false);
+            modifierResult.messages.push('<span style="color:#00FF00;">💀 Poisoned!</span>');
+        }
 
         // Calculate condition text
         const hpPct = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
@@ -6793,7 +6842,7 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                         
                         let dmg = Math.max(1, (spellRoll + p.magic + (p.wis || 0)) - Math.floor(enemy.defense / 2));
                         let crit = false;
-                        if (Math.random() * 100 < calcCritChance(p.lck || 0)) { 
+                        if (Math.random() * 100 < calcCritChance(p.lck || 0, p)) { 
                             dmg = Math.floor(dmg * 1.75); 
                             crit = true; 
                         }
@@ -6847,7 +6896,7 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 
                 let dmg = Math.max(1, (spellRoll + p.magic + (p.wis || 0)) - Math.floor(enemy.defense / 2));
                 let crit = false;
-                if (Math.random() * 100 < calcCritChance(p.lck || 0)) { dmg = Math.floor(dmg * 1.75); crit = true; }
+                if (Math.random() * 100 < calcCritChance(p.lck || 0, p)) { dmg = Math.floor(dmg * 1.75); crit = true; }
                 
                 enemy.hp -= dmg;
                 
@@ -6899,7 +6948,7 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 
                 let   dmg   = Math.max(1, (spellRoll + p.magic + (p.wis||0)) - Math.floor(enemy.defense / 2));
                 let crit = false;
-                if (Math.random()*100 < calcCritChance(p.lck||0)) { dmg = Math.floor(dmg*1.75); crit = true; }
+                if (Math.random()*100 < calcCritChance(p.lck||0, p)) { dmg = Math.floor(dmg*1.75); crit = true; }
                 enemy.hp -= dmg;
                 
                 // Check for spell status effects (burning from fire spells, etc.)
@@ -7024,7 +7073,17 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
             
             termAppend(`<span style="color:#FF4444;">⚔️  Weapon Damage:</span> ${weaponDmg} ${weaponMag}`);
             termAppend(`<span style="color:#4444FF;">🛡️  Armor Defense:</span> ${armorDef}`);
-            termAppend(`<span style="color:#FFD700;">🎯 Crit Chance:</span> ${calcCritChance(p.lck || 0)}%`);
+            termAppend(`<span style="color:#FFD700;">🎯 Crit Chance:</span> ${calcCritChance(p.lck || 0, p)}%`);
+            
+            // Rogue Shadow Strike status
+            const baseClass = p.baseClass || p.class;
+            if (baseClass === 'rogue') {
+                if (p.shadowStrikeReady) {
+                    termAppend(`<span style="color:#8888FF;">🌑 Shadow Strike:</span> READY! (Next attack guaranteed crit)`);
+                } else {
+                    termAppend(`<span style="color:#666666;">🌑 Shadow Strike:</span> On cooldown (activate after 5s out of combat)`);
+                }
+            }
             
             // Class damage multiplier if evolved
             if (p.hasEvolved) {
@@ -7952,6 +8011,25 @@ gameState.postCombatRecovery = true;
     if (!gameState.combatTimer) {
         startCombatTimer();
     }
+    
+    // ═══════════════════════════════════════════════════════════════
+    // ROGUE: SHADOW STRIKE - Activate stealth after combat
+    // ═══════════════════════════════════════════════════════════════
+    const p = gameState.player;
+    const baseClass = p.baseClass || p.class;
+    if (baseClass === 'rogue' && victory) {
+        // Clear any existing timer
+        if (p.shadowStrikeTimer) {
+            clearTimeout(p.shadowStrikeTimer);
+        }
+        
+        // Set 5-second timer for Shadow Strike
+        p.shadowStrikeTimer = setTimeout(() => {
+            p.shadowStrikeReady = true;
+            termAppend('', 'term-separator');
+            termAppend('🌑 You melt into the shadows... <span style="color:#8888FF;">[Shadow Strike Ready]</span>', 'term-highlight');
+        }, 5000);
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -8532,7 +8610,7 @@ function playerIsExhausted() {
                     <p><span class="stat-label">Physical Damage:</span> ${calculatePhysicalDamage()}</p>
                     <p><span class="stat-label">Magic Damage:</span> ${calculateMagicDamage()}</p>
                     <p><span class="stat-label">Defense:</span> ${calculateTotalDefense()}</p>
-                    <p><span class="stat-label">Crit Chance:</span> ${calcCritChance(p.lck)}%</p>
+                    <p><span class="stat-label">Crit Chance:</span> ${calcCritChance(p.lck, p)}%</p>
                 </div>
                 
                 ${hasPoints ? `
