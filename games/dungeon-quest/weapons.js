@@ -12,9 +12,9 @@ const QUALITY_CONFIG = {
     poor: { bonus: 0, color: '#808080', name: 'Poor' },
     normal: { bonus: 2, color: '#00FF00', name: 'Normal' },
     rare: { bonus: 5, color: '#0099FF', name: 'Rare' },
-    epic: { bonus: 10, color: '#9933FF', name: 'Epic' },
-    legendary: { bonus: 20, color: '#FF9900', name: 'Legendary' },
-    godly: { bonus: 50, color: '#FF0000', name: 'Godly' }
+    epic: { bonus: 8, color: '#9933FF', name: 'Epic' },
+    legendary: { bonus: 12, color: '#FF9900', name: 'Legendary' },
+    godly: { bonus: 20, color: '#FF0000', name: 'Godly' }
 };
 
 const WEAPONS = {
@@ -423,8 +423,8 @@ const WEAPONS = {
     // ═══════════════════════════════════════════════════════════════
     rusty_shiv: {
         name: 'Rusty Shiv',
-        baseDamage: 1,
-        maxDamage: 2,
+        baseDamage: 2,
+        maxDamage: 4,
         baseMagicDamage: 0,
         cost: 0,
         level: 1,
@@ -434,8 +434,8 @@ const WEAPONS = {
     },
     iron_dagger: {
         name: 'Iron Dagger',
-        baseDamage: 2,
-        maxDamage: 4,
+        baseDamage: 4,
+        maxDamage: 7,
         baseMagicDamage: 0,
         cost: 150,
         level: 1,
