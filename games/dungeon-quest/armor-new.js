@@ -1,0 +1,346 @@
+// armor.js - Armor Database (REBALANCED)
+// Armor uses BASE defense + CON scaling
+// Armor unlocks on ODD levels (1, 3, 5, 7, etc.)
+
+const ARMOR = {
+    // ===== LEVEL 1 STARTER ARMOR =====
+    torn_rags: {
+        name: 'Torn Rags',
+        baseDefense: 1,
+        magicDefense: 0,
+        cost: 0,
+        level: 1,
+        quality: 'poor',
+        slot: 'armor',
+        description: 'Barely protection. (1 + CON defense)'
+    },
+    leather_vest: {
+        name: 'Leather Vest',
+        baseDefense: 2,
+        magicDefense: 0,
+        cost: 0,
+        level: 1,
+        quality: 'normal',
+        slot: 'armor',
+        description: 'Basic leather. (2 + CON defense)'
+    },
+    cloth_robes: {
+        name: 'Cloth Robes',
+        baseDefense: 1,
+        magicDefense: 2,
+        cost: 0,
+        level: 1,
+        quality: 'normal',
+        slot: 'armor',
+        description: 'Magical cloth. (1 + CON, 2 + WIS defense)'
+    },
+
+    // ===== LEVEL 3 ARMOR =====
+    leather_armor: {
+        name: 'Leather Armor',
+        baseDefense: 3,
+        magicDefense: 0,
+        cost: 80,
+        level: 3,
+        quality: 'normal',
+        slot: 'armor',
+        description: 'Studded leather. (3 + CON defense)'
+    },
+    chain_mail: {
+        name: 'Chain Mail',
+        baseDefense: 4,
+        magicDefense: 0,
+        cost: 100,
+        level: 3,
+        quality: 'normal',
+        slot: 'armor',
+        description: 'Metal rings. (4 + CON defense)'
+    },
+    battle_robes: {
+        name: 'Battle Robes',
+        baseDefense: 2,
+        magicDefense: 4,
+        cost: 120,
+        level: 3,
+        quality: 'normal',
+        slot: 'armor',
+        description: 'Combat mage gear. (2 + CON, 4 + WIS defense)'
+    },
+
+    // ===== LEVEL 5 ARMOR =====
+    reinforced_leather: {
+        name: 'Reinforced Leather',
+        baseDefense: 5,
+        magicDefense: 1,
+        cost: 200,
+        level: 5,
+        quality: 'normal',
+        slot: 'armor',
+        description: 'Metal studs. (5 + CON, 1 + WIS defense)'
+    },
+    steel_plate: {
+        name: 'Steel Plate',
+        baseDefense: 7,
+        magicDefense: 0,
+        cost: 250,
+        level: 5,
+        quality: 'normal',
+        slot: 'armor',
+        description: 'Heavy plates. (7 + CON defense)'
+    },
+    enchanted_robes: {
+        name: 'Enchanted Robes',
+        baseDefense: 3,
+        magicDefense: 6,
+        cost: 280,
+        level: 5,
+        quality: 'rare',
+        slot: 'armor',
+        description: 'Magical weave. (3 + CON, 6 + WIS defense)'
+    },
+
+    // ===== LEVEL 7 ARMOR =====
+    dragon_scale: {
+        name: 'Dragon Scale Armor',
+        baseDefense: 8,
+        magicDefense: 3,
+        cost: 500,
+        level: 7,
+        quality: 'rare',
+        slot: 'armor',
+        description: 'Dragon hide. (8 + CON, 3 + WIS defense)'
+    },
+    adamantine_plate: {
+        name: 'Adamantine Plate',
+        baseDefense: 10,
+        magicDefense: 0,
+        cost: 600,
+        level: 7,
+        quality: 'rare',
+        slot: 'armor',
+        description: 'Indestructible metal. (10 + CON defense)'
+    },
+    arcane_vestments: {
+        name: 'Arcane Vestments',
+        baseDefense: 5,
+        magicDefense: 9,
+        cost: 650,
+        level: 7,
+        quality: 'rare',
+        slot: 'armor',
+        description: 'Arcane power. (5 + CON, 9 + WIS defense)'
+    },
+
+    // ===== LEVEL 9 ARMOR =====
+    shadow_leather: {
+        name: 'Shadow Leather',
+        baseDefense: 11,
+        magicDefense: 4,
+        cost: 900,
+        level: 9,
+        quality: 'epic',
+        slot: 'armor',
+        description: 'Woven shadows. (11 + CON, 4 + WIS defense)'
+    },
+    titan_plate: {
+        name: 'Titan Plate',
+        baseDefense: 14,
+        magicDefense: 2,
+        cost: 1100,
+        level: 9,
+        quality: 'epic',
+        slot: 'armor',
+        description: 'Titan forged. (14 + CON, 2 + WIS defense)'
+    },
+    celestial_robes: {
+        name: 'Celestial Robes',
+        baseDefense: 7,
+        magicDefense: 13,
+        cost: 1200,
+        level: 9,
+        quality: 'epic',
+        slot: 'armor',
+        description: 'Starlight woven. (7 + CON, 13 + WIS defense)'
+    },
+
+    // ===== LEVEL 11 ARMOR =====
+    nightstalker_armor: {
+        name: 'Nightstalker Armor',
+        baseDefense: 13,
+        magicDefense: 6,
+        cost: 1600,
+        level: 11,
+        quality: 'epic',
+        slot: 'armor',
+        description: 'Blend with night. (13 + CON, 6 + WIS defense)'
+    },
+    dreadnaught_plate: {
+        name: 'Dreadnaught Plate',
+        baseDefense: 17,
+        magicDefense: 3,
+        cost: 1900,
+        level: 11,
+        quality: 'epic',
+        slot: 'armor',
+        description: 'Unstoppable defense. (17 + CON, 3 + WIS defense)'
+    },
+    void_robes: {
+        name: 'Void Robes',
+        baseDefense: 9,
+        magicDefense: 16,
+        cost: 2000,
+        level: 11,
+        quality: 'epic',
+        slot: 'armor',
+        description: 'Empty space. (9 + CON, 16 + WIS defense)'
+    },
+
+    // ===== LEVEL 13 ARMOR =====
+    demon_hide: {
+        name: 'Demon Hide',
+        baseDefense: 16,
+        magicDefense: 8,
+        cost: 2500,
+        level: 13,
+        quality: 'legendary',
+        slot: 'armor',
+        description: 'Hellforged leather. (16 + CON, 8 + WIS defense)'
+    },
+    divine_aegis: {
+        name: 'Divine Aegis',
+        baseDefense: 20,
+        magicDefense: 10,
+        cost: 2800,
+        level: 13,
+        quality: 'legendary',
+        slot: 'armor',
+        description: 'God blessed. (20 + CON, 10 + WIS defense)'
+    },
+    infinity_robes: {
+        name: 'Infinity Robes',
+        baseDefense: 11,
+        magicDefense: 20,
+        cost: 3000,
+        level: 13,
+        quality: 'legendary',
+        slot: 'armor',
+        description: 'Endless protection. (11 + CON, 20 + WIS defense)'
+    },
+
+    // ===== LEVEL 15 ARMOR =====
+    godslayer_armor: {
+        name: 'Godslayer Armor',
+        baseDefense: 19,
+        magicDefense: 10,
+        cost: 3500,
+        level: 15,
+        quality: 'legendary',
+        slot: 'armor',
+        description: 'Deicide protection. (19 + CON, 10 + WIS defense)'
+    },
+    immortal_plate: {
+        name: 'Immortal Plate',
+        baseDefense: 24,
+        magicDefense: 12,
+        cost: 4000,
+        level: 15,
+        quality: 'legendary',
+        slot: 'armor',
+        description: 'Never break. (24 + CON, 12 + WIS defense)'
+    },
+    cosmic_vestments: {
+        name: 'Cosmic Vestments',
+        baseDefense: 13,
+        magicDefense: 24,
+        cost: 4200,
+        level: 15,
+        quality: 'legendary',
+        slot: 'armor',
+        description: 'Universe weave. (13 + CON, 24 + WIS defense)'
+    },
+
+    // ===== LEVEL 17 ARMOR =====
+    worldguard: {
+        name: 'Worldguard Armor',
+        baseDefense: 22,
+        magicDefense: 13,
+        cost: 5000,
+        level: 17,
+        quality: 'legendary',
+        slot: 'armor',
+        description: 'Protects worlds. (22 + CON, 13 + WIS defense)'
+    },
+    reality_plate: {
+        name: 'Reality Plate',
+        baseDefense: 28,
+        magicDefense: 14,
+        cost: 5500,
+        level: 17,
+        quality: 'legendary',
+        slot: 'armor',
+        description: 'Shaped by will. (28 + CON, 14 + WIS defense)'
+    },
+
+    // ===== LEVEL 19 ARMOR =====
+    apocalypse_armor: {
+        name: 'Apocalypse Armor',
+        baseDefense: 26,
+        magicDefense: 16,
+        cost: 6500,
+        level: 19,
+        quality: 'legendary',
+        slot: 'armor',
+        description: 'Endure anything. (26 + CON, 16 + WIS defense)'
+    },
+    eternity_robes: {
+        name: 'Eternity Robes',
+        baseDefense: 16,
+        magicDefense: 30,
+        cost: 7000,
+        level: 19,
+        quality: 'legendary',
+        slot: 'armor',
+        description: 'Timeless defense. (16 + CON, 30 + WIS defense)'
+    },
+
+    // ===== LEVEL 21 ARMOR =====
+    primordial_armor: {
+        name: 'Primordial Armor',
+        baseDefense: 30,
+        magicDefense: 18,
+        cost: 8500,
+        level: 21,
+        quality: 'legendary',
+        slot: 'armor',
+        description: 'First armor. (30 + CON, 18 + WIS defense)'
+    },
+
+    // ===== LEVEL 23 ARMOR =====
+    genesis_armor: {
+        name: 'Genesis Armor',
+        baseDefense: 35,
+        magicDefense: 20,
+        cost: 11000,
+        level: 23,
+        quality: 'legendary',
+        slot: 'armor',
+        description: 'Creation protection. (35 + CON, 20 + WIS defense)'
+    },
+
+    // ===== LEVEL 25 ULTIMATE ARMOR =====
+    omega_armor: {
+        name: 'Omega Armor',
+        baseDefense: 40,
+        magicDefense: 25,
+        cost: 20000,
+        level: 25,
+        quality: 'godly',
+        slot: 'armor',
+        description: 'The end and beginning. (40 + CON, 25 + WIS defense)'
+    }
+};
+
+// Export for use in other files
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { ARMOR };
+}
