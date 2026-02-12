@@ -153,55 +153,55 @@ const EXPLORATION_ZONES = {
 // Additional monsters for exploration zones
 const ZONE_MONSTERS = {
     // Riverside / early plains (4-6)
-    river_troll:   { name: 'River Troll',   baseHp: 50,  baseDamage: 9,  baseDefense: 6,  baseXp: 40,  baseGold: 22, level: 4 },
-    swamp_lurker:  { name: 'Swamp Lurker',  baseHp: 40,  baseDamage: 10, baseDefense: 4,  baseXp: 35,  baseGold: 18, level: 4 },
-    giant_frog:    { name: 'Giant Frog',    baseHp: 35,  baseDamage: 8,  baseDefense: 5,  baseXp: 30,  baseGold: 14, level: 4 },
-    water_snake:   { name: 'Water Snake',   baseHp: 30,  baseDamage: 11, baseDefense: 3,  baseXp: 32,  baseGold: 12, level: 4 },
+    river_troll:   { name: 'River Troll',   baseHp: 100,  baseDamage: 9,  baseDefense: 6,  baseXp: 40,  baseGold: 22, level: 4 },
+    swamp_lurker:  { name: 'Swamp Lurker',  baseHp: 80,  baseDamage: 10, baseDefense: 4,  baseXp: 35,  baseGold: 18, level: 4 },
+    giant_frog:    { name: 'Giant Frog',    baseHp: 70,  baseDamage: 8,  baseDefense: 5,  baseXp: 30,  baseGold: 14, level: 4 },
+    water_snake:   { name: 'Water Snake',   baseHp: 60,  baseDamage: 11, baseDefense: 3,  baseXp: 32,  baseGold: 12, level: 4 },
 
     // Plains (6-9)
-    plains_lion:   { name: 'Plains Lion',   baseHp: 75,  baseDamage: 16, baseDefense: 8,  baseXp: 95,  baseGold: 45, level: 7 },
-    centaur:       { name: 'Centaur',       baseHp: 90,  baseDamage: 18, baseDefense: 10, baseXp: 115, baseGold: 58, level: 8 },
+    plains_lion:   { name: 'Plains Lion',   baseHp: 150,  baseDamage: 16, baseDefense: 8,  baseXp: 95,  baseGold: 45, level: 7 },
+    centaur:       { name: 'Centaur',       baseHp: 180,  baseDamage: 18, baseDefense: 10, baseXp: 115, baseGold: 58, level: 8 },
 
     // Haunted Graveyard (7-9)
-    zombie:        { name: 'Zombie',        baseHp: 65,  baseDamage: 12, baseDefense: 7,  baseXp: 78,  baseGold: 28, level: 7 },
-    ghoul:         { name: 'Ghoul',         baseHp: 60,  baseDamage: 15, baseDefense: 6,  baseXp: 85,  baseGold: 32, level: 8 },
-    skeleton:      { name: 'Skeleton',      baseHp: 55,  baseDamage: 12, baseDefense: 9,  baseXp: 72,  baseGold: 30, level: 7 },
-    grave_robber:  { name: 'Grave Robber',  baseHp: 70,  baseDamage: 17, baseDefense: 7,  baseXp: 90,  baseGold: 85, level: 9 },
+    zombie:        { name: 'Zombie',        baseHp: 130,  baseDamage: 12, baseDefense: 7,  baseXp: 78,  baseGold: 28, level: 7 },
+    ghoul:         { name: 'Ghoul',         baseHp: 120,  baseDamage: 15, baseDefense: 6,  baseXp: 85,  baseGold: 32, level: 8 },
+    skeleton:      { name: 'Skeleton',      baseHp: 110,  baseDamage: 12, baseDefense: 9,  baseXp: 72,  baseGold: 30, level: 7 },
+    grave_robber:  { name: 'Grave Robber',  baseHp: 140,  baseDamage: 17, baseDefense: 7,  baseXp: 90,  baseGold: 85, level: 9 },
 
     // Dark Swamp (10-12)
-    swamp_hag:      { name: 'Swamp Hag',       baseHp: 115, baseDamage: 23, baseDefense: 12, baseXp: 185, baseGold: 92,  level: 11 },
-    plague_zombie:  { name: 'Plague Zombie',    baseHp: 105, baseDamage: 21, baseDefense: 10, baseXp: 165, baseGold: 75,  level: 10 },
-    giant_leech:    { name: 'Giant Leech',      baseHp: 100, baseDamage: 20, baseDefense: 11, baseXp: 160, baseGold: 68,  level: 10 },
-    bog_beast:      { name: 'Bog Beast',        baseHp: 135, baseDamage: 26, baseDefense: 15, baseXp: 215, baseGold: 108, level: 12 },
-    corrupted_treant:{ name: 'Corrupted Treant',baseHp: 155, baseDamage: 29, baseDefense: 18, baseXp: 245, baseGold: 122, level: 12 },
+    swamp_hag:      { name: 'Swamp Hag',       baseHp: 230, baseDamage: 23, baseDefense: 12, baseXp: 185, baseGold: 92,  level: 11 },
+    plague_zombie:  { name: 'Plague Zombie',    baseHp: 210, baseDamage: 21, baseDefense: 10, baseXp: 165, baseGold: 75,  level: 10 },
+    giant_leech:    { name: 'Giant Leech',      baseHp: 200, baseDamage: 20, baseDefense: 11, baseXp: 160, baseGold: 68,  level: 10 },
+    bog_beast:      { name: 'Bog Beast',        baseHp: 270, baseDamage: 26, baseDefense: 15, baseXp: 215, baseGold: 108, level: 12 },
+    corrupted_treant:{ name: 'Corrupted Treant',baseHp: 310, baseDamage: 29, baseDefense: 18, baseXp: 245, baseGold: 122, level: 12 },
 
     // Cursed Ruins (13-15)
-    cursed_knight:   { name: 'Cursed Knight',   baseHp: 145, baseDamage: 28, baseDefense: 20, baseXp: 225, baseGold: 112, level: 14 },
-    shadow_stalker:  { name: 'Shadow Stalker',  baseHp: 125, baseDamage: 31, baseDefense: 14, baseXp: 205, baseGold: 102, level: 14 },
-    ruin_guardian:   { name: 'Ruin Guardian',   baseHp: 185, baseDamage: 33, baseDefense: 25, baseXp: 285, baseGold: 142, level: 15 },
-    spectral_warrior:{ name: 'Spectral Warrior',baseHp: 140, baseDamage: 30, baseDefense: 16, baseXp: 215, baseGold: 108, level: 14 },
-    dark_priest:     { name: 'Dark Priest',     baseHp: 130, baseDamage: 34, baseDefense: 15, baseXp: 255, baseGold: 128, level: 15 },
+    cursed_knight:   { name: 'Cursed Knight',   baseHp: 290, baseDamage: 28, baseDefense: 20, baseXp: 225, baseGold: 112, level: 14 },
+    shadow_stalker:  { name: 'Shadow Stalker',  baseHp: 250, baseDamage: 31, baseDefense: 14, baseXp: 205, baseGold: 102, level: 14 },
+    ruin_guardian:   { name: 'Ruin Guardian',   baseHp: 370, baseDamage: 33, baseDefense: 25, baseXp: 285, baseGold: 142, level: 15 },
+    spectral_warrior:{ name: 'Spectral Warrior',baseHp: 280, baseDamage: 30, baseDefense: 16, baseXp: 215, baseGold: 108, level: 14 },
+    dark_priest:     { name: 'Dark Priest',     baseHp: 260, baseDamage: 34, baseDefense: 15, baseXp: 255, baseGold: 128, level: 15 },
 
     // Demon Portal (19-21)
-    lesser_demon:  { name: 'Lesser Demon',  baseHp: 165, baseDamage: 36, baseDefense: 18, baseXp: 305, baseGold: 152, level: 19 },
-    hellhound:     { name: 'Hellhound',     baseHp: 150, baseDamage: 39, baseDefense: 16, baseXp: 285, baseGold: 142, level: 19 },
-    imp_swarm:     { name: 'Imp Swarm',     baseHp: 135, baseDamage: 33, baseDefense: 14, baseXp: 265, baseGold: 132, level: 19 },
-    pit_fiend:     { name: 'Pit Fiend',     baseHp: 205, baseDamage: 43, baseDefense: 22, baseXp: 405, baseGold: 202, level: 20 },
-    demon_lord:    { name: 'Demon Lord',    baseHp: 255, baseDamage: 49, baseDefense: 28, baseXp: 555, baseGold: 278, level: 21 },
+    lesser_demon:  { name: 'Lesser Demon',  baseHp: 330, baseDamage: 36, baseDefense: 18, baseXp: 305, baseGold: 152, level: 19 },
+    hellhound:     { name: 'Hellhound',     baseHp: 300, baseDamage: 39, baseDefense: 16, baseXp: 285, baseGold: 142, level: 19 },
+    imp_swarm:     { name: 'Imp Swarm',     baseHp: 270, baseDamage: 33, baseDefense: 14, baseXp: 265, baseGold: 132, level: 19 },
+    pit_fiend:     { name: 'Pit Fiend',     baseHp: 410, baseDamage: 43, baseDefense: 22, baseXp: 405, baseGold: 202, level: 20 },
+    demon_lord:    { name: 'Demon Lord',    baseHp: 510, baseDamage: 49, baseDefense: 28, baseXp: 555, baseGold: 278, level: 21 },
 
     // Corrupted Temple (22-24)
-    fallen_angel:        { name: 'Fallen Angel',        baseHp: 225, baseDamage: 46, baseDefense: 25, baseXp: 485, baseGold: 242, level: 22 },
-    corrupted_paladin:   { name: 'Corrupted Paladin',   baseHp: 245, baseDamage: 49, baseDefense: 30, baseXp: 525, baseGold: 262, level: 23 },
-    dark_oracle:         { name: 'Dark Oracle',         baseHp: 195, baseDamage: 51, baseDefense: 22, baseXp: 465, baseGold: 232, level: 22 },
-    abomination:         { name: 'Abomination',         baseHp: 285, baseDamage: 53, baseDefense: 32, baseXp: 605, baseGold: 302, level: 24 },
-    void_priest:         { name: 'Void Priest',         baseHp: 215, baseDamage: 56, baseDefense: 26, baseXp: 545, baseGold: 272, level: 23 },
+    fallen_angel:        { name: 'Fallen Angel',        baseHp: 450, baseDamage: 46, baseDefense: 25, baseXp: 485, baseGold: 242, level: 22 },
+    corrupted_paladin:   { name: 'Corrupted Paladin',   baseHp: 490, baseDamage: 49, baseDefense: 30, baseXp: 525, baseGold: 262, level: 23 },
+    dark_oracle:         { name: 'Dark Oracle',         baseHp: 390, baseDamage: 51, baseDefense: 22, baseXp: 465, baseGold: 232, level: 22 },
+    abomination:         { name: 'Abomination',         baseHp: 570, baseDamage: 53, baseDefense: 32, baseXp: 605, baseGold: 302, level: 24 },
+    void_priest:         { name: 'Void Priest',         baseHp: 430, baseDamage: 56, baseDefense: 26, baseXp: 545, baseGold: 272, level: 23 },
 
     // Celestial Spire (25)
-    celestial_guardian:  { name: 'Celestial Guardian',  baseHp: 445, baseDamage: 72, baseDefense: 42, baseXp: 1005, baseGold: 502, level: 25 },
-    arch_angel:          { name: 'Arch Angel',          baseHp: 485, baseDamage: 76, baseDefense: 44, baseXp: 1105, baseGold: 552, level: 25 },
-    divine_champion:     { name: 'Divine Champion',     baseHp: 465, baseDamage: 79, baseDefense: 46, baseXp: 1055, baseGold: 527, level: 25 },
-    seraphim:            { name: 'Seraphim',            baseHp: 525, baseDamage: 83, baseDefense: 48, baseXp: 1155, baseGold: 577, level: 25 },
-    god_avatar:          { name: 'Avatar of a God',     baseHp: 605, baseDamage: 91, baseDefense: 50, baseXp: 1505, baseGold: 752, level: 25, isBoss: true }
+    celestial_guardian:  { name: 'Celestial Guardian',  baseHp: 890, baseDamage: 72, baseDefense: 42, baseXp: 1005, baseGold: 502, level: 25 },
+    arch_angel:          { name: 'Arch Angel',          baseHp: 970, baseDamage: 76, baseDefense: 44, baseXp: 1105, baseGold: 552, level: 25 },
+    divine_champion:     { name: 'Divine Champion',     baseHp: 930, baseDamage: 79, baseDefense: 46, baseXp: 1055, baseGold: 527, level: 25 },
+    seraphim:            { name: 'Seraphim',            baseHp: 1050, baseDamage: 83, baseDefense: 48, baseXp: 1155, baseGold: 577, level: 25 },
+    god_avatar:          { name: 'Avatar of a God',     baseHp: 1210, baseDamage: 91, baseDefense: 50, baseXp: 1505, baseGold: 752, level: 25, isBoss: true }
 };
 
 if (typeof module !== 'undefined' && module.exports) {

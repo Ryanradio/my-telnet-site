@@ -19,7 +19,7 @@ Object.assign(ENEMIES, {
     // Your child's monster! 💩
     poop_slime: { 
         name: 'Poop Slime', 
-        baseHp: 100, 
+        baseHp: 200, 
         baseDamage: 10, 
         baseDefense: 1, 
         baseXp: 250, 
@@ -32,7 +32,7 @@ Object.assign(ENEMIES, {
     
     goblin: { 
         name: 'Goblin', 
-        baseHp: 15, 
+        baseHp: 30, 
         baseDamage: 8, 
         baseDefense: 3, 
         baseXp: 20, 
@@ -45,7 +45,7 @@ Object.assign(ENEMIES, {
     
     wolf: { 
         name: 'Wolf', 
-        baseHp: 15, 
+        baseHp: 30, 
         baseDamage: 10, 
         baseDefense: 2, 
         baseXp: 25, 
@@ -58,7 +58,7 @@ Object.assign(ENEMIES, {
     
     giant_spider: { 
         name: 'Giant Spider', 
-        baseHp: 20, 
+        baseHp: 40, 
         baseDamage: 12, 
         baseDefense: 4, 
         baseXp: 30, 
@@ -71,7 +71,7 @@ Object.assign(ENEMIES, {
     
     wild_boar: {
         name: 'Wild Boar',
-        baseHp: 15,
+        baseHp: 30,
         baseDamage: 9,
         baseDefense: 4,
         baseXp: 22,
@@ -84,7 +84,7 @@ Object.assign(ENEMIES, {
     
     slime: {
         name: 'Slime',
-        baseHp: 15,
+        baseHp: 30,
         baseDamage: 6,
         baseDefense: 1,
         baseXp: 15,
@@ -97,7 +97,7 @@ Object.assign(ENEMIES, {
     
     kobold: {
         name: 'Kobold',
-        baseHp: 15,
+        baseHp: 30,
         baseDamage: 7,
         baseDefense: 2,
         baseXp: 18,
@@ -110,7 +110,7 @@ Object.assign(ENEMIES, {
     
     giant_rat: {
         name: 'Giant Rat',
-        baseHp: 15,
+        baseHp: 30,
         baseDamage: 8,
         baseDefense: 2,
         baseXp: 16,
@@ -123,7 +123,7 @@ Object.assign(ENEMIES, {
     
     forest_imp: {
         name: 'Forest Imp',
-        baseHp: 20,
+        baseHp: 40,
         baseDamage: 11,
         baseDefense: 3,
         baseXp: 24,
@@ -136,7 +136,7 @@ Object.assign(ENEMIES, {
     
     bandit: { 
         name: 'Bandit', 
-        baseHp: 30, 
+        baseHp: 60, 
         baseDamage: 16, 
         baseDefense: 7, 
         baseXp: 40, 
@@ -150,7 +150,7 @@ Object.assign(ENEMIES, {
     // Riverside monsters
     river_troll: {
         name: 'River Troll',
-        baseHp: 30,
+        baseHp: 60,
         baseDamage: 13,
         baseDefense: 6,
         baseXp: 35,
@@ -163,7 +163,7 @@ Object.assign(ENEMIES, {
     
     swamp_lurker: {
         name: 'Swamp Lurker',
-        baseHp: 30,
+        baseHp: 60,
         baseDamage: 14,
         baseDefense: 5,
         baseXp: 32,
@@ -176,7 +176,7 @@ Object.assign(ENEMIES, {
     
     giant_frog: {
         name: 'Giant Frog',
-        baseHp: 20,
+        baseHp: 40,
         baseDamage: 11,
         baseDefense: 5,
         baseXp: 28,
@@ -189,7 +189,7 @@ Object.assign(ENEMIES, {
     
     water_snake: {
         name: 'Water Snake',
-        baseHp: 30,
+        baseHp: 60,
         baseDamage: 15,
         baseDefense: 3,
         baseXp: 30,
@@ -206,7 +206,7 @@ Object.assign(ENEMIES, {
     
     orc: { 
         name: 'Orc Warrior', 
-        baseHp: 60, 
+        baseHp: 120, 
         baseDamage: 18, 
         baseDefense: 8, 
         baseXp: 60, 
@@ -219,7 +219,7 @@ Object.assign(ENEMIES, {
     
     dire_wolf: { 
         name: 'Dire Wolf', 
-        baseHp: 75, 
+        baseHp: 150, 
         baseDamage: 20, 
         baseDefense: 7, 
         baseXp: 65, 
@@ -232,7 +232,7 @@ Object.assign(ENEMIES, {
     
     plains_lion: {
         name: 'Plains Lion',
-        baseHp: 75,
+        baseHp: 150,
         baseDamage: 22,
         baseDefense: 9,
         baseXp: 70,
@@ -245,7 +245,7 @@ Object.assign(ENEMIES, {
     
     centaur: {
         name: 'Centaur Warrior',
-        baseHp: 90,
+        baseHp: 180,
         baseDamage: 24,
         baseDefense: 10,
         baseXp: 85,
@@ -258,7 +258,7 @@ Object.assign(ENEMIES, {
     
     plains_raider: {
         name: 'Plains Raider',
-        baseHp: 75,
+        baseHp: 150,
         baseDamage: 21,
         baseDefense: 8,
         baseXp: 68,
@@ -271,7 +271,7 @@ Object.assign(ENEMIES, {
     
     giant_scorpion: {
         name: 'Giant Scorpion',
-        baseHp: 90,
+        baseHp: 180,
         baseDamage: 23,
         baseDefense: 12,
         baseXp: 72,
@@ -285,7 +285,7 @@ Object.assign(ENEMIES, {
     // Graveyard monsters
     zombie: {
         name: 'Zombie',
-        baseHp: 75,
+        baseHp: 150,
         baseDamage: 17,
         baseDefense: 7,
         baseXp: 55,
@@ -298,7 +298,7 @@ Object.assign(ENEMIES, {
     
     ghoul: {
         name: 'Ghoul',
-        baseHp: 90,
+        baseHp: 180,
         baseDamage: 19,
         baseDefense: 6,
         baseXp: 62,
@@ -311,7 +311,7 @@ Object.assign(ENEMIES, {
     
     skeleton: {
         name: 'Skeleton',
-        baseHp: 75,
+        baseHp: 150,
         baseDamage: 16,
         baseDefense: 9,
         baseXp: 50,
@@ -324,7 +324,7 @@ Object.assign(ENEMIES, {
     
     wraith: {
         name: 'Wraith',
-        baseHp: 140,
+        baseHp: 280,
         baseDamage: 25,
         baseDefense: 8,
         baseXp: 90,
@@ -337,7 +337,7 @@ Object.assign(ENEMIES, {
     
     grave_robber: {
         name: 'Grave Robber',
-        baseHp: 100,
+        baseHp: 200,
         baseDamage: 20,
         baseDefense: 7,
         baseXp: 68,
@@ -350,7 +350,7 @@ Object.assign(ENEMIES, {
     
     spirit: {
         name: 'Restless Spirit',
-        baseHp: 75,
+        baseHp: 150,
         baseDamage: 18,
         baseDefense: 5,
         baseXp: 58,
@@ -367,7 +367,7 @@ Object.assign(ENEMIES, {
     
     troll: { 
         name: 'Cave Troll', 
-        baseHp: 155, 
+        baseHp: 310, 
         baseDamage: 28, 
         baseDefense: 15, 
         baseXp: 110, 
@@ -380,7 +380,7 @@ Object.assign(ENEMIES, {
     
     skeleton_warrior: { 
         name: 'Skeleton Warrior', 
-        baseHp: 155, 
+        baseHp: 310, 
         baseDamage: 26, 
         baseDefense: 12, 
         baseXp: 100, 
@@ -393,7 +393,7 @@ Object.assign(ENEMIES, {
     
     dark_mage: { 
         name: 'Dark Mage', 
-        baseHp: 175, 
+        baseHp: 350, 
         baseDamage: 32, 
         baseDefense: 10, 
         baseXp: 115, 
@@ -406,7 +406,7 @@ Object.assign(ENEMIES, {
     
     cave_drake: {
         name: 'Cave Drake',
-        baseHp: 195,
+        baseHp: 390,
         baseDamage: 30,
         baseDefense: 18,
         baseXp: 130,
@@ -419,7 +419,7 @@ Object.assign(ENEMIES, {
     
     stone_golem: {
         name: 'Stone Golem',
-        baseHp: 195,
+        baseHp: 390,
         baseDamage: 27,
         baseDefense: 25,
         baseXp: 125,
@@ -432,7 +432,7 @@ Object.assign(ENEMIES, {
     
     ogre: {
         name: 'Ogre',
-        baseHp: 175,
+        baseHp: 350,
         baseDamage: 29,
         baseDefense: 14,
         baseXp: 118,
@@ -446,7 +446,7 @@ Object.assign(ENEMIES, {
     // Dark Swamp monsters
     swamp_hag: {
         name: 'Swamp Hag',
-        baseHp: 195,
+        baseHp: 390,
         baseDamage: 31,
         baseDefense: 12,
         baseXp: 120,
@@ -459,7 +459,7 @@ Object.assign(ENEMIES, {
     
     plague_zombie: {
         name: 'Plague Zombie',
-        baseHp: 175,
+        baseHp: 350,
         baseDamage: 28,
         baseDefense: 10,
         baseXp: 108,
@@ -472,7 +472,7 @@ Object.assign(ENEMIES, {
     
     giant_leech: {
         name: 'Giant Leech',
-        baseHp: 175,
+        baseHp: 350,
         baseDamage: 27,
         baseDefense: 11,
         baseXp: 105,
@@ -485,7 +485,7 @@ Object.assign(ENEMIES, {
     
     bog_beast: {
         name: 'Bog Beast',
-        baseHp: 215,
+        baseHp: 430,
         baseDamage: 33,
         baseDefense: 16,
         baseXp: 135,
@@ -498,7 +498,7 @@ Object.assign(ENEMIES, {
     
     corrupted_treant: {
         name: 'Corrupted Treant',
-        baseHp: 235,
+        baseHp: 470,
         baseDamage: 30,
         baseDefense: 20,
         baseXp: 145,
@@ -512,7 +512,7 @@ Object.assign(ENEMIES, {
     // Cursed Ruins monsters
     cursed_knight: {
         name: 'Cursed Knight',
-        baseHp: 215,
+        baseHp: 430,
         baseDamage: 34,
         baseDefense: 22,
         baseXp: 140,
@@ -525,7 +525,7 @@ Object.assign(ENEMIES, {
     
     shadow_stalker: {
         name: 'Shadow Stalker',
-        baseHp: 215,
+        baseHp: 430,
         baseDamage: 36,
         baseDefense: 14,
         baseXp: 132,
@@ -538,7 +538,7 @@ Object.assign(ENEMIES, {
     
     ruin_guardian: {
         name: 'Ruin Guardian',
-        baseHp: 260,
+        baseHp: 520,
         baseDamage: 32,
         baseDefense: 28,
         baseXp: 155,
@@ -551,7 +551,7 @@ Object.assign(ENEMIES, {
     
     spectral_warrior: {
         name: 'Spectral Warrior',
-        baseHp: 235,
+        baseHp: 470,
         baseDamage: 35,
         baseDefense: 16,
         baseXp: 138,
@@ -564,7 +564,7 @@ Object.assign(ENEMIES, {
     
     dark_priest: {
         name: 'Dark Priest',
-        baseHp: 260,
+        baseHp: 520,
         baseDamage: 38,
         baseDefense: 15,
         baseXp: 148,
@@ -581,7 +581,7 @@ Object.assign(ENEMIES, {
     
     lich: { 
         name: 'Lich', 
-        baseHp: 285, 
+        baseHp: 570, 
         baseDamage: 42, 
         baseDefense: 18, 
         baseXp: 220, 
@@ -594,7 +594,7 @@ Object.assign(ENEMIES, {
     
     death_knight: { 
         name: 'Death Knight', 
-        baseHp: 340, 
+        baseHp: 680, 
         baseDamage: 48, 
         baseDefense: 25, 
         baseXp: 260, 
@@ -607,7 +607,7 @@ Object.assign(ENEMIES, {
     
     bone_dragon: {
         name: 'Bone Dragon',
-        baseHp: 365,
+        baseHp: 730,
         baseDamage: 50,
         baseDefense: 30,
         baseXp: 300,
@@ -620,7 +620,7 @@ Object.assign(ENEMIES, {
     
     vampire_lord: {
         name: 'Vampire Lord',
-        baseHp: 340,
+        baseHp: 680,
         baseDamage: 46,
         baseDefense: 20,
         baseXp: 270,
@@ -633,7 +633,7 @@ Object.assign(ENEMIES, {
     
     crypt_guard: {
         name: 'Crypt Guard',
-        baseHp: 285,
+        baseHp: 570,
         baseDamage: 40,
         baseDefense: 22,
         baseXp: 200,
@@ -647,7 +647,7 @@ Object.assign(ENEMIES, {
     // Demon Portal monsters
     lesser_demon: {
         name: 'Lesser Demon',
-        baseHp: 315,
+        baseHp: 630,
         baseDamage: 44,
         baseDefense: 19,
         baseXp: 240,
@@ -660,7 +660,7 @@ Object.assign(ENEMIES, {
     
     hellhound: {
         name: 'Hellhound',
-        baseHp: 285,
+        baseHp: 570,
         baseDamage: 47,
         baseDefense: 17,
         baseXp: 230,
@@ -673,7 +673,7 @@ Object.assign(ENEMIES, {
     
     imp_swarm: {
         name: 'Imp Swarm',
-        baseHp: 285,
+        baseHp: 570,
         baseDamage: 41,
         baseDefense: 15,
         baseXp: 210,
@@ -686,7 +686,7 @@ Object.assign(ENEMIES, {
     
     pit_fiend: {
         name: 'Pit Fiend',
-        baseHp: 340,
+        baseHp: 680,
         baseDamage: 52,
         baseDefense: 24,
         baseXp: 290,
@@ -699,7 +699,7 @@ Object.assign(ENEMIES, {
     
     demon_lord: {
         name: 'Demon Lord',
-        baseHp: 395,
+        baseHp: 790,
         baseDamage: 55,
         baseDefense: 28,
         baseXp: 320,
@@ -713,7 +713,7 @@ Object.assign(ENEMIES, {
     // Corrupted Temple monsters
     fallen_angel: {
         name: 'Fallen Angel',
-        baseHp: 365,
+        baseHp: 730,
         baseDamage: 50,
         baseDefense: 26,
         baseXp: 280,
@@ -726,7 +726,7 @@ Object.assign(ENEMIES, {
     
     corrupted_paladin: {
         name: 'Corrupted Paladin',
-        baseHp: 395,
+        baseHp: 790,
         baseDamage: 53,
         baseDefense: 30,
         baseXp: 300,
@@ -739,7 +739,7 @@ Object.assign(ENEMIES, {
     
     dark_oracle: {
         name: 'Dark Oracle',
-        baseHp: 340,
+        baseHp: 680,
         baseDamage: 56,
         baseDefense: 22,
         baseXp: 270,
@@ -752,7 +752,7 @@ Object.assign(ENEMIES, {
     
     abomination: {
         name: 'Abomination',
-        baseHp: 430,
+        baseHp: 860,
         baseDamage: 58,
         baseDefense: 32,
         baseXp: 340,
@@ -765,7 +765,7 @@ Object.assign(ENEMIES, {
     
     void_priest: {
         name: 'Void Priest',
-        baseHp: 395,
+        baseHp: 790,
         baseDamage: 60,
         baseDefense: 26,
         baseXp: 310,
@@ -782,7 +782,7 @@ Object.assign(ENEMIES, {
     
     fire_elemental: { 
         name: 'Fire Elemental', 
-        baseHp: 430, 
+        baseHp: 860, 
         baseDamage: 62, 
         baseDefense: 22, 
         baseXp: 380, 
@@ -795,7 +795,7 @@ Object.assign(ENEMIES, {
     
     lava_golem: {
         name: 'Lava Golem',
-        baseHp: 465,
+        baseHp: 930,
         baseDamage: 60,
         baseDefense: 38,
         baseXp: 400,
@@ -808,7 +808,7 @@ Object.assign(ENEMIES, {
     
     phoenix: {
         name: 'Phoenix',
-        baseHp: 505,
+        baseHp: 1010,
         baseDamage: 68,
         baseDefense: 24,
         baseXp: 420,
@@ -821,7 +821,7 @@ Object.assign(ENEMIES, {
     
     magma_dragon: {
         name: 'Magma Dragon',
-        baseHp: 560,
+        baseHp: 1120,
         baseDamage: 72,
         baseDefense: 42,
         baseXp: 500,
@@ -834,7 +834,7 @@ Object.assign(ENEMIES, {
     
     flame_titan: {
         name: 'Flame Titan',
-        baseHp: 560,
+        baseHp: 1120,
         baseDamage: 75,
         baseDefense: 45,
         baseXp: 550,
@@ -849,7 +849,7 @@ Object.assign(ENEMIES, {
     // Frozen Tundra monsters
     frost_giant: {
         name: 'Frost Giant',
-        baseHp: 465,
+        baseHp: 930,
         baseDamage: 65,
         baseDefense: 36,
         baseXp: 430,
@@ -862,7 +862,7 @@ Object.assign(ENEMIES, {
     
     ice_drake: {
         name: 'Ice Drake',
-        baseHp: 430,
+        baseHp: 860,
         baseDamage: 64,
         baseDefense: 32,
         baseXp: 410,
@@ -875,7 +875,7 @@ Object.assign(ENEMIES, {
     
     yeti: {
         name: 'Yeti',
-        baseHp: 430,
+        baseHp: 860,
         baseDamage: 61,
         baseDefense: 30,
         baseXp: 390,
@@ -888,7 +888,7 @@ Object.assign(ENEMIES, {
     
     frozen_revenant: {
         name: 'Frozen Revenant',
-        baseHp: 465,
+        baseHp: 930,
         baseDamage: 68,
         baseDefense: 34,
         baseXp: 440,
@@ -901,7 +901,7 @@ Object.assign(ENEMIES, {
     
     frost_wyrm: {
         name: 'Frost Wyrm',
-        baseHp: 560,
+        baseHp: 1120,
         baseDamage: 78,
         baseDefense: 40,
         baseXp: 520,
@@ -916,7 +916,7 @@ Object.assign(ENEMIES, {
     // Void Realm monsters
     void_walker: {
         name: 'Void Walker',
-        baseHp: 505,
+        baseHp: 1010,
         baseDamage: 70,
         baseDefense: 36,
         baseXp: 460,
@@ -929,7 +929,7 @@ Object.assign(ENEMIES, {
     
     reality_tear: {
         name: 'Reality Tear',
-        baseHp: 465,
+        baseHp: 930,
         baseDamage: 74,
         baseDefense: 33,
         baseXp: 450,
@@ -942,7 +942,7 @@ Object.assign(ENEMIES, {
     
     entropy_beast: {
         name: 'Entropy Beast',
-        baseHp: 505,
+        baseHp: 1010,
         baseDamage: 76,
         baseDefense: 38,
         baseXp: 480,
@@ -955,7 +955,7 @@ Object.assign(ENEMIES, {
     
     nihil_spawn: {
         name: 'Nihil Spawn',
-        baseHp: 560,
+        baseHp: 1120,
         baseDamage: 80,
         baseDefense: 40,
         baseXp: 510,
@@ -968,7 +968,7 @@ Object.assign(ENEMIES, {
     
     void_lord: {
         name: 'Void Lord',
-        baseHp: 560,
+        baseHp: 1120,
         baseDamage: 85,
         baseDefense: 45,
         baseXp: 600,
@@ -983,7 +983,7 @@ Object.assign(ENEMIES, {
     // Celestial Spire monsters
     celestial_guardian: {
         name: 'Celestial Guardian',
-        baseHp: 505,
+        baseHp: 1010,
         baseDamage: 72,
         baseDefense: 42,
         baseXp: 530,
@@ -996,7 +996,7 @@ Object.assign(ENEMIES, {
     
     arch_angel: {
         name: 'Arch Angel',
-        baseHp: 560,
+        baseHp: 1120,
         baseDamage: 78,
         baseDefense: 44,
         baseXp: 570,
@@ -1009,7 +1009,7 @@ Object.assign(ENEMIES, {
     
     divine_champion: {
         name: 'Divine Champion',
-        baseHp: 560,
+        baseHp: 1120,
         baseDamage: 82,
         baseDefense: 46,
         baseXp: 560,
@@ -1022,7 +1022,7 @@ Object.assign(ENEMIES, {
     
     seraphim: {
         name: 'Seraphim',
-        baseHp: 560,
+        baseHp: 1120,
         baseDamage: 88,
         baseDefense: 48,
         baseXp: 620,
@@ -1035,7 +1035,7 @@ Object.assign(ENEMIES, {
     
     god_avatar: {
         name: 'Avatar of a God',
-        baseHp: 560,
+        baseHp: 1120,
         baseDamage: 95,
         baseDefense: 50,
         baseXp: 800,
@@ -1053,7 +1053,7 @@ Object.assign(ENEMIES, {
     
     red_dragon: { 
         name: 'Ancient Red Dragon', 
-        baseHp: 365, 
+        baseHp: 730, 
         baseDamage: 70, 
         baseDefense: 35, 
         baseXp: 550, 
@@ -1067,7 +1067,7 @@ Object.assign(ENEMIES, {
     
     demon: { 
         name: 'Greater Demon', 
-        baseHp: 315, 
+        baseHp: 630, 
         baseDamage: 62, 
         baseDefense: 28, 
         baseXp: 450, 
@@ -1081,7 +1081,7 @@ Object.assign(ENEMIES, {
     
     vampire: {
         name: 'Ancient Vampire',
-        baseHp: 260,
+        baseHp: 520,
         baseDamage: 58,
         baseDefense: 22,
         baseXp: 350,
