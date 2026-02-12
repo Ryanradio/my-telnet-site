@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>⚔ Dungeon Development Environment</title>
+<style>
+:root {
+    --bg:      #0d0d0d;
+    --panel:   #111417;
+    --border:  #2a2f35;
+    --accent:  #00c896;
+    --gold:    #e8b84a;
+    --red:     #e84a4a;
+    --purple:  #a855f7;
+    --blue:    #4a8ee8;
+    --orange:  #e8874a;
+    --dim:     #666;
+    --text:    #cdd1d6;
+    --bright:  #f0f3f6;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    display: flex; height: 100vh;
+    font-family: 'Courier New', monospace;
+    background: var(--bg); color: var(--text); overflow: hidden;
+}
+#sidebar {
+    width: 300px; min-width: 300px;
+    background: var(--panel);
+    border-right: 2px solid var(--border);
+    display: flex; flex-direction: column; overflow: hidden;
+}
+#sidebarHeader {
+    background: #0a1a14; border-bottom: 2px solid var(--accent);
+    padding: 10px 14px; display: flex; align-items: center; gap: 8px;
+}
+#sidebarHeader h2 { font-size: 13px; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; }
+#sidebarScroll { flex: 1; overflow-y: auto; padding: 12px; }
+#sidebarScroll::-webkit-scrollbar { width: 6px; }
+#sidebarScroll::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+.section { margin-bottom: 12px; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+.section-title {
+    background: #1a1f24; padding: 6px 10px; font-size: 11px;
+    letter-spacing: 1px; color: var(--dim); text-transform: uppercase;
+    font-weight: bold; display: flex; justify-content: space-between;
+    align-items: center; cursor: pointer; user-select: none;
+}
+.section-title:hover { color: var(--text); }
+.section-body { padding: 10px; background: #0f1316; }
+label {
+    display: block; font-size: 11px; color: var(--dim);
+    margin-bottom: 3px; margin-top: 8px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+}
+label:first-child { margin-top: 0; }
+input[type=text], input[type=number], select, textarea {
+    width: 100%; background: #0a0e11; border: 1px solid var(--border);
+    color: var(--text); padding: 6px 8px;
+    font-family: 'Courier New', monospace; font-size: 12px;
+    border-radius: 3px; outline: none;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+textarea { resize: vertical; min-height: 50px; }
+button {
+    font-family: 'Courier New', monospace; font-size: 12px;
+    cursor: pointer; border: 1px solid var(--border);
+    background: #1a1f24; color: var(--text); padding: 5px 10px;
+    border-radius: 3px; transition: all 0.15s;
+}
+button:hover { border-color: var(--accent); color: var(--accent); }
+.btn-a  { border-color: var(--accent); color: var(--accent); background: rgba(0,200,150,.05); }
+.btn-a:hover { background: rgba(0,200,150,.15); }
+.btn-d  { border-color: var(--red); color: var(--red); background: rgba(232,74,74,.05); }
+.btn-d:hover { background: rgba(232,74,74,.15); }
+.btn-g  { border-color: var(--gold); color: var(--gold); background: rgba(232,184,74,.05); }
+.btn-g:hover { background: rgba(232,184,74,.15); }
+.btn-p  { border-color: var(--purple); color: var(--purple); background: rgba(168,85,247,.05); }
+.btn-p:hover { background: rgba(168,85,247,.15); }
+.btn-row { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+#toolbar {
+    background: #0a0e11; border-bottom: 2px solid var(--border);
+    padding: 7px 10px; display: flex; gap: 6px; align-items: center; flex-shrink: 0;
+}
+#modeLabel { margin-left: auto; font-size: 11px; color: var(--accent); letter-spacing: 1px; }
+#mapContainer { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+#mapArea {
+    flex: 1; overflow: auto; position: relative; background: #090c0e;
+    background-image: radial-gradient(circle, #1a1f24 1px, transparent 1px);
+    background-size: 50px 50px;
+}
+#grid { display: grid; position: relative; }
+#connections {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 50; overflow: visible;
+}
+.cell { border: 1px solid #141a1f; position: relative; }
+.room {
+    position: absolute; width: 100%; height: 100%;
+    background: #1a2228; border: 2px solid var(--accent);
+    box-sizing: border-box; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    font-weight: bold; color: var(--bright); z-index: 20;
+    font-size: 10px; cursor: pointer; transition: border-color 0.1s;
+}
+.room:hover { border-color: white; }
+.room.selected { border-color: var(--gold) !important; background: #1e2a1a; }
+.room.startRoom { background: #0a2018; }
+.room-id { font-size: 9px; color: var(--accent); }
+.room-icons { font-size: 11px; }
+/* Enemy entries */
+.enemy-entry {
+    border: 1px solid var(--border); border-radius: 3px;
+    padding: 7px 8px; margin-bottom: 6px; background: #0a0e11;
+}
+.enemy-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.enemy-name { color: var(--bright); font-size: 12px; font-weight: bold; }
+.drop-row {
+    background: #111518; border: 1px solid #222; border-radius: 3px;
+    padding: 4px 8px; margin-top: 4px; display: flex; gap: 6px; align-items: center;
+}
+.drop-row span { font-size: 11px; color: var(--gold); white-space: nowrap; }
+.drop-row select { flex: 1; font-size: 11px; padding: 3px 6px; }
+/* Trap entries */
+.trap-entry {
+    border: 1px solid #3a1515; border-radius: 3px;
+    padding: 8px; margin-bottom: 6px; background: #100a0a;
+}
+.trap-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.trap-name { font-weight: bold; font-size: 12px; }
+.trap-desc { font-size: 10px; color: var(--dim); margin-bottom: 6px; }
+.trap-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.trap-fields label { font-size: 10px; }
+.trap-fields input { padding: 4px 6px; font-size: 11px; }
+.trap-rearm { grid-column: 1/-1; display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+.trap-rearm input { width: auto; }
+.trap-rearm label { display: inline; margin: 0; text-transform: none; font-size: 11px; }
+/* Simulator */
+#simulatorPanel {
+    width: 380px; min-width: 380px; background: #050809;
+    color: #00ff88; display: none; flex-direction: column;
+    border-left: 2px solid #1a3328; font-size: 13px;
+}
+#simHeader {
+    background: #0a1a14; border-bottom: 2px solid #1a3328;
+    padding: 8px 12px; font-size: 11px; letter-spacing: 2px; color: var(--accent);
+    display: flex; justify-content: space-between; align-items: center;
+}
+#terminalOutput { flex: 1; overflow-y: auto; padding: 10px; line-height: 1.7; }
+#terminalOutput::-webkit-scrollbar { width: 4px; }
+#terminalOutput::-webkit-scrollbar-thumb { background: #1a3328; }
+#termInputRow {
+    border-top: 1px solid #1a3328; display: flex; align-items: center;
+    padding: 0 8px; background: #080d0b;
+}
+#termInputRow span { color: var(--accent); margin-right: 6px; }
+#terminalInput {
+    flex: 1; background: transparent; border: none; color: #00ff88;
+    padding: 8px 0; font-family: 'Courier New', monospace; font-size: 13px; outline: none;
+}
+#simControls {
+    display: flex; gap: 8px; padding: 8px 10px;
+    border-top: 1px solid #1a3328; background: #080d0b;
+}
+#simHealthLabel { margin-left: auto; font-size: 11px; color: var(--red); }
+#statusBar {
+    background: #0a0e11; border-top: 1px solid var(--border);
+    padding: 5px 14px; font-size: 11px; color: var(--dim);
+    display: flex; justify-content: space-between;
+}
+#statusMsg { color: var(--accent); }
+.collapsible-content { overflow: hidden; max-height: 9999px; }
+.collapsible-content.collapsed { max-height: 0; }
+.floor-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.floor-tab {
+    padding: 4px 12px; border: 1px solid var(--border); border-radius: 3px;
+    cursor: pointer; font-size: 11px; color: var(--dim); background: #0a0e11; font-family: monospace;
+}
+.floor-tab.active { border-color: var(--accent); color: var(--accent); background: rgba(0,200,150,.05); }
+hr { border-color: var(--border); margin: 8px 0; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div id="sidebar">
+<div id="sidebarHeader">
+    <span style="color:var(--accent);font-size:18px;">⚔</span>
+    <h2>Dungeon Editor</h2>
+    <span id="dirtyDot" style="color:var(--red);display:none;margin-left:auto;font-size:10px;">● UNSAVED</span>
+</div>
+<div id="sidebarScroll">
+
+<div class="section">
+    <div class="section-title" onclick="toggleSec(this)">Dungeon Settings <span>▾</span></div>
+    <div class="section-body collapsible-content">
+        <label>Name</label>
+        <input id="dungeonName" type="text" value="New Dungeon">
+        <label>Description</label>
+        <textarea id="dungeonDesc" rows="2"></textarea>
+    </div>
+</div>
+
+<div class="section">
+    <div class="section-title" onclick="toggleSec(this)">Floors <span>▾</span></div>
+    <div class="section-body collapsible-content">
+        <div class="floor-tabs" id="floorTabs"></div>
+        <div class="btn-row">
+            <button class="btn-a" onclick="addFloor()">+ Floor</button>
+            <button class="btn-d" onclick="deleteCurrentFloor()">× Floor</button>
+        </div>
+    </div>
+</div>
+
+<div class="section" id="inspectorSection" style="display:none;">
+    <div class="section-title" onclick="toggleSec(this)">
+        Room: <span id="inspRoomId">—</span> <span>▾</span>
+    </div>
+    <div class="section-body collapsible-content">
+
+        <label>Name</label>
+        <input id="roomName" type="text" placeholder="Room name...">
+        <label>Description</label>
+        <textarea id="roomDesc" rows="2" placeholder="What the player sees..."></textarea>
+
+        <!-- ENEMIES -->
+        <hr>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <span style="font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;">⚔ Enemies</span>
+            <div style="display:flex;gap:5px;align-items:center;">
+                <select id="enemySelect" style="width:130px;padding:3px 5px;font-size:11px;"></select>
+                <button class="btn-d" onclick="addEnemyToRoom()" style="padding:3px 7px;font-size:11px;">+</button>
+            </div>
+        </div>
+        <div id="enemyList"></div>
+
+        <!-- TRAPS -->
+        <hr>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <span style="font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;">⚠ Traps</span>
+            <div style="display:flex;gap:5px;align-items:center;">
+                <select id="trapTypeSelect" style="width:130px;padding:3px 5px;font-size:11px;">
+                    <option value="spike">🗡 Spike Trap</option>
+                    <option value="poison">☠ Poison Trap</option>
+                    <option value="stone">🪨 Stone Trap</option>
+                    <option value="fire">🔥 Fire Trap</option>
+                    <option value="lightning">⚡ Lightning Trap</option>
+                    <option value="freeze">❄ Freeze Trap</option>
+                    <option value="alarm">🔔 Alarm Trap</option>
+                    <option value="pit">🕳 Pit Trap</option>
+                    <option value="acid">🧪 Acid Trap</option>
+                    <option value="web">🕸 Web Trap</option>
+                    <option value="curse">🌀 Curse Trap</option>
+                </select>
+                <button class="btn-d" onclick="addTrapToRoom()" style="padding:3px 7px;font-size:11px;">+</button>
+            </div>
+        </div>
+        <div id="trapList"></div>
+
+        <!-- LADDER -->
+        <hr>
+        <span style="font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;">🪜 Ladder</span>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px;">
+            <div>
+                <label>Direction</label>
+                <select id="ladderDirection">
+                    <option value="">None</option>
+                    <option value="up">⬆ Up</option>
+                    <option value="down">⬇ Down</option>
+                </select>
+            </div>
+            <div>
+                <label>Target Floor</label>
+                <select id="ladderFloor" onchange="populateLadderRooms()">
+                    <option value="">— floor —</option>
+                </select>
+            </div>
+        </div>
+        <label>Target Room</label>
+        <select id="ladderTargetRoom"><option value="">— room —</option></select>
+
+        <!-- DOORS -->
+        <hr>
+        <span style="font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;">🔒 Locked Doors</span>
+        <div id="doorEditor" style="margin-top:6px;"></div>
+
+        <!-- ACTIONS -->
+        <div class="btn-row" style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px;">
+            <button class="btn-a" onclick="saveRoom()">💾 Save Room</button>
+            <button onclick="setAsStartRoom()">🚩 Set Start</button>
+            <button class="btn-d" onclick="deleteRoom()">× Delete</button>
+        </div>
+    </div>
+</div>
+
+<div class="section">
+    <div class="section-title" onclick="toggleSec(this)">Export / Import <span>▾</span></div>
+    <div class="section-body collapsible-content">
+        <div class="btn-row">
+            <button onclick="validateDungeon()">✓ Validate</button>
+            <button class="btn-g" onclick="exportDungeon()">↓ Export</button>
+            <button onclick="importDungeon()">↑ Import</button>
+        </div>
+    </div>
+</div>
+
+</div>
+<div id="statusBar">
+    <span id="statusMsg">Ready</span>
+    <span id="roomCountLbl">0 rooms</span>
+</div>
+</div>
+
+<!-- MAP -->
+<div id="mapContainer">
+<div id="toolbar">
+    <button class="btn-a" onclick="setMode('add')" id="btn-add">➕ Add</button>
+    <button onclick="setMode('connect')" id="btn-connect">🔗 Connect</button>
+    <button onclick="setMode('edit')" id="btn-edit">✎ Edit</button>
+    <span style="width:1px;background:var(--border);height:20px;margin:0 2px;"></span>
+    <button onclick="undo()" title="Ctrl+Z">↩</button>
+    <button onclick="redo()" title="Ctrl+Y">↪</button>
+    <span style="width:1px;background:var(--border);height:20px;margin:0 2px;"></span>
+    <button class="btn-p" onclick="startSimulation()">▶ Simulate</button>
+    <span id="modeLabel">MODE: ADD</span>
+</div>
+<div id="mapArea">
+    <div style="position:relative;">
+        <svg id="connections"></svg>
+        <div id="grid"></div>
+    </div>
+</div>
+</div>
+
+<!-- SIMULATOR -->
+<div id="simulatorPanel">
+<div id="simHeader">
+    <span>⚔ SIMULATOR</span>
+    <span id="simFloorLbl">Floor 1</span>
+</div>
+<div id="terminalOutput"></div>
+<div id="termInputRow">
+    <span>›</span>
+    <input id="terminalInput" type="text" placeholder="n s e w ne nw se sw  |  u d  |  pick [key]">
+</div>
+<div id="simControls">
+    <button class="btn-a" onclick="startSimulation()">▶ Start</button>
+    <button class="btn-d" onclick="stopSimulation()">■ Stop</button>
+    <span id="simHpLbl">HP: 100/100</span>
+</div>
+</div>
+
+<script src="monsters-expanded.js"></script>
+<script src="monsters.js"></script>
+<script>
+'use strict';
+
+// ── CONFIG ──────────────────────────────────────────────────────
+const GRID = 32, CELL = 50;
+let roomCounter = 0;
+
+const DOOR_TYPES = {
+    bronze:   { color:"#cd7f32", label:"Bronze Key"   },
+    copper:   { color:"#b87333", label:"Copper Key"   },
+    iron:     { color:"#a8a9ad", label:"Iron Key"     },
+    brass:    { color:"#b5a642", label:"Brass Key"    },
+    silver:   { color:"#c0c0c0", label:"Silver Key"   },
+    electrum: { color:"#d4af37", label:"Electrum Key" },
+    ruby:     { color:"#e0455b", label:"Ruby Key"     },
+    topaz:    { color:"#ffa07a", label:"Topaz Key"    },
+    diamond:  { color:"#aef0ff", label:"Diamond Key"  },
+    obsidian: { color:"#9b59b6", label:"Obsidian Key" },
+    bone:     { color:"#e8dcc8", label:"Bone Key"     },
+};
+
+const DROP_ITEMS = {
+    "":            "— no drop —",
+    bronze_key:    "🗝 Bronze Key",
+    copper_key:    "🗝 Copper Key",
+    iron_key:      "🗝 Iron Key",
+    brass_key:     "🗝 Brass Key",
+    silver_key:    "🗝 Silver Key",
+    electrum_key:  "🗝 Electrum Key",
+    ruby_key:      "🗝 Ruby Key",
+    topaz_key:     "🗝 Topaz Key",
+    diamond_key:   "🗝 Diamond Key",
+    obsidian_key:  "🗝 Obsidian Key",
+    bone_key:      "🗝 Bone Key",
+    ancient_map:   "📜 Ancient Map",
+    dungeon_note:  "📄 Dungeon Note",
+    rune_fragment: "✦ Rune Fragment",
+    chest_small:   "📦 Small Chest",
+    chest_large:   "📦 Large Chest",
+};
+
+const TRAP_CONFIG = {
+    spike:     { icon:"🗡", name:"Spike Trap",     color:"#e84a4a", defaultDmg:15, desc:"Spikes burst from floor on entry.",          dotDuration:0  },
+    poison:    { icon:"☠", name:"Poison Trap",    color:"#27ae60", defaultDmg:5,  desc:"Dart fires; poisons for X seconds.",          dotDuration:10 },
+    stone:     { icon:"🪨", name:"Stone Trap",    color:"#95a5a6", defaultDmg:20, desc:"A heavy stone drops on entry.",               dotDuration:0  },
+    fire:      { icon:"🔥", name:"Fire Trap",     color:"#e67e22", defaultDmg:12, desc:"Flames erupt from the floor.",               dotDuration:0  },
+    lightning: { icon:"⚡", name:"Lightning Trap",color:"#f1c40f", defaultDmg:18, desc:"A bolt strikes on entry.",                    dotDuration:0  },
+    freeze:    { icon:"❄", name:"Freeze Trap",   color:"#74b9ff", defaultDmg:8,  desc:"Ice blast slows and deals damage.",           dotDuration:0  },
+    alarm:     { icon:"🔔", name:"Alarm Trap",    color:"#dfe6e9", defaultDmg:0,  desc:"Triggers and summons nearby monsters.",       dotDuration:0  },
+    pit:       { icon:"🕳", name:"Pit Trap",      color:"#636e72", defaultDmg:25, desc:"Floor gives way; fall damage.",               dotDuration:0  },
+    acid:      { icon:"🧪", name:"Acid Trap",     color:"#a8e63d", defaultDmg:10, desc:"Acid spray; corrodes armor and deals damage.", dotDuration:5 },
+    web:       { icon:"🕸", name:"Web Trap",      color:"#b2bec3", defaultDmg:0,  desc:"Sticky web slows movement (stun 2 rounds).",  dotDuration:0  },
+    curse:     { icon:"🌀", name:"Curse Trap",    color:"#a855f7", defaultDmg:0,  desc:"Reduces player stats temporarily.",           dotDuration:0  },
+};
+
+const editorState = { activeFloor:1, mode:'add', selectedRoomId:null, connectBuffer:[] };
+const simulator   = { active:false, floor:1, roomId:null, keys:[], hp:100, maxHp:100 };
+const dungeon     = { name:"New Dungeon", description:"", floors:{ 1:{ startRoom:null, rooms:{} } } };
+const history     = { undoStack:[], redoStack:[], max:100 };
+let hasUnsaved = false, dragData = null;
+
+// ── GRID SETUP ──────────────────────────────────────────────────
+const grid = document.getElementById('grid');
+grid.style.gridTemplateColumns = `repeat(${GRID},${CELL}px)`;
+grid.style.gridTemplateRows    = `repeat(${GRID},${CELL}px)`;
+grid.style.width  = GRID*CELL+'px';
+grid.style.height = GRID*CELL+'px';
+for (let y=0;y<GRID;y++) for (let x=0;x<GRID;x++) {
+    const c = document.createElement('div');
+    c.className='cell'; c.dataset.x=x; c.dataset.y=y;
+    c.onclick=()=>handleCellClick(x,y);
+    grid.appendChild(c);
+}
+
+// ── UI HELPERS ──────────────────────────────────────────────────
+function updateStatus(msg) {
+    document.getElementById('statusMsg').textContent = msg;
+    const fl = dungeon.floors[editorState.activeFloor];
+    document.getElementById('roomCountLbl').textContent = fl ? Object.keys(fl.rooms).length+' rooms' : '0 rooms';
+}
+function markDirty()  { hasUnsaved=true;  document.getElementById('dirtyDot').style.display='inline'; }
+function markClean()  { hasUnsaved=false; document.getElementById('dirtyDot').style.display='none'; }
+function toggleSec(el){ const c=el.nextElementSibling; c.classList.toggle('collapsed'); el.querySelector('span:last-child').textContent=c.classList.contains('collapsed')?'▸':'▾'; }
+
+// ── FLOORS ──────────────────────────────────────────────────────
+function updateFloorTabs() {
+    const tabs = document.getElementById('floorTabs');
+    tabs.innerHTML='';
+    for (const f in dungeon.floors) {
+        const btn=document.createElement('button');
+        btn.className='floor-tab'+(parseInt(f)===editorState.activeFloor?' active':'');
+        btn.textContent='F'+f; btn.onclick=()=>switchFloor(parseInt(f));
+        tabs.appendChild(btn);
+    }
+    populateLadderFloors();
+}
+function switchFloor(f) {
+    editorState.activeFloor=f; editorState.selectedRoomId=null;
+    document.getElementById('inspectorSection').style.display='none';
+    updateFloorTabs(); render();
+}
+function addFloor() {
+    const n=Object.keys(dungeon.floors).length+1;
+    dungeon.floors[n]={startRoom:null,rooms:{}};
+    updateFloorTabs(); markDirty(); updateStatus('Floor '+n+' added.');
+}
+function deleteCurrentFloor() {
+    const f=editorState.activeFloor;
+    if (Object.keys(dungeon.floors).length<=1){updateStatus("Can't delete last floor.");return;}
+    if (!confirm('Delete Floor '+f+' and all rooms?')) return;
+    delete dungeon.floors[f];
+    editorState.activeFloor=parseInt(Object.keys(dungeon.floors)[0]);
+    updateFloorTabs(); render(); markDirty(); updateStatus('Floor '+f+' deleted.');
+}
+
+// ── ROOM MANAGEMENT ──────────────────────────────────────────────
+function handleCellClick(x,y) {
+    const floor=dungeon.floors[editorState.activeFloor];
+    const entry=Object.entries(floor.rooms).find(([,r])=>r.map.x===x&&r.map.y===y);
+    if (entry) {
+        const [id]=entry;
+        if (editorState.mode==='edit'||editorState.mode==='select') selectRoomForEdit(id);
+        else if (editorState.mode==='connect') selectRoomForConnect(id);
+        else updateStatus('Cell occupied. Use Edit mode.');
+    } else if (editorState.mode==='add') {
+        addRoom(x,y);
+    }
+}
+
+function addRoom(x,y) {
+    const floor=dungeon.floors[editorState.activeFloor];
+    if (Object.values(floor.rooms).some(r=>r.map.x===x&&r.map.y===y)){updateStatus('Cell occupied.');return;}
+    pushHistory();
+    const id='R'+(++roomCounter);
+    floor.rooms[id]={name:'',description:'',map:{x,y},exits:{},contents:{},flags:{discovered:false}};
+    if (!floor.startRoom) floor.startRoom=id;
+    markDirty(); render(); selectRoomForEdit(id); updateStatus(id+' created.');
+}
+
+function deleteRoom() {
+    const floor=dungeon.floors[editorState.activeFloor];
+    const id=editorState.selectedRoomId;
+    if (!id||!floor.rooms[id]){updateStatus('No room selected.');return;}
+    pushHistory();
+    for (const rid in floor.rooms){ const ex=floor.rooms[rid].exits; for (const d in ex) if(ex[d]===id) delete ex[d]; }
+    delete floor.rooms[id];
+    if (floor.startRoom===id){ const rem=Object.keys(floor.rooms); floor.startRoom=rem.length?rem[0]:null; }
+    editorState.selectedRoomId=null;
+    document.getElementById('inspectorSection').style.display='none';
+    markDirty(); render(); updateStatus(id+' deleted.');
+}
+
+function setAsStartRoom() {
+    const id=editorState.selectedRoomId; if(!id) return;
+    dungeon.floors[editorState.activeFloor].startRoom=id;
+    markDirty(); render(); updateStatus(id+' set as start room.');
+}
+
+function selectRoomForEdit(id) {
+    editorState.selectedRoomId=id;
+    const r=dungeon.floors[editorState.activeFloor].rooms[id];
+    document.getElementById('inspectorSection').style.display='block';
+    document.getElementById('inspRoomId').textContent=id;
+    document.getElementById('roomName').value=r.name||'';
+    document.getElementById('roomDesc').value=r.description||'';
+    loadEnemies(r); loadTraps(r); loadDoors(r); loadLadder(r);
+    document.querySelectorAll('.room').forEach(el=>el.classList.remove('selected'));
+    const el=document.querySelector(`.room[data-room-id="${id}"]`);
+    if(el) el.classList.add('selected');
+    updateStatus('Editing '+id);
+}
+
+// ── ENEMIES ──────────────────────────────────────────────────────
+function populateEnemyDropdown() {
+    const sel=document.getElementById('enemySelect'); sel.innerHTML='';
+    if (typeof ENEMIES==='undefined') return;
+    for (const k in ENEMIES){ const o=document.createElement('option'); o.value=k; o.textContent=ENEMIES[k].name||k; sel.appendChild(o); }
+}
+
+function addEnemyToRoom() {
+    if(!editorState.selectedRoomId) return;
+    const key=document.getElementById('enemySelect').value; if(!key) return;
+    const r=dungeon.floors[editorState.activeFloor].rooms[editorState.selectedRoomId];
+    if(!r.contents.enemies) r.contents.enemies=[];
+    r.contents.enemies.push({key, drop:""});
+    loadEnemies(r);
+}
+
+function loadEnemies(r) {
+    const list=document.getElementById('enemyList');
+    list.innerHTML='';
+    const enemies=r.contents?.enemies||[];
+    if(!enemies.length){
+        list.innerHTML='<div style="font-size:11px;color:var(--dim);padding:3px 0;">No enemies.</div>';
+        return;
+    }
+    enemies.forEach((entry,idx)=>{
+        const key = typeof entry==='string'?entry:entry.key;
+        const drop= typeof entry==='string'?'':entry.drop||'';
+        const name=(typeof ENEMIES!=='undefined'&&ENEMIES[key])?ENEMIES[key].name:key;
+
+        const div=document.createElement('div'); div.className='enemy-entry';
+
+        // Header
+        const hdr=document.createElement('div'); hdr.className='enemy-header';
+        const nm=document.createElement('span'); nm.className='enemy-name'; nm.innerHTML='👹 '+name;
+        const rm=document.createElement('button'); rm.className='btn-d'; rm.textContent='× Remove';
+        rm.style.cssText='padding:2px 7px;font-size:10px;';
+        rm.onclick=()=>{ enemies.splice(idx,1); loadEnemies(r); };
+        hdr.appendChild(nm); hdr.appendChild(rm); div.appendChild(hdr);
+
+        // Drop row
+        const dr=document.createElement('div'); dr.className='drop-row';
+        const lbl=document.createElement('span'); lbl.textContent='⬡ Drop:';
+        const dsel=document.createElement('select');
+        for (const k in DROP_ITEMS){ const o=document.createElement('option'); o.value=k; o.textContent=DROP_ITEMS[k]; if(k===drop) o.selected=true; dsel.appendChild(o); }
+        dsel.onchange=()=>{ const e=r.contents.enemies[idx]; if(typeof e==='object') e.drop=dsel.value; else r.contents.enemies[idx]={key,drop:dsel.value}; };
+        dr.appendChild(lbl); dr.appendChild(dsel); div.appendChild(dr);
+        list.appendChild(div);
+    });
+}
+
+// ── TRAPS ──────────────────────────────────────────────────────
+function addTrapToRoom() {
+    if(!editorState.selectedRoomId) return;
+    const type=document.getElementById('trapTypeSelect').value;
+    const r=dungeon.floors[editorState.activeFloor].rooms[editorState.selectedRoomId];
+    if(!r.contents.traps) r.contents.traps=[];
+    const cfg=TRAP_CONFIG[type]||{defaultDmg:10, dotDuration:0};
+    r.contents.traps.push({ type, damage:cfg.defaultDmg, duration:cfg.dotDuration, resetOnLeave:true, triggered:false });
+    loadTraps(r);
+}
+
+function loadTraps(r) {
+    const list=document.getElementById('trapList');
+    list.innerHTML='';
+    const traps=r.contents?.traps||[];
+    if(!traps.length){
+        list.innerHTML='<div style="font-size:11px;color:var(--dim);padding:3px 0;">No traps.</div>';
+        return;
+    }
+    traps.forEach((trap,idx)=>{
+        const cfg=TRAP_CONFIG[trap.type]||{icon:'?',name:trap.type,color:'#888',desc:'',dotDuration:0};
+        const div=document.createElement('div'); div.className='trap-entry';
+
+        // Header
+        const hdr=document.createElement('div'); hdr.className='trap-header';
+        const nm=document.createElement('span'); nm.className='trap-name'; nm.style.color=cfg.color; nm.textContent=cfg.icon+' '+cfg.name;
+        const rm=document.createElement('button'); rm.className='btn-d'; rm.textContent='× Remove';
+        rm.style.cssText='padding:2px 7px;font-size:10px;';
+        rm.onclick=()=>{ traps.splice(idx,1); loadTraps(r); };
+        hdr.appendChild(nm); hdr.appendChild(rm); div.appendChild(hdr);
+
+        const desc=document.createElement('div'); desc.className='trap-desc'; desc.textContent=cfg.desc; div.appendChild(desc);
+
+        const fields=document.createElement('div'); fields.className='trap-fields';
+
+        // Damage field
+        const dl=document.createElement('label'); dl.textContent='Damage';
+        const di=document.createElement('input'); di.type='number'; di.min='0'; di.max='999';
+        di.value=trap.damage||0; di.oninput=()=>{ trap.damage=parseInt(di.value)||0; };
+
+        // Duration / repeat
+        const xl=document.createElement('label');
+        const xi=document.createElement('input'); xi.type='number'; xi.min='0'; xi.max='120';
+        if (cfg.dotDuration>0) {
+            xl.textContent='Duration (sec)'; xi.value=trap.duration||cfg.dotDuration;
+            xi.oninput=()=>{ trap.duration=parseInt(xi.value)||0; };
+        } else {
+            xl.textContent='Repeat (0=once)'; xi.value=trap.repeatCount||0;
+            xi.oninput=()=>{ trap.repeatCount=parseInt(xi.value)||0; };
+        }
+
+        // Re-arm toggle
+        const ra=document.createElement('div'); ra.className='trap-rearm';
+        const rc=document.createElement('input'); rc.type='checkbox'; rc.style.width='auto';
+        rc.checked=trap.resetOnLeave!==false; rc.onchange=()=>{ trap.resetOnLeave=rc.checked; };
+        const rl=document.createElement('label'); rl.textContent='Re-arm when player leaves room';
+        ra.appendChild(rc); ra.appendChild(rl);
+
+        fields.appendChild(dl); fields.appendChild(di);
+        fields.appendChild(xl); fields.appendChild(xi);
+        fields.appendChild(ra);
+        div.appendChild(fields);
+        list.appendChild(div);
+    });
+}
+
+// ── LADDER ──────────────────────────────────────────────────────
+function populateLadderFloors() {
+    const sel=document.getElementById('ladderFloor'); const cur=sel.value;
+    sel.innerHTML='<option value="">— floor —</option>';
+    for (const f in dungeon.floors){
+        if(parseInt(f)===editorState.activeFloor) continue;
+        const o=document.createElement('option'); o.value=f; o.textContent='Floor '+f;
+        sel.appendChild(o);
+    }
+    if(cur) sel.value=cur;
+}
+
+function populateLadderRooms() {
+    const fk=document.getElementById('ladderFloor').value;
+    const sel=document.getElementById('ladderTargetRoom'); const cur=sel.value;
+    sel.innerHTML='<option value="">— room —</option>';
+    if(!fk||!dungeon.floors[fk]) return;
+    for (const id in dungeon.floors[fk].rooms){ const o=document.createElement('option'); o.value=id; o.textContent=id; sel.appendChild(o); }
+    if(cur) sel.value=cur;
+}
+
+function loadLadder(r) {
+    const ds=document.getElementById('ladderDirection');
+    const fs=document.getElementById('ladderFloor');
+    const rs=document.getElementById('ladderTargetRoom');
+    if(r.contents?.ladder){
+        ds.value=r.contents.ladder.direction||'';
+        fs.value=String(r.contents.ladder.leadsTo?.floor||'');
+        populateLadderRooms();
+        rs.value=r.contents.ladder.leadsTo?.room||'';
+    } else { ds.value=''; fs.value=''; rs.innerHTML='<option value="">— room —</option>'; }
+}
+
+// ── DOORS ──────────────────────────────────────────────────────
+function loadDoors(r) {
+    const con=document.getElementById('doorEditor'); con.innerHTML='';
+    const exits=r.exits||{};
+    const DNAMES={n:'North',ne:'NE',e:'East',se:'SE',s:'South',sw:'SW',w:'West',nw:'NW'};
+    const keys=Object.keys(exits);
+    if(!keys.length){ con.innerHTML='<div style="font-size:11px;color:var(--dim);">Connect exits first.</div>'; return; }
+    keys.forEach(dir=>{
+        const wrap=document.createElement('div'); wrap.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:5px;';
+        const lbl=document.createElement('span'); lbl.style.cssText='font-size:11px;color:var(--dim);width:52px;'; lbl.textContent=(DNAMES[dir]||dir.toUpperCase())+':';
+        const sel=document.createElement('select'); sel.dataset.dir=dir; sel.style.cssText='flex:1;padding:4px 6px;font-size:11px;';
+        const emp=document.createElement('option'); emp.value=''; emp.textContent='— none —'; sel.appendChild(emp);
+        for (const t in DOOR_TYPES){ const o=document.createElement('option'); o.value=t; o.textContent=DOOR_TYPES[t].label; o.style.color=DOOR_TYPES[t].color; sel.appendChild(o); }
+        const ex=r.contents?.doors?.[dir]; if(ex) sel.value=ex.type;
+        wrap.appendChild(lbl); wrap.appendChild(sel); con.appendChild(wrap);
+    });
+}
+
+// ── SAVE ROOM ──────────────────────────────────────────────────
+function saveRoom() {
+    const id=editorState.selectedRoomId; if(!id) return;
+    pushHistory();
+    const r=dungeon.floors[editorState.activeFloor].rooms[id];
+    r.name       =document.getElementById('roomName').value;
+    r.description=document.getElementById('roomDesc').value;
+    if(!r.contents) r.contents={};
+
+    // Ladder
+    const ld=document.getElementById('ladderDirection').value;
+    const lf=document.getElementById('ladderFloor').value;
+    const lr=document.getElementById('ladderTargetRoom').value;
+    if(ld&&lf&&lr){ r.contents.ladder={direction:ld,leadsTo:{floor:parseInt(lf),room:lr}}; }
+    else delete r.contents.ladder;
+
+    // Doors
+    const sels=document.querySelectorAll('#doorEditor select');
+    let doors={};
+    sels.forEach(s=>{ if(s.value) doors[s.dataset.dir]={type:s.value,locked:true}; });
+    if(Object.keys(doors).length) r.contents.doors=doors; else delete r.contents.doors;
+
+    // Clean empty
+    if(r.contents.enemies&&!r.contents.enemies.length) delete r.contents.enemies;
+    if(r.contents.traps&&!r.contents.traps.length)     delete r.contents.traps;
+
+    markDirty(); render(); selectRoomForEdit(id); updateStatus(id+' saved.');
+}
+
+// ── CONNECT ──────────────────────────────────────────────────────
+function selectRoomForConnect(id) {
+    if(!editorState.connectBuffer.length){
+        editorState.connectBuffer.push(id);
+        const el=document.querySelector(`.room[data-room-id="${id}"]`); if(el) el.style.borderColor='var(--purple)';
+        updateStatus('Select second room.'); return;
+    }
+    const first=editorState.connectBuffer[0];
+    if(first!==id) connectRooms(first,id);
+    editorState.connectBuffer=[]; render();
+}
+
+function connectRooms(aId,bId) {
+    const rooms=dungeon.floors[editorState.activeFloor].rooms;
+    const a=rooms[aId],b=rooms[bId]; if(!a||!b) return;
+    const dir=getDir(b.map.x-a.map.x,b.map.y-a.map.y);
+    if(!dir){updateStatus('Must be adjacent.');return;}
+    pushHistory();
+    a.exits[dir]=bId; b.exits[getOpp(dir)]=aId;
+    markDirty(); render(); updateStatus(aId+' ↔ '+bId);
+}
+
+function getDir(dx,dy){
+    if(dx===1&&dy===0) return 'e'; if(dx===-1&&dy===0) return 'w';
+    if(dx===0&&dy===1) return 's'; if(dx===0&&dy===-1) return 'n';
+    if(dx===1&&dy===-1) return 'ne'; if(dx===-1&&dy===-1) return 'nw';
+    if(dx===1&&dy===1) return 'se'; if(dx===-1&&dy===1) return 'sw';
+    return null;
+}
+function getOpp(d){ return{n:'s',s:'n',e:'w',w:'e',ne:'sw',sw:'ne',nw:'se',se:'nw'}[d]; }
+
+// ── RENDER ──────────────────────────────────────────────────────
+function render() {
+    document.querySelectorAll('.room').forEach(r=>r.remove());
+    const floor=dungeon.floors[editorState.activeFloor];
+    if(!floor) return;
+    const rooms=floor.rooms;
+    for (const id in rooms){
+        const r=rooms[id];
+        const cell=document.querySelector(`.cell[data-x='${r.map.x}'][data-y='${r.map.y}']`);
+        if(!cell) continue;
+        const div=document.createElement('div'); div.className='room';
+        if(id===floor.startRoom) div.classList.add('startRoom');
+        if(id===editorState.selectedRoomId) div.classList.add('selected');
+        div.dataset.roomId=id;
+        const icons=getRoomIcons(r);
+        div.innerHTML=`<div class="room-id">${id}</div>${icons?`<div class="room-icons">${icons}</div>`:''}`;
+        renderDoorSymbols(r,div);
+        div.onmousedown=e=>startDrag(e,id);
+        div.onclick=e=>{ e.stopPropagation();
+            if(editorState.mode==='edit') selectRoomForEdit(id);
+            else if(editorState.mode==='connect') selectRoomForConnect(id);
+        };
+        cell.appendChild(div);
+    }
+    drawConnections();
+    updateStatus(document.getElementById('statusMsg').textContent);
+}
+
+function getRoomIcons(r) {
+    let ic=[];
+    if(r.contents?.enemies?.length)  ic.push('👹');
+    if(r.contents?.traps?.length)    ic.push('⚠');
+    if(r.contents?.doors)            ic.push('🔒');
+    if(r.contents?.ladder)           ic.push(r.contents.ladder.direction==='up'?'⬆':'⬇');
+    if(r.flags?.townExit==='town1')  ic.push('🏘');
+    if(r.flags?.townExit==='town2')  ic.push('🌋');
+    return ic.join('');
+}
+
+function renderDoorSymbols(room,div) {
+    if(!room.contents?.doors) return;
+    const POS={n:{top:'-9px',left:'50%',transform:'translateX(-50%)'},s:{bottom:'-9px',left:'50%',transform:'translateX(-50%)'},e:{right:'-9px',top:'50%',transform:'translateY(-50%)'},w:{left:'-9px',top:'50%',transform:'translateY(-50%)'},ne:{top:'-9px',right:'-9px'},nw:{top:'-9px',left:'-9px'},se:{bottom:'-9px',right:'-9px'},sw:{bottom:'-9px',left:'-9px'}};
+    for (const dir in room.contents.doors){
+        const cfg=DOOR_TYPES[room.contents.doors[dir].type]; if(!cfg) continue;
+        const s=document.createElement('div'); s.textContent='#';
+        s.style.cssText=`position:absolute;color:${cfg.color};font-weight:bold;font-size:12px;z-index:30;line-height:1;`;
+        Object.assign(s.style,POS[dir]||{}); div.appendChild(s);
+    }
+}
+
+function drawConnections() {
+    const svg=document.getElementById('connections'); svg.innerHTML='';
+    const floor=dungeon.floors[editorState.activeFloor]; if(!floor) return;
+    const rooms=floor.rooms;
+    const gr=grid.getBoundingClientRect();
+    const drawn=new Set();
+    for (const id in rooms){
+        const fr=rooms[id];
+        const fe=document.querySelector(`.room[data-room-id="${id}"]`); if(!fe) continue;
+        const fr2=fe.getBoundingClientRect();
+        const x1=fr2.left+fr2.width/2-gr.left, y1=fr2.top+fr2.height/2-gr.top;
+        for (const dir in fr.exits){
+            const toId=fr.exits[dir];
+            const pk=[id,toId].sort().join(':'); if(drawn.has(pk)) continue; drawn.add(pk);
+            const te=document.querySelector(`.room[data-room-id="${toId}"]`); if(!te) continue;
+            const tr=te.getBoundingClientRect();
+            const x2=tr.left+tr.width/2-gr.left, y2=tr.top+tr.height/2-gr.top;
+            const ln=document.createElementNS('http://www.w3.org/2000/svg','line');
+            ln.setAttribute('x1',x1); ln.setAttribute('y1',y1); ln.setAttribute('x2',x2); ln.setAttribute('y2',y2);
+            ln.setAttribute('stroke','#00c896'); ln.setAttribute('stroke-width','1.5'); ln.setAttribute('stroke-opacity','0.5');
+            svg.appendChild(ln);
+        }
+    }
+    // Ladder badges (yellow/blue dots)
+    for (const id in rooms){
+        const r=rooms[id]; if(!r.contents?.ladder) continue;
+        const el=document.querySelector(`.room[data-room-id="${id}"]`); if(!el) continue;
+        const rc=el.getBoundingClientRect();
+        const cx=rc.left+rc.width/2-gr.left, cy=rc.top+rc.height/2-gr.top;
+        const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+        c.setAttribute('cx',cx); c.setAttribute('cy',cy-18); c.setAttribute('r','6');
+        c.setAttribute('fill',r.contents.ladder.direction==='up'?'#e8b84a':'#4a8ee8'); c.setAttribute('fill-opacity','0.8');
+        svg.appendChild(c);
+    }
+}
+
+// ── DRAG ──────────────────────────────────────────────────────
+function startDrag(e,id){
+    if(editorState.mode!=='edit') return; e.preventDefault();
+    dragData={id}; document.addEventListener('mousemove',onDrag); document.addEventListener('mouseup',stopDrag);
+}
+function onDrag(e){
+    if(!dragData) return;
+    const rect=grid.getBoundingClientRect();
+    const x=Math.floor((e.clientX-rect.left)/CELL), y=Math.floor((e.clientY-rect.top)/CELL);
+    if(x<0||y<0||x>=GRID||y>=GRID) return;
+    const floor=dungeon.floors[editorState.activeFloor];
+    if(Object.entries(floor.rooms).some(([rid,r])=>rid!==dragData.id&&r.map.x===x&&r.map.y===y)) return;
+    floor.rooms[dragData.id].map={x,y}; render();
+}
+function stopDrag(){ if(dragData){pushHistory();markDirty();} dragData=null; document.removeEventListener('mousemove',onDrag); document.removeEventListener('mouseup',stopDrag); }
+
+// ── MODE ──────────────────────────────────────────────────────
+function setMode(m){
+    editorState.mode=m; editorState.connectBuffer=[];
+    document.getElementById('modeLabel').textContent='MODE: '+m.toUpperCase();
+    ['add','connect','edit'].forEach(n=>{ const b=document.getElementById('btn-'+n); if(b) b.className=b.className.replace(' btn-a',''); });
+    const ab=document.getElementById('btn-'+m); if(ab&&!ab.className.includes('btn-a')) ab.className+=' btn-a';
+    updateStatus('Mode: '+m); render();
+}
+
+// ── HISTORY ──────────────────────────────────────────────────────
+function pushHistory(){ history.undoStack.push(JSON.stringify(dungeon)); if(history.undoStack.length>history.max) history.undoStack.shift(); history.redoStack=[]; }
+function undo(){ if(!history.undoStack.length){updateStatus('Nothing to undo.');return;} history.redoStack.push(JSON.stringify(dungeon)); replaceDungeon(JSON.parse(history.undoStack.pop())); render(); updateFloorTabs(); updateStatus('Undo'); }
+function redo(){ if(!history.redoStack.length){updateStatus('Nothing to redo.');return;} history.undoStack.push(JSON.stringify(dungeon)); replaceDungeon(JSON.parse(history.redoStack.pop())); render(); updateFloorTabs(); updateStatus('Redo'); }
+function replaceDungeon(d){ for(const k in dungeon) delete dungeon[k]; for(const k in d) dungeon[k]=d[k]; }
+
+// ── VALIDATE / EXPORT / IMPORT ──────────────────────────────────
+function validateDungeon(){
+    const errs=[];
+    for(const f in dungeon.floors){
+        const fl=dungeon.floors[f]; if(!fl.startRoom) errs.push('Floor '+f+': no startRoom');
+        for(const rid in fl.rooms){ const r=fl.rooms[rid]; for(const d in r.exits){ const t=r.exits[d]; if(!fl.rooms[t]) errs.push('F'+f+' '+rid+': exit '+d+' → missing '+t); } }
+    }
+    if(errs.length){ updateStatus('⚠ '+errs[0]); alert('Validation Errors:\n'+errs.join('\n')); }
+    else updateStatus('✓ Validation passed!');
+    return !errs.length;
+}
+
+function exportDungeon(){
+    dungeon.name       =document.getElementById('dungeonName').value||'NewDungeon';
+    dungeon.description=document.getElementById('dungeonDesc').value||'';
+    validateDungeon();
+    const clean=JSON.parse(JSON.stringify(dungeon));
+    const key=dungeon.name.replace(/\s+/g,'');
+    const txt=`window.DUNGEONS = window.DUNGEONS || {};\nwindow.DUNGEONS.${key} = ${JSON.stringify(clean,null,2)};`;
+    const blob=new Blob([txt],{type:'text/javascript'}); const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=key+'.js'; a.click(); URL.revokeObjectURL(url);
+    markClean(); updateStatus('Exported '+key+'.js');
+}
+
+function importDungeon(){
+    const inp=document.createElement('input'); inp.type='file'; inp.accept='.js,.json';
+    inp.onchange=e=>{
+        const f=e.target.files[0]; if(!f) return;
+        const reader=new FileReader();
+        reader.onload=ev=>{
+            let text=ev.target.result;
+            try {
+                if(text.includes('window.DUNGEONS')){ const m=text.match(/=\s*(\{[\s\S]*\});?\s*$/); if(m) text=m[1]; }
+                const data=JSON.parse(text);
+                let maxR=0;
+                for(const fl in data.floors) for(const id in data.floors[fl].rooms){ const n=parseInt(id.replace('R','')); if(!isNaN(n)&&n>maxR) maxR=n; }
+                roomCounter=maxR;
+                replaceDungeon(data);
+                document.getElementById('dungeonName').value=dungeon.name||'';
+                document.getElementById('dungeonDesc').value=dungeon.description||'';
+                editorState.activeFloor=parseInt(Object.keys(dungeon.floors)[0])||1;
+                editorState.selectedRoomId=null;
+                document.getElementById('inspectorSection').style.display='none';
+                updateFloorTabs(); render(); markClean(); updateStatus('Dungeon imported.');
+            } catch(err){ alert('Import failed: '+err.message); console.error(err); }
+        };
+        reader.readAsText(f);
+    };
+    inp.click();
+}
+
+// ── SIMULATOR ──────────────────────────────────────────────────
+document.getElementById('terminalInput').addEventListener('keydown',function(e){
+    if(e.key!=='Enter'||!simulator.active) return;
+    const inp=this.value.trim().toLowerCase(); this.value=''; handleSimCmd(inp);
+});
+
+function termPrint(html,color){
+    const out=document.getElementById('terminalOutput');
+    const d=document.createElement('div'); d.innerHTML=html;
+    if(color) d.style.color=color; out.appendChild(d); out.scrollTop=out.scrollHeight;
+}
+function termClear(){ document.getElementById('terminalOutput').innerHTML=''; }
+function updateSimHp(){ document.getElementById('simHpLbl').textContent=`HP: ${simulator.hp}/${simulator.maxHp}`; }
+
+function startSimulation(){
+    const floor=dungeon.floors[editorState.activeFloor];
+    if(!floor?.startRoom){alert('No start room set.');return;}
+    simulator.active=true; simulator.floor=editorState.activeFloor;
+    simulator.roomId=floor.startRoom; simulator.keys=[]; simulator.hp=simulator.maxHp;
+    document.getElementById('simulatorPanel').style.display='flex';
+    termClear();
+    termPrint('═══════════════════════════════','var(--accent)');
+    termPrint('  DUNGEON SIMULATION','var(--accent)');
+    termPrint('  n/s/e/w/ne/nw/se/sw  move','var(--dim)');
+    termPrint('  u / d               ladder','var(--dim)');
+    termPrint('  pick [key_name]     pick up drop','var(--dim)');
+    termPrint('═══════════════════════════════','var(--accent)');
+    updateSimHp(); document.getElementById('simFloorLbl').textContent='Floor '+simulator.floor;
+    enterSimRoom();
+}
+function stopSimulation(){ simulator.active=false; document.getElementById('simulatorPanel').style.display='none'; }
+
+function enterSimRoom(){
+    const room=dungeon.floors[simulator.floor]?.rooms?.[simulator.roomId];
+    if(!room){termPrint('ERROR: Room not found!','var(--red)');return;}
+
+    termPrint('');
+    termPrint(`<strong style="color:var(--accent)">[ ${simulator.roomId} ]</strong> ${room.name||'(Unnamed)'}`);
+    if(room.description) termPrint(room.description,'var(--dim)');
+
+    // Enemies
+    (room.contents?.enemies||[]).forEach(e=>{
+        const key=typeof e==='string'?e:e.key;
+        const drop=typeof e==='string'?null:e.drop;
+        const name=(typeof ENEMIES!=='undefined'&&ENEMIES[key])?ENEMIES[key].name:key;
+        let line=`👹 <span style="color:var(--red)">${name}</span>`;
+        if(drop) line+=` <span style="color:var(--gold)"> [drops: ${DROP_ITEMS[drop]||drop}]</span>`;
+        termPrint(line);
+    });
+
+    // Traps
+    (room.contents?.traps||[]).forEach(trap=>{
+        const cfg=TRAP_CONFIG[trap.type]||{icon:'?',name:trap.type,color:'#e88',desc:''};
+        if(!trap.triggered||trap.resetOnLeave){
+            termPrint(`${cfg.icon} <span style="color:${cfg.color}">TRAP: ${cfg.name}</span>`);
+            if(trap.damage>0){
+                simulator.hp=Math.max(0,simulator.hp-trap.damage);
+                termPrint(`  ⚠ You take <span style="color:var(--red)">${trap.damage} damage</span>!`);
+                if(cfg.dotDuration>0) termPrint(`  ☠ Effect lasts ${trap.duration||cfg.dotDuration}s...`,cfg.color);
+                trap.triggered=true; updateSimHp();
+            }
+            if(trap.type==='alarm') termPrint('  🔔 ALARM TRIGGERED — Monsters alerted!','#dfe6e9');
+            if(trap.type==='web')   termPrint('  🕸 You are slowed (2 rounds)!','#b2bec3');
+            if(trap.type==='curse') termPrint('  🌀 You feel a dark curse!','#a855f7');
+            if(!trap.damage&&trap.type!=='alarm'&&trap.type!=='web'&&trap.type!=='curse')
+                termPrint(`  Effect: ${cfg.desc}`,'var(--dim)');
+        }
+    });
+
+    if(simulator.hp<=0){
+        termPrint(''); termPrint('💀 YOU HAVE DIED.','var(--red)');
+        simulator.hp=simulator.maxHp; updateSimHp();
+        simulator.roomId=dungeon.floors[simulator.floor].startRoom;
+        termPrint('Respawning at start room...','var(--dim)');
+        enterSimRoom(); return;
+    }
+
+    // Doors
+    const doors=room.contents?.doors||{};
+    for(const dir in doors){
+        const d=doors[dir]; const cfg=DOOR_TYPES[d.type];
+        termPrint(`🔒 ${dir.toUpperCase()}: <span style="color:${cfg?.color||'#aaa'}">${cfg?.label||d.type}</span> door locked`);
+    }
+
+    // Ladder
+    if(room.contents?.ladder){
+        const lad=room.contents.ladder;
+        const ico=lad.direction==='up'?'⬆':'⬇';
+        termPrint(`🪜 Ladder ${ico} → Floor ${lad.leadsTo.floor} (${lad.leadsTo.room})`,'#e8b84a');
+    }
+
+    // Town exit
+    if(room.flags?.townExit){
+        const lbl=room.flags.townExitLabel||'Exit to '+room.flags.townExit;
+        termPrint(`🌀 <span style="color:#a855f7">${lbl}</span>`);
+    }
+
+    // Keys
+    if(simulator.keys.length) termPrint(`🗝 Keys held: ${simulator.keys.join(', ')}`,'#e8b84a');
+
+    // Exits
+    let exits=Object.keys(room.exits||[]);
+    if(room.contents?.ladder) exits.push(room.contents.ladder.direction==='up'?'u':'d');
+    termPrint(`Exits: <strong>${exits.length?exits.join(', '):'none'}</strong>`,'var(--dim)');
+    document.getElementById('simFloorLbl').textContent='Floor '+simulator.floor;
+}
+
+function handleSimCmd(cmd){
+    const room=dungeon.floors[simulator.floor]?.rooms?.[simulator.roomId]; if(!room) return;
+
+    // pick command
+    if(cmd.startsWith('pick')){
+        const item=cmd.split(' ').slice(1).join('_');
+        if(!item){termPrint('pick what? e.g. "pick iron_key"','var(--dim)');return;}
+        let found=false;
+        for(const e of (room.contents?.enemies||[])){
+            const drop=typeof e==='string'?null:e.drop;
+            if(drop&&(drop===item||drop===item+'_key')){
+                if(!simulator.keys.includes(drop)){
+                    simulator.keys.push(drop);
+                    termPrint(`🗝 Picked up <span style="color:var(--gold)">${DROP_ITEMS[drop]||drop}</span>!`);
+                } else termPrint('You already have that.','var(--dim)');
+                found=true; break;
+            }
+        }
+        if(!found) termPrint(`No "${item}" to pick up here.`,'var(--dim)');
+        return;
+    }
+
+    // Ladder (u/d)
+    if(cmd==='u'||cmd==='up'||cmd==='d'||cmd==='down'){
+        const dir=(cmd==='u'||cmd==='up')?'up':'down';
+        if(!room.contents?.ladder){termPrint('No ladder here.','var(--dim)');return;}
+        if(room.contents.ladder.direction!==dir){termPrint('Ladder goes '+room.contents.ladder.direction+'.','var(--dim)');return;}
+        rearmTraps(room);
+        const lad=room.contents.ladder;
+        simulator.floor=parseInt(lad.leadsTo.floor); simulator.roomId=lad.leadsTo.room;
+        termPrint(`🪜 You ${dir==='up'?'climb up':'descend'} the ladder...`,'#e8b84a');
+        enterSimRoom(); return;
+    }
+
+    // Directional
+    const target=room.exits?.[cmd];
+    if(target){
+        const door=room.contents?.doors?.[cmd];
+        if(door?.locked){
+            const haveKey=simulator.keys.includes(door.type+'_key')||simulator.keys.includes(door.type);
+            if(!haveKey){const cfg=DOOR_TYPES[door.type]; termPrint(`🔒 ${cfg?.label||door.type} door is locked.`,'var(--red)');return;}
+            termPrint(`🔓 Unlocked with ${door.type} key.`,'#e8b84a');
+        }
+        rearmTraps(room);
+        simulator.roomId=target; enterSimRoom(); return;
+    }
+
+    termPrint(`No exit "${cmd}".`,'var(--dim)');
+}
+
+function rearmTraps(room){ (room.contents?.traps||[]).forEach(t=>{ if(t.resetOnLeave) t.triggered=false; }); }
+
+// ── KEYBOARD ──────────────────────────────────────────────────────
+document.addEventListener('keydown',function(e){
+    if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
+    if(e.ctrlKey&&e.key==='z'){e.preventDefault();undo();return;}
+    if(e.ctrlKey&&e.key==='y'){e.preventDefault();redo();return;}
+    if(e.ctrlKey&&e.key==='s'){e.preventDefault();exportDungeon();return;}
+    if(e.key==='Escape'){editorState.connectBuffer=[];render();updateStatus('Cancelled.');}
+    if(!e.ctrlKey&&!e.altKey&&!e.shiftKey){
+        if(e.key==='a') setMode('add');
+        if(e.key==='c') setMode('connect');
+        if(e.key==='e') setMode('edit');
+    }
+});
+
+window.addEventListener('beforeunload',function(e){
+    if(!hasUnsaved) return; e.preventDefault(); e.returnValue='';
+});
+
+// ── INIT ──────────────────────────────────────────────────────
+(function init(){
+    if(typeof ENEMIES!=='undefined') populateEnemyDropdown();
+    populateLadderFloors();
+    document.getElementById('ladderFloor').addEventListener('change',populateLadderRooms);
+    updateFloorTabs();
+    setMode('add');
+    render();
+})();
+</script>
+</body>
+</html>

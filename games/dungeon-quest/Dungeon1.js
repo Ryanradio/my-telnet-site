@@ -7,8 +7,8 @@ window.DUNGEONS.Dungeon1 = {
       "startRoom": "R1",
       "rooms": {
         "R1": {
-          "name": "Dungeon Entrance",
-          "description": "The crumbling entrance to the Undermaze. A faint draft from the surface reminds you of Silverdale above.",
+          "name": "",
+          "description": "",
           "map": {
             "x": 12,
             "y": 7
@@ -18,11 +18,16 @@ window.DUNGEONS.Dungeon1 = {
             "w": "R8",
             "ne": "R48"
           },
-          "contents": {},
+          "contents": {
+            "doors": {
+              "ne": {
+                "type": "iron",
+                "locked": true
+              }
+            }
+          },
           "flags": {
-            "discovered": false,
-            "townExit": "town1",
-            "townExitLabel": "⬆ Return to Silverdale"
+            "discovered": false
           }
         },
         "R2": {
@@ -99,19 +104,6 @@ window.DUNGEONS.Dungeon1 = {
           "exits": {
             "nw": "R5"
           },
-          "contents": {},
-          "flags": {
-            "discovered": false
-          }
-        },
-        "R7": {
-          "name": "",
-          "description": "",
-          "map": {
-            "x": 17,
-            "y": 12
-          },
-          "exits": {},
           "contents": {},
           "flags": {
             "discovered": false
@@ -208,7 +200,20 @@ window.DUNGEONS.Dungeon1 = {
             "n": "R12",
             "se": "R14"
           },
-          "contents": {},
+          "contents": {
+            "doors": {
+              "se": {
+                "type": "copper",
+                "locked": true
+              }
+            },
+            "enemies": [
+              {
+                "key": "giant_scorpion",
+                "drop": "copper_key"
+              }
+            ]
+          },
           "flags": {
             "discovered": false
           }
@@ -274,7 +279,14 @@ window.DUNGEONS.Dungeon1 = {
             "s": "R29",
             "e": "R35"
           },
-          "contents": {},
+          "contents": {
+            "doors": {
+              "e": {
+                "type": "brass",
+                "locked": true
+              }
+            }
+          },
           "flags": {
             "discovered": false
           }
@@ -2985,8 +2997,8 @@ window.DUNGEONS.Dungeon1 = {
           }
         },
         "R128": {
-          "name": "The Far Gate",
-          "description": "At the deepest end of the maze, a portal of ash-grey light pulses steadily. Through it, you can sense another world — a city built on volcanic rock.",
+          "name": "",
+          "description": "",
           "map": {
             "x": 22,
             "y": 6
@@ -2996,10 +3008,7 @@ window.DUNGEONS.Dungeon1 = {
           },
           "contents": {},
           "flags": {
-            "discovered": false,
-            "townExit": "town2",
-            "townExitLabel": "🌋 Enter Ashen Harbor",
-            "firstDiscovery": true
+            "discovered": false
           }
         }
       }

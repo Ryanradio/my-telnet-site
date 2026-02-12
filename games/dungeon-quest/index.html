@@ -2598,7 +2598,13 @@ window.addEventListener('beforeunload', () => {
             terminalPrint('  /listitems            - Show all items');
             terminalPrint('');
             terminalPrint('UTILITIES:');
-            terminalPrint('  /teleport <location>  - Teleport to area');
+            terminalPrint('  /teleport <dest>               - Teleport anywhere');
+            terminalPrint('    /teleport town1              - Go to Silverdale');
+            terminalPrint('    /teleport town2              - Go to Ashen Harbor');
+            terminalPrint('    /teleport dungeon1           - Dungeon1 Floor 1 start');
+            terminalPrint('    /teleport dungeon1 f2        - Dungeon1 Floor 2 start');
+            terminalPrint('    /teleport dungeon1 f1 R57    - Dungeon1 Floor 1 Room R57');
+            terminalPrint('    /teleport forest             - Any explore zone key');
             terminalPrint('  /killmonster          - Instantly kill current enemy');
             terminalPrint('  /export <type>        - Export data (monsters/weapons/armor/items)');
             terminalPrint('  /clear                - Clear terminal output');
@@ -2882,19 +2888,156 @@ window.addEventListener('beforeunload', () => {
                 terminalPrint('ERROR: No active player character', 'error');
                 return;
             }
+            if (!args || args.length === 0) {
+                terminalPrint('ERROR: Usage: /teleport <destination>', 'error');
+                terminalPrint('  /teleport town1               — Silverdale', 'warning');
+                terminalPrint('  /teleport town2               — Ashen Harbor', 'warning');
+                terminalPrint('  /teleport dungeon1            — Dungeon1 Floor 1 start', 'warning');
+                terminalPrint('  /teleport dungeon1 f2         — Dungeon1 Floor 2 start', 'warning');
+                terminalPrint('  /teleport dungeon1 f3         — Dungeon1 Floor 3 start', 'warning');
+                terminalPrint('  /teleport dungeon1 f1 R57     — Dungeon1 Floor 1 Room R57', 'warning');
+                terminalPrint('  /teleport <zone>              — Any explore zone key', 'warning');
+                return;
+            }
 
-            const location = args[0]?.toLowerCase();
-            if (LOCATIONS[location]) {
-                gameState.currentLocation = location;
-                if (location === 'town') {
-                    showTown();
-                } else {
-                    exploreLocation(location);
+            const dest = args[0].toLowerCase();
+
+            // ── Town teleport ──────────────────────────────────────────────
+            if (dest === 'town1' || dest === 'town2') {
+                // Clear any dungeon/combat state
+                gameState.dungeon = null;
+                gameState.combatState = null;
+                if (gameState.combatTimer) { clearInterval(gameState.combatTimer); gameState.combatTimer = null; }
+                document.body.classList.remove("terminal-mode");
+                document.getElementById('terminalWindow').style.display = 'none';
+                document.getElementById('hud').style.display = 'none';
+                document.getElementById('actionBar').innerHTML = '';
+                document.getElementById('actionBar').style.display = 'none';
+                document.getElementById('mainScreen').style.display = 'block';
+                gameState._terminalOpen = false;
+                gameState._currentExploreArea = null;
+                gameState.currentTown = dest;
+                saveGame();
+                showTown(dest);
+                const tname = (typeof TOWNS !== 'undefined' && TOWNS[dest]) ? TOWNS[dest].name : dest;
+                terminalPrint(`SUCCESS: Teleported to ${tname}`, 'success');
+                return;
+            }
+
+            // ── Dungeon teleport: /teleport dungeon1 [fN] [RoomId] ────────
+            // Match dungeon key case-insensitively
+            const dungeonKey = (() => {
+                if (typeof DUNGEONS === 'undefined') return null;
+                for (const k in DUNGEONS) {
+                    if (k.toLowerCase() === dest) return k;
                 }
-                terminalPrint(`SUCCESS: Teleported to ${LOCATIONS[location].name}`, 'success');
-            } else {
-                terminalPrint(`ERROR: Unknown location '${location}'`, 'error');
-                terminalPrint('Available: ' + Object.keys(LOCATIONS).join(', '), 'warning');
+                return null;
+            })();
+
+            if (dungeonKey) {
+                if (typeof DUNGEONS === 'undefined' || !DUNGEONS[dungeonKey]) {
+                    terminalPrint(`ERROR: Dungeon "${dungeonKey}" not loaded`, 'error');
+                    return;
+                }
+                const dungeonData = DUNGEONS[dungeonKey];
+
+                // Parse floor: second arg like "f2" or "2"
+                let targetFloor = 1;
+                if (args[1]) {
+                    const floorStr = args[1].replace(/^f/i, '');
+                    const parsed = parseInt(floorStr);
+                    if (!isNaN(parsed) && dungeonData.floors[parsed]) {
+                        targetFloor = parsed;
+                    } else {
+                        terminalPrint(`ERROR: Floor "${args[1]}" not found in ${dungeonKey}`, 'error');
+                        terminalPrint(`Available floors: ${Object.keys(dungeonData.floors).map(f=>'F'+f).join(', ')}`, 'warning');
+                        return;
+                    }
+                }
+
+                const floorData = dungeonData.floors[targetFloor];
+
+                // Parse room: third arg like "R57"
+                let targetRoom = floorData.startRoom;
+                if (args[2]) {
+                    const roomId = args[2].toUpperCase();
+                    if (floorData.rooms[roomId]) {
+                        targetRoom = roomId;
+                    } else {
+                        // Try lowercase
+                        const found = Object.keys(floorData.rooms).find(k => k.toUpperCase() === roomId);
+                        if (found) {
+                            targetRoom = found;
+                        } else {
+                            terminalPrint(`ERROR: Room "${args[2]}" not found on Floor ${targetFloor}`, 'error');
+                            const roomList = Object.keys(floorData.rooms).join(', ');
+                            terminalPrint(`Floor ${targetFloor} rooms: ${roomList}`, 'warning');
+                            return;
+                        }
+                    }
+                }
+
+                // ── Actually teleport into dungeon ────────────────────────
+                // Clear any current dungeon/combat/explore state
+                gameState.combatState = null;
+                if (gameState.combatTimer) { clearInterval(gameState.combatTimer); gameState.combatTimer = null; }
+                gameState._terminalOpen = false;
+                gameState._currentExploreArea = null;
+
+                // Mark room as discovered
+                const destRoom = floorData.rooms[targetRoom];
+                destRoom.flags = destRoom.flags || {};
+                destRoom.flags.discovered = true;
+
+                gameState.dungeon = {
+                    dungeonKey,
+                    floor:          targetFloor,
+                    currentRoom:    targetRoom,
+                    discoveredRooms: new Set([targetRoom]),
+                    activeEnemies: []
+                };
+
+                // Show terminal
+                document.getElementById('mainScreen').style.display = 'none';
+                openTerminalView(dungeonKey);
+                startMpRegen(false);
+                startResting(false);
+
+                termAppend('', 'term-separator');
+                termAppend(`🔮 <span style="color:#AA88FF;">[SYSOP TELEPORT]</span> Floor ${targetFloor} — ${targetRoom}`, 'term-highlight');
+                termAppend(`<strong>${destRoom.name || targetRoom}</strong>`);
+                termAppend(destRoom.description || '', 'term-dim');
+                const exitList = buildExitList(destRoom);
+                termAppend(`You see exits: ${exitList}.`, 'term-dim');
+                checkTownExit(destRoom);
+
+                saveGame();
+                renderDungeonActionBar();
+
+                terminalPrint(`SUCCESS: Teleported to ${dungeonKey} Floor ${targetFloor} Room ${targetRoom}`, 'success');
+                return;
+            }
+
+            // ── Exploration zone teleport ─────────────────────────────────
+            if (typeof LOCATIONS !== 'undefined' && LOCATIONS[dest]) {
+                gameState.dungeon = null;
+                gameState.combatState = null;
+                if (gameState.combatTimer) { clearInterval(gameState.combatTimer); gameState.combatTimer = null; }
+                gameState.currentLocation = dest;
+                gameState._terminalOpen = false;
+                exploreLocation(dest);
+                terminalPrint(`SUCCESS: Teleported to ${LOCATIONS[dest].name}`, 'success');
+                return;
+            }
+
+            // ── Nothing matched ───────────────────────────────────────────
+            terminalPrint(`ERROR: Unknown destination "${dest}"`, 'error');
+            terminalPrint('Valid towns: town1, town2', 'warning');
+            if (typeof DUNGEONS !== 'undefined') {
+                terminalPrint('Valid dungeons: ' + Object.keys(DUNGEONS).map(k=>k.toLowerCase()).join(', '), 'warning');
+            }
+            if (typeof LOCATIONS !== 'undefined') {
+                terminalPrint('Valid zones: ' + Object.keys(LOCATIONS).filter(k=>k!=='town').join(', '), 'warning');
             }
         }
 
@@ -6278,6 +6421,24 @@ if (cs) {
         }
     });
 
+    // ⬆⬇ Ladder buttons (Up/Down) — shown when room has a ladder
+    if (room.contents && room.contents.ladder) {
+        const ladderDir = room.contents.ladder.direction; // 'up' or 'down'
+        const ladderBtn = document.createElement('button');
+        ladderBtn.textContent = ladderDir === 'up' ? '⬆ UP' : '⬇ DOWN';
+        ladderBtn.title = ladderDir === 'up'
+            ? `Climb up to Floor ${room.contents.ladder.leadsTo.floor}`
+            : `Climb down to Floor ${room.contents.ladder.leadsTo.floor}`;
+        ladderBtn.onclick = () => moveInDungeon(ladderDir);
+        ladderBtn.disabled = !canMove;
+        ladderBtn.style.cssText = 'min-width:60px;padding:6px 8px;font-size:13px;font-weight:bold;border-color:#FFD700;color:#FFD700;';
+        if (!canMove) {
+            ladderBtn.style.opacity = '0.4';
+            ladderBtn.style.cursor = 'not-allowed';
+        }
+        btnContainer.appendChild(ladderBtn);
+    }
+
     ab.appendChild(btnContainer);
 }
 
@@ -6853,8 +7014,65 @@ function moveInDungeon(direction) {
     }
 
     const ds = gameState.dungeon;
-    const dungeon = DUNGEONS[ds.dungeonKey];
-    const floor = dungeon.floors[ds.floor];
+    const dungeonData = DUNGEONS[ds.dungeonKey];
+
+    // ═══════════════════════════════════════════════════════════════
+    // LADDER MOVEMENT — "up" or "down"
+    // ═══════════════════════════════════════════════════════════════
+    if (direction === 'up' || direction === 'down') {
+        const currentFloor = dungeonData.floors[ds.floor];
+        const currentRoom = currentFloor.rooms[ds.currentRoom];
+
+        if (!currentRoom.contents || !currentRoom.contents.ladder) {
+            termAppend(`There is no ladder here.`, 'term-dim');
+            return;
+        }
+        const ladder = currentRoom.contents.ladder;
+        if (ladder.direction !== direction) {
+            termAppend(`The ladder only goes ${ladder.direction}.`, 'term-dim');
+            return;
+        }
+
+        const targetFloor = ladder.leadsTo.floor;
+        const targetRoom  = ladder.leadsTo.room;
+
+        if (!dungeonData.floors[targetFloor] || !dungeonData.floors[targetFloor].rooms[targetRoom]) {
+            termAppend(`⚠️ Ladder leads nowhere (floor ${targetFloor} / ${targetRoom} not found).`, 'term-error');
+            return;
+        }
+
+        // ── Transition ───────────────────────────────────────────
+        ds.floor      = targetFloor;
+        ds.currentRoom = targetRoom;
+        if (!ds.discoveredRooms) ds.discoveredRooms = new Set();
+        ds.discoveredRooms.add(targetRoom);
+
+        const destFloorData = dungeonData.floors[targetFloor];
+        const destRoom = destFloorData.rooms[targetRoom];
+        destRoom.flags = destRoom.flags || {};
+        destRoom.flags.discovered = true;
+
+        termAppend('', 'term-separator');
+        termAppend(`🪜 You ${direction === 'up' ? 'climb up' : 'descend'} the ladder to <strong>Floor ${targetFloor}</strong>.`, 'term-highlight');
+        termAppend(`<strong>${destRoom.name || targetRoom}</strong>`);
+        termAppend(destRoom.description || '', 'term-dim');
+
+        // List exits including any ladder in the destination room
+        const exitList = buildExitList(destRoom);
+        termAppend(`You see exits: ${exitList}.`, 'term-dim');
+
+        checkTownExit(destRoom);
+        triggerRoomTrap(destRoom);
+        checkEnemiesInRoom(targetRoom);
+        saveGame();
+        renderDungeonActionBar();
+        return;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // NORMAL DIRECTION MOVEMENT
+    // ═══════════════════════════════════════════════════════════════
+    const floor = dungeonData.floors[ds.floor];
     const currentRoom = floor.rooms[ds.currentRoom];
 
     const nextRoomId = currentRoom.exits[direction];
@@ -6866,49 +7084,195 @@ function moveInDungeon(direction) {
     const nextRoom = floor.rooms[nextRoomId];
 
     ds.currentRoom = nextRoomId;
+    if (!ds.discoveredRooms) ds.discoveredRooms = new Set();
     ds.discoveredRooms.add(nextRoomId);
+    nextRoom.flags = nextRoom.flags || {};
     nextRoom.flags.discovered = true;
 
     termAppend('', 'term-separator');
-    termAppend(`<strong>${nextRoom.name}</strong>`);
-    termAppend(nextRoom.description, 'term-dim');
+    termAppend(`<strong>${nextRoom.name || nextRoomId}</strong>`);
+    termAppend(nextRoom.description || '', 'term-dim');
 
-   // 🔥 Spawn encounter (once)
-checkRoomEncounter(nextRoom);
+    // 🔥 Spawn encounter (once)
+    checkRoomEncounter(nextRoom);
 
-// 👣 Move any active enemies that can follow
-updateDungeonEnemies();
+    // 👣 Move any active enemies that can follow
+    updateDungeonEnemies();
 
-// ⚔️ combat trigger (AFTER enemies move)
-//const enemyHere = getEnemyInRoom(ds.currentRoom);
-//if (enemyHere) {
-//    gameState.inCombat = true; // 👈 HERE
+    // 👁️ enemies already present (no combat)
+    checkEnemiesInRoom(nextRoomId);
 
-    //termAppend(
-    //    `⚔️ <strong>${enemyHere.name}</strong> confronts you!`,
-    //    'term-warning'
-    // );
-
-    //return;
-// }
-
-// 👁️ enemies already present (no combat)
-checkEnemiesInRoom(nextRoomId);
-
-    const exits = Object.keys(nextRoom.exits)
-        .map(d => d.toUpperCase())
-        .join(', ');
-
-    termAppend(`You see exits: ${exits}.`, 'term-dim');
+    const exitList = buildExitList(nextRoom);
+    termAppend(`You see exits: ${exitList}.`, 'term-dim');
 
     // 🌀 Check for town portal exit in this room
     checkTownExit(nextRoom);
 
-    // 💾 AUTO-SAVE after moving in dungeon (prevent cheating!)
+    // 🪤 Check for traps
+    triggerRoomTrap(nextRoom);
+
+    // 💾 AUTO-SAVE after moving in dungeon
     saveGame();
 
     // 🔑 update buttons for new room
     renderDungeonActionBar();
+}
+
+// Build the exit string including ladder directions
+function buildExitList(room) {
+    const exits = Object.keys(room.exits || {}).map(d => d.toUpperCase());
+    if (room.contents && room.contents.ladder) {
+        exits.push(room.contents.ladder.direction === 'up' ? '⬆ UP' : '⬇ DOWN');
+    }
+    return exits.length ? exits.join(', ') : 'none';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TRAP SYSTEM — triggers when player enters a room with a trap
+// Supports both old singular (room.contents.trap) and new array
+// (room.contents.traps[]) format from dungeon editor.
+// ═══════════════════════════════════════════════════════════════
+function triggerRoomTrap(room) {
+    if (!room || !room.contents) return;
+    const p = gameState.player;
+    if (!p) return;
+
+    // Build trap list — support both old (.trap) and new (.traps[]) formats
+    let traps = [];
+    if (room.contents.traps && Array.isArray(room.contents.traps)) {
+        traps = room.contents.traps;                  // new array format
+    } else if (room.contents.trap) {
+        traps = [room.contents.trap];                 // old single-trap format
+    }
+
+    if (!traps.length) return;
+
+    traps.forEach(trap => {
+        if (!trap || !trap.type) return;
+
+        // resetOnLeave = re-arm when player leaves (new format); no field = one-shot legacy
+        const resetable = (trap.resetOnLeave === true);
+        const dotType   = (trap.type === 'poison' || trap.type === 'acid');
+
+        // Skip if already triggered and not resetable (one-shot spent)
+        if (trap.triggered && !resetable && !dotType) return;
+
+        const damage = trap.damage || 0;
+        const name   = trap.name   || trap.type;
+
+        switch (trap.type) {
+
+            case 'spike':
+                p.hp = Math.max(1, p.hp - damage);
+                termAppend(`⚠️ <span style="color:#FF4444;">SPIKE TRAP!</span> Sharp spikes shoot from the floor — you take <strong>${damage} damage!</strong>`, 'term-error');
+                if (!resetable) trap.triggered = true;
+                break;
+
+            case 'stone':
+                p.hp = Math.max(1, p.hp - damage);
+                termAppend(`⚠️ <span style="color:#AA8866;">STONE TRAP!</span> A massive stone swings from the ceiling — you take <strong>${damage} damage!</strong>`, 'term-error');
+                if (!resetable) trap.triggered = true;
+                break;
+
+            case 'poison': {
+                // DOT: damage spread over duration (default 10s, 5 ticks)
+                const duration = trap.duration || 10;
+                const ticks = 5;
+                const tickInterval = Math.max(1000, (duration * 1000) / ticks);
+                const tickDmg = Math.max(1, Math.ceil(damage / ticks));
+                termAppend(`☠️ <span style="color:#44FF44;">POISON TRAP!</span> Toxic gas floods the room — you feel your strength seeping away!`, 'term-error');
+                let t = 0;
+                const timer = setInterval(() => {
+                    if (!gameState.player || t >= ticks) { clearInterval(timer); return; }
+                    gameState.player.hp = Math.max(1, gameState.player.hp - tickDmg);
+                    termAppend(`☠️ Poison deals <strong>${tickDmg}</strong> damage... (${gameState.player.hp}/${gameState.player.maxHp} HP)`, 'term-error');
+                    updateHud(); t++;
+                }, tickInterval);
+                break;
+            }
+
+            case 'acid': {
+                // Acid: instant damage + short DOT
+                p.hp = Math.max(1, p.hp - damage);
+                termAppend(`🧪 <span style="color:#a8e63d;">ACID TRAP!</span> Acid spray burns you — <strong>${damage} damage!</strong>`, 'term-error');
+                const acidDuration = trap.duration || 5;
+                const acidTicks = 3;
+                const acidInterval = Math.max(500, (acidDuration * 1000) / acidTicks);
+                const acidTickDmg = Math.max(1, Math.ceil(damage * 0.4 / acidTicks));
+                let at = 0;
+                const acidTimer = setInterval(() => {
+                    if (!gameState.player || at >= acidTicks) { clearInterval(acidTimer); return; }
+                    gameState.player.hp = Math.max(1, gameState.player.hp - acidTickDmg);
+                    termAppend(`🧪 Acid burns for <strong>${acidTickDmg}</strong> more damage...`, 'term-error');
+                    updateHud(); at++;
+                }, acidInterval);
+                if (!resetable) trap.triggered = true;
+                break;
+            }
+
+            case 'fire':
+                p.hp = Math.max(1, p.hp - damage);
+                termAppend(`🔥 <span style="color:#FF8800;">FIRE TRAP!</span> Flames erupt from hidden vents — you take <strong>${damage} damage!</strong>`, 'term-error');
+                if (!resetable) trap.triggered = true;
+                break;
+
+            case 'lightning':
+                p.hp = Math.max(1, p.hp - damage);
+                termAppend(`⚡ <span style="color:#FFDD00;">LIGHTNING TRAP!</span> A bolt of lightning strikes you — <strong>${damage} damage!</strong>`, 'term-error');
+                if (!resetable) trap.triggered = true;
+                break;
+
+            case 'arrow':
+                p.hp = Math.max(1, p.hp - damage);
+                termAppend(`🏹 <span style="color:#CCCC44;">ARROW TRAP!</span> A crossbow bolt catches you off guard — you take <strong>${damage} damage!</strong>`, 'term-error');
+                if (!resetable) trap.triggered = true;
+                break;
+
+            case 'freeze':
+                p.hp = Math.max(1, p.hp - damage);
+                termAppend(`❄️ <span style="color:#88CCFF;">FREEZE TRAP!</span> A burst of ice envelops you — you take <strong>${damage} damage</strong> and feel sluggish!`, 'term-error');
+                if (gameState.combatState && gameState.combatState.pipTimers) {
+                    gameState.combatState.pipTimers = gameState.combatState.pipTimers.map(t => t + 8);
+                }
+                if (!resetable) trap.triggered = true;
+                break;
+
+            case 'pit':
+                p.hp = Math.max(1, p.hp - damage);
+                termAppend(`🕳️ <span style="color:#95a5a6;">PIT TRAP!</span> The floor gives way! You fall hard — <strong>${damage} damage!</strong>`, 'term-error');
+                if (!resetable) trap.triggered = true;
+                break;
+
+            case 'alarm':
+                termAppend(`🔔 <span style="color:#dfe6e9;">ALARM TRAP!</span> A deafening bell rings out — nearby monsters are alerted!`, 'term-error');
+                if (!resetable) trap.triggered = true;
+                break;
+
+            case 'web':
+                termAppend(`🕸️ <span style="color:#b2bec3;">WEB TRAP!</span> Sticky strands bind your limbs — you're slowed for 2 rounds!`, 'term-error');
+                // Disable movement pip for 2 recovery cycles
+                if (gameState.combatState && gameState.combatState.pipTimers) {
+                    gameState.combatState.pipTimers = gameState.combatState.pipTimers.map(t => t + 5);
+                }
+                if (!resetable) trap.triggered = true;
+                break;
+
+            case 'curse':
+                termAppend(`🌀 <span style="color:#a855f7;">CURSE TRAP!</span> Dark energy courses through you — your stats are reduced!`, 'term-error');
+                // Temporarily reduce attack by 20% for the session
+                if (p.curseStacks === undefined) p.curseStacks = 0;
+                p.curseStacks = Math.min(3, p.curseStacks + 1);
+                if (!resetable) trap.triggered = true;
+                break;
+
+            default:
+                p.hp = Math.max(1, p.hp - damage);
+                termAppend(`⚠️ <span style="color:#FF4444;">TRAP!</span> A ${name} catches you — you take <strong>${damage} damage!</strong>`, 'term-error');
+                if (!resetable) trap.triggered = true;
+        }
+    });
+
+    updateHud();
 }
 
 
