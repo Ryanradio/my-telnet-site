@@ -1189,6 +1189,9 @@ body.terminal-mode #terminalWindow {
 
     <!-- External Game Data Files -->
     <script src="dungeon-data.js"></script>
+    <script src="Dungeon1.js"></script>
+    <script src="town1.js"></script>
+    <script src="town2.js"></script>
     <script src="monsters-expanded.js"></script>
     <script src="weapons.js"></script>
     <script src="armor.js"></script>
@@ -1946,6 +1949,7 @@ line.innerHTML =
         let gameState = {
             player: null,
             currentLocation: 'town',
+            currentTown: 'town1',   // which town hub the player is in
             combatState: null,
             combatTimer: null,
             lastAction: null,
@@ -2202,8 +2206,15 @@ function buildSaveSnapshot() {
             unlockedAreas: [...(p.unlockedAreas || [])],
             
             // Special flags
-            godMode: p.godMode || false
+            godMode: p.godMode || false,
+
+            // Achievements & runestones
+            achievements: [...(p.achievements || [])],
+            runestones: [...(p.runestones || [])]
         },
+        
+        // Town hub the player is in
+        currentTown: gameState.currentTown || 'town1',
         
         // ═══════════════════════════════════════════════════════════════
         // GENERATED WEAPONS - Save all dynamically created weapon drops
@@ -3516,8 +3527,13 @@ window.addEventListener('beforeunload', () => {
                     defeatedMasters: data.player.defeatedMasters || [],
                     unlockedAreas: data.player.unlockedAreas || [],
                     // Ensure bankGold exists (for old saves)
-                    bankGold: data.player.bankGold || 0
+                    bankGold: data.player.bankGold || 0,
+                    achievements: data.player.achievements || [],
+                    runestones: data.player.runestones || []
                 };
+                
+                // Restore current town
+                gameState.currentTown = data.currentTown || 'town1';
                 
                 // ═══════════════════════════════════════════════════════════════
                 // RESTORE GENERATED WEAPONS - Must happen BEFORE equipment check!
@@ -3947,37 +3963,193 @@ window.addEventListener('beforeunload', () => {
             return [];
         }
 
-        function showTown() {
+        function showTown(townId) {
             document.body.classList.remove("terminal-mode");
             
-            // Start MP regeneration (slower in town)
-            startMpRegen(true);
-            // Start resting for HP regen (slower in town)
-            startResting(true);
+            // Update current town if specified
+            if (townId) gameState.currentTown = townId;
+            const tid = gameState.currentTown || 'town1';
             
+            // Get town definition (fall back to inline data if TOWNS not loaded yet)
+            const townDef = (typeof TOWNS !== 'undefined' && TOWNS[tid]) ? TOWNS[tid] : null;
+            const townName = townDef ? townDef.name : 'Silverdale';
+            const townDesc = townDef ? townDef.description : 'A peaceful starting town.';
+
+            // Apply town color theme
+            if (townDef && townDef.theme) {
+                document.documentElement.style.setProperty('--text-color', townDef.theme);
+            } else {
+                document.documentElement.style.setProperty('--text-color', '#00FF41');
+            }
+
+            // Start MP/HP regen (slower in town)
+            startMpRegen(true);
+            startResting(true);
+
+            const p = gameState.player;
             const screen = document.getElementById('mainScreen');
+
+            // ── Portal tab (shown if player has white_runestone) ──────────
+            const hasRunestone = p.runestones && p.runestones.includes('white_runestone');
+            let portalOption = '';
+            if (hasRunestone && townDef && townDef.portalDestination) {
+                const destDef = (typeof TOWNS !== 'undefined' && TOWNS[townDef.portalDestination]) 
+                    ? TOWNS[townDef.portalDestination] : null;
+                const destName = destDef ? destDef.name : townDef.portalDestination;
+                portalOption = `
+                    <div class="menu-option" onclick="usePortal('${townDef.portalDestination}')"
+                         style="border-color:#AA88FF;background:rgba(170,136,255,0.07);">
+                        🌀 PORTAL → ${destName}
+                        <span style="color:#AA88FF;font-size:12px;"> [White Runestone ✦]</span>
+                    </div>`;
+            }
+
+            // ── Dungeon option (level-gated) ──────────────────────────────
+            let dungeonOption = '';
+            if (townDef && townDef.dungeonKey) {
+                const dungeonReady = p.level >= (townDef.dungeonRequiredLevel || 5);
+                if (dungeonReady) {
+                    dungeonOption = `
+                        <div class="menu-option" onclick="enterTownDungeon('${tid}')"
+                             style="border-color:var(--highlight-color);">
+                            🏰 ${townDef.dungeonName || 'DUNGEON'}
+                        </div>`;
+                } else {
+                    dungeonOption = `
+                        <div class="menu-option" style="opacity:0.45;cursor:default;"
+                             onclick="alert('${townDef.dungeonUnlockMessage || 'Not yet ready.'}')">
+                            🏰 ${townDef.dungeonName || 'DUNGEON'}
+                            <span style="color:var(--error-color);font-size:12px;"> [Requires Lv ${townDef.dungeonRequiredLevel || 5}]</span>
+                        </div>`;
+                }
+            } else if (!townDef) {
+                // Legacy fallback for old saves
+                dungeonOption = `<div class="menu-option" onclick="enterDungeons()">🏰 DUNGEONS</div>`;
+            }
+
+            // ── Runestone badge next to name ──────────────────────────────
+            let runestoneBadge = '';
+            if (p.runestones && p.runestones.length > 0) {
+                const badges = {
+                    'white_runestone': '<span title="White Runestone: Discovered Ashen Harbor" style="color:#FFFFFF;margin-left:6px;font-size:14px;" >✦</span>'
+                };
+                runestoneBadge = p.runestones.map(r => badges[r] || '').join('');
+            }
+
             screen.innerHTML = `
-                <div class="location-header">${LOCATIONS.town.name}</div>
+                <div class="location-header">${townName}${runestoneBadge}</div>
                 ${renderPlayerStats()}
                 <div class="message">
-                    <p>${LOCATIONS.town.description}</p>
+                    <p>${townDesc}</p>
                     <p style="color: var(--border-color); font-size: 14px;">Modem Speed: ${currentModemSpeed}</p>
                 </div>
                 <div style="margin: 20px 0;">
                     <div class="menu-option" onclick="showShop()">► VISIT SHOP</div>
-                    <div class="menu-option" onclick="showBank()">🏦 BANK (${gameState.player.bankGold || 0}g stored)</div>
+                    <div class="menu-option" onclick="showBank()">🏦 BANK (${p.bankGold || 0}g stored)</div>
                     <div class="menu-option" onclick="showCharacterStats()">📊 CHARACTER STATS</div>
                     <div class="menu-option" onclick="showTemple()">⛪ TEMPLE OF REBIRTH</div>
-                    <div class="menu-option" onclick="enterDungeons()">🏰 DUNGEONS</div>
-                    <div class="menu-option" onclick="restAtInn()">► REST AT INN (${calcInnCost(gameState.player.cha)} Gold)</div>
+                    ${dungeonOption}
+                    <div class="menu-option" onclick="restAtInn()">► REST AT INN (${calcInnCost(p.cha)} Gold)</div>
                     <div class="menu-option" onclick="showInventory()">► INVENTORY</div>
                     <div class="menu-option" onclick="showExplore()">► EXPLORE WORLD</div>
+                    ${portalOption}
                     <div class="menu-option" onclick="showModemSettings()">► MODEM SETTINGS</div>
-                    <div class="menu-option" onclick="saveGame()" style="border-color:var(--text-color);">💾 QUICK SAVE (auto-backup)</div>
-                    <div class="menu-option" onclick="downloadSaveFile()" style="border-color:var(--highlight-color);background:rgba(255,255,0,0.05);">📥 DOWNLOAD SAVE FILE (backup to device)</div>
+                    <div class="menu-option" onclick="saveGame()" style="border-color:var(--text-color);">💾 QUICK SAVE</div>
+                    <div class="menu-option" onclick="downloadSaveFile()" style="border-color:var(--highlight-color);background:rgba(255,255,0,0.05);">📥 DOWNLOAD SAVE FILE</div>
                     <div class="menu-option" onclick="showMainMenu()">► QUIT TO MENU</div>
                 </div>
             `;
+        }
+
+        // ── Travel to another town via portal ──────────────────────────
+        function usePortal(destTownId) {
+            const p = gameState.player;
+            if (!p.runestones || !p.runestones.includes('white_runestone')) {
+                alert('You need the White Runestone to use the portal!');
+                return;
+            }
+            const destDef = (typeof TOWNS !== 'undefined' && TOWNS[destTownId]) ? TOWNS[destTownId] : null;
+            const destName = destDef ? destDef.name : destTownId;
+            gameState.currentTown = destTownId;
+            saveGame();
+            showTown(destTownId);
+            // Flash a brief arrival message
+            setTimeout(() => {
+                const screen = document.getElementById('mainScreen');
+                const flash = document.createElement('div');
+                flash.style.cssText = 'position:fixed;top:15px;left:50%;transform:translateX(-50%);background:#0a0a0a;border:2px solid #AA88FF;padding:10px 20px;color:#AA88FF;font-size:16px;z-index:9999;';
+                flash.textContent = `🌀 Arrived in ${destName}`;
+                document.body.appendChild(flash);
+                setTimeout(() => flash.remove(), 2500);
+            }, 50);
+        }
+
+        // ── Enter the dungeon attached to the current town ─────────────
+        function enterTownDungeon(townId) {
+            const tid = townId || gameState.currentTown || 'town1';
+            const townDef = (typeof TOWNS !== 'undefined' && TOWNS[tid]) ? TOWNS[tid] : null;
+            if (!townDef || !townDef.dungeonKey) {
+                alert('No dungeon available here yet!');
+                return;
+            }
+            const p = gameState.player;
+            if (p.level < (townDef.dungeonRequiredLevel || 5)) {
+                alert(townDef.dungeonUnlockMessage || `You must be level ${townDef.dungeonRequiredLevel} to enter!`);
+                return;
+            }
+            if (typeof DUNGEONS === 'undefined' || !DUNGEONS[townDef.dungeonKey]) {
+                alert(`⚠️ Dungeon data not loaded! Make sure ${townDef.dungeonKey}.js is in the game folder.`);
+                return;
+            }
+            startDungeon(townDef.dungeonKey);
+        }
+
+        // ── Generic dungeon start (replaces testDungeon) ──────────────
+        function startDungeon(dungeonKey) {
+            document.body.classList.add("terminal-mode");
+            startMpRegen(false);
+            startResting(false);
+
+            const dungeon = DUNGEONS[dungeonKey];
+            const floor = dungeon.floors[1];
+
+            // Reset only discovered state for fresh run — preserve design flags (townExit, etc.)
+            Object.values(floor.rooms).forEach(r => {
+                r.flags = r.flags || {};
+                r.flags.discovered = false;
+                // Re-arm firstDiscovery only if player doesn't have runestone yet
+                if (r.flags.townExit === 'town2') {
+                    const p = gameState.player;
+                    const hasRunestone = p && p.runestones && p.runestones.includes('white_runestone');
+                    r.flags.firstDiscovery = !hasRunestone;
+                }
+            });
+
+            gameState.dungeon = {
+                dungeonKey,
+                floor: 1,
+                currentRoom: floor.startRoom,
+                discoveredRooms: new Set([floor.startRoom]),
+                activeEnemies: []
+            };
+
+            openTerminalView(dungeonKey);
+
+            const room = floor.rooms[floor.startRoom];
+            room.flags.discovered = true;
+
+            termAppend('', 'term-separator');
+            termAppend(`<strong>${room.name || 'Entrance'}</strong>`);
+            termAppend(room.description || 'You step into the darkness.', 'term-dim');
+
+            const exits = Object.keys(room.exits).map(d => d.toUpperCase()).join(', ');
+            termAppend(`You see exits: ${exits}.`, 'term-dim');
+
+            // Check for townExit flag at start room
+            checkTownExit(room);
+
+            saveGame();
+            renderDungeonActionBar();
         }
 
         function showBank() {
@@ -4816,24 +4988,34 @@ window.addEventListener('beforeunload', () => {
         function showExplore() {
             const screen = document.getElementById('mainScreen');
             const p = gameState.player;
-            
-            // Auto-unlock zones that don't require masters (just level requirement)
+            const tid = gameState.currentTown || 'town1';
+            const townDef = (typeof TOWNS !== 'undefined' && TOWNS[tid]) ? TOWNS[tid] : null;
+
+            // Determine which zone keys belong to this town
+            // A zone belongs here if: it has no 'town' field (legacy), OR its town matches current
+            const townZoneKeys = townDef ? (townDef.zones || []) : null;
+
+            // Auto-unlock zones that are not locked (level-only requirement)
             Object.keys(LOCATIONS).forEach(key => {
                 const loc = LOCATIONS[key];
-                if (key !== 'town' && !loc.locked && loc.requiredLevel && p.level >= loc.requiredLevel) {
+                if (key === 'town') return;
+                // Only auto-unlock zones that belong to this town
+                if (townZoneKeys && !townZoneKeys.includes(key)) return;
+                if (!loc.locked && loc.requiredLevel && p.level >= loc.requiredLevel) {
                     if (!p.unlockedAreas.includes(key)) {
                         p.unlockedAreas.push(key);
                     }
                 }
-                // Safety: remove any locked zones the player shouldn't have yet
-                if (key !== 'town' && loc.locked && loc.requiredLevel && p.level < loc.requiredLevel) {
+                // Safety: strip locks that shouldn't be held
+                if (loc.locked && loc.requiredLevel && p.level < loc.requiredLevel) {
                     const idx = p.unlockedAreas.indexOf(key);
                     if (idx !== -1) p.unlockedAreas.splice(idx, 1);
                 }
             });
-            
+
+            const townName = townDef ? townDef.name : 'World';
             let exploreHtml = `
-                <div class="location-header">WORLD MAP</div>
+                <div class="location-header">${townName} — EXPLORE</div>
                 ${renderPlayerStats()}
                 <div class="message">
                     <p>Where would you like to explore?</p>
@@ -4841,63 +5023,63 @@ window.addEventListener('beforeunload', () => {
                 <div style="margin: 20px 0;">
             `;
 
+            // Only show zones that belong to this town (or all zones if no town system)
             Object.keys(LOCATIONS).forEach(key => {
                 const loc = LOCATIONS[key];
-                if (key !== 'town') {
-                    const levelInfo = loc.enemyLevelRange ? 
-                        ` (Lv ${loc.enemyLevelRange[0]}-${loc.enemyLevelRange[1]})` : '';
-                    
-                    const isUnlocked = p.unlockedAreas.includes(key);
-                    const meetsLevelReq = p.level >= loc.requiredLevel;
-                    
-                    // ONLY SHOW if: unlocked OR meets level requirement
-                    // This hides future zones completely until player is high enough level
-                    if (!isUnlocked && !meetsLevelReq) {
-                        return; // Skip this zone entirely - player can't see it yet
+                if (key === 'town') return;
+                // Filter by town
+                if (townZoneKeys && !townZoneKeys.includes(key)) return;
+
+                const levelInfo = loc.enemyLevelRange ?
+                    ` (Lv ${loc.enemyLevelRange[0]}-${loc.enemyLevelRange[1]})` : '';
+
+                const isUnlocked = p.unlockedAreas.includes(key);
+                const meetsLevelReq = p.level >= (loc.requiredLevel || 1);
+
+                // Hide zones that don't meet level requirement and aren't unlocked
+                if (!isUnlocked && !meetsLevelReq) return;
+
+                if (isUnlocked) {
+                    exploreHtml += `
+                        <div class="menu-option" onclick="exploreLocation('${key}')">
+                            ► ${loc.name}${levelInfo} <span style="color: var(--border-color);">✓</span>
+                        </div>
+                    `;
+                    // Show master challenge if available
+                    const masterKey = `${p.class}_master_${key}`;
+                    if (typeof CLASS_MASTERS !== 'undefined' && CLASS_MASTERS[masterKey] && !p.defeatedMasters.includes(masterKey)) {
+                        const master = CLASS_MASTERS[masterKey];
+                        if (p.level >= master.requiredLevel) {
+                            exploreHtml += `
+                                <div class="menu-option" onclick="challengeMaster('${masterKey}')"
+                                     style="border-color:var(--highlight-color);background:rgba(255,255,0,0.1);">
+                                    ⚔️ CHALLENGE MASTER: ${master.name} (Lv ${master.level})
+                                </div>
+                            `;
+                        }
                     }
-                    
-                    if (isUnlocked) {
-                        // Unlocked area - can explore
+                } else {
+                    // Locked but level met — show with unlock requirement
+                    const masterKey = typeof getMasterKeyForArea !== 'undefined' ? getMasterKeyForArea(key) : null;
+                    const master = masterKey && typeof CLASS_MASTERS !== 'undefined' ? CLASS_MASTERS[masterKey] : null;
+                    if (master) {
                         exploreHtml += `
-                            <div class="menu-option" onclick="exploreLocation('${key}')">
-                                ► ${loc.name}${levelInfo} <span style="color: var(--border-color);">✓ UNLOCKED</span>
+                            <div class="menu-option" style="opacity:0.6;cursor:default;"
+                                 onclick="alert('${loc.unlockMessage || 'Locked'}')">
+                                🔒 ${loc.name}${levelInfo} - LOCKED
+                            </div>
+                            <div class="menu-option" onclick="challengeMaster('${masterKey}')"
+                                 style="border-color:var(--error-color);background:rgba(255,0,0,0.1);">
+                                ⚔️ CHALLENGE MASTER: ${master.name} (Lv ${master.level}) TO UNLOCK
                             </div>
                         `;
-                        
-                        // Show master challenge option if available
-                        const masterKey = `${p.class}_master_${key}`;
-                        if (CLASS_MASTERS[masterKey] && !p.defeatedMasters.includes(masterKey)) {
-                            const master = CLASS_MASTERS[masterKey];
-                            if (p.level >= master.requiredLevel) {
-                                exploreHtml += `
-                                    <div class="menu-option" onclick="challengeMaster('${masterKey}')" style="border-color: var(--highlight-color); background: rgba(255, 255, 0, 0.1);">
-                                        ⚔️ CHALLENGE MASTER: ${master.name} (Lv ${master.level})
-                                    </div>
-                                `;
-                            }
-                        }
                     } else {
-                        // Locked but meets level requirement - show as discoverable
-                        const masterKey = getMasterKeyForArea(key);
-                        const master = CLASS_MASTERS[masterKey];
-                        
-                        if (master) {
-                            exploreHtml += `
-                                <div class="menu-option" style="opacity: 0.6; cursor: default;" onclick="alert('${loc.unlockMessage}')">
-                                    🔒 ${loc.name}${levelInfo} - LOCKED
-                                </div>
-                                <div class="menu-option" onclick="challengeMaster('${masterKey}')" style="border-color: var(--error-color); background: rgba(255, 0, 0, 0.1);">
-                                    ⚔️ CHALLENGE MASTER: ${master.name} (Lv ${master.level}) TO UNLOCK!
-                                </div>
-                            `;
-                        } else {
-                            // No master for this zone, just show locked
-                            exploreHtml += `
-                                <div class="menu-option" style="opacity: 0.6; cursor: default;" onclick="alert('${loc.unlockMessage || 'Complete the previous area to unlock!'}')">
-                                    🔒 ${loc.name}${levelInfo} - LOCKED
-                                </div>
-                            `;
-                        }
+                        exploreHtml += `
+                            <div class="menu-option" style="opacity:0.6;cursor:default;"
+                                 onclick="alert('${loc.unlockMessage || 'Complete previous areas to unlock!'}')">
+                                🔒 ${loc.name}${levelInfo} - LOCKED
+                            </div>
+                        `;
                     }
                 }
             });
@@ -6035,13 +6217,30 @@ if (cs) {
     const btnContainer = document.createElement('div');
     btnContainer.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;justify-content:center;';
 
-    // Entrance exit button (always enabled)
+    // Entrance exit button (always enabled when at start room)
     if (ds.currentRoom === floor.startRoom) {
+        const startRoom = floor.rooms[floor.startRoom];
+        const exitTown = startRoom.flags && startRoom.flags.townExit ? startRoom.flags.townExit : null;
+        const exitLabel = (startRoom.flags && startRoom.flags.townExitLabel) || '⬅ Town';
         const exitBtn = document.createElement('button');
-        exitBtn.textContent = '⬅ Town';
-        exitBtn.onclick = returnToTown;
+        exitBtn.innerHTML = exitLabel;
+        exitBtn.onclick = () => returnToTown(exitTown || gameState.currentTown);
         exitBtn.style.cssText = 'min-width:55px;padding:6px 8px;font-size:13px;';
         btnContainer.appendChild(exitBtn);
+    }
+    
+    // Town-exit button for non-start rooms with townExit flag
+    if (ds.currentRoom !== floor.startRoom) {
+        const curRoom = floor.rooms[ds.currentRoom];
+        if (curRoom && curRoom.flags && curRoom.flags.townExit) {
+            const townId = curRoom.flags.townExit;
+            const label  = curRoom.flags.townExitLabel || `Exit to ${townId}`;
+            const portalBtn = document.createElement('button');
+            portalBtn.innerHTML = label;
+            portalBtn.onclick = () => townExitFromDungeon(townId);
+            portalBtn.style.cssText = 'min-width:80px;padding:6px 8px;font-size:13px;border-color:#AA88FF;color:#AA88FF;';
+            btnContainer.appendChild(portalBtn);
+        }
     }
     
     // MAP button (always enabled)
@@ -6227,19 +6426,35 @@ if (cs) {
                 }
             } else {
                 // Out of combat - exploring
+                // Show pip recovery status if any pips are still cooling down
+                const cs2 = gameState.combatState;
+                let pipWarning = '';
+                let canLeave = true;
+                if (cs2 && cs2.pipAvailable) {
+                    const ready = cs2.pipAvailable.filter(x => x).length;
+                    const total = cs2.pipAvailable.length;
+                    canLeave = (ready === total);
+                    if (!canLeave) {
+                        pipWarning = `<div style="color:#FF8800;font-size:11px;margin-bottom:4px;">
+                            ⏳ Pips recovering: ${'●'.repeat(ready) + '○'.repeat(total-ready)} — wait to leave</div>`;
+                    }
+                }
                 ab.innerHTML = `
+                    ${pipWarning}
                     <!-- 📊 STATS BUTTON - commented out, may re-implement later
                     <button onclick="showPlayerStats()">📊 STATS</button>
                     -->
                     <button onclick="exploreLocation('${gameState.currentLocation}')">🔍 CONTINUE EXPLORING</button>
                     <button onclick="showPotionMenuExplore()" style="border-color:#00FF00;">🧪 POTIONS</button>
-                    <button onclick="goBackToTown()">🏘️ RETURN TO TOWN</button>
+                    <button onclick="leaveExploreToTown()" ${canLeave ? '' : 'disabled'} 
+                        style="${canLeave ? '' : 'opacity:0.4;'}border-color:${canLeave ? 'var(--text-color)' : '#888'};">
+                        🏘️ RETURN TO TOWN
+                    </button>
                 `;
             }
         }
         function goBackToTown() {
-            closeTerminalView();
-            showTown();
+            leaveExploreToTown();
         }
         
         // ═══════════════════════════════════════════════════════════════
@@ -6409,13 +6624,8 @@ if (cs) {
         }
         
         function tryGoBackToTown() {
-            if (!isFullyRested()) {
-                termAppend('<span style="color:var(--error-color);">You are too exhausted to travel! Wait for your charges to restore…</span>', 'term-error');
-                return;
-            }
-            // Clear combat state now that we're leaving
-            gameState.combatState = null;
-            goBackToTown();
+            // Delegate to leaveExploreToTown — it handles pip check and enemy preservation
+            leaveExploreToTown();
         }
         
         function tryViewWorldMap() {
@@ -6423,8 +6633,7 @@ if (cs) {
                 termAppend('<span style="color:var(--error-color);">You are too exhausted to travel! Wait for your charges to restore…</span>', 'term-error');
                 return;
             }
-            // Clear combat state now that we're leaving
-            gameState.combatState = null;
+            // Preserve combatState — enemies wait here until player returns
             closeTerminalView();
             showExplore();
         }
@@ -6692,6 +6901,9 @@ checkEnemiesInRoom(nextRoomId);
 
     termAppend(`You see exits: ${exits}.`, 'term-dim');
 
+    // 🌀 Check for town portal exit in this room
+    checkTownExit(nextRoom);
+
     // 💾 AUTO-SAVE after moving in dungeon (prevent cheating!)
     saveGame();
 
@@ -6762,89 +6974,129 @@ function startDungeonCombat(dungeonEnemy) {
 // TEMP: DUNGEON TEST HARNESS (SAFE)
 // ─────────────────────────────────────────
 
-function returnToTown() {
+function returnToTown(townId) {
     console.log('⬅ returnToTown() called');
 
     // Clear dungeon state
     gameState.dungeon = null;
     gameState.combatState = null;
     gameState.postCombatRecovery = false;
-    
-    // Clear combat timer
+
     if (gameState.combatTimer) {
         clearInterval(gameState.combatTimer);
         gameState.combatTimer = null;
     }
 
-    // Clear terminal mode and content
+    // Update current town if specified
+    if (townId) gameState.currentTown = townId;
+
     document.body.classList.remove("terminal-mode");
     termClear();
-
-    // Hide terminal elements
     document.getElementById('terminalWindow').style.display = 'none';
     document.getElementById('hud').style.display = 'none';
-    
+
     const ab = document.getElementById('actionBar');
     ab.innerHTML = '';
     ab.style.display = 'none';
-    
-    // CRITICAL: Show mainScreen
-    document.getElementById('mainScreen').style.display = 'block';
 
-    // Reset terminal state
+    document.getElementById('mainScreen').style.display = 'block';
     gameState._terminalOpen = false;
     gameState._currentExploreArea = null;
-    
-    // Show town menu
+
+    saveGame();
+    showTown();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CHECK TOWN EXIT FLAG IN DUNGEON ROOMS
+// When a room has flags.townExit, show a portal button to that town.
+// ═══════════════════════════════════════════════════════════════
+function checkTownExit(room) {
+    if (!room || !room.flags || !room.flags.townExit) return;
+    const townId = room.flags.townExit;
+    const label  = room.flags.townExitLabel || `Exit to ${townId}`;
+    const firstDiscovery = room.flags.firstDiscovery;
+
+    // Special first-discovery logic: award White Runestone
+    if (firstDiscovery && townId === 'town2') {
+        const p = gameState.player;
+        if (!p.runestones) p.runestones = [];
+        if (!p.runestones.includes('white_runestone')) {
+            p.runestones.push('white_runestone');
+            if (!p.achievements) p.achievements = [];
+            p.achievements.push({ id: 'white_runestone', name: 'White Runestone', earned: Date.now() });
+
+            termAppend('', 'term-separator');
+            termAppend('✦ <span style="color:#FFFFFF;font-weight:bold;">WHITE RUNESTONE</span> ✦', 'term-highlight');
+            termAppend('You have discovered Ashen Harbor! A pale runestone materializes in your hand.', 'term-loot');
+            termAppend('The Portal network is now accessible from both towns.', 'term-dim');
+            termAppend('', 'term-separator');
+
+            // Don't trigger again
+            room.flags.firstDiscovery = false;
+            saveGame();
+        }
+    }
+
+    // Post a clickable portal message in the terminal
+    setTimeout(() => {
+        termAppend(
+            `<span style="color:#AA88FF;cursor:pointer;font-weight:bold;" onclick="townExitFromDungeon('${townId}')">` +
+            `[ ${label} ]</span>`,
+            'term-highlight'
+        );
+    }, 300);
+}
+
+// Called when player clicks the town exit link from a dungeon room
+function townExitFromDungeon(townId) {
+    const townDef = (typeof TOWNS !== 'undefined' && TOWNS[townId]) ? TOWNS[townId] : null;
+    const townName = townDef ? townDef.name : townId;
+    if (confirm(`Leave the dungeon and travel to ${townName}?`)) {
+        returnToTown(townId);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LEAVE EXPLORATION TO TOWN (allowed when pips are full)
+// Enemies are preserved via activeCombat save system
+// ═══════════════════════════════════════════════════════════════
+function leaveExploreToTown() {
+    const cs = gameState.combatState;
+    if (cs) {
+        const allReady = cs.pipAvailable && cs.pipAvailable.every(x => x);
+        if (!allReady) {
+            termAppend('<span style="color:var(--error-color);">⚠ You must wait for all pips to recover before leaving!</span>');
+            return;
+        }
+        // Enemies are preserved — activeCombat will save them
+    }
+
+    // Clear timers but NOT combatState (save will capture it)
+    if (gameState.combatTimer) {
+        clearInterval(gameState.combatTimer);
+        gameState.combatTimer = null;
+    }
+
+    // Stop resting timers
+    stopResting();
+
+    document.body.classList.remove("terminal-mode");
+    document.getElementById('terminalWindow').style.display = 'none';
+    document.getElementById('hud').style.display = 'none';
+    document.getElementById('actionBar').innerHTML = '';
+    document.getElementById('actionBar').style.display = 'none';
+    document.getElementById('mainScreen').style.display = 'block';
+    gameState._terminalOpen = false;
+    gameState._currentExploreArea = null;
+
+    saveGame();  // Saves activeCombat with enemies still alive
     showTown();
 }
 
 function testDungeon() {
-    document.body.classList.add("terminal-mode");
-    
-    // Start regeneration in dungeon (normal speed)
-    startMpRegen(false);
-    startResting(false);
-    
-    const dungeonKey = 'whisperingCrypt';
-    const dungeon = DUNGEONS[dungeonKey];
-    const floor = dungeon.floors[1];
-
-    // 🔁 reset encounter flags for testing
-Object.values(floor.rooms).forEach(r => {
-    if (r.encounter) {
-        delete r.encounter.resolved;
-    }
-});
-
-
-    gameState.dungeon = {
-        dungeonKey,
-        floor: 1,
-        currentRoom: floor.startRoom,
-        discoveredRooms: new Set([floor.startRoom]),
-        activeEnemies: []   // 👈 THIS WAS MISSING
-    };
-
-    openTerminalView(dungeonKey);
-
-    const room = floor.rooms[floor.startRoom];
-    room.flags.discovered = true;
-
-    termAppend('', 'term-separator');
-    termAppend(`<strong>${room.name}</strong>`);
-    termAppend(room.description, 'term-dim');
-
-    const exits = Object.keys(room.exits)
-        .map(d => d.toUpperCase())
-        .join(', ');
-
-    termAppend(`You see exits: ${exits}.`, 'term-dim');
-
-    // 💾 AUTO-SAVE when entering dungeon (track dungeon state!)
-    saveGame();
-
-    renderDungeonActionBar();
+    // Legacy redirect — use town1's dungeon
+    startDungeon('Dungeon1');
 }
 
 
