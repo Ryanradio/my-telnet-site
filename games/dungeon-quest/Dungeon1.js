@@ -190,8 +190,8 @@ window.DUNGEONS.Dungeon1 = {
           }
         },
         "R13": {
-          "name": "",
-          "description": "",
+          "name": "R13",
+          "description": "You see a large Copper door that appears to be lockedl",
           "map": {
             "x": 8,
             "y": 10
