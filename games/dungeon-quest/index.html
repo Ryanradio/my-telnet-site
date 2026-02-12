@@ -6835,13 +6835,14 @@ if (cs) {
         // PIP RECOVERY (always runs)
         // ─────────────────────────────────────────
         let anyRestored = false;
+        const pipCooldown = gameState.player ? getPipCooldown(gameState.player) : BASE_PIP_COOLDOWN;
 
         for (let i = 0; i < cs.pipTimers.length; i++) {
             if (!cs.pipAvailable[i] && cs.pipTimers[i] > 0) {
                 cs.pipTimers[i]--;
                 if (cs.pipTimers[i] <= 0) {
                     cs.pipAvailable[i] = true;
-                    cs.pipTimers[i] = 10;
+                    cs.pipTimers[i] = pipCooldown;
                     anyRestored = true;
                 }
             }
@@ -7561,13 +7562,24 @@ function testDungeon() {
 
 
 const BASE_PIP_COOLDOWN = 10;
-const MIN_PIP_COOLDOWN = 3;
+const MIN_PIP_COOLDOWN = 5;
 
 function getPipCooldown(player){
-    return Math.max(
-        MIN_PIP_COOLDOWN,
-        Math.floor(BASE_PIP_COOLDOWN - (player.speed || 0) * 0.25)
-    );
+    // Base is always 10s for all classes regardless of class speed stat.
+    // Only active speed_boost buff potions reduce pip recovery time.
+    let cooldown = BASE_PIP_COOLDOWN;
+
+    // Check for active speed_boost buff (from speed potions only)
+    if (player.buffs) {
+        const speedBuff = player.buffs.find(b => b.type === 'speed_boost');
+        if (speedBuff) {
+            // speedBuff.power is a percentage bonus (e.g. 25 = 25% faster)
+            const reduction = Math.floor(cooldown * (speedBuff.power / 100));
+            cooldown -= reduction;
+        }
+    }
+
+    return Math.max(MIN_PIP_COOLDOWN, cooldown);
 }
 
 
@@ -8274,7 +8286,7 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 });
             } else {
                 cs.pipAvailable[pipIndex] = false;
-                cs.pipTimers[pipIndex] = 10;
+                cs.pipTimers[pipIndex] = gameState.player ? getPipCooldown(gameState.player) : BASE_PIP_COOLDOWN;
                 renderActionBar();
                 termAppend('Failed to escape!', 'term-error');
                 startCombatTimer();
