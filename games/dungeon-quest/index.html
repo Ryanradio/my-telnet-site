@@ -2219,6 +2219,25 @@ function buildSaveSnapshot() {
             }
             return generated;
         })(),
+        
+        // ═══════════════════════════════════════════════════════════════
+        // GENERATED ARMOR - Save all dynamically created armor drops
+        // ═══════════════════════════════════════════════════════════════
+        generatedArmor: (() => {
+            const generated = {};
+            // Find all armor in inventory that have .isDropped flag
+            (p.inventory || []).forEach(itemKey => {
+                const armor = ARMOR[itemKey];
+                if (armor && armor.isDropped) {
+                    generated[itemKey] = armor;
+                }
+            });
+            // Also save equipped armor if it's generated
+            if (p.armor && ARMOR[p.armor]?.isDropped) {
+                generated[p.armor] = ARMOR[p.armor];
+            }
+            return generated;
+        })(),
 
         // Current location/state
         currentLocation: gameState.currentLocation,
@@ -2503,7 +2522,13 @@ window.addEventListener('beforeunload', () => {
             terminalPrint('  /logout               - End sysop session');
             terminalPrint('');
             terminalPrint('PLAYER COMMANDS:');
-            terminalPrint('  /give <type> <id>     - Give item (weapon/armor/item/spell)');
+            terminalPrint('  /give <type> <id> [quality]  - Give item to player');
+            terminalPrint('                                 Types: weapon, armor, item, spell');
+            terminalPrint('                                 Quality (optional): poor, normal, rare,');
+            terminalPrint('                                           epic, legendary, godly');
+            terminalPrint('                                 Examples:');
+            terminalPrint('                                   /give weapon iron_sword legendary');
+            terminalPrint('                                   /give armor leather_armor godly');
             terminalPrint('  /setlevel <level>     - Set player level (1-25)');
             terminalPrint('                          ⚡ Level 20 triggers class evolution!');
             terminalPrint('  /setgold <amount>     - Set gold amount');
@@ -2602,12 +2627,52 @@ window.addEventListener('beforeunload', () => {
                     break;
                 case 'armor':
                     if (ARMOR[id]) {
-                        if (!gameState.player.inventory.includes(id)) {
-                            gameState.player.inventory.push(id);
+                        // Check if quality was specified and is valid
+                        if (quality && QUALITY_CONFIG[quality]) {
+                            // Generate armor with specified quality
+                            const baseArmor = ARMOR[id];
+                            const armorLevel = baseArmor.level || gameState.player.level;
+                            
+                            // Create unique armor ID with quality
+                            const armorId = `${id}_${quality}_sysop_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+                            
+                            // Apply quality bonus (percentage-based)
+                            const bonusPct = QUALITY_CONFIG[quality].bonusPct || 0;
+                            const bonusDef = Math.floor(baseArmor.baseDefense * bonusPct);
+                            const bonusMag = Math.floor((baseArmor.baseMagicBonus || 0) * bonusPct);
+                            
+                            // Create the quality armor
+                            const qualityArmor = {
+                                id: armorId,
+                                name: `${QUALITY_CONFIG[quality].name} ${baseArmor.name}`,
+                                baseDefense: baseArmor.baseDefense + bonusDef,
+                                baseMagicBonus: (baseArmor.baseMagicBonus || 0) + bonusMag,
+                                level: armorLevel,
+                                quality: quality,
+                                cost: baseArmor.cost * (QUALITY_CONFIG[quality].bonusPct + 1),
+                                description: `A ${quality} quality ${baseArmor.name}`,
+                                slot: 'armor',
+                                isDropped: true, // Mark as generated
+                                classRestriction: baseArmor.classRestriction
+                            };
+                            
+                            // Register in ARMOR
+                            ARMOR[armorId] = qualityArmor;
+                            
+                            // Add to inventory
+                            gameState.player.inventory.push(armorId);
+                            
+                            terminalPrint(`SUCCESS: Gave ${quality} ${baseArmor.name} (${qualityArmor.baseDefense} DEF${qualityArmor.baseMagicBonus > 0 ? `, +${qualityArmor.baseMagicBonus} MAG` : ''})`, 'success');
+                        } else {
+                            // Give base armor without quality
+                            if (!gameState.player.inventory.includes(id)) {
+                                gameState.player.inventory.push(id);
+                            }
+                            terminalPrint(`SUCCESS: Gave armor '${ARMOR[id].name}' to player`, 'success');
                         }
-                        terminalPrint(`SUCCESS: Gave armor '${ARMOR[id].name}' to player`, 'success');
                     } else {
                         terminalPrint(`ERROR: Armor '${id}' not found`, 'error');
+                        terminalPrint('Use /listarmor to see available armor', 'error');
                     }
                     break;
                 case 'item':
@@ -3423,6 +3488,16 @@ window.addEventListener('beforeunload', () => {
                         WEAPONS[weaponId] = data.generatedWeapons[weaponId];
                     });
                     console.log(`✅ Restored ${Object.keys(data.generatedWeapons).length} generated weapons`);
+                }
+                
+                // ═══════════════════════════════════════════════════════════════
+                // RESTORE GENERATED ARMOR - Must happen BEFORE equipment check!
+                // ═══════════════════════════════════════════════════════════════
+                if (data.generatedArmor) {
+                    Object.keys(data.generatedArmor).forEach(armorId => {
+                        ARMOR[armorId] = data.generatedArmor[armorId];
+                    });
+                    console.log(`✅ Restored ${Object.keys(data.generatedArmor).length} generated armor pieces`);
                 }
                 
                 // ═══════════════════════════════════════════════════════════════
