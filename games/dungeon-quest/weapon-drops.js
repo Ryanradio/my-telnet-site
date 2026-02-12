@@ -82,14 +82,20 @@ function generateWeaponDrop(player, enemyLevel, enemyRarity = 'common') {
     // Determine quality
     const quality = rollQuality();
     
-    // Generate base damage based on level
-    const baseDamage = Math.floor(10 + (weaponLevel * 3));
-    const damageVariance = Math.floor(weaponLevel * 1.5);
+    // Generate base damage matching weapons.js scaling:
+    // Level 1 weapons: ~4-7 | Level 10: ~30-45 | Level 20: ~70-105
+    // Formula: baseDamage ≈ level * 3.5, variance ≈ 50% of base
+    const baseDamage = Math.max(3, Math.floor(weaponLevel * 3.5));
+    const damageVariance = Math.max(2, Math.floor(baseDamage * 0.5));
     
-    // Apply quality multiplier to damage
-    const qualityBonus = QUALITY_CONFIG[quality].bonus;
-    const minDamage = baseDamage + qualityBonus;
-    const maxDamage = baseDamage + damageVariance + qualityBonus;
+    // Apply quality bonus as percentage of base (matching QUALITY_CONFIG.bonusPct)
+    const bonusPct = (QUALITY_CONFIG[quality] && QUALITY_CONFIG[quality].bonusPct !== undefined)
+        ? QUALITY_CONFIG[quality].bonusPct
+        : 0;
+    const qualityBonusMin = Math.floor(baseDamage * bonusPct);
+    const qualityBonusMax = Math.floor((baseDamage + damageVariance) * bonusPct);
+    const minDamage = baseDamage + qualityBonusMin;
+    const maxDamage = baseDamage + damageVariance + qualityBonusMax;
     
     // Generate modifiers based on quality
     const modifiers = generateModifiers(quality);

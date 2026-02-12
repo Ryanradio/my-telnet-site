@@ -1189,7 +1189,6 @@ body.terminal-mode #terminalWindow {
 
     <!-- External Game Data Files -->
     <script src="dungeon-data.js"></script>
-    <script src="monsters.js"></script>
     <script src="monsters-expanded.js"></script>
     <script src="weapons.js"></script>
     <script src="armor.js"></script>
@@ -1470,17 +1469,22 @@ const OPPOSITE_DIR = {
         function calcChaSellBonus(cha){ return Math.min(15, (cha||0) * 1); }   // sell %  bonus
         function calcInnCost(cha)     { return Math.max(20, 50 - (cha||0)); }
         function calcCritChance(lck, player)  { 
-            let baseCrit = 5 + (lck || 0);  // 5% base + 1% per LCK
+            // Base: 3% + 0.5% per LCK (not 1%) — prevents LCK-dumping giving 30%+ at level 1
+            let baseCrit = 3 + Math.floor((lck || 0) * 0.5);
             
-            // ROGUE: Double LCK scaling + 10% class bonus
             if (player) {
                 const baseClass = player.baseClass || player.class;
+                const lvl = player.level || 1;
                 if (baseClass === 'rogue') {
-                    baseCrit = 10 + ((lck || 0) * 2);  // 10% base + 2% per LCK
+                    // Rogue: 5% base + 0.75% per LCK + 1% per 2 levels
+                    // This gives ~15% at level 3 with 17 LCK (fun but not broken)
+                    // and scales to ~50% at level 20 (exciting endgame)
+                    baseCrit = 5 + Math.floor((lck || 0) * 0.75) + Math.floor(lvl / 2);
                 }
             }
             
-            return Math.min(95, baseCrit);  // Cap at 95%
+            const cap = (player && (player.baseClass || player.class) === 'rogue') ? 75 : 30;
+            return Math.min(cap, baseCrit);
         }  // %
         function calcDodgeChance(dex) { return Math.min(40, (dex||0) * 2); }   // %
         function calcLootBonus(lck)   { return Math.min(25, (lck||0) * 2); }   // extra %
@@ -2241,6 +2245,41 @@ function buildSaveSnapshot() {
 
         // Current location/state
         currentLocation: gameState.currentLocation,
+
+        // ═══════════════════════════════════════════════════════════════
+        // ACTIVE COMBAT - Save mid-fight state so enemies persist on reload
+        // ═══════════════════════════════════════════════════════════════
+        activeCombat: (() => {
+            const cs = gameState.combatState;
+            if (!cs || gameState.dungeon) return null; // Only for world exploration combat
+            return {
+                location: gameState.currentLocation,
+                monsters: cs.monsters.map(m => ({
+                    // All fields needed to fully reconstruct the enemy
+                    key:         m.key,
+                    name:        m.name,
+                    rarity:      m.rarity,
+                    rarityColor: m.rarityColor,
+                    hp:          m.hp,
+                    maxHp:       m.maxHp,
+                    damage:      m.damage,
+                    defense:     m.defense,
+                    xp:          m.xp,
+                    gold:        m.gold,
+                    level:       m.level,
+                    possibleDrops: m.possibleDrops,
+                    dropRates:   m.dropRates,
+                    index:       m.index
+                })),
+                currentTarget:   cs.currentTarget,
+                enemyDelay:      cs.enemyDelay,
+                enemyHits:       cs.enemyHits,
+                enemyHitsLeft:   cs.enemyHitsLeft,
+                // Save pip state (how many pips are ready vs cooling down)
+                pipCount:        cs.pipAvailable.length,
+                pipsReady:       cs.pipAvailable.map(x => x),
+            };
+        })(),
 
         // Dungeon state (if in dungeon)
         dungeon: gameState.dungeon ? {
@@ -3636,6 +3675,58 @@ window.addEventListener('beforeunload', () => {
                     // Start regeneration in dungeon (normal speed)
                     startMpRegen(false);
                     startResting(false);
+                } else if (data.activeCombat && data.activeCombat.monsters && data.activeCombat.monsters.length > 0) {
+                    // ═══════════════════════════════════════════════════════════════
+                    // RESTORE MID-COMBAT STATE - enemies still waiting from last session
+                    // ═══════════════════════════════════════════════════════════════
+                    const ac = data.activeCombat;
+                    const p  = gameState.player;
+                    
+                    // Restore pip array
+                    const pipCount  = ac.pipCount || calcPlayerHits(p);
+                    const pipTimers = Array(pipCount).fill(10);
+                    const pipReady  = ac.pipsReady || Array(pipCount).fill(true);
+                    
+                    gameState.combatState = {
+                        monsters:           ac.monsters,
+                        currentTarget:      ac.currentTarget || 0,
+                        messages:           [],
+                        defeatedMonsters:   [],
+                        pipTimers:          pipTimers,
+                        pipAvailable:       pipReady,
+                        enemyTimer:         ac.enemyDelay || 15,
+                        enemyDelay:         ac.enemyDelay || 15,
+                        enemyHits:          ac.enemyHits  || 1,
+                        enemyHitsLeft:      ac.enemyHitsLeft || 1,
+                        playerStatusEffects:  [],
+                        monsterStatusEffects: {},
+                        dotTimers:            {},
+                        actionMode:           'main'
+                    };
+                    
+                    // Open the terminal view for the saved location
+                    const loc = ac.location || gameState.currentLocation;
+                    gameState.currentLocation = loc;
+                    gameState._terminalOpen = false;
+                    openTerminalView(loc);
+                    
+                    // Print restoration message
+                    termAppend('', 'term-separator');
+                    termAppend(`<span style="color:#FF8800;">⚠️ You were mid-combat when you left!</span>`, 'term-enemy');
+                    
+                    const names = ac.monsters.map(m =>
+                        `<span style="color:${m.rarityColor};">${m.name}</span> (${m.hp}/${m.maxHp} HP)`
+                    ).join(', ');
+                    termAppend(`Still fighting: ${names}`, 'term-enemy');
+                    
+                    // Start regen, render UI
+                    startMpRegen(false);
+                    startResting(false);
+                    renderEnemyCards();
+                    renderActionBar();
+                    startCombatTimer();
+                    
+                    console.log(`⚔️ Restored combat: ${ac.monsters.length} enemies waiting`);
                 } else {
                     showTown();
                 }
@@ -4734,6 +4825,11 @@ window.addEventListener('beforeunload', () => {
                         p.unlockedAreas.push(key);
                     }
                 }
+                // Safety: remove any locked zones the player shouldn't have yet
+                if (key !== 'town' && loc.locked && loc.requiredLevel && p.level < loc.requiredLevel) {
+                    const idx = p.unlockedAreas.indexOf(key);
+                    if (idx !== -1) p.unlockedAreas.splice(idx, 1);
+                }
             });
             
             let exploreHtml = `
@@ -5175,12 +5271,21 @@ function stabilizeTerminalLayout() {
 
             const location = LOCATIONS[locKey];
             const p = gameState.player;
+            
+            // Hard level gate - even if somehow unlocked, enforce min level
+            if (location.requiredLevel && p.level < location.requiredLevel) {
+                document.body.classList.remove("terminal-mode");
+                alert(`You must be level ${location.requiredLevel} to explore ${location.name}!`);
+                showExplore();
+                return;
+            }
+            
             if (!p.unlockedAreas.includes(locKey)) {
-    document.body.classList.remove("terminal-mode"); // 👈 ADD THIS
-    alert(location.unlockMessage || 'This area is locked!');
-    showExplore();
-    return;
-}
+                document.body.classList.remove("terminal-mode");
+                alert(location.unlockMessage || 'This area is locked!');
+                showExplore();
+                return;
+            }
 
             gameState.currentLocation = locKey;
             
@@ -6923,6 +7028,10 @@ function consumePips(cs, amount, cooldown) {
 
     // Consume pips
     consumePips(cs, pipCost, getPipCooldown(p));
+    
+    // Always reset action mode to main - whether the attack hits or dodges,
+    // the player should see the main combat menu (with updated pips)
+    cs.actionMode = 'main';
     
     // ═══════════════════════════════════════════════════════════════
     // ROGUE: SHADOW STRIKE - Guaranteed crit from stealth

@@ -15,12 +15,62 @@ const ARMOR = {
     },
     leather_armor: {
         name: 'Leather Armor',
-        baseDefense: 2,
+        baseDefense: 3,
         baseMagicBonus: 0,
         cost: 0,
         level: 1,
         quality: 'normal',
         slot: 'armor'
+    },
+    leather_vest: {
+        name: 'Leather Vest',
+        baseDefense: 2,
+        baseMagicBonus: 0,
+        cost: 0,
+        level: 1,
+        quality: 'poor',
+        slot: 'armor',
+        allowedClasses: ['rogue', 'ranger', 'hunter', 'archer']
+    },
+    // LEVEL 2 ARMOR
+    padded_armor: {
+        name: 'Padded Armor',
+        baseDefense: 4,
+        baseMagicBonus: 1,
+        cost: 200,
+        level: 2,
+        quality: 'normal',
+        slot: 'armor'
+    },
+    studded_leather: {
+        name: 'Studded Leather',
+        baseDefense: 5,
+        baseMagicBonus: 0,
+        cost: 250,
+        level: 2,
+        quality: 'normal',
+        slot: 'armor',
+        allowedClasses: ['rogue', 'ranger', 'hunter', 'archer', 'warrior', 'paladin', 'cleric']
+    },
+    // LEVEL 3 ARMOR
+    hide_armor: {
+        name: 'Hide Armor',
+        baseDefense: 6,
+        baseMagicBonus: 0,
+        cost: 350,
+        level: 3,
+        quality: 'normal',
+        slot: 'armor'
+    },
+    shadow_cloak: {
+        name: 'Shadow Cloak',
+        baseDefense: 5,
+        baseMagicBonus: 0,
+        cost: 400,
+        level: 3,
+        quality: 'rare',
+        slot: 'armor',
+        allowedClasses: ['rogue', 'ranger', 'hunter', 'archer']
     },
     
     // LEVEL 4 ARMOR
@@ -43,6 +93,27 @@ const ARMOR = {
         slot: 'armor'
     },
     
+    // LEVEL 6 ARMOR
+    scale_armor: {
+        name: 'Scale Armor',
+        baseDefense: 12,
+        baseMagicBonus: 0,
+        cost: 1200,
+        level: 6,
+        quality: 'normal',
+        slot: 'armor'
+    },
+    assassin_garb: {
+        name: "Assassin's Garb",
+        baseDefense: 10,
+        baseMagicBonus: 0,
+        cost: 1400,
+        level: 6,
+        quality: 'rare',
+        slot: 'armor',
+        allowedClasses: ['rogue', 'ranger', 'hunter', 'archer']
+    },
+
     // LEVEL 8 ARMOR
     plate_armor: {
         name: 'Plate Armor',

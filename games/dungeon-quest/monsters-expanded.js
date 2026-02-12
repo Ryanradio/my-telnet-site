@@ -9,7 +9,9 @@
 // legendary: 0.9% spawn rate, 2.5x stats, orange color
 // mythic: 0.1% spawn rate, 3.5x stats, red color
 
-const ENEMIES = {
+// Safe declaration - won't crash if loaded twice
+if (typeof ENEMIES === 'undefined') var ENEMIES = {};
+Object.assign(ENEMIES, {
     // ═══════════════════════════════════════════════════════════════
     // LEVEL 1-5 MONSTERS (Forest & Riverside)
     // ═══════════════════════════════════════════════════════════════
@@ -1090,7 +1092,7 @@ const ENEMIES = {
         dropRates: { common: 0.15, uncommon: 0.25, rare: 0.25, epic: 0.2, legendary: 0.12, mythic: 0.05 },
         isBoss: true
     }
-};
+});
 
 // Rarity multipliers and colors
 const RARITY_CONFIG = {
