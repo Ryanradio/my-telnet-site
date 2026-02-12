@@ -1190,6 +1190,7 @@ body.terminal-mode #terminalWindow {
     <!-- External Game Data Files -->
     <script src="dungeon-data.js"></script>
     <script src="monsters.js"></script>
+    <script src="monsters-expanded.js"></script>
     <script src="weapons.js"></script>
     <script src="armor.js"></script>
     <script src="items.js"></script>
@@ -1361,7 +1362,17 @@ const OPPOSITE_DIR = {
         };
 
         // ── derived-stat helpers ──────────────────────────────────────
-        function calcPlayerHits(p) {
+        // Compute quality bonus as a % of the weapon/armor base damage/defense
+        // QUALITY_CONFIG now uses bonusPct instead of a flat bonus
+        function getQualityBonus(quality, baseStat) {
+            const cfg = QUALITY_CONFIG[quality];
+            if (!cfg) return 0;
+            // Support old flat bonus saves gracefully
+            if (cfg.bonusPct !== undefined) return Math.floor(baseStat * cfg.bonusPct);
+            return cfg.bonus || 0;
+        }
+
+                function calcPlayerHits(p) {
             const baseClass = p.baseClass || p.class;
             
             // ROGUE: Dual-wield specialist with progressive pip scaling
@@ -2174,6 +2185,14 @@ function buildSaveSnapshot() {
             inventory: [...(p.inventory || [])],
             knownSpells: [...(p.knownSpells || [])],
             
+            // Stat points
+            statPoints: p.statPoints || 0,
+            
+            // Base class (for evolution tracking)
+            baseClass: p.baseClass,
+            className: p.className,
+            hasEvolved: p.hasEvolved,
+            
             // Progression
             defeatedMasters: [...(p.defeatedMasters || [])],
             unlockedAreas: [...(p.unlockedAreas || [])],
@@ -2181,6 +2200,25 @@ function buildSaveSnapshot() {
             // Special flags
             godMode: p.godMode || false
         },
+        
+        // ═══════════════════════════════════════════════════════════════
+        // GENERATED WEAPONS - Save all dynamically created weapon drops
+        // ═══════════════════════════════════════════════════════════════
+        generatedWeapons: (() => {
+            const generated = {};
+            // Find all weapons in inventory that have .isDropped flag
+            (p.inventory || []).forEach(itemKey => {
+                const weapon = WEAPONS[itemKey];
+                if (weapon && weapon.isDropped) {
+                    generated[itemKey] = weapon;
+                }
+            });
+            // Also save equipped weapon if it's generated
+            if (p.weapon && WEAPONS[p.weapon]?.isDropped) {
+                generated[p.weapon] = WEAPONS[p.weapon];
+            }
+            return generated;
+        })(),
 
         // Current location/state
         currentLocation: gameState.currentLocation,
@@ -2322,6 +2360,8 @@ window.addEventListener('beforeunload', () => {
             line.textContent = message;
             output.appendChild(line);
             
+            // Auto-scroll to bottom
+            output.scrollTop = output.scrollHeight;
         }
 
         function clearTerminal() {
@@ -2497,23 +2537,67 @@ window.addEventListener('beforeunload', () => {
             }
 
             if (args.length < 2) {
-                terminalPrint('ERROR: Usage: /give <type> <id>', 'error');
+                terminalPrint('ERROR: Usage: /give <type> <id> [quality]', 'error');
                 terminalPrint('Types: weapon, armor, item, spell', 'error');
+                terminalPrint('Quality (optional, for weapons): poor, normal, rare, epic, legendary, godly', 'error');
                 return;
             }
 
             const type = args[0].toLowerCase();
             const id = args[1].toLowerCase();
+            const quality = args[2] ? args[2].toLowerCase() : null;
 
             switch(type) {
                 case 'weapon':
                     if (WEAPONS[id]) {
-                        if (!gameState.player.inventory.includes(id)) {
-                            gameState.player.inventory.push(id);
+                        // Check if quality was specified and is valid
+                        if (quality && QUALITY_CONFIG[quality]) {
+                            // Generate a weapon drop with specified quality
+                            const baseWeapon = WEAPONS[id];
+                            const weaponLevel = baseWeapon.level || gameState.player.level;
+                            
+                            // Create unique weapon ID with quality
+                            const weaponId = `${id}_${quality}_sysop_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+                            
+                            // Apply quality bonus (percentage-based)
+                            const bonusPct = QUALITY_CONFIG[quality].bonusPct || 0;
+                            const bonusDmg = Math.floor(baseWeapon.baseDamage * bonusPct);
+                            const bonusMax = Math.floor((baseWeapon.maxDamage || baseWeapon.baseDamage) * bonusPct);
+                            
+                            // Create the quality weapon
+                            const qualityWeapon = {
+                                id: weaponId,
+                                name: `${QUALITY_CONFIG[quality].name} ${baseWeapon.name}`,
+                                baseDamage: baseWeapon.baseDamage + bonusDmg,
+                                maxDamage: (baseWeapon.maxDamage || baseWeapon.baseDamage) + bonusMax,
+                                baseMagicDamage: baseWeapon.baseMagicDamage || 0,
+                                level: weaponLevel,
+                                quality: quality,
+                                modifiers: [],
+                                cost: baseWeapon.cost * (QUALITY_CONFIG[quality].bonusPct + 1),
+                                description: `A ${quality} quality ${baseWeapon.name}`,
+                                slot: 'weapon',
+                                isDropped: true, // Mark as generated
+                                classRestriction: baseWeapon.classRestriction
+                            };
+                            
+                            // Register in WEAPONS
+                            WEAPONS[weaponId] = qualityWeapon;
+                            
+                            // Add to inventory
+                            gameState.player.inventory.push(weaponId);
+                            
+                            terminalPrint(`SUCCESS: Gave ${quality} ${baseWeapon.name} (${qualityWeapon.baseDamage}-${qualityWeapon.maxDamage} dmg)`, 'success');
+                        } else {
+                            // Give base weapon without quality
+                            if (!gameState.player.inventory.includes(id)) {
+                                gameState.player.inventory.push(id);
+                            }
+                            terminalPrint(`SUCCESS: Gave weapon '${WEAPONS[id].name}' to player`, 'success');
                         }
-                        terminalPrint(`SUCCESS: Gave weapon '${WEAPONS[id].name}' to player`, 'success');
                     } else {
                         terminalPrint(`ERROR: Weapon '${id}' not found`, 'error');
+                        terminalPrint('Use /listweapons to see available weapons', 'error');
                     }
                     break;
                 case 'armor':
@@ -2528,9 +2612,7 @@ window.addEventListener('beforeunload', () => {
                     break;
                 case 'item':
                     if (ITEMS[id]) {
-                        if (!gameState.player.inventory.includes(id)) {
-                            gameState.player.inventory.push(id);
-                        }
+                        gameState.player.inventory.push(id); // Items can stack, so always push
                         terminalPrint(`SUCCESS: Gave item '${ITEMS[id].name}' to player`, 'success');
                     } else {
                         terminalPrint(`ERROR: Item '${id}' not found`, 'error');
@@ -3334,6 +3416,16 @@ window.addEventListener('beforeunload', () => {
                 };
                 
                 // ═══════════════════════════════════════════════════════════════
+                // RESTORE GENERATED WEAPONS - Must happen BEFORE equipment check!
+                // ═══════════════════════════════════════════════════════════════
+                if (data.generatedWeapons) {
+                    Object.keys(data.generatedWeapons).forEach(weaponId => {
+                        WEAPONS[weaponId] = data.generatedWeapons[weaponId];
+                    });
+                    console.log(`✅ Restored ${Object.keys(data.generatedWeapons).length} generated weapons`);
+                }
+                
+                // ═══════════════════════════════════════════════════════════════
                 // EQUIPMENT MIGRATION (fix old save data with missing weapons/armor)
                 // ═══════════════════════════════════════════════════════════════
                 const p = gameState.player;
@@ -3664,7 +3756,11 @@ window.addEventListener('beforeunload', () => {
                 unlockedAreas:  ['forest'],
                 // ── new stat block ──
                 str: stats.str,  dex: stats.dex,  wis: stats.wis,
-                cha: stats.cha,  con: stats.con,  lck: stats.lck
+                cha: stats.cha,  con: stats.con,  lck: stats.lck,
+                // ── stat point allocation ──
+                statPoints: 0,   // earned 3 per level-up, spent in Character Stats
+                // ── store base class so evolution doesn't lose class identity ──
+                baseClass: classKey
             };
             gameState.currentLocation = 'town';
             
@@ -3926,9 +4022,9 @@ window.addEventListener('beforeunload', () => {
                     const owned = p.inventory.includes(key);
                     const equipped = p.weapon === key;
                     const qualityColor = QUALITY_CONFIG[weapon.quality].color;
-                    const qualityBonus = QUALITY_CONFIG[weapon.quality].bonus;
+                    const qualityBonus = getQualityBonus(weapon.quality, weapon.baseDamage);
                     const totalDmg = weapon.baseDamage + qualityBonus;
-                    const totalMag = weapon.baseMagicDamage + qualityBonus;
+                    const totalMag = weapon.baseMagicDamage + getQualityBonus(weapon.quality, weapon.baseMagicDamage);
                     
                     // Build modifier display
                     let modifierHtml = '';
@@ -3971,9 +4067,9 @@ window.addEventListener('beforeunload', () => {
                     const owned = p.inventory.includes(key);
                     const equipped = p.armor === key;
                     const qualityColor = QUALITY_CONFIG[armor.quality].color;
-                    const qualityBonus = QUALITY_CONFIG[armor.quality].bonus;
+                    const qualityBonus = getQualityBonus(armor.quality, armor.baseDefense);
                     const totalDef = armor.baseDefense + qualityBonus;
-                    const totalMag = (armor.baseMagicBonus || 0) + (qualityBonus > 0 ? Math.floor(qualityBonus / 2) : 0);
+                    const totalMag = (armor.baseMagicBonus || 0) + getQualityBonus(armor.quality, armor.baseMagicBonus || 0);
                     
                     shopHtml += `
                         <div class="item-card ${equipped ? 'equipped' : ''}">
@@ -4067,14 +4163,14 @@ window.addEventListener('beforeunload', () => {
                         itemName = weapon.name;
                         itemColor = QUALITY_CONFIG[weapon.quality].color;
                         sellValue = Math.floor(weapon.cost * 0.5);
-                        const qualityBonus = QUALITY_CONFIG[weapon.quality].bonus;
+                        const qualityBonus = getQualityBonus(weapon.quality, weapon.baseDamage);
                         itemDesc = `DMG: ${weapon.baseDamage + qualityBonus} | MAG: ${weapon.baseMagicDamage + qualityBonus}`;
                     } else if (data.type === 'armor') {
                         const armor = ARMOR[itemKey];
                         itemName = armor.name;
                         itemColor = QUALITY_CONFIG[armor.quality].color;
                         sellValue = Math.floor(armor.cost * 0.5);
-                        const qualityBonus = QUALITY_CONFIG[armor.quality].bonus;
+                        const qualityBonus = getQualityBonus(armor.quality, armor.baseDefense);
                         itemDesc = `DEF: ${armor.baseDefense + qualityBonus}`;
                     }
                     
@@ -4244,9 +4340,9 @@ window.addEventListener('beforeunload', () => {
                 const weapon = WEAPONS[key];
                 const equipped = p.weapon === key;
                 const qualityColor = QUALITY_CONFIG[weapon.quality].color;
-                const qualityBonus = QUALITY_CONFIG[weapon.quality].bonus;
+                const qualityBonus = getQualityBonus(weapon.quality, weapon.baseDamage);
                 const totalDmg = weapon.baseDamage + qualityBonus;
-                const totalMag = weapon.baseMagicDamage + qualityBonus;
+                const totalMag = weapon.baseMagicDamage + Math.floor(weapon.baseMagicDamage * (QUALITY_CONFIG[weapon.quality]?.bonusPct || 0));
                 
                 // Build modifier display
                 let modifierHtml = '';
@@ -4289,9 +4385,9 @@ window.addEventListener('beforeunload', () => {
                 const armor = ARMOR[key];
                 const equipped = p.armor === key;
                 const qualityColor = QUALITY_CONFIG[armor.quality].color;
-                const qualityBonus = QUALITY_CONFIG[armor.quality].bonus;
+                const qualityBonus = getQualityBonus(armor.quality, armor.baseDefense);
                 const totalDef = armor.baseDefense + qualityBonus;
-                const totalMag = (armor.baseMagicBonus || 0) + (qualityBonus > 0 ? Math.floor(qualityBonus / 2) : 0);
+                const totalMag = (armor.baseMagicBonus || 0) + Math.floor((armor.baseMagicBonus || 0) * (QUALITY_CONFIG[armor.quality]?.bonusPct || 0));
                 
                 invHtml += `
                     <div class="item-card ${equipped ? 'equipped' : ''}">
@@ -5846,7 +5942,9 @@ if (cs) {
                             <span style="color:#8aaa8a;font-size:15px;"> (${hitsLeft}/${maxHits})</span>
                         </div>
                         <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                            <!-- 📊 STATS BUTTON - commented out, may re-implement later
                             <button onclick="showPlayerStats()" class="action-icon-btn" title="View Stats" style="border-color:#FFD700;">📊 Stats</button>
+                            -->
                             <button onclick="showAttackMenu()" ${!canAct?'disabled':''} class="action-icon-btn" title="Attack">⚔️ Attack</button>
                             <button onclick="showSpellMenu()"  ${!canAct?'disabled':''} class="action-icon-btn" title="Cast Spell">✨ Spell</button>
                             <button onclick="showPotionMenu()" class="action-icon-btn" title="Use Potion" style="border-color:#00FF00;">🧪 Potion</button>
@@ -5950,7 +6048,9 @@ if (cs) {
             } else {
                 // Out of combat - exploring
                 ab.innerHTML = `
+                    <!-- 📊 STATS BUTTON - commented out, may re-implement later
                     <button onclick="showPlayerStats()">📊 STATS</button>
+                    -->
                     <button onclick="exploreLocation('${gameState.currentLocation}')">🔍 CONTINUE EXPLORING</button>
                     <button onclick="showPotionMenuExplore()" style="border-color:#00FF00;">🧪 POTIONS</button>
                     <button onclick="goBackToTown()">🏘️ RETURN TO TOWN</button>
@@ -6714,7 +6814,7 @@ function consumePips(cs, amount, cooldown) {
         }
     }
     
-    const qBonus = QUALITY_CONFIG[weapon.quality].bonus;
+    const qBonus = getQualityBonus(weapon.quality, weapon.baseDamage);
 
     // Determine pip cost and damage multiplier
     let pipCost = 1;
@@ -7508,11 +7608,15 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
             const p = gameState.player;
             const ab = document.getElementById('actionBar');
             
-            // Count potions
+            // Count all usable potions (healing + buffs, same as combat)
             const potions = {};
             p.inventory.forEach(ik => {
-                if (ITEMS[ik] && ['heal_hp','heal_mp','full_restore'].includes(ITEMS[ik].subtype)) {
-                    if (!potions[ik]) potions[ik] = { item: ITEMS[ik], count: 0 };
+                const item = ITEMS[ik];
+                if (item && (
+                    ['heal_hp','heal_mp','full_restore'].includes(item.subtype) ||
+                    item.subtype?.startsWith('buff_')
+                )) {
+                    if (!potions[ik]) potions[ik] = { item, count: 0 };
                     potions[ik].count++;
                 }
             });
@@ -7520,47 +7624,74 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
             const keys = Object.keys(potions);
             if (keys.length === 0) {
                 ab.innerHTML = `
-                    <div style="color:var(--error-color);margin-bottom:10px;">You have no potions!</div>
+                    <div style="color:var(--error-color);font-size:10px;margin-bottom:4px;">You have no potions!</div>
                     <button onclick="renderActionBar()">← BACK</button>
                 `;
                 return;
             }
             
-            let html = `
-                <div style="color:var(--highlight-color);font-size:10px;margin-bottom:6px;">
-                    USE POTION (HP: ${p.hp}/${p.maxHp} | MP: ${p.mp}/${p.maxMp}):
-                </div>
-                <div style="display:flex;flex-direction:column;gap:6px;">
-            `;
+            // Color + icon lookup (mirrors combat potion menu)
+            function potionColor(subtype) {
+                if (subtype==='heal_hp') return '#ff4444';
+                if (subtype==='heal_mp') return '#4488ff';
+                if (subtype==='full_restore') return '#FFD700';
+                if (subtype==='buff_str') return '#FF8800';
+                if (subtype==='buff_def') return '#00AAFF';
+                if (subtype==='buff_xp') return '#FFD700';
+                if (subtype==='buff_gold') return '#FFD700';
+                if (subtype==='buff_magic') return '#8888FF';
+                if (subtype==='buff_damage') return '#FF0000';
+                if (subtype==='buff_invuln') return '#AAAAAA';
+                if (subtype==='buff_luck') return '#FFAA00';
+                if (subtype==='buff_regen') return '#00FF88';
+                if (subtype==='buff_speed') return '#00FF00';
+                if (subtype==='buff_crit') return '#FF00FF';
+                return '#00FF00';
+            }
+            function potionIcon(subtype) {
+                if (subtype==='heal_hp') return '❤️';
+                if (subtype==='heal_mp') return '💙';
+                if (subtype==='full_restore') return '✨';
+                if (subtype==='buff_str') return '💪';
+                if (subtype==='buff_def') return '🛡️';
+                if (subtype==='buff_xp') return '⭐';
+                if (subtype==='buff_gold') return '💰';
+                if (subtype==='buff_magic') return '🔮';
+                if (subtype==='buff_damage') return '⚔️';
+                if (subtype==='buff_invuln') return '🗿';
+                if (subtype==='buff_luck') return '🍀';
+                if (subtype==='buff_regen') return '💚';
+                if (subtype==='buff_speed') return '⚡';
+                if (subtype==='buff_crit') return '🎯';
+                return '🧪';
+            }
+
+            let html = `<div style="color:var(--highlight-color);font-size:10px;margin-bottom:4px;">USE POTION (HP: ${p.hp}/${p.maxHp} | MP: ${p.mp}/${p.maxMp}):</div>`;
+            html += `<div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-start;">`;
             
             keys.forEach(pk => {
                 const pd  = potions[pk];
-                const col = pd.item.subtype==='heal_hp' ? '#FF4444' : 
-                           pd.item.subtype==='heal_mp' ? '#4488FF' : '#FFD700';
-                const icon = pd.item.subtype==='heal_hp' ? '❤️' : 
-                            pd.item.subtype==='heal_mp' ? '💙' : '✨';
-                
-                // Check if at full HP/MP
+                const col = potionColor(pd.item.subtype);
+                const icon = potionIcon(pd.item.subtype);
                 const atFull = (pd.item.subtype === 'heal_hp' && p.hp >= p.maxHp) ||
-                              (pd.item.subtype === 'heal_mp' && p.mp >= p.maxMp) ||
-                              (pd.item.subtype === 'full_restore' && p.hp >= p.maxHp && p.mp >= p.maxMp);
-                
-                html += `
-                    <button onclick="usePotionExplore('${pk}')" 
-                            ${atFull ? 'disabled' : ''} 
-                            style="color:${col};text-align:left;padding:8px;">
-                        ${icon} <strong>${pd.item.name}</strong> x${pd.count} 
-                        <span style="font-size:12px;color:#8aaa8a;"> - ${pd.item.description}</span>
-                        ${atFull ? '<span style="color:#666;"> (Already Full)</span>' : ''}
-                    </button>
-                `;
+                               (pd.item.subtype === 'heal_mp' && p.mp >= p.maxMp) ||
+                               (pd.item.subtype === 'full_restore' && p.hp >= p.maxHp && p.mp >= p.maxMp);
+                const shortName = pd.item.name.length > 12 ? pd.item.name.substring(0,12)+'…' : pd.item.name;
+                html += `<button onclick="usePotionExplore('${pk}')" ${atFull ? 'disabled' : ''} style="
+                    color:${col}; border:1px solid ${col};
+                    background:var(--secondary-bg);
+                    padding:4px 6px; min-width:70px; max-width:90px;
+                    font-size:11px; flex:0 0 auto;
+                    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+                    opacity:${atFull ? 0.4 : 1};
+                ">${icon} ${shortName} x${pd.count}</button>`;
             });
             
-            html += `
-                </div>
-                <button onclick="renderActionBar()" style="margin-top:10px;">← BACK</button>
-            `;
-            
+            html += `<button onclick="renderActionBar()" style="
+                padding:4px 8px; min-width:60px; flex:0 0 auto;
+                background:var(--secondary-bg); border:1px solid var(--border-color);
+                color:var(--text-color); font-size:11px;">❌ Back</button>`;
+            html += `</div>`;
             ab.innerHTML = html;
         }
         
@@ -7631,7 +7762,7 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
         }
     }
     
-    const qBonus   = QUALITY_CONFIG[armor.quality].bonus;
+    const qBonus = getQualityBonus(armor.quality, armor.baseDefense);
     let totalDef   = p.defense + armor.baseDefense + qBonus + (p.con || 0);
 
     if (cs.defending) {
@@ -7778,7 +7909,7 @@ function checkCombatEnd() {
         if (p.xp >= p.xpToNext) {
             levelUp();
             termAppend(`<span style="color:var(--highlight-color);font-size:18px;">⬆️ LEVEL UP! You are now level ${p.level}!</span>`, 'term-victory');
-            termAppend(`<span style="color:#FFD700;">+3 Stat Points!</span>`, 'term-loot');
+            termAppend(`<span style="color:#FFD700;">+3 Stat Points! </span><span style="color:#00FFFF;">→ Spend them at CHARACTER STATS in town.</span>`, 'term-loot');
         }
         
         // Add to defeated list and remove from active combat
@@ -8080,7 +8211,7 @@ function endCombat(victory) {
     while (gameState.player.xp >= gameState.player.xpToNext && gameState.player.level < 25) {
         levelUp();
         termAppend(`⬆️ LEVEL UP! You are now level ${gameState.player.level}!`, 'term-victory');
-        termAppend(`<span style="color:#00FFFF;">+3 Stat Points! Visit the Stats menu in town to allocate them.</span>`, 'term-loot');
+        termAppend(`<span style="color:#00FFFF;">+3 Stat Points! → Spend them at CHARACTER STATS in town.</span>`, 'term-loot');
         
         // Check for class evolution announcement
         if (gameState.player._justEvolved) {
@@ -8772,7 +8903,7 @@ function playerIsExhausted() {
         function calculatePhysicalDamage() {
             const p = gameState.player;
             const weapon = WEAPONS[p.weapon] || { baseDamage: 1, quality: 'poor' };
-            const qBonus = QUALITY_CONFIG[weapon.quality].bonus;
+            const qBonus = getQualityBonus(weapon.quality, weapon.baseDamage);
             let weaponDamage = weapon.baseDamage + qBonus;
             if (p.level <= 5) weaponDamage = Math.floor(weaponDamage * 0.7);
             return weaponDamage + (p.str || 0);
@@ -8781,14 +8912,14 @@ function playerIsExhausted() {
         function calculateMagicDamage() {
             const p = gameState.player;
             const weapon = WEAPONS[p.weapon] || { baseMagicDamage: 0, quality: 'poor' };
-            const qBonus = QUALITY_CONFIG[weapon.quality].bonus;
+            const qBonus = getQualityBonus(weapon.quality, weapon.baseDamage);
             return (weapon.baseMagicDamage + qBonus) + (p.wis || 0);
         }
         
         function calculateTotalDefense() {
             const p = gameState.player;
             const armor = ARMOR[p.armor] || { baseDefense: 0, quality: 'poor' };
-            const qBonus = QUALITY_CONFIG[armor.quality].bonus;
+            const qBonus = getQualityBonus(armor.quality, armor.baseDefense);
             return p.defense + armor.baseDefense + qBonus + (p.con || 0);
         }
         
