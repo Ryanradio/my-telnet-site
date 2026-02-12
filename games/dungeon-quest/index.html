@@ -2298,6 +2298,7 @@ function buildSaveSnapshot() {
             floor: gameState.dungeon.floor,
             currentRoom: gameState.dungeon.currentRoom,
             discoveredRooms: [...gameState.dungeon.discoveredRooms],
+            spawnedRooms: [...(gameState.dungeon.spawnedRooms || [])],
             activeEnemies: gameState.dungeon.activeEnemies.map(e => ({
                 id: e.id,
                 monsterId: e.monsterId,
@@ -2305,7 +2306,8 @@ function buildSaveSnapshot() {
                 hp: e.hp,
                 maxHp: e.maxHp,
                 currentRoom: e.currentRoom,
-                leash: e.leash
+                leash: e.leash,
+                drop: e.drop || null
             }))
         } : null,
 
@@ -3793,6 +3795,7 @@ window.addEventListener('beforeunload', () => {
                         floor: data.dungeon.floor,
                         currentRoom: data.dungeon.currentRoom,
                         discoveredRooms: new Set(data.dungeon.discoveredRooms),
+                        spawnedRooms: new Set(data.dungeon.spawnedRooms || []),
                         activeEnemies: (data.dungeon.activeEnemies || []).map(e => ({
                             ...e,
                             isChasing: false,
@@ -6898,36 +6901,60 @@ if (cs) {
 // ═══════════════════════════════════════════════════════════════
 
 function checkRoomEncounter(room) {
-    if (!room || !room.encounter) return;
-
     const ds = gameState.dungeon;
+    if (!ds) return;
     if (!ds.activeEnemies) ds.activeEnemies = [];
 
-    // prevent re-triggering
-    if (room.encounter.resolved) return;
+    // ── NEW FORMAT: contents.enemies[] from dungeon editor ────────────
+    // Each entry: { key: 'giant_scorpion', drop: 'copper_key' } or plain string.
+    // Only spawn once per room per dungeon session.
+    if (room.contents && Array.isArray(room.contents.enemies) && room.contents.enemies.length > 0) {
+        if (!ds.spawnedRooms) ds.spawnedRooms = new Set();
+        if (ds.spawnedRooms.has(ds.currentRoom)) return;
+        ds.spawnedRooms.add(ds.currentRoom);
 
-    const enemyDef = ENEMIES[room.encounter.monsterId];
-    if (!enemyDef) {
-        console.warn('Enemy not found:', room.encounter.monsterId);
+        room.contents.enemies.forEach(entry => {
+            const monsterId = typeof entry === 'string' ? entry : entry.key;
+            const drop      = typeof entry === 'string' ? null  : (entry.drop || null);
+            const enemyDef  = ENEMIES[monsterId];
+            if (!enemyDef) { console.warn('Dungeon enemy not found:', monsterId); return; }
+
+            const inst = {
+                id: crypto.randomUUID(),
+                monsterId,
+                name:          enemyDef.name,
+                currentRoom:   ds.currentRoom,
+                leash:         enemyDef.isBoss ? 6 : 3,
+                roomsFollowed: 0,
+                drop
+            };
+            ds.activeEnemies.push(inst);
+            termAppend(`\u26a0\ufe0f <strong>${inst.name}</strong> steps out of the shadows!`, 'term-warning');
+        });
         return;
     }
 
+    // ── OLD FORMAT: room.encounter.monsterId ──────────────────────────
+    if (!room || !room.encounter) return;
+    if (room.encounter.resolved) return;
+
+    const enemyDef = ENEMIES[room.encounter.monsterId];
+    if (!enemyDef) { console.warn('Enemy not found:', room.encounter.monsterId); return; }
+
     const enemyInstance = {
         id: crypto.randomUUID(),
-        monsterId: room.encounter.monsterId,
-        name: enemyDef.name,
-        currentRoom: ds.currentRoom,
-        leash: enemyDef.isBoss ? 6 : 3,
-        roomsFollowed: 0
+        monsterId:     room.encounter.monsterId,
+        name:          enemyDef.name,
+        currentRoom:   ds.currentRoom,
+        leash:         enemyDef.isBoss ? 6 : 3,
+        roomsFollowed: 0,
+        drop:          room.encounter.drop || null
     };
 
     ds.activeEnemies.push(enemyInstance);
     room.encounter.resolved = true;
 
-    termAppend(
-        `⚠️ <strong>${enemyInstance.name}</strong> steps out of the shadows!`,
-        'term-warning'
-    );
+    termAppend(`\u26a0\ufe0f <strong>${enemyInstance.name}</strong> steps out of the shadows!`, 'term-warning');
 }
 
 
@@ -7063,6 +7090,7 @@ function moveInDungeon(direction) {
 
         checkTownExit(destRoom);
         triggerRoomTrap(destRoom);
+        checkRoomEncounter(destRoom);
         checkEnemiesInRoom(targetRoom);
         saveGame();
         renderDungeonActionBar();
@@ -7079,6 +7107,44 @@ function moveInDungeon(direction) {
     if (!nextRoomId) {
         termAppend(`You cannot go that way.`, 'term-dim');
         return;
+    }
+
+    // ── DOOR LOCK CHECK ──────────────────────────────────────────────
+    // If a locked door exists on this exit, player must have the matching key.
+    const door = currentRoom.contents?.doors?.[direction];
+    if (door && door.locked) {
+        const keyItem = door.type + '_key';   // e.g. 'copper' → 'copper_key'
+        const inv = gameState.player.inventory || [];
+        const hasKey = inv.includes(keyItem);
+
+        if (!hasKey) {
+            // Door color names for flavour text
+            const COLOR_NAMES = {
+                bronze:'Bronze', copper:'Copper', iron:'Iron', brass:'Brass',
+                silver:'Silver', electrum:'Electrum', ruby:'Ruby', topaz:'Topaz',
+                diamond:'Diamond', obsidian:'Obsidian', bone:'Bone'
+            };
+            const doorName = (COLOR_NAMES[door.type] || door.type) + ' door';
+            termAppend(
+                `🔒 A locked <span style="color:${getDoorColor(door.type)}">${doorName}</span> blocks your path. You need a ${COLOR_NAMES[door.type] || door.type} key.`,
+                'term-warning'
+            );
+            return;
+        }
+
+        // Player has the key — consume it (one-time use) and proceed
+        const keyIdx = inv.indexOf(keyItem);
+        inv.splice(keyIdx, 1);
+        const COLOR_NAMES2 = {
+            bronze:'Bronze', copper:'Copper', iron:'Iron', brass:'Brass',
+            silver:'Silver', electrum:'Electrum', ruby:'Ruby', topaz:'Topaz',
+            diamond:'Diamond', obsidian:'Obsidian', bone:'Bone'
+        };
+        termAppend(
+            `🔓 You use your <span style="color:${getDoorColor(door.type)}">${COLOR_NAMES2[door.type] || door.type} key</span> to unlock the door.`,
+            'term-highlight'
+        );
+        door.locked = false; // door stays unlocked for rest of session
     }
 
     const nextRoom = floor.rooms[nextRoomId];
@@ -7124,7 +7190,36 @@ function buildExitList(room) {
     if (room.contents && room.contents.ladder) {
         exits.push(room.contents.ladder.direction === 'up' ? '⬆ UP' : '⬇ DOWN');
     }
+    // Mark locked exits
+    if (room.contents && room.contents.doors) {
+        return exits.map(d => {
+            const dl = d.toLowerCase();
+            const door = room.contents.doors[dl];
+            if (door && door.locked) {
+                return `${d}<span style="color:#e8b84a">🔒</span>`;
+            }
+            return d;
+        }).join(', ') || 'none';
+    }
     return exits.length ? exits.join(', ') : 'none';
+}
+
+// Return the CSS color for a door type (matches dungeon editor palette)
+function getDoorColor(type) {
+    const DOOR_COLORS = {
+        bronze:   '#cd7f32',
+        copper:   '#b87333',
+        iron:     '#a8a9ad',
+        brass:    '#b5a642',
+        silver:   '#c0c0c0',
+        electrum: '#d4af37',
+        ruby:     '#e0455b',
+        topaz:    '#ffa07a',
+        diamond:  '#aef0ff',
+        obsidian: '#9b59b6',
+        bone:     '#e8dcc8'
+    };
+    return DOOR_COLORS[type] || '#aaa';
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -8909,9 +9004,30 @@ function endCombat(victory) {
         });
     }
 
-    // ── Remove defeated dungeon enemy ──
+    // ── Remove defeated dungeon enemy & award drop ──
     if (gameState.dungeon && gameState.combatState?.dungeonEnemyId) {
         const dungeonEnemyId = gameState.combatState.dungeonEnemyId;
+
+        // Find the enemy before removing it so we can read its drop
+        const defeatedDungeonEnemy = gameState.dungeon.activeEnemies.find(
+            e => e.id === dungeonEnemyId
+        );
+
+        // Award the drop item if set
+        if (defeatedDungeonEnemy && defeatedDungeonEnemy.drop) {
+            const dropKey = defeatedDungeonEnemy.drop;
+            if (dropKey && ITEMS[dropKey]) {
+                gameState.player.inventory.push(dropKey);
+                const dropItem = ITEMS[dropKey];
+                const dropIcon = dropItem.icon || '📦';
+                const keyColor = dropItem.subtype === 'dungeon_key' ? '#e8b84a' : '#00FF88';
+                termAppend(
+                    `${dropIcon} <span style="color:${keyColor};">${dropItem.name}</span> found on the body!`,
+                    'term-loot'
+                );
+            }
+        }
+
         gameState.dungeon.activeEnemies = gameState.dungeon.activeEnemies.filter(
             e => e.id !== dungeonEnemyId
         );

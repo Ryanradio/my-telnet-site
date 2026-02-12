@@ -231,6 +231,148 @@ const ITEMS = {
         power: 0,
         cost: 0,
         description: 'Quest item'
+    },
+
+    // ─── DUNGEON KEYS ─────────────────────────────────────────────────
+    // Dropped by enemies, used to unlock colored doors in dungeons.
+    bronze_key: {
+        name: 'Bronze Key',
+        subtype: 'dungeon_key',
+        power: 0,
+        cost: 0,
+        sellValue: 0,
+        description: 'A tarnished bronze key. Opens bronze-locked dungeon doors.',
+        icon: '🗝',
+        keyType: 'bronze'
+    },
+    copper_key: {
+        name: 'Copper Key',
+        subtype: 'dungeon_key',
+        power: 0,
+        cost: 0,
+        sellValue: 0,
+        description: 'A worn copper key. Opens copper-locked dungeon doors.',
+        icon: '🗝',
+        keyType: 'copper'
+    },
+    iron_key: {
+        name: 'Iron Key',
+        subtype: 'dungeon_key',
+        power: 0,
+        cost: 0,
+        sellValue: 0,
+        description: 'A heavy iron key. Opens iron-locked dungeon doors.',
+        icon: '🗝',
+        keyType: 'iron'
+    },
+    brass_key: {
+        name: 'Brass Key',
+        subtype: 'dungeon_key',
+        power: 0,
+        cost: 0,
+        sellValue: 0,
+        description: 'A polished brass key. Opens brass-locked dungeon doors.',
+        icon: '🗝',
+        keyType: 'brass'
+    },
+    silver_key: {
+        name: 'Silver Key',
+        subtype: 'dungeon_key',
+        power: 0,
+        cost: 0,
+        sellValue: 0,
+        description: 'A gleaming silver key. Opens silver-locked dungeon doors.',
+        icon: '🗝',
+        keyType: 'silver'
+    },
+    electrum_key: {
+        name: 'Electrum Key',
+        subtype: 'dungeon_key',
+        power: 0,
+        cost: 0,
+        sellValue: 0,
+        description: 'An unusual electrum key. Opens electrum-locked dungeon doors.',
+        icon: '🗝',
+        keyType: 'electrum'
+    },
+    ruby_key: {
+        name: 'Ruby Key',
+        subtype: 'dungeon_key',
+        power: 0,
+        cost: 0,
+        sellValue: 0,
+        description: 'A crimson ruby key. Opens ruby-locked dungeon doors.',
+        icon: '🗝',
+        keyType: 'ruby'
+    },
+    topaz_key: {
+        name: 'Topaz Key',
+        subtype: 'dungeon_key',
+        power: 0,
+        cost: 0,
+        sellValue: 0,
+        description: 'An amber topaz key. Opens topaz-locked dungeon doors.',
+        icon: '🗝',
+        keyType: 'topaz'
+    },
+    diamond_key: {
+        name: 'Diamond Key',
+        subtype: 'dungeon_key',
+        power: 0,
+        cost: 0,
+        sellValue: 0,
+        description: 'A pristine diamond key. Opens diamond-locked dungeon doors.',
+        icon: '🗝',
+        keyType: 'diamond'
+    },
+    obsidian_key: {
+        name: 'Obsidian Key',
+        subtype: 'dungeon_key',
+        power: 0,
+        cost: 0,
+        sellValue: 0,
+        description: 'A dark obsidian key. Opens obsidian-locked dungeon doors.',
+        icon: '🗝',
+        keyType: 'obsidian'
+    },
+    bone_key: {
+        name: 'Bone Key',
+        subtype: 'dungeon_key',
+        power: 0,
+        cost: 0,
+        sellValue: 0,
+        description: 'A gnarly bone key. Opens bone-locked dungeon doors.',
+        icon: '🗝',
+        keyType: 'bone'
+    },
+
+    // ─── DUNGEON MISC DROPS ───────────────────────────────────────────
+    ancient_map: {
+        name: 'Ancient Map',
+        subtype: 'quest',
+        power: 0,
+        cost: 0,
+        sellValue: 5,
+        description: 'A crumbling map with cryptic markings.',
+        icon: '📜'
+    },
+    dungeon_note: {
+        name: 'Dungeon Note',
+        subtype: 'quest',
+        power: 0,
+        cost: 0,
+        sellValue: 0,
+        description: 'A scrawled note left by a previous explorer.',
+        icon: '📄'
+    },
+    rune_fragment: {
+        name: 'Rune Fragment',
+        subtype: 'material',
+        power: 0,
+        cost: 0,
+        sellValue: 25,
+        description: 'A shard of ancient rune stone. Seems valuable.',
+        icon: '✦'
     }
 };
 
