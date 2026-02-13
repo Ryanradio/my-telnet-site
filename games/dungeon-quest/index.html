@@ -1726,10 +1726,9 @@ line.innerHTML =
             combatTimer: null,
             lastAction: null,
             restState: {
-                isResting: false,
-                restStartTime: null,
-                hpRegenTimer: null,
-                mpRegenTimer: null
+                hpRegenTimer: null,    // ticks HP outside combat
+                mpRegenTimer: null,    // ticks MP after 15s inactivity
+                mpLastAction: 0        // timestamp of last attack/spell; 0 = never
             },
             sysop: {
                 authenticated: false,
@@ -1740,131 +1739,92 @@ line.innerHTML =
         };
 
         // ═══════════════════════════════════════════════════════════════
-        // PASSIVE REGENERATION SYSTEM
+        // PASSIVE REGENERATION SYSTEM  (rewritten)
+        //
+        // HP REGEN  — ticks every 8s when NOT in combat, anywhere (town
+        //             or dungeon).  Restores 5% maxHP per tick.  Stops
+        //             the moment combat begins; resumes when it ends.
+        //
+        // MP REGEN  — driven by a SINGLE long-running interval (3s tick).
+        //             On each tick it checks: has it been ≥15s since the
+        //             player last attacked or cast a spell?  If yes, add
+        //             5% maxMP.  If the player attacks/casts, we record
+        //             mpLastAction = Date.now() which resets the 15s clock.
+        //             Works inside AND outside combat — a mage can tank
+        //             hits and recover MP as long as they stop attacking.
         // ═══════════════════════════════════════════════════════════════
-        
-        function startMpRegen(isTown = false) {
-    if (gameState.restState.mpRegenTimer) {
-        clearInterval(gameState.restState.mpRegenTimer);
-        gameState.restState.mpRegenTimer = null;
-    }
 
-    // ⏳ Wait 30 seconds before MP regen begins
-    setTimeout(() => {
+        // ── Called whenever the player fires an attack or casts a spell ─
+        function markMpAction() {
+            gameState.restState.mpLastAction = Date.now();
+        }
 
-        // If combat started or player gone, abort
-        if (gameState.combatState) return;
-        if (!gameState.player) return;
+        // ── HP regen: start ticking.  Safe to call multiple times ───────
+        function startHpRegen() {
+            // Clear any existing timer first
+            if (gameState.restState.hpRegenTimer) {
+                clearInterval(gameState.restState.hpRegenTimer);
+                gameState.restState.hpRegenTimer = null;
+            }
 
-        const regenInterval = isTown ? 10000 : 5000;
+            gameState.restState.hpRegenTimer = setInterval(() => {
+                const p = gameState.player;
+                if (!p) return;
 
-        gameState.restState.mpRegenTimer = setInterval(() => {
-            const p = gameState.player;
+                // Pause if in active combat
+                if (gameState.combatState) return;
 
-            if (!p || p.mp >= p.maxMp || gameState.combatState) {
-                if (p && p.mp >= p.maxMp) {
-                    p.mp = p.maxMp;
+                // Already full
+                if (p.hp >= p.maxHp) {
+                    p.hp = p.maxHp;
                     updateHud();
-                }
-                return;
-            }
-
-            const mpRestore = Math.ceil(p.maxMp * 0.05); // 5% MP per tick (was 10%)
-            p.mp = Math.min(p.maxMp, p.mp + mpRestore);
-            updateHud();
-
-            // Visual feedback (dungeon only)
-            if (gameState.currentLocation !== 'town') {
-                const hudMp = document.querySelector('#hud');
-                if (hudMp) {
-                    hudMp.style.animation = 'none';
-                    setTimeout(() => {
-                        hudMp.style.animation = 'flash-blue 0.3s ease';
-                    }, 10);
-                }
-            }
-
-        }, regenInterval);
-
-    }, 30000); // 🔥 30 second delay
-}
-        
-        function startResting(isTown = false) {
-            const p = gameState.player;
-            if (!p) return;
-            
-            // Can't rest in combat
-            if (!gameState.restState.isResting || gameState.combatState) return;
-
-            
-            // Already at full HP? No need to rest
-            if (p.hp >= p.maxHp) {
-                gameState.restState.isResting = false;
-                return;
-            }
-            
-            gameState.restState.isResting = true;
-            gameState.restState.restStartTime = Date.now();
-            
-            // Wait 30 seconds before HP regen starts (same for town and dungeon)
-            setTimeout(() => {
-                // Check if still resting (not interrupted by combat)
-                if (!gameState.restState.isResting || gameState.combatState) {
                     return;
                 }
-                
-                // Start HP regeneration
-                // Town: 5% every 20s (50% slower)
-                // Dungeon/Exploration: 5% every 10s (normal)
-                if (gameState.restState.hpRegenTimer) {
-                    clearInterval(gameState.restState.hpRegenTimer);
-                }
-                
-                const regenInterval = isTown ? 20000 : 10000; // Town is 2x slower
-                
-                gameState.restState.hpRegenTimer = setInterval(() => {
-                    const player = gameState.player;
-                    if (!player || player.hp >= player.maxHp || !gameState.restState.isResting || gameState.combatState) {
-                        // Stop regen if HP full, no longer resting, or combat started
-                        if (player && player.hp >= player.maxHp) {
-                            player.hp = player.maxHp;
-                            updateHud();
-                        }
-                        stopResting();
-                        return;
-                    }
-                    
-                    // Restore 5% of max HP
-                    const hpRestore = Math.ceil(player.maxHp * 0.05);
-                    player.hp = Math.min(player.maxHp, player.hp + hpRestore);
-                    updateHud();
-                    
-                    // Visual feedback
-                    const hudHp = document.querySelector('#hud');
-                    if (hudHp) {
-                        hudHp.style.animation = 'none';
-                        setTimeout(() => {
-                            hudHp.style.animation = 'flash-green 0.3s ease';
-                        }, 10);
-                    }
-                }, regenInterval);
-                
-            }, 30000); // 30 second delay before HP regen
+
+                const restore = Math.max(1, Math.ceil(p.maxHp * 0.05));
+                p.hp = Math.min(p.maxHp, p.hp + restore);
+                updateHud();
+            }, 8000); // tick every 8 seconds
         }
-        
+
+        // ── MP regen: start the global inactivity ticker ─────────────────
+        function startMpRegen() {
+            // Only start once — idempotent
+            if (gameState.restState.mpRegenTimer) return;
+
+            const MP_COOLDOWN = 15000;  // 15s of no attacks before MP ticks
+            const MP_TICK_MS  = 3000;   // check every 3 seconds
+
+            gameState.restState.mpRegenTimer = setInterval(() => {
+                const p = gameState.player;
+                if (!p) return;
+                if (p.mp >= p.maxMp) return;
+
+                const idle = Date.now() - (gameState.restState.mpLastAction || 0);
+                if (idle < MP_COOLDOWN) return;  // still within the 15s window
+
+                const restore = Math.max(1, Math.ceil(p.maxMp * 0.05));
+                p.mp = Math.min(p.maxMp, p.mp + restore);
+                updateHud();
+            }, MP_TICK_MS);
+        }
+
+        // ── Legacy shim — old code calls startResting / startMpRegen(isTown) ─
+        function startResting(isTown = false) {
+            startHpRegen();
+        }
+
+        // ── Stop HP regen only (called when combat starts) ────────────────
         function stopResting() {
-            gameState.restState.isResting = false;
-            gameState.restState.restStartTime = null;
-            
             if (gameState.restState.hpRegenTimer) {
                 clearInterval(gameState.restState.hpRegenTimer);
                 gameState.restState.hpRegenTimer = null;
             }
         }
-        
+
+        // ── Stop both timers entirely (logout, new character, etc.) ──────
         function stopAllRegen() {
             stopResting();
-            
             if (gameState.restState.mpRegenTimer) {
                 clearInterval(gameState.restState.mpRegenTimer);
                 gameState.restState.mpRegenTimer = null;
@@ -6497,6 +6457,7 @@ if (cs) {
                 termAppend('Not enough action points!', 'term-error');
                 return;
             }
+            markMpAction();  // reset 15s MP regen countdown
             
             // Staff melee does reduced damage (50% of normal + small magic bonus)
             // Formula: (weapon base damage × 0.5) + (STR × 0.3) + (magic damage × 0.3)
@@ -7643,6 +7604,7 @@ function consumePips(cs, amount, cooldown) {
 
     // Consume pips
     consumePips(cs, pipCost, getPipCooldown(p));
+    markMpAction();  // reset 15s MP regen countdown on every attack
     
     // Always reset action mode to main - whether the attack hits or dodges,
     // the player should see the main combat menu (with updated pips)
@@ -7841,6 +7803,7 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
 
 
             p.mp -= spell.mpCost;
+            markMpAction();  // reset 15s MP regen countdown on every spell cast
 
             if (spell.type === 'heal') {
                 const heal = spell.power + Math.floor(p.magic * 1.5) + (p.wis || 0);
