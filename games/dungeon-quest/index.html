@@ -1781,7 +1781,7 @@ line.innerHTML =
                     return;
                 }
 
-                const restore = Math.max(1, Math.ceil(p.maxHp * 0.05));
+                const restore = 1;  // flat 1 HP per tick — use potions if impatient
                 p.hp = Math.min(p.maxHp, p.hp + restore);
                 updateHud();
             }, 8000); // tick every 8 seconds
@@ -4326,7 +4326,7 @@ window.addEventListener('beforeunload', () => {
                     shopHtml += `
                         <div class="item-card ${equipped ? 'equipped' : ''}">
                             <div style="color: ${qualityColor};">${weapon.name}</div>
-                            <div>DMG: ${weapon.maxDamage ? `${totalDmg}-${weapon.maxDamage}` : totalDmg}${totalMag > 0 ? ` | MAG: ${totalMag}` : ''}</div>
+                            <div>DMG: ${totalDmg}${weapon.maxDamage ? `-${weapon.maxDamage + getQualityBonus(weapon.quality, weapon.maxDamage - weapon.baseDamage)}` : ''}${totalMag > 0 ? ` | MAG: ${totalMag}` : ''}</div>
                             ${modifierHtml}
                             <div>Level: ${weapon.level}</div>
                             ${owned ? '<div style="color: var(--border-color);">OWNED</div>' : 
@@ -4675,7 +4675,7 @@ window.addEventListener('beforeunload', () => {
                 invHtml += `
                     <div class="item-card ${equipped ? 'equipped' : ''}">
                         <div style="color: ${qualityColor};">${weapon.name}</div>
-                        <div>DMG: ${weapon.maxDamage ? `${totalDmg}-${weapon.maxDamage}` : totalDmg}${totalMag > 0 ? ` | MAG: ${totalMag}` : ''}</div>
+                        <div>DMG: ${totalDmg}${weapon.maxDamage ? `-${weapon.maxDamage + getQualityBonus(weapon.quality, weapon.maxDamage - weapon.baseDamage)}` : ''}${totalMag > 0 ? ` | MAG: ${totalMag}` : ''}</div>
                         ${modifierHtml}
                         ${equipped ? '<div style="color: var(--border-color);">EQUIPPED</div>' : 
                           `<button onclick="equipItem('weapon', '${key}')">EQUIP</button>`}
@@ -5433,7 +5433,7 @@ function stabilizeTerminalLayout() {
             // ═══════════════════════════════════════════════════════════════
             if (typeof rollForAdventure !== 'undefined') {
                 const adventureRoll = Math.random();
-                const adventureThreshold = location.adventureChance || 0.05;
+                const adventureThreshold = location.adventureChance || 0.01;  // 1% rare encounter
                 
                 if (adventureRoll < adventureThreshold) {
                     const adventure = rollForAdventure(p.level);
@@ -9036,9 +9036,10 @@ function endCombat(victory) {
     }
     
     // ═══════════════════════════════════════════════════════════
-    // WEAPON DROPS! 🗡️
+    // WEAPON + ARMOR DROPS 🗡️🛡️
     // ═══════════════════════════════════════════════════════════
     defeated.forEach((monster, index) => {
+        // ── Weapon drop ───────────────────────────────────────
         const weaponDrop = generateWeaponDrop(
             gameState.player, 
             monster.level, 
@@ -9080,6 +9081,31 @@ function endCombat(victory) {
                 });
             }
             termAppend('', 'term-separator');
+        }
+
+        // ── Armor drop ────────────────────────────────────────
+        if (typeof generateArmorDrop !== 'undefined') {
+            const armorKey = generateArmorDrop(
+                gameState.player,
+                monster.level,
+                monster.rarity || 'common'
+            );
+
+            if (armorKey && typeof ARMOR !== 'undefined' && ARMOR[armorKey]) {
+                const armorDef = ARMOR[armorKey];
+                gameState.player.inventory.push(armorKey);
+
+                const qColor = QUALITY_CONFIG[armorDef.quality]?.color || '#00FF00';
+                const qBonus = getQualityBonus(armorDef.quality, armorDef.baseDefense);
+                const totalDef = armorDef.baseDefense + qBonus;
+
+                termAppend('', 'term-separator');
+                termAppend(`🛡️ <span style="color:${qColor};font-size:18px;font-weight:bold;">ARMOR DROP!</span>`, 'term-victory');
+                termAppend(`<span style="color:${qColor};">${armorDef.name}</span>`, 'term-loot');
+                termAppend(`<span style="color:#8aaa8a;">Level ${armorDef.level || 1} ${armorDef.quality} armor</span>`, 'term-dim');
+                termAppend(`<span style="color:#00AAFF;">DEF: ${totalDef}${armorDef.baseMagicBonus > 0 ? ` | MAG BONUS: +${armorDef.baseMagicBonus}` : ''}</span>`);
+                termAppend('', 'term-separator');
+            }
         }
     });
 

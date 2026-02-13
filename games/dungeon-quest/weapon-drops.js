@@ -7,7 +7,7 @@
 // DROP CHANCE CONFIGURATION
 // ═══════════════════════════════════════════════════════════════
 const WEAPON_DROP_CONFIG = {
-    baseDropChance: 0.05, // 5% base chance for weapon drop
+    baseDropChance: 0.025, // 2.5% base chance for weapon drop (halved from 5%)
     
     // Chance increases with monster rarity
     rarityMultipliers: {
@@ -248,11 +248,86 @@ function calculateWeaponValue(level, quality, modifiers) {
     return Math.floor(baseValue);
 }
 
+// ═══════════════════════════════════════════════════════════════
+// ARMOR DROP SYSTEM
+// Same base drop rate as weapons, class-appropriate armor
+// ═══════════════════════════════════════════════════════════════
+
+const ARMOR_DROP_CONFIG = {
+    baseDropChance: 0.025, // same as weapons (2.5% base)
+    rarityMultipliers: {
+        common:   1.0,
+        uncommon: 1.5,
+        rare:     1.5,
+        epic:     2.5,
+        boss:     5.0
+    }
+};
+
+// Which armor types each class can receive as drops
+const CLASS_ARMOR_POOLS = {
+    warrior:  ['chain_mail', 'scale_mail', 'plate_armor', 'full_plate', 'iron_armor'],
+    paladin:  ['chain_mail', 'scale_mail', 'plate_armor', 'full_plate', 'iron_armor'],
+    rogue:    ['leather_armor', 'leather_vest', 'studded_leather'],
+    ranger:   ['leather_armor', 'studded_leather', 'hide_armor'],
+    hunter:   ['leather_armor', 'studded_leather', 'hide_armor'],
+    archer:   ['leather_armor', 'studded_leather', 'hide_armor'],
+    mage:     ['cloth_robe', 'mage_robes', 'silk_robe'],
+    warlock:  ['cloth_robe', 'dark_robes'],
+    cleric:   ['padded_armor', 'chain_mail', 'holy_vestments'],
+    acolyte:  ['cloth_robe', 'padded_armor']
+};
+
+/**
+ * Generate a random armor drop appropriate to the player's class.
+ * Returns an ARMOR key (string) or null if no drop.
+ *
+ * @param {object} player      - The player object
+ * @param {number} enemyLevel  - Level of the defeated enemy
+ * @param {string} enemyRarity - Rarity string of the enemy
+ * @returns {string|null} ARMOR key or null if no drop
+ */
+function generateArmorDrop(player, enemyLevel, enemyRarity = 'common') {
+    // Roll drop chance (same structure as weapon drops)
+    const baseChance  = ARMOR_DROP_CONFIG.baseDropChance;
+    const rarityMult  = ARMOR_DROP_CONFIG.rarityMultipliers[enemyRarity] || 1.0;
+    if (Math.random() > baseChance * rarityMult) return null;
+
+    const playerClass = player.baseClass || player.class;
+    const maxLevel    = player.level + 2;
+
+    // Build candidate list from class pool
+    const poolKeys   = CLASS_ARMOR_POOLS[playerClass] || [];
+    let candidates   = poolKeys.filter(k => {
+        if (typeof ARMOR === 'undefined' || !ARMOR[k]) return false;
+        const a = ARMOR[k];
+        if (a.level && a.level > maxLevel) return false;
+        if (a.allowedClasses && !a.allowedClasses.includes(playerClass)) return false;
+        return true;
+    });
+
+    // Fallback: any armor the class can equip at this level
+    if (candidates.length === 0 && typeof ARMOR !== 'undefined') {
+        candidates = Object.keys(ARMOR).filter(k => {
+            const a = ARMOR[k];
+            if (a.level && a.level > maxLevel) return false;
+            if (a.allowedClasses && !a.allowedClasses.includes(playerClass)) return false;
+            return true;
+        });
+    }
+
+    if (candidates.length === 0) return null;
+    return candidates[Math.floor(Math.random() * candidates.length)];
+}
+
 // Export
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { 
         generateWeaponDrop,
+        generateArmorDrop,
         CLASS_WEAPON_POOLS,
-        WEAPON_DROP_CONFIG
+        CLASS_ARMOR_POOLS,
+        WEAPON_DROP_CONFIG,
+        ARMOR_DROP_CONFIG
     };
 }
