@@ -3,6 +3,22 @@
 // ═══════════════════════════════════════════════════════════════
 
 const ARMOR = {
+    // ═══════════════════════════════════════════════════════════════
+    // UNARMORED — fallback when no armor is equipped
+    // Gives zero defense; player relies solely on character stats
+    // ═══════════════════════════════════════════════════════════════
+    no_armor: {
+        name: 'No Armor',
+        baseDefense: 0,
+        baseMagicBonus: 0,
+        cost: 0,
+        level: 1,
+        quality: 'poor',
+        slot: 'armor',
+        description: 'You wear no armor. Your body is your only protection.',
+        unarmored: true   // flag used to suppress "equipped" badge
+    },
+
     // LEVEL 1 STARTER ARMOR
     cloth_robe: {
         name: 'Cloth Robe',

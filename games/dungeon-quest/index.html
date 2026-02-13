@@ -1188,6 +1188,8 @@ const OPPOSITE_DIR = {
         // ═══════════════════════════════════════════════════════════════
         
         function canUseWeapon(playerClass, weapon) {
+            // Bare fists — always usable by everyone
+            if (weapon.unarmed) return true;
             // If weapon has allowedClasses, check it
             if (weapon.allowedClasses) {
                 return weapon.allowedClasses.includes(playerClass);
@@ -1226,6 +1228,8 @@ const OPPOSITE_DIR = {
         }
         
         function canUseArmor(playerClass, armor) {
+            // No Armor — always usable by everyone
+            if (armor.unarmored) return true;
             // If armor has allowedClasses, check it
             if (armor.allowedClasses) {
                 return armor.allowedClasses.includes(playerClass);
@@ -3447,48 +3451,21 @@ window.addEventListener('beforeunload', () => {
                 // ═══════════════════════════════════════════════════════════════
                 const p = gameState.player;
                 
-                // Check if weapon exists
-                if (!WEAPONS[p.weapon]) {
-                    console.warn(`⚠️ Weapon '${p.weapon}' not found. Migrating to default weapon...`);
-                    // Try to find a suitable replacement based on class
-                    const classDefaults = {
-                        warrior: 'iron_sword',
-                        rogue: 'dagger',
-                        acolyte: 'staff',
-                        cleric: 'mace',
-                        necrolyte: 'staff',
-                        paladin: 'mace',
-                        hunter: 'bow',
-                        archer: 'bow',
-                        ranger: 'bow',
-                        druid: 'staff',
-                        mage: 'staff',
-                        sorceror: 'staff',
-                        warlock: 'staff'
-                    };
-                    p.weapon = classDefaults[p.class] || 'iron_sword';
-                    console.log(`✅ Migrated weapon to: ${p.weapon}`);
+                // Check if weapon exists (null/undefined = intentionally unarmed)
+                if (p.weapon && !WEAPONS[p.weapon]) {
+                    console.warn(`⚠️ Weapon '${p.weapon}' not found. Migrating to bare_fists...`);
+                    p.weapon = 'bare_fists';
+                    console.log(`✅ Migrated weapon to: bare_fists`);
                 }
+                if (!p.weapon) p.weapon = 'bare_fists';
                 
-                // Check if armor exists
-                if (!ARMOR[p.armor]) {
-                    console.warn(`⚠️ Armor '${p.armor}' not found. Migrating to default armor...`);
-                    // Class-based armor defaults
-                    const armorDefaults = {
-                        warrior: 'leather_armor',
-                        rogue: 'leather_vest',
-                        paladin: 'chain_mail',
-                        cleric: 'leather_armor',
-                        acolyte: 'cloth_robes',
-                        mage: 'cloth_robes',
-                        warlock: 'cloth_robes',
-                        ranger: 'leather_armor',
-                        hunter: 'leather_armor',
-                        archer: 'leather_vest'
-                    };
-                    p.armor = armorDefaults[p.class] || 'leather_vest';
-                    console.log(`✅ Migrated armor to: ${p.armor}`);
+                // Check if armor exists (null/undefined = intentionally unarmored)
+                if (p.armor && !ARMOR[p.armor]) {
+                    console.warn(`⚠️ Armor '${p.armor}' not found. Migrating to no_armor...`);
+                    p.armor = 'no_armor';
+                    console.log(`✅ Migrated armor to: no_armor`);
                 }
+                if (!p.armor) p.armor = 'no_armor';
                 
                 // Ensure className exists (for old saves)
                 if (!p.className && p.class && CLASSES[p.class]) {
@@ -4317,8 +4294,8 @@ window.addEventListener('beforeunload', () => {
             Object.keys(WEAPONS).forEach(key => {
                 const weapon = WEAPONS[key];
                 
-                // Filter by level and class
-                if (weapon.level <= p.level + 2 && canUseWeapon(playerClass, weapon)) {
+                // Filter by level and class — never show bare_fists in shop
+                if (!weapon.unarmed && weapon.level <= p.level + 2 && canUseWeapon(playerClass, weapon)) {
                     const owned = p.inventory.includes(key);
                     const equipped = p.weapon === key;
                     const qualityColor = QUALITY_CONFIG[weapon.quality].color;
@@ -4451,12 +4428,12 @@ window.addEventListener('beforeunload', () => {
                     if (!itemCounts[itemKey]) itemCounts[itemKey] = { type: 'item', count: 0 };
                     itemCounts[itemKey].count++;
                 }
-                // Duplicate weapons/armor (not currently equipped)
-                else if (WEAPONS[itemKey] && itemKey !== p.weapon) {
+                // Duplicate weapons/armor (not currently equipped, not virtual slots)
+                else if (WEAPONS[itemKey] && itemKey !== p.weapon && !WEAPONS[itemKey].unarmed) {
                     if (!itemCounts[itemKey]) itemCounts[itemKey] = { type: 'weapon', count: 0 };
                     itemCounts[itemKey].count++;
                 }
-                else if (ARMOR[itemKey] && itemKey !== p.armor) {
+                else if (ARMOR[itemKey] && itemKey !== p.armor && !ARMOR[itemKey].unarmored) {
                     if (!itemCounts[itemKey]) itemCounts[itemKey] = { type: 'armor', count: 0 };
                     itemCounts[itemKey].count++;
                 }
@@ -4660,16 +4637,47 @@ window.addEventListener('beforeunload', () => {
                     <div class="inventory-grid">
             `;
 
+            // ── Currently equipped weapon slot ────────────────────────────
+            const eqWeapon    = WEAPONS[p.weapon];
+            const eqWIsUnarmed = !eqWeapon || !!eqWeapon.unarmed;
+            if (eqWIsUnarmed) {
+                invHtml += `
+                    <div class="item-card equipped" style="border-color:#555;">
+                        <div style="color:#888;">✊ Bare Fists</div>
+                        <div style="color:#555;font-size:13px;">DMG: 0 (stats only)</div>
+                        <div style="color:#555;font-size:12px;">No weapon equipped</div>
+                    </div>
+                `;
+            } else {
+                const qc   = QUALITY_CONFIG[eqWeapon.quality];
+                const qb   = getQualityBonus(eqWeapon.quality, eqWeapon.baseDamage);
+                const tMin = eqWeapon.baseDamage + qb;
+                const tMax = eqWeapon.maxDamage ? eqWeapon.maxDamage + getQualityBonus(eqWeapon.quality, eqWeapon.maxDamage - eqWeapon.baseDamage) : tMin;
+                const tMag = (eqWeapon.baseMagicDamage || 0) + Math.floor((eqWeapon.baseMagicDamage || 0) * (qc?.bonusPct || 0));
+                invHtml += `
+                    <div class="item-card equipped">
+                        <div style="color:${qc?.color || '#0f0'};">⚔️ ${eqWeapon.name}</div>
+                        <div>DMG: ${tMin}${tMax > tMin ? `-${tMax}` : ''}${tMag > 0 ? ` | MAG: ${tMag}` : ''}</div>
+                        <div style="color:var(--border-color);">EQUIPPED</div>
+                        <button onclick="unequipItem('weapon')" style="border-color:#ff4444;color:#ff4444;margin-top:4px;">UNEQUIP</button>
+                    </div>
+                `;
+            }
+
+            // ── Other weapons in inventory ────────────────────────────────
             p.inventory.filter(item => {
                 const weapon = WEAPONS[item];
-                return weapon && canUseWeapon(playerClass, weapon);
+                // Skip bare_fists (virtual slot) and currently equipped
+                return weapon && !weapon.unarmed && canUseWeapon(playerClass, weapon);
             }).forEach(key => {
                 const weapon = WEAPONS[key];
                 const equipped = p.weapon === key;
+                if (equipped) return; // already shown in the equipped slot above
                 const qualityColor = QUALITY_CONFIG[weapon.quality].color;
                 const qualityBonus = getQualityBonus(weapon.quality, weapon.baseDamage);
                 const totalDmg = weapon.baseDamage + qualityBonus;
                 const totalMag = weapon.baseMagicDamage + Math.floor(weapon.baseMagicDamage * (QUALITY_CONFIG[weapon.quality]?.bonusPct || 0));
+                const totalMax = weapon.maxDamage ? weapon.maxDamage + getQualityBonus(weapon.quality, weapon.maxDamage - weapon.baseDamage) : totalDmg;
                 
                 // Build modifier display
                 let modifierHtml = '';
@@ -4679,9 +4687,7 @@ window.addEventListener('beforeunload', () => {
                         const mod = WEAPON_MODIFIERS[modKey];
                         if (mod) {
                             modifierHtml += `<div style="color:${mod.color};">• ${mod.name}`;
-                            if (mod.minDamage) {
-                                modifierHtml += ` (${mod.minDamage}-${mod.maxDamage})`;
-                            }
+                            if (mod.minDamage) modifierHtml += ` (${mod.minDamage}-${mod.maxDamage})`;
                             modifierHtml += `</div>`;
                         }
                     });
@@ -4689,12 +4695,11 @@ window.addEventListener('beforeunload', () => {
                 }
                 
                 invHtml += `
-                    <div class="item-card ${equipped ? 'equipped' : ''}">
+                    <div class="item-card">
                         <div style="color: ${qualityColor};">${weapon.name}</div>
-                        <div>DMG: ${totalDmg}${weapon.maxDamage ? `-${weapon.maxDamage + getQualityBonus(weapon.quality, weapon.maxDamage - weapon.baseDamage)}` : ''}${totalMag > 0 ? ` | MAG: ${totalMag}` : ''}</div>
+                        <div>DMG: ${totalDmg}${totalMax > totalDmg ? `-${totalMax}` : ''}${totalMag > 0 ? ` | MAG: ${totalMag}` : ''}</div>
                         ${modifierHtml}
-                        ${equipped ? '<div style="color: var(--border-color);">EQUIPPED</div>' : 
-                          `<button onclick="equipItem('weapon', '${key}')">EQUIP</button>`}
+                        <button onclick="equipItem('weapon', '${key}')">EQUIP</button>
                     </div>
                 `;
             });
@@ -4705,24 +4710,51 @@ window.addEventListener('beforeunload', () => {
                     <div class="inventory-grid">
             `;
 
+            // ── Currently equipped armor slot ─────────────────────────────
+            const eqArmor      = ARMOR[p.armor];
+            const eqAIsUnarmored = !eqArmor || !!eqArmor.unarmored;
+            if (eqAIsUnarmored) {
+                invHtml += `
+                    <div class="item-card equipped" style="border-color:#555;">
+                        <div style="color:#888;">🫥 No Armor</div>
+                        <div style="color:#555;font-size:13px;">DEF: 0</div>
+                        <div style="color:#555;font-size:12px;">No armor equipped</div>
+                    </div>
+                `;
+            } else {
+                const aqc  = QUALITY_CONFIG[eqArmor.quality];
+                const aqb  = getQualityBonus(eqArmor.quality, eqArmor.baseDefense);
+                const tDef = eqArmor.baseDefense + aqb;
+                const tMag = (eqArmor.baseMagicBonus || 0) + Math.floor((eqArmor.baseMagicBonus || 0) * (aqc?.bonusPct || 0));
+                invHtml += `
+                    <div class="item-card equipped">
+                        <div style="color:${aqc?.color || '#0f0'};">🛡️ ${eqArmor.name}</div>
+                        <div>DEF: ${tDef}${tMag > 0 ? ` | MAG+: ${tMag}` : ''}</div>
+                        <div style="color:var(--border-color);">EQUIPPED</div>
+                        <button onclick="unequipItem('armor')" style="border-color:#ff4444;color:#ff4444;margin-top:4px;">UNEQUIP</button>
+                    </div>
+                `;
+            }
+
+            // ── Other armors in inventory ─────────────────────────────────
             p.inventory.filter(item => {
                 const armor = ARMOR[item];
-                return armor && canUseArmor(playerClass, armor);
+                // Skip no_armor (virtual slot) and currently equipped
+                return armor && !armor.unarmored && canUseArmor(playerClass, armor);
             }).forEach(key => {
                 const armor = ARMOR[key];
                 const equipped = p.armor === key;
+                if (equipped) return; // already shown in the equipped slot above
                 const qualityColor = QUALITY_CONFIG[armor.quality].color;
                 const qualityBonus = getQualityBonus(armor.quality, armor.baseDefense);
                 const totalDef = armor.baseDefense + qualityBonus;
                 const totalMag = (armor.baseMagicBonus || 0) + Math.floor((armor.baseMagicBonus || 0) * (QUALITY_CONFIG[armor.quality]?.bonusPct || 0));
                 
                 invHtml += `
-                    <div class="item-card ${equipped ? 'equipped' : ''}">
+                    <div class="item-card">
                         <div style="color: ${qualityColor};">${armor.name}</div>
-                        <div>DEF: ${totalDef}</div>
-                        ${totalMag > 0 ? `<div>MAG+: ${totalMag}</div>` : ''}
-                        ${equipped ? '<div style="color: var(--border-color);">EQUIPPED</div>' : 
-                          `<button onclick="equipItem('armor', '${key}')">EQUIP</button>`}
+                        <div>DEF: ${totalDef}${totalMag > 0 ? ` | MAG+: ${totalMag}` : ''}</div>
+                        <button onclick="equipItem('armor', '${key}')">EQUIP</button>
                     </div>
                 `;
             });
@@ -4839,32 +4871,32 @@ window.addEventListener('beforeunload', () => {
             
             if (type === 'weapon') {
                 const weapon = WEAPONS[key];
-                if (!weapon) {
-                    alert('Invalid weapon!');
-                    return;
-                }
-                if (!canUseWeapon(playerClass, weapon)) {
-                    alert(`Your class (${playerClass}) cannot use ${weapon.name}!`);
-                    return;
-                }
-                if (weapon.level > p.level) {
-                    alert(`You must be level ${weapon.level} to equip ${weapon.name}!`);
-                    return;
+                if (!weapon) { alert('Invalid weapon!'); return; }
+                // bare_fists always equippable (unequip path)
+                if (!weapon.unarmed) {
+                    if (!canUseWeapon(playerClass, weapon)) {
+                        alert(`Your class (${playerClass}) cannot use ${weapon.name}!`);
+                        return;
+                    }
+                    if (weapon.level > p.level) {
+                        alert(`You must be level ${weapon.level} to equip ${weapon.name}!`);
+                        return;
+                    }
                 }
                 p.weapon = key;
             } else {
                 const armor = ARMOR[key];
-                if (!armor) {
-                    alert('Invalid armor!');
-                    return;
-                }
-                if (!canUseArmor(playerClass, armor)) {
-                    alert(`Your class (${playerClass}) cannot use ${armor.name}!`);
-                    return;
-                }
-                if (armor.level > p.level) {
-                    alert(`You must be level ${armor.level} to equip ${armor.name}!`);
-                    return;
+                if (!armor) { alert('Invalid armor!'); return; }
+                // no_armor always equippable (unequip path)
+                if (!armor.unarmored) {
+                    if (!canUseArmor(playerClass, armor)) {
+                        alert(`Your class (${playerClass}) cannot use ${armor.name}!`);
+                        return;
+                    }
+                    if (armor.level > p.level) {
+                        alert(`You must be level ${armor.level} to equip ${armor.name}!`);
+                        return;
+                    }
                 }
                 p.armor = key;
             }
@@ -4872,6 +4904,18 @@ window.addEventListener('beforeunload', () => {
             // 💾 AUTO-SAVE after equipping
             saveGame();
             
+            showInventory();
+        }
+
+        // Unequip: revert to bare fists or no armor
+        function unequipItem(type) {
+            const p = gameState.player;
+            if (type === 'weapon') {
+                p.weapon = 'bare_fists';
+            } else {
+                p.armor = 'no_armor';
+            }
+            saveGame();
             showInventory();
         }
 
@@ -7581,23 +7625,24 @@ function consumePips(cs, amount, cooldown) {
     const enemy = cs.monsters[ti];
     let weapon = WEAPONS[p.weapon];
     
-    // Safety check: if weapon doesn't exist, use a default weapon
+    // No weapon equipped → fight with bare fists
     if (!weapon) {
-        console.error(`❌ Weapon '${p.weapon}' not found in WEAPONS! Using default weapon.`);
-        p.weapon = 'iron_sword'; // Default to iron sword
-        weapon = WEAPONS[p.weapon];
-        if (!weapon) {
-            termAppend('ERROR: No weapons available! Please contact sysop.', 'term-error');
-            return;
+        if (p.weapon && p.weapon !== 'bare_fists') {
+            // Weapon key set but missing from DB — silently switch to fists
+            console.warn(`⚠️ Weapon '${p.weapon}' not found — fighting unarmed.`);
         }
+        p.weapon = 'bare_fists';
+        weapon   = WEAPONS['bare_fists'];
     }
+    
+    const unarmed = !!weapon.unarmed;
     
     const qBonus = getQualityBonus(weapon.quality, weapon.baseDamage);
 
     // Determine pip cost and damage multiplier
     let pipCost = 1;
     let damageMultiplier = 1;
-    let attackName = 'attacks';
+    let attackName = unarmed ? 'punches' : 'attacks';
     let armorPiercing = 0;
 
     if (attackType === 'normal') {
@@ -7607,14 +7652,18 @@ function consumePips(cs, amount, cooldown) {
         // HIGH RISK / HIGH REWARD: costs 2 pips, 35% miss chance, but hits for 3x damage
         pipCost = 2;
         damageMultiplier = 3.0;
-        attackName = 'winds up a <span style="color:#FF8800;">HEAVY STRIKE</span>';
+        attackName = unarmed
+            ? 'winds up a <span style="color:#FF8800;">HAYMAKER</span>'
+            : 'winds up a <span style="color:#FF8800;">HEAVY STRIKE</span>';
         armorPiercing = 0.35;
     } 
     else if (attackType === 'special') {
         const availablePips = cs.pipAvailable.filter(x => x).length;
         pipCost = availablePips;
         damageMultiplier = 1 + (availablePips * 0.5);
-        attackName = `unleashes a <span style="color:#FFD700;">⭐ SPECIAL ATTACK ⭐</span> (${availablePips} pips)`;
+        attackName = unarmed
+            ? `unleashes a <span style="color:#FFD700;">⭐ FLURRY OF BLOWS ⭐</span> (${availablePips} pips)`
+            : `unleashes a <span style="color:#FFD700;">⭐ SPECIAL ATTACK ⭐</span> (${availablePips} pips)`;
         armorPiercing = 0.3;
     }
 
@@ -7683,8 +7732,9 @@ function consumePips(cs, amount, cooldown) {
 
     // ── HEAVY ATTACK: extra 35% miss chance on top of dodge ──────────
     if (attackType === 'heavy' && Math.random() < 0.35) {
+        const missVerb = unarmed ? 'swing wildly' : 'overswing';
         termAppend(
-            `You ${attackName} but overswing and <span style="color:#ff8c00;">MISS!</span>`,
+            `You ${attackName} but ${missVerb} and <span style="color:#ff8c00;">MISS!</span>`,
             'term-warning'
         );
         updateEnemyCards();
@@ -8623,15 +8673,13 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
     // Defensive stats
     let armor = ARMOR[p.armor];
     
-    // Safety check: if armor doesn't exist, use default armor
+    // No armor equipped → bare skin (no_armor gives 0 defense)
     if (!armor) {
-        console.error(`❌ Armor '${p.armor}' not found in ARMOR! Using default armor.`);
-        p.armor = 'leather_vest'; // Default to leather vest
-        armor = ARMOR[p.armor];
-        if (!armor) {
-            console.error('❌ CRITICAL: No armor available!');
-            armor = { baseDefense: 0, quality: 'poor' }; // Emergency fallback
+        if (p.armor && p.armor !== 'no_armor') {
+            console.warn(`⚠️ Armor '${p.armor}' not found — treating as unarmored.`);
         }
+        p.armor = 'no_armor';
+        armor   = ARMOR['no_armor'] || { baseDefense: 0, baseMagicBonus: 0, quality: 'poor' };
     }
     
     const qBonus = getQualityBonus(armor.quality, armor.baseDefense);

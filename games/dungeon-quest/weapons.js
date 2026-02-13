@@ -8,16 +8,37 @@
 // Quality bonuses apply to BOTH min and max
 // ═══════════════════════════════════════════════════════════════
 
+// Quality bonuses are PERCENTAGES of the weapon's baseDamage.
+// A +50% legendary bonus on a level-1 dagger (4 dmg) = +2 dmg.
+// The same +50% on a level-20 sword (70 dmg) = +35 dmg.
+// This keeps early drops exciting without breaking balance.
 const QUALITY_CONFIG = {
-    poor: { bonus: 0, color: '#808080', name: 'Poor' },
-    normal: { bonus: 2, color: '#00FF00', name: 'Normal' },
-    rare: { bonus: 5, color: '#0099FF', name: 'Rare' },
-    epic: { bonus: 8, color: '#9933FF', name: 'Epic' },
-    legendary: { bonus: 12, color: '#FF9900', name: 'Legendary' },
-    godly: { bonus: 20, color: '#FF0000', name: 'Godly' }
+    poor:      { bonusPct: 0.00, color: '#808080', name: 'Poor'      },
+    normal:    { bonusPct: 0.10, color: '#00FF00', name: 'Normal'    }, // +10%
+    rare:      { bonusPct: 0.25, color: '#0099FF', name: 'Rare'      }, // +25%
+    epic:      { bonusPct: 0.40, color: '#9933FF', name: 'Epic'      }, // +40%
+    legendary: { bonusPct: 0.60, color: '#FF9900', name: 'Legendary' }, // +60%
+    godly:     { bonusPct: 0.85, color: '#FF0000', name: 'Godly'     }  // +85%
 };
 
 const WEAPONS = {
+    // ═══════════════════════════════════════════════════════════════
+    // UNARMED — fallback when no weapon is equipped
+    // Damage = 0 from weapon; only character stats contribute
+    // ═══════════════════════════════════════════════════════════════
+    bare_fists: {
+        name: 'Bare Fists',
+        baseDamage: 0,
+        maxDamage: 0,
+        baseMagicDamage: 0,
+        level: 1,
+        quality: 'poor',
+        type: 'unarmed',
+        cost: 0,
+        description: 'No weapon equipped. Damage comes from raw strength alone.',
+        unarmed: true   // flag used for flavour text
+    },
+
     // ═══════════════════════════════════════════════════════════════
     // LEVEL 1 - STARTER WEAPONS
     // ═══════════════════════════════════════════════════════════════
