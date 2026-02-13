@@ -21,7 +21,7 @@ html, body {
     padding: 0;
     width: 100%;
     height: 100%;
-    overflow: hidden; /* prevents whole-page scrolling */
+    /* let each child manage its own overflow */
 }
 
 body {
@@ -30,21 +30,75 @@ body {
     touch-action: manipulation;
 }
 
-#gameWrapper {
-    height: 100vh;
-    height: 100dvh;   /* dynamic viewport height (fixes iOS) */
+/* ── Menu container (town/shop) ────────────────────────────────── */
+#menuContainer {
+    height: 100%;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
 }
 
+/* ── Gameplay wrapper — full viewport, column flex ──────────────── */
+#gameWrapper {
+    position: fixed;          /* pin to viewport — immune to container padding */
+    inset: 0;                 /* top/right/bottom/left = 0 */
+    display: none;            /* JS shows this */
+    flex-direction: column;
+    overflow: hidden;
+    /* safe area padding for notched phones */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-sizing: border-box;
+}
+
+/* Shown in terminal mode */
+body.terminal-mode #gameWrapper {
+    display: flex;
+}
+
+/* ── HUD — fixed height, never shrinks ──────────────────────────── */
+#hud {
+    flex: 0 0 auto;
+    display: none;
+}
+
+body.terminal-mode #hud {
+    display: block;
+}
+
+/* ── Terminal — takes ALL leftover space, scrolls ───────────────── */
+#terminalWindow {
+    flex: 1 1 0;
+    min-height: 0;                     /* CRITICAL for flex scrolling */
+    overflow-y: scroll;                /* always show scrollbar track */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    display: none;
+}
+
+body.terminal-mode #terminalWindow {
+    display: block;
+}
+
+/* ── Action bar — hugs the bottom, auto height ──────────────────── */
+#actionBar {
+    flex: 0 0 auto;
+    display: none;
+    overflow: visible;
+    box-sizing: border-box;
+}
+
+body.terminal-mode #actionBar {
+    display: block;
+}
+
+/* default button sizing — minimal, let content + flex size them */
 #actionBar button {
-    min-width: 64px;
-    min-height: 44px;
-    padding: 10px 14px;
-    font-size: 16px;
-    border-radius: 10px;
+    min-width: 0;
+    min-height: 32px;
+    border-radius: 5px;
 }
 
         @import url('https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap');
@@ -220,11 +274,8 @@ body {
             padding-left: 8px;
         }
 
-        /* ─── static HUD ─── */
+        /* ─── static HUD visual styles ─── */
 #hud {
-    display: none; /* JS controls visibility */
-    flex-shrink: 0; /* prevent HUD from shrinking */
-    
     background: var(--secondary-bg);
     border: 2px solid var(--border-color);
     border-bottom: none;
@@ -265,20 +316,14 @@ body {
         .mp-bar { background: #4488ff; }
         .xp-bar { background: var(--text-color); }
 
-        /* ─── scrolling terminal ─── */
+        /* ─── scrolling terminal visual styles ─── */
 #terminalWindow {
-    display: none;
-    flex: 1 1 auto;
-    min-height: 0; /* REQUIRED for flex scrolling */
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch; /* smooth scrolling on iOS */
-    
     background: var(--secondary-bg);
     border: 2px solid var(--border-color);
     border-top: 1px solid #333;
     padding: 8px 10px;
     box-shadow: inset 0 0 40px rgba(0,255,0,0.07);
-    scroll-behavior: smooth;
+    /* NOTE: no scroll-behavior:smooth — it fights with programmatic scrollTop on mobile */
 }
 
         .term-line {
@@ -294,23 +339,12 @@ body {
         .term-line.term-system    { color: #888; font-style: italic; }
         .term-line.term-separator { margin-top: 6px; padding-top: 6px; border-top: 1px solid #2a4a2a; }
 
-        /* ─── action bar at bottom ─── */
+        /* ─── action bar visual styles ─── */
 #actionBar {
-    flex: 0 0 110px;
-    height: 110px;
-
     background: var(--secondary-bg);
-    border: 2px solid var(--border-color);
-    border-top: 1px solid #444;
-
-    display: flex;
-    justify-content: center;
-    align-items: center;
-
-    gap: 6px;
-    padding: 6px;
-
-    box-sizing: border-box;
+    border-top: 2px solid var(--border-color);
+    padding: 5px 6px;
+    gap: 4px;
 }
 
 
@@ -318,29 +352,33 @@ body {
             background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%);
             color: var(--text-color);
             border: 2px solid var(--border-color);
-            padding: 8px 12px;
+            padding: 6px 8px;
             font-family: 'VT323', monospace;
-            font-size: 16px;
+            font-size: 15px;
             cursor: pointer;
             transition: all 0.15s;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
-            min-width: 60px;
-            min-height: 40px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            min-width: 0;
+            min-height: 0;
+            box-sizing: border-box;
         }
         
-        /* Combat action buttons */
+        /* Combat action buttons — one tight row */
         .action-icon-btn {
-            flex: 1;
-            min-width: 80px !important;
-            padding: 10px 8px !important;
+            flex: 1 1 0;
+            min-width: 0 !important;
+            padding: 6px 4px !important;
             text-align: center;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
         }
         
         /* Target selection buttons */
         .target-btn {
-            flex: 1;
-            min-width: 120px !important;
-            padding: 10px !important;
+            flex: 1 1 0;
+            min-width: 0 !important;
+            padding: 6px 5px !important;
             background: linear-gradient(180deg, #0a2a0a 0%, #051505 100%) !important;
             border-color: var(--text-color) !important;
         }
@@ -353,11 +391,13 @@ body {
         
         /* Spell selection buttons */
         .spell-btn {
-            flex: 1;
-            min-width: 100px !important;
-            padding: 10px !important;
+            flex: 1 1 0;
+            min-width: 0 !important;
+            padding: 6px 4px !important;
             background: linear-gradient(180deg, #1a1a2a 0%, #0a0a15 100%) !important;
             border-color: #4488ff !important;
+            font-size: 13px;
+            line-height: 1.2;
         }
         
         .spell-btn:hover:not(:disabled) {
@@ -365,6 +405,44 @@ body {
             border-color: #88bbff !important;
             color: #88bbff !important;
         }
+
+        /* ── PIP COOLDOWN SWEEP (Diablo/WoW style) ───────────────────── */
+        .pip-btn {
+            position: relative;
+            overflow: hidden;
+            isolation: isolate;
+        }
+        .pip-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background: conic-gradient(
+                rgba(0,0,0,0.70) var(--pip-pct, 100%),
+                transparent      var(--pip-pct, 100%)
+            );
+            pointer-events: none;
+            z-index: 1;
+            transition: none;
+        }
+        .pip-btn > *, .pip-btn span { position: relative; z-index: 2; }
+        .pip-btn.cooling {
+            border-color: #ff8c00 !important;
+            box-shadow: 0 0 8px rgba(255,140,0,0.35) !important;
+        }
+        .pip-btn.all-ready {
+            border-color: #00ff88 !important;
+            box-shadow: 0 0 10px rgba(0,255,136,0.5) !important;
+        }
+        .pip-badge {
+            position: absolute;
+            top: 2px; right: 4px;
+            font-size: 10px; line-height: 1;
+            color: #ff8c00;
+            z-index: 3;
+            pointer-events: none;
+        }
+
         #actionBar button:hover {
             background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%);
             color: var(--highlight-color);
@@ -382,84 +460,7 @@ body {
             transform: none;
         }
 
-        /* Mobile adjustments */
-        @media (max-width: 600px) {
-            .header {
-                padding: 6px;
-                margin-bottom: 6px;
-            }
-            
-            .header h1 {
-                font-size: 16px;
-                margin-bottom: 3px;
-            }
-            
-            .header p {
-                font-size: 14px;
-            }
-            
-            /* Even more compact header during gameplay on mobile */
-            body.terminal-mode .header {
-                padding: 3px;
-                margin-bottom: 3px;
-                border-width: 1px;
-            }
-            
-            body.terminal-mode .header h1 {
-                font-size: 10px;
-                margin-bottom: 0;
-            }
-            
-            #hud {
-                padding: 4px 8px;
-            }
-            
-            .hud-top .hud-name { font-size: 16px; }
-            .hud-top .hud-gold { font-size: 14px; }
-            
-            .hud-bars {
-                grid-template-columns: 1fr;
-                gap: 4px;
-            }
-            
-            .hud-bar-group label {
-                font-size: 13px;
-            }
-            
-            .hud-bar-group .bar-nums {
-                font-size: 13px;
-            }
-            
-            .progress-bar {
-                height: 10px;
-            }
-            
-            #terminalWindow {
-                padding: 6px 8px;
-            }
-            
-            .term-line {
-                font-size: 15px;
-                line-height: 1.25;
-            }
-            
-            #actionBar {
-                padding: 4px;
-                gap: 3px;
-            }
-            
-            #actionBar button {
-                font-size: 12px;
-                padding: 5px 6px;
-                min-width: 40px;
-                min-height: 36px;
-            }
-            
-            /* Compact dungeon navigation on mobile */
-            #actionBar > div {
-                gap: 3px;
-            }
-        }
+
 
         .term-line.term-victory   { color: var(--border-color); font-size: 22px; }
         .term-line.term-loot      { color: #FFD700; }
@@ -480,24 +481,7 @@ body {
 
    
    
-  #actionBar {
-    flex-shrink: 0;
-
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
-
-    padding: 12px;
-    background: var(--secondary-bg);
-    border-top: 2px solid var(--border-color);
-}
-
-
-
-#actionBar button {
-    flex: 0 0 auto;
-}
+/* stale actionBar block removed */
 
 
 
@@ -772,10 +756,6 @@ body {
 
 
         .action-icon-btn {
-            width: 52px;
-            height: 52px;
-            font-size: 24px;
-            padding: 0;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -783,7 +763,7 @@ body {
             background: var(--secondary-bg);
             color: var(--text-color);
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.15s;
         }
         
         .action-icon-btn:hover:not(:disabled) {
@@ -802,311 +782,82 @@ body {
         }
 
         /* ═══════════════════════════════════════════════════════════════
-           RESPONSIVE MOBILE/TABLET DESIGN
+           RESPONSIVE — mobile first, clean
            ═══════════════════════════════════════════════════════════════ */
-        
-        @media (max-width: 768px) {
-            body {
-                font-size: 18px;
-                padding: 0;
-                margin: 0;
-            }
-            
-            .container {
-                max-width: 100%;
-                padding: 8px;
-                margin: 0;
-            }
-            
-            .header {
-                padding: 8px;
-                margin-bottom: 8px;
-            }
-            
-            .header h1 {
-                font-size: 18px;
-                margin-bottom: 4px;
-            }
-            
-            .header .subtitle {
-                font-size: 12px;
-            }
-            
-            .screen {
-                padding: 10px;
-                min-height: 300px;
-                margin-bottom: 10px;
-            }
-            
-            .location-header {
-                font-size: 20px;
-                padding: 8px;
-                margin-bottom: 8px;
-            }
-            
-            .stats-bar {
-                font-size: 16px;
-                padding: 8px;
-                margin-bottom: 8px;
-            }
-            
-            .progress-bar {
-                height: 12px;
-            }
-            
-            .menu-option {
-                padding: 10px;
-                font-size: 18px;
-                margin: 6px 0;
-            }
-            
-            button {
-                padding: 10px 15px;
-                font-size: 16px;
-                margin: 4px 2px;
-            }
-            
-            input[type="text"] {
-                font-size: 18px;
-                padding: 10px;
-                width: 100%;
-                box-sizing: border-box;
-            }
-            
-            /* Character select cards - stack vertically */
-            .character-select {
-                grid-template-columns: 1fr;
-                gap: 10px;
-            }
-            
-            .class-card {
-                padding: 12px;
-            }
-            
-            .class-card div {
-                font-size: 16px !important;
-            }
-            
-            /* Inventory grid - 2 columns on mobile */
-            .inventory-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 8px;
-            }
-            
-            .item-card {
-                padding: 8px;
-                font-size: 15px;
-            }
-            
-            .item-card button {
-                padding: 6px 10px;
-                font-size: 14px;
-            }
-            
-            /* HUD - compact on mobile */
-            #hud > div {
-                padding: 6px !important;
-                font-size: 16px !important;
-            }
-            
-            #hud > div > div {
-                gap: 10px !important;
-            }
-            
-           /* Terminal - adjust for mobile screen */
-#terminalWindow {
-    flex: 1;
-    overflow-y: auto;
-    padding: 10px;
-    font-size: 17px;
-}
 
-            
-            .term-line {
-                font-size: 17px;
-                line-height: 1.3;
-                margin: 3px 0;
-            }
-            
-            /* Enemy cards removed - info shown in terminal only */
-            
-            /* Action bar - stack buttons vertically on very small screens */
-            #actionBar {
-                padding: 8px;
-            }
-            
-            #actionBar button {
-                margin: 3px 2px;
-                padding: 8px 10px;
-                font-size: 15px;
-            }
-            
-            .action-icon-btn {
-                width: 48px;
-                height: 48px;
-                font-size: 22px;
-            }
-            
-            .action-label {
-                font-size: 16px;
-                margin: 6px 0 3px 0;
-            }
-            
-            /* Stat allocation screen */
-            #mainScreen > div[style*="max-width:520px"] {
-                max-width: 100% !important;
-            }
-            
-            /* Make tables/grids more compact */
-            .message {
-                padding: 10px;
-                font-size: 17px;
-            }
-            
-            .stat-label {
-                font-size: 17px;
-            }
-            
-            /* ASCII art - smaller on mobile */
-            .ascii-art {
-                font-size: 10px;
-                line-height: 1.1;
-            }
+        /* All phones/tablets ≤768px */
+        @media (max-width: 768px) {
+            body { font-size: 16px; }
+
+            /* Menu screen */
+            #menuContainer { padding: 4px; }
+            .header { padding: 5px 6px; margin-bottom: 3px; }
+            .header h1 { font-size: 15px; margin-bottom: 2px; }
+            .screen { padding: 8px; }
+
+            /* HUD — one compact bar */
+            #hud { padding: 3px 6px; }
+            .hud-top .hud-name { font-size: 14px; }
+            .hud-top .hud-gold { font-size: 12px; }
+            .hud-bars { gap: 4px; }
+            .hud-bar-group label { font-size: 10px; }
+            .hud-bar-group .bar-nums { font-size: 10px; }
+            .progress-bar { height: 7px; }
+
+            /* Terminal */
+            #terminalWindow { padding: 5px 7px; }
+            .term-line { font-size: 15px; line-height: 1.3; margin: 1px 0; padding: 1px 0; }
+
+            /* Action bar */
+            #actionBar { padding: 4px 4px 4px 4px; }
+            #actionBar button { font-size: 13px; padding: 5px 7px; min-height: 34px; border-radius: 5px; }
+            .action-icon-btn { font-size: 14px; padding: 5px 6px !important; min-height: 34px; }
+            .spell-btn  { font-size: 12px; padding: 4px 5px !important; }
+            .target-btn { font-size: 13px; padding: 5px 6px !important; }
+
+            /* Other UI */
+            .menu-option { padding: 8px; font-size: 16px; margin: 4px 0; }
+            button { padding: 7px 10px; font-size: 14px; margin: 3px 1px; }
+            .character-select { grid-template-columns: 1fr; gap: 8px; }
+            .inventory-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+            .item-card { padding: 6px; font-size: 13px; }
+            .ascii-art { font-size: 9px; line-height: 1.1; }
         }
-        
-        /* Extra small phones */
-        @media (max-width: 480px) {
-            body {
-                font-size: 16px;
-            }
-            
-            .container {
-                padding: 4px;
-            }
-            
-            .header h1 {
-                font-size: 16px;
-            }
-            
-            button {
-                padding: 8px 12px;
-                font-size: 14px;
-                margin: 3px 1px;
-            }
-            
-            .menu-option {
-                padding: 8px;
-                font-size: 16px;
-            }
-            
-            #terminalWindow {
-                
-                padding: 8px;
-                font-size: 16px;
-            }
-            
-            .term-line {
-                font-size: 16px;
-            }
-            
-            /* Inventory - single column on very small screens */
-            .inventory-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            /* Action icon buttons stay as icons on small phones */
-            .action-icon-btn {
-                width: 44px;
-                height: 44px;
-                font-size: 20px;
-            }
-            
-            /* Other action bar buttons (target selection, etc) */
-            #actionBar button:not(.action-icon-btn) {
-                padding: 8px 12px;
-                margin: 3px 2px;
-            }
-            
-            .location-header {
-                font-size: 18px;
-            }
-            
-            /* Enemy cards removed - info shown in terminal only */
+
+        /* Very small phones ≤390px */
+        @media (max-width: 390px) {
+            .term-line { font-size: 14px; }
+            #actionBar { padding: 3px; }
+            #actionBar button { font-size: 12px; padding: 4px 5px; min-height: 30px; }
+            .action-icon-btn { font-size: 13px; padding: 4px 4px !important; min-height: 30px; }
         }
-        
+
         /* Landscape tablets */
         @media (min-width: 769px) and (max-width: 1024px) {
-            .container {
-                max-width: 95%;
-                padding: 15px;
-            }
-            
-            .character-select {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .inventory-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
+            #menuContainer { max-width: 95%; padding: 12px; }
+            .character-select { grid-template-columns: repeat(2, 1fr); }
+            .inventory-grid { grid-template-columns: repeat(3, 1fr); }
         }
-        
-        /* Portrait tablets */
-        @media (min-width: 481px) and (max-width: 768px) and (orientation: portrait) {
-            .character-select {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .inventory-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            #terminalWindow {
-                }
-        }
-        
-        /* Prevent text selection on double-tap (mobile) */
+
+        /* Touch: no hover lift, tap highlight */
         @media (hover: none) and (pointer: coarse) {
-            button, .menu-option, .class-card, .item-card, .enemy-card {
-                -webkit-tap-highlight-color: rgba(0, 255, 0, 0.2);
-                user-select: none;
-                -webkit-user-select: none;
+            button, .menu-option, .class-card, .item-card {
+                -webkit-tap-highlight-color: rgba(0,255,0,0.2);
+                user-select: none; -webkit-user-select: none;
             }
+            #actionBar button:hover { transform: none; box-shadow: none; }
+            .action-icon-btn:hover:not(:disabled) { transform: none; }
         }
 
        
 /* ─────────────────────────────────────────
-   TERMINAL MODE – SHOW GAMEPLAY UI
+   TERMINAL MODE – show/hide rules
+   (layout is handled by #gameWrapper fixed-position rules above)
    ───────────────────────────────────────── */
 
-/* Hide menu when in terminal mode */
-body.terminal-mode #mainScreen {
+/* Hide menu container in terminal mode */
+body.terminal-mode #menuContainer {
     display: none;
-}
-
-/* Hide gameplay wrapper when NOT in terminal mode */
-body:not(.terminal-mode) #gameWrapper {
-    display: none;
-}
-
-/* Show gameplay wrapper in terminal mode */
-body.terminal-mode #gameWrapper {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-}
-
-/* HUD and action bar should be visible */
-body.terminal-mode #hud,
-body.terminal-mode #actionBar {
-    display: block;
-}
-
-/* Terminal should fill remaining space */
-body.terminal-mode #terminalWindow {
-    display: block;
-    flex: 1;
-    min-height: 0;   /* IMPORTANT for flex scroll */
-    overflow-y: auto;
 }
 
 
@@ -1116,19 +867,19 @@ body.terminal-mode #terminalWindow {
 <body>
     <div class="scanline"></div>
     
-    <div class="container">
+    <!-- MENU WRAPPER (town/shop/etc) -->
+    <div class="container" id="menuContainer">
         <div class="header">
             <h1>⚔️ DUNGEON QUEST ⚔️</h1>
             <div style="color: var(--border-color);">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
             <div style="color: var(--menu-color); font-size: 16px;">A Classic Text Adventure</div>
         </div>
+        <div class="screen" id="mainScreen">
+            <!-- Menu / town content -->
+        </div>
+    </div>
 
-  
-  <div class="screen" id="mainScreen">
-    <!-- Menu / town content -->
-</div>
-
-<!-- GAMEPLAY WRAPPER -->
+<!-- GAMEPLAY WRAPPER — lives at body level, full viewport -->
 <div id="gameWrapper">
 
     <!-- HUD -->
@@ -1147,7 +898,7 @@ body.terminal-mode #terminalWindow {
     <!-- TERMINAL -->
     <div id="terminalWindow"></div>
 
-    <!-- BOTTOM HUD (shows when terminal is open) -->
+    <!-- BOTTOM HUD -->
     <div id="bottomHud" style="display:none;">
         <div style="background:var(--secondary-bg);border:2px solid var(--border-color);border-bottom:none;padding:4px 8px;font-size:12px;">
             <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
@@ -1163,12 +914,6 @@ body.terminal-mode #terminalWindow {
     <!-- ACTION BAR -->
     <div id="actionBar"></div>
 
-</div>
-
-
-</div>
-
-    </div>
 </div>    
 
     <!-- SYSOP Terminal -->
@@ -1210,12 +955,8 @@ body.terminal-mode #terminalWindow {
 
 
 function updateTerminalSafeArea() {
-    const term = document.getElementById('terminalWindow');
-    const bar  = document.getElementById('actionBar');
-    if (!term || !bar) return;
-
-    const barHeight = bar.offsetHeight;
-    term.style.paddingBottom = barHeight + 'px';
+    // No-op: layout handled by fixed-position flex column.
+    // Terminal fills remaining space; actionBar sits below it naturally.
 }
 
 
@@ -2127,13 +1868,11 @@ gameState.hasRestoredGame = false;
         });
 
 function showActionBar() {
-    const ab = document.getElementById('actionBar');
-    if (ab) ab.style.display = 'block';
+    // No-op: body.terminal-mode CSS handles actionBar visibility
 }
 
 function hideActionBar() {
-    const ab = document.getElementById('actionBar');
-    if (ab) ab.style.display = 'none';
+    // No-op: body.terminal-mode CSS handles actionBar visibility
 }
 
 
@@ -2911,11 +2650,7 @@ window.addEventListener('beforeunload', () => {
                 gameState.combatState = null;
                 if (gameState.combatTimer) { clearInterval(gameState.combatTimer); gameState.combatTimer = null; }
                 document.body.classList.remove("terminal-mode");
-                document.getElementById('terminalWindow').style.display = 'none';
-                document.getElementById('hud').style.display = 'none';
                 document.getElementById('actionBar').innerHTML = '';
-                document.getElementById('actionBar').style.display = 'none';
-                document.getElementById('mainScreen').style.display = 'block';
                 gameState._terminalOpen = false;
                 gameState._currentExploreArea = null;
                 gameState.currentTown = dest;
@@ -3000,7 +2735,7 @@ window.addEventListener('beforeunload', () => {
                 };
 
                 // Show terminal
-                document.getElementById('mainScreen').style.display = 'none';
+                /* mainScreen hidden by terminal-mode CSS class */
                 openTerminalView(dungeonKey);
                 startMpRegen(false);
                 startResting(false);
@@ -5395,40 +5130,17 @@ window.addEventListener('beforeunload', () => {
         // ═══════════════════════════════════════════════════════════════
         
 function openTerminalView(locKey) {
-    // Add terminal-mode class to body
+    // CSS body.terminal-mode handles all show/hide — just add the class
     document.body.classList.add('terminal-mode');
-    
-    document.getElementById('mainScreen').style.display = 'none';
 
-    const hud = document.getElementById('hud');
-    const bottomHud = document.getElementById('bottomHud');
     const term = document.getElementById('terminalWindow');
-    const ab = document.getElementById('actionBar');
 
-    hud.style.display = 'none';  // Hide top HUD
-    bottomHud.style.display = 'block';  // Show bottom HUD
-    term.style.display = 'block';
-    
-    updateHud();  // Update both HUDs
-
-  // 🔑 RESET terminal scroll position on open
-requestAnimationFrame(() => {
-    const tw = document.getElementById('terminalWindow');
-    tw.style.display = 'block';
-    tw.offsetHeight;
-    tw.scrollTop = 0;
-});
-
-
-// Dungeon always uses the action bar for movement
-ab.style.display = 'block';
-
+    updateHud();
     initHud();
 
     if (!gameState._terminalOpen) {
         term.innerHTML = '';
         term.scrollTop = 0;
-       
 
         gameState._terminalOpen = true;
         gameState._currentExploreArea = locKey;
@@ -5439,7 +5151,6 @@ ab.style.display = 'block';
     }
 
     updateTerminalSafeArea();
-
 }
 
 
@@ -5449,20 +5160,22 @@ function stabilizeTerminalLayout() {
 
     // Force flexbox to resolve height again
     tw.style.display = 'block';
-    tw.offsetHeight;
+    tw.offsetHeight;   // read triggers reflow
 
     // Reassert scrolling
     tw.style.overflowY = 'auto';
+
+    // Scroll to bottom — triple rAF on mobile to survive layout shifts
+    requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => {
+        tw.scrollTop = tw.scrollHeight + 9999;
+    })));
 }
 
 
 
         function closeTerminalView() {
-            document.getElementById('mainScreen').style.display    = 'block';
-            document.getElementById('hud').style.display           = 'none';
-            document.getElementById('bottomHud').style.display     = 'none';
-            document.getElementById('terminalWindow').style.display = 'none';
-            document.getElementById('actionBar').style.display     = 'none';
+            // Remove terminal-mode class — CSS handles all element visibility
+            document.body.classList.remove('terminal-mode');
             gameState._terminalOpen = false;
             gameState._currentExploreArea = null;
         }
@@ -5480,9 +5193,10 @@ function stabilizeTerminalLayout() {
         function scrollTerminalToBottom() {
     const tw = document.getElementById('terminalWindow');
     if (!tw) return;
-
-    tw.scrollTop = tw.scrollHeight;
-    
+    // Double rAF: first frame paints, second measures correct scrollHeight
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+        tw.scrollTop = tw.scrollHeight + 9999;
+    }));
 }
 
 
@@ -5496,10 +5210,10 @@ function stabilizeTerminalLayout() {
     const { html, extraClass, onDone } = termQueue.shift();
     const tw = document.getElementById('terminalWindow');
 
-    // ✅ Decide ONCE whether we should auto-scroll
-    const shouldAutoScroll =
-        tw.scrollHeight <= tw.clientHeight + 5 ||
-        tw.scrollHeight - tw.scrollTop - tw.clientHeight < 40;
+    // Auto-scroll: always follow during combat; otherwise only if already near bottom.
+    // Use a generous threshold (120px) so mobile's dynamic chrome doesn't break it.
+    const distFromBottom = tw.scrollHeight - tw.scrollTop - tw.clientHeight;
+    const shouldAutoScroll = !!gameState.combatState || distFromBottom < 120;
 
     const line = document.createElement('div');
     line.className = 'term-line' + (extraClass ? ' ' + extraClass : '');
@@ -5508,9 +5222,7 @@ function stabilizeTerminalLayout() {
     // separator or empty lines
     if (extraClass === 'term-separator' || html === '') {
         line.innerHTML = html;
-        if (shouldAutoScroll) {
-            tw.scrollTop = tw.scrollHeight;
-        }
+        if (shouldAutoScroll) requestAnimationFrame(() => { tw.scrollTop = tw.scrollHeight; });
         if (onDone) onDone();
         termDrain();
         return;
@@ -5519,9 +5231,7 @@ function stabilizeTerminalLayout() {
     // instant mode
     if (currentModemSpeed === 'instant') {
         line.innerHTML = html;
-        if (shouldAutoScroll) {
-            tw.scrollTop = tw.scrollHeight;
-        }
+        if (shouldAutoScroll) requestAnimationFrame(() => { tw.scrollTop = tw.scrollHeight; });
         if (onDone) onDone();
         termDrain();
         return;
@@ -5551,7 +5261,7 @@ function stabilizeTerminalLayout() {
 
             // ✅ scroll ONLY after line completes
             if (shouldAutoScroll) {
-                tw.scrollTop = tw.scrollHeight;
+                requestAnimationFrame(() => { tw.scrollTop = tw.scrollHeight; });
             }
 
             if (onDone) onDone();
@@ -5876,10 +5586,18 @@ function stabilizeTerminalLayout() {
             });
 
             let msg;
-            if (monsters.length === 1)
-                msg = `A wild <span style="color:${monsters[0].rarityColor};">${monsters[0].name}</span> appears!`;
-            else {
-                const names = monsters.map(m => `<span style="color:${m.rarityColor};">${m.name}</span>`).join(', ');
+            if (monsters.length === 1) {
+                const m0 = monsters[0];
+                const lvlDiff = (m0.level || 1) - (gameState.player.level || 1);
+                const lvlColor = lvlDiff > 2 ? '#ff4444' : lvlDiff > 0 ? '#ff8c00' : lvlDiff < 0 ? '#88ff88' : '#aaa';
+                const lvlTag = `<span style="color:${lvlColor};font-size:14px;"> [Lv.${m0.level || '?'}]</span>`;
+                msg = `A wild <span style="color:${m0.rarityColor};">${m0.name}</span>${lvlTag} appears!`;
+            } else {
+                const names = monsters.map(m => {
+                    const lvlDiff = (m.level||1) - (gameState.player.level||1);
+                    const lvlColor = lvlDiff > 2 ? '#ff4444' : lvlDiff > 0 ? '#ff8c00' : lvlDiff < 0 ? '#88ff88' : '#aaa';
+                    return `<span style="color:${m.rarityColor};">${m.name}</span><span style="color:${lvlColor};"> Lv.${m.level||'?'}</span>`;
+                }).join(', ');
                 msg = `${monsters.length} enemies appear: ${names}!`;
             }
 
@@ -5917,6 +5635,7 @@ function stabilizeTerminalLayout() {
             termAppend(msg, 'term-enemy', () => {
                 renderEnemyCards();
                 renderActionBar();
+                setTimeout(updatePipButtons, 0);
                 startCombatTimer();
             });
         }
@@ -6207,12 +5926,7 @@ ${mapAscii}
     const ab = document.getElementById('actionBar');
 
     function updateTerminalSafeArea() {
-        const term = document.getElementById('terminalWindow');
-        const bar  = document.getElementById('actionBar');
-        if (!term || !bar) return;
-
-        const barHeight = bar.offsetHeight;
-        term.style.paddingBottom = barHeight + 'px';
+        // No-op with fixed flex layout
     }
 
     // Clear action bar
@@ -6261,8 +5975,8 @@ if (cs) {
                 <span style="color:#8aaa8a;font-size:13px;">(${hitsLeft}/${maxHits})</span>
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;">
-                <button onclick="showAttackMenu()" ${!canAct ? 'disabled' : ''}>⚔️</button>
-                <button onclick="showSpellMenu()"  ${!canAct ? 'disabled' : ''}>✨</button>
+                <button onclick="showAttackMenu()" ${!canAct ? 'disabled' : ''} class="pip-btn" id="pipBtn-attack">⚔️</button>
+                <button onclick="showSpellMenu()"  ${!canAct ? 'disabled' : ''} class="pip-btn" id="pipBtn-spell">✨</button>
                 <button onclick="showPotionMenu()" ${!canAct ? 'disabled' : ''}>🧪</button>
                 <button onclick="playerDefend()"   ${!canAct ? 'disabled' : ''}>🛡️</button>
                 <button onclick="attemptFlee()"    ${!canAct ? 'disabled' : ''}>🏃</button>
@@ -6272,8 +5986,9 @@ if (cs) {
 
     /* ───────── ATTACK TYPE MENU ───────── */
     else if (mode === 'attack_type') {
-        const normalCost = 1;
-        const heavyCost  = 2;
+        const normalCost  = 1;
+        const heavyCost   = 2;
+        const showSpecial = hitsLeft >= 3;
 
         combatDiv.innerHTML = `
             <div style="color:var(--highlight-color);font-size:14px;margin-bottom:4px;text-align:center;">
@@ -6283,12 +5998,11 @@ if (cs) {
                 <button onclick="selectAttackType('normal')" ${hitsLeft < normalCost ? 'disabled' : ''}>
                     ⚔️ Normal
                 </button>
-                <button onclick="selectAttackType('heavy')" ${hitsLeft < heavyCost ? 'disabled' : ''}>
-                    💥 Heavy
+                <button onclick="selectAttackType('heavy')" ${hitsLeft < heavyCost ? 'disabled' : ''}
+                    title="35% miss — hits for 3x!">
+                    💥 Heavy<span style="font-size:10px;color:#ff8c00;"> ⚠</span>
                 </button>
-                <button onclick="selectAttackType('special')" ${hitsLeft < 1 ? 'disabled' : ''}>
-                    ⭐ Special
-                </button>
+                ${showSpecial ? `<button onclick="selectAttackType('special')">⭐ Special</button>` : ''}
                 <button onclick="cancelAction()">❌</button>
             </div>
         `;
@@ -6460,6 +6174,8 @@ if (cs) {
             // If in dungeon, always use dungeon action bar with combat overlay
             if (gameState.dungeon) {
                 renderDungeonActionBar();
+                // Sweep animation + scroll fix (deferred so DOM is settled)
+                requestAnimationFrame(() => { updatePipButtons(); stabilizeTerminalLayout(); });
                 return;
             }
             
@@ -6478,49 +6194,31 @@ if (cs) {
                 const mode = cs.actionMode || 'main';
 
                 if (mode === 'main') {
-                    // Main combat menu
+                    // Main combat menu — single row of 5 equal buttons + pip indicator above
                     ab.innerHTML = `
-                        <div style="color:var(--highlight-color);font-size:10px;margin-bottom:6px;">
-                            ATTACKS: <span style="letter-spacing:3px;">${pips}</span>
-                            <span style="color:#8aaa8a;font-size:15px;"> (${hitsLeft}/${maxHits})</span>
+                        <div style="color:var(--highlight-color);font-size:11px;line-height:1;margin-bottom:3px;text-align:center;letter-spacing:1px;">
+                            <span style="letter-spacing:3px;">${pips}</span>
+                            <span style="color:#8aaa8a;font-size:11px;"> ${hitsLeft}/${maxHits}</span>
                         </div>
-                        <div style="display:flex;flex-wrap:wrap;gap:6px;">
-                            <!-- 📊 STATS BUTTON - commented out, may re-implement later
-                            <button onclick="showPlayerStats()" class="action-icon-btn" title="View Stats" style="border-color:#FFD700;">📊 Stats</button>
-                            -->
-                            <button onclick="showAttackMenu()" ${!canAct?'disabled':''} class="action-icon-btn" title="Attack">⚔️ Attack</button>
-                            <button onclick="showSpellMenu()"  ${!canAct?'disabled':''} class="action-icon-btn" title="Cast Spell">✨ Spell</button>
-                            <button onclick="showPotionMenu()" class="action-icon-btn" title="Use Potion" style="border-color:#00FF00;">🧪 Potion</button>
-                            <button onclick="playerDefend()"   ${!canAct?'disabled':''} class="action-icon-btn" title="Defend">🛡️ Defend</button>
+                        <div style="display:flex;gap:3px;width:100%;">
+                            <button onclick="showAttackMenu()" ${!canAct?'disabled':''} class="action-icon-btn pip-btn" title="Attack" id="pipBtn-attack">⚔️ Atk</button>
+                            <button onclick="showSpellMenu()"  ${!canAct?'disabled':''} class="action-icon-btn pip-btn" title="Cast Spell" id="pipBtn-spell">✨ Spl</button>
+                            <button onclick="showPotionMenu()" class="action-icon-btn" title="Use Potion" style="border-color:#00FF00;">🧪 Pot</button>
+                            <button onclick="playerDefend()"   ${!canAct?'disabled':''} class="action-icon-btn" title="Defend">🛡️ Def</button>
                             <button onclick="attemptFlee()"    ${!canAct?'disabled':''} class="action-icon-btn" title="Flee">🏃 Flee</button>
                         </div>
                     `;
                 } else if (mode === 'attack_type') {
-                    // Attack type selection menu
                     const normalCost = 1;
                     const heavyCost = 2;
-                    const specialCost = hitsLeft; // Uses all pips
-                    
+                    const showSpecial = hitsLeft >= 3;
                     ab.innerHTML = `
-    <div style="color:var(--highlight-color);font-size:18px;margin-bottom:6px;">
-        CHOOSE ATTACK TYPE:
-    </div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px;">
-        <button onclick="selectAttackType('normal')" ${hitsLeft < normalCost ? 'disabled' : ''} class="action-icon-btn">
-            ⚔️ Normal
-        </button>
-        <button onclick="selectAttackType('heavy')" ${hitsLeft < heavyCost ? 'disabled' : ''} class="action-icon-btn">
-            💥 Heavy
-        </button>
-        <button onclick="selectAttackType('special')" ${hitsLeft < 1 ? 'disabled' : ''} class="action-icon-btn">
-            ⭐ Special
-        </button>
-        <button onclick="cancelAction()" class="action-icon-btn">
-            ❌ Back
-        </button>
-    </div>
-
-
+                        <div style="display:flex;gap:3px;width:100%;">
+                            <button onclick="selectAttackType('normal')" ${hitsLeft < normalCost ? 'disabled' : ''} class="action-icon-btn">⚔️ Nrm</button>
+                            <button onclick="selectAttackType('heavy')"  ${hitsLeft < heavyCost  ? 'disabled' : ''} class="action-icon-btn" title="35% miss, 3x dmg" style="border-color:#ff8c00;">💥 Hvy</button>
+                            ${showSpecial ? `<button onclick="selectAttackType('special')" class="action-icon-btn" style="border-color:#FFD700;">⭐ Spc</button>` : ''}
+                            <button onclick="cancelAction()" class="action-icon-btn" style="border-color:#888;">❌</button>
+                        </div>
                     `;
                 } else if (mode === 'target_attack' || mode === 'target_spell' || mode === 'target_staff_melee') {
                     // Target selection menu
@@ -6542,12 +6240,9 @@ if (cs) {
 
                     
                     ab.innerHTML = `
-                        <div style="color:var(--highlight-color);font-size:10px;margin-bottom:6px;">
-                            SELECT TARGET FOR ${actionName.toUpperCase()}:
-                        </div>
-                        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                        <div style="display:flex;flex-wrap:wrap;gap:3px;width:100%;">
                             ${targetBtns}
-                            <button onclick="cancelAction()" class="action-icon-btn">❌ Back</button>
+                            <button onclick="cancelAction()" class="action-icon-btn" style="border-color:#888;">❌</button>
                         </div>
                     `;
                 } else if (mode === 'spell_list') {
@@ -6578,13 +6273,10 @@ if (cs) {
                         </button>` : '';
                     
                     ab.innerHTML = `
-                        <div style="color:var(--highlight-color);font-size:10px;margin-bottom:6px;">
-                            SELECT SPELL:
-                        </div>
-                        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                        <div style="display:flex;flex-wrap:wrap;gap:3px;width:100%;">
                             ${spellBtns}
                             ${meleeOption}
-                            <button onclick="cancelAction()" class="action-icon-btn">❌ Back</button>
+                            <button onclick="cancelAction()" class="action-icon-btn" style="border-color:#888;">❌</button>
                         </div>
                     `;
                 }
@@ -6605,17 +6297,18 @@ if (cs) {
                 }
                 ab.innerHTML = `
                     ${pipWarning}
-                    <!-- 📊 STATS BUTTON - commented out, may re-implement later
-                    <button onclick="showPlayerStats()">📊 STATS</button>
-                    -->
-                    <button onclick="exploreLocation('${gameState.currentLocation}')">🔍 CONTINUE EXPLORING</button>
-                    <button onclick="showPotionMenuExplore()" style="border-color:#00FF00;">🧪 POTIONS</button>
-                    <button onclick="leaveExploreToTown()" ${canLeave ? '' : 'disabled'} 
-                        style="${canLeave ? '' : 'opacity:0.4;'}border-color:${canLeave ? 'var(--text-color)' : '#888'};">
-                        🏘️ RETURN TO TOWN
-                    </button>
+                    <div style="display:flex;gap:3px;width:100%;">
+                        <button onclick="exploreLocation('${gameState.currentLocation}')" style="flex:2;">🔍 Explore</button>
+                        <button onclick="showPotionMenuExplore()" style="flex:1;border-color:#00FF00;">🧪 Pots</button>
+                        <button onclick="leaveExploreToTown()" ${canLeave ? '' : 'disabled'}
+                            style="flex:1;${canLeave ? '' : 'opacity:0.4;'}border-color:${canLeave ? 'var(--text-color)' : '#888'};">
+                            🏘️ Town
+                        </button>
+                    </div>
                 `;
             }
+            // After any button-set change, fix terminal scroll on mobile
+            requestAnimationFrame(() => { updatePipButtons(); stabilizeTerminalLayout(); });
         }
         function goBackToTown() {
             leaveExploreToTown();
@@ -6851,6 +6544,8 @@ if (cs) {
         if (anyRestored) {
             renderActionBar();
         }
+        // Always update pip sweep animation each tick
+        updatePipButtons();
 
         // ─────────────────────────────────────────
         // POST-COMBAT RECOVERY CLEANUP
@@ -7452,14 +7147,10 @@ function returnToTown(townId) {
 
     document.body.classList.remove("terminal-mode");
     termClear();
-    document.getElementById('terminalWindow').style.display = 'none';
-    document.getElementById('hud').style.display = 'none';
 
     const ab = document.getElementById('actionBar');
     ab.innerHTML = '';
-    ab.style.display = 'none';
 
-    document.getElementById('mainScreen').style.display = 'block';
     gameState._terminalOpen = false;
     gameState._currentExploreArea = null;
 
@@ -7542,11 +7233,7 @@ function leaveExploreToTown() {
     stopResting();
 
     document.body.classList.remove("terminal-mode");
-    document.getElementById('terminalWindow').style.display = 'none';
-    document.getElementById('hud').style.display = 'none';
     document.getElementById('actionBar').innerHTML = '';
-    document.getElementById('actionBar').style.display = 'none';
-    document.getElementById('mainScreen').style.display = 'block';
     gameState._terminalOpen = false;
     gameState._currentExploreArea = null;
 
@@ -7563,6 +7250,65 @@ function testDungeon() {
 
 const BASE_PIP_COOLDOWN = 10;
 const MIN_PIP_COOLDOWN = 5;
+
+// ── PIP SWEEP BUTTON ANIMATION ─────────────────────────────────────
+// Called each tick to update the conic-gradient overlay on Attack/Spell btns.
+// Uses total "worst" pip state: sweep = fraction of the longest cooling pip.
+function updatePipButtons() {
+    const cs = gameState.combatState;
+    if (!cs || !cs.pipTimers) return;
+
+    const cd     = gameState.player ? getPipCooldown(gameState.player) : BASE_PIP_COOLDOWN;
+    const total  = cs.pipTimers.length;
+    const ready  = cs.pipAvailable.filter(Boolean).length;
+    const cooling = total - ready;
+
+    // Fraction complete = 1 means "fully cooled" (no overlay)
+    // We show the cooldown of the pip that will recover SOONEST (smallest remaining)
+    let pct = 1; // default = ready (no overlay)
+    if (cooling > 0) {
+        // Find the minimum remaining timer among cooling pips
+        let minRemaining = Infinity;
+        for (let i = 0; i < total; i++) {
+            if (!cs.pipAvailable[i]) {
+                minRemaining = Math.min(minRemaining, cs.pipTimers[i]);
+            }
+        }
+        // pct = fraction ALREADY elapsed (so sweep goes from full → empty as timer counts down)
+        pct = 1 - (minRemaining / cd);
+        pct = Math.max(0, Math.min(1, pct));
+    }
+
+    // For multi-pip, the dial wraps: each full rotation = one pip recovery
+    // We rotate based on: (pips already recovered this cycle) + current pip fraction
+    // Visual: dial spins continuously once per pip cooldown duration
+    const revolutionsLeft = cooling;  // each remaining pip = one more sweep
+    // conic-gradient percentage = fraction of current pip elapsed
+    const pipPct = (pct * 100).toFixed(1) + '%';
+
+    // Update all pip-btn elements
+    document.querySelectorAll('.pip-btn').forEach(btn => {
+        btn.style.setProperty('--pip-pct', pipPct);
+        if (cooling > 0) {
+            btn.classList.add('cooling');
+            btn.classList.remove('all-ready');
+            // Show pip badge if >1 pip cooling
+            let badge = btn.querySelector('.pip-badge');
+            if (cooling > 1) {
+                if (!badge) { badge = document.createElement('span'); badge.className='pip-badge'; btn.appendChild(badge); }
+                badge.textContent = cooling + '×';
+            } else if (badge) {
+                badge.remove();
+            }
+        } else {
+            btn.style.setProperty('--pip-pct', '0%');
+            btn.classList.remove('cooling');
+            btn.classList.add('all-ready');
+            const badge = btn.querySelector('.pip-badge');
+            if (badge) badge.remove();
+        }
+    });
+}
 
 function getPipCooldown(player){
     // Base is always 10s for all classes regardless of class speed stat.
@@ -7657,6 +7403,23 @@ function consumePips(cs, amount, cooldown) {
             
             return dodgeChance;
         }
+
+        // ═══════════════════════════════════════════════════════════════
+        // LEVEL-SCALING DAMAGE MODIFIER
+        // Per level enemy is ABOVE player: player deals -5%, takes +5%
+        // Per level enemy is BELOW player: player deals +5%, takes -5%
+        // Capped at ±50%.
+        // ═══════════════════════════════════════════════════════════════
+        function getLevelDamageMult(playerLevel, enemyLevel) {
+            const diff = (enemyLevel || 1) - (playerLevel || 1);
+            const PCT  = 0.05;
+            const CAP  = 0.50;
+            const shift = Math.max(-CAP, Math.min(CAP, diff * PCT));
+            return {
+                playerDealt: Math.max(0.1, 1 - shift),  // enemy higher → player deals less
+                enemyDealt:  Math.max(0.5, 1 + shift)   // enemy higher → player takes more
+            };
+        }
         
         function calculateDamage({
   attacker,
@@ -7729,10 +7492,11 @@ function consumePips(cs, amount, cooldown) {
         pipCost = 1;
     } 
     else if (attackType === 'heavy') {
+        // HIGH RISK / HIGH REWARD: costs 2 pips, 35% miss chance, but hits for 3x damage
         pipCost = 2;
-        damageMultiplier = 1.75;
-        attackName = 'unleashes a <span style="color:#FF8800;">HEAVY STRIKE</span>';
-        armorPiercing = 0.2;
+        damageMultiplier = 3.0;
+        attackName = 'winds up a <span style="color:#FF8800;">HEAVY STRIKE</span>';
+        armorPiercing = 0.35;
     } 
     else if (attackType === 'special') {
         const availablePips = cs.pipAvailable.filter(x => x).length;
@@ -7803,6 +7567,22 @@ function consumePips(cs, amount, cooldown) {
 
     // Calculate enemy dodge chance based on level difference
     const enemyDodgeChance = calculateEnemyDodge(p.level, enemy.level);
+
+    // ── HEAVY ATTACK: extra 35% miss chance on top of dodge ──────────
+    if (attackType === 'heavy' && Math.random() < 0.35) {
+        termAppend(
+            `You ${attackName} but overswing and <span style="color:#ff8c00;">MISS!</span>`,
+            'term-warning'
+        );
+        updateEnemyCards();
+        updateHud();
+        renderActionBar();
+        return;
+    }
+
+    // ── LEVEL SCALING: player damage modifier ────────────────────────
+    const lvlMult = getLevelDamageMult(p.level, enemy.level);
+    totalBase = Math.max(1, Math.floor(totalBase * lvlMult.playerDealt));
 
     // Resolve damage
     const result = calculateDamage({
@@ -8698,13 +8478,19 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
             return;
         }
 
+        // Level scaling: enemy deals more/less based on level gap
+        const _lvlMult = getLevelDamageMult(p.level, enemy.level);
+        const _scaledBase = Math.max(1,
+            Math.floor(enemy.damage * intent.damageMult * DAMAGE_SCALING.monsterDamageMult * _lvlMult.enemyDealt)
+        );
+
         const result = calculateDamage({
             attacker: enemy,
             defender: {
                 defense: totalDef,
                 magicDefense: totalDef
             },
-            base: Math.floor(enemy.damage * intent.damageMult * DAMAGE_SCALING.monsterDamageMult),
+            base: _scaledBase,
             type: enemy.magicAttack ? 'magic' : 'physical',
             dodgeChance: calcDodgeChance(p.dex || 0) / 100,
             armorPiercing: intent.armorPiercing
