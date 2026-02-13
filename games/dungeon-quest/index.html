@@ -4013,7 +4013,81 @@ window.addEventListener('beforeunload', () => {
                 alert(`⚠️ Dungeon data not loaded! Make sure ${townDef.dungeonKey}.js is in the game folder.`);
                 return;
             }
-            startDungeon(townDef.dungeonKey);
+
+            // ── Show dungeon warning modal ──────────────────────────────────
+            const hasRecall  = p.inventory.includes('recall_potion');
+            const dungeonName = DUNGEONS[townDef.dungeonKey].name || townDef.dungeonKey;
+            const recallNote  = hasRecall
+                ? `<div style="color:#00ff88;margin-top:8px;">✅ You carry a <strong>Recall Potion</strong> — you can use it to escape at any time.</div>`
+                : `<div style="color:#ff4444;margin-top:8px;">❌ You do NOT have a Recall Potion!<br>
+                   Visit the <strong>Shop → Potions</strong> to buy one for <span style="color:#FFD700;">5,000 gold</span> before you go.</div>`;
+
+            const modal = document.createElement('div');
+            modal.id = 'dungeonWarningModal';
+            modal.style.cssText = `
+                position:fixed;inset:0;z-index:9999;
+                display:flex;align-items:center;justify-content:center;
+                background:rgba(0,0,0,0.85);
+                font-family:'VT323',monospace;
+            `;
+            modal.innerHTML = `
+                <div style="
+                    border:3px double #ff4444;
+                    background:#000;
+                    max-width:480px;width:90%;
+                    padding:22px 24px;
+                    box-shadow:0 0 40px rgba(255,0,0,0.4);
+                    color:#00ff00;
+                    line-height:1.4;
+                ">
+                    <div style="font-size:22px;color:#ff4444;text-align:center;margin-bottom:12px;letter-spacing:2px;">
+                        ⚠️ DUNGEON WARNING ⚠️
+                    </div>
+                    <div style="font-size:18px;color:#ffff00;margin-bottom:12px;text-align:center;">
+                        ${dungeonName}
+                    </div>
+
+                    <div style="font-size:16px;margin-bottom:10px;">
+                        Once you enter, there are <strong style="color:#ff4444;">only three ways to leave:</strong>
+                    </div>
+                    <div style="font-size:16px;padding-left:8px;margin-bottom:14px;">
+                        <div style="margin-bottom:4px;">🌀 <strong style="color:#AA88FF;">Recall Potion</strong> — instantly return to town
+                            <div style="font-size:13px;color:#888;padding-left:22px;">Purchase one at the shop for 5,000 gold. One use.</div>
+                        </div>
+                        <div style="margin-bottom:4px;">🚪 <strong style="color:#00ff88;">Entrance / Exit</strong> — walk back the way you came</div>
+                        <div>🏙️ <strong style="color:#4488ff;">Town portal rooms</strong> — special dungeon rooms with an exit portal</div>
+                    </div>
+
+                    <div style="
+                        border:1px solid #444;padding:10px;margin-bottom:14px;
+                        background:rgba(255,100,0,0.05);font-size:15px;color:#ff8800;
+                    ">
+                        ⚔️ Prepare yourself before embarking — stock up on potions, spells, and equipment.
+                        Once inside, you cannot return to the shop without finding your way out first.
+                    </div>
+
+                    ${recallNote}
+
+                    <div style="display:flex;gap:10px;margin-top:18px;justify-content:center;">
+                        <button onclick="
+                            document.getElementById('dungeonWarningModal').remove();
+                            startDungeon('${townDef.dungeonKey}');
+                        " style="
+                            font-family:'VT323',monospace;font-size:18px;
+                            padding:8px 22px;cursor:pointer;
+                            background:linear-gradient(180deg,#1a0000,#0a0000);
+                            color:#ff4444;border:2px solid #ff4444;
+                        ">⚔️ ENTER DUNGEON</button>
+                        <button onclick="document.getElementById('dungeonWarningModal').remove();" style="
+                            font-family:'VT323',monospace;font-size:18px;
+                            padding:8px 22px;cursor:pointer;
+                            background:linear-gradient(180deg,#001a00,#000a00);
+                            color:#00ff88;border:2px solid #00ff88;
+                        ">← STAY SAFE</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
         }
 
         // ── Generic dungeon start (replaces testDungeon) ──────────────
@@ -4343,20 +4417,41 @@ window.addEventListener('beforeunload', () => {
 
             // Add potions to shop
             const potionsForSale = ['health_potion', 'greater_health_potion', 'superior_health_potion',
-                                   'mana_potion', 'greater_mana_potion', 'superior_mana_potion', 'elixir'];
+                                   'mana_potion', 'greater_mana_potion', 'superior_mana_potion', 'elixir',
+                                   'recall_potion'];
             
             potionsForSale.forEach(key => {
                 if (ITEMS[key]) {
                     const item = ITEMS[key];
-                    shopHtml += `
-                        <div class="item-card">
-                            <div style="color: var(--highlight-color);">${item.name}</div>
-                            <div>${item.description}</div>
-                            <div>Power: ${item.power || 'Full'}</div>
-                            <button onclick="buyItem('item', '${key}', ${item.cost})">Buy ${item.cost}G</button>
-                            ${gameState.player.cha ? '<div style="color:#8aaa8a;font-size:15px;">CHA disc: ' + calcChaDiscount(gameState.player.cha) + '%</div>' : ''}
-                        </div>
-                    `;
+                    const p = gameState.player;
+
+                    if (key === 'recall_potion') {
+                        // Special recall potion card — one per character, dungeon use only
+                        const alreadyOwned = p.inventory.includes('recall_potion');
+                        shopHtml += `
+                            <div class="item-card" style="border-color:#AA88FF;">
+                                <div style="color:#AA88FF;font-size:17px;">🌀 ${item.name}</div>
+                                <div style="color:#888;font-size:13px;font-style:italic;">${item.lore}</div>
+                                <div style="color:#ffcc00;margin-top:4px;">${item.description}</div>
+                                <div style="color:#ff8800;font-size:13px;">⚠ Dungeon use only · 1 per adventure</div>
+                                ${alreadyOwned
+                                    ? '<div style="color:#AA88FF;font-size:14px;margin-top:4px;">ALREADY OWNED</div>'
+                                    : `<button onclick="buyItem('item', 'recall_potion', 5000)"
+                                        style="border-color:#AA88FF;color:#AA88FF;margin-top:6px;">Buy 5000G</button>`
+                                }
+                            </div>
+                        `;
+                    } else {
+                        shopHtml += `
+                            <div class="item-card">
+                                <div style="color: var(--highlight-color);">${item.name}</div>
+                                <div>${item.description}</div>
+                                <div>Power: ${item.power || 'Full'}</div>
+                                <button onclick="buyItem('item', '${key}', ${item.cost})">Buy ${item.cost}G</button>
+                                ${p.cha ? '<div style="color:#8aaa8a;font-size:15px;">CHA disc: ' + calcChaDiscount(p.cha) + '%</div>' : ''}
+                            </div>
+                        `;
+                    }
                 }
             });
 
@@ -4514,6 +4609,12 @@ window.addEventListener('beforeunload', () => {
             const p = gameState.player;
             const playerClass = p.baseClass || p.class;
             
+            // Recall potion: only one allowed at a time
+            if (key === 'recall_potion' && p.inventory.includes('recall_potion')) {
+                alert('You already carry a Recall Potion.\nYou can only hold one at a time.');
+                return;
+            }
+
             // Validate class restrictions
             if (type === 'weapon') {
                 const weapon = WEAPONS[key];
@@ -4807,6 +4908,12 @@ window.addEventListener('beforeunload', () => {
             
             if (!potion) {
                 alert('Invalid potion!');
+                return;
+            }
+
+            // ── Recall Potion ──────────────────────────────────────────────
+            if (potion.subtype === 'recall') {
+                alert('Recall Potions can only be used while inside a dungeon.');
                 return;
             }
             
@@ -8100,15 +8207,19 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
         function showPotionMenu() {
             const cs = gameState.combatState;
             if (!cs) return;
-            // REMOVED: pip check - potions can be used even with no pips!
             const p = gameState.player;
+            const inDungeon = !!gameState.dungeon;
             const potions = {};
             p.inventory.forEach(ik => {
                 const item = ITEMS[ik];
-                if (item && (
+                if (!item) return;
+                const isRecall = item.subtype === 'recall';
+                // recall only available outside combat (cs exists here so block it)
+                if (isRecall) return;
+                if (
                     ['heal_hp','heal_mp','full_restore'].includes(item.subtype) ||
                     item.subtype?.startsWith('buff_')
-                )) {
+                ) {
                     if (!potions[ik]) potions[ik] = { item: item, count: 0 };
                     potions[ik].count++;
                 }
@@ -8132,7 +8243,8 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 
                 // Color based on potion type
                 let col = '#00FF00';
-                if (item.subtype === 'heal_hp') col = '#ff4444';
+                if (item.subtype === 'recall') col = '#AA88FF';
+                else if (item.subtype === 'heal_hp') col = '#ff4444';
                 else if (item.subtype === 'heal_mp') col = '#4488ff';
                 else if (item.subtype === 'full_restore') col = '#FFD700';
                 else if (item.subtype === 'buff_str') col = '#FF8800';
@@ -8149,7 +8261,8 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 
                 // Icon based on potion type
                 let icon = '🧪';
-                if (item.subtype === 'heal_hp') icon = '❤️';
+                if (item.subtype === 'recall') icon = '🌀';
+                else if (item.subtype === 'heal_hp') icon = '❤️';
                 else if (item.subtype === 'heal_mp') icon = '💙';
                 else if (item.subtype === 'full_restore') icon = '✨';
                 else if (item.subtype === 'buff_str') icon = '💪';
@@ -8202,6 +8315,39 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
             const potion = ITEMS[potionKey];
             const p      = gameState.player;
             let msg;
+
+            // ── Recall Potion ──────────────────────────────────────────────
+            if (potion.subtype === 'recall') {
+                if (!gameState.dungeon) {
+                    termAppend('<span style="color:#ff8800;">⚠ Recall Potions only work inside dungeons!</span>');
+                    renderActionBar();
+                    return;
+                }
+                if (gameState.combatState) {
+                    termAppend('<span style="color:#ff4444;">⚠ You cannot recall while in combat! Defeat or flee your enemies first.</span>');
+                    renderActionBar();
+                    return;
+                }
+                // Consume and recall
+                const idx = p.inventory.indexOf(potionKey);
+                if (idx !== -1) p.inventory.splice(idx, 1);
+                updateHud();
+                const dest = gameState.currentTown || 'town1';
+                termAppend(`<span style="color:#AA88FF;">🌀 The Recall Potion dissolves in your hand — a swirling portal opens beneath you...</span>`);
+                termAppend(`<span style="color:#AA88FF;">You are swept away to safety!</span>`);
+                setTimeout(() => {
+                    gameState.dungeon      = null;
+                    gameState.combatState  = null;
+                    if (gameState.combatTimer) { clearInterval(gameState.combatTimer); gameState.combatTimer = null; }
+                    document.getElementById('actionBar').innerHTML = '';
+                    document.body.classList.remove('terminal-mode');
+                    gameState._terminalOpen = false;
+                    saveGame();
+                    showTown(dest);
+                }, 1800);
+                return;
+            }
+
             if (potion.subtype === 'heal_hp') {
                 const actual = Math.min(p.maxHp - p.hp, potion.power);
                 p.hp = Math.min(p.maxHp, p.hp + potion.power);
@@ -8315,15 +8461,20 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
         function showPotionMenuExplore() {
             const p = gameState.player;
             const ab = document.getElementById('actionBar');
+            const inDungeon = !!gameState.dungeon;
             
-            // Count all usable potions (healing + buffs, same as combat)
+            // Count all usable potions (healing + buffs + recall if in dungeon)
             const potions = {};
             p.inventory.forEach(ik => {
                 const item = ITEMS[ik];
-                if (item && (
+                if (!item) return;
+                const isRecall = item.subtype === 'recall';
+                if (isRecall && !inDungeon) return; // recall only usable in dungeon
+                if (
+                    isRecall ||
                     ['heal_hp','heal_mp','full_restore'].includes(item.subtype) ||
                     item.subtype?.startsWith('buff_')
-                )) {
+                ) {
                     if (!potions[ik]) potions[ik] = { item, count: 0 };
                     potions[ik].count++;
                 }
@@ -8340,6 +8491,7 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
             
             // Color + icon lookup (mirrors combat potion menu)
             function potionColor(subtype) {
+                if (subtype==='recall') return '#AA88FF';
                 if (subtype==='heal_hp') return '#ff4444';
                 if (subtype==='heal_mp') return '#4488ff';
                 if (subtype==='full_restore') return '#FFD700';
@@ -8357,6 +8509,7 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 return '#00FF00';
             }
             function potionIcon(subtype) {
+                if (subtype==='recall') return '🌀';
                 if (subtype==='heal_hp') return '❤️';
                 if (subtype==='heal_mp') return '💙';
                 if (subtype==='full_restore') return '✨';
@@ -8407,6 +8560,31 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
             const potion = ITEMS[potionKey];
             const p = gameState.player;
             
+            // ── Recall Potion ──────────────────────────────────────────────
+            if (potion.subtype === 'recall') {
+                if (!gameState.dungeon) {
+                    termAppend('<span style="color:#ff8800;">⚠ Recall Potions only work inside dungeons!</span>');
+                    return;
+                }
+                const idx2 = p.inventory.indexOf(potionKey);
+                if (idx2 !== -1) p.inventory.splice(idx2, 1);
+                updateHud();
+                const dest = gameState.currentTown || 'town1';
+                termAppend(`<span style="color:#AA88FF;">🌀 The Recall Potion dissolves in your hand — a swirling portal opens beneath you...</span>`);
+                termAppend(`<span style="color:#AA88FF;">You are swept away to safety!</span>`);
+                setTimeout(() => {
+                    gameState.dungeon      = null;
+                    gameState.combatState  = null;
+                    if (gameState.combatTimer) { clearInterval(gameState.combatTimer); gameState.combatTimer = null; }
+                    document.getElementById('actionBar').innerHTML = '';
+                    document.body.classList.remove('terminal-mode');
+                    gameState._terminalOpen = false;
+                    saveGame();
+                    showTown(dest);
+                }, 1800);
+                return;
+            }
+
             let msg;
             if (potion.subtype === 'heal_hp') {
                 const actual = Math.min(p.maxHp - p.hp, potion.power);

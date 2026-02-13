@@ -373,6 +373,19 @@ const ITEMS = {
         sellValue: 25,
         description: 'A shard of ancient rune stone. Seems valuable.',
         icon: '✦'
+    },
+
+    // ─── RECALL POTION ───────────────────────────────────────────────
+    recall_potion: {
+        name: 'Recall Potion',
+        subtype: 'recall',
+        power: 0,
+        cost: 5000,
+        sellValue: 0,           // can't be sold — too valuable
+        maxStack: 1,            // only one can be held at a time
+        description: 'Instantly return to town from any dungeon.',
+        icon: '🌀',
+        lore: 'A swirling vial of homeward magic. One sip and you are gone.'
     }
 };
 
