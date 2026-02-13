@@ -58,41 +58,45 @@ body.terminal-mode #gameWrapper {
     display: flex;
 }
 
-/* ── HUD — fixed height, never shrinks ──────────────────────────── */
+/* ── Desktop HUD (top) ──────────────────────────────────────────── */
 #hud {
     flex: 0 0 auto;
     display: none;
 }
+body.terminal-mode #hud { display: block; }
 
-body.terminal-mode #hud {
-    display: block;
+/* ── Mobile HUD (above action bar) — hidden on desktop ─────────── */
+#mobileHud {
+    display: none;  /* JS/CSS controls this */
+    flex: 0 0 auto;
+    background: var(--secondary-bg);
+    border-top: 1px solid var(--border-color);
+    padding: 2px 6px;
+    box-sizing: border-box;
 }
+
+/* ── Legacy bottomHud — always hidden ──────────────────────────── */
+#bottomHud { display: none !important; }
 
 /* ── Terminal — takes ALL leftover space, scrolls ───────────────── */
 #terminalWindow {
     flex: 1 1 0;
     min-height: 0;                     /* CRITICAL for flex scrolling */
-    overflow-y: scroll;                /* always show scrollbar track */
+    overflow-y: scroll;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
     display: none;
 }
+body.terminal-mode #terminalWindow { display: block; }
 
-body.terminal-mode #terminalWindow {
-    display: block;
-}
-
-/* ── Action bar — hugs the bottom, auto height ──────────────────── */
+/* ── Action bar ─────────────────────────────────────────────────── */
 #actionBar {
     flex: 0 0 auto;
     display: none;
     overflow: visible;
     box-sizing: border-box;
 }
-
-body.terminal-mode #actionBar {
-    display: block;
-}
+body.terminal-mode #actionBar { display: block; }
 
 /* default button sizing — minimal, let content + flex size them */
 #actionBar button {
@@ -274,7 +278,7 @@ body.terminal-mode #actionBar {
             padding-left: 8px;
         }
 
-        /* ─── static HUD visual styles ─── */
+        /* ─── desktop HUD visual styles ─── */
 #hud {
     background: var(--secondary-bg);
     border: 2px solid var(--border-color);
@@ -282,6 +286,31 @@ body.terminal-mode #actionBar {
     padding: 6px 10px;
     box-shadow: inset 0 0 30px rgba(0,255,0,0.08);
 }
+
+        /* ─── mobile HUD strip (between terminal and action bar) ─── */
+#mobileHud {
+    display: none;
+    font-family: 'VT323', monospace;
+    font-size: 13px;
+    line-height: 1;
+    background: var(--secondary-bg);
+    border-top: 1px solid #2a5a2a;
+    border-bottom: 1px solid #2a5a2a;
+    padding: 3px 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-sizing: border-box;
+}
+#mobileHud span {
+    display: inline-block;
+    margin-right: 8px;
+}
+#mobileHud #mhName  { color: var(--highlight-color); font-size: 12px; }
+#mobileHud #mhHp    { color: #ff6666; }
+#mobileHud #mhMp    { color: #4488ff; }
+#mobileHud #mhXp    { color: var(--text-color); }
+#mobileHud #mhGold  { color: #FFD700; }
 
 
         .hud-top {
@@ -787,7 +816,7 @@ body.terminal-mode #actionBar {
 
         /* All phones/tablets ≤768px */
         @media (max-width: 768px) {
-            body { font-size: 16px; }
+            body { font-size: 15px; }
 
             /* Menu screen */
             #menuContainer { padding: 4px; }
@@ -795,21 +824,17 @@ body.terminal-mode #actionBar {
             .header h1 { font-size: 15px; margin-bottom: 2px; }
             .screen { padding: 8px; }
 
-            /* HUD — one compact bar */
-            #hud { padding: 3px 6px; }
-            .hud-top .hud-name { font-size: 14px; }
-            .hud-top .hud-gold { font-size: 12px; }
-            .hud-bars { gap: 4px; }
-            .hud-bar-group label { font-size: 10px; }
-            .hud-bar-group .bar-nums { font-size: 10px; }
-            .progress-bar { height: 7px; }
+            /* Desktop HUD: hidden on mobile — mobileHud takes its place */
+            body.terminal-mode #hud { display: none !important; }
+            /* Mobile HUD strip: sits between terminal and action bar */
+            body.terminal-mode #mobileHud { display: block; }
 
-            /* Terminal */
-            #terminalWindow { padding: 5px 7px; }
-            .term-line { font-size: 15px; line-height: 1.3; margin: 1px 0; padding: 1px 0; }
+            /* Terminal: smallest still-readable text, maximise screen space */
+            #terminalWindow { padding: 3px 5px; }
+            .term-line { font-size: 13px; line-height: 1.2; margin: 0; padding: 0; }
 
             /* Action bar */
-            #actionBar { padding: 4px 4px 4px 4px; }
+            #actionBar { padding: 3px; }
             #actionBar button { font-size: 13px; padding: 5px 7px; min-height: 34px; border-radius: 5px; }
             .action-icon-btn { font-size: 14px; padding: 5px 6px !important; min-height: 34px; }
             .spell-btn  { font-size: 12px; padding: 4px 5px !important; }
@@ -826,10 +851,11 @@ body.terminal-mode #actionBar {
 
         /* Very small phones ≤390px */
         @media (max-width: 390px) {
-            .term-line { font-size: 14px; }
-            #actionBar { padding: 3px; }
+            .term-line { font-size: 12px; line-height: 1.15; }
+            #actionBar { padding: 2px 3px; }
             #actionBar button { font-size: 12px; padding: 4px 5px; min-height: 30px; }
             .action-icon-btn { font-size: 13px; padding: 4px 4px !important; min-height: 30px; }
+            #mobileHud { font-size: 12px; padding: 2px 4px; }
         }
 
         /* Landscape tablets */
@@ -882,33 +908,38 @@ body.terminal-mode #menuContainer {
 <!-- GAMEPLAY WRAPPER — lives at body level, full viewport -->
 <div id="gameWrapper">
 
-    <!-- HUD -->
+    <!-- HUD (desktop: top of screen) -->
     <div id="hud">
         <div class="hud-inner">
             <div id="hudName"></div>
             <div class="hud-stats">
-                <span id="hudGold"></span>
                 <span id="hudHpNums"></span>
                 <span id="hudMpNums"></span>
                 <span id="hudXpNums"></span>
+                <span id="hudGold"></span>
             </div>
         </div>
     </div>
 
-    <!-- TERMINAL -->
+    <!-- TERMINAL — fills all remaining space -->
     <div id="terminalWindow"></div>
 
-    <!-- BOTTOM HUD -->
-    <div id="bottomHud" style="display:none;">
-        <div style="background:var(--secondary-bg);border:2px solid var(--border-color);border-bottom:none;padding:4px 8px;font-size:12px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
-                <span id="bottomHudName" style="color:var(--highlight-color);font-weight:bold;"></span>
-                <span id="bottomHudGold" style="color:#FFD700;"></span>
-                <span id="bottomHudHp" style="color:#ff6666;"></span>
-                <span id="bottomHudMp" style="color:#4488ff;"></span>
-                <span id="bottomHudXp" style="color:var(--text-color);"></span>
-            </div>
-        </div>
+    <!-- MOBILE HUD (mobile only: sits just above action bar) -->
+    <div id="mobileHud">
+        <span id="mhName"></span>
+        <span id="mhHp"></span>
+        <span id="mhMp"></span>
+        <span id="mhXp"></span>
+        <span id="mhGold"></span>
+    </div>
+
+    <!-- BOTTOM HUD (legacy, kept for compatibility) -->
+    <div id="bottomHud">
+        <span id="bottomHudName"></span>
+        <span id="bottomHudHp"></span>
+        <span id="bottomHudMp"></span>
+        <span id="bottomHudXp"></span>
+        <span id="bottomHudGold"></span>
     </div>
 
     <!-- ACTION BAR -->
@@ -5075,53 +5106,37 @@ window.addEventListener('beforeunload', () => {
         function updateHud() {
     const p = gameState.player;
 
-    // ── HUD may be opened before character exists ──
-    if (!p) {
-        const hudName = document.getElementById('hudName');
-        if (!hudName) return;
+    // ── helper: set element text safely ──
+    const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
 
-        hudName.textContent = '— No Adventurer —';
-        document.getElementById('hudGold').textContent   = '💰 0 g';
-        document.getElementById('hudHpNums').textContent = '❤️ HP: —';
-        document.getElementById('hudMpNums').textContent = '✨ MP: —';
-        document.getElementById('hudXpNums').textContent = '⭐ XP: —';
-        
-        // Update bottom HUD too
-        const bottomName = document.getElementById('bottomHudName');
-        if (bottomName) {
-            bottomName.textContent = '— No Adventurer —';
-            document.getElementById('bottomHudGold').textContent = '💰 0 g';
-            document.getElementById('bottomHudHp').textContent = '❤️ —';
-            document.getElementById('bottomHudMp').textContent = '✨ —';
-            document.getElementById('bottomHudXp').textContent = '⭐ —';
-        }
+    if (!p) {
+        set('hudName',    '— No Adventurer —');
+        set('hudHpNums',  '❤️ HP: —');
+        set('hudMpNums',  '✨ MP: —');
+        set('hudXpNums',  '⭐ XP: —');
+        set('hudGold',    '💰 0 g');
+        // mobile hud
+        set('mhName', '— No Adventurer —');
+        set('mhHp',   '❤️ —');
+        set('mhMp',   '✨ —');
+        set('mhXp',   '⭐ —');
+        set('mhGold', '💰 0');
         return;
     }
 
-    document.getElementById('hudName').textContent =
-        `${p.name} – Lv ${p.level} ${p.className}`;
+    // ── Desktop HUD (gold last) ──
+    set('hudName',    `${p.name} – Lv ${p.level} ${p.className}`);
+    set('hudHpNums',  `❤️ ${p.hp}/${p.maxHp}`);
+    set('hudMpNums',  `✨ ${p.mp}/${p.maxMp}`);
+    set('hudXpNums',  `⭐ ${p.xp}/${p.xpToNext}`);
+    set('hudGold',    `💰 ${p.gold}g`);
 
-    document.getElementById('hudGold').textContent =
-        `💰 ${p.gold} g`;
-
-    document.getElementById('hudHpNums').textContent =
-        `❤️ HP: ${p.hp} / ${p.maxHp}`;
-
-    document.getElementById('hudMpNums').textContent =
-        `✨ MP: ${p.mp} / ${p.maxMp}`;
-
-    document.getElementById('hudXpNums').textContent =
-        `⭐ XP: ${p.xp} / ${p.xpToNext}`;
-        
-    // Update bottom HUD if it exists
-    const bottomName = document.getElementById('bottomHudName');
-    if (bottomName) {
-        bottomName.textContent = `${p.name} – Lv ${p.level} ${p.className}`;
-        document.getElementById('bottomHudGold').textContent = `💰 ${p.gold}g`;
-        document.getElementById('bottomHudHp').textContent = `❤️ ${p.hp}/${p.maxHp}`;
-        document.getElementById('bottomHudMp').textContent = `✨ ${p.mp}/${p.maxMp}`;
-        document.getElementById('bottomHudXp').textContent = `⭐ ${p.xp}/${p.xpToNext}`;
-    }
+    // ── Mobile HUD strip (gold last) ──
+    set('mhName', `${p.name} Lv${p.level}`);
+    set('mhHp',   `❤️${p.hp}/${p.maxHp}`);
+    set('mhMp',   `✨${p.mp}/${p.maxMp}`);
+    set('mhXp',   `⭐${p.xp}/${p.xpToNext}`);
+    set('mhGold', `💰${p.gold}g`);
 }
 
 
@@ -5210,19 +5225,28 @@ function stabilizeTerminalLayout() {
     const { html, extraClass, onDone } = termQueue.shift();
     const tw = document.getElementById('terminalWindow');
 
-    // Auto-scroll: always follow during combat; otherwise only if already near bottom.
-    // Use a generous threshold (120px) so mobile's dynamic chrome doesn't break it.
+    // Decide whether to auto-scroll BEFORE appending so we know
+    // if the user has manually scrolled up.
+    // During combat: ALWAYS follow (never let new text appear off-screen).
+    // Outside combat: follow only if already near the bottom (user hasn't scrolled up).
     const distFromBottom = tw.scrollHeight - tw.scrollTop - tw.clientHeight;
-    const shouldAutoScroll = !!gameState.combatState || distFromBottom < 120;
+    const shouldAutoScroll = !!gameState.combatState || distFromBottom < 80;
 
     const line = document.createElement('div');
     line.className = 'term-line' + (extraClass ? ' ' + extraClass : '');
     tw.appendChild(line);
 
-    // separator or empty lines
+    // Inline scroll helper — fires after paint so scrollHeight is correct
+    const doScroll = () => {
+        if (shouldAutoScroll) {
+            requestAnimationFrame(() => { tw.scrollTop = tw.scrollHeight + 9999; });
+        }
+    };
+
+    // separator or empty lines — no streaming
     if (extraClass === 'term-separator' || html === '') {
         line.innerHTML = html;
-        if (shouldAutoScroll) requestAnimationFrame(() => { tw.scrollTop = tw.scrollHeight; });
+        doScroll();
         if (onDone) onDone();
         termDrain();
         return;
@@ -5231,18 +5255,18 @@ function stabilizeTerminalLayout() {
     // instant mode
     if (currentModemSpeed === 'instant') {
         line.innerHTML = html;
-        if (shouldAutoScroll) requestAnimationFrame(() => { tw.scrollTop = tw.scrollHeight; });
+        doScroll();
         if (onDone) onDone();
         termDrain();
         return;
     }
 
-    // streaming mode
+    // streaming mode — scroll on EVERY tick so the line scrolls into view
+    // as characters arrive, not just when it completes
     const charsPerTick = MODEM_SPEEDS[currentModemSpeed];
     let visibleCount = 0;
     let totalVisible = 0;
 
-    // count visible characters (ignore HTML tags)
     {
         let inTag = false;
         for (let i = 0; i < html.length; i++) {
@@ -5258,18 +5282,15 @@ function stabilizeTerminalLayout() {
         if (visibleCount >= totalVisible) {
             clearInterval(ticker);
             line.innerHTML = html;
-
-            // ✅ scroll ONLY after line completes
-            if (shouldAutoScroll) {
-                requestAnimationFrame(() => { tw.scrollTop = tw.scrollHeight; });
-            }
-
+            doScroll();
             if (onDone) onDone();
             termDrain();
         } else {
             line.innerHTML =
                 sliceToVisible(html, visibleCount) +
                 '<span style="animation:blink 1s infinite;">_</span>';
+            // Scroll during streaming so text stays visible as it types
+            if (shouldAutoScroll) tw.scrollTop = tw.scrollHeight + 9999;
         }
     }, 16);
 }
