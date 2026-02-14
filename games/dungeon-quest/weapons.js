@@ -54,8 +54,8 @@ const WEAPONS = {
     },
     iron_sword: { 
         name: 'Iron Sword', 
-        baseDamage: 3,
-        maxDamage: 5,
+        baseDamage: 8,
+        maxDamage: 14,
         baseMagicDamage: 0, 
         cost: 0, 
         level: 1,
@@ -74,8 +74,8 @@ const WEAPONS = {
     },
     training_bow: { 
         name: 'Training Bow', 
-        baseDamage: 2,
-        maxDamage: 4,
+        baseDamage: 7,
+        maxDamage: 12,
         baseMagicDamage: 0, 
         cost: 0, 
         level: 1,
@@ -455,8 +455,8 @@ const WEAPONS = {
     },
     iron_dagger: {
         name: 'Iron Dagger',
-        baseDamage: 4,
-        maxDamage: 7,
+        baseDamage: 6,
+        maxDamage: 11,
         baseMagicDamage: 0,
         cost: 150,
         level: 1,

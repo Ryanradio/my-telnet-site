@@ -92,7 +92,7 @@ const ARMOR = {
     // LEVEL 4 ARMOR
     chain_mail: {
         name: 'Chain Mail',
-        baseDefense: 8,
+        baseDefense: 5,
         baseMagicBonus: 0,
         cost: 500,
         level: 4,
