@@ -825,62 +825,7 @@ body.terminal-mode .hud-stats span {
             50% { box-shadow: 0 0 20px var(--error-color); }
         }
 
-        /* ─── Quit / SYSOP dual-purpose button ──────────────────────── */
-        .quit-sysop-btn {
-            display: flex !important;
-            align-items: center;
-            justify-content: space-between;
-            border: 1px solid #3a1a1a !important;
-            background: rgba(40,0,0,0.25);
-            user-select: none;
-            -webkit-user-select: none;
-            position: relative;
-            overflow: hidden;
-            transition: border-color 0.2s, background 0.2s !important;
-        }
-        .quit-sysop-btn:hover {
-            border-color: #883333 !important;
-            background: rgba(60,0,0,0.4) !important;
-            padding-left: 8px !important;   /* override .menu-option:hover slide */
-        }
-        .qsb-main {
-            color: #cc4444;
-            font-size: inherit;
-            letter-spacing: 0.5px;
-        }
-        .qsb-hint {
-            color: #553333;
-            font-size: 12px;
-            font-family: 'VT323', monospace;
-            padding-left: 8px;
-            white-space: nowrap;
-            transition: color 0.2s;
-        }
-        .quit-sysop-btn:hover .qsb-hint { color: #884444; }
-
-        /* Holding state — border pulses red, hint glows */
-        .quit-sysop-btn.holding {
-            border-color: #ff2222 !important;
-            background: rgba(80,0,0,0.5) !important;
-            box-shadow: 0 0 12px rgba(255,0,0,0.4);
-        }
-        .quit-sysop-btn.holding .qsb-hint {
-            color: #ff4444;
-        }
-        /* Progress fill that grows during hold */
-        .quit-sysop-btn::after {
-            content: '';
-            position: absolute;
-            bottom: 0; left: 0;
-            height: 2px;
-            width: 0%;
-            background: #ff2222;
-            transition: none;
-        }
-        .quit-sysop-btn.holding::after {
-            width: 100%;
-            transition: width 0.6s linear;
-        }
+        /* quit button is now a plain .menu-option */
 
         /* ─── Full-screen SYSOP Overlay ──────────────────────────────── */
         #sysopOverlay {
@@ -891,28 +836,32 @@ body.terminal-mode .hud-stats span {
             display: none;
             flex-direction: column;
             overflow: hidden;
+            height: 100%;
+            width: 100%;
         }
         #sysopOverlay.open { display: flex; }
 
-        #sysopOverlayInner {
-            flex: 1;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            padding: 10px 12px 20px;
-        }
-
-        .syo-header {
+        /* Sticky header — never scrolls away */
+        #sysopOverlayHeader {
+            flex: 0 0 auto;
             display: flex;
             align-items: center;
             justify-content: space-between;
             border-bottom: 2px solid #ff4444;
-            padding-bottom: 8px;
-            margin-bottom: 10px;
-            position: sticky;
-            top: 0;
+            padding: 8px 12px;
             background: #000;
-            z-index: 1;
         }
+
+        /* Scrollable content area — gets all remaining height */
+        #sysopOverlayInner {
+            flex: 1 1 0;
+            min-height: 0;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 10px 12px 30px;
+        }
+
+        /* .syo-header replaced by #sysopOverlayHeader (fixed, outside scroll) */
         .syo-title {
             color: #ff4444;
             font-family: 'Press Start 2P', monospace;
@@ -1228,11 +1177,13 @@ body.terminal-mode #menuContainer {
 
     <!-- SYSOP Full-Screen Overlay -->
     <div id="sysopOverlay">
+        <!-- Header is fixed — never scrolls -->
+        <div id="sysopOverlayHeader">
+            <span class="syo-title">⚠ SYSOP TERMINAL ⚠</span>
+            <button class="syo-close" onclick="closeSysopOverlay()">✕ CLOSE</button>
+        </div>
+        <!-- Scrollable content -->
         <div id="sysopOverlayInner">
-            <div class="syo-header">
-                <span class="syo-title">⚠ SYSOP TERMINAL ⚠</span>
-                <button class="syo-close" onclick="closeSysopOverlay()">✕ CLOSE</button>
-            </div>
             <div id="sysopOverlayContent"></div>
         </div>
     </div>
@@ -2504,60 +2455,7 @@ window.addEventListener('beforeunload', () => {
         }
 
         // ═══════════════════════════════════════════════════════════════
-        // ═══════════════════════════════════════════════════════════════
-        // QUIT ↔ SYSOP DUAL-PURPOSE BUTTON
-        // Click / short-tap  →  quit confirm
-        // Shift+click (desktop)  OR  hold 600 ms (mobile)  →  SYSOP
-        // ═══════════════════════════════════════════════════════════════
-
-        let _quitHoldTimer  = null;
-        let _quitIsHolding  = false;
-        const QUIT_HOLD_MS  = 600;
-
-        // Desktop: shift+click → sysop, plain click → quit
-        function handleQuitClick(e) {
-            // Pointer events handle the hold path; this fires for mouse only.
-            // Block if the hold path already fired (mobile touch completes both).
-            if (_quitIsHolding) { _quitIsHolding = false; return; }
-            if (e.shiftKey) {
-                openSysopOverlay();
-            } else {
-                confirmQuitToMenu();
-            }
-        }
-
-        // Mobile long-press (and desktop mousedown)
-        function quitBtnDown(e) {
-            // Shift+mousedown on desktop → skip the hold timer, go straight to sysop
-            if (e.shiftKey) return;
-            const btn = document.getElementById('quitSysopBtn');
-            if (btn) btn.classList.add('holding');
-            _quitHoldTimer = setTimeout(() => {
-                _quitHoldTimer  = null;
-                _quitIsHolding  = true;
-                if (btn) btn.classList.remove('holding');
-                openSysopOverlay();
-            }, QUIT_HOLD_MS);
-        }
-        function quitBtnUp(e) {
-            if (_quitHoldTimer) {
-                clearTimeout(_quitHoldTimer);
-                _quitHoldTimer = null;
-            }
-            const btn = document.getElementById('quitSysopBtn');
-            if (btn) btn.classList.remove('holding');
-            // Click handler fires next; nothing more to do here
-        }
-        function quitBtnCancel() {
-            if (_quitHoldTimer) {
-                clearTimeout(_quitHoldTimer);
-                _quitHoldTimer = null;
-            }
-            const btn = document.getElementById('quitSysopBtn');
-            if (btn) btn.classList.remove('holding');
-        }
-
-        // Quit confirm dialog
+        // ── Quit to menu ─────────────────────────────────────────────
         function confirmQuitToMenu() {
             if (confirm('Quit to main menu?\nUnsaved progress will be lost.')) {
                 stopAllRegen();
@@ -2625,6 +2523,7 @@ window.addEventListener('beforeunload', () => {
                     <input class="syo-input" id="sysoUser" placeholder="sysop" autocomplete="off" autocorrect="off" spellcheck="false">
                     <div class="syo-label">PASSWORD</div>
                     <input class="syo-input" id="sysoPass" type="password" placeholder="••••••••" autocomplete="off">
+                    <div id="sysoLoginErr" style="display:none;color:#ff4444;font-family:'VT323',monospace;font-size:18px;margin:4px 0 8px;"></div>
                     <div class="syo-grid" style="margin-top:8px;">
                         <button class="syo-btn full" style="border-color:#00FF41;color:#00FF41;font-size:22px;padding:14px;"
                             onclick="sysoLogin()">⚡ LOGIN</button>
@@ -2693,9 +2592,22 @@ window.addEventListener('beforeunload', () => {
         function sysoLogin() {
             const u = (document.getElementById('sysoUser')?.value || '').trim();
             const p = (document.getElementById('sysoPass')?.value || '').trim();
-            handleLogin([u, p]);
-            sysoLog(`/login ${u} ***`);
-            renderSysopOverlay();
+            // Directly check credentials — don't rely on desktop terminal feedback
+            if (u === SYSOP_CREDENTIALS.username && p === SYSOP_CREDENTIALS.password) {
+                gameState.sysop.authenticated = true;
+                gameState.sysop.username = u;
+                document.getElementById('sysopBadge')?.classList.add('active');
+                sysoLog('Authentication successful. Welcome, ' + u);
+                renderSysopOverlay();
+            } else {
+                // Show error inline in overlay — visible on mobile without desktop terminal
+                const errEl = document.getElementById('sysoLoginErr');
+                if (errEl) {
+                    errEl.textContent = '✗ Invalid credentials';
+                    errEl.style.display = 'block';
+                }
+                sysoLog('Authentication failed.', 'error');
+            }
         }
         function sysoLogout() {
             handleLogout();
@@ -4567,16 +4479,7 @@ window.addEventListener('beforeunload', () => {
                     <div class="menu-option" onclick="showModemSettings()">► MODEM SETTINGS</div>
                     <div class="menu-option" onclick="saveGame()" style="border-color:var(--text-color);">💾 QUICK SAVE</div>
                     <div class="menu-option" onclick="downloadSaveFile()" style="border-color:var(--highlight-color);background:rgba(255,255,0,0.05);">📥 DOWNLOAD SAVE FILE</div>
-                    <div class="menu-option quit-sysop-btn" id="quitSysopBtn"
-                        onclick="handleQuitClick(event)"
-                        onpointerdown="quitBtnDown(event)"
-                        onpointerup="quitBtnUp(event)"
-                        onpointerleave="quitBtnCancel()"
-                        oncontextmenu="return false;"
-                        title="Click to quit  |  Shift+click or hold for SYSOP">
-                        <span class="qsb-main">⏏ QUIT TO MENU</span>
-                        <span class="qsb-hint">hold: ⚠SYSOP</span>
-                    </div>
+                    <div class="menu-option" onclick="confirmQuitToMenu()">⏏ QUIT TO MENU</div>
                 </div>
             `;
         }
