@@ -63,7 +63,10 @@ body.terminal-mode #gameWrapper {
     flex: 0 0 auto;
     display: none;
 }
-body.terminal-mode #hud { display: block; }
+body.terminal-mode #hud {
+    display: block;
+    order: 3;   /* terminal=1, hud=3, actionBar=4 → HUD sits just above action bar */
+}
 
 /* ── Mobile HUD (above action bar) — hidden on desktop ─────────── */
 #mobileHud {
@@ -73,6 +76,7 @@ body.terminal-mode #hud { display: block; }
     border-top: 1px solid var(--border-color);
     padding: 2px 6px;
     box-sizing: border-box;
+    order: 2;
 }
 
 /* ── Legacy bottomHud — always hidden ──────────────────────────── */
@@ -86,6 +90,7 @@ body.terminal-mode #hud { display: block; }
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
     display: none;
+    order: 1;
 }
 body.terminal-mode #terminalWindow { display: block; }
 
@@ -95,6 +100,7 @@ body.terminal-mode #terminalWindow { display: block; }
     display: none;
     overflow: visible;
     box-sizing: border-box;
+    order: 4;
 }
 body.terminal-mode #actionBar { display: block; }
 
@@ -322,11 +328,58 @@ body.terminal-mode #actionBar { display: block; }
     display: inline-block;
     margin-right: 8px;
 }
-#mobileHud #mhName  { color: var(--highlight-color); font-size: 12px; }
 #mobileHud #mhHp    { color: #ff6666; }
 #mobileHud #mhMp    { color: #4488ff; }
 #mobileHud #mhXp    { color: var(--text-color); }
 #mobileHud #mhGold  { color: #FFD700; }
+
+/* Hide XP and gold on very narrow screens (≤420px) — use 📊 button instead */
+@media (max-width: 420px) {
+    #mobileHud .mhud-xp   { display: none !important; }
+    #mobileHud .mhud-gold { display: none !important; }
+}
+
+/* ─── Desktop HUD: compact strip in terminal-mode ───────────────── */
+body.terminal-mode #hud {
+    padding: 2px 8px !important;
+    border-width: 1px !important;
+    border-top: 1px solid #1a3a1a !important;
+    border-bottom: none !important;
+    box-shadow: none !important;
+    background: #050a05 !important;
+}
+body.terminal-mode .hud-inner {
+    display: flex !important;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 6px;
+    justify-content: flex-start;
+}
+body.terminal-mode #hudName {
+    font-size: 11px !important;
+    color: var(--highlight-color) !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 160px;
+    flex-shrink: 1;
+}
+body.terminal-mode .hud-stats {
+    display: flex !important;
+    flex-wrap: nowrap;
+    gap: 8px;
+    font-size: 13px !important;
+    align-items: center;
+    flex: 1;
+}
+body.terminal-mode .hud-stats span {
+    white-space: nowrap;
+    font-size: 13px !important;
+}
+/* On mobile the desktop HUD is hidden — mobileHud takes over */
+@media (max-width: 768px) {
+    body.terminal-mode #hud { display: none !important; }
+}
 
 
         .hud-top {
@@ -772,6 +825,206 @@ body.terminal-mode #actionBar { display: block; }
             50% { box-shadow: 0 0 20px var(--error-color); }
         }
 
+        /* ─── Quit / SYSOP dual-purpose button ──────────────────────── */
+        .quit-sysop-btn {
+            display: flex !important;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid #3a1a1a !important;
+            background: rgba(40,0,0,0.25);
+            user-select: none;
+            -webkit-user-select: none;
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.2s, background 0.2s !important;
+        }
+        .quit-sysop-btn:hover {
+            border-color: #883333 !important;
+            background: rgba(60,0,0,0.4) !important;
+            padding-left: 8px !important;   /* override .menu-option:hover slide */
+        }
+        .qsb-main {
+            color: #cc4444;
+            font-size: inherit;
+            letter-spacing: 0.5px;
+        }
+        .qsb-hint {
+            color: #553333;
+            font-size: 12px;
+            font-family: 'VT323', monospace;
+            padding-left: 8px;
+            white-space: nowrap;
+            transition: color 0.2s;
+        }
+        .quit-sysop-btn:hover .qsb-hint { color: #884444; }
+
+        /* Holding state — border pulses red, hint glows */
+        .quit-sysop-btn.holding {
+            border-color: #ff2222 !important;
+            background: rgba(80,0,0,0.5) !important;
+            box-shadow: 0 0 12px rgba(255,0,0,0.4);
+        }
+        .quit-sysop-btn.holding .qsb-hint {
+            color: #ff4444;
+        }
+        /* Progress fill that grows during hold */
+        .quit-sysop-btn::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0;
+            height: 2px;
+            width: 0%;
+            background: #ff2222;
+            transition: none;
+        }
+        .quit-sysop-btn.holding::after {
+            width: 100%;
+            transition: width 0.6s linear;
+        }
+
+        /* ─── Full-screen SYSOP Overlay ──────────────────────────────── */
+        #sysopOverlay {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            z-index: 2000;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        #sysopOverlay.open { display: flex; }
+
+        #sysopOverlayInner {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 10px 12px 20px;
+        }
+
+        .syo-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid #ff4444;
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+            position: sticky;
+            top: 0;
+            background: #000;
+            z-index: 1;
+        }
+        .syo-title {
+            color: #ff4444;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            letter-spacing: 1px;
+        }
+        .syo-close {
+            background: none;
+            border: 1px solid #ff4444;
+            color: #ff4444;
+            font-family: 'VT323', monospace;
+            font-size: 20px;
+            padding: 2px 10px;
+            cursor: pointer;
+        }
+
+        /* Output log */
+        .syo-log {
+            background: #050505;
+            border: 1px solid #1a3a1a;
+            color: #00FF41;
+            font-family: 'VT323', monospace;
+            font-size: 15px;
+            padding: 6px 8px;
+            max-height: 100px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            white-space: pre-wrap;
+            line-height: 1.3;
+        }
+
+        /* Section */
+        .syo-section { margin-bottom: 12px; }
+        .syo-section-title {
+            color: #ff8c00;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 9px;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+            padding-bottom: 3px;
+            border-bottom: 1px solid #2a2a00;
+        }
+
+        /* Button grid */
+        .syo-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+        .syo-grid.cols3 { grid-template-columns: 1fr 1fr 1fr; }
+        .syo-btn {
+            background: #050505;
+            border: 1px solid #2a4a2a;
+            color: #00FF41;
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            padding: 10px 6px;
+            cursor: pointer;
+            text-align: center;
+            transition: background 0.1s;
+        }
+        .syo-btn:active  { background: #0a1a0a; }
+        .syo-btn.red     { border-color:#ff4444; color:#ff4444; }
+        .syo-btn.orange  { border-color:#ff8c00; color:#ff8c00; }
+        .syo-btn.yellow  { border-color:#FFD700; color:#FFD700; }
+        .syo-btn.full    { grid-column: 1 / -1; }
+
+        /* Sub form */
+        .syo-sub {
+            border: 1px solid #1a3a1a;
+            padding: 10px;
+            margin-top: 8px;
+            background: #020a02;
+        }
+        .syo-sub-title {
+            color: #00FF41;
+            font-size: 13px;
+            margin-bottom: 6px;
+            font-family: 'VT323', monospace;
+        }
+        .syo-label {
+            color: #5a8a5a;
+            font-family: 'VT323', monospace;
+            font-size: 15px;
+            margin: 4px 0 2px;
+        }
+        .syo-input {
+            width: 100%;
+            background: #000;
+            border: 1px solid #2a4a2a;
+            color: #00FF41;
+            font-family: 'VT323', monospace;
+            font-size: 20px;
+            padding: 6px 8px;
+            box-sizing: border-box;
+            margin-bottom: 6px;
+            outline: none;
+        }
+        .syo-input:focus { border-color: #00FF41; }
+        select.syo-input { font-size: 16px; }
+
+        /* Login form */
+        .syo-login-art {
+            color: #ff4444;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 9px;
+            text-align: center;
+            line-height: 1.6;
+            margin: 10px 0 14px;
+            letter-spacing: 1px;
+        }
+
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -942,11 +1195,10 @@ body.terminal-mode #menuContainer {
 
     <!-- MOBILE HUD (mobile only: sits just above action bar) -->
     <div id="mobileHud">
-        <span id="mhName"></span>
         <span id="mhHp"></span>
         <span id="mhMp"></span>
-        <span id="mhXp"></span>
-        <span id="mhGold"></span>
+        <span id="mhXp" class="mhud-xp"></span>
+        <span id="mhGold" class="mhud-gold"></span>
     </div>
 
     <!-- BOTTOM HUD (legacy, kept for compatibility) -->
@@ -971,6 +1223,17 @@ body.terminal-mode #menuContainer {
         <div class="terminal-input-line">
             <span class="terminal-prompt">root@dungeon:~#</span>
             <input type="text" class="terminal-input" id="terminalInput" autocomplete="off">
+        </div>
+    </div>
+
+    <!-- SYSOP Full-Screen Overlay -->
+    <div id="sysopOverlay">
+        <div id="sysopOverlayInner">
+            <div class="syo-header">
+                <span class="syo-title">⚠ SYSOP TERMINAL ⚠</span>
+                <button class="syo-close" onclick="closeSysopOverlay()">✕ CLOSE</button>
+            </div>
+            <div id="sysopOverlayContent"></div>
         </div>
     </div>
 
@@ -1117,7 +1380,7 @@ const OPPOSITE_DIR = {
         // ═══════════════════════════════════════════════════════════════
         // STAT SYSTEM
         // ═══════════════════════════════════════════════════════════════
-        const STAT_BUDGET  = 30;
+        const STAT_BUDGET  = 10;
         const STAT_NAMES   = ['str','dex','wis','cha','con','lck'];
         const STAT_LABELS  = { str:'STR', dex:'DEX', wis:'WIS', cha:'CHA', con:'CON', lck:'LCK' };
         const STAT_DESCS   = {
@@ -1133,13 +1396,14 @@ const OPPOSITE_DIR = {
         const OPPOSED_PAIRS = [['str','wis'],['dex','cha'],['con','lck']];
 
         const CLASS_STAT_PRESETS = {
-            warrior : { str:10, dex:4, wis:2, cha:2, con:8, lck:4 },
-            rogue   : { str:4,  dex:10,wis:2, cha:4, con:4, lck:6 },
-            paladin : { str:7,  dex:3, wis:7, cha:4, con:6, lck:3 },
-            mage    : { str:2,  dex:3, wis:10,cha:3, con:4, lck:8 },
-            cleric  : { str:3,  dex:2, wis:9, cha:6, con:6, lck:4 },
-            ranger  : { str:5,  dex:8, wis:3, cha:3, con:5, lck:6 },
-            warlock : { str:2,  dex:4, wis:9, cha:5, con:4, lck:6 }
+            // Sums to exactly 10; biased toward class identity, min 0
+            warrior : { str:3, dex:1, wis:0, cha:1, con:3, lck:2 },
+            rogue   : { str:1, dex:4, wis:0, cha:1, con:1, lck:3 },
+            paladin : { str:2, dex:1, wis:3, cha:2, con:2, lck:0 },
+            mage    : { str:0, dex:1, wis:4, cha:1, con:1, lck:3 },
+            cleric  : { str:1, dex:0, wis:4, cha:2, con:2, lck:1 },
+            ranger  : { str:1, dex:3, wis:1, cha:1, con:2, lck:2 },
+            warlock : { str:0, dex:1, wis:4, cha:2, con:1, lck:2 }
         };
         const CLASS_AFFINITIES = {
             warrior :['str','con'],
@@ -1286,8 +1550,8 @@ const OPPOSITE_DIR = {
 
         // random reroll: scatter STAT_BUDGET among 6 stats (min 1 each)
         function rerollStats(classKey) {
-            const s = { str:1, dex:1, wis:1, cha:1, con:1, lck:1 };
-            let rem = STAT_BUDGET - 6;
+            const s = { str:0, dex:0, wis:0, cha:0, con:0, lck:0 };
+            let rem = STAT_BUDGET;  // all 10 points distributed randomly
             while (rem-- > 0) s[STAT_NAMES[Math.floor(Math.random()*6)]]++;
             return s;
         }
@@ -1876,6 +2140,25 @@ gameState.hasRestoredGame = false;
             if (e.key === 'Escape' && gameState.sysop.terminalActive) {
                 toggleTerminal();
             }
+            // ── Dungeon keyboard navigation ───────────────────────────
+            // Arrow keys work any time the dungeon is active and focus
+            // is NOT inside a text input (so typing in kb field still works).
+            if (gameState.dungeon && !gameState.sysop.terminalActive) {
+                const tag = document.activeElement?.tagName;
+                const inInput = tag === 'INPUT' || tag === 'TEXTAREA';
+                if (!inInput) {
+                    const arrowMap = {
+                        'ArrowUp':   'n',
+                        'ArrowDown': 's',
+                        'ArrowLeft': 'w',
+                        'ArrowRight':'e'
+                    };
+                    if (arrowMap[e.key]) {
+                        e.preventDefault();
+                        dungeonNav(arrowMap[e.key]);
+                    }
+                }
+            }
         });
 
 function showActionBar() {
@@ -2173,6 +2456,368 @@ window.addEventListener('beforeunload', () => {
                 terminal.classList.remove('active');
             }
         }
+
+        // ═══════════════════════════════════════════════════════════════
+        // 🧪 POTION BUTTON LONG-PRESS → SYSOP (3 seconds)
+        // ═══════════════════════════════════════════════════════════════
+        let _potHoldTimer  = null;
+        let _potFired      = false;
+        const POT_HOLD_MS  = 3000;
+
+        function potBtnDown(e, normalFn) {
+            e.preventDefault();
+            _potFired = false;
+            _potHoldTimer = setTimeout(() => {
+                _potHoldTimer = null;
+                _potFired     = true;
+                openSysopOverlay();
+            }, POT_HOLD_MS);
+        }
+        function potBtnUp(e, normalFn) {
+            if (_potHoldTimer) {
+                clearTimeout(_potHoldTimer);
+                _potHoldTimer = null;
+            }
+            if (!_potFired) {
+                // Normal short tap — call the potion menu
+                if (typeof window[normalFn] === 'function') window[normalFn]();
+            }
+            _potFired = false;
+        }
+        function potBtnCancel() {
+            if (_potHoldTimer) { clearTimeout(_potHoldTimer); _potHoldTimer = null; }
+            _potFired = false;
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // 📊 PRINT STATS TO TERMINAL
+        // ═══════════════════════════════════════════════════════════════
+        function printStatsToTerminal() {
+            const p = gameState.player;
+            if (!p) { termAppend('No character loaded.', 'term-error'); return; }
+            termAppend('', 'term-separator');
+            termAppend(`📊 <span style="color:var(--highlight-color);">${p.name}</span> · Lv ${p.level} ${p.className}`, 'term-highlight');
+            termAppend(`❤️ HP: <span style="color:#ff6666;">${p.hp}/${p.maxHp}</span>  ✨ MP: <span style="color:#4488ff;">${p.mp}/${p.maxMp}</span>`);
+            termAppend(`⭐ XP: ${p.xp}/${p.xpToNext}  💰 Gold: ${p.gold}g`);
+            termAppend(`STR:${p.str} DEX:${p.dex} CON:${p.con} WIS:${p.wis} CHA:${p.cha} LCK:${p.lck}`, 'term-dim');
+            termAppend('', 'term-separator');
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════════════════════
+        // QUIT ↔ SYSOP DUAL-PURPOSE BUTTON
+        // Click / short-tap  →  quit confirm
+        // Shift+click (desktop)  OR  hold 600 ms (mobile)  →  SYSOP
+        // ═══════════════════════════════════════════════════════════════
+
+        let _quitHoldTimer  = null;
+        let _quitIsHolding  = false;
+        const QUIT_HOLD_MS  = 600;
+
+        // Desktop: shift+click → sysop, plain click → quit
+        function handleQuitClick(e) {
+            // Pointer events handle the hold path; this fires for mouse only.
+            // Block if the hold path already fired (mobile touch completes both).
+            if (_quitIsHolding) { _quitIsHolding = false; return; }
+            if (e.shiftKey) {
+                openSysopOverlay();
+            } else {
+                confirmQuitToMenu();
+            }
+        }
+
+        // Mobile long-press (and desktop mousedown)
+        function quitBtnDown(e) {
+            // Shift+mousedown on desktop → skip the hold timer, go straight to sysop
+            if (e.shiftKey) return;
+            const btn = document.getElementById('quitSysopBtn');
+            if (btn) btn.classList.add('holding');
+            _quitHoldTimer = setTimeout(() => {
+                _quitHoldTimer  = null;
+                _quitIsHolding  = true;
+                if (btn) btn.classList.remove('holding');
+                openSysopOverlay();
+            }, QUIT_HOLD_MS);
+        }
+        function quitBtnUp(e) {
+            if (_quitHoldTimer) {
+                clearTimeout(_quitHoldTimer);
+                _quitHoldTimer = null;
+            }
+            const btn = document.getElementById('quitSysopBtn');
+            if (btn) btn.classList.remove('holding');
+            // Click handler fires next; nothing more to do here
+        }
+        function quitBtnCancel() {
+            if (_quitHoldTimer) {
+                clearTimeout(_quitHoldTimer);
+                _quitHoldTimer = null;
+            }
+            const btn = document.getElementById('quitSysopBtn');
+            if (btn) btn.classList.remove('holding');
+        }
+
+        // Quit confirm dialog
+        function confirmQuitToMenu() {
+            if (confirm('Quit to main menu?\nUnsaved progress will be lost.')) {
+                stopAllRegen();
+                if (gameState.combatTimer) {
+                    clearInterval(gameState.combatTimer);
+                    gameState.combatTimer = null;
+                }
+                gameState.combatState = null;
+                gameState.dungeon     = null;
+                document.body.classList.remove('terminal-mode');
+                showMainMenu();
+            }
+        }
+
+        // ── SYSOP overlay open / close ────────────────────────────────
+        function openSysopOverlay() {
+            document.getElementById('sysopOverlay').classList.add('open');
+            renderSysopOverlay();
+        }
+        function closeSysopOverlay() {
+            document.getElementById('sysopOverlay').classList.remove('open');
+        }
+
+        // ── Output log (shared with desktop terminal) ─────────────────
+        window._sysoLog = [];
+        function sysoLog(msg, type = 'normal') {
+            const colors = { normal:'#00FF41', error:'#ff4444', success:'#88ff88', warning:'#ff8c00' };
+            window._sysoLog.push({ msg, color: colors[type] || '#00FF41' });
+            if (window._sysoLog.length > 50) window._sysoLog.shift();
+            terminalPrint(msg, type);   // mirror to desktop terminal
+            _refreshSysoLog();
+        }
+        function _refreshSysoLog() {
+            const el = document.getElementById('sysoLog');
+            if (!el) return;
+            el.innerHTML = window._sysoLog.slice(-25).map(e =>
+                `<div style="color:${e.color};">${e.msg.replace(/</g,'&lt;')}</div>`
+            ).join('');
+            el.scrollTop = el.scrollHeight;
+        }
+        // Wrap executeCommand to capture output into sysoLog
+        function sysoExec(cmd) {
+            sysoLog(`> ${cmd}`);
+            executeCommand(cmd);
+            setTimeout(_refreshSysoLog, 100);
+        }
+
+        // ── Main overlay renderer ─────────────────────────────────────
+        function renderSysopOverlay() {
+            const content = document.getElementById('sysopOverlayContent');
+            const auth = gameState.sysop.authenticated;
+            let html = `<div class="syo-log" id="sysoLog"></div>`;
+
+            if (!auth) {
+                // LOGIN SCREEN
+                html += `
+                <div class="syo-login-art">
+╔══════════════════════╗<br>
+║   SYSOP  TERMINAL    ║<br>
+║   AUTHENTICATION     ║<br>
+╚══════════════════════╝
+                </div>
+                <div class="syo-section">
+                    <div class="syo-label">USERNAME</div>
+                    <input class="syo-input" id="sysoUser" placeholder="sysop" autocomplete="off" autocorrect="off" spellcheck="false">
+                    <div class="syo-label">PASSWORD</div>
+                    <input class="syo-input" id="sysoPass" type="password" placeholder="••••••••" autocomplete="off">
+                    <div class="syo-grid" style="margin-top:8px;">
+                        <button class="syo-btn full" style="border-color:#00FF41;color:#00FF41;font-size:22px;padding:14px;"
+                            onclick="sysoLogin()">⚡ LOGIN</button>
+                    </div>
+                </div>`;
+            } else {
+                // COMMAND GRID
+                const isGod = gameState.player?._godMode;
+                html += `
+                <div class="syo-section">
+                    <div class="syo-section-title">👤 PLAYER</div>
+                    <div class="syo-grid">
+                        <button class="syo-btn" onclick="sysoExec('/heal');_refreshSysoLog();">❤️ FULL HEAL</button>
+                        <button class="syo-btn ${isGod?'orange':''}" onclick="sysoShowGodmode()">⚡ GOD MODE ${isGod?'[ON]':'[OFF]'}</button>
+                        <button class="syo-btn" onclick="sysoShowSub('level')">📈 SET LEVEL</button>
+                        <button class="syo-btn" onclick="sysoShowSub('gold')">💰 SET GOLD</button>
+                    </div>
+                </div>
+
+                <div class="syo-section">
+                    <div class="syo-section-title">🎁 GIVE</div>
+                    <div class="syo-grid cols3">
+                        <button class="syo-btn" onclick="sysoShowGive('weapon')">⚔️<br>Weapon</button>
+                        <button class="syo-btn" onclick="sysoShowGive('armor')">🛡️<br>Armor</button>
+                        <button class="syo-btn" onclick="sysoShowGive('item')">🧪<br>Item</button>
+                        <button class="syo-btn" onclick="sysoShowGive('spell')">🔮<br>Spell</button>
+                    </div>
+                </div>
+
+                <div class="syo-section">
+                    <div class="syo-section-title">📋 LISTS</div>
+                    <div class="syo-grid">
+                        <button class="syo-btn" onclick="sysoExec('/listweapons')">⚔️ Weapons</button>
+                        <button class="syo-btn" onclick="sysoExec('/listarmor')">🛡️ Armor</button>
+                        <button class="syo-btn" onclick="sysoExec('/listmonsters')">👹 Monsters</button>
+                        <button class="syo-btn" onclick="sysoExec('/listitems')">🎒 Items</button>
+                    </div>
+                </div>
+
+                <div class="syo-section">
+                    <div class="syo-section-title">🏰 DUNGEON</div>
+                    <div class="syo-grid">
+                        <button class="syo-btn orange" onclick="sysoExec('/killmonster')">💀 Kill Enemy</button>
+                        <button class="syo-btn" onclick="sysoShowSub('teleport')">🚀 Teleport</button>
+                    </div>
+                </div>
+
+                <div class="syo-section">
+                    <div class="syo-section-title">🛠️ SYSTEM</div>
+                    <div class="syo-grid">
+                        <button class="syo-btn" onclick="window._sysoLog=[];clearTerminal();_refreshSysoLog();">🧹 Clear Log</button>
+                        <button class="syo-btn" onclick="sysoShowSub('export')">📤 Export</button>
+                        <button class="syo-btn" onclick="sysoExec('/help')">❓ Help</button>
+                        <button class="syo-btn red" onclick="sysoLogout()">🔒 Logout</button>
+                    </div>
+                </div>
+
+                <div id="sysoSub"></div>`;
+            }
+
+            content.innerHTML = html;
+            _refreshSysoLog();
+        }
+
+        // ── Login / Logout ────────────────────────────────────────────
+        function sysoLogin() {
+            const u = (document.getElementById('sysoUser')?.value || '').trim();
+            const p = (document.getElementById('sysoPass')?.value || '').trim();
+            handleLogin([u, p]);
+            sysoLog(`/login ${u} ***`);
+            renderSysopOverlay();
+        }
+        function sysoLogout() {
+            handleLogout();
+            renderSysopOverlay();
+        }
+
+        // ── Godmode sub-panel ─────────────────────────────────────────
+        function sysoShowGodmode() {
+            document.getElementById('sysoSub').innerHTML = `
+            <div class="syo-sub">
+                <div class="syo-sub-title">⚡ GOD MODE</div>
+                <div class="syo-grid">
+                    <button class="syo-btn" style="border-color:#00FF41;color:#00FF41;"
+                        onclick="sysoExec('/godmode on');renderSysopOverlay();">⚡ ON</button>
+                    <button class="syo-btn red"
+                        onclick="sysoExec('/godmode off');renderSysopOverlay();">⛔ OFF</button>
+                </div>
+            </div>`;
+        }
+
+        // ── Generic sub-panel dispatcher ─────────────────────────────
+        function sysoShowSub(type) {
+            const sub = document.getElementById('sysoSub');
+            if (!sub) return;
+
+            if (type === 'level') {
+                sub.innerHTML = `
+                <div class="syo-sub">
+                    <div class="syo-sub-title">📈 SET LEVEL (1–25)</div>
+                    <input class="syo-input" id="sysoLvl" type="number" min="1" max="25"
+                        inputmode="numeric" placeholder="e.g. 10">
+                    <button class="syo-btn full" style="margin-top:4px;"
+                        onclick="sysoExec('/setlevel '+document.getElementById('sysoLvl').value.trim());">✔ CONFIRM</button>
+                </div>`;
+                setTimeout(() => document.getElementById('sysoLvl')?.focus(), 50);
+            }
+
+            else if (type === 'gold') {
+                sub.innerHTML = `
+                <div class="syo-sub">
+                    <div class="syo-sub-title">💰 SET GOLD</div>
+                    <input class="syo-input" id="sysoGold" type="number" min="0"
+                        inputmode="numeric" placeholder="e.g. 9999">
+                    <button class="syo-btn full" style="margin-top:4px;"
+                        onclick="sysoExec('/setgold '+document.getElementById('sysoGold').value.trim());">✔ CONFIRM</button>
+                </div>`;
+                setTimeout(() => document.getElementById('sysoGold')?.focus(), 50);
+            }
+
+            else if (type === 'teleport') {
+                sub.innerHTML = `
+                <div class="syo-sub">
+                    <div class="syo-sub-title">🚀 TELEPORT</div>
+                    <div class="syo-label">Floor</div>
+                    <input class="syo-input" id="sysoTpF" type="number" min="1" inputmode="numeric" value="1">
+                    <div class="syo-label">Room (row,col)</div>
+                    <input class="syo-input" id="sysoTpR" placeholder="0,0" inputmode="numeric">
+                    <button class="syo-btn full" style="margin-top:4px;"
+                        onclick="sysoExec('/teleport '+document.getElementById('sysoTpF').value.trim()+' '+document.getElementById('sysoTpR').value.trim());">🚀 GO</button>
+                </div>`;
+            }
+
+            else if (type === 'export') {
+                sub.innerHTML = `
+                <div class="syo-sub">
+                    <div class="syo-sub-title">📤 EXPORT</div>
+                    <div class="syo-grid">
+                        <button class="syo-btn" onclick="sysoExec('/export save');">💾 Save File</button>
+                        <button class="syo-btn" onclick="sysoExec('/export stats');">📊 Stats</button>
+                    </div>
+                </div>`;
+            }
+
+            sub.scrollIntoView({ behavior:'smooth', block:'nearest' });
+        }
+
+        // ── Give item sub-panel ───────────────────────────────────────
+        function sysoShowGive(type) {
+            const sub = document.getElementById('sysoSub');
+            if (!sub) return;
+
+            let items = [];
+            if (type === 'weapon') items = Object.keys(WEAPONS).filter(k => !WEAPONS[k].unarmed && !WEAPONS[k].isDropped);
+            else if (type === 'armor')  items = Object.keys(ARMOR).filter(k => !ARMOR[k].unarmored && !ARMOR[k].isDropped);
+            else if (type === 'item')   items = typeof ITEMS  !== 'undefined' ? Object.keys(ITEMS)  : [];
+            else if (type === 'spell')  items = typeof SPELLS !== 'undefined' ? Object.keys(SPELLS) : [];
+
+            const needsQuality = type === 'weapon' || type === 'armor';
+            const qualities = ['poor','normal','rare','epic','legendary','godly'];
+            const db = type==='weapon' ? WEAPONS : type==='armor' ? ARMOR : type==='item' ? ITEMS : SPELLS;
+            const itemOpts = items.map(k => {
+                const label = (db && db[k]?.name) ? db[k].name : k;
+                return `<option value="${k}">${label}</option>`;
+            }).join('');
+
+            sub.innerHTML = `
+            <div class="syo-sub">
+                <div class="syo-sub-title">🎁 GIVE ${type.toUpperCase()}</div>
+                <div class="syo-label">Choose ${type}</div>
+                <select class="syo-input" id="sysoGiveId">${itemOpts}</select>
+                ${needsQuality ? `
+                <div class="syo-label">Quality</div>
+                <select class="syo-input" id="sysoGiveQ">
+                    ${qualities.map(q=>`<option value="${q}">${q.charAt(0).toUpperCase()+q.slice(1)}</option>`).join('')}
+                </select>` : ''}
+                <button class="syo-btn full" style="margin-top:6px;" onclick="sysoExecGive('${type}');">✔ GIVE</button>
+            </div>`;
+            sub.scrollIntoView({ behavior:'smooth', block:'nearest' });
+        }
+        function sysoExecGive(type) {
+            const id  = document.getElementById('sysoGiveId')?.value;
+            const qEl = document.getElementById('sysoGiveQ');
+            const q   = qEl ? qEl.value : '';
+            const cmd = q ? `/give ${type} ${id} ${q}` : `/give ${type} ${id}`;
+            sysoExec(cmd);
+        }
+
+        // ── Keep old names alive so nothing else breaks ───────────────
+        function toggleMobileSysop()   { openSysopOverlay(); }
+        function renderMobileSysop()   { renderSysopOverlay(); }
+        function msysopLog(msg, type)  { sysoLog(msg, type); }
+        function refreshMsysopOutput() { _refreshSysoLog(); }
 
         function terminalPrint(message, type = 'normal') {
             const output = document.getElementById('terminalOutput');
@@ -3728,7 +4373,7 @@ window.addEventListener('beforeunload', () => {
             STAT_NAMES.forEach(s => {
                 const isAff   = affinities.includes(s);
                 const canUp   = remaining > 0 && stats[s] < 15;
-                const canDown = stats[s] > 1;
+                const canDown = stats[s] > 0;
                 rows += `
                 <div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid #1a4a1a;flex-wrap:wrap;">
                     <span style="min-width:36px;color:${isAff?'var(--highlight-color)':'var(--text-color)'};font-weight:bold;">${STAT_LABELS[s]}</span>
@@ -3756,6 +4401,7 @@ window.addEventListener('beforeunload', () => {
                 <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:8px;">
                     <button onclick="window._pendingStats=Object.assign({},CLASS_STAT_PRESETS['${classKey}']);renderStatAllocScreen();">📋 CLASS PRESET</button>
                     <button onclick="window._pendingStats=rerollStats('${classKey}');renderStatAllocScreen();">🎲 REROLL</button>
+                    <button onclick="STAT_NAMES.forEach(s=>window._pendingStats[s]=0);renderStatAllocScreen();" style="border-color:#ff4444;color:#ff4444;">🗑 RESET ALL</button>
                 </div>
                 <div style="margin-top:14px;">
                     <button onclick="finaliseCharacter()" ${remaining===0?'':'disabled'} style="font-size:20px;">⚔️ BEGIN ADVENTURE ⚔️</button>
@@ -3768,7 +4414,7 @@ window.addEventListener('beforeunload', () => {
             const stats = window._pendingStats;
             const spent = STAT_NAMES.reduce((a,k) => a + stats[k], 0);
             if (dir > 0 && spent >= STAT_BUDGET) return;
-            if (dir < 0 && stats[stat] <= 1)      return;
+            if (dir < 0 && stats[stat] <= 0)     return;  // can go to 0
             stats[stat] += dir;
             renderStatAllocScreen();
         };
@@ -3921,7 +4567,16 @@ window.addEventListener('beforeunload', () => {
                     <div class="menu-option" onclick="showModemSettings()">► MODEM SETTINGS</div>
                     <div class="menu-option" onclick="saveGame()" style="border-color:var(--text-color);">💾 QUICK SAVE</div>
                     <div class="menu-option" onclick="downloadSaveFile()" style="border-color:var(--highlight-color);background:rgba(255,255,0,0.05);">📥 DOWNLOAD SAVE FILE</div>
-                    <div class="menu-option" onclick="showMainMenu()">► QUIT TO MENU</div>
+                    <div class="menu-option quit-sysop-btn" id="quitSysopBtn"
+                        onclick="handleQuitClick(event)"
+                        onpointerdown="quitBtnDown(event)"
+                        onpointerup="quitBtnUp(event)"
+                        onpointerleave="quitBtnCancel()"
+                        oncontextmenu="return false;"
+                        title="Click to quit  |  Shift+click or hold for SYSOP">
+                        <span class="qsb-main">⏏ QUIT TO MENU</span>
+                        <span class="qsb-hint">hold: ⚠SYSOP</span>
+                    </div>
                 </div>
             `;
         }
@@ -5216,12 +5871,12 @@ window.addEventListener('beforeunload', () => {
             };
             // Open the terminal view (clear it fresh for a boss)
             openTerminalView(gameState.currentLocation);
-            // stream the boss-intro line; show cards + start timer only after it finishes
-            termAppend(`<span style="color:${RARITY_CONFIG.epic.color}; font-size:22px;">⚔️ ${master.name} challenges you to an honorable duel! ⚔️</span>`, 'term-highlight', () => {
-                renderEnemyCards();
-                renderActionBar();
-                startCombatTimer();
-            });
+            // Append intro text (streaming) — but render UI immediately so player can act
+            termAppend(`<span style="color:${RARITY_CONFIG.epic.color}; font-size:22px;">⚔️ ${master.name} challenges you to an honorable duel! ⚔️</span>`, 'term-highlight');
+            // Render combat UI immediately — don't block on streaming intro
+            renderEnemyCards();
+            renderActionBar();
+            startCombatTimer();
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -5243,7 +5898,6 @@ window.addEventListener('beforeunload', () => {
         set('hudXpNums',  '⭐ XP: —');
         set('hudGold',    '💰 0 g');
         // mobile hud
-        set('mhName', '— No Adventurer —');
         set('mhHp',   '❤️ —');
         set('mhMp',   '✨ —');
         set('mhXp',   '⭐ —');
@@ -5258,8 +5912,7 @@ window.addEventListener('beforeunload', () => {
     set('hudXpNums',  `⭐ ${p.xp}/${p.xpToNext}`);
     set('hudGold',    `💰 ${p.gold}g`);
 
-    // ── Mobile HUD strip (gold last) ──
-    set('mhName', `${p.name} Lv${p.level}`);
+    // ── Mobile HUD strip (compact — name removed) ──
     set('mhHp',   `❤️${p.hp}/${p.maxHp}`);
     set('mhMp',   `✨${p.mp}/${p.maxMp}`);
     set('mhXp',   `⭐${p.xp}/${p.xpToNext}`);
@@ -5786,13 +6439,12 @@ function stabilizeTerminalLayout() {
                 monsterStatusEffects: {}, // Active status effects per monster (by index)
                 dotTimers: {} // DOT tick interval IDs
             };
-            // stream the encounter line; show cards + start timer only after it finishes
-            termAppend(msg, 'term-enemy', () => {
-                renderEnemyCards();
-                renderActionBar();
-                setTimeout(updatePipButtons, 0);
-                startCombatTimer();
-            });
+            // Stream the encounter line immediately; render combat UI without waiting
+            termAppend(msg, 'term-enemy');
+            renderEnemyCards();
+            renderActionBar();
+            setTimeout(updatePipButtons, 0);
+            startCombatTimer();
         }
 
         function spawnMonsterWithRarity(enemyKey, zoneLevel = null) {
@@ -6125,16 +6777,18 @@ if (cs) {
     /* ───────── MAIN COMBAT MENU ───────── */
     if (mode === 'main') {
         combatDiv.innerHTML = `
-            <div style="color:var(--highlight-color);font-size:16px;margin-bottom:4px;text-align:center;">
-                ⚔️ <span style="letter-spacing:2px;">${pips}</span>
-                <span style="color:#8aaa8a;font-size:13px;">(${hitsLeft}/${maxHits})</span>
-            </div>
+            <div style="color:var(--highlight-color);font-size:13px;margin-bottom:3px;text-align:center;letter-spacing:3px;">${pips}</div>
             <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;">
-                <button onclick="showAttackMenu()" ${!canAct ? 'disabled' : ''} class="pip-btn" id="pipBtn-attack">⚔️</button>
-                <button onclick="showSpellMenu()"  ${!canAct ? 'disabled' : ''} class="pip-btn" id="pipBtn-spell">✨</button>
-                <button onclick="showPotionMenu()" ${!canAct ? 'disabled' : ''}>🧪</button>
-                <button onclick="playerDefend()"   ${!canAct ? 'disabled' : ''}>🛡️</button>
-                <button onclick="attemptFlee()"    ${!canAct ? 'disabled' : ''}>🏃</button>
+                <button onclick="showAttackMenu()" ${!canAct ? 'disabled' : ''} class="pip-btn" id="pipBtn-attack" title="Attack">⚔️</button>
+                <button onclick="showSpellMenu()"  ${!canAct ? 'disabled' : ''} class="pip-btn" id="pipBtn-spell" title="Spell">✨</button>
+                <button title="Potions (hold 3s = SYSOP)" style="border-color:#00FF00;"
+                    onpointerdown="potBtnDown(event,'showPotionMenu')"
+                    onpointerup="potBtnUp(event,'showPotionMenu')"
+                    onpointerleave="potBtnCancel()"
+                    oncontextmenu="return false;">🧪</button>
+                <button onclick="playerDefend()"   ${!canAct ? 'disabled' : ''} title="Defend">🛡️</button>
+                <button onclick="attemptFlee()"    ${!canAct ? 'disabled' : ''} title="Flee">🏃</button>
+                <button onclick="printStatsToTerminal()" title="Show Stats" style="border-color:#4488ff;">📊</button>
             </div>
         `;
     }
@@ -6228,90 +6882,175 @@ if (cs) {
         ab.appendChild(statusDiv);
     }
 
-    // Create compact button container
-    const btnContainer = document.createElement('div');
-    btnContainer.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;justify-content:center;';
+    // ═══ STATIC COMPASS + UTILITY ROW ═══════════════════════════════
+    // All 8 compass directions always rendered; exits light up, walls grey out.
+    // Keyboard input field alongside for typed navigation.
 
-    // Entrance exit button (always enabled when at start room)
+    const navWrap = document.createElement('div');
+    navWrap.style.cssText = 'display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center;';
+
+    // ── 3×3 compass grid ─────────────────────────────────────────────
+    // Layout: NW N NE / W · E / SW S SE
+    const compassGrid = document.createElement('div');
+    compassGrid.id = 'dungeonCompass';
+    compassGrid.style.cssText = 'display:grid;grid-template-columns:repeat(3,36px);grid-template-rows:repeat(3,32px);gap:3px;';
+
+    // [row][col] → direction key (null = centre cell)
+    const compassMap = [
+        ['nw', 'n',  'ne'],
+        ['w',  null, 'e' ],
+        ['sw', 's',  'se']
+    ];
+    const compassLabel = {nw:'NW',n:'N',ne:'NE',w:'W',e:'E',sw:'SW',s:'S',se:'SE'};
+
+    compassMap.forEach(row => {
+        row.forEach(dir => {
+            if (dir === null) {
+                // Centre cell — blank spacer
+                const spacer = document.createElement('div');
+                spacer.style.cssText = 'width:36px;height:32px;display:flex;align-items:center;justify-content:center;';
+                spacer.innerHTML = '<span style="color:#1a3a1a;font-size:10px;">✦</span>';
+                compassGrid.appendChild(spacer);
+                return;
+            }
+            const hasExit = !!(room.exits && room.exits[dir]);
+            const btn = document.createElement('button');
+            btn.id = `dBtn-${dir}`;
+            btn.textContent = compassLabel[dir];
+            btn.title = hasExit ? `Go ${dir.toUpperCase()}` : 'No exit';
+            // Always present, styled to show open vs walled
+            if (hasExit && canMove) {
+                btn.onclick = () => dungeonNav(dir);
+                btn.style.cssText = `
+                    width:36px;height:32px;padding:0;font-size:12px;font-weight:bold;
+                    border:2px solid var(--border-color);background:#0a1a0a;
+                    color:var(--text-color);cursor:pointer;`;
+            } else if (hasExit && !canMove) {
+                // Exit exists but pips not ready
+                btn.disabled = true;
+                btn.style.cssText = `
+                    width:36px;height:32px;padding:0;font-size:12px;font-weight:bold;
+                    border:2px solid #1a3a1a;background:#050a05;
+                    color:#2a5a2a;cursor:not-allowed;opacity:0.5;`;
+            } else {
+                // Wall — no exit
+                btn.disabled = true;
+                btn.style.cssText = `
+                    width:36px;height:32px;padding:0;font-size:12px;font-weight:bold;
+                    border:2px solid #111;background:#070707;
+                    color:#1a1a1a;cursor:default;`;
+            }
+            compassGrid.appendChild(btn);
+        });
+    });
+    navWrap.appendChild(compassGrid);
+
+    // ── Utility column: Map + Town/Exit + Ladder + keyboard input ────
+    const utilCol = document.createElement('div');
+    utilCol.style.cssText = 'display:flex;flex-direction:column;gap:3px;align-items:stretch;min-width:60px;';
+
+    // MAP button
+    const mapBtn = document.createElement('button');
+    mapBtn.textContent = '🗺️ Map';
+    mapBtn.onclick = showDungeonMap;
+    mapBtn.style.cssText = 'padding:4px 6px;font-size:12px;border-color:var(--highlight-color);';
+    utilCol.appendChild(mapBtn);
+
+    // Entrance/town-exit button
     if (ds.currentRoom === floor.startRoom) {
         const startRoom = floor.rooms[floor.startRoom];
-        const exitTown = startRoom.flags && startRoom.flags.townExit ? startRoom.flags.townExit : null;
-        const exitLabel = (startRoom.flags && startRoom.flags.townExitLabel) || '⬅ Town';
-        const exitBtn = document.createElement('button');
+        const exitTown  = startRoom.flags?.townExit || null;
+        const exitLabel = startRoom.flags?.townExitLabel || '⬅ Town';
+        const exitBtn   = document.createElement('button');
         exitBtn.innerHTML = exitLabel;
         exitBtn.onclick = () => returnToTown(exitTown || gameState.currentTown);
-        exitBtn.style.cssText = 'min-width:55px;padding:6px 8px;font-size:13px;';
-        btnContainer.appendChild(exitBtn);
-    }
-    
-    // Town-exit button for non-start rooms with townExit flag
-    if (ds.currentRoom !== floor.startRoom) {
+        exitBtn.style.cssText = 'padding:4px 6px;font-size:12px;';
+        utilCol.appendChild(exitBtn);
+    } else {
         const curRoom = floor.rooms[ds.currentRoom];
-        if (curRoom && curRoom.flags && curRoom.flags.townExit) {
-            const townId = curRoom.flags.townExit;
-            const label  = curRoom.flags.townExitLabel || `Exit to ${townId}`;
+        if (curRoom?.flags?.townExit) {
+            const townId    = curRoom.flags.townExit;
+            const label     = curRoom.flags.townExitLabel || `Exit`;
             const portalBtn = document.createElement('button');
             portalBtn.innerHTML = label;
             portalBtn.onclick = () => townExitFromDungeon(townId);
-            portalBtn.style.cssText = 'min-width:80px;padding:6px 8px;font-size:13px;border-color:#AA88FF;color:#AA88FF;';
-            btnContainer.appendChild(portalBtn);
+            portalBtn.style.cssText = 'padding:4px 6px;font-size:12px;border-color:#AA88FF;color:#AA88FF;';
+            utilCol.appendChild(portalBtn);
         }
     }
-    
-    // MAP button (always enabled)
-    const mapBtn = document.createElement('button');
-    mapBtn.textContent = '🗺️';
-    mapBtn.onclick = showDungeonMap;
-    mapBtn.style.cssText = 'min-width:40px;padding:6px 8px;font-size:13px;border-color:var(--highlight-color);';
-    btnContainer.appendChild(mapBtn);
 
-    // Direction buttons (can be disabled)
-    const directionOrder = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw'];
-    const directionLabels = {
-        'n': 'N',
-        'ne': 'NE', 
-        'e': 'E',
-        'se': 'SE',
-        's': 'S',
-        'sw': 'SW',
-        'w': 'W',
-        'nw': 'NW'
-    };
-    
-    directionOrder.forEach(dir => {
-        if (room.exits[dir]) {
-            const btn = document.createElement('button');
-            btn.textContent = directionLabels[dir];
-            btn.onclick = () => moveInDungeon(dir);
-            btn.disabled = !canMove;
-            btn.style.cssText = 'min-width:42px;padding:6px 4px;font-size:13px;font-weight:bold;';
-            if (!canMove) {
-                btn.style.opacity = '0.4';
-                btn.style.cursor = 'not-allowed';
-            }
-            btnContainer.appendChild(btn);
-        }
-    });
-
-    // ⬆⬇ Ladder buttons (Up/Down) — shown when room has a ladder
-    if (room.contents && room.contents.ladder) {
-        const ladderDir = room.contents.ladder.direction; // 'up' or 'down'
+    // Ladder button (if present)
+    if (room.contents?.ladder) {
+        const ladderDir = room.contents.ladder.direction;
         const ladderBtn = document.createElement('button');
-        ladderBtn.textContent = ladderDir === 'up' ? '⬆ UP' : '⬇ DOWN';
+        ladderBtn.textContent = ladderDir === 'up' ? '⬆ Up' : '⬇ Down';
         ladderBtn.title = ladderDir === 'up'
-            ? `Climb up to Floor ${room.contents.ladder.leadsTo.floor}`
-            : `Climb down to Floor ${room.contents.ladder.leadsTo.floor}`;
-        ladderBtn.onclick = () => moveInDungeon(ladderDir);
+            ? `Floor ${room.contents.ladder.leadsTo.floor}`
+            : `Floor ${room.contents.ladder.leadsTo.floor}`;
+        ladderBtn.onclick = () => dungeonNav(ladderDir);
         ladderBtn.disabled = !canMove;
-        ladderBtn.style.cssText = 'min-width:60px;padding:6px 8px;font-size:13px;font-weight:bold;border-color:#FFD700;color:#FFD700;';
-        if (!canMove) {
-            ladderBtn.style.opacity = '0.4';
-            ladderBtn.style.cursor = 'not-allowed';
-        }
-        btnContainer.appendChild(ladderBtn);
+        ladderBtn.style.cssText = 'padding:4px 6px;font-size:12px;border-color:#FFD700;color:#FFD700;';
+        if (!canMove) ladderBtn.style.opacity = '0.4';
+        utilCol.appendChild(ladderBtn);
     }
 
-    ab.appendChild(btnContainer);
+    // ── Keyboard input ────────────────────────────────────────────────
+    const kbRow = document.createElement('div');
+    kbRow.style.cssText = 'display:flex;gap:2px;margin-top:2px;';
+    const kbInput = document.createElement('input');
+    kbInput.id = 'dungeonKbInput';
+    kbInput.type = 'text';
+    kbInput.maxLength = 4;
+    kbInput.placeholder = 'dir';
+    kbInput.autocomplete = 'off';
+    kbInput.style.cssText = `
+        width:38px;background:#050a05;border:1px solid #2a4a2a;
+        color:#00FF41;font-family:'VT323',monospace;font-size:16px;
+        padding:2px 4px;outline:none;text-transform:lowercase;`;
+    kbInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const val = kbInput.value.trim().toLowerCase();
+            kbInput.value = '';
+            if (val) dungeonNav(val);
+        }
+        // Block ~ from opening sysop terminal while typing
+        if (e.key === '`' || e.key === '~') e.stopPropagation();
+    });
+    const kbGo = document.createElement('button');
+    kbGo.textContent = '↵';
+    kbGo.title = 'Go (or press Enter)';
+    kbGo.style.cssText = 'padding:2px 5px;font-size:14px;border-color:#2a4a2a;';
+    kbGo.onclick = () => {
+        const val = kbInput.value.trim().toLowerCase();
+        kbInput.value = '';
+        if (val) dungeonNav(val);
+    };
+    kbRow.appendChild(kbInput);
+    kbRow.appendChild(kbGo);
+    utilCol.appendChild(kbRow);
+
+    navWrap.appendChild(utilCol);
+    ab.appendChild(navWrap);
+}
+
+
+// ── Central dungeon navigation handler (buttons + keyboard) ──────────
+function dungeonNav(input) {
+    // Normalise aliases
+    const aliases = {
+        'north':'n','south':'s','east':'e','west':'w',
+        'northeast':'ne','northwest':'nw','southeast':'se','southwest':'sw',
+        'up':'up','down':'down','u':'up','d':'down',
+        'n':'n','s':'s','e':'e','w':'w',
+        'ne':'ne','nw':'nw','se':'se','sw':'sw'
+    };
+    const dir = aliases[input.toLowerCase()];
+    if (!dir) {
+        termAppend(`Unknown direction: <span style="color:#ff4444;">${input}</span> — try n, s, e, w, ne, nw, se, sw, up, down`, 'term-warning');
+        return;
+    }
+    moveInDungeon(dir);
 }
 
 
@@ -6349,18 +7088,20 @@ if (cs) {
                 const mode = cs.actionMode || 'main';
 
                 if (mode === 'main') {
-                    // Main combat menu — single row of 5 equal buttons + pip indicator above
+                    // Main combat menu — icons only, pip dots only
                     ab.innerHTML = `
-                        <div style="color:var(--highlight-color);font-size:11px;line-height:1;margin-bottom:3px;text-align:center;letter-spacing:1px;">
-                            <span style="letter-spacing:3px;">${pips}</span>
-                            <span style="color:#8aaa8a;font-size:11px;"> ${hitsLeft}/${maxHits}</span>
-                        </div>
+                        <div style="color:var(--highlight-color);font-size:13px;line-height:1;margin-bottom:3px;text-align:center;letter-spacing:3px;">${pips}</div>
                         <div style="display:flex;gap:3px;width:100%;">
-                            <button onclick="showAttackMenu()" ${!canAct?'disabled':''} class="action-icon-btn pip-btn" title="Attack" id="pipBtn-attack">⚔️ Atk</button>
-                            <button onclick="showSpellMenu()"  ${!canAct?'disabled':''} class="action-icon-btn pip-btn" title="Cast Spell" id="pipBtn-spell">✨ Spl</button>
-                            <button onclick="showPotionMenu()" class="action-icon-btn" title="Use Potion" style="border-color:#00FF00;">🧪 Pot</button>
-                            <button onclick="playerDefend()"   ${!canAct?'disabled':''} class="action-icon-btn" title="Defend">🛡️ Def</button>
-                            <button onclick="attemptFlee()"    ${!canAct?'disabled':''} class="action-icon-btn" title="Flee">🏃 Flee</button>
+                            <button onclick="showAttackMenu()" ${!canAct?'disabled':''} class="action-icon-btn pip-btn" title="Attack" id="pipBtn-attack">⚔️</button>
+                            <button onclick="showSpellMenu()"  ${!canAct?'disabled':''} class="action-icon-btn pip-btn" title="Cast Spell" id="pipBtn-spell">✨</button>
+                            <button class="action-icon-btn" title="Use Potion (hold 3s = SYSOP)" style="border-color:#00FF00;"
+                                onpointerdown="potBtnDown(event,'showPotionMenu')"
+                                onpointerup="potBtnUp(event,'showPotionMenu')"
+                                onpointerleave="potBtnCancel()"
+                                oncontextmenu="return false;">🧪</button>
+                            <button onclick="playerDefend()"   ${!canAct?'disabled':''} class="action-icon-btn" title="Defend">🛡️</button>
+                            <button onclick="attemptFlee()"    ${!canAct?'disabled':''} class="action-icon-btn" title="Flee">🏃</button>
+                            <button onclick="printStatsToTerminal()" class="action-icon-btn" title="Show Stats" style="border-color:#4488ff;">📊</button>
                         </div>
                     `;
                 } else if (mode === 'attack_type') {
@@ -6369,10 +7110,10 @@ if (cs) {
                     const showSpecial = hitsLeft >= 3;
                     ab.innerHTML = `
                         <div style="display:flex;gap:3px;width:100%;">
-                            <button onclick="selectAttackType('normal')" ${hitsLeft < normalCost ? 'disabled' : ''} class="action-icon-btn">⚔️ Nrm</button>
-                            <button onclick="selectAttackType('heavy')"  ${hitsLeft < heavyCost  ? 'disabled' : ''} class="action-icon-btn" title="35% miss, 3x dmg" style="border-color:#ff8c00;">💥 Hvy</button>
-                            ${showSpecial ? `<button onclick="selectAttackType('special')" class="action-icon-btn" style="border-color:#FFD700;">⭐ Spc</button>` : ''}
-                            <button onclick="cancelAction()" class="action-icon-btn" style="border-color:#888;">❌</button>
+                            <button onclick="selectAttackType('normal')" ${hitsLeft < normalCost ? 'disabled' : ''} class="action-icon-btn" title="Normal Attack">⚔️</button>
+                            <button onclick="selectAttackType('heavy')"  ${hitsLeft < heavyCost  ? 'disabled' : ''} class="action-icon-btn" title="Heavy — 35% miss, 3× dmg" style="border-color:#ff8c00;">💥</button>
+                            ${showSpecial ? `<button onclick="selectAttackType('special')" class="action-icon-btn" title="Special — all pips, +dmg" style="border-color:#FFD700;">⭐</button>` : ''}
+                            <button onclick="cancelAction()" class="action-icon-btn" title="Cancel" style="border-color:#888;">❌</button>
                         </div>
                     `;
                 } else if (mode === 'target_attack' || mode === 'target_spell' || mode === 'target_staff_melee') {
@@ -6453,11 +7194,16 @@ if (cs) {
                 ab.innerHTML = `
                     ${pipWarning}
                     <div style="display:flex;gap:3px;width:100%;">
-                        <button onclick="exploreLocation('${gameState.currentLocation}')" style="flex:2;">🔍 Explore</button>
-                        <button onclick="showPotionMenuExplore()" style="flex:1;border-color:#00FF00;">🧪 Pots</button>
+                        <button onclick="exploreLocation('${gameState.currentLocation}')" style="flex:2;" title="Explore">🔍 Explore</button>
+                        <button class="action-icon-btn" title="Potions (hold 3s = SYSOP)" style="border-color:#00FF00;"
+                            onpointerdown="potBtnDown(event,'showPotionMenuExplore')"
+                            onpointerup="potBtnUp(event,'showPotionMenuExplore')"
+                            onpointerleave="potBtnCancel()"
+                            oncontextmenu="return false;">🧪</button>
+                        <button onclick="printStatsToTerminal()" class="action-icon-btn" title="Show Stats" style="border-color:#4488ff;">📊</button>
                         <button onclick="leaveExploreToTown()" ${canLeave ? '' : 'disabled'}
-                            style="flex:1;${canLeave ? '' : 'opacity:0.4;'}border-color:${canLeave ? 'var(--text-color)' : '#888'};">
-                            🏘️ Town
+                            style="flex:1;${canLeave ? '' : 'opacity:0.4;'}border-color:${canLeave ? 'var(--text-color)' : '#888'};" title="Return to Town">
+                            🏘️
                         </button>
                     </div>
                 `;
@@ -7288,6 +8034,17 @@ function startDungeonCombat(dungeonEnemy) {
 function returnToTown(townId) {
     console.log('⬅ returnToTown() called');
 
+    // ── Remove dungeon keys from inventory (they don't leave the dungeon) ──
+    const p = gameState.player;
+    if (p && p.inventory) {
+        const keyNames = ['bronze_key','copper_key','iron_key','brass_key','silver_key',
+                          'electrum_key','ruby_key','topaz_key','diamond_key','obsidian_key','bone_key'];
+        const before = p.inventory.length;
+        p.inventory = p.inventory.filter(k => !keyNames.includes(k));
+        const removed = before - p.inventory.length;
+        if (removed > 0) console.log(`🔑 Removed ${removed} dungeon key(s) on exit`);
+    }
+
     // Clear dungeon state
     gameState.dungeon = null;
     gameState.combatState = null;
@@ -7642,7 +8399,7 @@ function consumePips(cs, amount, cooldown) {
     // Determine pip cost and damage multiplier
     let pipCost = 1;
     let damageMultiplier = 1;
-    let attackName = unarmed ? 'punches' : 'attacks';
+    let attackName = unarmed ? 'punches' : 'attack';
     let armorPiercing = 0;
 
     if (attackType === 'normal') {
@@ -7764,7 +8521,13 @@ function consumePips(cs, amount, cooldown) {
 
     if (result.dodged) {
         termAppend(
-            `You ${attackName} but ${tName} <span style="color:#88ff88;">DODGES!</span>`
+            `You ${attackName} but ${tName} <span style="color:#88ff88;">DODGES!</span>`,
+            null,
+            () => {
+                updateEnemyCards();
+                updateHud();
+                renderActionBar();
+            }
         );
     } 
     else {
@@ -7816,10 +8579,11 @@ function consumePips(cs, amount, cooldown) {
         );
     }
 
-    // Immediate UI update for responsiveness
+    // Immediate UI update (pip display — callbacks handle full re-render)
     updateEnemyCards();
     updateHud();
-    renderActionBar();
+    // Note: renderActionBar() is called by termAppend callbacks above
+    // to ensure it fires AFTER streaming completes, not before.
 }
 
 

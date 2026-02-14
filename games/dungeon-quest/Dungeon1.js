@@ -8,7 +8,7 @@ window.DUNGEONS.Dungeon1 = {
       "rooms": {
         "R1": {
           "name": "",
-          "description": "",
+          "description": "You are at the start of a dimly lit cave.  The entrance to the town is here.",
           "map": {
             "x": 12,
             "y": 7
@@ -73,7 +73,14 @@ window.DUNGEONS.Dungeon1 = {
             "w": "R3",
             "se": "R5"
           },
-          "contents": {},
+          "contents": {
+            "enemies": [
+              {
+                "key": "orc",
+                "drop": ""
+              }
+            ]
+          },
           "flags": {
             "discovered": false
           }
@@ -104,14 +111,21 @@ window.DUNGEONS.Dungeon1 = {
           "exits": {
             "nw": "R5"
           },
-          "contents": {},
+          "contents": {
+            "enemies": [
+              {
+                "key": "plains_lion",
+                "drop": ""
+              }
+            ]
+          },
           "flags": {
             "discovered": false
           }
         },
         "R8": {
           "name": "",
-          "description": "",
+          "description": "You are in a dimly lit cave.",
           "map": {
             "x": 11,
             "y": 7
@@ -127,7 +141,7 @@ window.DUNGEONS.Dungeon1 = {
         },
         "R9": {
           "name": "",
-          "description": "",
+          "description": "You are in a dimly lit cave.",
           "map": {
             "x": 10,
             "y": 7
@@ -136,7 +150,14 @@ window.DUNGEONS.Dungeon1 = {
             "e": "R8",
             "w": "R10"
           },
-          "contents": {},
+          "contents": {
+            "enemies": [
+              {
+                "key": "orc",
+                "drop": ""
+              }
+            ]
+          },
           "flags": {
             "discovered": false
           }
@@ -168,7 +189,14 @@ window.DUNGEONS.Dungeon1 = {
             "ne": "R10",
             "s": "R12"
           },
-          "contents": {},
+          "contents": {
+            "enemies": [
+              {
+                "key": "orc",
+                "drop": ""
+              }
+            ]
+          },
           "flags": {
             "discovered": false
           }
@@ -245,7 +273,17 @@ window.DUNGEONS.Dungeon1 = {
             "nw": "R14",
             "se": "R16"
           },
-          "contents": {},
+          "contents": {
+            "traps": [
+              {
+                "type": "spike",
+                "damage": 30,
+                "duration": 0,
+                "resetOnLeave": true,
+                "triggered": false
+              }
+            ]
+          },
           "flags": {
             "discovered": false
           }
@@ -285,7 +323,13 @@ window.DUNGEONS.Dungeon1 = {
                 "type": "brass",
                 "locked": true
               }
-            }
+            },
+            "enemies": [
+              {
+                "key": "giant_scorpion",
+                "drop": "brass_key"
+              }
+            ]
           },
           "flags": {
             "discovered": false
@@ -319,7 +363,14 @@ window.DUNGEONS.Dungeon1 = {
             "s": "R27",
             "w": "R20"
           },
-          "contents": {},
+          "contents": {
+            "enemies": [
+              {
+                "key": "orc",
+                "drop": ""
+              }
+            ]
+          },
           "flags": {
             "discovered": false
           }
@@ -351,7 +402,14 @@ window.DUNGEONS.Dungeon1 = {
             "se": "R20",
             "nw": "R22"
           },
-          "contents": {},
+          "contents": {
+            "enemies": [
+              {
+                "key": "dire_wolf",
+                "drop": ""
+              }
+            ]
+          },
           "flags": {
             "discovered": false
           }
@@ -384,7 +442,14 @@ window.DUNGEONS.Dungeon1 = {
             "sw": "R24",
             "n": "R25"
           },
-          "contents": {},
+          "contents": {
+            "enemies": [
+              {
+                "key": "orc",
+                "drop": ""
+              }
+            ]
+          },
           "flags": {
             "discovered": false
           }
@@ -430,7 +495,14 @@ window.DUNGEONS.Dungeon1 = {
           "exits": {
             "sw": "R25"
           },
-          "contents": {},
+          "contents": {
+            "enemies": [
+              {
+                "key": "dire_wolf",
+                "drop": ""
+              }
+            ]
+          },
           "flags": {
             "discovered": false
           }
@@ -461,7 +533,14 @@ window.DUNGEONS.Dungeon1 = {
           "exits": {
             "ne": "R27"
           },
-          "contents": {},
+          "contents": {
+            "enemies": [
+              {
+                "key": "orc",
+                "drop": ""
+              }
+            ]
+          },
           "flags": {
             "discovered": false
           }
@@ -510,7 +589,14 @@ window.DUNGEONS.Dungeon1 = {
             "sw": "R32",
             "se": "R33"
           },
-          "contents": {},
+          "contents": {
+            "enemies": [
+              {
+                "key": "orc",
+                "drop": ""
+              }
+            ]
+          },
           "flags": {
             "discovered": false
           }
@@ -556,7 +642,14 @@ window.DUNGEONS.Dungeon1 = {
           "exits": {
             "nw": "R33"
           },
-          "contents": {},
+          "contents": {
+            "enemies": [
+              {
+                "key": "orc",
+                "drop": ""
+              }
+            ]
+          },
           "flags": {
             "discovered": false
           }
@@ -588,7 +681,14 @@ window.DUNGEONS.Dungeon1 = {
             "nw": "R35",
             "e": "R37"
           },
-          "contents": {},
+          "contents": {
+            "enemies": [
+              {
+                "key": "orc",
+                "drop": ""
+              }
+            ]
+          },
           "flags": {
             "discovered": false
           }
@@ -620,7 +720,14 @@ window.DUNGEONS.Dungeon1 = {
           "exits": {
             "nw": "R37"
           },
-          "contents": {},
+          "contents": {
+            "enemies": [
+              {
+                "key": "orc",
+                "drop": ""
+              }
+            ]
+          },
           "flags": {
             "discovered": false
           }
@@ -636,7 +743,18 @@ window.DUNGEONS.Dungeon1 = {
             "sw": "R37",
             "ne": "R40"
           },
-          "contents": {},
+          "contents": {
+            "enemies": [
+              {
+                "key": "orc",
+                "drop": ""
+              },
+              {
+                "key": "orc",
+                "drop": ""
+              }
+            ]
+          },
           "flags": {
             "discovered": false
           }
@@ -700,7 +818,14 @@ window.DUNGEONS.Dungeon1 = {
           "exits": {
             "nw": "R42"
           },
-          "contents": {},
+          "contents": {
+            "enemies": [
+              {
+                "key": "giant_scorpion",
+                "drop": "iron_key"
+              }
+            ]
+          },
           "flags": {
             "discovered": false
           }
@@ -716,7 +841,14 @@ window.DUNGEONS.Dungeon1 = {
             "sw": "R41",
             "ne": "R45"
           },
-          "contents": {},
+          "contents": {
+            "enemies": [
+              {
+                "key": "orc",
+                "drop": ""
+              }
+            ]
+          },
           "flags": {
             "discovered": false
           }
@@ -763,7 +895,14 @@ window.DUNGEONS.Dungeon1 = {
           "exits": {
             "n": "R46"
           },
-          "contents": {},
+          "contents": {
+            "enemies": [
+              {
+                "key": "orc",
+                "drop": ""
+              }
+            ]
+          },
           "flags": {
             "discovered": false
           }
@@ -811,7 +950,14 @@ window.DUNGEONS.Dungeon1 = {
             "nw": "R49",
             "e": "R51"
           },
-          "contents": {},
+          "contents": {
+            "enemies": [
+              {
+                "key": "plains_lion",
+                "drop": ""
+              }
+            ]
+          },
           "flags": {
             "discovered": false
           }
@@ -859,7 +1005,14 @@ window.DUNGEONS.Dungeon1 = {
             "sw": "R52",
             "n": "R54"
           },
-          "contents": {},
+          "contents": {
+            "enemies": [
+              {
+                "key": "plains_lion",
+                "drop": ""
+              }
+            ]
+          },
           "flags": {
             "discovered": false
           }
@@ -907,7 +1060,24 @@ window.DUNGEONS.Dungeon1 = {
             "s": "R55",
             "ne": "R57"
           },
-          "contents": {},
+          "contents": {
+            "enemies": [
+              {
+                "key": "giant_scorpion",
+                "drop": "bronze_key"
+              },
+              {
+                "key": "giant_scorpion",
+                "drop": ""
+              }
+            ],
+            "doors": {
+              "ne": {
+                "type": "bronze",
+                "locked": true
+              }
+            }
+          },
           "flags": {
             "discovered": false
           }
@@ -1407,7 +1577,14 @@ window.DUNGEONS.Dungeon1 = {
             "e": "R27",
             "se": "R29"
           },
-          "contents": {},
+          "contents": {
+            "enemies": [
+              {
+                "key": "giant_scorpion",
+                "drop": "silver_key"
+              }
+            ]
+          },
           "flags": {
             "discovered": false
           }
@@ -1774,7 +1951,17 @@ window.DUNGEONS.Dungeon1 = {
             "n": "R50",
             "s": "R52"
           },
-          "contents": {},
+          "contents": {
+            "traps": [
+              {
+                "type": "poison",
+                "damage": 3,
+                "duration": 10,
+                "resetOnLeave": true,
+                "triggered": false
+              }
+            ]
+          },
           "flags": {
             "discovered": false
           }
@@ -1787,9 +1974,17 @@ window.DUNGEONS.Dungeon1 = {
             "y": 20
           },
           "exits": {
-            "n": "R51"
+            "n": "R51",
+            "s": "R53"
           },
-          "contents": {},
+          "contents": {
+            "doors": {
+              "s": {
+                "type": "silver",
+                "locked": true
+              }
+            }
+          },
           "flags": {
             "discovered": false
           }
@@ -1802,7 +1997,8 @@ window.DUNGEONS.Dungeon1 = {
             "y": 21
           },
           "exits": {
-            "se": "R54"
+            "se": "R54",
+            "n": "R52"
           },
           "contents": {},
           "flags": {
@@ -2975,7 +3171,20 @@ window.DUNGEONS.Dungeon1 = {
             "w": "R125",
             "n": "R127"
           },
-          "contents": {},
+          "contents": {
+            "doors": {
+              "n": {
+                "type": "electrum",
+                "locked": true
+              }
+            },
+            "enemies": [
+              {
+                "key": "wraith",
+                "drop": "electrum_key"
+              }
+            ]
+          },
           "flags": {
             "discovered": false
           }

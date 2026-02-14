@@ -91,7 +91,7 @@ const WEAPONS = {
         baseDamage: 5,
         maxDamage: 8,
         baseMagicDamage: 0,
-        cost: 11000,
+        cost: 110,
         level: 2,
         quality: 'normal',
         slot: 'weapon'
