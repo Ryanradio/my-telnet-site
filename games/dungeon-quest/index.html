@@ -3,6 +3,12 @@
 <head>
     <meta charset="UTF-8">
    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+   <!-- PWA: standalone mode removes browser chrome on iOS/Android -->
+   <meta name="apple-mobile-web-app-capable" content="yes">
+   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+   <meta name="apple-mobile-web-app-title" content="Dungeon Quest">
+   <meta name="mobile-web-app-capable" content="yes">
+   <meta name="theme-color" content="#000000">
 
     <title>⚔️ DUNGEON QUEST  ⚔️</title>
    
@@ -43,14 +49,39 @@ body {
 
 /* ── Gameplay wrapper — full viewport, column flex ──────────────── */
 #gameWrapper {
-    position: fixed;          /* pin to viewport — immune to container padding */
-    inset: 0;                 /* top/right/bottom/left = 0 */
-    display: none;            /* JS shows this */
+    position: fixed;
+    inset: 0;
+    display: none;
     flex-direction: column;
     overflow: hidden;
-    /* safe area padding for notched phones */
     padding-bottom: env(safe-area-inset-bottom, 0px);
     box-sizing: border-box;
+    /* ── Desktop: cap width, centre, add side backdrop ── */
+    background: #000;
+}
+
+/* Desktop: constrain play area to readable column */
+@media (min-width: 769px) {
+    #gameWrapper {
+        /* Dark backdrop fills full viewport, game column sits centred */
+        background: #050505;
+    }
+    #gameWrapper > * {
+        /* All direct children get the same max-width and centring */
+        max-width: 820px;
+        width: 100%;
+        margin-left: auto;
+        margin-right: auto;
+        box-sizing: border-box;
+    }
+    /* Terminal itself also needs width constraint but stretches vertically */
+    #terminalWindow {
+        max-width: 820px !important;
+    }
+    /* HUD strip: same max-width, let it sit at bottom */
+    #hud {
+        max-width: 820px !important;
+    }
 }
 
 /* Shown in terminal mode */
@@ -341,7 +372,7 @@ body.terminal-mode #actionBar { display: block; }
 
 /* ─── Desktop HUD: compact strip in terminal-mode ───────────────── */
 body.terminal-mode #hud {
-    padding: 2px 8px !important;
+    padding: 3px 10px !important;
     border-width: 1px !important;
     border-top: 1px solid #1a3a1a !important;
     border-bottom: none !important;
@@ -352,29 +383,29 @@ body.terminal-mode .hud-inner {
     display: flex !important;
     flex-wrap: nowrap;
     align-items: center;
-    gap: 6px;
+    gap: 10px;
     justify-content: flex-start;
 }
 body.terminal-mode #hudName {
-    font-size: 11px !important;
+    font-size: 13px !important;
     color: var(--highlight-color) !important;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 160px;
+    max-width: 200px;
     flex-shrink: 1;
 }
 body.terminal-mode .hud-stats {
     display: flex !important;
     flex-wrap: nowrap;
-    gap: 8px;
-    font-size: 13px !important;
+    gap: 12px;
+    font-size: 14px !important;
     align-items: center;
     flex: 1;
 }
 body.terminal-mode .hud-stats span {
     white-space: nowrap;
-    font-size: 13px !important;
+    font-size: 14px !important;
 }
 /* On mobile the desktop HUD is hidden — mobileHud takes over */
 @media (max-width: 768px) {
@@ -1104,12 +1135,73 @@ body.terminal-mode #menuContainer {
     display: none;
 }
 
+/* ── Fullscreen toggle button ──────────────────────────────────────── */
+#fsBtn {
+    position: fixed;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);
+    right: 8px;
+    z-index: 1500;
+    background: rgba(0,0,0,0.7);
+    border: 1px solid #2a5a2a;
+    color: #00FF41;
+    font-size: 18px;
+    width: 34px;
+    height: 34px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: none;         /* shown only on mobile */
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    line-height: 1;
+    opacity: 0.75;
+    transition: opacity 0.2s;
+}
+#fsBtn:active { opacity: 1; transform: scale(0.92); }
+/* Show on touch devices */
+@media (hover: none) and (pointer: coarse) {
+    #fsBtn { display: flex; }
+}
+/* Hide when game wrapper is active (action bar is already at bottom) */
+body.terminal-mode #fsBtn { bottom: calc(env(safe-area-inset-bottom, 0px) + 90px); }
+
+/* ── Install modal overlay ──────────────────────────────────────────── */
+#installModal.open { display: flex !important; }
+#installModalBox .install-step {
+    padding: 6px 0;
+    font-size: 17px;
+    border-bottom: 1px solid #0d1f0d;
+    line-height: 1.35;
+}
+#installModalBox .install-step:last-child { border-bottom: none; }
+#installModalBox .install-highlight { color: var(--highlight-color); }
+#installModalBox .install-icon { font-size: 22px; margin-right: 6px; }
+
 
         
     </style>
 </head>
 <body>
     <div class="scanline"></div>
+
+    <!-- Fullscreen toggle (mobile only) -->
+    <button id="fsBtn" onclick="toggleFullscreen()" title="Fullscreen">⛶</button>
+
+    <!-- Install modal (replaces old bottom-strip banner) -->
+    <div id="installModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:3000;align-items:center;justify-content:center;">
+        <div id="installModalBox" style="
+            background:#050a05;border:2px solid var(--border-color);
+            max-width:420px;width:90%;padding:20px 22px 18px;
+            font-family:'VT323',monospace;color:var(--text-color);
+            box-shadow:0 0 40px rgba(0,255,65,0.2);
+            position:relative;box-sizing:border-box;">
+            <div style="font-size:22px;color:var(--highlight-color);margin-bottom:14px;border-bottom:1px solid #1a3a1a;padding-bottom:8px;">
+                📱 INSTALL DUNGEON QUEST
+            </div>
+            <div id="installModalBody"></div>
+            <button onclick="closeInstallModal()" style="margin-top:14px;width:100%;font-size:18px;border-color:#555;">✕ CLOSE</button>
+        </div>
+    </div>
     
     <!-- MENU WRAPPER (town/shop/etc) -->
     <div class="container" id="menuContainer">
@@ -2104,6 +2196,151 @@ gameState.hasRestoredGame = false;
             username: 'sysop',
             password: 'Radojcsics'
         };
+
+        // ══════════════════════════════════════════════════════════════
+        // FULLSCREEN + iOS INSTALL BANNER
+        // ══════════════════════════════════════════════════════════════
+
+        // ══════════════════════════════════════════════════════════════
+        // INSTALL APP MODAL  — detects platform, shows tailored steps
+        // ══════════════════════════════════════════════════════════════
+
+        // Detect platform
+        function _getPlatform() {
+            const ua = navigator.userAgent || '';
+            const isStandalone = window.navigator.standalone === true ||
+                                 window.matchMedia('(display-mode: standalone)').matches;
+            if (isStandalone) return 'standalone';
+            if (/iphone|ipad|ipod/i.test(ua)) return 'ios';
+            if (/android/i.test(ua)) return 'android';
+            if (/macintosh|windows|linux/i.test(ua)) return 'desktop';
+            return 'unknown';
+        }
+
+        // Content for each platform
+        const _installContent = {
+            standalone: {
+                title: '✅ Already Installed!',
+                steps: [
+                    { icon: '🎮', text: 'You\'re already running Dungeon Quest as an installed app.' },
+                    { icon: '✨', text: 'Full-screen mode is active — enjoy your adventure!' }
+                ]
+            },
+            ios: {
+                title: '📱 Install on iPhone / iPad',
+                steps: [
+                    { icon: '1️⃣', text: 'Tap the <span class="install-highlight">⎙ Share</span> button at the bottom of Safari' },
+                    { icon: '2️⃣', text: 'Scroll down and tap <span class="install-highlight">Add to Home Screen</span>' },
+                    { icon: '3️⃣', text: 'Tap <span class="install-highlight">Add</span> in the top-right corner' },
+                    { icon: '4️⃣', text: 'Open <span class="install-highlight">Dungeon Quest</span> from your home screen — full-screen, no browser chrome!' }
+                ]
+            },
+            android: {
+                title: '📱 Install on Android',
+                steps: [
+                    { icon: '1️⃣', text: 'Tap the <span class="install-highlight">⋮ menu</span> in the top-right of Chrome' },
+                    { icon: '2️⃣', text: 'Tap <span class="install-highlight">Add to Home screen</span> (or look for an install banner at the bottom)' },
+                    { icon: '3️⃣', text: 'Tap <span class="install-highlight">Install</span> when prompted' },
+                    { icon: '4️⃣', text: 'Open <span class="install-highlight">Dungeon Quest</span> from your home screen for full-screen play!' }
+                ]
+            },
+            desktop: {
+                title: '🖥️ Install on Desktop',
+                steps: [
+                    { icon: '🌐', text: 'In <span class="install-highlight">Chrome or Edge</span>, look for the install icon (⊕) in the address bar' },
+                    { icon: '2️⃣', text: 'Click <span class="install-highlight">Install</span> when prompted, or go to <span class="install-highlight">⋮ menu → Install Dungeon Quest</span>' },
+                    { icon: '3️⃣', text: 'Once installed it opens in its own window without browser chrome' },
+                    { icon: 'ℹ️', text: 'Firefox and Safari desktop do <span class="install-highlight">not</span> support PWA install' }
+                ]
+            },
+            unknown: {
+                title: '📱 Install Dungeon Quest',
+                steps: [
+                    { icon: '📖', text: 'Are you on <span class="install-highlight">iPhone/iPad</span>? Tap ⎙ Share → Add to Home Screen' },
+                    { icon: '📖', text: 'Are you on <span class="install-highlight">Android</span>? Tap ⋮ menu → Add to Home Screen' },
+                    { icon: '📖', text: 'Are you on <span class="install-highlight">Desktop</span>? Look for the ⊕ install icon in your address bar' }
+                ]
+            }
+        };
+
+        function openInstallModal() {
+            const platform = _getPlatform();
+            const content  = _installContent[platform] || _installContent.unknown;
+
+            const stepsHtml = content.steps.map(s =>
+                `<div class="install-step">
+                    <span class="install-icon">${s.icon}</span>${s.text}
+                </div>`
+            ).join('');
+
+            document.getElementById('installModalBody').innerHTML = `
+                <div style="font-size:19px;color:var(--highlight-color);margin-bottom:10px;">
+                    ${content.title}
+                </div>
+                ${stepsHtml}
+                ${platform === 'unknown' ? `
+                <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+                    <button onclick="_showInstallFor('ios')"    style="flex:1;font-size:14px;padding:6px;">🍎 iPhone</button>
+                    <button onclick="_showInstallFor('android')" style="flex:1;font-size:14px;padding:6px;">🤖 Android</button>
+                    <button onclick="_showInstallFor('desktop')" style="flex:1;font-size:14px;padding:6px;">🖥️ Desktop</button>
+                </div>` : ''}
+            `;
+
+            document.getElementById('installModal').classList.add('open');
+        }
+
+        function _showInstallFor(platform) {
+            const content = _installContent[platform] || _installContent.unknown;
+            const stepsHtml = content.steps.map(s =>
+                `<div class="install-step">
+                    <span class="install-icon">${s.icon}</span>${s.text}
+                </div>`
+            ).join('');
+            document.getElementById('installModalBody').innerHTML = `
+                <div style="font-size:19px;color:var(--highlight-color);margin-bottom:10px;">
+                    ${content.title}
+                </div>
+                ${stepsHtml}
+                <button onclick="openInstallModal()" style="margin-top:10px;font-size:14px;padding:5px 10px;border-color:#555;">← Back</button>
+            `;
+        }
+
+        function closeInstallModal() {
+            document.getElementById('installModal').classList.remove('open');
+        }
+
+        // Close on backdrop click
+        document.getElementById('installModal').addEventListener('click', function(e) {
+            if (e.target === this) closeInstallModal();
+        });
+
+        // ── Fullscreen toggle button (⛶) still triggers modal on iOS ────
+        function toggleFullscreen() {
+            const el = document.documentElement;
+            if (!document.fullscreenElement && !document.webkitFullscreenElement &&
+                !document.mozFullScreenElement) {
+                const req = el.requestFullscreen || el.webkitRequestFullscreen ||
+                            el.mozRequestFullScreen || el.msRequestFullscreen;
+                if (req) {
+                    req.call(el).catch(() => {});
+                } else {
+                    // iOS — can't programmatic fullscreen, show install modal
+                    openInstallModal();
+                }
+            } else {
+                const exit = document.exitFullscreen || document.webkitExitFullscreen ||
+                             document.mozCancelFullScreen || document.msExitFullscreen;
+                if (exit) exit.call(document);
+            }
+        }
+
+        document.addEventListener('fullscreenchange',       _onFsChange);
+        document.addEventListener('webkitfullscreenchange', _onFsChange);
+        function _onFsChange() {
+            const inFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+            const btn = document.getElementById('fsBtn');
+            if (btn) btn.textContent = inFs ? '⊠' : '⛶';
+        }
 
         // Toggle terminal with ~ key
         document.addEventListener('keydown', (e) => {
@@ -3870,7 +4107,17 @@ window.addEventListener('beforeunload', () => {
             const screen = document.getElementById('mainScreen');
             const characters = getAllCharacters();
             const hasCharacters = characters.length > 0;
-            
+
+            // Only show install option if not already a standalone PWA
+            const isStandalone = window.navigator.standalone === true ||
+                                 window.matchMedia('(display-mode: standalone)').matches;
+            const installOption = isStandalone ? '' : `
+                    <div class="menu-option" onclick="openInstallModal()"
+                         style="border-color:#2a5a2a;color:#4a9a4a;margin-top:12px;">
+                        📱 INSTALL APP
+                        <span style="font-size:13px;color:#336633;"> — play fullscreen</span>
+                    </div>`;
+
             screen.innerHTML = `
                 <div class="location-header">MAIN MENU</div>
                 <div style="text-align: center; margin: 30px 0;">
@@ -3889,6 +4136,7 @@ window.addEventListener('beforeunload', () => {
                     </div>
                     <div class="menu-option" onclick="loadFromFile()">📁 LOAD FROM FILE (.dqsave)</div>
                     <div class="menu-option" onclick="showInstructions()">► INSTRUCTIONS</div>
+                    ${installOption}
                 </div>
             `;
         }
