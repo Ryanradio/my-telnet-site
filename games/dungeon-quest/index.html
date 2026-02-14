@@ -4981,63 +4981,76 @@ window.addEventListener('beforeunload', () => {
             modal.style.cssText = `
                 position:fixed;inset:0;z-index:9999;
                 display:flex;align-items:center;justify-content:center;
-                background:rgba(0,0,0,0.85);
+                background:rgba(0,0,0,0.88);
                 font-family:'VT323',monospace;
+                padding:env(safe-area-inset-top,12px) 12px env(safe-area-inset-bottom,12px) 12px;
+                box-sizing:border-box;
             `;
             modal.innerHTML = `
                 <div style="
                     border:3px double #ff4444;
                     background:#000;
-                    max-width:480px;width:90%;
-                    padding:22px 24px;
+                    max-width:480px;width:100%;
+                    max-height:calc(100dvh - 24px);
+                    display:flex;flex-direction:column;
                     box-shadow:0 0 40px rgba(255,0,0,0.4);
                     color:#00ff00;
-                    line-height:1.4;
+                    box-sizing:border-box;
+                    overflow:hidden;
                 ">
-                    <div style="font-size:22px;color:#ff4444;text-align:center;margin-bottom:12px;letter-spacing:2px;">
-                        ⚠️ DUNGEON WARNING ⚠️
-                    </div>
-                    <div style="font-size:18px;color:#ffff00;margin-bottom:12px;text-align:center;">
-                        ${dungeonName}
-                    </div>
-
-                    <div style="font-size:16px;margin-bottom:10px;">
-                        Once you enter, there are <strong style="color:#ff4444;">only three ways to leave:</strong>
-                    </div>
-                    <div style="font-size:16px;padding-left:8px;margin-bottom:14px;">
-                        <div style="margin-bottom:4px;">🌀 <strong style="color:#AA88FF;">Recall Potion</strong> — instantly return to town
-                            <div style="font-size:13px;color:#888;padding-left:22px;">Purchase one at the shop for 5,000 gold. One use.</div>
+                    <!-- Scrollable content area -->
+                    <div style="overflow-y:auto;padding:18px 20px 12px;flex:1 1 0;min-height:0;-webkit-overflow-scrolling:touch;">
+                        <div style="font-size:22px;color:#ff4444;text-align:center;margin-bottom:12px;letter-spacing:2px;">
+                            ⚠️ DUNGEON WARNING ⚠️
                         </div>
-                        <div style="margin-bottom:4px;">🚪 <strong style="color:#00ff88;">Entrance / Exit</strong> — walk back the way you came</div>
-                        <div>🏙️ <strong style="color:#4488ff;">Town portal rooms</strong> — special dungeon rooms with an exit portal</div>
+                        <div style="font-size:18px;color:#ffff00;margin-bottom:12px;text-align:center;">
+                            ${dungeonName}
+                        </div>
+
+                        <div style="font-size:16px;margin-bottom:10px;">
+                            Once you enter, there are <strong style="color:#ff4444;">only three ways to leave:</strong>
+                        </div>
+                        <div style="font-size:16px;padding-left:8px;margin-bottom:14px;">
+                            <div style="margin-bottom:6px;">🌀 <strong style="color:#AA88FF;">Recall Potion</strong> — instantly return to town
+                                <div style="font-size:13px;color:#888;padding-left:22px;">Purchase one at the shop for 5,000 gold. One use.</div>
+                            </div>
+                            <div style="margin-bottom:6px;">🚪 <strong style="color:#00ff88;">Entrance / Exit</strong> — walk back the way you came</div>
+                            <div>🏙️ <strong style="color:#4488ff;">Town portal rooms</strong> — special dungeon rooms with an exit portal</div>
+                        </div>
+
+                        <div style="
+                            border:1px solid #444;padding:10px;margin-bottom:14px;
+                            background:rgba(255,100,0,0.05);font-size:15px;color:#ff8800;
+                        ">
+                            ⚔️ Prepare yourself before embarking — stock up on potions, spells, and equipment.
+                            Once inside, you cannot return to the shop without finding your way out first.
+                        </div>
+
+                        ${recallNote}
                     </div>
 
+                    <!-- Pinned button row — always visible -->
                     <div style="
-                        border:1px solid #444;padding:10px;margin-bottom:14px;
-                        background:rgba(255,100,0,0.05);font-size:15px;color:#ff8800;
+                        display:flex;gap:10px;padding:12px 20px;
+                        border-top:1px solid #330000;
+                        background:#050000;
+                        flex-shrink:0;
                     ">
-                        ⚔️ Prepare yourself before embarking — stock up on potions, spells, and equipment.
-                        Once inside, you cannot return to the shop without finding your way out first.
-                    </div>
-
-                    ${recallNote}
-
-                    <div style="display:flex;gap:10px;margin-top:18px;justify-content:center;">
                         <button onclick="
                             document.getElementById('dungeonWarningModal').remove();
                             startDungeon('${townDef.dungeonKey}');
                         " style="
-                            font-family:'VT323',monospace;font-size:18px;
-                            padding:8px 22px;cursor:pointer;
+                            flex:1;font-family:'VT323',monospace;font-size:20px;
+                            padding:10px 8px;cursor:pointer;
                             background:linear-gradient(180deg,#1a0000,#0a0000);
                             color:#ff4444;border:2px solid #ff4444;
-                        ">⚔️ ENTER DUNGEON</button>
+                        ">⚔️ ENTER</button>
                         <button onclick="document.getElementById('dungeonWarningModal').remove();" style="
-                            font-family:'VT323',monospace;font-size:18px;
-                            padding:8px 22px;cursor:pointer;
+                            flex:1;font-family:'VT323',monospace;font-size:20px;
+                            padding:10px 8px;cursor:pointer;
                             background:linear-gradient(180deg,#001a00,#000a00);
                             color:#00ff88;border:2px solid #00ff88;
-                        ">← STAY SAFE</button>
+                        ">← BACK</button>
                     </div>
                 </div>
             `;
@@ -9981,109 +9994,111 @@ function endCombat(victory) {
         const p = gameState.player;
         const inDungeon = !!gameState.dungeon;
 
-        // Restore HP/MP
+        // ── Calculate penalties BEFORE applying them ─────────────────
+        // Level 1 players are immune to all penalties
+        const isLevel1 = p.level <= 1;
+
+        let xpLost   = 0;
+        let goldLost = 0;
+
+        if (!isLevel1) {
+            // ── XP penalty: 10% of TOTAL xp accumulated so far ─────────
+            // "Total XP" = XP needed to reach current level + current p.xp
+            const xpAtLevelStart = getXpForLevel(p.class, p.level);
+            const totalXpSoFar   = xpAtLevelStart + p.xp;
+            xpLost = Math.floor(totalXpSoFar * 0.10);
+
+            // Never drop a level — floor XP at 0 for current level
+            const newCurrentXp = p.xp - xpLost;
+            p.xp = Math.max(0, newCurrentXp);
+            // xpToNext stays the same (level doesn't change)
+
+            // ── Gold penalty: lose ALL carried gold (bank is safe) ──────
+            goldLost = p.gold;
+            p.gold   = 0;
+        }
+
+        // Restore HP/MP to full
         p.hp = p.maxHp;
         p.mp = p.maxMp;
 
-        if (inDungeon) {
-            // ═══════════════════════════════════════
-            // HARSH DUNGEON DEATH PENALTY
-            // ═══════════════════════════════════════
-            
-            // Lose 10% of TOTAL XP earned
-            const currentLevelXp = getXpForLevel(p.class, p.level);
-            const totalXpEarned = currentLevelXp + p.xp;
-            const xpLost = Math.floor(totalXpEarned * 0.10);
-            
-            // Calculate new total XP
-            let newTotalXp = totalXpEarned - xpLost;
-            if (newTotalXp < 0) newTotalXp = 0;
-            
-            // Find new level based on XP
-            let newLevel = 1;
-            for (let lvl = 25; lvl >= 1; lvl--) {
-                if (newTotalXp >= getXpForLevel(p.class, lvl)) {
-                    newLevel = lvl;
-                    break;
-                }
-            }
-            
-            const levelsLost = p.level - newLevel;
-            
-            // Apply level loss
-            if (levelsLost > 0) {
-                for (let i = 0; i < levelsLost; i++) {
-                    p.level--;
-                    
-                    // Reduce stats from level loss
-                    p.maxHp = Math.max(20, p.maxHp - 15 - (p.con || 0));
-                    p.maxMp = Math.max(10, p.maxMp - 10);
-                    p.strength = Math.max(1, p.strength - 2);
-                    p.defense = Math.max(1, p.defense - 2);
-                    p.magic = Math.max(1, p.magic - 2);
-                    p.speed = Math.max(1, p.speed - 1);
-                    
-                    if (p.str !== undefined) {
-                        p.str = Math.max(1, p.str - 1);
-                        p.dex = Math.max(1, p.dex - 1);
-                        p.wis = Math.max(1, p.wis - 1);
-                        p.cha = Math.max(1, p.cha - 1);
-                        p.con = Math.max(1, p.con - 1);
-                        p.lck = Math.max(1, p.lck - 1);
-                    }
-                }
-            }
-            
-            // Set XP to remainder after new level
-            const newLevelBaseXp = getXpForLevel(p.class, newLevel);
-            p.xp = newTotalXp - newLevelBaseXp;
-            p.xpToNext = getXpToNextLevel(p.class, newLevel);
-            
-            // Ensure XP doesn't go negative
-            if (p.xp < 0) p.xp = 0;
-            
-            // Lose ALL carried gold (bank is safe)
-            const goldLost = p.gold;
-            p.gold = 0;
-            
-            // Clear dungeon state - you're kicked out
-            gameState.dungeon = null;
-            
-            gameState.combatState = null;
-            gameState.postCombatRecovery = false;
+        // Clear dungeon / combat state
+        gameState.dungeon              = null;
+        gameState.combatState          = null;
+        gameState.postCombatRecovery   = false;
 
-            updateHud();
-            
-            // Dramatic death message
-            let deathMsg = `<span style="color:var(--error-color);font-size:20px;">💀 YOU HAVE DIED 💀</span><br><br>`;
-            deathMsg += `<span style="color:#ff6666;">XP Lost: ${xpLost.toLocaleString()}</span><br>`;
-            if (levelsLost > 0) {
-                deathMsg += `<span style="color:#ff3333;">LEVELS LOST: ${levelsLost}!</span><br>`;
-            }
-            deathMsg += `<span style="color:#ffaa00;">Gold Lost: ${goldLost} (Bank is safe)</span><br><br>`;
-            deathMsg += `<span style="color:#888;">You wake up in town, broken and defeated...</span>`;
-            
-            termAppend(deathMsg, 'term-error', () => {
-                setTimeout(() => { 
-                    closeTerminalView(); 
-                    showTown();
-                    // Auto-save the harsh penalty
-                    saveGame();
-                }, 3000);
-            });
-        } else {
-            // Standard overworld death - just lose 50% gold
-            p.gold = Math.floor(p.gold / 2);
-            
-            gameState.combatState = null;
-            gameState.postCombatRecovery = false;
+        updateHud();
+        saveGame();  // persist penalties immediately
 
-            updateHud();
+        // ── Build death screen shown IN THE TERMINAL ──────────────────
+        // Separator
+        termAppend('', 'term-separator');
+
+        // Big skull header
+        termAppend(
+            `<span style="color:#ff2222;font-size:26px;letter-spacing:4px;">💀  YOU HAVE DIED  💀</span>`,
+            'term-error'
+        );
+        termAppend('', 'term-separator');
+
+        if (isLevel1) {
+            // No penalties at level 1
             termAppend(
-                'You have been defeated… You wake up in town.',
-                'term-error',
-                () => setTimeout(() => { closeTerminalView(); showTown(); }, 1200)
+                `<span style="color:#88ff88;">You are a <strong>Level 1</strong> adventurer — no penalties apply.</span>`,
+                'term-loot'
             );
+            termAppend(
+                `<span style="color:#aaaaaa;">You wake up bruised but no worse for wear...</span>`
+            );
+        } else {
+            // Show each penalty
+            termAppend(
+                `<span style="color:#ff6666;">💸 Gold Lost: </span>` +
+                `<span style="color:#ffaa00;font-size:18px;">${goldLost.toLocaleString()}g</span>` +
+                `<span style="color:#888;"> (gold in your <strong>Bank</strong> is safe)</span>`
+            );
+
+            const xpBefore = p.xp + xpLost;
+            termAppend(
+                `<span style="color:#ff6666;">📉 XP Lost: </span>` +
+                `<span style="color:#ff8888;font-size:18px;">${xpLost.toLocaleString()} XP</span>`
+            );
+            termAppend(
+                `<span style="color:#888;">XP: ${xpBefore.toLocaleString()} → ${p.xp.toLocaleString()}` +
+                `${p.xp === 0 ? ' <span style="color:#ff4444;">(reset to 0 for this level)</span>' : ''}</span>`
+            );
+
+            if (inDungeon) {
+                termAppend(
+                    `<span style="color:#ff4444;">🏚️ Expelled from the dungeon!</span>`
+                );
+            }
+
+            termAppend('', 'term-separator');
+            termAppend(
+                `<span style="color:#666;">Your level remains <strong style="color:#aaa;">Lv ${p.level}</strong>. ` +
+                `Gold in your bank is untouched.</span>`
+            );
+        }
+
+        termAppend('', 'term-separator');
+        termAppend(
+            `<span style="color:#888888;">Press <strong style="color:#00ff88;">[CONTINUE]</strong> to return to town...</span>`
+        );
+
+        // ── Inject CONTINUE button into the action bar ────────────────
+        const ab = document.getElementById('actionBar');
+        if (ab) {
+            ab.innerHTML = `
+                <div style="display:flex;gap:6px;width:100%;padding:4px;">
+                    <button onclick="confirmDeathReturn()"
+                        style="flex:1;font-size:20px;min-height:50px;
+                               background:linear-gradient(180deg,#0a0000,#000);
+                               color:#ff4444;border:2px solid #ff4444;
+                               font-family:'VT323',monospace;letter-spacing:2px;">
+                        💀 CONTINUE
+                    </button>
+                </div>`;
         }
         return;
     }
@@ -10369,6 +10384,17 @@ gameState.postCombatRecovery = true;
             termAppend('🌑 You melt into the shadows... <span style="color:#8888FF;">[Shadow Strike Ready]</span>', 'term-highlight');
         }, 5000);
     }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DEATH CONFIRMATION — player presses [CONTINUE] to return to town
+// ═══════════════════════════════════════════════════════════════
+function confirmDeathReturn() {
+    // Start regen fresh in town
+    startMpRegen(true);
+    startResting(true);
+    closeTerminalView();
+    showTown();
 }
 
 // ═══════════════════════════════════════════════════════════════
