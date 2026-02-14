@@ -82,6 +82,13 @@ body {
     #hud {
         max-width: 820px !important;
     }
+    /* Status bars: same max-width */
+    #statusBars {
+        max-width: 820px !important;
+    }
+    /* Desktop: taller action bar buttons, easier mouse click */
+    #actionBar button { min-height: 48px !important; font-size: 22px !important; }
+    .action-icon-btn  { min-height: 48px !important; font-size: 24px !important; }
 }
 
 /* Shown in terminal mode */
@@ -96,16 +103,13 @@ body.terminal-mode #gameWrapper {
 }
 body.terminal-mode #hud {
     display: block;
-    order: 3;   /* terminal=1, hud=3, actionBar=4 → HUD sits just above action bar */
+    order: 3;   /* terminal=1, hud=3, actionBar=4, statusBars=5 */
 }
 
-/* ── Mobile HUD (above action bar) — hidden on desktop ─────────── */
+/* ── Mobile HUD text strip — hidden in terminal mode (bars replace it) */
 #mobileHud {
-    display: none;  /* JS/CSS controls this */
+    display: none;
     flex: 0 0 auto;
-    background: var(--secondary-bg);
-    border-top: 1px solid var(--border-color);
-    padding: 2px 6px;
     box-sizing: border-box;
     order: 2;
 }
@@ -116,7 +120,7 @@ body.terminal-mode #hud {
 /* ── Terminal — takes ALL leftover space, scrolls ───────────────── */
 #terminalWindow {
     flex: 1 1 0;
-    min-height: 0;                     /* CRITICAL for flex scrolling */
+    min-height: 0;
     overflow-y: scroll;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
@@ -132,14 +136,93 @@ body.terminal-mode #terminalWindow { display: block; }
     overflow: visible;
     box-sizing: border-box;
     order: 4;
+    padding: 4px;
 }
 body.terminal-mode #actionBar { display: block; }
 
-/* default button sizing — minimal, let content + flex size them */
+/* default button sizing */
 #actionBar button {
     min-width: 0;
-    min-height: 32px;
+    min-height: 44px;       /* taller — easier to tap/click */
     border-radius: 5px;
+    font-size: 20px;
+}
+
+/* ── Status bars (HP/MP/XP) — always at very bottom ────────────── */
+#statusBars {
+    flex: 0 0 auto;
+    display: none;
+    order: 5;
+    padding: 0;
+    box-sizing: border-box;
+    background: #000;
+    /* safe area so bars clear iPhone home indicator */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+body.terminal-mode #statusBars { display: block; }
+
+/* HP + MP side-by-side row */
+#sbHpMpRow {
+    display: flex;
+    height: 7px;
+    gap: 2px;
+    padding: 0 2px;
+}
+
+/* HP track */
+#sbHpTrack {
+    flex: 1;
+    background: #1a0000;
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+}
+#sbHpFill {
+    height: 100%;
+    background: linear-gradient(90deg, #cc0000, #ff3333);
+    box-shadow: 0 0 4px #ff0000, 0 0 8px rgba(255,0,0,0.4);
+    transition: width 0.4s ease;
+    border-radius: 2px;
+}
+
+/* MP track */
+#sbMpTrack {
+    flex: 1;
+    background: #00001a;
+    border-radius: 2px;
+    overflow: hidden;
+}
+#sbMpFill {
+    height: 100%;
+    background: linear-gradient(90deg, #0044cc, #4499ff);
+    box-shadow: 0 0 4px #0066ff, 0 0 8px rgba(0,102,255,0.4);
+    transition: width 0.4s ease;
+    border-radius: 2px;
+    animation: mpPulse 3s ease-in-out infinite;
+}
+@keyframes mpPulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.75; }
+}
+@keyframes hpLowPulse {
+    0%, 100% { opacity: 1;    box-shadow: 0 0 6px #ff0000, 0 0 12px rgba(255,0,0,0.6); }
+    50%       { opacity: 0.6; box-shadow: 0 0 2px #ff0000; }
+}
+
+/* XP track — full width below */
+#sbXpTrack {
+    height: 4px;
+    background: #0d0d00;
+    margin: 2px 2px 0;
+    border-radius: 1px;
+    overflow: hidden;
+}
+#sbXpFill {
+    height: 100%;
+    background: linear-gradient(90deg, #886600, #ffdd00);
+    box-shadow: 0 0 3px #ffaa00;
+    transition: width 0.5s ease;
+    border-radius: 1px;
 }
 
         @import url('https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap');
@@ -340,31 +423,10 @@ body.terminal-mode #actionBar { display: block; }
     box-shadow: inset 0 0 30px rgba(0,255,0,0.08);
 }
 
-        /* ─── mobile HUD strip (between terminal and action bar) ─── */
-#mobileHud {
-    display: none;
-    font-family: 'VT323', monospace;
-    font-size: 13px;
-    line-height: 1;
-    background: var(--secondary-bg);
-    border-top: 1px solid #2a5a2a;
-    border-bottom: 1px solid #2a5a2a;
-    padding: 3px 6px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    box-sizing: border-box;
-}
-#mobileHud span {
-    display: inline-block;
-    margin-right: 8px;
-}
-#mobileHud #mhHp    { color: #ff6666; }
-#mobileHud #mhMp    { color: #4488ff; }
-#mobileHud #mhXp    { color: var(--text-color); }
-#mobileHud #mhGold  { color: #FFD700; }
+        /* mobileHud text spans — hidden in terminal mode, bars take over */
+#mobileHud span { display: none; }
 
-/* Hide XP and gold on very narrow screens (≤420px) — use 📊 button instead */
+/* Hide XP and gold on very narrow screens — bars show it visually */
 @media (max-width: 420px) {
     #mobileHud .mhud-xp   { display: none !important; }
     #mobileHud .mhud-gold { display: none !important; }
@@ -1073,21 +1135,23 @@ body.terminal-mode .hud-stats span {
             .header h1 { font-size: 15px; margin-bottom: 2px; }
             .screen { padding: 8px; }
 
-            /* Desktop HUD: hidden on mobile — mobileHud takes its place */
+            /* Desktop HUD: hidden on mobile — status bars replace it */
             body.terminal-mode #hud { display: none !important; }
-            /* Mobile HUD strip: sits between terminal and action bar */
-            body.terminal-mode #mobileHud { display: block; }
 
             /* Terminal: smallest still-readable text, maximise screen space */
             #terminalWindow { padding: 3px 5px; }
             .term-line { font-size: 13px; line-height: 1.2; margin: 0; padding: 0; }
 
-            /* Action bar */
-            #actionBar { padding: 3px; }
-            #actionBar button { font-size: 13px; padding: 5px 7px; min-height: 34px; border-radius: 5px; }
-            .action-icon-btn { font-size: 14px; padding: 5px 6px !important; min-height: 34px; }
+            /* Action bar — taller buttons on mobile for easier tapping */
+            #actionBar { padding: 4px 3px 2px; }
+            #actionBar button { font-size: 18px; padding: 6px 7px; min-height: 46px; border-radius: 5px; }
+            .action-icon-btn { font-size: 20px; padding: 6px 6px !important; min-height: 46px; }
             .spell-btn  { font-size: 12px; padding: 4px 5px !important; }
             .target-btn { font-size: 13px; padding: 5px 6px !important; }
+
+            /* Status bars — slightly taller on small screens for visibility */
+            #sbHpMpRow { height: 8px; }
+            #sbXpTrack { height: 5px; }
 
             /* Other UI */
             .menu-option { padding: 8px; font-size: 16px; margin: 4px 0; }
@@ -1101,10 +1165,9 @@ body.terminal-mode .hud-stats span {
         /* Very small phones ≤390px */
         @media (max-width: 390px) {
             .term-line { font-size: 12px; line-height: 1.15; }
-            #actionBar { padding: 2px 3px; }
-            #actionBar button { font-size: 12px; padding: 4px 5px; min-height: 30px; }
-            .action-icon-btn { font-size: 13px; padding: 4px 4px !important; min-height: 30px; }
-            #mobileHud { font-size: 12px; padding: 2px 4px; }
+            #actionBar { padding: 3px 2px 1px; }
+            #actionBar button { font-size: 17px; padding: 5px 5px; min-height: 42px; }
+            .action-icon-btn { font-size: 19px; padding: 5px 4px !important; min-height: 42px; }
         }
 
         /* Landscape tablets */
@@ -1114,6 +1177,24 @@ body.terminal-mode .hud-stats span {
             .inventory-grid { grid-template-columns: repeat(3, 1fr); }
         }
 
+        /* ── Keyboard shortcut hints on action buttons (desktop only) ── */
+        .kb-hint {
+            display: none;  /* hidden by default, shown on desktop below */
+            position: absolute;
+            bottom: 2px;
+            right: 3px;
+            font-size: 9px;
+            line-height: 1;
+            color: #556655;
+            font-family: monospace;
+            pointer-events: none;
+            z-index: 3;
+        }
+        /* Show hints on devices with a real pointer (desktop) */
+        @media (hover: hover) and (pointer: fine) {
+            .kb-hint { display: block; }
+            .action-icon-btn { position: relative; }
+        }
         /* Touch: no hover lift, tap highlight */
         @media (hover: none) and (pointer: coarse) {
             button, .menu-option, .class-card, .item-card {
@@ -1162,8 +1243,8 @@ body.terminal-mode #menuContainer {
 @media (hover: none) and (pointer: coarse) {
     #fsBtn { display: flex; }
 }
-/* Hide when game wrapper is active (action bar is already at bottom) */
-body.terminal-mode #fsBtn { bottom: calc(env(safe-area-inset-bottom, 0px) + 90px); }
+/* Hide when game wrapper is active (move above status bars) */
+body.terminal-mode #fsBtn { bottom: calc(env(safe-area-inset-bottom, 0px) + 70px); opacity: 0.45; }
 
 /* ── Install modal overlay ──────────────────────────────────────────── */
 #installModal.open { display: flex !important; }
@@ -1234,7 +1315,7 @@ body.terminal-mode #fsBtn { bottom: calc(env(safe-area-inset-bottom, 0px) + 90px
     <!-- TERMINAL — fills all remaining space -->
     <div id="terminalWindow"></div>
 
-    <!-- MOBILE HUD (mobile only: sits just above action bar) -->
+    <!-- MOBILE HUD text strip — desktop name/gold only, hidden on mobile in terminal mode -->
     <div id="mobileHud">
         <span id="mhHp"></span>
         <span id="mhMp"></span>
@@ -1253,6 +1334,17 @@ body.terminal-mode #fsBtn { bottom: calc(env(safe-area-inset-bottom, 0px) + 90px
 
     <!-- ACTION BAR -->
     <div id="actionBar"></div>
+
+    <!-- STATUS BARS — HP/MP/XP thin bars, always at very bottom -->
+    <div id="statusBars">
+        <!-- HP + MP row -->
+        <div id="sbHpMpRow">
+            <div id="sbHpTrack"><div id="sbHpFill"></div></div>
+            <div id="sbMpTrack"><div id="sbMpFill"></div></div>
+        </div>
+        <!-- XP row -->
+        <div id="sbXpTrack"><div id="sbXpFill"></div></div>
+    </div>
 
 </div>    
 
@@ -2352,8 +2444,6 @@ gameState.hasRestoredGame = false;
                 toggleTerminal();
             }
             // ── Dungeon keyboard navigation ───────────────────────────
-            // Arrow keys work any time the dungeon is active and focus
-            // is NOT inside a text input (so typing in kb field still works).
             if (gameState.dungeon && !gameState.sysop.terminalActive) {
                 const tag = document.activeElement?.tagName;
                 const inInput = tag === 'INPUT' || tag === 'TEXTAREA';
@@ -2368,6 +2458,88 @@ gameState.hasRestoredGame = false;
                         e.preventDefault();
                         dungeonNav(arrowMap[e.key]);
                     }
+                }
+            }
+            // ── Combat / Explore keyboard shortcuts ──────────────────
+            // Only on desktop (pointer:fine) and not in any input field
+            // 1=Attack  2=Spell  3=Potion  4=Defend  5=Flee  6=Stats
+            // Esc=Cancel/Back
+            if (!gameState.sysop.terminalActive && gameState.combatState !== undefined) {
+                const tag = document.activeElement?.tagName;
+                if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+                const cs = gameState.combatState;
+                const mode = cs ? (cs.actionMode || 'main') : null;
+                // Number keys 1-9 — context-sensitive across all menu layers
+                const numKey = parseInt(e.key, 10);   // 1-9, or NaN
+                if (!isNaN(numKey) && numKey >= 1) {
+                    // ── Target selection (attack or spell aimed at a monster) ──
+                    if (cs && (mode === 'target_attack' || mode === 'target_spell' || mode === 'target_staff_melee')) {
+                        const idx = numKey - 1;
+                        if (idx < cs.monsters.length) { e.preventDefault(); executeTargetedAction(idx); }
+                        return;
+                    }
+                    // ── Spell list ──
+                    if (cs && mode === 'spell_list') {
+                        const validSpells = (gameState.player.knownSpells || []).map(sk => ensureSpellExists(sk) || SPELLS[sk]).filter(Boolean);
+                        const weapon   = WEAPONS[gameState.player.weapon];
+                        const hasStaff = weapon && (weapon.name.toLowerCase().includes('staff') || weapon.baseMagicDamage > 0);
+                        const idx = numKey - 1;
+                        if (idx < validSpells.length) {
+                            e.preventDefault();
+                            selectSpell(gameState.player.knownSpells.filter(sk => (ensureSpellExists(sk)||SPELLS[sk]))[idx]);
+                        } else if (hasStaff && idx === validSpells.length) {
+                            e.preventDefault(); staffMeleeAttack();
+                        }
+                        return;
+                    }
+                    // ── Attack type sub-menu ──
+                    if (cs && mode === 'attack_type') {
+                        if (numKey === 1) { e.preventDefault(); selectAttackType('normal'); }
+                        else if (numKey === 2) { e.preventDefault(); selectAttackType('heavy'); }
+                        else if (numKey === 3) {
+                            const hl = cs.pipAvailable ? cs.pipAvailable.filter(x=>x).length : 0;
+                            if (hl >= 3) { e.preventDefault(); selectAttackType('special'); }
+                        }
+                        return;
+                    }
+                    // ── Main combat menu ──
+                    if (cs && mode === 'main') {
+                        e.preventDefault();
+                        if (numKey === 1) showAttackMenu();
+                        else if (numKey === 2) showSpellMenu();
+                        else if (numKey === 3) showPotionMenu();
+                        else if (numKey === 4) playerDefend();
+                        else if (numKey === 5) attemptFlee();
+                        else if (numKey === 6) printStatsToTerminal();
+                        return;
+                    }
+                    // ── Explore (no combat) ──
+                    if (!cs) {
+                        e.preventDefault();
+                        if (numKey === 1) exploreLocation(gameState.currentLocation);
+                        else if (numKey === 3) showPotionMenuExplore();
+                        else if (numKey === 4) printStatsToTerminal();
+                        else if (numKey === 5) leaveExploreToTown();
+                        return;
+                    }
+                }
+                switch (e.key) {
+                    case 'Escape':
+                        if (cs && mode !== 'main')          { e.preventDefault(); cancelAction(); }
+                        break;
+                    // Attack sub-menu letter shortcuts (legacy, still work)
+                    case 'n': case 'N':
+                        if (cs && mode === 'attack_type')   { e.preventDefault(); selectAttackType('normal'); }
+                        return;
+                    case 'h': case 'H':
+                        if (cs && mode === 'attack_type')   { e.preventDefault(); selectAttackType('heavy'); }
+                        break;
+                    case 's': case 'S':
+                        if (cs && mode === 'attack_type') {
+                            const hl = cs.pipAvailable ? cs.pipAvailable.filter(x=>x).length : 0;
+                            if (hl >= 3) { e.preventDefault(); selectAttackType('special'); }
+                        }
+                        return;
                 }
             }
         });
@@ -6064,40 +6236,54 @@ window.addEventListener('beforeunload', () => {
 
     // ── helper: set element text safely ──
     const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+    // ── helper: set element width% safely ──
+    const setBar = (id, pct) => {
+        const el = document.getElementById(id);
+        if (el) el.style.width = Math.max(0, Math.min(100, pct)) + '%';
+    };
 
     if (!p) {
-        set('hudName',    '— No Adventurer —');
-        set('hudHpNums',  '❤️ HP: —');
-        set('hudMpNums',  '✨ MP: —');
-        set('hudXpNums',  '⭐ XP: —');
-        set('hudGold',    '💰 0 g');
-        // mobile hud
-        set('mhHp',   '❤️ —');
-        set('mhMp',   '✨ —');
-        set('mhXp',   '⭐ —');
-        set('mhGold', '💰 0');
+        set('hudName',   '— No Adventurer —');
+        set('hudHpNums', '❤️ HP: —');
+        set('hudMpNums', '✨ MP: —');
+        set('hudXpNums', '⭐ XP: —');
+        set('hudGold',   '💰 0 g');
+        setBar('sbHpFill', 0);
+        setBar('sbMpFill', 0);
+        setBar('sbXpFill', 0);
         return;
     }
 
-    // ── Desktop HUD (gold last) ──
-    set('hudName',    `${p.name} – Lv ${p.level} ${p.className}`);
-    set('hudHpNums',  `❤️ ${p.hp}/${p.maxHp}`);
-    set('hudMpNums',  `✨ ${p.mp}/${p.maxMp}`);
-    set('hudXpNums',  `⭐ ${p.xp}/${p.xpToNext}`);
-    set('hudGold',    `💰 ${p.gold}g`);
+    // ── Desktop HUD strip (name + numbers, desktop only) ──
+    set('hudName',   `${p.name} – Lv ${p.level} ${p.className}`);
+    set('hudHpNums', `❤️ ${p.hp}/${p.maxHp}`);
+    set('hudMpNums', `✨ ${p.mp}/${p.maxMp}`);
+    set('hudXpNums', `⭐ ${p.xp}/${p.xpToNext}`);
+    set('hudGold',   `💰 ${p.gold}g`);
 
-    // ── Mobile HUD strip (compact — name removed) ──
-    set('mhHp',   `❤️${p.hp}/${p.maxHp}`);
-    set('mhMp',   `✨${p.mp}/${p.maxMp}`);
-    set('mhXp',   `⭐${p.xp}/${p.xpToNext}`);
-    set('mhGold', `💰${p.gold}g`);
+    // ── Status bars (HP / MP / XP) ──
+    const hpPct = p.maxHp  > 0 ? (p.hp  / p.maxHp)  * 100 : 0;
+    const mpPct = p.maxMp  > 0 ? (p.mp  / p.maxMp)  * 100 : 0;
+    const xpPct = p.xpToNext > 0 ? (p.xp / p.xpToNext) * 100 : 0;
+    setBar('sbHpFill', hpPct);
+    setBar('sbMpFill', mpPct);
+    setBar('sbXpFill', xpPct);
+
+    // ── Low-HP: change HP bar colour and add heartbeat ──
+    const hpFill = document.getElementById('sbHpFill');
+    if (hpFill) {
+        if (hpPct < 25) {
+            hpFill.style.background = 'linear-gradient(90deg, #880000, #ff0000)';
+            hpFill.style.animation  = 'hpLowPulse 0.8s ease-in-out infinite';
+        } else {
+            hpFill.style.background = 'linear-gradient(90deg, #cc0000, #ff3333)';
+            hpFill.style.animation  = '';
+        }
+    }
 
     // ── Low-HP heartbeat border on terminal ──
     const tw = document.getElementById('terminalWindow');
-    if (tw) {
-        const hpPct = p.maxHp > 0 ? p.hp / p.maxHp : 1;
-        tw.classList.toggle('danger-heartbeat', hpPct < 0.15);
-    }
+    if (tw) tw.classList.toggle('danger-heartbeat', hpPct < 15);
 }
 
 
@@ -7266,16 +7452,16 @@ function dungeonNav(input) {
                     ab.innerHTML = `
                         <div style="color:var(--highlight-color);font-size:13px;line-height:1;margin-bottom:3px;text-align:center;letter-spacing:3px;">${pips}</div>
                         <div style="display:flex;gap:3px;width:100%;">
-                            <button onclick="showAttackMenu()" ${!canAct?'disabled':''} class="action-icon-btn pip-btn" title="Attack" id="pipBtn-attack">⚔️</button>
-                            <button onclick="showSpellMenu()"  ${!canAct?'disabled':''} class="action-icon-btn pip-btn" title="Cast Spell" id="pipBtn-spell">✨</button>
-                            <button class="action-icon-btn" title="Use Potion (hold 3s = SYSOP)" style="border-color:#00FF00;"
+                            <button onclick="showAttackMenu()" ${!canAct?'disabled':''} class="action-icon-btn pip-btn" title="Attack [1]" id="pipBtn-attack">⚔️<span class="kb-hint">1</span></button>
+                            <button onclick="showSpellMenu()"  ${!canAct?'disabled':''} class="action-icon-btn pip-btn" title="Cast Spell [2]" id="pipBtn-spell">✨<span class="kb-hint">2</span></button>
+                            <button class="action-icon-btn" title="Use Potion [3]" style="border-color:#00FF00;"
                                 onpointerdown="potBtnDown(event,'showPotionMenu')"
                                 onpointerup="potBtnUp(event,'showPotionMenu')"
                                 onpointerleave="potBtnCancel()"
-                                oncontextmenu="return false;">🧪</button>
-                            <button onclick="playerDefend()"   ${!canAct?'disabled':''} class="action-icon-btn" title="Defend">🛡️</button>
-                            <button onclick="attemptFlee()"    ${!canAct?'disabled':''} class="action-icon-btn" title="Flee">🏃</button>
-                            <button onclick="printStatsToTerminal()" class="action-icon-btn" title="Show Stats" style="border-color:#4488ff;">📊</button>
+                                oncontextmenu="return false;">🧪<span class="kb-hint">3</span></button>
+                            <button onclick="playerDefend()"   ${!canAct?'disabled':''} class="action-icon-btn" title="Defend [4]">🛡️<span class="kb-hint">4</span></button>
+                            <button onclick="attemptFlee()"    ${!canAct?'disabled':''} class="action-icon-btn" title="Flee [5]">🏃<span class="kb-hint">5</span></button>
+                            <button onclick="printStatsToTerminal()" class="action-icon-btn" title="Show Stats [6]" style="border-color:#4488ff;">📊<span class="kb-hint">6</span></button>
                         </div>
                     `;
                 } else if (mode === 'attack_type') {
@@ -7284,69 +7470,59 @@ function dungeonNav(input) {
                     const showSpecial = hitsLeft >= 3;
                     ab.innerHTML = `
                         <div style="display:flex;gap:3px;width:100%;">
-                            <button onclick="selectAttackType('normal')" ${hitsLeft < normalCost ? 'disabled' : ''} class="action-icon-btn" title="Normal Attack">⚔️</button>
-                            <button onclick="selectAttackType('heavy')"  ${hitsLeft < heavyCost  ? 'disabled' : ''} class="action-icon-btn" title="Heavy — 35% miss, 3× dmg" style="border-color:#ff8c00;">💥</button>
-                            ${showSpecial ? `<button onclick="selectAttackType('special')" class="action-icon-btn" title="Special — all pips, +dmg" style="border-color:#FFD700;">⭐</button>` : ''}
-                            <button onclick="cancelAction()" class="action-icon-btn" title="Cancel" style="border-color:#888;">❌</button>
+                            <button onclick="selectAttackType('normal')" ${hitsLeft < normalCost ? 'disabled' : ''} class="action-icon-btn" title="Normal Attack [N]">⚔️<span class="kb-hint">N</span></button>
+                            <button onclick="selectAttackType('heavy')"  ${hitsLeft < heavyCost  ? 'disabled' : ''} class="action-icon-btn" title="Heavy — 35% miss, 3× dmg [H]" style="border-color:#ff8c00;">💥<span class="kb-hint">H</span></button>
+                            ${showSpecial ? `<button onclick="selectAttackType('special')" class="action-icon-btn" title="Special — all pips [S]" style="border-color:#FFD700;">⭐<span class="kb-hint">S</span></button>` : ''}
+                            <button onclick="cancelAction()" class="action-icon-btn" title="Cancel [Esc]" style="border-color:#888;">❌<span class="kb-hint">Esc</span></button>
                         </div>
                     `;
                 } else if (mode === 'target_attack' || mode === 'target_spell' || mode === 'target_staff_melee') {
-                    // Target selection menu
-                    let actionName;
-                    if (mode === 'target_spell') {
-                        actionName = cs.pendingSpell?.name || 'Spell';
-                    } else if (mode === 'target_staff_melee') {
-                        actionName = 'Staff Melee';
-                    } else {
-                        actionName = 'Attack';
-                    }
-                    
-                    const targetBtns = monsters.map((m, i) => {
-    return `<button onclick="executeTargetedAction(${i})"
-        class="target-btn">
-        #${i + 1} ${m.name}
-    </button>`;
-}).join('');
-
-                    
+                    const targetBtns = monsters.map((m, i) =>
+                        `<button onclick="executeTargetedAction(${i})" class="target-btn" style="position:relative;">
+                            ${i + 1}. ${m.name}<span class="kb-hint">${i + 1}</span>
+                        </button>`
+                    ).join('');
                     ab.innerHTML = `
                         <div style="display:flex;flex-wrap:wrap;gap:3px;width:100%;">
                             ${targetBtns}
-                            <button onclick="cancelAction()" class="action-icon-btn" style="border-color:#888;">❌</button>
+                            <button onclick="cancelAction()" class="action-icon-btn" style="border-color:#888;position:relative;">❌<span class="kb-hint">Esc</span></button>
                         </div>
                     `;
                 } else if (mode === 'spell_list') {
-                    // Spell selection menu
-                    const spellBtns = p.knownSpells.map(sk => {
+                    // Build numbered spell list
+                    const validSpells = p.knownSpells.map(sk => {
                         const spell = ensureSpellExists(sk) || SPELLS[sk];
-                        if (!spell) {
-                            console.warn(`⚠️ Spell '${sk}' not found in SPELLS object`);
-                            return ''; // Skip this spell
-                        }
+                        if (!spell) { console.warn(`⚠️ Spell '${sk}' not found`); return null; }
+                        return { sk, spell };
+                    }).filter(Boolean);
+
+                    const weapon   = WEAPONS[p.weapon];
+                    const hasStaff = weapon && (weapon.name.toLowerCase().includes('staff') || weapon.baseMagicDamage > 0);
+
+                    const spellBtns = validSpells.map(({sk, spell}, i) => {
                         const canCast = p.mp >= spell.mpCost;
-                        const aoeTag = spell.type === 'aoe_damage' ? ' <span style="color:#FF8800;">AOE</span>' : '';
-                        return `<button onclick="selectSpell('${sk}')" ${!canCast?'disabled':''} class="spell-btn">
+                        const aoeTag  = spell.type === 'aoe_damage' ? ' <span style="color:#FF8800;">AOE</span>' : '';
+                        return `<button onclick="selectSpell('${sk}')" ${!canCast?'disabled':''} class="spell-btn" style="position:relative;">
                             ${spell.name}${aoeTag}<br>
                             <span style="font-size:12px;">${spell.mpCost} MP</span>
+                            <span class="kb-hint">${i + 1}</span>
                         </button>`;
-                    }).filter(Boolean).join('');
-                    
-                    // Check if player has a staff weapon
-                    const weapon = WEAPONS[p.weapon];
-                    const hasStaff = weapon && (weapon.name.toLowerCase().includes('staff') || weapon.baseMagicDamage > 0);
-                    
-                    // Add melee attack option if player has staff (can bonk enemies with it!)
-                    const meleeOption = hasStaff ? 
-                        `<button onclick="staffMeleeAttack()" class="spell-btn" style="border-color:#FF8800;">
-                            ⚔️ Staff Melee<br>
-                            <span style="font-size:12px;">Bonk! (No MP)</span>
-                        </button>` : '';
-                    
+                    }).join('');
+
+                    const staffIdx    = validSpells.length;
+                    const meleeOption = hasStaff
+                        ? `<button onclick="staffMeleeAttack()" class="spell-btn" style="border-color:#FF8800;position:relative;">
+                               ⚔️ Staff Melee<br>
+                               <span style="font-size:12px;">Bonk! (No MP)</span>
+                               <span class="kb-hint">${staffIdx + 1}</span>
+                           </button>`
+                        : '';
+
                     ab.innerHTML = `
                         <div style="display:flex;flex-wrap:wrap;gap:3px;width:100%;">
                             ${spellBtns}
                             ${meleeOption}
-                            <button onclick="cancelAction()" class="action-icon-btn" style="border-color:#888;">❌</button>
+                            <button onclick="cancelAction()" class="action-icon-btn" style="border-color:#888;position:relative;">❌<span class="kb-hint">Esc</span></button>
                         </div>
                     `;
                 }
@@ -7368,16 +7544,16 @@ function dungeonNav(input) {
                 ab.innerHTML = `
                     ${pipWarning}
                     <div style="display:flex;gap:3px;width:100%;">
-                        <button onclick="exploreLocation('${gameState.currentLocation}')" style="flex:2;" title="Explore">🔍 Explore</button>
-                        <button class="action-icon-btn" title="Potions (hold 3s = SYSOP)" style="border-color:#00FF00;"
+                        <button onclick="exploreLocation('${gameState.currentLocation}')" style="flex:2;" title="Explore [1]">🔍 Explore<span class="kb-hint">1</span></button>
+                        <button class="action-icon-btn" title="Potions [3]" style="border-color:#00FF00;"
                             onpointerdown="potBtnDown(event,'showPotionMenuExplore')"
                             onpointerup="potBtnUp(event,'showPotionMenuExplore')"
                             onpointerleave="potBtnCancel()"
-                            oncontextmenu="return false;">🧪</button>
-                        <button onclick="printStatsToTerminal()" class="action-icon-btn" title="Show Stats" style="border-color:#4488ff;">📊</button>
+                            oncontextmenu="return false;">🧪<span class="kb-hint">3</span></button>
+                        <button onclick="printStatsToTerminal()" class="action-icon-btn" title="Show Stats [4]" style="border-color:#4488ff;">📊<span class="kb-hint">4</span></button>
                         <button onclick="leaveExploreToTown()" ${canLeave ? '' : 'disabled'}
-                            style="flex:1;${canLeave ? '' : 'opacity:0.4;'}border-color:${canLeave ? 'var(--text-color)' : '#888'};" title="Return to Town">
-                            🏘️
+                            style="flex:1;${canLeave ? '' : 'opacity:0.4;'}border-color:${canLeave ? 'var(--text-color)' : '#888'};" title="Return to Town [5]">
+                            🏘️<span class="kb-hint">5</span>
                         </button>
                     </div>
                 `;
