@@ -4142,28 +4142,64 @@ window.addEventListener('beforeunload', () => {
         // ═══════════════════════════════════════════════════════════════
         // CLASS-SPECIFIC XP TABLES (Levels 1-25)
         // ═══════════════════════════════════════════════════════════════
-        const XP_TABLES = {
-            acolyte: [0, 1150, 3490, 9625, 20640, 42200, 78200, 134300, 216900, 333500, 492000, 701800, 972800, 1315900, 1742800],
-            necrolyte: [0, 1150, 3490, 9625, 20640, 42200, 78200, 134300, 216900, 333500, 492000, 701800, 972800, 1315900, 1742800],
-            archer: [0, 1125, 3240, 8025, 17890, 36000, 66300, 113400, 182600, 280200, 413000, 588700, 815600, 1102800, 1460100],
-            druid: [0, 1180, 3800, 10290, 24160, 50000, 93000, 161400, 261500, 402700, 595000, 849600, 1178400, 1594900, 2113200],
-            sorceror: [0, 1180, 3800, 10290, 24160, 50000, 93000, 161400, 261500, 402700, 595000, 849600, 1178400, 1594900, 2113200],
-            hunter: [0, 1125, 3240, 8025, 17890, 36000, 66300, 113400, 182600, 280200, 413000, 588700, 815600, 1102800, 1460100],
-            rogue: [0, 1120, 3200, 7860, 17440, 35000, 64400, 109000, 177000, 271500, 400000, 570100, 789600, 1067600, 1413500],
-            warrior: [0, 1125, 3240, 8025, 17890, 36000, 66300, 113400, 182600, 280200, 413000, 588700, 815600, 1102800, 1460100],
-            paladin: [0, 1125, 3240, 8025, 17890, 36000, 66300, 113400, 182600, 280200, 413000, 588700, 815600, 1102800, 1460100]
+        // ── XP TABLES (levels 1-25) ────────────────────────────────────────
+        // Calibrated against actual monster XP output per zone:
+        //   Zone1 (Lv1-2 mobs, ~22 xp avg) → Lv1-3: ~50-80 kills each
+        //   Zone2 unlocks Lv4 (~62 xp avg) → Lv4-5: ~80 kills each
+        //   Zone3 unlocks Lv6 (~105 xp avg) → Lv6-9: ~80-85 kills each
+        //   Zone4 unlocks Lv10 (~211 xp avg) → Lv10-15: ~85 kills each
+        //   Zone5 unlocks Lv13, Zone6 Lv16, Zone7 Lv19, Zone8 Lv22
+        // Lv1→2 and Lv2→3 kept at original values (already fair).
+        // Lv3 onward: cut to match real kill counts (old table was 8-10x too high).
+
+        // Base table (warrior/paladin/archer/hunter — standard speed)
+        const _BASE_XP = [
+              0,    1125,    3240,    5000,    9960,
+          15720,   24120,   33400,   45320,   57985,
+          75920,   98275,  123350,  153100,  187100,
+         226520,  290150,  355940,  466190,  561950,
+         699700,  817500,  975200, 1160100, 1370300
+        ];
+
+        // Class XP multipliers (higher = needs more XP per level = slower)
+        // Applied to every threshold from Lv3 onward (Lv1-2 stay identical)
+        const _XP_MULT = {
+            warrior:  1.00,
+            paladin:  1.00,
+            archer:   1.00,
+            hunter:   1.00,
+            rogue:    0.93,   // rogues level slightly faster
+            acolyte:  1.08,   // casters slightly slower (AOE advantage)
+            necrolyte:1.08,
+            druid:    1.08,
+            sorceror: 1.08,
+            mage:     1.05,
+            cleric:   1.00,
+            warlock:  1.05,
         };
-        
-        // Extend to level 25 (levels 16-25)
-        XP_TABLES.acolyte.push(2266200, 2895900, 3657600, 4555300, 5609100, 6836000, 8254100, 9882100, 11739900, 13048000);
-        XP_TABLES.necrolyte.push(2266200, 2895900, 3657600, 4555300, 5609100, 6836000, 8254100, 9882100, 11739900, 13048000);
-        XP_TABLES.archer.push(1898300, 2428600, 3063100, 3814700, 4696900, 5724000, 6911200, 8274200, 9829700, 11594700);
-        XP_TABLES.druid.push(2748800, 3518100, 4438700, 5529300, 6809500, 8300000, 10022900, 12001000, 14258400, 16820200);
-        XP_TABLES.sorceror.push(2748800, 3518100, 4438700, 5529300, 6809500, 8300000, 10022900, 12001000, 14258400, 16820200);
-        XP_TABLES.hunter.push(1898300, 2428600, 3063100, 3814700, 4696900, 5724000, 6911200, 8274200, 9829700, 11594700);
-        XP_TABLES.rogue.push(1637500, 2350000, 2964800, 3692200, 4546000, 5540000, 6689000, 8008000, 9513300, 11221500);
-        XP_TABLES.warrior.push(1898300, 2428600, 3063100, 3814700, 4696900, 5724000, 6911200, 8274200, 9829700, 11594700);
-        XP_TABLES.paladin.push(1898300, 2428600, 3063100, 3814700, 4696900, 5724000, 6911200, 8274200, 9829700, 11594700);
+
+        function _buildXpTable(cls) {
+            const mult = _XP_MULT[cls] || 1.00;
+            return _BASE_XP.map((v, i) => {
+                if (i <= 2) return v;          // Lv1-3 thresholds unchanged
+                return Math.round(v * mult);
+            });
+        }
+
+        const XP_TABLES = {
+            warrior:   _buildXpTable('warrior'),
+            paladin:   _buildXpTable('paladin'),
+            archer:    _buildXpTable('archer'),
+            hunter:    _buildXpTable('hunter'),
+            rogue:     _buildXpTable('rogue'),
+            acolyte:   _buildXpTable('acolyte'),
+            necrolyte: _buildXpTable('necrolyte'),
+            druid:     _buildXpTable('druid'),
+            sorceror:  _buildXpTable('sorceror'),
+            mage:      _buildXpTable('mage'),
+            cleric:    _buildXpTable('cleric'),
+            warlock:   _buildXpTable('warlock'),
+        };
         
         function getXpForLevel(playerClass, level) {
             const table = XP_TABLES[playerClass] || XP_TABLES.warrior;
@@ -4976,84 +5012,79 @@ window.addEventListener('beforeunload', () => {
                 : `<div style="color:#ff4444;margin-top:8px;">❌ You do NOT have a Recall Potion!<br>
                    Visit the <strong>Shop → Potions</strong> to buy one for <span style="color:#FFD700;">5,000 gold</span> before you go.</div>`;
 
+            // Build modal entirely with createElement — no innerHTML template literals
+            // so nested quotes / special chars in dungeonName can't break the HTML
             const modal = document.createElement('div');
             modal.id = 'dungeonWarningModal';
-            modal.style.cssText = `
-                position:fixed;inset:0;z-index:9999;
-                display:flex;align-items:center;justify-content:center;
-                background:rgba(0,0,0,0.88);
-                font-family:'VT323',monospace;
-                padding:env(safe-area-inset-top,12px) 12px env(safe-area-inset-bottom,12px) 12px;
-                box-sizing:border-box;
-            `;
-            modal.innerHTML = `
-                <div style="
-                    border:3px double #ff4444;
-                    background:#000;
-                    max-width:480px;width:100%;
-                    max-height:calc(100dvh - 24px);
-                    display:flex;flex-direction:column;
-                    box-shadow:0 0 40px rgba(255,0,0,0.4);
-                    color:#00ff00;
-                    box-sizing:border-box;
-                    overflow:hidden;
-                ">
-                    <!-- Scrollable content area -->
-                    <div style="overflow-y:auto;padding:18px 20px 12px;flex:1 1 0;min-height:0;-webkit-overflow-scrolling:touch;">
-                        <div style="font-size:22px;color:#ff4444;text-align:center;margin-bottom:12px;letter-spacing:2px;">
-                            ⚠️ DUNGEON WARNING ⚠️
-                        </div>
-                        <div style="font-size:18px;color:#ffff00;margin-bottom:12px;text-align:center;">
-                            ${dungeonName}
-                        </div>
+            Object.assign(modal.style, {
+                position: 'fixed', inset: '0', zIndex: '9999',
+                display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+                background: 'rgba(0,0,0,0.88)', fontFamily: "'VT323',monospace"
+            });
 
-                        <div style="font-size:16px;margin-bottom:10px;">
-                            Once you enter, there are <strong style="color:#ff4444;">only three ways to leave:</strong>
-                        </div>
-                        <div style="font-size:16px;padding-left:8px;margin-bottom:14px;">
-                            <div style="margin-bottom:6px;">🌀 <strong style="color:#AA88FF;">Recall Potion</strong> — instantly return to town
-                                <div style="font-size:13px;color:#888;padding-left:22px;">Purchase one at the shop for 5,000 gold. One use.</div>
-                            </div>
-                            <div style="margin-bottom:6px;">🚪 <strong style="color:#00ff88;">Entrance / Exit</strong> — walk back the way you came</div>
-                            <div>🏙️ <strong style="color:#4488ff;">Town portal rooms</strong> — special dungeon rooms with an exit portal</div>
-                        </div>
+            // Outer card
+            const card = document.createElement('div');
+            Object.assign(card.style, {
+                width: '100%', maxWidth: '480px',
+                background: '#000',
+                border: '3px double #ff4444',
+                boxShadow: '0 0 40px rgba(255,0,0,0.4)',
+                color: '#00ff00',
+                paddingBottom: 'env(safe-area-inset-bottom, 0px)'
+            });
 
-                        <div style="
-                            border:1px solid #444;padding:10px;margin-bottom:14px;
-                            background:rgba(255,100,0,0.05);font-size:15px;color:#ff8800;
-                        ">
-                            ⚔️ Prepare yourself before embarking — stock up on potions, spells, and equipment.
-                            Once inside, you cannot return to the shop without finding your way out first.
-                        </div>
+            // Header
+            const hdr = document.createElement('div');
+            Object.assign(hdr.style, { padding: '14px 20px 10px', textAlign: 'center', borderBottom: '1px solid #330000' });
+            hdr.innerHTML = `<div style="font-size:24px;color:#ff4444;letter-spacing:2px;">⚠️ DUNGEON WARNING ⚠️</div>
+                             <div style="font-size:18px;color:#ffff00;margin-top:4px;"></div>`;
+            hdr.querySelector('div + div').textContent = dungeonName; // safe text assignment
+            card.appendChild(hdr);
 
-                        ${recallNote}
-                    </div>
-
-                    <!-- Pinned button row — always visible -->
-                    <div style="
-                        display:flex;gap:10px;padding:12px 20px;
-                        border-top:1px solid #330000;
-                        background:#050000;
-                        flex-shrink:0;
-                    ">
-                        <button onclick="
-                            document.getElementById('dungeonWarningModal').remove();
-                            startDungeon('${townDef.dungeonKey}');
-                        " style="
-                            flex:1;font-family:'VT323',monospace;font-size:20px;
-                            padding:10px 8px;cursor:pointer;
-                            background:linear-gradient(180deg,#1a0000,#0a0000);
-                            color:#ff4444;border:2px solid #ff4444;
-                        ">⚔️ ENTER</button>
-                        <button onclick="document.getElementById('dungeonWarningModal').remove();" style="
-                            flex:1;font-family:'VT323',monospace;font-size:20px;
-                            padding:10px 8px;cursor:pointer;
-                            background:linear-gradient(180deg,#001a00,#000a00);
-                            color:#00ff88;border:2px solid #00ff88;
-                        ">← BACK</button>
-                    </div>
+            // Body
+            const body = document.createElement('div');
+            Object.assign(body.style, { padding: '12px 20px', fontSize: '15px', lineHeight: '1.6', borderBottom: '1px solid #330000' });
+            body.innerHTML = `
+                <div style="color:#ff8800;margin-bottom:8px;font-size:16px;">
+                    ⚠️ You <strong>cannot shop or bank</strong> once inside. Prepare first!
                 </div>
-            `;
+                <div style="color:#aaa;font-size:14px;margin-bottom:8px;">
+                    Leave via: &nbsp;🌀 Recall Potion &nbsp;|&nbsp; 🚪 Walk back out &nbsp;|&nbsp; 🏙️ Portal room
+                </div>`;
+            // Recall note added separately so its HTML is injected cleanly
+            const rn = document.createElement('div');
+            rn.innerHTML = recallNote;
+            body.appendChild(rn);
+            card.appendChild(body);
+
+            // Button row
+            const btnRow = document.createElement('div');
+            Object.assign(btnRow.style, { display: 'flex', gap: '10px', padding: '12px 20px' });
+
+            const btnEnter = document.createElement('button');
+            Object.assign(btnEnter.style, {
+                flex: '1', fontFamily: "'VT323',monospace", fontSize: '22px',
+                padding: '12px 8px', cursor: 'pointer',
+                background: 'linear-gradient(180deg,#1a0000,#0a0000)',
+                color: '#ff4444', border: '2px solid #ff4444'
+            });
+            btnEnter.textContent = '⚔️ ENTER';
+            btnEnter.onclick = () => { modal.remove(); startDungeon(townDef.dungeonKey); };
+
+            const btnBack = document.createElement('button');
+            Object.assign(btnBack.style, {
+                flex: '1', fontFamily: "'VT323',monospace", fontSize: '22px',
+                padding: '12px 8px', cursor: 'pointer',
+                background: 'linear-gradient(180deg,#001a00,#000a00)',
+                color: '#00ff88', border: '2px solid #00ff88'
+            });
+            btnBack.textContent = '← BACK';
+            btnBack.onclick = () => modal.remove();
+
+            btnRow.appendChild(btnEnter);
+            btnRow.appendChild(btnBack);
+            card.appendChild(btnRow);
+            modal.appendChild(card);
             document.body.appendChild(modal);
         }
 
@@ -6610,9 +6641,12 @@ function stabilizeTerminalLayout() {
             };
             effects.push(effect);
             
-            // Show message
+            // Show message — use applyMessage for the "caught fire" moment, message for ticks
             const targetName = isPlayer ? 'You' : target.name;
-            termAppend(statusDef.message(targetName), 'term-warning');
+            const applyMsg = statusDef.applyMessage
+                ? statusDef.applyMessage(targetName)
+                : statusDef.message(targetName, '');  // empty string avoids "undefined"
+            termAppend(applyMsg, 'term-warning');
             
             // Start DOT ticks if applicable
             if (statusDef.type === 'dot') {
@@ -6666,18 +6700,36 @@ function stabilizeTerminalLayout() {
                     clearInterval(cs.dotTimers[timerKey]);
                     return;
                 }
+
+                // ── Stop ticking if the enemy is already dead or gone ──
+                if (!isPlayer) {
+                    const stillAlive = cs.monsters && cs.monsters.some(m => m === target);
+                    if (!stillAlive || target.hp <= 0) {
+                        clearInterval(cs.dotTimers[timerKey]);
+                        delete cs.dotTimers[timerKey];
+                        return;
+                    }
+                }
                 
                 const damage = statusDef.damagePerTick;
                 target.hp -= damage;
                 
                 const targetName = isPlayer ? 'You' : target.name;
-                termAppend(statusDef.message(targetName, damage), 'term-warning');
+                // Tick message always has damage value — no undefined
+                termAppend(statusDef.tickMessage
+                    ? statusDef.tickMessage(targetName, damage)
+                    : statusDef.message(targetName, damage),
+                    'term-warning');
                 
                 updateHud();
                 updateEnemyCards();
                 
                 // Check if target died from DOT
                 if (target.hp <= 0) {
+                    // Stop ticking immediately — target is dead
+                    clearInterval(cs.dotTimers[timerKey]);
+                    delete cs.dotTimers[timerKey];
+
                     if (!isPlayer) {
                         termAppend(`${target.name} succumbs to ${statusDef.name}!`, 'term-victory');
                         checkCombatEnd();
@@ -6839,6 +6891,14 @@ function stabilizeTerminalLayout() {
             // Scale stats based on monster level
             const levelMult = 1 + (monsterLevel - 1) * 0.15; // 15% increase per level
             
+            // ── Damage variance: ±33% around the average, scaled by level gap vs player ──
+            // baseDamage is the AVERAGE. min = 67%, max = 133%.
+            // Level gap further shifts the range: each level above player = +5% to both ends
+            // each level below player = -5%, capped at ±50% total shift.
+            const scaledAvg   = Math.floor(template.baseDamage * mult * levelMult);
+            const rawMin      = Math.max(1, Math.round(scaledAvg * 0.67));
+            const rawMax      = Math.max(rawMin + 1, Math.round(scaledAvg * 1.33));
+
             const monster = {
                 key: enemyKey, 
                 name: template.name, 
@@ -6846,9 +6906,12 @@ function stabilizeTerminalLayout() {
                 rarityColor: RARITY_CONFIG[rarity].color,
                 hp: Math.floor(template.baseHp * mult * levelMult), 
                 maxHp: Math.floor(template.baseHp * mult * levelMult),
-                damage: Math.floor(template.baseDamage * mult * levelMult), 
+                // damage is the average (kept for backwards-compat); min/max used in combat
+                damage:    scaledAvg,
+                minDamage: rawMin,
+                maxDamage: rawMax,
                 defense: Math.floor(template.baseDefense * mult * levelMult),
-                xp: Math.floor(template.baseXp * mult * levelMult), // Base XP, will be scaled on defeat
+                xp: Math.floor(template.baseXp * mult * levelMult),
                 gold: Math.floor(template.baseGold * mult * levelMult),
                 level: monsterLevel, 
                 possibleDrops: template.possibleDrops, 
@@ -9833,8 +9896,17 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
 
         // Level scaling: enemy deals more/less based on level gap
         const _lvlMult = getLevelDamageMult(p.level, enemy.level);
+
+        // ── Pick a random damage roll within the enemy's min/max range ──
+        // Then shift the range based on level gap: +5% per level above player, -5% per level below
+        const levelDiff   = enemy.level - p.level;   // positive = enemy is stronger
+        const gapShift    = Math.max(-0.5, Math.min(0.5, levelDiff * 0.05)); // ±5% per level, cap ±50%
+        const eMin = Math.max(1, Math.round((enemy.minDamage ?? enemy.damage * 0.67) * (1 + gapShift)));
+        const eMax = Math.max(eMin + 1, Math.round((enemy.maxDamage ?? enemy.damage * 1.33) * (1 + gapShift)));
+        const rolledDamage = eMin + Math.floor(Math.random() * (eMax - eMin + 1));
+
         const _scaledBase = Math.max(1,
-            Math.floor(enemy.damage * intent.damageMult * DAMAGE_SCALING.monsterDamageMult * _lvlMult.enemyDealt)
+            Math.floor(rolledDamage * intent.damageMult * DAMAGE_SCALING.monsterDamageMult * _lvlMult.enemyDealt)
         );
 
         const result = calculateDamage({

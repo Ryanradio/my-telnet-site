@@ -16,7 +16,9 @@ const STATUS_EFFECTS = {
         tickInterval: 3000, // 3 seconds
         duration: 9000, // 9 seconds (3 ticks)
         description: 'Taking fire damage over time',
-        message: (target, damage) => `${target} is burning! (${damage} fire damage)`
+        applyMessage: (target) => `${target} catches fire! 🔥`,
+        tickMessage:  (target, damage) => `${target} is burning! (${damage} fire damage)`,
+        message:      (target, damage) => `${target} is burning! (${damage} fire damage)`
     },
     
     poisoned: {
@@ -28,7 +30,9 @@ const STATUS_EFFECTS = {
         tickInterval: 3000,
         duration: 12000, // 12 seconds (4 ticks)
         description: 'Poisoned - taking damage over time',
-        message: (target, damage) => `${target} suffers from poison! (${damage} poison damage)`
+        applyMessage: (target) => `${target} has been poisoned! ☠️`,
+        tickMessage:  (target, damage) => `${target} suffers from poison! (${damage} poison damage)`,
+        message:      (target, damage) => `${target} suffers from poison! (${damage} poison damage)`
     },
     
     bleeding: {
@@ -40,7 +44,9 @@ const STATUS_EFFECTS = {
         tickInterval: 2000,
         duration: 10000, // 10 seconds (5 ticks)
         description: 'Bleeding profusely',
-        message: (target, damage) => `${target} is bleeding! (${damage} damage)`
+        applyMessage: (target) => `${target} starts bleeding! 🩸`,
+        tickMessage:  (target, damage) => `${target} is bleeding! (${damage} damage)`,
+        message:      (target, damage) => `${target} is bleeding! (${damage} damage)`
     },
     
     // ═══════════════════════════════════════════════════════════════
