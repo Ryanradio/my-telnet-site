@@ -1564,14 +1564,14 @@ const OPPOSITE_DIR = {
                 function calcPlayerHits(p) {
             const baseClass = p.baseClass || p.class;
             
-            // ROGUE: Dual-wield specialist with progressive pip scaling
+            // ROGUE: Dagger specialist — pip count scales with mastery
+            // Each pip fires TWICE (double-strike with daggers)
+            // Lv1=1pip  Lv5=2pips  Lv10=3pips  Lv15=4pips (hard cap)
             if (baseClass === 'rogue') {
-                if (p.level >= 20) return 7;
-                if (p.level >= 15) return 6;
-                if (p.level >= 10) return 5;
-                if (p.level >= 5) return 4;
-                if (p.level >= 3) return 3;
-                return 2; // Level 1-2: Dual wield
+                if (p.level >= 15) return 4;
+                if (p.level >= 10) return 3;
+                if (p.level >= 5)  return 2;
+                return 1;
             }
             
             // OTHER CLASSES: Standard progression
@@ -1594,6 +1594,11 @@ const OPPOSITE_DIR = {
                 return weapon.allowedClasses.includes(playerClass);
             }
             
+            // ROGUE: daggers only — no exceptions
+            if (playerClass === 'rogue') {
+                return !!weapon.classRestriction && weapon.classRestriction === 'rogue';
+            }
+
             // Default restrictions based on weapon type/name
             const weaponName = weapon.name.toLowerCase();
             
@@ -1607,9 +1612,9 @@ const OPPOSITE_DIR = {
                 return ['ranger', 'archer', 'hunter'].includes(playerClass);
             }
             
-            // Daggers - rogues primarily, but others can use
-            if (weaponName.includes('dagger')) {
-                return ['rogue', 'ranger', 'hunter'].includes(playerClass);
+            // Daggers - rogues handled above; rangers/hunters can use too
+            if (weaponName.includes('dagger') || weapon.classRestriction === 'rogue') {
+                return ['ranger', 'hunter'].includes(playerClass);
             }
             
             // Maces - paladins and clerics
@@ -1619,10 +1624,10 @@ const OPPOSITE_DIR = {
             
             // Swords and axes - warriors and melee classes
             if (weaponName.includes('sword') || weaponName.includes('axe') || weaponName.includes('hammer')) {
-                return ['warrior', 'paladin', 'rogue'].includes(playerClass);
+                return ['warrior', 'paladin'].includes(playerClass);
             }
             
-            // Default: everyone can use
+            // Default: everyone except rogue can use
             return true;
         }
         
@@ -8999,6 +9004,46 @@ function consumePips(cs, amount, cooldown) {
             applyStatusEffect(enemy, 'poisoned', false);
             modifierResult.messages.push('<span style="color:#00FF00;">💀 Poisoned!</span>');
         }
+
+        // ── ROGUE DOUBLE-STRIKE ───────────────────────────────────────
+        // Every dagger pip fires twice. Roll a second independent hit.
+        if (baseClass === 'rogue' && weapon.classRestriction === 'rogue' && enemy.hp > 0) {
+            const minDmg2 = weapon.baseDamage + qBonus;
+            const maxDmg2 = (weapon.maxDamage || weapon.baseDamage) + qBonus;
+            let weaponDamage2 = Math.floor(Math.random() * (maxDmg2 - minDmg2 + 1)) + minDmg2;
+            const physBase2 = weaponDamage2 + Math.floor((p.str || 0) * 1.5);
+            let totalBase2  = Math.floor(Math.max(physBase2, magicBase) * damageMultiplier);
+            totalBase2 = Math.floor(totalBase2 * classMult);
+            totalBase2 = Math.max(1, Math.floor(totalBase2 * lvlMult.playerDealt));
+
+            const result2 = calculateDamage({
+                attacker: p, defender: enemy,
+                base: totalBase2,
+                type: 'physical',
+                critChance: calcCritChance(p.lck || 0, p) / 100,
+                dodgeChance: enemyDodgeChance,
+                armorPiercing
+            });
+
+            if (!result2.dodged) {
+                const mod2 = applyWeaponModifiers(p, enemy, result2.damage, weapon);
+                enemy.hp -= mod2.totalDamage;
+                const crit2Tag = result2.crit
+                    ? ' <span style="color:#FFD700;">★ CRIT!</span>'
+                    : '';
+                modifierResult.messages.push(
+                    `↪ Second strike: <span class="dmg-enemy">${mod2.totalDamage} damage</span>${crit2Tag}`
+                );
+                // Poison on second hit too
+                if (weapon.poisonChance && Math.random() < weapon.poisonChance && enemy.hp > 0) {
+                    applyStatusEffect(enemy, 'poisoned', false);
+                    modifierResult.messages.push('<span style="color:#00FF00;">💀 Poisoned!</span>');
+                }
+            } else {
+                modifierResult.messages.push('↪ Second strike: <span style="color:#88ff88;">DODGED!</span>');
+            }
+        }
+        // ── END ROGUE DOUBLE-STRIKE ───────────────────────────────────
 
         // Calculate condition text
         const hpPct = Math.max(0, (enemy.hp / enemy.maxHp) * 100);

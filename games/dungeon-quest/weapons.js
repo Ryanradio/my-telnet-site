@@ -440,285 +440,246 @@ const WEAPONS = {
     },
     
     // ═══════════════════════════════════════════════════════════════
-    // ROGUE DAGGERS (DUAL-WIELD EXCLUSIVE)
+    // ROGUE DAGGERS — Dagger-exclusive class (all classRestriction: 'rogue')
+    // Damage values are tuned for DOUBLE-HIT per pip:
+    //   one pip = two strikes at these values.
+    //   Upgrade available roughly every 2 levels.
+    // Pip schedule: Lv1=1pip  Lv5=2pips  Lv10=3pips  Lv15=4pips
     // ═══════════════════════════════════════════════════════════════
+
+    // ── Level 1 ──────────────────────────────────────────────────
     rusty_shiv: {
         name: 'Rusty Shiv',
-        baseDamage: 2,
-        maxDamage: 4,
-        baseMagicDamage: 0,
-        cost: 0,
-        level: 1,
-        quality: 'poor',
-        slot: 'weapon',
-        classRestriction: 'rogue'
+        baseDamage: 2, maxDamage: 4, baseMagicDamage: 0,
+        cost: 0, level: 1, quality: 'poor', slot: 'weapon',
+        classRestriction: 'rogue',
+        description: 'A jagged bit of scrap metal. Barely a weapon.'
     },
     iron_dagger: {
         name: 'Iron Dagger',
-        baseDamage: 6,
-        maxDamage: 11,
-        baseMagicDamage: 0,
-        cost: 150,
-        level: 1,
-        quality: 'normal',
-        slot: 'weapon',
-        classRestriction: 'rogue'
+        baseDamage: 3, maxDamage: 5, baseMagicDamage: 0,
+        cost: 150, level: 1, quality: 'normal', slot: 'weapon',
+        classRestriction: 'rogue',
+        description: 'A simple iron blade. Reliable if nothing else.'
     },
-    steel_stiletto: {
-        name: 'Steel Stiletto',
-        baseDamage: 6,
-        maxDamage: 9,
-        baseMagicDamage: 0,
-        cost: 400,
-        level: 3,
-        quality: 'normal',
-        slot: 'weapon',
-        classRestriction: 'rogue'
+
+    // ── Level 2 ──────────────────────────────────────────────────
+    bone_pick: {
+        name: 'Bone Pick',
+        baseDamage: 3, maxDamage: 6, baseMagicDamage: 0,
+        cost: 280, level: 2, quality: 'normal', slot: 'weapon',
+        classRestriction: 'rogue',
+        description: 'Carved from something that used to fight back.'
     },
+
+    // ── Level 3 ──────────────────────────────────────────────────
+    copper_stiletto: {
+        name: 'Copper Stiletto',
+        baseDamage: 4, maxDamage: 7, baseMagicDamage: 0,
+        cost: 400, level: 3, quality: 'normal', slot: 'weapon',
+        classRestriction: 'rogue',
+        description: 'Thin, fast, and gets between ribs nicely.'
+    },
+
+    // ── Level 4 ──────────────────────────────────────────────────
     throwing_knife: {
         name: 'Throwing Knife',
-        baseDamage: 7,
-        maxDamage: 11,
-        baseMagicDamage: 0,
-        cost: 500,
-        level: 4,
-        quality: 'normal',
-        slot: 'weapon',
-        classRestriction: 'rogue'
+        baseDamage: 4, maxDamage: 8, baseMagicDamage: 0,
+        cost: 520, level: 4, quality: 'normal', slot: 'weapon',
+        classRestriction: 'rogue',
+        description: 'Balanced for both throwing and close-in work.'
     },
+
+    // ── Level 5 (2 pips unlock here) ─────────────────────────────
     assassin_blade: {
         name: "Assassin's Blade",
-        baseDamage: 9,
-        maxDamage: 14,
-        baseMagicDamage: 0,
-        cost: 700,
-        level: 5,
-        quality: 'rare',
-        slot: 'weapon',
-        classRestriction: 'rogue'
+        baseDamage: 5, maxDamage: 9, baseMagicDamage: 0,
+        cost: 700, level: 5, quality: 'normal', slot: 'weapon',
+        classRestriction: 'rogue',
+        description: 'Etched with guild marks. Ownership is not discussed.'
     },
+
+    // ── Level 6 ──────────────────────────────────────────────────
     shadow_fang: {
         name: 'Shadow Fang',
-        baseDamage: 12,
-        maxDamage: 18,
-        baseMagicDamage: 0,
-        cost: 1100,
-        level: 6,
-        quality: 'rare',
-        slot: 'weapon',
-        classRestriction: 'rogue'
+        baseDamage: 6, maxDamage: 10, baseMagicDamage: 0,
+        cost: 900, level: 6, quality: 'rare', slot: 'weapon',
+        classRestriction: 'rogue',
+        description: 'Dark-forged steel that seems to drink the light.'
     },
+
+    // ── Level 7 ──────────────────────────────────────────────────
     venom_spike: {
         name: 'Venom Spike',
-        baseDamage: 14,
-        maxDamage: 21,
-        baseMagicDamage: 0,
-        cost: 1500,
-        level: 7,
-        quality: 'rare',
-        slot: 'weapon',
+        baseDamage: 7, maxDamage: 12, baseMagicDamage: 0,
+        cost: 1200, level: 7, quality: 'rare', slot: 'weapon',
         classRestriction: 'rogue',
-        poisonChance: 0.3
+        poisonChance: 0.25,
+        description: 'Hollow blade. The venom does the second shift.'
     },
+
+    // ── Level 8 ──────────────────────────────────────────────────
     midnight_dirk: {
         name: 'Midnight Dirk',
-        baseDamage: 16,
-        maxDamage: 24,
-        baseMagicDamage: 0,
-        cost: 2000,
-        level: 8,
-        quality: 'rare',
-        slot: 'weapon',
-        classRestriction: 'rogue'
+        baseDamage: 8, maxDamage: 13, baseMagicDamage: 0,
+        cost: 1500, level: 8, quality: 'rare', slot: 'weapon',
+        classRestriction: 'rogue',
+        description: 'Forged at midnight, never reflects light.'
     },
+
+    // ── Level 9 ──────────────────────────────────────────────────
     blacksteel_dagger: {
         name: 'Blacksteel Dagger',
-        baseDamage: 18,
-        maxDamage: 27,
-        baseMagicDamage: 0,
-        cost: 2500,
-        level: 9,
-        quality: 'epic',
-        slot: 'weapon',
-        classRestriction: 'rogue'
+        baseDamage: 9, maxDamage: 15, baseMagicDamage: 0,
+        cost: 2000, level: 9, quality: 'rare', slot: 'weapon',
+        classRestriction: 'rogue',
+        description: 'The steel is unnaturally dense and holds an edge forever.'
     },
+
+    // ── Level 10 (3 pips unlock here) ────────────────────────────
     phantom_edge: {
         name: 'Phantom Edge',
-        baseDamage: 22,
-        maxDamage: 33,
-        baseMagicDamage: 0,
-        cost: 3200,
-        level: 10,
-        quality: 'epic',
-        slot: 'weapon',
-        classRestriction: 'rogue'
+        baseDamage: 10, maxDamage: 17, baseMagicDamage: 0,
+        cost: 2600, level: 10, quality: 'rare', slot: 'weapon',
+        classRestriction: 'rogue',
+        description: 'Strikes leave no sound. Enemies hear nothing until too late.'
     },
+
+    // ── Level 11 ─────────────────────────────────────────────────
     soul_piercer: {
         name: 'Soul Piercer',
-        baseDamage: 24,
-        maxDamage: 36,
-        baseMagicDamage: 0,
-        cost: 5000,
-        level: 11,
-        quality: 'epic',
-        slot: 'weapon',
-        classRestriction: 'rogue'
+        baseDamage: 11, maxDamage: 18, baseMagicDamage: 0,
+        cost: 3400, level: 11, quality: 'epic', slot: 'weapon',
+        classRestriction: 'rogue',
+        description: 'Some wounds heal. Others linger somewhere deeper.'
     },
+
+    // ── Level 12 ─────────────────────────────────────────────────
     serpent_tooth: {
         name: "Serpent's Tooth",
-        baseDamage: 28,
-        maxDamage: 42,
-        baseMagicDamage: 0,
-        cost: 6000,
-        level: 12,
-        quality: 'epic',
-        slot: 'weapon',
+        baseDamage: 12, maxDamage: 20, baseMagicDamage: 0,
+        cost: 4200, level: 12, quality: 'epic', slot: 'weapon',
         classRestriction: 'rogue',
-        poisonChance: 0.4
+        poisonChance: 0.35,
+        description: 'Harvested from a black mamba the size of a horse.'
     },
+
+    // ── Level 13 ─────────────────────────────────────────────────
     eclipse_blade: {
         name: 'Eclipse Blade',
-        baseDamage: 32,
-        maxDamage: 48,
-        baseMagicDamage: 0,
-        cost: 7500,
-        level: 13,
-        quality: 'epic',
-        slot: 'weapon',
-        classRestriction: 'rogue'
+        baseDamage: 13, maxDamage: 22, baseMagicDamage: 0,
+        cost: 5200, level: 13, quality: 'epic', slot: 'weapon',
+        classRestriction: 'rogue',
+        description: 'Cuts through shadow like it was always meant to be there.'
     },
-    nightfall: {
-        name: 'Nightfall',
-        baseDamage: 36,
-        maxDamage: 54,
-        baseMagicDamage: 0,
-        cost: 9000,
-        level: 14,
-        quality: 'legendary',
-        slot: 'weapon',
-        classRestriction: 'rogue'
+
+    // ── Level 14 ─────────────────────────────────────────────────
+    wraithblade: {
+        name: 'Wraithblade',
+        baseDamage: 14, maxDamage: 23, baseMagicDamage: 0,
+        cost: 6200, level: 14, quality: 'epic', slot: 'weapon',
+        classRestriction: 'rogue',
+        description: 'Traded for by a rogue who never came back to explain where he got it.'
     },
+
+    // ── Level 15 (4 pips unlock here) ────────────────────────────
     shadow_reaver: {
         name: 'Shadow Reaver',
-        baseDamage: 40,
-        maxDamage: 60,
-        baseMagicDamage: 0,
-        cost: 11000,
-        level: 15,
-        quality: 'legendary',
-        slot: 'weapon',
-        classRestriction: 'rogue'
+        baseDamage: 16, maxDamage: 26, baseMagicDamage: 0,
+        cost: 7500, level: 15, quality: 'epic', slot: 'weapon',
+        classRestriction: 'rogue',
+        description: 'It does not cut so much as unmake.'
     },
+
+    // ── Level 16 ─────────────────────────────────────────────────
     void_stiletto: {
         name: 'Void Stiletto',
-        baseDamage: 46,
-        maxDamage: 69,
-        baseMagicDamage: 0,
-        cost: 14000,
-        level: 16,
-        quality: 'legendary',
-        slot: 'weapon',
-        classRestriction: 'rogue'
+        baseDamage: 17, maxDamage: 28, baseMagicDamage: 0,
+        cost: 9000, level: 16, quality: 'legendary', slot: 'weapon',
+        classRestriction: 'rogue',
+        description: 'Thin as a whisper. Leaves a wound that doubts its own existence.'
     },
+
+    // ── Level 17 ─────────────────────────────────────────────────
     death_whisper: {
         name: "Death's Whisper",
-        baseDamage: 52,
-        maxDamage: 78,
-        baseMagicDamage: 0,
-        cost: 18000,
-        level: 17,
-        quality: 'legendary',
-        slot: 'weapon',
-        classRestriction: 'rogue'
+        baseDamage: 18, maxDamage: 30, baseMagicDamage: 0,
+        cost: 11000, level: 17, quality: 'legendary', slot: 'weapon',
+        classRestriction: 'rogue',
+        description: 'You hear it right before you stop hearing anything.'
     },
+
+    // ── Level 18 ─────────────────────────────────────────────────
     oblivion_shard: {
         name: 'Oblivion Shard',
-        baseDamage: 58,
-        maxDamage: 87,
-        baseMagicDamage: 0,
-        cost: 22000,
-        level: 18,
-        quality: 'legendary',
-        slot: 'weapon'
-,
-        classRestriction: 'rogue'
+        baseDamage: 20, maxDamage: 32, baseMagicDamage: 0,
+        cost: 13500, level: 18, quality: 'legendary', slot: 'weapon',
+        classRestriction: 'rogue',
+        description: 'A fragment of something that should not exist in this world.'
     },
+
+    // ── Level 19 ─────────────────────────────────────────────────
     reaper_kiss: {
         name: "Reaper's Kiss",
-        baseDamage: 64,
-        maxDamage: 96,
-        baseMagicDamage: 0,
-        cost: 28000,
-        level: 19,
-        quality: 'legendary',
-        slot: 'weapon',
-        classRestriction: 'rogue'
+        baseDamage: 21, maxDamage: 34, baseMagicDamage: 0,
+        cost: 16000, level: 19, quality: 'legendary', slot: 'weapon',
+        classRestriction: 'rogue',
+        description: 'The Reaper does not swing. He leans in gently.'
     },
+
+    // ── Level 20 ─────────────────────────────────────────────────
     bloodmoon_fang: {
         name: 'Bloodmoon Fang',
-        baseDamage: 70,
-        maxDamage: 105,
-        baseMagicDamage: 0,
-        cost: 35000,
-        level: 20,
-        quality: 'legendary',
-        slot: 'weapon',
-        classRestriction: 'rogue'
+        baseDamage: 23, maxDamage: 37, baseMagicDamage: 0,
+        cost: 20000, level: 20, quality: 'legendary', slot: 'weapon',
+        classRestriction: 'rogue',
+        poisonChance: 0.40,
+        description: 'Only sharpens under a red moon. Stays that way.'
     },
+
+    // ── Level 21 ─────────────────────────────────────────────────
     eternal_night: {
         name: 'Eternal Night',
-        baseDamage: 76,
-        maxDamage: 114,
-        baseMagicDamage: 0,
-        cost: 42000,
-        level: 21,
-        quality: 'legendary',
-        slot: 'weapon',
-        classRestriction: 'rogue'
+        baseDamage: 25, maxDamage: 40, baseMagicDamage: 0,
+        cost: 25000, level: 21, quality: 'legendary', slot: 'weapon',
+        classRestriction: 'rogue',
+        description: 'Somewhere a sun set and never came back. This is why.'
     },
+
+    // ── Level 22 ─────────────────────────────────────────────────
     shadowbane_dagger: {
         name: 'Shadowbane',
-        baseDamage: 84,
-        maxDamage: 126,
-        baseMagicDamage: 0,
-        cost: 50000,
-        level: 22,
-        quality: 'legendary',
-        slot: 'weapon',
-        classRestriction: 'rogue'
+        baseDamage: 27, maxDamage: 43, baseMagicDamage: 0,
+        cost: 31000, level: 22, quality: 'legendary', slot: 'weapon',
+        classRestriction: 'rogue',
+        description: 'Its edge is the last thing darkness sees before it ends.'
     },
+
+    // ── Level 23 ─────────────────────────────────────────────────
     silencer: {
         name: 'Silencer',
-        baseDamage: 92,
-        maxDamage: 138,
-        baseMagicDamage: 0,
-        cost: 60000,
-        level: 23,
-        quality: 'legendary',
-        slot: 'weapon',
-        classRestriction: 'rogue'
+        baseDamage: 29, maxDamage: 46, baseMagicDamage: 0,
+        cost: 38000, level: 23, quality: 'legendary', slot: 'weapon',
+        classRestriction: 'rogue',
+        description: 'No one has ever heard it coming. Nor going.'
     },
+
+    // ── Level 24 ─────────────────────────────────────────────────
     abyssal_thorn: {
         name: 'Abyssal Thorn',
-        baseDamage: 100,
-        maxDamage: 150,
-        baseMagicDamage: 0,
-        cost: 75000,
-        level: 24,
-        quality: 'legendary',
-        slot: 'weapon',
-        classRestriction: 'rogue'
+        baseDamage: 32, maxDamage: 50, baseMagicDamage: 0,
+        cost: 47000, level: 24, quality: 'legendary', slot: 'weapon',
+        classRestriction: 'rogue',
+        description: 'Grew naturally in a place where nothing should grow.'
     },
+
+    // ── Level 25 ─────────────────────────────────────────────────
     omega_blade: {
         name: 'Omega Blade',
-        baseDamage: 110,
-        maxDamage: 165,
-        baseMagicDamage: 0,
-        cost: 100000,
-        level: 25,
-        quality: 'godly',
-        slot: 'weapon',
-        classRestriction: 'rogue'
+        baseDamage: 35, maxDamage: 55, baseMagicDamage: 0,
+        cost: 60000, level: 25, quality: 'godly', slot: 'weapon',
+        classRestriction: 'rogue',
+        description: 'The last dagger. Every shadow in existence fears this edge.'
     }
 };
 
