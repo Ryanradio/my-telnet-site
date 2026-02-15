@@ -1930,25 +1930,28 @@ const ADVENTURE_ENEMIES = {
         dropRates: { uncommon: 0.3, rare: 0.25, epic: 0.12 }
     },
     mine_horror: {
-        name: 'Mine Horror',
-        baseHp: 260,
-        baseDamage: 34,
-        baseDefense: 16,
-        baseXp: 1300,
-        baseGold: 420,
-        level: 9,
-        possibleDrops: ['worm_hide', 'large_gem', 'bone_dust'],
-        dropRates: { uncommon: 0.35, rare: 0.2, epic: 0.08 }
-    },
-        baseHp: 400,
-        baseDamage: 55,
-        baseDefense: 35,
-        baseXp: 3000,
-        baseGold: 2000,
-        level: 17,
-        possibleDrops: ['demon_core'],
-        dropRates: { legendary: 0.3 }
-    }
+    name: 'Mine Horror',
+    baseHp: 260,
+    baseDamage: 34,
+    baseDefense: 16,
+    baseXp: 1300,
+    baseGold: 420,
+    level: 9,
+    possibleDrops: ['worm_hide', 'large_gem', 'bone_dust'],
+    dropRates: { uncommon: 0.35, rare: 0.2, epic: 0.08 }
+},
+
+demon_overlord: {
+    name: 'Demon Overlord',
+    baseHp: 400,
+    baseDamage: 55,
+    baseDefense: 35,
+    baseXp: 3000,
+    baseGold: 2000,
+    level: 17,
+    possibleDrops: ['demon_core'],
+    dropRates: { legendary: 0.3 }
+}
 };
 
 // Rarity chances
