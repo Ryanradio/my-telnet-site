@@ -2656,7 +2656,8 @@ Object.assign(ENEMIES, {
         possibleDrops: ['superior_health_potion', 'oblivion_blade', 'void_crown', 'flawless_gem'],
         dropRates: { common: 0.02, uncommon: 0.05, rare: 0.13, epic: 0.3, legendary: 0.38, mythic: 0.2 },
         isBoss: true
-    },
+    }
+});
 
 // Rarity multipliers and colors
 const RARITY_CONFIG = {
