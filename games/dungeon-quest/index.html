@@ -3569,7 +3569,7 @@ window.addEventListener('beforeunload', () => {
             
             // Update XP to next
             p.xpToNext = getXpToNextLevel(p.baseClass || p.class, p.level);
-            p.xp = 0; // Reset XP within level
+            p.xp = getXpForLevel(p.baseClass || p.class, p.level); // Set to start of this level
             
             updateHud();
             terminalPrint(`SUCCESS: Set player level to ${targetLevel}`, 'success');
@@ -4508,6 +4508,28 @@ window.addEventListener('beforeunload', () => {
                     p.className = CLASSES[p.class].name;
                     console.log(`✅ Added className: ${p.className}`);
                 }
+
+                // ═══════════════════════════════════════════════════════════════
+                // XP SYSTEM MIGRATION — running total (v2) vs per-level (v1)
+                // Old saves store p.xp as XP earned within the current level
+                // (always < xpToNext). New system stores p.xp as a cumulative
+                // running total (always >= getXpForLevel(cls, level)).
+                // We detect old saves and convert them automatically.
+                // ═══════════════════════════════════════════════════════════════
+                (function migrateXp(p) {
+                    if (p.level <= 1) return; // Level 1 needs no migration
+                    const cls = p.baseClass || p.class;
+                    const levelFloor = getXpForLevel(cls, p.level);
+                    if (p.xp < levelFloor) {
+                        // Old-style save: p.xp is within-level XP.
+                        // Convert to running total by adding the level's base threshold.
+                        const oldXp = p.xp;
+                        p.xp = levelFloor + oldXp;
+                        console.log(`✅ XP migration: level ${p.level} ${cls} | ${oldXp} within-level → ${p.xp} running total`);
+                    }
+                    // Also ensure xpToNext matches the cumulative table value
+                    p.xpToNext = getXpToNextLevel(cls, p.level);
+                })(p);
                 
                 gameState.currentLocation = data.currentLocation || 'silverdale';
                 
@@ -5259,7 +5281,11 @@ window.addEventListener('beforeunload', () => {
             const p = gameState.player;
             const hpPercent = (p.hp / p.maxHp) * 100;
             const mpPercent = (p.mp / p.maxMp) * 100;
-            const xpPercent = (p.xp / p.xpToNext) * 100;
+            const xpAtThisLevel  = getXpForLevel(p.baseClass || p.class || p.class, p.level);
+            const xpAtNextLevel  = p.xpToNext;
+            const xpIntoLevel    = p.xp - xpAtThisLevel;
+            const xpNeededInLevel = xpAtNextLevel - xpAtThisLevel;
+            const xpPercent = xpNeededInLevel > 0 ? (xpIntoLevel / xpNeededInLevel) * 100 : 100;
             
             // Get display class name
             let displayClass;
@@ -5295,6 +5321,7 @@ window.addEventListener('beforeunload', () => {
                     </div>
                     <div>
                         <span class="stat-label">XP:</span> ${p.xp}/${p.xpToNext}
+                        <span style="color:#888;font-size:0.85em;"> (${Math.floor(((p.xp - getXpForLevel(p.baseClass||p.class, p.level)) / Math.max(1, p.xpToNext - getXpForLevel(p.baseClass||p.class, p.level))) * 100)}% to next)</span>
                     </div>
                 </div>
             `;
@@ -6309,7 +6336,13 @@ window.addEventListener('beforeunload', () => {
     // ── Status bars (HP / MP / XP) ──
     const hpPct = p.maxHp  > 0 ? (p.hp  / p.maxHp)  * 100 : 0;
     const mpPct = p.maxMp  > 0 ? (p.mp  / p.maxMp)  * 100 : 0;
-    const xpPct = p.xpToNext > 0 ? (p.xp / p.xpToNext) * 100 : 0;
+    // XP bar shows progress within the current level only
+    const hudCls = p.baseClass || p.class;
+    const xpLevelStart = getXpForLevel(hudCls, p.level);
+    const xpLevelEnd   = p.xpToNext;
+    const xpInLevel    = p.xp - xpLevelStart;
+    const xpSpan       = xpLevelEnd - xpLevelStart;
+    const xpPct = xpSpan > 0 ? Math.min(100, (xpInLevel / xpSpan) * 100) : 100;
     setBar('sbHpFill', hpPct);
     setBar('sbMpFill', mpPct);
     setBar('sbXpFill', xpPct);
@@ -10075,15 +10108,13 @@ function endCombat(victory) {
         let goldLost = 0;
 
         if (!isLevel1) {
-            // ── XP penalty: 10% of TOTAL xp accumulated so far ─────────
-            // "Total XP" = XP needed to reach current level + current p.xp
-            const xpAtLevelStart = getXpForLevel(p.class, p.level);
-            const totalXpSoFar   = xpAtLevelStart + p.xp;
-            xpLost = Math.floor(totalXpSoFar * 0.10);
+            // ── XP penalty: 10% of total accumulated XP ────────────────
+            // p.xp is now a running total, so it IS the total XP so far.
+            xpLost = Math.floor(p.xp * 0.10);
 
-            // Never drop a level — floor XP at 0 for current level
-            const newCurrentXp = p.xp - xpLost;
-            p.xp = Math.max(0, newCurrentXp);
+            // Never drop a level — floor XP at the start-of-current-level threshold
+            const xpFloor = getXpForLevel(p.class, p.level);
+            p.xp = Math.max(xpFloor, p.xp - xpLost);
             // xpToNext stays the same (level doesn't change)
 
             // ── Gold penalty: lose ALL carried gold (bank is safe) ──────
@@ -10138,7 +10169,7 @@ function endCombat(victory) {
             );
             termAppend(
                 `<span style="color:#888;">XP: ${xpBefore.toLocaleString()} → ${p.xp.toLocaleString()}` +
-                `${p.xp === 0 ? ' <span style="color:#ff4444;">(reset to 0 for this level)</span>' : ''}</span>`
+                `${p.xp === getXpForLevel(p.class, p.level) ? ' <span style="color:#ff4444;">(floored at level start)</span>' : ''}</span>`
             );
 
             if (inDungeon) {
@@ -10395,7 +10426,7 @@ function endCombat(victory) {
     // Max level message
     if (gameState.player.level >= 25 && gameState.player.xp >= gameState.player.xpToNext) {
         termAppend(`🌟 You have reached MAX LEVEL! (25)`, 'term-victory');
-        gameState.player.xp = gameState.player.xpToNext; // Cap XP
+        gameState.player.xp = gameState.player.xpToNext; // Cap at max threshold
     }
 
     updateHud();
@@ -10663,15 +10694,14 @@ function playerIsExhausted() {
             
             // Cap at level 25
             if (p.level >= 25) {
-                p.xp = p.xpToNext; // Keep at max
+                p.xp = p.xpToNext; // Pin running total at the max threshold
                 return;
             }
             
             const oldLevel = p.level;
             p.level++;
-            p.xp -= p.xpToNext;
-            
-            // Update xpToNext using class-specific table
+            // XP is now a running total — do NOT subtract xpToNext.
+            // Just raise the bar to the next level's cumulative threshold.
             p.xpToNext = getXpToNextLevel(p.baseClass || p.class, p.level);
 
             // HP/MP increases (CON scaling for HP)
