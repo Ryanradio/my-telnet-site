@@ -4,7 +4,10 @@
 const EXPLORATION_ZONES = {
 
     // ═══════════════════════════════════════════════════════════════
-    // TOWN 1 ZONES  (Silverdale) — Levels 1-9
+    // TOWN 1 ZONES  (Silverdale) — Levels 1-6 ONLY
+    // Zones here are hard-capped to town1. A level 7+ player still
+    // only sees forest and riverside here — they must go to Town 2
+    // to access the 7-9 tier. No exceptions.
     // ═══════════════════════════════════════════════════════════════
     forest: {
         name: 'Whispering Forest',
@@ -37,29 +40,31 @@ const EXPLORATION_ZONES = {
         name: 'Haunted Graveyard',
         description: 'An ancient cemetery where the dead don\'t rest peacefully.',
         enemyLevelRange: [7, 9],
-        encounters: ['zombie', 'ghoul', 'skeleton', 'grave_robber', 'spirit', 'wraith',
+        encounters: ['zombie', 'ghoul', 'skeleton', 'grave_robber', 'spirit',
                      'bone_archer', 'shadow_hound', 'crypt_bat', 'wailing_banshee', 'grave_knight',
                      'death_cultist', 'flesh_golem', 'specter', 'vampire_thrall'],
         requiredLevel: 7,
-        locked: true,
-        town: 'town1',
-        unlockMessage: 'Defeat your class master in the riverside to unlock this area!',
+        locked: false,
+        town: 'town2',
         adventureChance: 0.07
     },
 
     // ═══════════════════════════════════════════════════════════════
-    // TOWN 2 ZONES  (Ashen Harbor) — Levels 6-18
+    // TOWN 2 ZONES  (Ashen Harbor) — Levels 7-18
+    // haunted_graveyard is the first zone (unlocked by default).
+    // plains unlocks after defeating the graveyard class master.
     // ═══════════════════════════════════════════════════════════════
     plains: {
         name: 'Endless Plains',
         description: 'Open grasslands with roaming beasts and bandit camps.',
-        enemyLevelRange: [6, 9],
-        encounters: ['orc', 'dire_wolf', 'bandit', 'plains_lion', 'centaur', 'plains_raider', 'giant_scorpion',
-                     'war_boar', 'hobgoblin', 'plains_hawk', 'thorn_golem', 'dust_wraith',
-                     'orc_berserker', 'giant_beetle', 'minotaur_scout', 'will_o_wisp', 'gnoll_chief'],
-        requiredLevel: 6,
-        locked: false,
+        enemyLevelRange: [7, 9],
+        encounters: ['dire_wolf', 'plains_lion', 'centaur', 'plains_raider', 'giant_scorpion',
+                     'orc_berserker', 'giant_beetle', 'minotaur_scout', 'will_o_wisp', 'gnoll_chief',
+                     'grave_knight', 'shadow_hound', 'flesh_golem', 'specter', 'vampire_thrall'],
+        requiredLevel: 7,
+        locked: true,
         town: 'town2',
+        unlockMessage: 'Defeat your class master in the graveyard to unlock this area!',
         adventureChance: 0.06
     },
 

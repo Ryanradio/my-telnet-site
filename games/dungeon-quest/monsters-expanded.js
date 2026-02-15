@@ -362,6 +362,114 @@ Object.assign(ENEMIES, {
     },
 
     // ═══════════════════════════════════════════════════════════════
+    // LEVEL 5-8 MONSTERS (Dungeon - The Undermaze)
+    // ═══════════════════════════════════════════════════════════════
+
+    cave_orc: {
+        name: 'Cave Orc',
+        baseHp: 110,
+        baseDamage: 17,
+        baseDefense: 8,
+        baseXp: 55,
+        baseGold: 32,
+        level: 5,
+        description: 'A pale orc who has never seen sunlight and is furious about it',
+        possibleDrops: ['health_potion', 'iron_sword', 'leather_armor', 'medium_gem'],
+        dropRates: { common: 0.4, uncommon: 0.25, rare: 0.1, epic: 0.03 }
+    },
+
+    cave_gnoll: {
+        name: 'Cave Gnoll',
+        baseHp: 100,
+        baseDamage: 16,
+        baseDefense: 7,
+        baseXp: 50,
+        baseGold: 28,
+        level: 5,
+        description: 'A hyena-headed scavenger that hunts in underground tunnels',
+        possibleDrops: ['health_potion', 'gnoll_hide', 'bone_club', 'small_gem'],
+        dropRates: { common: 0.45, uncommon: 0.2, rare: 0.08, epic: 0.02 }
+    },
+
+    dungeon_bat: {
+        name: 'Giant Dungeon Bat',
+        baseHp: 90,
+        baseDamage: 15,
+        baseDefense: 5,
+        baseXp: 45,
+        baseGold: 20,
+        level: 5,
+        description: 'A massive bat with a wingspan that fills narrow corridors',
+        possibleDrops: ['health_potion', 'bat_wing', 'small_gem'],
+        dropRates: { common: 0.5, uncommon: 0.18, rare: 0.05 }
+    },
+
+    stone_crawler: {
+        name: 'Stone Crawler',
+        baseHp: 130,
+        baseDamage: 16,
+        baseDefense: 12,
+        baseXp: 58,
+        baseGold: 25,
+        level: 6,
+        description: 'An armored beetle the size of a cart horse that feeds on cave minerals',
+        possibleDrops: ['health_potion', 'chitin_shard', 'small_gem', 'medium_gem'],
+        dropRates: { common: 0.4, uncommon: 0.25, rare: 0.1, epic: 0.03 }
+    },
+
+    tomb_rat: {
+        name: 'Tomb Rat',
+        baseHp: 95,
+        baseDamage: 15,
+        baseDefense: 4,
+        baseXp: 47,
+        baseGold: 18,
+        level: 5,
+        description: 'A diseased rat that has grown bloated feasting on dungeon refuse',
+        possibleDrops: ['health_potion', 'rat_tail', 'small_gem'],
+        dropRates: { common: 0.55, uncommon: 0.15, rare: 0.04 }
+    },
+
+    dungeon_spider: {
+        name: 'Dungeon Spider',
+        baseHp: 120,
+        baseDamage: 17,
+        baseDefense: 6,
+        baseXp: 56,
+        baseGold: 26,
+        level: 6,
+        description: 'A pale web-spinning predator that has claimed entire corridors as its own',
+        possibleDrops: ['health_potion', 'spider_silk', 'venom_gland', 'small_gem'],
+        dropRates: { common: 0.42, uncommon: 0.22, rare: 0.09, epic: 0.02 }
+    },
+
+    dark_stalker: {
+        name: 'Dark Stalker',
+        baseHp: 140,
+        baseDamage: 19,
+        baseDefense: 7,
+        baseXp: 63,
+        baseGold: 38,
+        level: 7,
+        description: 'A shadow-cloaked humanoid that hunts by heat and heartbeat',
+        possibleDrops: ['health_potion', 'shadow_cloth', 'dark_essence', 'medium_gem'],
+        dropRates: { common: 0.38, uncommon: 0.25, rare: 0.12, epic: 0.04 }
+    },
+
+    fungal_horror: {
+        name: 'Fungal Horror',
+        baseHp: 160,
+        baseDamage: 18,
+        baseDefense: 10,
+        baseXp: 66,
+        baseGold: 30,
+        level: 7,
+        description: 'A shambling mass of animated fungus that releases toxic spores',
+        possibleDrops: ['health_potion', 'spore_sac', 'fungal_extract', 'medium_gem'],
+        dropRates: { common: 0.4, uncommon: 0.25, rare: 0.1, epic: 0.03 }
+    },
+
+    // ═══════════════════════════════════════════════════════════════
     // LEVEL 11-15 MONSTERS (Cave, Dark Swamp, Cursed Ruins)
     // ═══════════════════════════════════════════════════════════════
     
