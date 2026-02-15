@@ -5018,11 +5018,12 @@ window.addEventListener('beforeunload', () => {
             modal.id = 'dungeonWarningModal';
             Object.assign(modal.style, {
                 position: 'fixed', inset: '0', zIndex: '9999',
-                display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-                background: 'rgba(0,0,0,0.88)', fontFamily: "'VT323',monospace"
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'rgba(0,0,0,0.88)', fontFamily: "'VT323',monospace",
+                padding: '16px'
             });
 
-            // Outer card
+            // Outer card — centered, full border, max-width for readability
             const card = document.createElement('div');
             Object.assign(card.style, {
                 width: '100%', maxWidth: '480px',
@@ -5030,7 +5031,7 @@ window.addEventListener('beforeunload', () => {
                 border: '3px double #ff4444',
                 boxShadow: '0 0 40px rgba(255,0,0,0.4)',
                 color: '#00ff00',
-                paddingBottom: 'env(safe-area-inset-bottom, 0px)'
+                boxSizing: 'border-box'
             });
 
             // Header
