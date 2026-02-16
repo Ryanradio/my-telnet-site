@@ -2367,11 +2367,29 @@ gameState.hasRestoredGame = false;
         // ═══════════════════════════════════════════════════════════════
         // SYSOP TERMINAL SYSTEM
         // ═══════════════════════════════════════════════════════════════
-
-        const SYSOP_CREDENTIALS = {
-            username: 'sysop',
-            password: 'Radojcsics'
+        // Credentials are NOT stored in plaintext.
+        // Username is stored as a base64 label only.
+        // Password is verified by comparing SHA-256 hashes — the actual
+        // password never appears anywhere in this source file.
+        // SHA-256 cannot be reversed without brute-force.
+        const _SYS = {
+            // atob('U3lzb3A=') → 'Sysop'
+            u: 'U3lzb3A=',
+            // SHA-256 of the real password (not the password itself)
+            h: '708bdb7228d3bc89a59db53a36d686bac51fba5126229428f9ea532b821e77ea'
         };
+
+        async function _hashPassword(pw) {
+            const buf  = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
+            return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+        }
+
+        async function _checkCredentials(u, p) {
+            const expectedUser = atob(_SYS.u);
+            if (u !== expectedUser) return false;
+            const hashed = await _hashPassword(p);
+            return hashed === _SYS.h;
+        }
 
         // ══════════════════════════════════════════════════════════════
         // FULLSCREEN + iOS INSTALL BANNER
@@ -3111,22 +3129,22 @@ window.addEventListener('beforeunload', () => {
         function sysoLogin() {
             const u = (document.getElementById('sysoUser')?.value || '').trim();
             const p = (document.getElementById('sysoPass')?.value || '').trim();
-            // Directly check credentials — don't rely on desktop terminal feedback
-            if (u === SYSOP_CREDENTIALS.username && p === SYSOP_CREDENTIALS.password) {
-                gameState.sysop.authenticated = true;
-                gameState.sysop.username = u;
-                document.getElementById('sysopBadge')?.classList.add('active');
-                sysoLog('Authentication successful. Welcome, ' + u);
-                renderSysopOverlay();
-            } else {
-                // Show error inline in overlay — visible on mobile without desktop terminal
-                const errEl = document.getElementById('sysoLoginErr');
-                if (errEl) {
-                    errEl.textContent = '✗ Invalid credentials';
-                    errEl.style.display = 'block';
+            _checkCredentials(u, p).then(valid => {
+                if (valid) {
+                    gameState.sysop.authenticated = true;
+                    gameState.sysop.username = atob(_SYS.u);
+                    document.getElementById('sysopBadge')?.classList.add('active');
+                    sysoLog('Authentication successful. Welcome, ' + atob(_SYS.u));
+                    renderSysopOverlay();
+                } else {
+                    const errEl = document.getElementById('sysoLoginErr');
+                    if (errEl) {
+                        errEl.textContent = '✗ Invalid credentials';
+                        errEl.style.display = 'block';
+                    }
+                    sysoLog('Authentication failed.', 'error');
                 }
-                sysoLog('Authentication failed.', 'error');
-            }
+            });
         }
         function sysoLogout() {
             handleLogout();
@@ -3177,15 +3195,35 @@ window.addEventListener('beforeunload', () => {
             }
 
             else if (type === 'teleport') {
+                // List available dungeons for the dropdown
+                const dungeonOptions = (typeof DUNGEONS !== 'undefined')
+                    ? Object.keys(DUNGEONS).map(k => `<option value="${k}">${k}</option>`).join('')
+                    : '<option value="Dungeon1">Dungeon1</option>';
+
                 sub.innerHTML = `
                 <div class="syo-sub">
                     <div class="syo-sub-title">🚀 TELEPORT</div>
-                    <div class="syo-label">Floor</div>
+                    <div class="syo-grid" style="margin-bottom:8px;">
+                        <button class="syo-btn" onclick="sysoExec('/teleport town1')">🏘 Silverdale</button>
+                        <button class="syo-btn" onclick="sysoExec('/teleport town2')">🌋 Ashen Harbor</button>
+                    </div>
+                    <div class="syo-label">Dungeon</div>
+                    <select class="syo-input" id="sysoTpDungeon" style="font-size:18px;padding:6px;">
+                        ${dungeonOptions}
+                    </select>
+                    <div class="syo-label">Floor (e.g. 1, 2, 3)</div>
                     <input class="syo-input" id="sysoTpF" type="number" min="1" inputmode="numeric" value="1">
-                    <div class="syo-label">Room (row,col)</div>
-                    <input class="syo-input" id="sysoTpR" placeholder="0,0" inputmode="numeric">
-                    <button class="syo-btn full" style="margin-top:4px;"
-                        onclick="sysoExec('/teleport '+document.getElementById('sysoTpF').value.trim()+' '+document.getElementById('sysoTpR').value.trim());">🚀 GO</button>
+                    <div class="syo-label">Room ID (e.g. R1, R57) — leave blank for floor start</div>
+                    <input class="syo-input" id="sysoTpR" placeholder="R1" autocorrect="off" spellcheck="false"
+                           style="text-transform:uppercase;">
+                    <button class="syo-btn full" style="margin-top:8px;"
+                        onclick="(function(){
+                            const d=document.getElementById('sysoTpDungeon').value.trim();
+                            const f=document.getElementById('sysoTpF').value.trim();
+                            const r=document.getElementById('sysoTpR').value.trim();
+                            const cmd='/teleport '+d+' f'+f+(r?' '+r.toUpperCase():'');
+                            sysoExec(cmd);
+                        })();">🚀 GO</button>
                 </div>`;
             }
 
@@ -3365,22 +3403,23 @@ window.addEventListener('beforeunload', () => {
                 terminalPrint('ERROR: Usage: /login <username> <password>', 'error');
                 return;
             }
-
             const username = args[0];
             const password = args[1];
-
-            if (username === SYSOP_CREDENTIALS.username && password === SYSOP_CREDENTIALS.password) {
-                gameState.sysop.authenticated = true;
-                gameState.sysop.username = username;
-                document.getElementById('sysopBadge').classList.add('active');
-                terminalPrint('═══════════════════════════════════════', 'success');
-                terminalPrint('  AUTHENTICATION SUCCESSFUL', 'success');
-                terminalPrint('  Welcome, SYSOP ' + username, 'success');
-                terminalPrint('  Type /help for available commands', 'success');
-                terminalPrint('═══════════════════════════════════════', 'success');
-            } else {
-                terminalPrint('ERROR: Authentication failed. Invalid credentials.', 'error');
-            }
+            const displayName = atob(_SYS.u);
+            _checkCredentials(username, password).then(valid => {
+                if (valid) {
+                    gameState.sysop.authenticated = true;
+                    gameState.sysop.username = displayName;
+                    document.getElementById('sysopBadge').classList.add('active');
+                    terminalPrint('═══════════════════════════════════════', 'success');
+                    terminalPrint('  AUTHENTICATION SUCCESSFUL', 'success');
+                    terminalPrint('  Welcome, ' + displayName, 'success');
+                    terminalPrint('  Type /help for available commands', 'success');
+                    terminalPrint('═══════════════════════════════════════', 'success');
+                } else {
+                    terminalPrint('ERROR: Authentication failed. Invalid credentials.', 'error');
+                }
+            });
         }
 
         function handleLogout() {
