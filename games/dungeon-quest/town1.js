@@ -1,7 +1,7 @@
 // town1.js - Silverdale (Starting Town)
 // ═══════════════════════════════════════════════════════════════
 // The first town players start in. Contains early-game content,
-// a dungeon entrance (Dungeon1) unlocked at level 5, and a portal
+// a dungeon entrance (Dungeon1) unlocked at level 3, and a portal
 // to Ashen Harbor once the White Runestone is earned.
 // ═══════════════════════════════════════════════════════════════
 
@@ -15,8 +15,8 @@ window.TOWNS.town1 = {
     dungeonKey: 'Dungeon1',
     dungeonName: 'The Undermaze',
     dungeonDescription: 'A treacherous maze of tunnels beneath Silverdale. Rumored to connect to another world...',
-    dungeonRequiredLevel: 5,
-    dungeonUnlockMessage: 'You must be at least level 5 to brave the Undermaze!',
+    dungeonRequiredLevel: 3,
+    dungeonUnlockMessage: 'You must be at least level 3 to brave the Undermaze!',
 
     // Zones that belong to this town's world map
     zones: ['forest', 'riverside', 'haunted_graveyard'],

@@ -264,7 +264,7 @@ window.DUNGEONS.Dungeon1 = {
         },
         "R15": {
           "name": "The Spike Run",
-          "description": "You are in a corridor that feels wrong \u2014 the floor has too many seams. Step carefully.",
+          "description": "You are in a corridor that feels wrong — the floor has too many seams. Step carefully.",
           "map": {
             "x": 10,
             "y": 12
@@ -734,7 +734,7 @@ window.DUNGEONS.Dungeon1 = {
         },
         "R39": {
           "name": "The Ambush Chamber",
-          "description": "You are in a wide room \u2014 and two orcs were waiting for you. They planned this.",
+          "description": "You are in a wide room — and two orcs were waiting for you. They planned this.",
           "map": {
             "x": 15,
             "y": 14
@@ -1084,7 +1084,7 @@ window.DUNGEONS.Dungeon1 = {
         },
         "R57": {
           "name": "The Descent Shaft",
-          "description": "You are in a rough shaft where a wooden ladder disappears into the darkness below. There is no going back the way you came from here \u2014 only down.",
+          "description": "You are in a rough shaft where a wooden ladder disappears into the darkness below. There is no going back the way you came from here — only down.",
           "map": {
             "x": 20,
             "y": 3
@@ -1589,7 +1589,7 @@ window.DUNGEONS.Dungeon1 = {
         },
         "R25": {
           "name": "The Three-Tunnel Cross",
-          "description": "You are in a junction where three tunnels meet \u2014 the air from the south path is noticeably colder.",
+          "description": "You are in a junction where three tunnels meet — the air from the south path is noticeably colder.",
           "map": {
             "x": 13,
             "y": 14
@@ -1652,7 +1652,7 @@ window.DUNGEONS.Dungeon1 = {
         },
         "R28": {
           "name": "The Scorpion Ambush",
-          "description": "You are in a widened section of tunnel \u2014 and a giant scorpion drops from the ceiling. It carries a silver key.",
+          "description": "You are in a widened section of tunnel — and a giant scorpion drops from the ceiling. It carries a silver key.",
           "map": {
             "x": 10,
             "y": 15
@@ -1753,7 +1753,7 @@ window.DUNGEONS.Dungeon1 = {
         },
         "R33": {
           "name": "The Cold Run",
-          "description": "You are in a passage where the air is noticeably colder \u2014 something is venting from below.",
+          "description": "You are in a passage where the air is noticeably colder — something is venting from below.",
           "map": {
             "x": 9,
             "y": 20
@@ -1785,7 +1785,7 @@ window.DUNGEONS.Dungeon1 = {
         },
         "R35": {
           "name": "The Low Arch Passage",
-          "description": "You are in a passage so low you must duck \u2014 the ceiling here was never finished.",
+          "description": "You are in a passage so low you must duck — the ceiling here was never finished.",
           "map": {
             "x": 9,
             "y": 22
@@ -1973,7 +1973,7 @@ window.DUNGEONS.Dungeon1 = {
         },
         "R45": {
           "name": "The Elevated Corridor",
-          "description": "You are in a raised passage running above a natural void \u2014 the floor occasionally trembles.",
+          "description": "You are in a raised passage running above a natural void — the floor occasionally trembles.",
           "map": {
             "x": 20,
             "y": 13
@@ -2221,7 +2221,7 @@ window.DUNGEONS.Dungeon1 = {
         },
         "R57": {
           "name": "The Stone Throat",
-          "description": "You are in a narrow passage they call the Stone Throat \u2014 the walls close in until they nearly touch.",
+          "description": "You are in a narrow passage they call the Stone Throat — the walls close in until they nearly touch.",
           "map": {
             "x": 14,
             "y": 23
@@ -2309,7 +2309,7 @@ window.DUNGEONS.Dungeon1 = {
         },
         "R62": {
           "name": "The Straight Run",
-          "description": "You are in a long straight corridor \u2014 the first in a while \u2014 that offers an uncomfortable amount of visibility in both directions.",
+          "description": "You are in a long straight corridor — the first in a while — that offers an uncomfortable amount of visibility in both directions.",
           "map": {
             "x": 15,
             "y": 19
@@ -2387,7 +2387,7 @@ window.DUNGEONS.Dungeon1 = {
         },
         "R66": {
           "name": "The Deep Crossroads",
-          "description": "You are in a four-way junction at the heart of the deep floor \u2014 passages branch in every direction.",
+          "description": "You are in a four-way junction at the heart of the deep floor — passages branch in every direction.",
           "map": {
             "x": 19,
             "y": 20
@@ -2544,7 +2544,7 @@ window.DUNGEONS.Dungeon1 = {
         },
         "R74": {
           "name": "The Dead End Depths",
-          "description": "You are in the southernmost dead end of the dungeon \u2014 the rock here is unmarked by any tool.",
+          "description": "You are in the southernmost dead end of the dungeon — the rock here is unmarked by any tool.",
           "map": {
             "x": 23,
             "y": 23
@@ -2682,7 +2682,7 @@ window.DUNGEONS.Dungeon1 = {
         },
         "R82": {
           "name": "The Carved Passage",
-          "description": "You are in a corridor where the stonework transitions from rough to finely cut \u2014 someone wanted this part to last.",
+          "description": "You are in a corridor where the stonework transitions from rough to finely cut — someone wanted this part to last.",
           "map": {
             "x": 10,
             "y": 21
@@ -2857,7 +2857,7 @@ window.DUNGEONS.Dungeon1 = {
         },
         "R92": {
           "name": "The Torch Gallery",
-          "description": "You are in a gallery where ancient iron torch rings line both walls at regular intervals \u2014 all empty.",
+          "description": "You are in a gallery where ancient iron torch rings line both walls at regular intervals — all empty.",
           "map": {
             "x": 15,
             "y": 16
@@ -2944,7 +2944,7 @@ window.DUNGEONS.Dungeon1 = {
         },
         "R97": {
           "name": "The Northern Hub",
-          "description": "You are in a central hub where three passages split off \u2014 north, east, and west.",
+          "description": "You are in a central hub where three passages split off — north, east, and west.",
           "map": {
             "x": 11,
             "y": 14
@@ -2968,7 +2968,7 @@ window.DUNGEONS.Dungeon1 = {
         },
         "R98": {
           "name": "The Sealed Spur",
-          "description": "You are in a short dead-end spur. The northern wall is suspiciously smooth \u2014 as if it was bricked up deliberately.",
+          "description": "You are in a short dead-end spur. The northern wall is suspiciously smooth — as if it was bricked up deliberately.",
           "map": {
             "x": 11,
             "y": 13
@@ -3038,7 +3038,7 @@ window.DUNGEONS.Dungeon1 = {
         },
         "R102": {
           "name": "The Three-Spur Hub",
-          "description": "You are in a hub room where three spurs radiate outward \u2014 north, southeast, and southwest.",
+          "description": "You are in a hub room where three spurs radiate outward — north, southeast, and southwest.",
           "map": {
             "x": 7,
             "y": 14
@@ -3116,7 +3116,7 @@ window.DUNGEONS.Dungeon1 = {
         },
         "R106": {
           "name": "The Passage Hub",
-          "description": "You are in a small hub room with three exits \u2014 each one leading somewhere the others do not.",
+          "description": "You are in a small hub room with three exits — each one leading somewhere the others do not.",
           "map": {
             "x": 5,
             "y": 16
@@ -3232,7 +3232,7 @@ window.DUNGEONS.Dungeon1 = {
         },
         "R112": {
           "name": "The Smoothed Passage",
-          "description": "You are in a corridor where the stonework becomes noticeably finer \u2014 this section was built, not carved.",
+          "description": "You are in a corridor where the stonework becomes noticeably finer — this section was built, not carved.",
           "map": {
             "x": 16,
             "y": 13
@@ -3278,7 +3278,7 @@ window.DUNGEONS.Dungeon1 = {
         },
         "R114": {
           "name": "The Grand Junction",
-          "description": "You are in a wide junction where the main corridor splits into three \u2014 the masonry here is exceptional.",
+          "description": "You are in a wide junction where the main corridor splits into three — the masonry here is exceptional.",
           "map": {
             "x": 16,
             "y": 11
@@ -3396,7 +3396,7 @@ window.DUNGEONS.Dungeon1 = {
         },
         "R120": {
           "name": "The Final Hall West",
-          "description": "You are in the western terminus of the final hall \u2014 a dead end that seems to be waiting for something.",
+          "description": "You are in the western terminus of the final hall — a dead end that seems to be waiting for something.",
           "map": {
             "x": 10,
             "y": 8
@@ -3519,7 +3519,7 @@ window.DUNGEONS.Dungeon1 = {
         },
         "R126": {
           "name": "The Electrum Gate",
-          "description": "You are in the chamber of the electrum door \u2014 and the wraith that guards it rises from the floor to meet you. It carries the key.",
+          "description": "You are in the chamber of the electrum door — and the wraith that guards it rises from the floor to meet you. It carries the key.",
           "map": {
             "x": 22,
             "y": 8
@@ -3548,7 +3548,7 @@ window.DUNGEONS.Dungeon1 = {
         },
         "R127": {
           "name": "The Exit Corridor",
-          "description": "You are in the final corridor of the Undermaze. The air ahead smells different \u2014 open, living. Almost like outside.",
+          "description": "You are in the final corridor of the Undermaze. The air ahead smells different — open, living. Almost like outside.",
           "map": {
             "x": 22,
             "y": 7
@@ -3564,7 +3564,7 @@ window.DUNGEONS.Dungeon1 = {
         },
         "R128": {
           "name": "The Gates of Ashen Harbor",
-          "description": "You are in a grand vaulted chamber where great iron doors bear the crest of Ashen Harbor. Beyond them lies the second town \u2014 you have made it through the Undermaze.",
+          "description": "You are in a grand vaulted chamber where great iron doors bear the crest of Ashen Harbor. Beyond them lies the second town — you have made it through the Undermaze.",
           "map": {
             "x": 22,
             "y": 6
@@ -3572,7 +3572,9 @@ window.DUNGEONS.Dungeon1 = {
           "exits": {
             "s": "R127"
           },
-          "contents": {},
+          "contents": {
+            "runestone": "white_runestone"
+          },
           "flags": {
             "discovered": false,
             "townExit": "town2"

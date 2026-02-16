@@ -1446,7 +1446,7 @@ const OPPOSITE_DIR = {
                 magic: 5,
                 speed: 15,
                 description: 'Swift and deadly, strikes first with critical hits',
-                startWeapon: 'iron_dagger',
+                startWeapon: 'rusty_shiv',
                 startArmor: 'leather_vest'
             },
             paladin: {
@@ -1695,6 +1695,86 @@ const OPPOSITE_DIR = {
             while (rem-- > 0) s[STAT_NAMES[Math.floor(Math.random()*6)]]++;
             return s;
         }
+
+        // ═══════════════════════════════════════════════════════════════
+        // RUNESTONES — World-progression keystones, one per major arc.
+        // Each runestone unlocks a portal, a region, or a world secret.
+        // Colors: white, yellow, green, blue, purple, brown, black, red
+        // ═══════════════════════════════════════════════════════════════
+        const RUNESTONES = {
+            white_runestone: {
+                id:          'white_runestone',
+                name:        'White Runestone',
+                color:       '#FFFFFF',
+                badgeSymbol: '✦',
+                description: 'A pale stone humming with quiet energy. It unlocks passage to Ashen Harbor.',
+                lore:        'Found at the heart of Dungeon1. Its surface is smooth and cold as winter.',
+                unlocksPortal: { from: 'town1', to: 'town2' }
+            },
+            yellow_runestone: {
+                id:          'yellow_runestone',
+                name:        'Yellow Runestone',
+                color:       '#FFD700',
+                badgeSymbol: '✦',
+                description: 'A warm golden stone radiating faint heat. Its purpose is not yet known.',
+                lore:        'Ancient texts speak of a sunken city where this stone once served as a key.',
+                unlocksPortal: null  // destination TBD
+            },
+            green_runestone: {
+                id:          'green_runestone',
+                name:        'Green Runestone',
+                color:       '#00FF88',
+                badgeSymbol: '✦',
+                description: 'A mossy stone pulsing with natural energy. The forest seems to breathe around it.',
+                lore:        'Those who carry it claim to hear the Whispering Forest even in silence.',
+                unlocksPortal: null
+            },
+            blue_runestone: {
+                id:          'blue_runestone',
+                name:        'Blue Runestone',
+                color:       '#44AAFF',
+                badgeSymbol: '✦',
+                description: 'A cool blue stone that drips condensation even in dry air.',
+                lore:        'Said to be a fragment of a glacier that froze during the Age of Storms.',
+                unlocksPortal: null
+            },
+            purple_runestone: {
+                id:          'purple_runestone',
+                name:        'Purple Runestone',
+                color:       '#BB66FF',
+                badgeSymbol: '✦',
+                description: 'A violet stone swirling with arcane light. It vibrates in the presence of magic.',
+                lore:        'Mages covet these. Some have gone mad trying to decode what it whispers.',
+                unlocksPortal: null
+            },
+            brown_runestone: {
+                id:          'brown_runestone',
+                name:        'Brown Runestone',
+                color:       '#CC8844',
+                badgeSymbol: '✦',
+                description: 'A rough earthen stone worn smooth by centuries. It feels impossibly heavy.',
+                lore:        'Dwarven records suggest an entire mountain was carved to produce one of these.',
+                unlocksPortal: null
+            },
+            black_runestone: {
+                id:          'black_runestone',
+                name:        'Black Runestone',
+                color:       '#888888',
+                badgeSymbol: '✦',
+                description: 'A void-black stone that seems to absorb the light around it. Cold to the touch.',
+                lore:        'No one knows where it came from. No one who has seen where it goes has returned.',
+                unlocksPortal: null
+            },
+            red_runestone: {
+                id:          'red_runestone',
+                name:        'Red Runestone',
+                color:       '#FF3333',
+                badgeSymbol: '✦',
+                description: 'A blood-red stone that pulses like a heartbeat. It grows warm when danger is near.',
+                lore:        'The last bearer scratched a single word on the wall before vanishing: "Run."',
+                unlocksPortal: null
+            }
+        };
 
         const SPELLS = {
     heal: {
@@ -2629,6 +2709,9 @@ function buildSaveSnapshot() {
             // Special flags
             godMode: p.godMode || false,
 
+            // Portal unlock flag — set when player first uses town2→town1 portal
+            portalUnlocked: p.portalUnlocked || false,
+
             // Achievements & runestones
             achievements: [...(p.achievements || [])],
             runestones: [...(p.runestones || [])]
@@ -3319,12 +3402,18 @@ window.addEventListener('beforeunload', () => {
             terminalPrint('');
             terminalPrint('PLAYER COMMANDS:');
             terminalPrint('  /give <type> <id> [quality]  - Give item to player');
-            terminalPrint('                                 Types: weapon, armor, item, spell');
+            terminalPrint('                                 Types: weapon, armor, item, spell, runestone');
             terminalPrint('                                 Quality (optional): poor, normal, rare,');
             terminalPrint('                                           epic, legendary, godly');
             terminalPrint('                                 Examples:');
             terminalPrint('                                   /give weapon iron_sword legendary');
             terminalPrint('                                   /give armor leather_armor godly');
+            terminalPrint('                                   /give runestone white');
+            terminalPrint('                                   /give runestone yellow');
+            terminalPrint('                                   /give runestone none  (removes all)');
+            terminalPrint('                                 Runestone colors:');
+            terminalPrint('                                   white, yellow, green, blue,');
+            terminalPrint('                                   purple, brown, black, red');
             terminalPrint('  /setlevel <level>     - Set player level (1-25)');
             terminalPrint('                          ⚡ Level 20 triggers class evolution!');
             terminalPrint('  /setgold <amount>     - Set gold amount');
@@ -3495,6 +3584,48 @@ window.addEventListener('beforeunload', () => {
                         terminalPrint(`ERROR: Spell '${id}' not found`, 'error');
                     }
                     break;
+                case 'runestone': {
+                    // Special: /give runestone none — clears all runestones
+                    if (id === 'none' || id === 'clear' || id === 'reset') {
+                        if (!gameState.player.runestones || gameState.player.runestones.length === 0) {
+                            terminalPrint('Player has no runestones to remove.', 'warning');
+                        } else {
+                            const removed = [...gameState.player.runestones];
+                            gameState.player.runestones = [];
+                            // Also clear portalUnlocked since it ties to runestone travel
+                            gameState.player.portalUnlocked = false;
+                            saveGame();
+                            terminalPrint(`SUCCESS: Removed ${removed.length} runestone(s): ${removed.join(', ')}`, 'success');
+                            terminalPrint('  → Portal access reset.', 'info');
+                        }
+                        break;
+                    }
+                    // Accept 'white' or 'white_runestone' — normalize to full key
+                    const rsId = id.includes('_runestone') ? id : `${id}_runestone`;
+                    if (RUNESTONES[rsId]) {
+                        const rs = RUNESTONES[rsId];
+                        if (!gameState.player.runestones) gameState.player.runestones = [];
+                        if (!gameState.player.runestones.includes(rsId)) {
+                            gameState.player.runestones.push(rsId);
+                            if (!gameState.player.achievements) gameState.player.achievements = [];
+                            gameState.player.achievements.push({ id: rsId, name: rs.name, earned: Date.now() });
+                            terminalPrint(`SUCCESS: Gave <span style="color:${rs.color};">${rs.name}</span> to player`, 'success');
+                            terminalPrint(`  → "${rs.description}"`, 'info');
+                            if (rs.unlocksPortal) {
+                                terminalPrint(`  → Portal unlocked: ${rs.unlocksPortal.from} ↔ ${rs.unlocksPortal.to}`, 'success');
+                            }
+                            saveGame();
+                        } else {
+                            terminalPrint(`Player already has the ${rs.name}`, 'warning');
+                        }
+                    } else {
+                        terminalPrint(`ERROR: Unknown runestone color '${id}'`, 'error');
+                        terminalPrint('Valid colors: white, yellow, green, blue, purple, brown, black, red', 'error');
+                        terminalPrint('Usage: /give runestone white   OR   /give runestone white_runestone', 'error');
+                        terminalPrint('       /give runestone none    — removes all runestones', 'error');
+                    }
+                    break;
+                }
                 default:
                     terminalPrint(`ERROR: Invalid type '${type}'`, 'error');
             }
@@ -4461,7 +4592,9 @@ window.addEventListener('beforeunload', () => {
                     // Ensure bankGold exists (for old saves)
                     bankGold: data.player.bankGold || 0,
                     achievements: data.player.achievements || [],
-                    runestones: data.player.runestones || []
+                    runestones: data.player.runestones || [],
+                    // Portal unlock — false for old saves that predate this flag
+                    portalUnlocked: data.player.portalUnlocked || false
                 };
                 
                 // Restore current town
@@ -4918,51 +5051,65 @@ window.addEventListener('beforeunload', () => {
             const p = gameState.player;
             const screen = document.getElementById('mainScreen');
 
-            // ── Portal tab (shown if player has white_runestone) ──────────
-            const hasRunestone = p.runestones && p.runestones.includes('white_runestone');
+            // ── Portal option logic ───────────────────────────────────────
+            // Town1: shows only if player has white_runestone OR portalUnlocked flag
+            // Town2: ALWAYS shows a portal back to town1 (you got here somehow).
+            //        First use of town2 portal permanently unlocks bidirectional travel
+            //        (sets p.portalUnlocked = true, which also enables town1 → town2).
+            const hasRunestone    = p.runestones && p.runestones.includes('white_runestone');
+            const portalUnlocked  = !!p.portalUnlocked;
             let portalOption = '';
-            if (hasRunestone && townDef && townDef.portalDestination) {
-                const destDef = (typeof TOWNS !== 'undefined' && TOWNS[townDef.portalDestination]) 
-                    ? TOWNS[townDef.portalDestination] : null;
-                const destName = destDef ? destDef.name : townDef.portalDestination;
+
+            if (tid === 'town2') {
+                // Town2 always has the return portal visible
                 portalOption = `
-                    <div class="menu-option" onclick="usePortal('${townDef.portalDestination}')"
+                    <div class="menu-option" onclick="usePortal('town1')"
                          style="border-color:#AA88FF;background:rgba(170,136,255,0.07);">
-                        🌀 PORTAL → ${destName}
-                        <span style="color:#AA88FF;font-size:12px;"> [White Runestone ✦]</span>
+                        ► 🌀 PORTAL → Silverdale
+                        ${!portalUnlocked ? '<span style="color:#AA88FF;font-size:12px;"> [First use unlocks permanent travel]</span>' : ''}
+                    </div>`;
+            } else if (tid === 'town1' && (hasRunestone || portalUnlocked)) {
+                // Town1: portal visible once player has runestone OR used town2 portal
+                const destDef  = (typeof TOWNS !== 'undefined' && TOWNS['town2']) ? TOWNS['town2'] : null;
+                const destName = destDef ? destDef.name : 'Ashen Harbor';
+                portalOption = `
+                    <div class="menu-option" onclick="usePortal('town2')"
+                         style="border-color:#AA88FF;background:rgba(170,136,255,0.07);">
+                        ► 🌀 PORTAL → ${destName}
+                        ${hasRunestone ? '<span style="color:#AA88FF;font-size:12px;"> [White Runestone ✦]</span>' : ''}
                     </div>`;
             }
 
             // ── Dungeon option (level-gated) ──────────────────────────────
             let dungeonOption = '';
             if (townDef && townDef.dungeonKey) {
-                const dungeonReady = p.level >= (townDef.dungeonRequiredLevel || 5);
+                const dungeonReady = p.level >= (townDef.dungeonRequiredLevel || 3);
                 if (dungeonReady) {
                     dungeonOption = `
                         <div class="menu-option" onclick="enterTownDungeon('${tid}')"
                              style="border-color:var(--highlight-color);">
-                            🏰 ${townDef.dungeonName || 'DUNGEON'}
+                            ► 🏰 ${townDef.dungeonName || 'DUNGEON'}
                         </div>`;
                 } else {
                     dungeonOption = `
                         <div class="menu-option" style="opacity:0.45;cursor:default;"
                              onclick="alert('${townDef.dungeonUnlockMessage || 'Not yet ready.'}')">
                             🏰 ${townDef.dungeonName || 'DUNGEON'}
-                            <span style="color:var(--error-color);font-size:12px;"> [Requires Lv ${townDef.dungeonRequiredLevel || 5}]</span>
+                            <span style="color:var(--error-color);font-size:12px;"> [Requires Lv ${townDef.dungeonRequiredLevel || 3}]</span>
                         </div>`;
                 }
             } else if (!townDef) {
-                // Legacy fallback for old saves
-                dungeonOption = `<div class="menu-option" onclick="enterDungeons()">🏰 DUNGEONS</div>`;
+                dungeonOption = `<div class="menu-option" onclick="enterDungeons()">► 🏰 DUNGEONS</div>`;
             }
 
-            // ── Runestone badge next to name ──────────────────────────────
+            // ── Runestone badges next to town name ────────────────────────
             let runestoneBadge = '';
             if (p.runestones && p.runestones.length > 0) {
-                const badges = {
-                    'white_runestone': '<span title="White Runestone: Discovered Ashen Harbor" style="color:#FFFFFF;margin-left:6px;font-size:14px;" >✦</span>'
-                };
-                runestoneBadge = p.runestones.map(r => badges[r] || '').join('');
+                runestoneBadge = p.runestones.map(rsId => {
+                    const rs = (typeof RUNESTONES !== 'undefined') ? RUNESTONES[rsId] : null;
+                    if (!rs) return '';
+                    return `<span title="${rs.name}: ${rs.description}" style="color:${rs.color};margin-left:5px;font-size:14px;cursor:default;">${rs.badgeSymbol}</span>`;
+                }).join('');
             }
 
             screen.innerHTML = `
@@ -4974,18 +5121,18 @@ window.addEventListener('beforeunload', () => {
                 </div>
                 <div style="margin: 20px 0;">
                     <div class="menu-option" onclick="showShop()">► VISIT SHOP</div>
-                    <div class="menu-option" onclick="showBank()">🏦 BANK (${p.bankGold || 0}g stored)</div>
-                    <div class="menu-option" onclick="showCharacterStats()">📊 CHARACTER STATS</div>
-                    <div class="menu-option" onclick="showTemple()">⛪ TEMPLE OF REBIRTH</div>
+                    <div class="menu-option" onclick="showBank()">► 🏦 BANK (${p.bankGold || 0}g stored)</div>
+                    <div class="menu-option" onclick="showCharacterStats()">► 📊 CHARACTER STATS</div>
+                    <div class="menu-option" onclick="showTemple()">► ⛪ TEMPLE OF REBIRTH</div>
                     ${dungeonOption}
                     <div class="menu-option" onclick="restAtInn()">► REST AT INN (${calcInnCost(p.cha)} Gold)</div>
                     <div class="menu-option" onclick="showInventory()">► INVENTORY</div>
                     <div class="menu-option" onclick="showExplore()">► EXPLORE WORLD</div>
                     ${portalOption}
                     <div class="menu-option" onclick="showModemSettings()">► MODEM SETTINGS</div>
-                    <div class="menu-option" onclick="saveGame()" style="border-color:var(--text-color);">💾 QUICK SAVE</div>
-                    <div class="menu-option" onclick="downloadSaveFile()" style="border-color:var(--highlight-color);background:rgba(255,255,0,0.05);">📥 DOWNLOAD SAVE FILE</div>
-                    <div class="menu-option" onclick="confirmQuitToMenu()">⏏ QUIT TO MENU</div>
+                    <div class="menu-option" onclick="saveGame()" style="border-color:var(--text-color);">► 💾 QUICK SAVE</div>
+                    <div class="menu-option" onclick="downloadSaveFile()" style="border-color:var(--highlight-color);background:rgba(255,255,0,0.05);">► 📥 DOWNLOAD SAVE FILE</div>
+                    <div class="menu-option" onclick="confirmQuitToMenu()">► ⏏ QUIT TO MENU</div>
                 </div>
             `;
         }
@@ -4993,18 +5140,37 @@ window.addEventListener('beforeunload', () => {
         // ── Travel to another town via portal ──────────────────────────
         function usePortal(destTownId) {
             const p = gameState.player;
-            if (!p.runestones || !p.runestones.includes('white_runestone')) {
-                alert('You need the White Runestone to use the portal!');
-                return;
+            const fromTown = gameState.currentTown || 'town1';
+
+            // Town2 → Town1: always allowed (you're already there).
+            // First time using this direction unlocks permanent bidirectional travel.
+            if (fromTown === 'town2' && destTownId === 'town1') {
+                if (!p.portalUnlocked) {
+                    p.portalUnlocked = true;
+                    saveGame();
+                    // Show unlock announcement
+                    const screen = document.getElementById('mainScreen');
+                    const flash = document.createElement('div');
+                    flash.style.cssText = 'position:fixed;top:15px;left:50%;transform:translateX(-50%);background:#0a0a0a;border:2px solid #AA88FF;padding:12px 24px;color:#AA88FF;font-size:16px;z-index:9999;text-align:center;';
+                    flash.innerHTML = '🌀 <strong>Portal Unlocked!</strong><br><span style="font-size:13px;color:#ccc;">You can now travel freely between Silverdale and Ashen Harbor.</span>';
+                    document.body.appendChild(flash);
+                    setTimeout(() => flash.remove(), 3500);
+                }
+            } else if (fromTown === 'town1' && destTownId === 'town2') {
+                // Town1 → Town2: requires runestone OR already unlocked
+                if (!p.portalUnlocked && !(p.runestones && p.runestones.includes('white_runestone'))) {
+                    alert('You need to have visited Ashen Harbor first to use this portal!');
+                    return;
+                }
             }
+
             const destDef = (typeof TOWNS !== 'undefined' && TOWNS[destTownId]) ? TOWNS[destTownId] : null;
             const destName = destDef ? destDef.name : destTownId;
             gameState.currentTown = destTownId;
             saveGame();
             showTown(destTownId);
-            // Flash a brief arrival message
+            // Flash arrival message
             setTimeout(() => {
-                const screen = document.getElementById('mainScreen');
                 const flash = document.createElement('div');
                 flash.style.cssText = 'position:fixed;top:15px;left:50%;transform:translateX(-50%);background:#0a0a0a;border:2px solid #AA88FF;padding:10px 20px;color:#AA88FF;font-size:16px;z-index:9999;';
                 flash.textContent = `🌀 Arrived in ${destName}`;
@@ -6332,7 +6498,20 @@ window.addEventListener('beforeunload', () => {
     }
 
     // ── Desktop HUD strip (name + numbers, desktop only) ──
-    set('hudName',   `${p.name} – Lv ${p.level} ${p.className}`);
+    // Build runestone badge(s) — colored ✦ pip(s) after name
+    let runestonePip = '';
+    if (p.runestones && p.runestones.length > 0 && typeof RUNESTONES !== 'undefined') {
+        runestonePip = p.runestones.map(rsId => {
+            const rs = RUNESTONES[rsId];
+            return rs
+                ? `<span title="${rs.name}" style="color:${rs.color};margin-left:4px;font-size:14px;">✦</span>`
+                : '';
+        }).join('');
+    }
+    const hudNameEl = document.getElementById('hudName');
+    if (hudNameEl) {
+        hudNameEl.innerHTML = `${p.name} – Lv ${p.level} ${p.className}${runestonePip}`;
+    }
     set('hudHpNums', `❤️ ${p.hp}/${p.maxHp}`);
     set('hudMpNums', `✨ ${p.mp}/${p.maxMp}`);
     set('hudXpNums', `⭐ ${p.xp}/${p.xpToNext}`);
@@ -7963,6 +8142,85 @@ function dungeonNav(input) {
 // PLAYER ACTIONS
 // ═══════════════════════════════════════════════════════════════
 
+// ── RUNESTONE ROOM EVENT ─────────────────────────────────────────
+// Called every time a room is entered. If the room has contents.runestone
+// and the player doesn't already have it, award it with a dramatic flash.
+function checkRunestone(room) {
+    if (!room || !room.contents || !room.contents.runestone) return;
+    const p = gameState.player;
+    if (!p) return;
+
+    const rsId = room.contents.runestone;
+    if (!p.runestones) p.runestones = [];
+    if (p.runestones.includes(rsId)) return;  // already have it — no repeat
+
+    // Mark as obtained
+    p.runestones.push(rsId);
+    if (!p.achievements) p.achievements = [];
+    p.achievements.push({ id: rsId, name: rsId.replace('_', ' '), earned: Date.now() });
+
+    // Get registry data for color and name
+    const rs = (typeof RUNESTONES !== 'undefined' && RUNESTONES[rsId]) ? RUNESTONES[rsId] : null;
+    const rsName  = rs ? rs.name  : rsId.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const rsColor = rs ? rs.color : '#FFFFFF';
+    const rsDesc  = rs ? rs.description : 'A mysterious runestone.';
+
+    // ── Dramatic flash cutscene ───────────────────────────────────
+    termAppend('', 'term-separator');
+    termAppend(
+        `<span style="color:#FFFFFF;font-weight:bold;font-size:18px;letter-spacing:2px;">⚡ A FLASH OF BLINDING LIGHT! ⚡</span>`,
+        'term-highlight'
+    );
+    termAppend(
+        `<span style="color:${rsColor};font-weight:bold;">You now have the ${rsName} inscribed upon your forehead!</span>`,
+        'term-loot'
+    );
+    termAppend(
+        `<span style="color:#aaa;font-style:italic;">${rsDesc}</span>`,
+        'term-dim'
+    );
+    termAppend('', 'term-separator');
+
+    // Flash overlay on the screen
+    const flash = document.createElement('div');
+    flash.style.cssText = [
+        'position:fixed', 'inset:0', 'background:#FFFFFF', 'opacity:0.9',
+        'z-index:99999', 'pointer-events:none',
+        'transition:opacity 0.6s ease-out'
+    ].join(';');
+    document.body.appendChild(flash);
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            flash.style.opacity = '0';
+            setTimeout(() => {
+                flash.remove();
+                // After flash — show colored pip banner
+                const banner = document.createElement('div');
+                banner.style.cssText = [
+                    `position:fixed`, `top:60px`, `left:50%`,
+                    `transform:translateX(-50%)`,
+                    `background:#0a0a0a`,
+                    `border:2px solid ${rsColor}`,
+                    `padding:12px 28px`,
+                    `color:${rsColor}`,
+                    `font-family:'VT323',monospace`,
+                    `font-size:20px`,
+                    `z-index:9999`,
+                    `text-align:center`,
+                    `letter-spacing:1px`
+                ].join(';');
+                banner.innerHTML = `<span style="font-size:22px;">✦</span> ${rsName} <span style="font-size:22px;">✦</span><br><span style="font-size:14px;color:#ccc;">Inscribed upon your forehead</span>`;
+                document.body.appendChild(banner);
+                setTimeout(() => banner.remove(), 4000);
+            }, 650);
+        });
+    });
+
+    // Update HUD immediately so the pip appears
+    updateHud();
+    saveGame();
+}
+
 function checkRoomEncounter(room) {
     const ds = gameState.dungeon;
     if (!ds) return;
@@ -8153,6 +8411,7 @@ function moveInDungeon(direction) {
 
         checkTownExit(destRoom);
         triggerRoomTrap(destRoom);
+        checkRunestone(destRoom);
         checkRoomEncounter(destRoom);
         checkEnemiesInRoom(targetRoom);
         saveGame();
@@ -8224,6 +8483,9 @@ function moveInDungeon(direction) {
 
     // 🔥 Spawn encounter (once)
     checkRoomEncounter(nextRoom);
+
+    // ✦ Runestone pickup (once, triggers flash cutscene)
+    checkRunestone(nextRoom);
 
     // 👣 Move any active enemies that can follow
     updateDungeonEnemies();
