@@ -450,14 +450,14 @@ const WEAPONS = {
     // ── Level 1 ──────────────────────────────────────────────────
     rusty_shiv: {
         name: 'Rusty Shiv',
-        baseDamage: 2, maxDamage: 4, baseMagicDamage: 0,
+        baseDamage: 3, maxDamage: 5, baseMagicDamage: 0,
         cost: 0, level: 1, quality: 'poor', slot: 'weapon',
         classRestriction: 'rogue',
         description: 'A jagged bit of scrap metal. Barely a weapon.'
     },
     iron_dagger: {
         name: 'Iron Dagger',
-        baseDamage: 3, maxDamage: 5, baseMagicDamage: 0,
+        baseDamage: 5, maxDamage: 8, baseMagicDamage: 0,
         cost: 150, level: 1, quality: 'normal', slot: 'weapon',
         classRestriction: 'rogue',
         description: 'A simple iron blade. Reliable if nothing else.'
@@ -466,7 +466,7 @@ const WEAPONS = {
     // ── Level 2 ──────────────────────────────────────────────────
     bone_pick: {
         name: 'Bone Pick',
-        baseDamage: 3, maxDamage: 6, baseMagicDamage: 0,
+        baseDamage: 5, maxDamage: 9, baseMagicDamage: 0,
         cost: 280, level: 2, quality: 'normal', slot: 'weapon',
         classRestriction: 'rogue',
         description: 'Carved from something that used to fight back.'
@@ -475,7 +475,7 @@ const WEAPONS = {
     // ── Level 3 ──────────────────────────────────────────────────
     copper_stiletto: {
         name: 'Copper Stiletto',
-        baseDamage: 4, maxDamage: 7, baseMagicDamage: 0,
+        baseDamage: 6, maxDamage: 10, baseMagicDamage: 0,
         cost: 400, level: 3, quality: 'normal', slot: 'weapon',
         classRestriction: 'rogue',
         description: 'Thin, fast, and gets between ribs nicely.'
@@ -484,7 +484,7 @@ const WEAPONS = {
     // ── Level 4 ──────────────────────────────────────────────────
     throwing_knife: {
         name: 'Throwing Knife',
-        baseDamage: 4, maxDamage: 8, baseMagicDamage: 0,
+        baseDamage: 7, maxDamage: 11, baseMagicDamage: 0,
         cost: 520, level: 4, quality: 'normal', slot: 'weapon',
         classRestriction: 'rogue',
         description: 'Balanced for both throwing and close-in work.'
@@ -493,7 +493,7 @@ const WEAPONS = {
     // ── Level 5 (2 pips unlock here) ─────────────────────────────
     assassin_blade: {
         name: "Assassin's Blade",
-        baseDamage: 5, maxDamage: 9, baseMagicDamage: 0,
+        baseDamage: 8, maxDamage: 13, baseMagicDamage: 0,
         cost: 700, level: 5, quality: 'normal', slot: 'weapon',
         classRestriction: 'rogue',
         description: 'Etched with guild marks. Ownership is not discussed.'

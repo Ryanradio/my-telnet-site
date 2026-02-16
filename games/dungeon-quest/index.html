@@ -8823,7 +8823,11 @@ function consumePips(cs, amount, cooldown) {
       : (defender.defense || 0);
 
   defense *= (1 - armorPiercing);
-  damage = Math.max(1, Math.floor(damage - defense));
+
+  // Minimum damage guarantee: defense can never reduce a hit below 40% of base.
+  // Without this, low-level weapons (3-5 dmg) get nearly zeroed by any defense.
+  const minDamage = Math.max(1, Math.floor(base * 0.40));
+  damage = Math.max(minDamage, Math.floor(damage - defense));
 
   // Crit check
   let crit = false;
