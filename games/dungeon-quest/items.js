@@ -206,7 +206,8 @@ const ITEMS = {
         subtype: 'material',
         power: 0,
         cost: 10,
-        description: 'Crafting material'
+        sellValue: 5,
+        description: 'A glittering gem. Worth a few coins to the right merchant.'
     },
     
     large_gem: {
@@ -214,7 +215,8 @@ const ITEMS = {
         subtype: 'material',
         power: 0,
         cost: 50,
-        description: 'Rare crafting material'
+        sellValue: 25,
+        description: 'A fine quality gem. Merchants pay well for these.'
     },
     
     dragon_scale: {

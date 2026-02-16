@@ -449,12 +449,11 @@ body.terminal-mode .hud-inner {
     justify-content: flex-start;
 }
 body.terminal-mode #hudName {
-    font-size: 13px !important;
+    font-size: 14px !important;
     color: var(--highlight-color) !important;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 200px;
+    overflow: visible;
+    max-width: 280px;
     flex-shrink: 1;
 }
 body.terminal-mode .hud-stats {
@@ -2967,7 +2966,7 @@ window.addEventListener('beforeunload', () => {
             const p = gameState.player;
             if (!p) { termAppend('No character loaded.', 'term-error'); return; }
             termAppend('', 'term-separator');
-            termAppend(`📊 <span style="color:var(--highlight-color);">${p.name}</span> · Lv ${p.level} ${p.className}`, 'term-highlight');
+            termAppend(`📊 <span style="color:var(--highlight-color);">${p.name}${getRunestonePip(p)}</span> · Lv ${p.level} ${p.className}`, 'term-highlight');
             termAppend(`❤️ HP: <span style="color:#ff6666;">${p.hp}/${p.maxHp}</span>  ✨ MP: <span style="color:#4488ff;">${p.mp}/${p.maxMp}</span>`);
             termAppend(`⭐ XP: ${p.xp}/${p.xpToNext}  💰 Gold: ${p.gold}g`);
             termAppend(`STR:${p.str} DEX:${p.dex} CON:${p.con} WIS:${p.wis} CHA:${p.cha} LCK:${p.lck}`, 'term-dim');
@@ -4464,14 +4463,11 @@ window.addEventListener('beforeunload', () => {
 
             screen.innerHTML = `
                 <div class="location-header">MAIN MENU</div>
-                <div style="text-align: center; margin: 30px 0;">
-                    <div class="ascii-art" style="color: var(--highlight-color);">
-    ⚔️ ═══════════════════════════════ ⚔️
-       ╔═══════════════════════════╗
-       ║   DUNGEON QUEST AWAITS!   ║
-       ╚═══════════════════════════╝
-    🗡️ ═══════════════════════════════ 🗡️
+                <div style="text-align:center; margin: 30px 0;">
+                    <div style="display:inline-block; border:2px solid var(--highlight-color); padding:10px 28px; color:var(--highlight-color); font-family:'VT323',monospace; font-size:22px; letter-spacing:2px; box-shadow:0 0 12px rgba(255,200,0,0.3);">
+                        DUNGEON QUEST AWAITS!
                     </div>
+                    <div style="color:var(--highlight-color); font-size:18px; margin-top:8px; letter-spacing:3px;">⚔️ ——————————————— ⚔️</div>
                 </div>
                 <div style="max-width: 400px; margin: 0 auto;">
                     <div class="menu-option" onclick="newGame()">► NEW GAME</div>
@@ -5662,144 +5658,216 @@ window.addEventListener('beforeunload', () => {
 
         function showShopSell() {
             const p = gameState.player;
-            
-            // Group items by key and count them
+            const QUALITY_ORDER = ['poor','normal','rare','epic','legendary','godly'];
+
+            // Current sell threshold from UI (default: poor = only poor)
+            const thresholdEl = document.getElementById('sellQualityThreshold');
+            const threshold   = thresholdEl ? thresholdEl.value : 'poor';
+            const thresholdIdx = QUALITY_ORDER.indexOf(threshold);
+
+            // Build sellable item list
             const itemCounts = {};
-            
             p.inventory.forEach(itemKey => {
-                // Items with sellValue
-                if (ITEMS[itemKey] && ITEMS[itemKey].sellValue > 0) {
-                    if (!itemCounts[itemKey]) itemCounts[itemKey] = { type: 'item', count: 0 };
+                if (ITEMS[itemKey] && (ITEMS[itemKey].sellValue > 0)) {
+                    if (!itemCounts[itemKey]) itemCounts[itemKey] = { type:'item', count:0 };
                     itemCounts[itemKey].count++;
-                }
-                // Duplicate weapons/armor (not currently equipped, not virtual slots)
-                else if (WEAPONS[itemKey] && itemKey !== p.weapon && !WEAPONS[itemKey].unarmed) {
-                    if (!itemCounts[itemKey]) itemCounts[itemKey] = { type: 'weapon', count: 0 };
+                } else if (WEAPONS[itemKey] && itemKey !== p.weapon && !WEAPONS[itemKey].unarmed) {
+                    if (!itemCounts[itemKey]) itemCounts[itemKey] = { type:'weapon', count:0 };
                     itemCounts[itemKey].count++;
-                }
-                else if (ARMOR[itemKey] && itemKey !== p.armor && !ARMOR[itemKey].unarmored) {
-                    if (!itemCounts[itemKey]) itemCounts[itemKey] = { type: 'armor', count: 0 };
+                } else if (ARMOR[itemKey] && itemKey !== p.armor && !ARMOR[itemKey].unarmored) {
+                    if (!itemCounts[itemKey]) itemCounts[itemKey] = { type:'armor', count:0 };
                     itemCounts[itemKey].count++;
                 }
             });
-            
-            let sellHtml = '<h3 style="color: var(--highlight-color);">YOUR SELLABLE ITEMS</h3>';
-            sellHtml += '<div class="inventory-grid">';
-            
+
+            // Determine which items are within the sell threshold
+            function getItemQualityIdx(itemKey, type) {
+                if (type === 'item') return -1; // items always sellable
+                if (type === 'weapon') return QUALITY_ORDER.indexOf(WEAPONS[itemKey]?.quality || 'poor');
+                if (type === 'armor')  return QUALITY_ORDER.indexOf(ARMOR[itemKey]?.quality || 'poor');
+                return -1;
+            }
+
+            // Count gold total for "sell all" preview
+            let sellAllGold = 0;
+            let sellAllCount = 0;
+            Object.entries(itemCounts).forEach(([itemKey, data]) => {
+                const qIdx = getItemQualityIdx(itemKey, data.type);
+                if (data.type === 'item' || qIdx <= thresholdIdx) {
+                    const sv = getSellValue(itemKey, data.type);
+                    sellAllGold  += sv * data.count;
+                    sellAllCount += data.count;
+                }
+            });
+
+            const qualityOptions = QUALITY_ORDER.map(q => {
+                const cfg = QUALITY_CONFIG[q];
+                return `<option value="${q}" ${q === threshold ? 'selected' : ''}>
+                    ${cfg.name} and below
+                </option>`;
+            }).join('');
+
+            let sellHtml = `
+                <div style="margin-bottom:12px;">
+                    <div style="color:var(--highlight-color);font-size:18px;margin-bottom:8px;">SELL ITEMS</div>
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">
+                        <label style="font-size:14px;color:#aaa;">Sell threshold:</label>
+                        <select id="sellQualityThreshold"
+                            style="background:#111;border:1px solid var(--border-color);color:#fff;padding:4px 8px;font-size:14px;"
+                            onchange="showShopSell()">
+                            ${qualityOptions}
+                        </select>
+                        <button onclick="sellAllBelowThreshold()"
+                            style="background:#222;border:1px solid #ff8c00;color:#ff8c00;padding:5px 14px;font-size:14px;cursor:pointer;">
+                            💰 SELL ALL (${sellAllCount} items · ${sellAllGold}g)
+                        </button>
+                    </div>
+                    <div style="font-size:12px;color:#666;">Items at or below the chosen quality tier will be sold. Equipped gear is never sold.</div>
+                </div>
+                <div class="inventory-grid">`;
+
             const itemKeys = Object.keys(itemCounts);
             if (itemKeys.length === 0) {
                 sellHtml += '<div class="message">You have nothing to sell.</div>';
             } else {
                 itemKeys.forEach(itemKey => {
                     const data = itemCounts[itemKey];
-                    let itemName, itemColor, sellValue, itemDesc;
-                    
+                    const qIdx = getItemQualityIdx(itemKey, data.type);
+                    const withinThreshold = data.type === 'item' || qIdx <= thresholdIdx;
+
+                    let itemName, itemColor, sellValue, itemDesc, qualityLabel = '';
+
                     if (data.type === 'item') {
                         const item = ITEMS[itemKey];
-                        itemName = item.name;
+                        itemName  = item.name;
                         itemColor = '#00FF00';
                         sellValue = item.sellValue;
-                        itemDesc = item.description;
+                        itemDesc  = item.description;
                     } else if (data.type === 'weapon') {
                         const weapon = WEAPONS[itemKey];
-                        itemName = weapon.name;
-                        itemColor = QUALITY_CONFIG[weapon.quality].color;
-                        sellValue = Math.floor(weapon.cost * 0.5);
-                        const qualityBonus = getQualityBonus(weapon.quality, weapon.baseDamage);
-                        itemDesc = `DMG: ${weapon.baseDamage + qualityBonus} | MAG: ${weapon.baseMagicDamage + qualityBonus}`;
+                        itemName     = weapon.name;
+                        itemColor    = QUALITY_CONFIG[weapon.quality]?.color || '#fff';
+                        sellValue    = getSellValue(itemKey, 'weapon');
+                        qualityLabel = QUALITY_CONFIG[weapon.quality]?.name || '';
+                        const qb     = getQualityBonus(weapon.quality, weapon.baseDamage);
+                        itemDesc     = `DMG: ${weapon.baseDamage+qb}`;
                     } else if (data.type === 'armor') {
                         const armor = ARMOR[itemKey];
-                        itemName = armor.name;
-                        itemColor = QUALITY_CONFIG[armor.quality].color;
-                        sellValue = Math.floor(armor.cost * 0.5);
-                        const qualityBonus = getQualityBonus(armor.quality, armor.baseDefense);
-                        itemDesc = `DEF: ${armor.baseDefense + qualityBonus}`;
+                        itemName     = armor.name;
+                        itemColor    = QUALITY_CONFIG[armor.quality]?.color || '#fff';
+                        sellValue    = getSellValue(itemKey, 'armor');
+                        qualityLabel = QUALITY_CONFIG[armor.quality]?.name || '';
+                        const qb     = getQualityBonus(armor.quality, armor.baseDefense);
+                        itemDesc     = `DEF: ${armor.baseDefense+qb}`;
                     }
-                    
+
+                    const dimmed = !withinThreshold ? 'opacity:0.4;' : '';
+
                     sellHtml += `
-                        <div class="item-card">
-                            <div style="color: ${itemColor};">${itemName} ${data.count > 1 ? `<span style="color:#FFD700;">x${data.count}</span>` : ''}</div>
-                            <div style="font-size: 16px;">${itemDesc}</div>
-                            <div style="color: var(--border-color); margin-top: 10px;">
-                                ${sellValue}g each
-                                ${data.count > 1 ? `<br><span style="color:#FFD700;">Total: ${sellValue * data.count}g</span>` : ''}
-                            </div>
-                            ${data.count > 1 ? `
-                                <button onclick="showSellQuantityPrompt('${itemKey}', ${sellValue}, ${data.count})">SELL (${data.count})</button>
-                            ` : `
-                                <button onclick="sellItem('${itemKey}', ${sellValue}, 1)">SELL</button>
-                            `}
-                        </div>
-                    `;
+                        <div class="item-card" style="${dimmed}">
+                            <div style="color:${itemColor};">${itemName}${qualityLabel ? ` <span style="font-size:11px;">[${qualityLabel}]</span>` : ''}${data.count > 1 ? ` <span style="color:#FFD700;">x${data.count}</span>` : ''}</div>
+                            <div style="font-size:14px;color:#aaa;">${itemDesc}</div>
+                            <div style="color:var(--border-color);margin-top:6px;">${sellValue}g each</div>
+                            ${withinThreshold
+                                ? `<button onclick="sellItem('${itemKey}', ${sellValue}, ${data.count})" style="margin-top:6px;">SELL${data.count > 1 ? ` ALL (${sellValue*data.count}g)` : ` (${sellValue}g)`}</button>`
+                                : `<div style="font-size:11px;color:#555;margin-top:6px;">Above threshold</div>`
+                            }
+                        </div>`;
                 });
             }
-            
             sellHtml += '</div>';
             document.getElementById('shopContent').innerHTML = sellHtml;
         }
-        
-        function showSellQuantityPrompt(itemKey, unitPrice, totalCount) {
-            const itemName = getItemName(itemKey);
-            const bonus = calcChaSellBonus(gameState.player.cha);
-            const actualPrice = Math.floor(unitPrice * (1 + bonus/100));
-            
-            const quantity = prompt(
-                `How many ${itemName} do you want to sell?\n\n` +
-                `You have: ${totalCount}\n` +
-                `Price: ${actualPrice}g each${bonus > 0 ? ` (+${bonus}% CHA bonus)` : ''}\n\n` +
-                `Enter quantity (1-${totalCount}) or "all":`,
-                totalCount
-            );
-            
-            if (!quantity || quantity === '' || quantity === null) return;
-            
-            let amount;
-            if (quantity.toLowerCase() === 'all') {
-                amount = totalCount;
-            } else {
-                amount = parseInt(quantity);
-                if (isNaN(amount) || amount < 1 || amount > totalCount) {
-                    alert('Invalid quantity!');
-                    return;
+
+        // Returns sell value for a weapon or armor (10% of cost)
+        function getSellValue(itemKey, type) {
+            if (type === 'item') return ITEMS[itemKey]?.sellValue || 0;
+            if (type === 'weapon') return Math.max(1, Math.floor((WEAPONS[itemKey]?.cost || 0) * 0.10));
+            if (type === 'armor')  return Math.max(1, Math.floor((ARMOR[itemKey]?.cost  || 0) * 0.10));
+            return 0;
+        }
+
+        function sellAllBelowThreshold() {
+            const p = gameState.player;
+            const QUALITY_ORDER = ['poor','normal','rare','epic','legendary','godly'];
+            const thresholdEl = document.getElementById('sellQualityThreshold');
+            const threshold   = thresholdEl ? thresholdEl.value : 'poor';
+            const thresholdIdx = QUALITY_ORDER.indexOf(threshold);
+            const bonus = calcChaSellBonus(p.cha);
+
+            let totalGold = 0, totalItems = 0;
+            const toRemove = [];
+
+            // Collect items to sell (don't remove during iteration)
+            p.inventory.forEach(itemKey => {
+                if (ITEMS[itemKey] && ITEMS[itemKey].sellValue > 0) {
+                    toRemove.push({ key: itemKey, value: ITEMS[itemKey].sellValue });
+                } else if (WEAPONS[itemKey] && itemKey !== p.weapon && !WEAPONS[itemKey].unarmed) {
+                    const qIdx = QUALITY_ORDER.indexOf(WEAPONS[itemKey]?.quality || 'poor');
+                    if (qIdx <= thresholdIdx) toRemove.push({ key: itemKey, value: getSellValue(itemKey, 'weapon') });
+                } else if (ARMOR[itemKey] && itemKey !== p.armor && !ARMOR[itemKey].unarmored) {
+                    const qIdx = QUALITY_ORDER.indexOf(ARMOR[itemKey]?.quality || 'poor');
+                    if (qIdx <= thresholdIdx) toRemove.push({ key: itemKey, value: getSellValue(itemKey, 'armor') });
                 }
+            });
+
+            if (toRemove.length === 0) {
+                showShopSell(); return;
             }
-            
-            sellItem(itemKey, unitPrice, amount);
+
+            // Remove all and tally gold
+            toRemove.forEach(({ key, value }) => {
+                const idx = p.inventory.indexOf(key);
+                if (idx !== -1) {
+                    p.inventory.splice(idx, 1);
+                    const actualValue = Math.floor(value * (1 + bonus/100));
+                    totalGold  += actualValue;
+                    totalItems++;
+                }
+            });
+
+            p.gold += totalGold;
+            const bonusText = bonus > 0 ? ` (+${bonus}% CHA)` : '';
+            // No popup — just refresh sell panel with a brief status line
+            saveGame();
+            showShopSell();
+            // Insert a one-line feedback message above the panel
+            const content = document.getElementById('shopContent');
+            const msg = document.createElement('div');
+            msg.style.cssText = 'background:#111;border:1px solid #ff8c00;color:#ff8c00;padding:6px 12px;font-size:15px;margin-bottom:10px;';
+            msg.textContent = `Sold ${totalItems} item${totalItems!==1?'s':''} for ${totalGold}g${bonusText}.`;
+            content.prepend(msg);
+            setTimeout(() => msg.remove(), 3000);
+        }
+
+        function showSellQuantityPrompt(itemKey, unitPrice, totalCount) {
+            // Legacy path — no longer used but kept for safety
+            sellItem(itemKey, unitPrice, totalCount);
         }
 
         function sellItem(itemKey, baseValue, quantity = 1) {
             const p = gameState.player;
-            
-            // Remove items from inventory
             let removed = 0;
             for (let i = p.inventory.length - 1; i >= 0 && removed < quantity; i--) {
-                if (p.inventory[i] === itemKey) {
-                    p.inventory.splice(i, 1);
-                    removed++;
-                }
+                if (p.inventory[i] === itemKey) { p.inventory.splice(i, 1); removed++; }
             }
-            
-            if (removed === 0) {
-                alert('Item not found!');
-                return;
-            }
-            
-            const bonus = calcChaSellBonus(p.cha);
-            const unitValue = Math.floor(baseValue * (1 + bonus/100));
+            if (removed === 0) return;
+            const bonus      = calcChaSellBonus(p.cha);
+            const unitValue  = Math.floor(baseValue * (1 + bonus/100));
             const totalValue = unitValue * removed;
-            
             p.gold += totalValue;
-            
-            const itemName = getItemName(itemKey);
-            const quantityText = removed > 1 ? ` x${removed}` : '';
-            const bonusText = bonus > 0 ? ` (+${bonus}% CHA bonus)` : '';
-            
-            alert(`Sold ${itemName}${quantityText} for ${totalValue}g!${bonusText}`);
-            
-            // 💾 AUTO-SAVE after selling
             saveGame();
-            
             showShopSell();
+            // Brief inline feedback, no alert()
+            const content = document.getElementById('shopContent');
+            if (content) {
+                const msg = document.createElement('div');
+                const name = getItemName(itemKey);
+                msg.style.cssText = 'background:#111;border:1px solid #4a9a4a;color:#4a9a4a;padding:6px 12px;font-size:15px;margin-bottom:10px;';
+                msg.textContent = `Sold ${removed > 1 ? removed+'× ' : ''}${name} for ${totalValue}g.`;
+                content.prepend(msg);
+                setTimeout(() => msg.remove(), 2500);
+            }
         }
 
         function buyItem(type, key, baseCost) {
@@ -6474,6 +6542,19 @@ window.addEventListener('beforeunload', () => {
         function initHud() {
             updateHud();
         }
+        // ── Shared helper: returns HTML ✦ pip(s) for the player's runestones ──
+        // font-size:'1em' inherits parent size so pip is always same size as name
+        function getRunestonePip(player) {
+            if (!player || !player.runestones || !player.runestones.length) return '';
+            if (typeof RUNESTONES === 'undefined') return '';
+            return player.runestones.map(rsId => {
+                const rs = RUNESTONES[rsId];
+                return rs
+                    ? `<span title="${rs.name}" style="color:${rs.color};margin-left:8px;font-size:16px;vertical-align:middle;line-height:1;">✦</span>`
+                    : '';
+            }).join('');
+        }
+
         function updateHud() {
     const p = gameState.player;
 
@@ -6498,16 +6579,7 @@ window.addEventListener('beforeunload', () => {
     }
 
     // ── Desktop HUD strip (name + numbers, desktop only) ──
-    // Build runestone badge(s) — colored ✦ pip(s) after name
-    let runestonePip = '';
-    if (p.runestones && p.runestones.length > 0 && typeof RUNESTONES !== 'undefined') {
-        runestonePip = p.runestones.map(rsId => {
-            const rs = RUNESTONES[rsId];
-            return rs
-                ? `<span title="${rs.name}" style="color:${rs.color};margin-left:4px;font-size:14px;">✦</span>`
-                : '';
-        }).join('');
-    }
+    const runestonePip = getRunestonePip(p);
     const hudNameEl = document.getElementById('hudName');
     if (hudNameEl) {
         hudNameEl.innerHTML = `${p.name} – Lv ${p.level} ${p.className}${runestonePip}`;

@@ -3557,7 +3557,17 @@ window.DUNGEONS.Dungeon1 = {
             "s": "R126",
             "n": "R128"
           },
-          "contents": {},
+          "contents": {
+            "traps": [
+              {
+                "type": "stone",
+                "damage": 120,
+                "duration": 0,
+                "resetOnLeave": true,
+                "triggered": false
+              }
+            ]
+          },
           "flags": {
             "discovered": false
           }
