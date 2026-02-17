@@ -1377,6 +1377,7 @@ body.terminal-mode #fsBtn { bottom: calc(env(safe-area-inset-bottom, 0px) + 70px
     </div>
 
     <!-- External Game Data Files -->
+    <script src="gameversion.js"></script>
     <script src="dungeon-data.js"></script>
     <script src="Dungeon1.js"></script>
     <script src="town1.js"></script>
@@ -2230,6 +2231,10 @@ line.innerHTML =
             
             input.click();
         }
+
+        // ── Version check and revision history live in gameversion.js ──
+        // GAME_VERSION and REVISION_HISTORY are loaded from that file.
+        // checkGameVersion() is also defined there.
 
         // Game State
         let gameState = {
@@ -4639,12 +4644,17 @@ window.addEventListener('beforeunload', () => {
                     </div>
                     <div class="menu-option" onclick="loadFromFile()">📁 LOAD FROM FILE (.dqsave)</div>
                     <div class="menu-option" onclick="showInstructions()">► INSTRUCTIONS</div>
+                    <div class="menu-option" onclick="showRevisionHistory()" style="border-color:#4a7a4a;color:#8aaa8a;">► 📋 REVISION HISTORY</div>
                     ${installOption}
+                </div>
+                <div style="position:fixed;bottom:6px;right:10px;font-family:'VT323',monospace;font-size:13px;color:#1a3a1a;pointer-events:none;user-select:none;">
+                    v${GAME_VERSION}
                 </div>
             `;
         }
 
         function showCharacterSelect() {
+            checkGameVersion();
             const characters = getAllCharacters();
             if (characters.length === 0) {
                 alert('No saved characters found!');
@@ -5064,19 +5074,101 @@ window.addEventListener('beforeunload', () => {
             const screen = document.getElementById('mainScreen');
             screen.innerHTML = `
                 <div class="location-header">INSTRUCTIONS</div>
+
                 <div class="message">
-                    <p><span class="stat-label">OBJECTIVE:</span> Explore dungeons, defeat monsters, level up, and become legendary!</p>
-                    <br>
-                    <p><span class="stat-label">COMBAT:</span> Combat is turn-based with a timer. Choose your action before time runs out!</p>
-                    <br>
-                    <p><span class="stat-label">EXPLORATION:</span> Travel to different locations, each with stronger monsters.</p>
-                    <br>
-                    <p><span class="stat-label">PROGRESSION:</span> Gain XP, level up, buy better equipment, and learn new spells.</p>
-                    <br>
-                    <p><span class="stat-label">SAVING:</span> Save your game at any time from the town menu.</p>
+                    <p><span class="stat-label">OBJECTIVE:</span> Explore dungeons, defeat monsters, collect loot, level up, and become legendary!</p>
                 </div>
+
+                <div class="message">
+                    <p><span class="stat-label">COMBAT:</span> Turn-based with a pip timer. Each pip takes ~10 seconds to recharge. Use Attack, Spell, or Potion each turn. The enemy attacks on its own timer — watch for telegraphed moves! You must have full pips restored to move to a new room.</p>
+                </div>
+
+                <div class="message">
+                    <p><span class="stat-label">EXPLORATION:</span> Travel to different locations from the world map. Stronger zones have tougher enemies but better loot. You must defeat zone bosses to unlock further areas.</p>
+                </div>
+
+                <div class="message">
+                    <p><span class="stat-label">PROGRESSION:</span> Gain XP and Gold from combat. Level up to increase stats, unlock new spells, and equip higher-tier gear. Visit the Temple to learn spells. Check the Shop for weapons and armor.</p>
+                </div>
+
+                <div class="message">
+                    <p><span class="stat-label">SAVING:</span> The game auto-saves after most actions. Use Quick Save or Download Save File from the town menu to keep a backup.</p>
+                </div>
+
+                <div class="message" style="border-color:#FF4444;">
+                    <p><span class="stat-label" style="color:#FF4444;">⚠ DUNGEON WARNING:</span></p>
+                    <p>Dungeons are persistent — enemies remember where you are. If you run from a fight, <strong>enemies will follow you</strong> into the next room and immediately join any existing combat. Pulling multiple enemies is intentional — use AOE spells to handle groups!</p>
+                    <p style="margin-top:6px;">You cannot move while your pips are recharging. Plan your retreat carefully — a cornered adventurer with empty pips is a dead one.</p>
+                    <p style="margin-top:6px;">Dungeon keys are <strong>permanent collectibles</strong> — they never leave your inventory and are not consumed when unlocking doors. Collect them all to access deeper areas.</p>
+                </div>
+
+                <div class="message" style="border-color:#9933FF;">
+                    <p><span class="stat-label" style="color:#9933FF;">🎨 ENEMY RARITY COLORS:</span></p>
+                    <p>Enemy names are colored by rarity tier. Higher rarity = more HP, damage, and better drop chance:</p>
+                    <p style="margin-top:6px;">
+                        <span style="color:#FFFFFF;">■ Common</span> — Standard encounter, normal drops<br>
+                        <span style="color:#00FF00;">■ Uncommon</span> — 30% stronger, improved drops<br>
+                        <span style="color:#0099FF;">■ Rare</span> — 60% stronger, can double-attack<br>
+                        <span style="color:#9933FF;">■ Epic</span> — 2× stats, multi-attacks, good loot<br>
+                        <span style="color:#FF9900;">■ Legendary</span> — 2.5× stats, dangerous, rare drops<br>
+                        <span style="color:#FF0000;">■ Mythic</span> — 3.5× stats, extremely deadly, best loot
+                    </p>
+                </div>
+
+                <div class="message" style="border-color:#FF9900;">
+                    <p><span class="stat-label" style="color:#FF9900;">🗡️ WEAPON &amp; ARMOR QUALITY:</span></p>
+                    <p>Equipment has a quality tier that boosts its base stats by a percentage. Quality is shown by the item's name color:</p>
+                    <p style="margin-top:6px;">
+                        <span style="color:#808080;">■ Poor</span> — No bonus (base stats only)<br>
+                        <span style="color:#00FF00;">■ Normal</span> — +10% stats<br>
+                        <span style="color:#0099FF;">■ Rare</span> — +25% stats<br>
+                        <span style="color:#9933FF;">■ Epic</span> — +40% stats<br>
+                        <span style="color:#FF9900;">■ Legendary</span> — +60% stats<br>
+                        <span style="color:#FF0000;">■ Godly</span> — +85% stats (extremely rare)
+                    </p>
+                </div>
+
+                <div class="message" style="border-color:#00FF88;">
+                    <p><span class="stat-label" style="color:#00FF88;">📦 WEAPON &amp; ARMOR DROPS:</span></p>
+                    <p>Every enemy you defeat has a chance to drop a weapon or armor piece. Drop quality scales with the enemy's rarity and your current level — so a Legendary enemy killed at level 10 will drop much better gear than the same enemy at level 1.</p>
+                    <p style="margin-top:6px;">Dungeon enemies with a <span style="color:#e8b84a;">🔑 key</span> always drop their key on death. Other special drops (like rare crafting materials) show up as loot in the combat results screen.</p>
+                    <p style="margin-top:6px;">New drops go directly into your inventory. Use the <strong>🎒 Inventory</strong> button in the dungeon or visit Inventory from town to equip them.</p>
+                </div>
+
                 <button onclick="showMainMenu()">BACK TO MENU</button>
             `;
+        }
+
+        function showRevisionHistory() {
+            const screen = document.getElementById('mainScreen');
+            let html = `<div class="location-header">📋 REVISION HISTORY</div>`;
+
+            if (typeof REVISION_HISTORY === 'undefined' || REVISION_HISTORY.length === 0) {
+                html += `<div class="message"><p style="color:#888;">No revision history available.</p></div>`;
+            } else {
+                REVISION_HISTORY.forEach((rev, idx) => {
+                    const isLatest = idx === 0;
+                    const borderCol = isLatest ? '#00FF88' : '#2a4a2a';
+                    const labelHtml = isLatest
+                        ? `<span style="color:#00FF88;font-size:13px;margin-left:8px;">← CURRENT</span>`
+                        : '';
+                    html += `
+                    <div class="message" style="border-color:${borderCol};margin-bottom:10px;">
+                        <div style="display:flex;align-items:baseline;flex-wrap:wrap;gap:4px;margin-bottom:6px;">
+                            <span style="color:${isLatest?'#00FF88':'var(--highlight-color)'};font-size:16px;font-weight:bold;">v${rev.version}</span>
+                            ${labelHtml}
+                            <span style="color:#666;font-size:13px;margin-left:6px;">${rev.date}</span>
+                        </div>
+                        <div style="color:#aaa;font-size:14px;margin-bottom:6px;font-style:italic;">${rev.summary}</div>
+                        <ul style="margin:0;padding-left:18px;font-size:13px;color:#8aaa8a;line-height:1.7;">
+                            ${rev.changes.map(c => `<li>${c}</li>`).join('')}
+                        </ul>
+                    </div>`;
+                });
+            }
+
+            html += `<button onclick="showMainMenu()">BACK TO MENU</button>`;
+            screen.innerHTML = html;
         }
 
         function newGame() {
@@ -5757,6 +5849,7 @@ window.addEventListener('beforeunload', () => {
         }
 
         function enterDungeons() {
+    checkGameVersion();
     termClear();
     testDungeon();
 }
@@ -8143,46 +8236,204 @@ if (cs) {
         utilCol.appendChild(ladderBtn);
     }
 
-    // ── Keyboard input ────────────────────────────────────────────────
-    const kbRow = document.createElement('div');
-    kbRow.style.cssText = 'display:flex;gap:2px;margin-top:2px;';
-    const kbInput = document.createElement('input');
-    kbInput.id = 'dungeonKbInput';
-    kbInput.type = 'text';
-    kbInput.maxLength = 4;
-    kbInput.placeholder = 'dir';
-    kbInput.autocomplete = 'off';
-    kbInput.style.cssText = `
-        width:38px;background:#050a05;border:1px solid #2a4a2a;
-        color:#00FF41;font-family:'VT323',monospace;font-size:16px;
-        padding:2px 4px;outline:none;text-transform:lowercase;`;
-    kbInput.addEventListener('keydown', e => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            const val = kbInput.value.trim().toLowerCase();
-            kbInput.value = '';
-            if (val) dungeonNav(val);
-        }
-        // Block ~ from opening sysop terminal while typing
-        if (e.key === '`' || e.key === '~') e.stopPropagation();
+    // ── INVENTORY button (replaces keyboard input) ───────────────────
+    const invBtn = document.createElement('button');
+    // Count HP and MP potions for the badge
+    const invP = gameState.player;
+    let hpPotCount = 0, mpPotCount = 0;
+    (invP.inventory || []).forEach(ik => {
+        const it = ITEMS[ik];
+        if (!it) return;
+        if (it.subtype === 'heal_hp' || it.subtype === 'full_restore') hpPotCount++;
+        if (it.subtype === 'heal_mp' || it.subtype === 'full_restore') mpPotCount++;
     });
-    const kbGo = document.createElement('button');
-    kbGo.textContent = '↵';
-    kbGo.title = 'Go (or press Enter)';
-    kbGo.style.cssText = 'padding:2px 5px;font-size:14px;border-color:#2a4a2a;';
-    kbGo.onclick = () => {
-        const val = kbInput.value.trim().toLowerCase();
-        kbInput.value = '';
-        if (val) dungeonNav(val);
-    };
-    kbRow.appendChild(kbInput);
-    kbRow.appendChild(kbGo);
-    utilCol.appendChild(kbRow);
+    invBtn.innerHTML = `🎒 Inv<br><span style="font-size:10px;color:#ff6666;">❤️${hpPotCount}</span> <span style="font-size:10px;color:#6688ff;">💙${mpPotCount}</span>`;
+    invBtn.title = 'Dungeon Inventory';
+    invBtn.onclick = showDungeonInventory;
+    invBtn.style.cssText = 'padding:4px 6px;font-size:12px;border-color:#8aaa8a;line-height:1.3;';
+    utilCol.appendChild(invBtn);
 
     navWrap.appendChild(utilCol);
     ab.appendChild(navWrap);
 }
 
+
+// ── Full-screen dungeon inventory (replaces old potion menu) ─────────
+function showDungeonInventory() {
+    const ab = document.getElementById('actionBar');
+    const p  = gameState.player;
+    const cs = gameState.combatState;
+    const inCombat = cs && !cs.combatOver;
+
+    function potColor(st) {
+        if (st==='heal_hp') return '#ff4444';
+        if (st==='heal_mp') return '#4488ff';
+        if (st==='full_restore') return '#FFD700';
+        if (st==='recall') return '#AA88FF';
+        if (st?.startsWith('buff_')) return '#00FF88';
+        return '#00FF00';
+    }
+    function potIcon(st) {
+        if (st==='heal_hp') return '❤️';
+        if (st==='heal_mp') return '💙';
+        if (st==='full_restore') return '✨';
+        if (st==='recall') return '🌀';
+        if (st==='buff_str') return '💪';
+        if (st==='buff_def') return '🛡️';
+        if (st==='buff_magic') return '🔮';
+        if (st==='buff_damage') return '⚔️';
+        if (st==='buff_regen') return '💚';
+        if (st==='buff_crit') return '🎯';
+        if (st?.startsWith('buff_')) return '🧪';
+        return '🧪';
+    }
+    function backFn() {
+        if (inCombat) renderDungeonActionBar();
+        else renderDungeonActionBar();
+    }
+
+    // ── Potions ──────────────────────────────────────────────────────
+    const potions = {};
+    p.inventory.forEach(ik => {
+        const item = ITEMS[ik];
+        if (!item) return;
+        if (item.subtype === 'recall' && inCombat) return; // no recall during combat
+        if (['heal_hp','heal_mp','full_restore','recall'].includes(item.subtype) || item.subtype?.startsWith('buff_')) {
+            if (!potions[ik]) potions[ik] = { item, count: 0 };
+            potions[ik].count++;
+        }
+    });
+
+    // ── Weapons ──────────────────────────────────────────────────────
+    const playerClass = p.baseClass || p.class;
+    const weapons = p.inventory.filter(ik => {
+        const w = WEAPONS[ik];
+        return w && !w.unarmed && canUseWeapon(playerClass, w);
+    });
+
+    // ── Armor ────────────────────────────────────────────────────────
+    const armors = p.inventory.filter(ik => {
+        const a = ARMOR[ik];
+        return a && !a.unarmored && canUseArmor(playerClass, a);
+    });
+
+    let html = `
+    <div style="
+        position:fixed;inset:0;z-index:9999;
+        background:#000d00;border:2px solid var(--border-color);
+        overflow-y:auto;padding:10px;box-sizing:border-box;
+        font-family:'VT323',monospace;
+    ">
+        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:6px;margin-bottom:10px;">
+            <span style="color:var(--highlight-color);font-size:18px;letter-spacing:3px;">🎒 DUNGEON INVENTORY</span>
+            <button onclick="document.getElementById('dungeonInvOverlay').remove(); renderDungeonActionBar();" style="font-size:14px;padding:4px 10px;border-color:#ff4444;color:#ff4444;">✕ CLOSE</button>
+        </div>
+        <div style="color:#8aaa8a;font-size:13px;margin-bottom:8px;">
+            ❤️ ${p.hp}/${p.maxHp} HP &nbsp;|&nbsp; 💙 ${p.mp}/${p.maxMp} MP
+            ${inCombat ? ' &nbsp;|&nbsp; <span style="color:#ff4444;">⚔️ IN COMBAT</span>' : ''}
+        </div>
+    `;
+
+    // POTIONS SECTION
+    html += `<div style="color:var(--highlight-color);font-size:15px;letter-spacing:2px;margin-bottom:6px;">— POTIONS —</div>`;
+    const potKeys = Object.keys(potions);
+    if (potKeys.length === 0) {
+        html += `<div style="color:#555;font-size:13px;margin-bottom:10px;">No potions.</div>`;
+    } else {
+        html += `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">`;
+        potKeys.forEach(pk => {
+            const pd = potions[pk];
+            const col = potColor(pd.item.subtype);
+            const ico = potIcon(pd.item.subtype);
+            const atFull = (pd.item.subtype==='heal_hp' && p.hp>=p.maxHp) ||
+                           (pd.item.subtype==='heal_mp' && p.mp>=p.maxMp) ||
+                           (pd.item.subtype==='full_restore' && p.hp>=p.maxHp && p.mp>=p.maxMp);
+            const useFn = inCombat ? `usePotion('${pk}');document.getElementById('dungeonInvOverlay').remove();renderDungeonActionBar();`
+                                   : `usePotionExplore('${pk}');document.getElementById('dungeonInvOverlay').remove();renderDungeonActionBar();`;
+            html += `
+            <button onclick="${useFn}" ${atFull?'disabled':''} style="
+                min-width:100px;padding:8px 10px;
+                color:${col};border:2px solid ${col};
+                background:#050a05;font-size:14px;
+                opacity:${atFull?0.4:1};text-align:center;
+            ">
+                ${ico} ${pd.item.name}<br>
+                <span style="color:#aaa;font-size:12px;">x${pd.count} — Use (no pip)</span>
+            </button>`;
+        });
+        html += `</div>`;
+    }
+
+    // WEAPONS SECTION
+    html += `<div style="color:var(--highlight-color);font-size:15px;letter-spacing:2px;margin-bottom:6px;">— WEAPONS —</div>`;
+    html += `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">`;
+    // Equipped slot
+    const eqW = WEAPONS[p.weapon];
+    if (eqW && !eqW.unarmed) {
+        const qc = QUALITY_CONFIG[eqW.quality];
+        html += `<div style="min-width:120px;padding:8px;border:2px solid ${qc?.color||'#0f0'};background:#050a05;font-size:13px;">
+            <div style="color:${qc?.color||'#0f0'};">${eqW.name}</div>
+            <div style="color:#aaa;font-size:11px;">DMG ${eqW.baseDamage}-${eqW.maxDamage||eqW.baseDamage}</div>
+            <div style="color:var(--highlight-color);font-size:11px;">★ EQUIPPED</div>
+        </div>`;
+    }
+    if (weapons.length === 0 && (!eqW || eqW.unarmed)) {
+        html += `<div style="color:#555;font-size:13px;">No weapons.</div>`;
+    }
+    weapons.forEach(ik => {
+        if (ik === p.weapon) return;
+        const w = WEAPONS[ik];
+        const qc = QUALITY_CONFIG[w.quality];
+        html += `<button onclick="equipItem('weapon','${ik}');document.getElementById('dungeonInvOverlay').remove();renderDungeonActionBar();" style="
+            min-width:120px;padding:8px;border:2px solid ${qc?.color||'#0f0'};
+            background:#050a05;font-size:13px;text-align:left;cursor:pointer;">
+            <div style="color:${qc?.color||'#0f0'};">${w.name}</div>
+            <div style="color:#aaa;font-size:11px;">DMG ${w.baseDamage}-${w.maxDamage||w.baseDamage}</div>
+            <div style="color:#FFD700;font-size:11px;">▶ EQUIP</div>
+        </button>`;
+    });
+    html += `</div>`;
+
+    // ARMOR SECTION
+    html += `<div style="color:var(--highlight-color);font-size:15px;letter-spacing:2px;margin-bottom:6px;">— ARMOR —</div>`;
+    html += `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">`;
+    const eqA = ARMOR[p.armor];
+    if (eqA && !eqA.unarmored) {
+        const qc = QUALITY_CONFIG[eqA.quality];
+        html += `<div style="min-width:120px;padding:8px;border:2px solid ${qc?.color||'#0f0'};background:#050a05;font-size:13px;">
+            <div style="color:${qc?.color||'#0f0'};">${eqA.name}</div>
+            <div style="color:#aaa;font-size:11px;">DEF ${eqA.baseDefense}</div>
+            <div style="color:var(--highlight-color);font-size:11px;">★ EQUIPPED</div>
+        </div>`;
+    }
+    if (armors.length === 0 && (!eqA || eqA.unarmored)) {
+        html += `<div style="color:#555;font-size:13px;">No armor.</div>`;
+    }
+    armors.forEach(ik => {
+        if (ik === p.armor) return;
+        const a = ARMOR[ik];
+        const qc = QUALITY_CONFIG[a.quality];
+        html += `<button onclick="equipItem('armor','${ik}');document.getElementById('dungeonInvOverlay').remove();renderDungeonActionBar();" style="
+            min-width:120px;padding:8px;border:2px solid ${qc?.color||'#0f0'};
+            background:#050a05;font-size:13px;text-align:left;cursor:pointer;">
+            <div style="color:${qc?.color||'#0f0'};">${a.name}</div>
+            <div style="color:#aaa;font-size:11px;">DEF ${a.baseDefense}</div>
+            <div style="color:#FFD700;font-size:11px;">▶ EQUIP</div>
+        </button>`;
+    });
+    html += `</div>`;
+
+    html += `</div>`; // end overlay inner
+    html += `</div>`; // end overlay
+
+    // Inject as overlay div (not into actionBar — covers whole screen)
+    const existing = document.getElementById('dungeonInvOverlay');
+    if (existing) existing.remove();
+    const overlay = document.createElement('div');
+    overlay.id = 'dungeonInvOverlay';
+    overlay.innerHTML = html;
+    document.body.appendChild(overlay);
+}
 
 // ── Central dungeon navigation handler (buttons + keyboard) ──────────
 function dungeonNav(input) {
@@ -8510,6 +8761,7 @@ function dungeonNav(input) {
         
 
         function tryExploreLocation(locKey) {
+            checkGameVersion();
             if (!isFullyRested()) {
                 termAppend('<span style="color:var(--error-color);">You are too exhausted to continue! Wait for your charges to restore…</span>', 'term-error');
                 return;
@@ -8944,16 +9196,14 @@ function moveInDungeon(direction) {
             return;
         }
 
-        // Player has the key — consume it (one-time use) and proceed
-        const keyIdx = inv.indexOf(keyItem);
-        inv.splice(keyIdx, 1);
+        // Player has the key — keys are permanent collectibles, door unlocks for session
         const COLOR_NAMES2 = {
             bronze:'Bronze', copper:'Copper', iron:'Iron', brass:'Brass',
             silver:'Silver', electrum:'Electrum', ruby:'Ruby', topaz:'Topaz',
             diamond:'Diamond', obsidian:'Obsidian', bone:'Bone'
         };
         termAppend(
-            `🔓 You use your <span style="color:${getDoorColor(door.type)}">${COLOR_NAMES2[door.type] || door.type} key</span> to unlock the door.`,
+            `🔓 Your <span style="color:${getDoorColor(door.type)}">${COLOR_NAMES2[door.type] || door.type} key</span> unlocks the door.`,
             'term-highlight'
         );
         door.locked = false; // door stays unlocked for rest of session
@@ -9202,51 +9452,49 @@ function checkEnemiesInRoom(roomId, newArrivals) {
     const ds = gameState.dungeon;
     if (!ds || !ds.activeEnemies) return;
 
-    // Find ALL enemies currently in this room
     const enemiesHere = ds.activeEnemies.filter(e => e.currentRoom === roomId);
     if (enemiesHere.length === 0) return;
 
     const cs = gameState.combatState;
 
-    // ── Case 1: Active combat — followers JOIN existing fight ──
+    // ── Active non-finished combat: add ALL room enemies not yet in this fight ──
     if (cs && !cs.combatOver) {
-        const arrivals = newArrivals || [];
-        if (arrivals.length === 0) return; // nobody new arrived, don't re-trigger
-
-        // Find which arrivals are not already in combat
         const linkedIds = new Set(cs.dungeonEnemyIds || (cs.dungeonEnemyId ? [cs.dungeonEnemyId] : []));
-        const joining = arrivals.filter(e => !linkedIds.has(e.id));
+
+        // Join = any enemy in this room not already tracked in combat
+        // (covers both followers from arrivals AND pre-existing room enemies)
+        const joining = enemiesHere.filter(e => !linkedIds.has(e.id));
         if (joining.length === 0) return;
 
-        // Add each joiner as a new monster in the active combat
         joining.forEach(de => {
             if (!de.monsterId) return;
             const newMonster = spawnMonsterWithRarity(de.monsterId, true);
             newMonster.index = cs.monsters.length;
-            // Restore saved HP if partially damaged
             if (de.hp !== undefined && de.hp < de.maxHp) {
                 newMonster.hp    = de.hp;
                 newMonster.maxHp = de.maxHp;
             }
             cs.monsters.push(newMonster);
-
-            // Track its dungeon ID for post-combat cleanup
-            if (!cs.dungeonEnemyIds) cs.dungeonEnemyIds = linkedIds.has(cs.dungeonEnemyId) ? [cs.dungeonEnemyId] : [];
+            if (!cs.dungeonEnemyIds) cs.dungeonEnemyIds = cs.dungeonEnemyId ? [cs.dungeonEnemyId] : [];
             cs.dungeonEnemyIds.push(de.id);
             linkedIds.add(de.id);
-
-            termAppend(
-                `⚔️ <strong>${newMonster.name}</strong> joins the fight!`,
-                'term-warning'
-            );
+            termAppend(`⚔️ <strong>${newMonster.name}</strong> joins the fight!`, 'term-warning');
         });
 
-        // Refresh combat UI to show new enemies
+        // Ensure combat timer is running and reset actionMode so player sees all targets
+        cs.actionMode = 'main';
+        if (!gameState.combatTimer) startCombatTimer();
         renderDungeonActionBar();
         return;
     }
 
-    // ── Case 2: No active combat — start fresh with all enemies here ──
+    // ── No combat or stale finished combat: clear state and start fresh ──
+    if (cs) {
+        if (gameState.combatTimer) { clearInterval(gameState.combatTimer); gameState.combatTimer = null; }
+        gameState.combatState = null;
+        gameState.postCombatRecovery = false;
+    }
+
     if (enemiesHere.length === 1) {
         termAppend(`⚔️ <strong>${enemiesHere[0].name}</strong> confronts you!`, 'term-warning');
     } else {
@@ -12185,20 +12433,27 @@ function playerIsExhausted() {
                 return;
             }
             
-            // Get available spells
-            const availableSpells = [];
-            const currentSpells = [];
-            
+            // Build spell lists
+            const availableSpells = [];   // can learn now
+            const upcomingSpells  = [];   // locked by level (but prereq met or no prereq)
+            const currentSpells   = [];   // already known
+
             Object.entries(spellTree.spellTree).forEach(([key, spell]) => {
-                const hasSpell = p.knownSpells.includes(key);
-                const canAfford = p.gold >= spell.cost;
-                const levelReq = p.level >= spell.level;
-                const meetsRequirement = !spell.requires || p.knownSpells.includes(spell.requires);
-                
+                const hasSpell       = p.knownSpells.includes(key);
+                const levelReq       = p.level >= spell.level;
+                const meetsReq       = !spell.requires || p.knownSpells.includes(spell.requires);
+                // A spell whose prereq is still in knownSpells (not yet upgraded away) = still "known"
+                const prereqKnown    = spell.requires && p.knownSpells.includes(spell.requires);
+                const canAfford      = p.gold >= spell.cost;
+
                 if (hasSpell) {
                     currentSpells.push({ key, spell });
-                } else if (levelReq && meetsRequirement) {
+                } else if (levelReq && meetsReq) {
+                    // Only offer if the spell is a true upgrade (old spell removed) or brand new
                     availableSpells.push({ key, spell, canAfford });
+                } else if (!hasSpell && !levelReq && meetsReq) {
+                    // Coming soon — player hasn't reached the level yet
+                    upcomingSpells.push({ key, spell });
                 }
             });
             
@@ -12241,6 +12496,21 @@ function playerIsExhausted() {
             } else {
                 html += `<div class="message"><p style="color:#888;">No new spells available at your level.</p></div>`;
             }
+
+            // Show upcoming locked spells
+            if (upcomingSpells.length > 0) {
+                html += `<div class="message" style="border-color:#444;"><h3 style="color:#888;">Coming Soon</h3>`;
+                upcomingSpells.forEach(({ key, spell }) => {
+                    const typeIcon = spell.type === 'heal' ? '💚' : spell.type === 'lifesteal' ? '🩸' : spell.type === 'aoe_damage' ? '🔥' : '💥';
+                    const aoeTag = spell.type === 'aoe_damage' ? ' <span style="color:#664400;">[AOE]</span>' : '';
+                    html += `<div style="margin:8px 0;padding:8px;border:1px solid #333;opacity:0.6;">
+                        <p>${typeIcon} <strong style="color:#666;">${spell.name}${aoeTag}</strong> — Unlocks at <span style="color:#888;">Level ${spell.level}</span><br>
+                        <span style="font-size:12px;color:#555;">${spell.description}</span><br>
+                        <span style="color:#666;">${spell.mpCost} MP | Cost: ${spell.cost}g</span></p>
+                    </div>`;
+                });
+                html += `</div>`;
+            }
             
             html += `<button onclick="showTemple()">← BACK</button>`;
             screen.innerHTML = html;
@@ -12275,6 +12545,35 @@ function playerIsExhausted() {
             if (!SPELLS[spellKey]) {
                 SPELLS[spellKey] = { ...spell, pipCost: 1 };
             }
+
+            // ── Enforce slot order after every learn ───────────────────────
+            // Slot 1 = single-target (damage / heal for healers)
+            // Slot 2 = AOE (heal for healers)
+            // Rule: for healer classes damage goes first, for others single-target damage first, AOE second
+            const healerClasses = ['cleric','priest','paladin','shaman'];
+            const isHealer = healerClasses.includes(classKey);
+
+            p.knownSpells.sort((a, b) => {
+                const sa = SPELLS[a] || CLASS_SPELL_TREES[classKey]?.spellTree?.[a];
+                const sb = SPELLS[b] || CLASS_SPELL_TREES[classKey]?.spellTree?.[b];
+                if (!sa || !sb) return 0;
+                function rank(s) {
+                    if (isHealer) {
+                        // healers: damage=0 (slot1), heal=1 (slot2), aoe=2
+                        if (s.type === 'damage') return 0;
+                        if (s.type === 'heal' || s.type === 'lifesteal') return 1;
+                        if (s.type === 'aoe_damage') return 2;
+                        return 3;
+                    } else {
+                        // mages/others: single-target damage=0 (slot1), aoe=1 (slot2), heal=2
+                        if (s.type === 'damage') return 0;
+                        if (s.type === 'aoe_damage') return 1;
+                        if (s.type === 'heal' || s.type === 'lifesteal') return 2;
+                        return 3;
+                    }
+                }
+                return rank(sa) - rank(sb);
+            });
             
             saveGame();
             alert(`Learned ${spell.name}!`);
@@ -12289,6 +12588,7 @@ function playerIsExhausted() {
             loadAllClassSpells();
         }
         
+        checkGameVersion();
         initGame();
 
 

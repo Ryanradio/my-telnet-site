@@ -1,0 +1,125 @@
+// ═══════════════════════════════════════════════════════════════════════
+// GAME VERSION FILE — gameversion.js
+// ── UPDATE THIS FILE ON EVERY PATCH ────────────────────────────────────
+// This is the single source of truth for game versioning.
+// The GAME_VERSION string is checked against localStorage on load.
+// If a player has an older version cached, they get a refresh banner.
+// ═══════════════════════════════════════════════════════════════════════
+
+const GAME_VERSION = '2025.02.17-r2';
+
+// ── VERSION CHECK ──────────────────────────────────────────────────────
+// Call this on: game init, character select, enter dungeon, enter explore.
+// Shows a persistent red banner if the player's cached version is outdated.
+function checkGameVersion() {
+    const stored = localStorage.getItem('dq_game_version');
+    if (stored && stored !== GAME_VERSION) {
+        const existing = document.getElementById('versionBanner');
+        if (existing) return; // already showing
+        const banner = document.createElement('div');
+        banner.id = 'versionBanner';
+        banner.innerHTML = `
+            <div style="
+                position:fixed;top:0;left:0;right:0;z-index:99999;
+                background:#220000;border-bottom:3px solid #ff0000;
+                padding:10px 16px;font-family:'VT323',monospace;
+                display:flex;align-items:center;justify-content:space-between;
+                gap:10px;box-sizing:border-box;
+            ">
+                <div>
+                    <span style="color:#ff4444;font-size:18px;font-weight:bold;">⚠ OUTDATED VERSION DETECTED</span><br>
+                    <span style="color:#ff8888;font-size:14px;">
+                        You are running <strong style="color:#ffaaaa;">v${stored}</strong> — latest is
+                        <strong style="color:#00ff88;">v${GAME_VERSION}</strong>.
+                        Refresh now to get the latest patch and avoid bugs!
+                    </span>
+                </div>
+                <button onclick="location.reload(true)" style="
+                    background:#ff0000;color:#fff;border:2px solid #ff4444;
+                    padding:8px 16px;font-family:'VT323',monospace;font-size:16px;
+                    cursor:pointer;white-space:nowrap;flex-shrink:0;
+                ">🔄 REFRESH NOW</button>
+            </div>`;
+        document.body.prepend(banner);
+    }
+    // Always write current version so the NEXT stale load is detected
+    localStorage.setItem('dq_game_version', GAME_VERSION);
+}
+
+
+// ── REVISION HISTORY ───────────────────────────────────────────────────
+// Most recent first. Keep entries brief — one line per bullet.
+// ═══════════════════════════════════════════════════════════════════════
+const REVISION_HISTORY = [
+
+    {
+        version: '2025.02.17-r2',
+        date: 'Feb 17, 2025',
+        summary: 'Enemy AI, Inventory Overhaul, Spell Shop, Version System',
+        changes: [
+            'Dungeon enemies now all follow you into a room and JOIN active combat instantly',
+            'Followers attack the player correctly — combat timer no longer stalls',
+            'Multiple enemies entering a room during combat are added to the fight in real time',
+            'Dungeon keys are now PERMANENT — never removed from inventory or on exit',
+            'Keys do not get consumed when unlocking a door (door stays unlocked per session)',
+            'Replaced dungeon keyboard direction input with 🎒 Inventory button (shows potion counts)',
+            'New full-screen Dungeon Inventory panel: use potions, swap weapons/armor mid-dungeon',
+            'Potion menu no longer breaks combat buttons when enemy attacks during it',
+            'Spell slot ordering fixed: single-target = slot 1, AOE = slot 2 (always)',
+            'Healer classes: damage spell = slot 1, healing spell = slot 2',
+            'Spell shop no longer re-shows already-learned spells at 0 gold',
+            'Spell shop shows "Coming Soon" section for spells locked by level',
+            'Version watermark added to main menu (bottom-right corner)',
+            'Added version check: stale cache triggers a "Please Refresh" banner',
+            'gameversion.js created as single source of truth for version + patch notes',
+            'Revision History added to main menu',
+        ]
+    },
+
+    {
+        version: '2025.02.17-r1',
+        date: 'Feb 17, 2025',
+        summary: 'Dungeon Maps, Combat Fixes, Shop & UI Polish',
+        changes: [
+            'Runestone pip now displays next to player name (not town name)',
+            'Enemy critical hits show in red 💀 to distinguish from player crits',
+            'Returning from dungeon map mid-combat correctly restores attack buttons',
+            'Dungeon map shows [T] trap markers (red) and [H] home/start marker (yellow)',
+            'Floor-scoped room discovery: Floor 1 and Floor 2 maps are fully independent',
+            'Dungeon maps now persist across floor changes and logout/login',
+            '/revealmap sysop command added to reveal entire dungeon layout',
+            'Shop sell: duplicate items with different quality now stack separately',
+            'Multiple dungeon enemies now show in combat and attack the player',
+            'Key-carrying enemies drop their key on death correctly',
+        ]
+    },
+
+    {
+        version: '2025.02.17-r0',
+        date: 'Feb 17, 2025',
+        summary: 'Rogue Rework, Spell/Wand Balance, Sysop Tools',
+        changes: [
+            'Rogue double-strike and weapon restrictions reworked',
+            'Spell attack menu unified across all casting classes',
+            'Wand and staff damage rebalanced',
+            'Zone auto-unlock added to /setlevel sysop command',
+            'Mobile sysop teleport fixed',
+            'Hash-based sysop credential system added',
+            'Username capitalization fixed on character select',
+        ]
+    },
+
+    {
+        version: '2025.02.16-r0',
+        date: 'Feb 16, 2025',
+        summary: 'UI Polish, Dungeon Editor, Shop Sell System',
+        changes: [
+            'Runestone pip sizing and positioning improved',
+            'Dungeon editor grid layout fixes',
+            'Shop sell system implemented with sell value display',
+            'Gem sellValue added to items',
+            'Character select layout improved for mobile',
+        ]
+    },
+
+];
