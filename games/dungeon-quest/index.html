@@ -4615,6 +4615,7 @@ window.addEventListener('beforeunload', () => {
         }
 
         function showMainMenu() {
+            checkGameVersion();
             const screen = document.getElementById('mainScreen');
             const characters = getAllCharacters();
             const hasCharacters = characters.length > 0;
@@ -5074,6 +5075,7 @@ window.addEventListener('beforeunload', () => {
             const screen = document.getElementById('mainScreen');
             screen.innerHTML = `
                 <div class="location-header">INSTRUCTIONS</div>
+                <button onclick="showMainMenu()" style="margin-bottom:10px;">BACK TO MENU</button>
 
                 <div class="message">
                     <p><span class="stat-label">OBJECTIVE:</span> Explore dungeons, defeat monsters, collect loot, level up, and become legendary!</p>
@@ -5142,6 +5144,7 @@ window.addEventListener('beforeunload', () => {
         function showRevisionHistory() {
             const screen = document.getElementById('mainScreen');
             let html = `<div class="location-header">📋 REVISION HISTORY</div>`;
+            html += `<button onclick="showMainMenu()" style="margin-bottom:10px;">BACK TO MENU</button>`;
 
             if (typeof REVISION_HISTORY === 'undefined' || REVISION_HISTORY.length === 0) {
                 html += `<div class="message"><p style="color:#888;">No revision history available.</p></div>`;
@@ -5347,6 +5350,7 @@ window.addEventListener('beforeunload', () => {
         }
 
         function showTown(townId) {
+            checkGameVersion();
             document.body.classList.remove("terminal-mode");
             
             // Update current town if specified
@@ -5660,10 +5664,12 @@ window.addEventListener('beforeunload', () => {
         }
 
         function showBank() {
+            checkGameVersion();
             const screen = document.getElementById('mainScreen');
             const p = gameState.player;
             screen.innerHTML = `
                 <div class="location-header">🏦 TOWN BANK</div>
+                <button onclick="showTown()" style="margin-bottom:10px;">← BACK TO TOWN</button>
                 ${renderPlayerStats()}
                 <div class="message" style="border-color:var(--highlight-color);">
                     <p><strong style="color:var(--highlight-color);">💰 YOUR VAULT IS SAFE</strong></p>
@@ -5828,10 +5834,12 @@ window.addEventListener('beforeunload', () => {
         }
 
         function showShop() {
+            checkGameVersion();
             const screen = document.getElementById('mainScreen');
             
             let shopHtml = `
                 <div class="location-header">MERCHANT SHOP</div>
+                <button onclick="showTown()" style="margin-bottom:10px;">LEAVE SHOP</button>
                 ${renderPlayerStats()}
                 <div class="message">
                     <p>Welcome to my shop! What can I do for you?</p>
@@ -6326,12 +6334,14 @@ window.addEventListener('beforeunload', () => {
         }
 
         function showInventory() {
+            checkGameVersion();
             const p = gameState.player;
             const playerClass = p.baseClass || p.class;
             const screen = document.getElementById('mainScreen');
             
             let invHtml = `
                 <div class="location-header">INVENTORY</div>
+                <button onclick="showTown()" style="margin-bottom:10px;">BACK</button>
                 ${renderPlayerStats()}
                 <div style="margin: 20px 0;">
                     <h3 style="color: var(--highlight-color);">WEAPONS</h3>
@@ -6369,11 +6379,13 @@ window.addEventListener('beforeunload', () => {
             p.inventory.filter(item => {
                 const weapon = WEAPONS[item];
                 // Skip bare_fists (virtual slot) and currently equipped
-                return weapon && !weapon.unarmed && canUseWeapon(playerClass, weapon);
+                return weapon && !weapon.unarmed;
             }).forEach(key => {
                 const weapon = WEAPONS[key];
                 const equipped = p.weapon === key;
                 if (equipped) return; // already shown in the equipped slot above
+                
+                const canEquip = canUseWeapon(playerClass, weapon);
                 const qualityColor = QUALITY_CONFIG[weapon.quality].color;
                 const qualityBonus = getQualityBonus(weapon.quality, weapon.baseDamage);
                 const totalDmg = weapon.baseDamage + qualityBonus;
@@ -6396,11 +6408,14 @@ window.addEventListener('beforeunload', () => {
                 }
                 
                 invHtml += `
-                    <div class="item-card">
+                    <div class="item-card${canEquip ? '' : ' unusable'}" style="${canEquip ? '' : 'opacity:0.5;border-color:#555;'}">
                         <div style="color: ${qualityColor};">${weapon.name}</div>
                         <div>DMG: ${totalDmg}${totalMax > totalDmg ? `-${totalMax}` : ''}${totalMag > 0 ? ` | MAG: ${totalMag}` : ''}</div>
                         ${modifierHtml}
-                        <button onclick="equipItem('weapon', '${key}')">EQUIP</button>
+                        ${canEquip 
+                            ? `<button onclick="equipItem('weapon', '${key}')">EQUIP</button>`
+                            : `<button disabled style="opacity:0.4;">CANNOT EQUIP</button>`
+                        }
                     </div>
                 `;
             });
@@ -6441,21 +6456,26 @@ window.addEventListener('beforeunload', () => {
             p.inventory.filter(item => {
                 const armor = ARMOR[item];
                 // Skip no_armor (virtual slot) and currently equipped
-                return armor && !armor.unarmored && canUseArmor(playerClass, armor);
+                return armor && !armor.unarmored;
             }).forEach(key => {
                 const armor = ARMOR[key];
                 const equipped = p.armor === key;
                 if (equipped) return; // already shown in the equipped slot above
+                
+                const canEquip = canUseArmor(playerClass, armor);
                 const qualityColor = QUALITY_CONFIG[armor.quality].color;
                 const qualityBonus = getQualityBonus(armor.quality, armor.baseDefense);
                 const totalDef = armor.baseDefense + qualityBonus;
                 const totalMag = (armor.baseMagicBonus || 0) + Math.floor((armor.baseMagicBonus || 0) * (QUALITY_CONFIG[armor.quality]?.bonusPct || 0));
                 
                 invHtml += `
-                    <div class="item-card">
+                    <div class="item-card${canEquip ? '' : ' unusable'}" style="${canEquip ? '' : 'opacity:0.5;border-color:#555;'}">
                         <div style="color: ${qualityColor};">${armor.name}</div>
                         <div>DEF: ${totalDef}${totalMag > 0 ? ` | MAG+: ${totalMag}` : ''}</div>
-                        <button onclick="equipItem('armor', '${key}')">EQUIP</button>
+                        ${canEquip
+                            ? `<button onclick="equipItem('armor', '${key}')">EQUIP</button>`
+                            : `<button disabled style="opacity:0.4;">CANNOT EQUIP</button>`
+                        }
                     </div>
                 `;
             });
@@ -6823,6 +6843,7 @@ function equipItem(type, key) {
         }
 
         function showExplore() {
+            checkGameVersion();
             const screen = document.getElementById('mainScreen');
             const p = gameState.player;
             const tid = gameState.currentTown || 'town1';
@@ -8320,10 +8341,16 @@ function showDungeonInventory() {
     let html = `
     <div style="
         position:fixed;inset:0;z-index:9999;
-        background:#000d00;border:2px solid var(--border-color);
-        overflow-y:auto;padding:10px;box-sizing:border-box;
-        font-family:'VT323',monospace;
+        background:rgba(0,0,0,0.5);
+        display:flex;align-items:center;justify-content:center;
+        padding:10px;box-sizing:border-box;
     ">
+        <div style="
+            max-width:800px;width:100%;max-height:90vh;
+            background:#000d00;border:2px solid var(--border-color);
+            overflow-y:auto;padding:10px;box-sizing:border-box;
+            font-family:'VT323',monospace;
+        ">
         <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:6px;margin-bottom:10px;">
             <span style="color:var(--highlight-color);font-size:18px;letter-spacing:3px;">🎒 DUNGEON INVENTORY</span>
             <button onclick="document.getElementById('dungeonInvOverlay').remove(); renderDungeonActionBar();" style="font-size:14px;padding:4px 10px;border-color:#ff4444;color:#ff4444;">✕ CLOSE</button>
@@ -8423,7 +8450,13 @@ function showDungeonInventory() {
     });
     html += `</div>`;
 
-    html += `</div>`; // end overlay inner
+    // Bottom CLOSE button
+    html += `
+    <div style="margin-top:16px;text-align:center;padding-top:10px;border-top:1px solid var(--border-color);">
+        <button onclick="document.getElementById('dungeonInvOverlay').remove(); renderDungeonActionBar();" style="font-size:16px;padding:8px 24px;border-color:#ff4444;color:#ff4444;">✕ CLOSE</button>
+    </div>`;
+
+    html += `</div>`; // end inner container
     html += `</div>`; // end overlay
 
     // Inject as overlay div (not into actionBar — covers whole screen)
@@ -12162,6 +12195,7 @@ function playerIsExhausted() {
         // ═══════════════════════════════════════════════════════════════
         
         function showCharacterStats() {
+            checkGameVersion();
             const p = gameState.player;
             const screen = document.getElementById('mainScreen');
             
@@ -12172,6 +12206,7 @@ function playerIsExhausted() {
             
             screen.innerHTML = `
                 <div class="location-header">📊 CHARACTER STATS</div>
+                <button onclick="showTown()" style="margin-bottom:10px;">← BACK TO TOWN</button>
                 ${renderPlayerStats()}
                 
                 <div class="message" style="border-color:${hasPoints ? '#FFD700' : 'var(--border-color)'};">
@@ -12278,6 +12313,7 @@ function playerIsExhausted() {
         // ═══════════════════════════════════════════════════════════════
         
         function showTemple() {
+            checkGameVersion();
             const p = gameState.player;
             const screen = document.getElementById('mainScreen');
             
@@ -12287,6 +12323,7 @@ function playerIsExhausted() {
             
             screen.innerHTML = `
                 <div class="location-header">⛪ TEMPLE OF REBIRTH</div>
+                <button onclick="showTown()" style="margin-bottom:10px;">← BACK TO TOWN</button>
                 ${renderPlayerStats()}
                 
                 <div class="message">
@@ -12315,6 +12352,7 @@ function playerIsExhausted() {
             
             screen.innerHTML = `
                 <div class="location-header">🔄 STAT RESPEC</div>
+                <button onclick="showTemple()" style="margin-bottom:10px;">← BACK</button>
                 ${renderPlayerStats()}
                 
                 <div class="message" style="border-color:#8aaa8a;">
@@ -12459,6 +12497,7 @@ function playerIsExhausted() {
             
             let html = `
                 <div class="location-header">📖 SPELL TRAINING</div>
+                <button onclick="showTemple()" style="margin-bottom:10px;">← BACK</button>
                 ${renderPlayerStats()}
                 
                 <div class="message">

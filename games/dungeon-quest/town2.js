@@ -19,7 +19,7 @@ window.TOWNS.town2 = {
     dungeonUnlockMessage: 'You must be at least level 10 to enter the Ashen Vault!',
 
     // Zones that belong to Ashen Harbor's world map
-    zones: ['plains', 'dark_swamp', 'cursed_ruins', 'cave'],
+    zones: ['haunted_graveyard', 'plains', 'cave', 'dark_swamp', 'cursed_ruins'],
 
     // Town services
     services: {

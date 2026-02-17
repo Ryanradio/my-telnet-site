@@ -6,7 +6,7 @@
 // If a player has an older version cached, they get a refresh banner.
 // ═══════════════════════════════════════════════════════════════════════
 
-const GAME_VERSION = '2025.02.17-r2';
+const GAME_VERSION = '2025.02.17-r4';
 
 // ── VERSION CHECK ──────────────────────────────────────────────────────
 // Call this on: game init, character select, enter dungeon, enter explore.
@@ -51,6 +51,40 @@ function checkGameVersion() {
 // Most recent first. Keep entries brief — one line per bullet.
 // ═══════════════════════════════════════════════════════════════════════
 const REVISION_HISTORY = [
+
+    {
+        version: '2025.02.17-r4',
+        date: 'Feb 17, 2025',
+        summary: 'Version Check, Inventory Display, Zone Fixes',
+        changes: [
+            'Version check now runs on EVERY menu option from town (Shop, Bank, Inventory, Temple, Explore, Stats, Main Menu)',
+            'PWA/desktop icon users will now see update prompts when navigating menus (no manual refresh needed)',
+            'All weapons and armor now show in inventory regardless of class restrictions',
+            'Unusable items display as dimmed with "CANNOT EQUIP" button (rogues see swords, mages see axes, etc.)',
+            'Rogues can equip non-dagger weapons but only get double-strike with daggers',
+            'Fixed: Haunted Graveyard (Lv 7-9) moved from town1 to town2 where it belongs',
+            'Fixed: Town2 exploration now shows correct zones (Haunted Graveyard, Plains, Cave, Swamp, Ruins)',
+            'Town1 exploration now only shows Forest and Riverside',
+        ]
+    },
+
+    {
+        version: '2025.02.17-r3',
+        date: 'Feb 17, 2025',
+        summary: 'Enemy Join Fix, Instructions Expanded, UI Polish',
+        changes: [
+            'Fixed: Enemies that follow into a room with pre-existing enemies now ALL appear instantly',
+            'Fixed: Followers now show up immediately on attack buttons (not after they attack first)',
+            'Instructions screen expanded with dungeon warning, color guide, and drop mechanics',
+            'Rarity color guide: all 6 enemy tiers from Common (white) to Mythic (red)',
+            'Quality color guide: all 6 equipment tiers from Poor (gray) to Godly (red)',
+            'Drop mechanics explained: quality scales with enemy rarity and player level',
+            'Dungeon Inventory overlay now only covers playable area (not entire screen)',
+            'Added bottom CLOSE button to Dungeon Inventory panel (was top-right only)',
+            'All screens with BACK buttons now have duplicate button at top and bottom',
+            'Revision History screen accessible from main menu',
+        ]
+    },
 
     {
         version: '2025.02.17-r2',

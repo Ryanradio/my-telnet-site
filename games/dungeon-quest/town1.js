@@ -19,7 +19,7 @@ window.TOWNS.town1 = {
     dungeonUnlockMessage: 'You must be at least level 3 to brave the Undermaze!',
 
     // Zones that belong to this town's world map
-    zones: ['forest', 'riverside', 'haunted_graveyard'],
+    zones: ['forest', 'riverside'],
 
     // Town services (all standard for town1)
     services: {
