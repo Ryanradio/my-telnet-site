@@ -5342,7 +5342,7 @@ window.addEventListener('beforeunload', () => {
             }
 
             screen.innerHTML = `
-                <div class="location-header">${townName}${runestoneBadge}</div>
+                <div class="location-header">${townName}</div>
                 ${renderPlayerStats()}
                 <div class="message">
                     <p>${townDesc}</p>
@@ -5714,7 +5714,7 @@ window.addEventListener('beforeunload', () => {
             return `
                 <div class="stats-bar">
                     <div>
-                        <span class="stat-label">${p.name}</span> - Level ${p.level} ${displayClass}
+                        <span class="stat-label">${p.name}${getRunestonePip(p)}</span> - Level ${p.level} ${displayClass}
                     </div>
                     <div>
                         <span class="stat-label">Gold:</span> ${p.gold}
@@ -6399,9 +6399,9 @@ window.addEventListener('beforeunload', () => {
                     <div class="inventory-grid">
             `;
 
-            // Count and display items
+            // Count and display items — EXCLUDE dungeon keys (shown in Key Ring below)
             const itemCounts = {};
-            p.inventory.filter(item => ITEMS[item]).forEach(key => {
+            p.inventory.filter(item => ITEMS[item] && ITEMS[item].subtype !== 'dungeon_key').forEach(key => {
                 itemCounts[key] = (itemCounts[key] || 0) + 1;
             });
 
@@ -6467,15 +6467,112 @@ window.addEventListener('beforeunload', () => {
             invHtml += `
                     </div>
                 </div>
+                ${renderKeyRing(p)}
                 <button onclick="showTown()">BACK</button>
             `;
 
             screen.innerHTML = invHtml;
         }
 
-        function equipItem(type, key) {
-            const p = gameState.player;
-            const playerClass = p.baseClass || p.class;
+        function renderKeyRing(p) {
+            // ── Key metadata: ASCII art + color for each key type ──
+            const KEY_META = {
+                bronze_key:   { color: '#cd7f32', glow: '#7a3a00', label: 'BRONZE',   ascii: '&lt;=-[O' },
+                copper_key:   { color: '#b87333', glow: '#5a2800', label: 'COPPER',   ascii: '&lt;=-{O' },
+                iron_key:     { color: '#8a8a8a', glow: '#333333', label: 'IRON',     ascii: '&lt;==|O' },
+                brass_key:    { color: '#d4a017', glow: '#6b4c00', label: 'BRASS',    ascii: '&lt;=-&lt;O' },
+                silver_key:   { color: '#c0c0c0', glow: '#555577', label: 'SILVER',   ascii: '&lt;==*O' },
+                electrum_key: { color: '#88d4c0', glow: '#005544', label: 'ELECTRUM', ascii: '&lt;=~(O' },
+                ruby_key:     { color: '#e0115f', glow: '#800030', label: 'RUBY',     ascii: '&lt;=-@O' },
+                topaz_key:    { color: '#ffa500', glow: '#804000', label: 'TOPAZ',    ascii: '&lt;=-&Diamond;O' },
+                diamond_key:  { color: '#b9f2ff', glow: '#005080', label: 'DIAMOND',  ascii: '&lt;==&lt;&gt;' },
+                obsidian_key: { color: '#4a0080', glow: '#200040', label: 'OBSIDIAN', ascii: '&lt;==%O' },
+                bone_key:     { color: '#e8dcc8', glow: '#5a4a2a', label: 'BONE',     ascii: '&lt;=-#O' },
+            };
+
+            // Collect dungeon keys from inventory (they persist permanently)
+            const heldKeys = {};
+            (p.inventory || []).forEach(itemKey => {
+                if (ITEMS[itemKey] && ITEMS[itemKey].subtype === 'dungeon_key') {
+                    heldKeys[itemKey] = (heldKeys[itemKey] || 0) + 1;
+                }
+            });
+
+            const hasAnyKey = Object.keys(heldKeys).length > 0;
+
+            let html = `
+                <div style="margin:20px 0;">
+                    <h3 style="
+                        color:var(--highlight-color);
+                        border-bottom:1px solid var(--border-color);
+                        padding-bottom:6px;
+                        margin-bottom:12px;
+                        letter-spacing:3px;
+                    ">⚿ KEY RING</h3>`;
+
+            if (!hasAnyKey) {
+                html += `
+                    <div style="
+                        font-family:monospace;
+                        color:#333;
+                        font-size:14px;
+                        padding:12px;
+                        border:1px solid #1a1a1a;
+                        text-align:center;
+                        letter-spacing:2px;
+                    ">[ NO KEYS COLLECTED ]</div>`;
+            } else {
+                html += `<div style="display:flex;flex-wrap:wrap;gap:10px;">`;
+
+                Object.entries(heldKeys).forEach(([keyId, count]) => {
+                    const meta  = KEY_META[keyId] || { color:'#aaa', glow:'#333', label: keyId.replace('_key','').toUpperCase(), ascii:'&lt;=-[O' };
+                    const item  = ITEMS[keyId];
+                    const desc  = item ? item.description : '';
+                    const cnt   = count > 1 ? ` ×${count}` : '';
+
+                    html += `
+                        <div title="${desc}" style="
+                            font-family:'VT323',monospace;
+                            background:#050505;
+                            border:1px solid ${meta.color};
+                            box-shadow:0 0 8px ${meta.glow},inset 0 0 6px #000;
+                            padding:8px 14px;
+                            display:inline-flex;
+                            flex-direction:column;
+                            align-items:center;
+                            gap:4px;
+                            min-width:90px;
+                            cursor:default;
+                            position:relative;
+                        ">
+                            <div style="
+                                font-size:22px;
+                                letter-spacing:-2px;
+                                color:${meta.color};
+                                text-shadow:0 0 10px ${meta.color},0 0 4px ${meta.glow};
+                                line-height:1;
+                            ">${meta.ascii}</div>
+                            <div style="
+                                font-size:13px;
+                                color:${meta.color};
+                                letter-spacing:2px;
+                                text-shadow:0 0 6px ${meta.color};
+                                line-height:1;
+                            ">${meta.label}${cnt}</div>
+                        </div>`;
+                });
+
+                html += `</div>`;
+            }
+
+            html += `</div>`;
+            return html;
+}
+
+// Equip weapon or armor
+function equipItem(type, key) {
+    const p = gameState.player;
+    const playerClass = p.baseClass || p.class;
             
             if (type === 'weapon') {
                 const weapon = WEAPONS[key];
@@ -8677,63 +8774,54 @@ function checkRoomEncounter(room) {
 
 function updateDungeonEnemies() {
     const ds = gameState.dungeon;
-    if (!ds || !ds.activeEnemies) return;
+    if (!ds || !ds.activeEnemies) return [];
 
     const dungeon = DUNGEONS[ds.dungeonKey];
     const floor = dungeon.floors[ds.floor];
+    const arrived = []; // enemies that just moved into player's room
 
     ds.activeEnemies.forEach(enemy => {
         const enemyRoom = floor.rooms[enemy.currentRoom];
         if (!enemyRoom) return;
 
-        // 🧠 START chase ONLY when player enters enemy's room
+        // Start chase when player enters enemy's room for the first time
         if (!enemy.isChasing && enemy.currentRoom === ds.currentRoom) {
             enemy.isChasing = true;
             enemy.roomsFollowed = 0;
-
-            //  IF THE ENEMY IS CHASING YOU, PRINT THIS MESSAGE
-         //   termAppend(
-         //       `👁️ <strong>${enemy.name}</strong> begins to pursue you…`,
-         //       'term-warning'
-         //   );
-         //   return;
         }
 
-        // ❌ not chasing → do nothing
+        // Not chasing → do nothing
         if (!enemy.isChasing) return;
 
-        // 🛑 leash exhausted → STOP and STAY
+        // Already in player's room → nothing to move
+        if (enemy.currentRoom === ds.currentRoom) return;
+
+        // Leash exhausted → stop
         if (enemy.roomsFollowed >= enemy.leash) {
             enemy.isChasing = false;
-
-            termAppend(
-                `🛑 <strong>${enemy.name}</strong> stops the chase.`,
-                'term-dim'
-            );
-            return; // ⛔ ABSOLUTELY REQUIRED
+            termAppend(`🛑 <strong>${enemy.name}</strong> stops the chase.`, 'term-dim');
+            return;
         }
 
-        // 👣 follow ONLY while chasing
+        // Follow player — find which exit leads toward player's room
         const exits = enemyRoom.exits || {};
-for (const dir in exits) {
-    if (exits[dir] === ds.currentRoom) {
-        enemy.currentRoom = ds.currentRoom;
-enemy.roomsFollowed++;
-enemy.justArrived = true; // 👈 add this
+        for (const dir in exits) {
+            if (exits[dir] === ds.currentRoom) {
+                enemy.currentRoom = ds.currentRoom;
+                enemy.roomsFollowed++;
 
-const fromDir = OPPOSITE_DIR[dir] || dir;
-
-termAppend(
-    `⚠️ <strong>${enemy.name}</strong> enters from the <em>${fromDir}</em>.`,
-    'term-warning'
-);
-
-return;
-
-    }
-}
-
+                const fromDir = OPPOSITE_DIR[dir] || dir;
+                termAppend(
+                    `⚠️ <strong>${enemy.name}</strong> enters from the <em>${fromDir}</em>.`,
+                    'term-warning'
+                );
+                arrived.push(enemy);
+                return;
+            }
+        }
     });
+
+    return arrived; // caller decides what to do with arrivals
 }
 
 
@@ -8891,11 +8979,12 @@ function moveInDungeon(direction) {
     // ✦ Runestone pickup (once, triggers flash cutscene)
     checkRunestone(nextRoom);
 
-    // 👣 Move any active enemies that can follow
-    updateDungeonEnemies();
+    // 👣 Move any active enemies that can follow; get list of who just arrived
+    const arrivals = updateDungeonEnemies();
 
-    // 👁️ enemies already present (no combat)
-    checkEnemiesInRoom(nextRoomId);
+    // ⚔️ Unified enemy check — handles both pre-existing enemies AND followers
+    //    Pass arrivals so followers can JOIN an active combat instead of waiting
+    checkEnemiesInRoom(nextRoomId, arrivals);
 
     const exitList = buildExitList(nextRoom);
     termAppend(`You see exits: ${exitList}.`, 'term-dim');
@@ -9109,51 +9198,102 @@ function getEnemyInRoom(roomId) {
 
 
 
-function checkEnemiesInRoom(roomId) {
+function checkEnemiesInRoom(roomId, newArrivals) {
     const ds = gameState.dungeon;
     if (!ds || !ds.activeEnemies) return;
 
-    // Find enemy in current room
-    const enemyHere = ds.activeEnemies.find(e => e.currentRoom === roomId);
-    
-    if (enemyHere) {
-        // AUTO-ENGAGE COMBAT!
-        termAppend(
-            `⚔️ <strong>${enemyHere.name}</strong> confronts you!`,
-            'term-warning'
-        );
-        
-        // Start combat with this dungeon enemy
-        startDungeonCombat(enemyHere);
-    }
-}
+    // Find ALL enemies currently in this room
+    const enemiesHere = ds.activeEnemies.filter(e => e.currentRoom === roomId);
+    if (enemiesHere.length === 0) return;
 
-function startDungeonCombat(dungeonEnemy) {
-    // Use the enemy's monsterId to start combat
-    if (!dungeonEnemy.monsterId) {
-        console.error('Dungeon enemy missing monsterId:', dungeonEnemy);
+    const cs = gameState.combatState;
+
+    // ── Case 1: Active combat — followers JOIN existing fight ──
+    if (cs && !cs.combatOver) {
+        const arrivals = newArrivals || [];
+        if (arrivals.length === 0) return; // nobody new arrived, don't re-trigger
+
+        // Find which arrivals are not already in combat
+        const linkedIds = new Set(cs.dungeonEnemyIds || (cs.dungeonEnemyId ? [cs.dungeonEnemyId] : []));
+        const joining = arrivals.filter(e => !linkedIds.has(e.id));
+        if (joining.length === 0) return;
+
+        // Add each joiner as a new monster in the active combat
+        joining.forEach(de => {
+            if (!de.monsterId) return;
+            const newMonster = spawnMonsterWithRarity(de.monsterId, true);
+            newMonster.index = cs.monsters.length;
+            // Restore saved HP if partially damaged
+            if (de.hp !== undefined && de.hp < de.maxHp) {
+                newMonster.hp    = de.hp;
+                newMonster.maxHp = de.maxHp;
+            }
+            cs.monsters.push(newMonster);
+
+            // Track its dungeon ID for post-combat cleanup
+            if (!cs.dungeonEnemyIds) cs.dungeonEnemyIds = linkedIds.has(cs.dungeonEnemyId) ? [cs.dungeonEnemyId] : [];
+            cs.dungeonEnemyIds.push(de.id);
+            linkedIds.add(de.id);
+
+            termAppend(
+                `⚔️ <strong>${newMonster.name}</strong> joins the fight!`,
+                'term-warning'
+            );
+        });
+
+        // Refresh combat UI to show new enemies
+        renderDungeonActionBar();
         return;
     }
-    
-    // Start normal combat using the monsterId
-    startCombat([dungeonEnemy.monsterId]);
-    
-    // Link combat to dungeon enemy for persistence
-    if (gameState.combatState) {
-        gameState.combatState.dungeonEnemyId = dungeonEnemy.id;
-        
-        // If this enemy has saved HP, restore it to the combat monster
-        if (dungeonEnemy.hp !== undefined && dungeonEnemy.hp < dungeonEnemy.maxHp) {
-            const monster = gameState.combatState.monsters[0];
+
+    // ── Case 2: No active combat — start fresh with all enemies here ──
+    if (enemiesHere.length === 1) {
+        termAppend(`⚔️ <strong>${enemiesHere[0].name}</strong> confronts you!`, 'term-warning');
+    } else {
+        const names = enemiesHere.map(e => `<strong>${e.name}</strong>`).join(', ');
+        termAppend(`⚔️ ${names} surround you!`, 'term-warning');
+    }
+    startDungeonCombat(enemiesHere);
+}
+
+function startDungeonCombat(dungeonEnemies) {
+    // Accept either a single enemy or an array
+    if (!Array.isArray(dungeonEnemies)) dungeonEnemies = [dungeonEnemies];
+    if (dungeonEnemies.length === 0) return;
+
+    // Clear any stale finished combat state
+    if (gameState.combatState && gameState.combatState.combatOver) {
+        gameState.combatState = null;
+        gameState.postCombatRecovery = false;
+    }
+
+    const monsterIds = dungeonEnemies.map(e => e.monsterId).filter(Boolean);
+    if (monsterIds.length === 0) {
+        console.error('Dungeon enemies missing monsterId:', dungeonEnemies);
+        return;
+    }
+
+    // Start combat with all enemies in room
+    startCombat(monsterIds);
+
+    if (!gameState.combatState) return;
+
+    // Link ALL dungeon enemy IDs to combat state for post-combat cleanup
+    gameState.combatState.dungeonEnemyIds = dungeonEnemies.map(e => e.id);
+    // Legacy single-enemy field (keeps drops working for first enemy)
+    gameState.combatState.dungeonEnemyId = dungeonEnemies[0].id;
+
+    // Restore saved HP for each monster (matched by index)
+    dungeonEnemies.forEach((de, idx) => {
+        if (de.hp !== undefined && de.hp < de.maxHp) {
+            const monster = gameState.combatState.monsters[idx];
             if (monster) {
-                monster.hp = dungeonEnemy.hp;
-                monster.maxHp = dungeonEnemy.maxHp;
-                console.log(`Restored dungeon enemy HP: ${monster.hp}/${monster.maxHp}`);
+                monster.hp  = de.hp;
+                monster.maxHp = de.maxHp;
             }
         }
-    }
-    
-    // 💾 Save combat state
+    });
+
     saveGame();
 }
 
@@ -9164,17 +9304,7 @@ function startDungeonCombat(dungeonEnemy) {
 
 function returnToTown(townId) {
     console.log('⬅ returnToTown() called');
-
-    // ── Remove dungeon keys from inventory (they don't leave the dungeon) ──
-    const p = gameState.player;
-    if (p && p.inventory) {
-        const keyNames = ['bronze_key','copper_key','iron_key','brass_key','silver_key',
-                          'electrum_key','ruby_key','topaz_key','diamond_key','obsidian_key','bone_key'];
-        const before = p.inventory.length;
-        p.inventory = p.inventory.filter(k => !keyNames.includes(k));
-        const removed = before - p.inventory.length;
-        if (removed > 0) console.log(`🔑 Removed ${removed} dungeon key(s) on exit`);
-    }
+    // ── Dungeon keys persist in inventory — they are permanent collectibles ──
 
     // Clear dungeon state
     gameState.dungeon = null;
@@ -10982,34 +11112,40 @@ function endCombat(victory) {
         });
     }
 
-    // ── Remove defeated dungeon enemy & award drop ──
-    if (gameState.dungeon && gameState.combatState?.dungeonEnemyId) {
-        const dungeonEnemyId = gameState.combatState.dungeonEnemyId;
+    // ── Remove ALL defeated dungeon enemies & award drops ──
+    if (gameState.dungeon && gameState.combatState) {
+        const cs = gameState.combatState;
+        // Collect all dungeon enemy IDs linked to this combat
+        const linkedIds = cs.dungeonEnemyIds || (cs.dungeonEnemyId ? [cs.dungeonEnemyId] : []);
 
-        // Find the enemy before removing it so we can read its drop
-        const defeatedDungeonEnemy = gameState.dungeon.activeEnemies.find(
-            e => e.id === dungeonEnemyId
-        );
+        linkedIds.forEach(dungeonEnemyId => {
+            const defeatedDungeonEnemy = gameState.dungeon.activeEnemies.find(
+                e => e.id === dungeonEnemyId
+            );
 
-        // Award the drop item if set
-        if (defeatedDungeonEnemy && defeatedDungeonEnemy.drop) {
-            const dropKey = defeatedDungeonEnemy.drop;
-            if (dropKey && ITEMS[dropKey]) {
-                gameState.player.inventory.push(dropKey);
-                const dropItem = ITEMS[dropKey];
-                const dropIcon = dropItem.icon || '📦';
-                const keyColor = dropItem.subtype === 'dungeon_key' ? '#e8b84a' : '#00FF88';
-                termAppend(
-                    `${dropIcon} <span style="color:${keyColor};">${dropItem.name}</span> found on the body!`,
-                    'term-loot'
-                );
+            // Award the drop item if set
+            if (defeatedDungeonEnemy && defeatedDungeonEnemy.drop) {
+                const dropKey = defeatedDungeonEnemy.drop;
+                if (dropKey && ITEMS[dropKey]) {
+                    gameState.player.inventory.push(dropKey);
+                    const dropItem = ITEMS[dropKey];
+                    const dropIcon = dropItem.icon || '📦';
+                    const keyColor = dropItem.subtype === 'dungeon_key' ? '#e8b84a' : '#00FF88';
+                    termAppend(
+                        `${dropIcon} <span style="color:${keyColor};">${dropItem.name}</span> found on the body!`,
+                        'term-loot'
+                    );
+                }
             }
-        }
+        });
 
-        gameState.dungeon.activeEnemies = gameState.dungeon.activeEnemies.filter(
-            e => e.id !== dungeonEnemyId
-        );
-        console.log(`🗑️ Removed dungeon enemy: ${dungeonEnemyId}`);
+        // Remove all defeated enemies from the dungeon
+        if (linkedIds.length > 0) {
+            gameState.dungeon.activeEnemies = gameState.dungeon.activeEnemies.filter(
+                e => !linkedIds.includes(e.id)
+            );
+            console.log(`🗑️ Removed ${linkedIds.length} dungeon enemy(s): ${linkedIds.join(', ')}`);
+        }
     }
 
     // ── terminal output ──
@@ -11171,8 +11307,23 @@ gameState.postCombatRecovery = true;
     
     // Check if we're in a dungeon
     if (gameState.dungeon) {
-        // Dungeon handles its own buttons - just render them
-        renderDungeonActionBar();
+        // After a short delay, check if more enemies are still in the room
+        if (victory) {
+            setTimeout(() => {
+                const ds = gameState.dungeon;
+                if (!ds) return;
+                const remaining = ds.activeEnemies.filter(e => e.currentRoom === ds.currentRoom);
+                if (remaining.length > 0) {
+                    // More enemies in room — start new combat
+                    checkEnemiesInRoom(ds.currentRoom);
+                } else {
+                    // No more enemies — show exploration buttons
+                    renderDungeonActionBar();
+                }
+            }, 400);
+        } else {
+            renderDungeonActionBar();
+        }
     } else if (isMaster) {
         ab.innerHTML = `
             <button onclick="tryViewWorldMap()">🗺️ VIEW WORLD MAP</button>
