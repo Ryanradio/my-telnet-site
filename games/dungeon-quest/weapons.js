@@ -65,12 +65,25 @@ const WEAPONS = {
     wooden_staff: { 
         name: 'Wooden Staff', 
         baseDamage: 1,
-        maxDamage: 3,
+        maxDamage: 2,
         baseMagicDamage: 3, 
         cost: 0, 
         level: 1,
         quality: 'normal',
-        slot: 'weapon'
+        slot: 'weapon',
+        weaponSubtype: 'staff'
+    },
+    // Wands: stronger melee, less magic than equivalent staff
+    apprentice_wand: {
+        name: 'Apprentice Wand',
+        baseDamage: 3,
+        maxDamage: 6,
+        baseMagicDamage: 1,
+        cost: 80,
+        level: 1,
+        quality: 'normal',
+        slot: 'weapon',
+        weaponSubtype: 'wand'
     },
     training_bow: { 
         name: 'Training Bow', 
@@ -98,13 +111,25 @@ const WEAPONS = {
     },
     apprentice_staff: {
         name: 'Apprentice Staff',
-        baseDamage: 2,
-        maxDamage: 4,
-        baseMagicDamage: 5,
+        baseDamage: 1,
+        maxDamage: 2,
+        baseMagicDamage: 6,
         cost: 500,
         level: 2,
         quality: 'normal',
-        slot: 'weapon'
+        slot: 'weapon',
+        weaponSubtype: 'staff'
+    },
+    focus_wand: {
+        name: 'Focus Wand',
+        baseDamage: 4,
+        maxDamage: 8,
+        baseMagicDamage: 2,
+        cost: 200,
+        level: 2,
+        quality: 'normal',
+        slot: 'weapon',
+        weaponSubtype: 'wand'
     },
 
     // ═══════════════════════════════════════════════════════════════
@@ -142,13 +167,25 @@ const WEAPONS = {
     },
     flame_staff: {
         name: 'Flame Staff',
-        baseDamage: 4,
-        maxDamage: 7,
-        baseMagicDamage: 10,
+        baseDamage: 2,
+        maxDamage: 4,
+        baseMagicDamage: 12,
         cost: 550,
         level: 4,
         quality: 'rare',
-        slot: 'weapon'
+        slot: 'weapon',
+        weaponSubtype: 'staff'
+    },
+    ember_wand: {
+        name: 'Ember Wand',
+        baseDamage: 8,
+        maxDamage: 13,
+        baseMagicDamage: 4,
+        cost: 320,
+        level: 4,
+        quality: 'rare',
+        slot: 'weapon',
+        weaponSubtype: 'wand'
     },
 
     // ═══════════════════════════════════════════════════════════════
@@ -166,13 +203,25 @@ const WEAPONS = {
     },
     ice_staff: {
         name: 'Ice Staff',
-        baseDamage: 5,
-        maxDamage: 9,
-        baseMagicDamage: 14,
+        baseDamage: 3,
+        maxDamage: 6,
+        baseMagicDamage: 16,
         cost: 11000,
         level: 6,
         quality: 'rare',
-        slot: 'weapon'
+        slot: 'weapon',
+        weaponSubtype: 'staff'
+    },
+    frost_wand: {
+        name: 'Frost Wand',
+        baseDamage: 10,
+        maxDamage: 16,
+        baseMagicDamage: 6,
+        cost: 800,
+        level: 6,
+        quality: 'rare',
+        slot: 'weapon',
+        weaponSubtype: 'wand'
     },
     elven_bow: {
         name: 'Elven Bow',
@@ -200,13 +249,25 @@ const WEAPONS = {
     },
     lightning_staff: {
         name: 'Lightning Staff',
-        baseDamage: 7,
-        maxDamage: 12,
-        baseMagicDamage: 20,
+        baseDamage: 4,
+        maxDamage: 8,
+        baseMagicDamage: 24,
         cost: 1800,
         level: 8,
         quality: 'rare',
-        slot: 'weapon'
+        slot: 'weapon',
+        weaponSubtype: 'staff'
+    },
+    shock_wand: {
+        name: 'Shock Wand',
+        baseDamage: 14,
+        maxDamage: 21,
+        baseMagicDamage: 9,
+        cost: 1100,
+        level: 8,
+        quality: 'rare',
+        slot: 'weapon',
+        weaponSubtype: 'wand'
     },
     shadowblade: {
         name: 'Shadowblade',
@@ -234,13 +295,25 @@ const WEAPONS = {
     },
     archmage_staff: {
         name: 'Archmage Staff',
-        baseDamage: 10,
-        maxDamage: 16,
-        baseMagicDamage: 28,
+        baseDamage: 7,
+        maxDamage: 11,
+        baseMagicDamage: 33,
         cost: 11000,
         level: 10,
         quality: 'epic',
-        slot: 'weapon'
+        slot: 'weapon',
+        weaponSubtype: 'staff'
+    },
+    arcane_wand: {
+        name: 'Arcane Wand',
+        baseDamage: 19,
+        maxDamage: 28,
+        baseMagicDamage: 12,
+        cost: 2200,
+        level: 10,
+        quality: 'epic',
+        slot: 'weapon',
+        weaponSubtype: 'wand'
     },
     dragonslayer_bow: {
         name: 'Dragonslayer Bow',
@@ -268,13 +341,25 @@ const WEAPONS = {
     },
     void_staff: {
         name: 'Void Staff',
-        baseDamage: 12,
-        maxDamage: 20,
-        baseMagicDamage: 35,
+        baseDamage: 8,
+        maxDamage: 14,
+        baseMagicDamage: 42,
         cost: 5000,
         level: 12,
         quality: 'epic',
-        slot: 'weapon'
+        slot: 'weapon',
+        weaponSubtype: 'staff'
+    },
+    void_wand: {
+        name: 'Void Wand',
+        baseDamage: 24,
+        maxDamage: 36,
+        baseMagicDamage: 16,
+        cost: 3200,
+        level: 12,
+        quality: 'epic',
+        slot: 'weapon',
+        weaponSubtype: 'wand'
     },
 
     // ═══════════════════════════════════════════════════════════════
@@ -292,13 +377,25 @@ const WEAPONS = {
     },
     celestial_staff: {
         name: 'Celestial Staff',
-        baseDamage: 14,
-        maxDamage: 24,
-        baseMagicDamage: 42,
+        baseDamage: 9,
+        maxDamage: 16,
+        baseMagicDamage: 50,
         cost: 8000,
         level: 14,
         quality: 'legendary',
-        slot: 'weapon'
+        slot: 'weapon',
+        weaponSubtype: 'staff'
+    },
+    celestial_wand: {
+        name: 'Celestial Wand',
+        baseDamage: 28,
+        maxDamage: 43,
+        baseMagicDamage: 19,
+        cost: 5500,
+        level: 14,
+        quality: 'legendary',
+        slot: 'weapon',
+        weaponSubtype: 'wand'
     },
     phantom_bow: {
         name: 'Phantom Bow',
@@ -326,13 +423,25 @@ const WEAPONS = {
     },
     eternity_staff: {
         name: 'Staff of Eternity',
-        baseDamage: 18,
-        maxDamage: 30,
-        baseMagicDamage: 50,
+        baseDamage: 12,
+        maxDamage: 21,
+        baseMagicDamage: 60,
         cost: 11000,
         level: 16,
         quality: 'legendary',
-        slot: 'weapon'
+        slot: 'weapon',
+        weaponSubtype: 'staff'
+    },
+    eternity_wand: {
+        name: 'Wand of Eternity',
+        baseDamage: 36,
+        maxDamage: 54,
+        baseMagicDamage: 22,
+        cost: 8000,
+        level: 16,
+        quality: 'legendary',
+        slot: 'weapon',
+        weaponSubtype: 'wand'
     },
 
     // ═══════════════════════════════════════════════════════════════
@@ -350,13 +459,25 @@ const WEAPONS = {
     },
     apocalypse_staff: {
         name: 'Apocalypse Staff',
-        baseDamage: 22,
-        maxDamage: 36,
-        baseMagicDamage: 58,
+        baseDamage: 15,
+        maxDamage: 25,
+        baseMagicDamage: 69,
         cost: 50000,
         level: 18,
         quality: 'legendary',
-        slot: 'weapon'
+        slot: 'weapon',
+        weaponSubtype: 'staff'
+    },
+    apocalypse_wand: {
+        name: 'Apocalypse Wand',
+        baseDamage: 43,
+        maxDamage: 64,
+        baseMagicDamage: 27,
+        cost: 18000,
+        level: 18,
+        quality: 'legendary',
+        slot: 'weapon',
+        weaponSubtype: 'wand'
     },
 
     // ═══════════════════════════════════════════════════════════════
@@ -374,13 +495,25 @@ const WEAPONS = {
     },
     cosmic_staff: {
         name: 'Cosmic Staff',
-        baseDamage: 26,
-        maxDamage: 42,
-        baseMagicDamage: 66,
+        baseDamage: 18,
+        maxDamage: 29,
+        baseMagicDamage: 79,
         cost: 22000,
         level: 20,
         quality: 'legendary',
-        slot: 'weapon'
+        slot: 'weapon',
+        weaponSubtype: 'staff'
+    },
+    cosmic_wand: {
+        name: 'Cosmic Wand',
+        baseDamage: 50,
+        maxDamage: 75,
+        baseMagicDamage: 30,
+        cost: 16000,
+        level: 20,
+        quality: 'legendary',
+        slot: 'weapon',
+        weaponSubtype: 'wand'
     },
 
     // ═══════════════════════════════════════════════════════════════
@@ -428,16 +561,6 @@ const WEAPONS = {
     // ═══════════════════════════════════════════════════════════════
     // THE LEGENDARY BUTTERKNIFE
     // ═══════════════════════════════════════════════════════════════
-    magical_butterknife: {
-        name: 'Magical Butterknife',
-        baseDamage: 9999,
-        maxDamage: 9999,
-        baseMagicDamage: 9999,
-        cost: 0,
-        level: 1,
-        quality: 'godly',
-        slot: 'weapon'
-    },
     
     // ═══════════════════════════════════════════════════════════════
     // ROGUE DAGGERS — Dagger-exclusive class (all classRestriction: 'rogue')

@@ -1600,10 +1600,21 @@ const OPPOSITE_DIR = {
 
             // Default restrictions based on weapon type/name
             const weaponName = weapon.name.toLowerCase();
+            const SPELL_CLASSES = ['mage', 'warlock', 'cleric', 'acolyte', 'necrolyte', 'druid', 'sorceror'];
             
             // Staffs - magic users only
-            if (weaponName.includes('staff') || weapon.baseMagicDamage > weapon.baseDamage) {
-                return ['mage', 'warlock', 'cleric', 'acolyte', 'necrolyte', 'druid'].includes(playerClass);
+            if (weaponName.includes('staff') || weapon.weaponSubtype === 'staff') {
+                return SPELL_CLASSES.includes(playerClass);
+            }
+            
+            // Wands - magic users only (but also accessible from shop for magic classes)
+            if (weaponName.includes('wand') || weapon.weaponSubtype === 'wand') {
+                return SPELL_CLASSES.includes(playerClass);
+            }
+            
+            // Also catch high-magic weapons by baseMagicDamage ratio
+            if (weapon.baseMagicDamage > weapon.baseDamage) {
+                return SPELL_CLASSES.includes(playerClass);
             }
             
             // Bows - rangers and archers only
@@ -2731,7 +2742,23 @@ function buildSaveSnapshot() {
 
             // Achievements & runestones
             achievements: [...(p.achievements || [])],
-            runestones: [...(p.runestones || [])]
+            runestones: [...(p.runestones || [])],
+            
+            // ═══════════════════════════════════════════════════════════════
+            // PERSISTENT DUNGEON MAPS — discovered rooms for all dungeons/floors
+            // Structure: { dungeonKey: { floorNum: [roomIds...] } }
+            // ═══════════════════════════════════════════════════════════════
+            dungeonMaps: (() => {
+                const maps = {};
+                for (const dungeonKey in (p.dungeonMaps || {})) {
+                    maps[dungeonKey] = {};
+                    for (const floorNum in p.dungeonMaps[dungeonKey]) {
+                        // Convert Set to Array for JSON serialization
+                        maps[dungeonKey][floorNum] = [...p.dungeonMaps[dungeonKey][floorNum]];
+                    }
+                }
+                return maps;
+            })()
         },
         
         // Town hub the player is in
@@ -3393,6 +3420,9 @@ window.addEventListener('beforeunload', () => {
                 case '/export':
                     handleExport(args);
                     break;
+                case '/revealmap':
+                    handleRevealMap(args);
+                    break;
                 default:
                     terminalPrint(`ERROR: Unknown command '${command}'. Type /help for available commands.`, 'error');
             }
@@ -3478,9 +3508,12 @@ window.addEventListener('beforeunload', () => {
             terminalPrint('    /teleport dungeon1 f2        - Dungeon1 Floor 2 start');
             terminalPrint('    /teleport dungeon1 f1 R57    - Dungeon1 Floor 1 Room R57');
             terminalPrint('    /teleport forest             - Any explore zone key');
-            terminalPrint('  /killmonster          - Instantly kill current enemy');
-            terminalPrint('  /export <type>        - Export data (monsters/weapons/armor/items)');
-            terminalPrint('  /clear                - Clear terminal output');
+            terminalPrint('  /revealmap [dungeon]     - Reveal entire dungeon map');
+            terminalPrint('                             No arg = all dungeons');
+            terminalPrint('                             /revealmap dungeon1');
+            terminalPrint('  /killmonster             - Instantly kill current enemy');
+            terminalPrint('  /export <type>           - Export data (monsters/weapons/armor/items)');
+            terminalPrint('  /clear                   - Clear terminal output');
             terminalPrint('═══════════════════════════════════════', 'warning');
         }
 
@@ -3745,7 +3778,24 @@ window.addEventListener('beforeunload', () => {
             p.xpToNext = getXpToNextLevel(p.baseClass || p.class, p.level);
             p.xp = getXpForLevel(p.baseClass || p.class, p.level); // Set to start of this level
             
+            // ═══════════════════════════════════════════════════════════════
+            // AUTO-UNLOCK EXPLORE ZONES (same logic as showTown)
+            // ═══════════════════════════════════════════════════════════════
+            if (typeof LOCATIONS !== 'undefined') {
+                Object.keys(LOCATIONS).forEach(key => {
+                    const loc = LOCATIONS[key];
+                    if (key === 'town') return;
+                    if (!loc.locked && loc.requiredLevel && p.level >= loc.requiredLevel) {
+                        if (!p.unlockedAreas.includes(key)) {
+                            p.unlockedAreas.push(key);
+                            terminalPrint(`✓ Unlocked zone: ${loc.name}`, 'success');
+                        }
+                    }
+                });
+            }
+            
             updateHud();
+            saveGame();
             terminalPrint(`SUCCESS: Set player level to ${targetLevel}`, 'success');
             
             if (p.hasEvolved) {
@@ -3900,11 +3950,17 @@ window.addEventListener('beforeunload', () => {
                 destRoom.flags = destRoom.flags || {};
                 destRoom.flags.discovered = true;
 
+                // Load persistent map and add target room
+                const persistentMap = loadDungeonMap(gameState.player, dungeonKey, targetFloor);
+                const scopedTargetRoom = `${targetFloor}:${targetRoom}`;
+                persistentMap.add(scopedTargetRoom);
+                saveRoomDiscovery(gameState.player, dungeonKey, targetFloor, targetRoom);
+
                 gameState.dungeon = {
                     dungeonKey,
                     floor:          targetFloor,
                     currentRoom:    targetRoom,
-                    discoveredRooms: new Set([targetRoom]),
+                    discoveredRooms: persistentMap, // Load from persistent map
                     activeEnemies: []
                 };
 
@@ -3961,6 +4017,74 @@ window.addEventListener('beforeunload', () => {
             gameState.combatState.enemy.hp = 0;
             terminalPrint('SUCCESS: Enemy eliminated', 'success');
             checkCombatEnd();
+        }
+
+        function handleRevealMap(args) {
+            if (!gameState.player) {
+                terminalPrint('ERROR: No active player character', 'error');
+                return;
+            }
+            
+            if (typeof DUNGEONS === 'undefined') {
+                terminalPrint('ERROR: DUNGEONS not loaded', 'error');
+                return;
+            }
+            
+            const p = gameState.player;
+            let targetDungeons = [];
+            
+            // If dungeon specified, reveal only that one
+            if (args && args.length > 0) {
+                const dungeonKey = args[0];
+                // Match case-insensitively
+                const matched = Object.keys(DUNGEONS).find(k => k.toLowerCase() === dungeonKey.toLowerCase());
+                if (!matched) {
+                    terminalPrint(`ERROR: Dungeon "${dungeonKey}" not found`, 'error');
+                    terminalPrint(`Available dungeons: ${Object.keys(DUNGEONS).join(', ')}`, 'warning');
+                    return;
+                }
+                targetDungeons = [matched];
+            } else {
+                // No arg = reveal ALL dungeons
+                targetDungeons = Object.keys(DUNGEONS);
+            }
+            
+            let totalRooms = 0;
+            let totalFloors = 0;
+            
+            targetDungeons.forEach(dungeonKey => {
+                const dungeon = DUNGEONS[dungeonKey];
+                
+                Object.keys(dungeon.floors).forEach(floorNum => {
+                    const floor = dungeon.floors[floorNum];
+                    totalFloors++;
+                    
+                    // Reveal all rooms on this floor
+                    Object.keys(floor.rooms).forEach(roomId => {
+                        const room = floor.rooms[roomId];
+                        if (room.map) { // Only rooms with map coordinates
+                            saveRoomDiscovery(p, dungeonKey, parseInt(floorNum), roomId);
+                            totalRooms++;
+                        }
+                    });
+                });
+            });
+            
+            // If currently in a dungeon, reload the persistent map for active floor
+            if (gameState.dungeon) {
+                const ds = gameState.dungeon;
+                ds.discoveredRooms = loadDungeonMap(p, ds.dungeonKey, ds.floor);
+            }
+            
+            saveGame();
+            
+            terminalPrint('═══════════════════════════════════════', 'success');
+            terminalPrint('  MAP REVEAL COMPLETE', 'success');
+            terminalPrint(`  Dungeons: ${targetDungeons.join(', ')}`, 'success');
+            terminalPrint(`  Floors revealed: ${totalFloors}`, 'success');
+            terminalPrint(`  Rooms revealed: ${totalRooms}`, 'success');
+            terminalPrint('  Open dungeon map to see all rooms', 'success');
+            terminalPrint('═══════════════════════════════════════', 'success');
         }
 
         function listMonsters() {
@@ -4530,8 +4654,10 @@ window.addEventListener('beforeunload', () => {
             const screen = document.getElementById('mainScreen');
             screen.innerHTML = `
                 <div class="location-header">SELECT CHARACTER</div>
-                <div id="characterList" style="max-width: 600px; margin: 20px auto;"></div>
-                <button onclick="showMainMenu()">← BACK TO MENU</button>
+                <div id="characterList" style="max-width: 600px; margin: 20px auto; padding: 0 10px;"></div>
+                <div style="padding: 0 10px 20px;">
+                    <button onclick="showMainMenu()" style="width:100%;max-width:600px;display:block;margin:0 auto;">← BACK TO MENU</button>
+                </div>
             `;
             
             const charList = document.getElementById('characterList');
@@ -4544,32 +4670,29 @@ window.addEventListener('beforeunload', () => {
                     border: 2px solid var(--border-color);
                     padding: 15px;
                     margin-bottom: 15px;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
+                    box-sizing: border-box;
+                    width: 100%;
                 `;
                 
                 card.innerHTML = `
-                    <div style="flex: 1;">
-                        <div style="color: var(--highlight-color); font-size: 22px; margin-bottom: 5px;">
+                    <div style="margin-bottom: 12px;">
+                        <div style="color: var(--highlight-color); font-size: 22px; margin-bottom: 4px; word-break: break-word;">
                             ${char.name}
                         </div>
                         <div style="color: var(--text-color); font-size: 16px;">
                             Level ${char.level} ${char.class || 'Adventurer'}
                         </div>
-                        <div style="color: #8aaa8a; font-size: 14px; margin-top: 5px;">
+                        <div style="color: #8aaa8a; font-size: 14px; margin-top: 4px;">
                             Last played: ${char.lastSaved}
                         </div>
                     </div>
-                    <div style="display: flex; gap: 10px;">
-                        <button onclick="event.stopPropagation(); loadCharacter('${char.id}')" 
-                                style="padding: 8px 16px; background: #0a3a0a; border: 2px solid var(--text-color);">
+                    <div style="display: flex; gap: 10px; width: 100%;">
+                        <button onclick="event.stopPropagation(); loadCharacter('${char.id}')"
+                                style="flex: 1; padding: 12px 8px; background: #0a3a0a; border: 2px solid var(--text-color); font-size: 18px; min-width: 0;">
                             ▶ PLAY
                         </button>
-                        <button onclick="event.stopPropagation(); confirmDeleteCharacter('${char.id}', '${char.name}')" 
-                                style="padding: 8px 16px; background: #3a0a0a; border: 2px solid var(--error-color); color: var(--error-color);">
+                        <button onclick="event.stopPropagation(); confirmDeleteCharacter('${char.id}', '${char.name}')"
+                                style="flex: 1; padding: 12px 8px; background: #3a0a0a; border: 2px solid var(--error-color); color: var(--error-color); font-size: 18px; min-width: 0;">
                             🗑️ DELETE
                         </button>
                     </div>
@@ -4629,7 +4752,23 @@ window.addEventListener('beforeunload', () => {
                     achievements: data.player.achievements || [],
                     runestones: data.player.runestones || [],
                     // Portal unlock — false for old saves that predate this flag
-                    portalUnlocked: data.player.portalUnlocked || false
+                    portalUnlocked: data.player.portalUnlocked || false,
+                    // ═══════════════════════════════════════════════════════════════
+                    // PERSISTENT DUNGEON MAPS - Restore and convert arrays back to Sets
+                    // ═══════════════════════════════════════════════════════════════
+                    dungeonMaps: (() => {
+                        const maps = {};
+                        if (data.player.dungeonMaps) {
+                            for (const dungeonKey in data.player.dungeonMaps) {
+                                maps[dungeonKey] = {};
+                                for (const floorNum in data.player.dungeonMaps[dungeonKey]) {
+                                    // Convert arrays back to Sets
+                                    maps[dungeonKey][floorNum] = new Set(data.player.dungeonMaps[dungeonKey][floorNum]);
+                                }
+                            }
+                        }
+                        return maps;
+                    })()
                 };
                 
                 // Restore current town
@@ -4680,6 +4819,27 @@ window.addEventListener('beforeunload', () => {
                 if (!p.className && p.class && CLASSES[p.class]) {
                     p.className = CLASSES[p.class].name;
                     console.log(`✅ Added className: ${p.className}`);
+                }
+
+                // ═══════════════════════════════════════════════════════════════
+                // ROGUE WEAPON MIGRATION — daggers only (force old rogues to comply)
+                // ═══════════════════════════════════════════════════════════════
+                const baseClassCheck = p.baseClass || p.class;
+                if (baseClassCheck === 'rogue' && p.weapon && WEAPONS[p.weapon]) {
+                    const wpn = WEAPONS[p.weapon];
+                    const isDagger = wpn.classRestriction === 'rogue'
+                        || (wpn.name && (wpn.name.toLowerCase().includes('dagger') || wpn.name.toLowerCase().includes('shiv')))
+                        || (p.weapon && (p.weapon.toLowerCase().includes('dagger') || p.weapon.toLowerCase().includes('shiv')));
+                    if (!isDagger) {
+                        console.warn(`⚠️ Rogue has non-dagger weapon '${p.weapon}'. Migrating to rusty_shiv...`);
+                        // Strip the non-dagger from inventory if present
+                        const idx = p.inventory.indexOf(p.weapon);
+                        if (idx !== -1) p.inventory.splice(idx, 1);
+                        // Equip rusty_shiv
+                        p.weapon = 'rusty_shiv';
+                        if (!p.inventory.includes('rusty_shiv')) p.inventory.push('rusty_shiv');
+                        console.log(`✅ Rogue weapon migrated to rusty_shiv`);
+                    }
                 }
 
                 // ═══════════════════════════════════════════════════════════════
@@ -4740,11 +4900,29 @@ window.addEventListener('beforeunload', () => {
                     
                     const dungeon = DUNGEONS[dungeonKey];
                     
+                    // ═══════════════════════════════════════════════════════════════
+                    // MERGE: Load persistent map + current session discovered rooms
+                    // This ensures all previously discovered rooms are remembered
+                    // ═══════════════════════════════════════════════════════════════
+                    const floorNum = data.dungeon.floor;
+                    const persistentMap = loadDungeonMap(p, dungeonKey, floorNum);
+                    const sessionRooms = new Set(data.dungeon.discoveredRooms || []);
+                    
+                    // Merge session rooms into persistent map
+                    sessionRooms.forEach(roomKey => {
+                        persistentMap.add(roomKey);
+                        // Also save to persistent storage
+                        if (roomKey.includes(':')) {
+                            const [floor, roomId] = roomKey.split(':');
+                            saveRoomDiscovery(p, dungeonKey, parseInt(floor), roomId);
+                        }
+                    });
+                    
                     gameState.dungeon = {
                         dungeonKey: dungeonKey,
-                        floor: data.dungeon.floor,
+                        floor: floorNum,
                         currentRoom: data.dungeon.currentRoom,
-                        discoveredRooms: new Set(data.dungeon.discoveredRooms),
+                        discoveredRooms: persistentMap, // Use merged map
                         spawnedRooms: new Set(data.dungeon.spawnedRooms || []),
                         activeEnemies: (data.dungeon.activeEnemies || []).map(e => ({
                             ...e,
@@ -4752,6 +4930,22 @@ window.addEventListener('beforeunload', () => {
                             roomsFollowed: 0
                         }))
                     };
+                    
+                    // ═══════════════════════════════════════════════════════════════
+                    // MIGRATION: Convert old discoveredRooms format (roomId) to new format (floorNum:roomId)
+                    // ═══════════════════════════════════════════════════════════════
+                    const ds = gameState.dungeon;
+                    const migratedSet = new Set();
+                    ds.discoveredRooms.forEach(entry => {
+                        if (entry.includes(':')) {
+                            // Already new format
+                            migratedSet.add(entry);
+                        } else {
+                            // Old format (just roomId) — scope to current floor
+                            migratedSet.add(`${ds.floor}:${entry}`);
+                        }
+                    });
+                    ds.discoveredRooms = migratedSet;
                     
                     // Open dungeon UI
                     openTerminalView(dungeonKey);
@@ -5338,11 +5532,19 @@ window.addEventListener('beforeunload', () => {
                 }
             });
 
+            // ═══════════════════════════════════════════════════════════════
+            // Initialize dungeon state with persistent discovered rooms
+            // ═══════════════════════════════════════════════════════════════
+            const persistentMap = loadDungeonMap(gameState.player, dungeonKey, 1);
+            const scopedStartRoom = `1:${floor.startRoom}`;
+            persistentMap.add(scopedStartRoom); // Ensure start room is always discovered
+            saveRoomDiscovery(gameState.player, dungeonKey, 1, floor.startRoom);
+            
             gameState.dungeon = {
                 dungeonKey,
                 floor: 1,
                 currentRoom: floor.startRoom,
-                discoveredRooms: new Set([floor.startRoom]),
+                discoveredRooms: persistentMap, // Load from persistent map
                 activeEnemies: []
             };
 
@@ -5711,11 +5913,17 @@ window.addEventListener('beforeunload', () => {
                     if (!itemCounts[itemKey]) itemCounts[itemKey] = { type:'item', count:0 };
                     itemCounts[itemKey].count++;
                 } else if (WEAPONS[itemKey] && itemKey !== p.weapon && !WEAPONS[itemKey].unarmed) {
-                    if (!itemCounts[itemKey]) itemCounts[itemKey] = { type:'weapon', count:0 };
-                    itemCounts[itemKey].count++;
+                    // Group by itemKey + quality to avoid stacking different qualities
+                    const wpn = WEAPONS[itemKey];
+                    const groupKey = `${itemKey}__${wpn.quality || 'normal'}`;
+                    if (!itemCounts[groupKey]) itemCounts[groupKey] = { type:'weapon', count:0, baseKey:itemKey, quality:wpn.quality };
+                    itemCounts[groupKey].count++;
                 } else if (ARMOR[itemKey] && itemKey !== p.armor && !ARMOR[itemKey].unarmored) {
-                    if (!itemCounts[itemKey]) itemCounts[itemKey] = { type:'armor', count:0 };
-                    itemCounts[itemKey].count++;
+                    // Group by itemKey + quality to avoid stacking different qualities
+                    const arm = ARMOR[itemKey];
+                    const groupKey = `${itemKey}__${arm.quality || 'normal'}`;
+                    if (!itemCounts[groupKey]) itemCounts[groupKey] = { type:'armor', count:0, baseKey:itemKey, quality:arm.quality };
+                    itemCounts[groupKey].count++;
                 }
             });
 
@@ -5769,32 +5977,34 @@ window.addEventListener('beforeunload', () => {
             if (itemKeys.length === 0) {
                 sellHtml += '<div class="message">You have nothing to sell.</div>';
             } else {
-                itemKeys.forEach(itemKey => {
-                    const data = itemCounts[itemKey];
-                    const qIdx = getItemQualityIdx(itemKey, data.type);
+                itemKeys.forEach(groupKey => {
+                    const data = itemCounts[groupKey];
+                    // For weapons/armor, use baseKey to lookup the actual item; for items, groupKey = itemKey
+                    const actualItemKey = data.baseKey || groupKey;
+                    const qIdx = getItemQualityIdx(actualItemKey, data.type);
                     const withinThreshold = data.type === 'item' || qIdx <= thresholdIdx;
 
                     let itemName, itemColor, sellValue, itemDesc, qualityLabel = '';
 
                     if (data.type === 'item') {
-                        const item = ITEMS[itemKey];
+                        const item = ITEMS[actualItemKey];
                         itemName  = item.name;
                         itemColor = '#00FF00';
                         sellValue = item.sellValue;
                         itemDesc  = item.description;
                     } else if (data.type === 'weapon') {
-                        const weapon = WEAPONS[itemKey];
+                        const weapon = WEAPONS[actualItemKey];
                         itemName     = weapon.name;
                         itemColor    = QUALITY_CONFIG[weapon.quality]?.color || '#fff';
-                        sellValue    = getSellValue(itemKey, 'weapon');
+                        sellValue    = getSellValue(actualItemKey, 'weapon');
                         qualityLabel = QUALITY_CONFIG[weapon.quality]?.name || '';
                         const qb     = getQualityBonus(weapon.quality, weapon.baseDamage);
                         itemDesc     = `DMG: ${weapon.baseDamage+qb}`;
                     } else if (data.type === 'armor') {
-                        const armor = ARMOR[itemKey];
+                        const armor = ARMOR[actualItemKey];
                         itemName     = armor.name;
                         itemColor    = QUALITY_CONFIG[armor.quality]?.color || '#fff';
-                        sellValue    = getSellValue(itemKey, 'armor');
+                        sellValue    = getSellValue(actualItemKey, 'armor');
                         qualityLabel = QUALITY_CONFIG[armor.quality]?.name || '';
                         const qb     = getQualityBonus(armor.quality, armor.baseDefense);
                         itemDesc     = `DEF: ${armor.baseDefense+qb}`;
@@ -5808,7 +6018,7 @@ window.addEventListener('beforeunload', () => {
                             <div style="font-size:14px;color:#aaa;">${itemDesc}</div>
                             <div style="color:var(--border-color);margin-top:6px;">${sellValue}g each</div>
                             ${withinThreshold
-                                ? `<button onclick="sellItem('${itemKey}', ${sellValue}, ${data.count})" style="margin-top:6px;">SELL${data.count > 1 ? ` ALL (${sellValue*data.count}g)` : ` (${sellValue}g)`}</button>`
+                                ? `<button onclick="sellItemGroup('${groupKey}', ${sellValue}, ${data.count})" style="margin-top:6px;">SELL${data.count > 1 ? ` ALL (${sellValue*data.count}g)` : ` (${sellValue}g)`}</button>`
                                 : `<div style="font-size:11px;color:#555;margin-top:6px;">Above threshold</div>`
                             }
                         </div>`;
@@ -5877,6 +6087,53 @@ window.addEventListener('beforeunload', () => {
             msg.textContent = `Sold ${totalItems} item${totalItems!==1?'s':''} for ${totalGold}g${bonusText}.`;
             content.prepend(msg);
             setTimeout(() => msg.remove(), 3000);
+        }
+
+        function sellItemGroup(groupKey, baseValue, quantity = 1) {
+            // groupKey might be "itemKey__quality" for weapons/armor, or just "itemKey" for items
+            // We need to sell the actual items from inventory that match this group
+            const p = gameState.player;
+            const parts = groupKey.split('__');
+            const actualItemKey = parts[0];
+            const targetQuality = parts[1]; // undefined for items
+            
+            let removed = 0;
+            for (let i = p.inventory.length - 1; i >= 0 && removed < quantity; i--) {
+                const invKey = p.inventory[i];
+                // For items: match key exactly
+                // For weapons/armor: match key AND quality
+                if (invKey === actualItemKey || invKey.startsWith(actualItemKey)) {
+                    // Check quality match for weapons/armor
+                    if (targetQuality) {
+                        const item = WEAPONS[invKey] || ARMOR[invKey];
+                        if (item && item.quality === targetQuality) {
+                            p.inventory.splice(i, 1);
+                            removed++;
+                        }
+                    } else {
+                        // No quality check needed (it's an item)
+                        p.inventory.splice(i, 1);
+                        removed++;
+                    }
+                }
+            }
+            if (removed === 0) return;
+            const bonus      = calcChaSellBonus(p.cha);
+            const unitValue  = Math.floor(baseValue * (1 + bonus/100));
+            const totalValue = unitValue * removed;
+            p.gold += totalValue;
+            saveGame();
+            showShopSell();
+            // Brief inline feedback, no alert()
+            const content = document.getElementById('shopContent');
+            if (content) {
+                const msg = document.createElement('div');
+                const name = getItemName(actualItemKey);
+                msg.style.cssText = 'background:#111;border:1px solid #4a9a4a;color:#4a9a4a;padding:6px 12px;font-size:15px;margin-bottom:10px;';
+                msg.textContent = `Sold ${removed > 1 ? removed+'× ' : ''}${name} for ${totalValue}g.`;
+                content.prepend(msg);
+                setTimeout(() => msg.remove(), 2500);
+            }
         }
 
         function showSellQuantityPrompt(itemKey, unitPrice, totalCount) {
@@ -7319,6 +7576,30 @@ function stabilizeTerminalLayout() {
         // ═══════════════════════════════════════════════════════════════
         
        // ═══════════════════════════════════════════════════════════════
+       // PERSISTENT DUNGEON MAP HELPERS
+       // ═══════════════════════════════════════════════════════════════
+       
+       function ensureDungeonMapStructure(player, dungeonKey, floorNum) {
+           // Initialize dungeonMaps if it doesn't exist
+           if (!player.dungeonMaps) player.dungeonMaps = {};
+           if (!player.dungeonMaps[dungeonKey]) player.dungeonMaps[dungeonKey] = {};
+           if (!player.dungeonMaps[dungeonKey][floorNum]) player.dungeonMaps[dungeonKey][floorNum] = new Set();
+       }
+       
+       function saveRoomDiscovery(player, dungeonKey, floorNum, roomId) {
+           // Save to persistent map
+           ensureDungeonMapStructure(player, dungeonKey, floorNum);
+           const scopedKey = `${floorNum}:${roomId}`;
+           player.dungeonMaps[dungeonKey][floorNum].add(scopedKey);
+       }
+       
+       function loadDungeonMap(player, dungeonKey, floorNum) {
+           // Return the persistent discovered rooms for this dungeon+floor
+           ensureDungeonMapStructure(player, dungeonKey, floorNum);
+           return new Set(player.dungeonMaps[dungeonKey][floorNum]);
+       }
+       
+       // ═══════════════════════════════════════════════════════════════
        // DUNGEON MAP SYSTEM
        // ═══════════════════════════════════════════════════════════════
        
@@ -7334,8 +7615,8 @@ function stabilizeTerminalLayout() {
            const dungeon = DUNGEONS[ds.dungeonKey];
            const floor = dungeon.floors[ds.floor];
            
-           // Build ASCII map
-           const mapAscii = generateAsciiMap(floor, ds.currentRoom, ds.discoveredRooms);
+           // Build ASCII map (pass floor number for scoped keys)
+           const mapAscii = generateAsciiMap(floor, ds.currentRoom, ds.discoveredRooms, ds.floor);
            
            // Show map in terminal
            const term = document.getElementById('terminalWindow');
@@ -7345,7 +7626,7 @@ function stabilizeTerminalLayout() {
                        === ${dungeon.name} - Floor ${ds.floor} ===
                    </div>
                    <div style="text-align: center; margin-bottom: 15px; color: #8aaa8a; font-size: 14px;">
-                       Legend: [@] = You | [ ] = Room | [?] = Undiscovered
+                       Legend: [@] = You | [ ] = Room | [?] = Undiscovered | <span style="color:#FF4444;">[T]</span> = Trap | <span style="color:#FFD700;">[H]</span> = Start
                    </div>
 ${mapAscii}
                </div>
@@ -7377,19 +7658,15 @@ ${mapAscii}
            const exits = Object.keys(room.exits).map(d => d.toUpperCase()).join(', ');
            termAppend(`You see exits: ${exits}.`, 'term-dim');
            
-           // If there was combat before viewing map, show enemy cards again
-           if (wasInCombat) {
-               renderEnemyCards();
-           } else {
-               // Check for enemies in room (if not already in combat)
-               checkEnemiesInRoom(ds.currentRoom);
-           }
-           
+           // Restore combat state + action bar (renderDungeonActionBar handles both combat and exploration)
            renderDungeonActionBar();
        }
        
-       function generateAsciiMap(floor, currentRoom, discoveredRooms) {
+       function generateAsciiMap(floor, currentRoom, discoveredRooms, floorNum) {
            const rooms = floor.rooms;
+           
+           // Helper to build floor-scoped key
+           const scopedKey = (roomId) => `${floorNum}:${roomId}`;
            
            // Find map bounds
            let minX = Infinity, maxX = -Infinity;
@@ -7397,7 +7674,7 @@ ${mapAscii}
            
            Object.keys(rooms).forEach(roomId => {
                const room = rooms[roomId];
-               if (room.map && discoveredRooms.has(roomId)) {
+               if (room.map && discoveredRooms.has(scopedKey(roomId))) {
                    minX = Math.min(minX, room.map.x);
                    maxX = Math.max(maxX, room.map.x);
                    minY = Math.min(minY, room.map.y);
@@ -7419,7 +7696,7 @@ ${mapAscii}
            // First pass: Draw all connections
            Object.keys(rooms).forEach(roomId => {
                const room = rooms[roomId];
-               if (!room.map || !discoveredRooms.has(roomId)) return;
+               if (!room.map || !discoveredRooms.has(scopedKey(roomId))) return;
                
                const x = toGridX(room.map.x);
                const y = toGridY(room.map.y);
@@ -7429,7 +7706,7 @@ ${mapAscii}
                    const targetId = room.exits[dir];
                    const targetRoom = rooms[targetId];
                    
-                   if (!targetRoom || !targetRoom.map || !discoveredRooms.has(targetId)) return;
+                   if (!targetRoom || !targetRoom.map || !discoveredRooms.has(scopedKey(targetId))) return;
                    
                    const direction = dir.toLowerCase();
                    
@@ -7456,22 +7733,27 @@ ${mapAscii}
            // Second pass: Draw rooms (overwrites connections at room positions)
            Object.keys(rooms).forEach(roomId => {
                const room = rooms[roomId];
-               if (!room.map || !discoveredRooms.has(roomId)) return;
+               if (!room.map || !discoveredRooms.has(scopedKey(roomId))) return;
                
                const x = toGridX(room.map.x);
                const y = toGridY(room.map.y);
                
-               // Draw room
+               // Draw room with markers
                const isPlayer = roomId === currentRoom;
+               const isStart = roomId === floor.startRoom;
+               const hasTrap = room.contents?.trap;
+               
+               grid[y + 1][x] = '[';
                if (isPlayer) {
-                   grid[y + 1][x] = '[';
-                   grid[y + 1][x + 1] = '@';
-                   grid[y + 1][x + 2] = ']';
+                   grid[y + 1][x + 1] = '@'; // Player
+               } else if (hasTrap) {
+                   grid[y + 1][x + 1] = 'T'; // Trap (red)
+               } else if (isStart) {
+                   grid[y + 1][x + 1] = 'H'; // Home/start (yellow)
                } else {
-                   grid[y + 1][x] = '[';
-                   grid[y + 1][x + 1] = ' ';
-                   grid[y + 1][x + 2] = ']';
+                   grid[y + 1][x + 1] = ' '; // Empty room
                }
+               grid[y + 1][x + 2] = ']';
            });
            
            // Convert grid to string with proper coloring
@@ -7482,6 +7764,10 @@ ${mapAscii}
                    const char = grid[y][x];
                    if (char === '@') {
                        line += `<span style="color:var(--highlight-color);">${char}</span>`;
+                   } else if (char === 'T') {
+                       line += `<span style="color:#FF4444;">${char}</span>`; // Red for trap
+                   } else if (char === 'H') {
+                       line += `<span style="color:#FFD700;">${char}</span>`; // Yellow for home/start
                    } else if (char === '[' || char === ']') {
                        line += `<span style="color:var(--border-color);">${char}</span>`;
                    } else {
@@ -7541,6 +7827,7 @@ if (cs) {
 
     /* ───────── MAIN COMBAT MENU ───────── */
     if (mode === 'main') {
+        const p = gameState.player;
         combatDiv.innerHTML = `
             <div style="color:var(--highlight-color);font-size:13px;margin-bottom:3px;text-align:center;letter-spacing:3px;">${pips}</div>
             <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;">
@@ -7901,9 +8188,6 @@ function dungeonNav(input) {
                         return { sk, spell };
                     }).filter(Boolean);
 
-                    const weapon   = WEAPONS[p.weapon];
-                    const hasStaff = weapon && (weapon.name.toLowerCase().includes('staff') || weapon.baseMagicDamage > 0);
-
                     const spellBtns = validSpells.map(({sk, spell}, i) => {
                         const canCast = p.mp >= spell.mpCost;
                         const aoeTag  = spell.type === 'aoe_damage' ? ' <span style="color:#FF8800;">AOE</span>' : '';
@@ -7914,19 +8198,9 @@ function dungeonNav(input) {
                         </button>`;
                     }).join('');
 
-                    const staffIdx    = validSpells.length;
-                    const meleeOption = hasStaff
-                        ? `<button onclick="staffMeleeAttack()" class="spell-btn" style="border-color:#FF8800;position:relative;">
-                               ⚔️ Staff Melee<br>
-                               <span style="font-size:12px;">Bonk! (No MP)</span>
-                               <span class="kb-hint">${staffIdx + 1}</span>
-                           </button>`
-                        : '';
-
                     ab.innerHTML = `
                         <div style="display:flex;flex-wrap:wrap;gap:3px;width:100%;">
                             ${spellBtns}
-                            ${meleeOption}
                             <button onclick="cancelAction()" class="action-icon-btn" style="border-color:#888;position:relative;">❌<span class="kb-hint">Esc</span></button>
                         </div>
                     `;
@@ -8027,14 +8301,21 @@ function dungeonNav(input) {
             }
             markMpAction();  // reset 15s MP regen countdown
             
-            // Staff melee does reduced damage (50% of normal + small magic bonus)
-            // Formula: (weapon base damage × 0.5) + (STR × 0.3) + (magic damage × 0.3)
-            let baseDamage = Math.floor((weapon.baseDamage || 1) * 0.5);
-            const strBonus = Math.floor((p.str || p.strength || 0) * 0.3);
-            const magicBonus = Math.floor((weapon.baseMagicDamage || 0) * 0.3);
+            // Wands: full physical damage (their design purpose — better melee than staffs)
+            // Staffs: 70% physical + some magic bleed (still a real hit, not a joke)
+            const isWand = weapon && weapon.weaponSubtype === 'wand';
+            const meleePct = isWand ? 1.0 : 0.7;
+            const qBonus   = getQualityBonus(weapon ? weapon.quality : 'normal', weapon ? weapon.baseDamage : 0);
+            const minDmg   = (weapon ? weapon.baseDamage : 1) + qBonus;
+            const maxDmg   = (weapon ? (weapon.maxDamage || weapon.baseDamage) : 1) + qBonus;
+            const rolled   = Math.floor(Math.random() * (maxDmg - minDmg + 1)) + minDmg;
+
+            let baseDamage = Math.floor(rolled * meleePct);
+            const strBonus = Math.floor((p.str || p.strength || 0) * (isWand ? 0.8 : 0.4));
+            const magicBleed = isWand ? 0 : Math.floor((weapon ? weapon.baseMagicDamage || 0 : 0) * 0.2);
             
             // Total damage
-            let totalDamage = baseDamage + strBonus + magicBonus;
+            let totalDamage = baseDamage + strBonus + magicBleed;
             
             // Apply class damage multiplier (if evolved)
             const classMult = getClassDamageMultiplier(p);
@@ -8056,12 +8337,16 @@ function dungeonNav(input) {
                 : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
             
             if (result.dodged) {
-                termAppend(`You swing your staff at ${tName} but they <span style="color:#88ff88;">DODGE!</span>`);
+                termAppend(`You strike at ${tName} but they <span style="color:#88ff88;">DODGE!</span>`);
             } else {
                 const critTag = result.crit ? ' <span style="color:#FFD700;">★ CRITICAL HIT!</span>' : '';
+                const isWand = weapon && weapon.weaponSubtype === 'wand';
+                const strikeVerb = isWand
+                    ? `snaps <span style="color:#AA88FF;">✦ ${weapon.name}</span> at`
+                    : `strikes with <span style="color:#AA88FF;">✦ ${weapon ? weapon.name : 'staff'}</span> at`;
                 enemy.hp -= result.damage;
                 termAppend(
-                    `You <span style="color:#FF8800;">BONK</span> ${tName} with your staff for <span class="dmg-enemy">${result.damage} damage!</span>${critTag}`,
+                    `You ${strikeVerb} ${tName} for <span class="dmg-enemy">${result.damage} damage!</span>${critTag}`,
                     null,
                     () => {
                         checkCombatEnd();
@@ -8503,8 +8788,14 @@ function moveInDungeon(direction) {
         // ── Transition ───────────────────────────────────────────
         ds.floor      = targetFloor;
         ds.currentRoom = targetRoom;
-        if (!ds.discoveredRooms) ds.discoveredRooms = new Set();
-        ds.discoveredRooms.add(targetRoom);
+        
+        // Load persistent map for the new floor and merge with current session
+        const persistentMap = loadDungeonMap(gameState.player, ds.dungeonKey, targetFloor);
+        const scopedKey = `${targetFloor}:${targetRoom}`;
+        persistentMap.add(scopedKey); // Add current room
+        saveRoomDiscovery(gameState.player, ds.dungeonKey, targetFloor, targetRoom); // Save to persistent
+        
+        ds.discoveredRooms = persistentMap; // Use persistent map for active session
 
         const destFloorData = dungeonData.floors[targetFloor];
         const destRoom = destFloorData.rooms[targetRoom];
@@ -8584,7 +8875,9 @@ function moveInDungeon(direction) {
 
     ds.currentRoom = nextRoomId;
     if (!ds.discoveredRooms) ds.discoveredRooms = new Set();
-    ds.discoveredRooms.add(nextRoomId);
+    const scopedKey = `${ds.floor}:${nextRoomId}`;
+    ds.discoveredRooms.add(scopedKey); // Active session
+    saveRoomDiscovery(gameState.player, ds.dungeonKey, ds.floor, nextRoomId); // Persistent map
     nextRoom.flags = nextRoom.flags || {};
     nextRoom.flags.discovered = true;
 
@@ -9386,7 +9679,11 @@ function consumePips(cs, amount, cooldown) {
 
         // ── ROGUE DOUBLE-STRIKE ───────────────────────────────────────
         // Every dagger pip fires twice. Roll a second independent hit.
-        if (baseClass === 'rogue' && weapon.classRestriction === 'rogue' && enemy.hp > 0) {
+        // Triggers if: classRestriction='rogue' OR weapon name/key contains dagger/shiv
+        const isDaggerWeapon = weapon.classRestriction === 'rogue'
+            || (weapon.name && (weapon.name.toLowerCase().includes('dagger') || weapon.name.toLowerCase().includes('shiv')))
+            || (p.weapon && (p.weapon.toLowerCase().includes('dagger') || p.weapon.toLowerCase().includes('shiv')));
+        if (baseClass === 'rogue' && isDaggerWeapon && enemy.hp > 0) {
             const minDmg2 = weapon.baseDamage + qBonus;
             const maxDmg2 = (weapon.maxDamage || weapon.baseDamage) + qBonus;
             let weaponDamage2 = Math.floor(Math.random() * (maxDmg2 - minDmg2 + 1)) + minDmg2;
@@ -10430,7 +10727,7 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
             );
         } else {
             const critTag = hit.crit
-                ? ' <span style="color:#FFD700;">★ CRIT!</span>'
+                ? ' <span style="color:#FF4444;">💀 ENEMY CRITICAL!</span>'
                 : '';
 
             termAppend(
