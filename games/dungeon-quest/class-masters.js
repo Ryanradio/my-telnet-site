@@ -107,6 +107,40 @@ const CLASS_MASTERS = {
         possibleDrops: ['elven_bow', 'leather_armor', 'health_potion'],
         dropRates: { common: 0.8, uncommon: 0.6, rare: 0.4 }
     },
+    
+    warlock_master_forest: {
+        name: 'Void Caller Malachar',
+        class: 'warlock',
+        unlocks: 'plains',
+        baseHp: 130,
+        baseDamage: 38,
+        baseDefense: 12,
+        level: 3,
+        requiredLevel: 3,
+        xp: 150,
+        gold: 200,
+        description: 'A dark sorcerer who wields forbidden magic',
+        guaranteedDrops: ['cursed_staff', 'shadow_robes', 'large_gem'],
+        possibleDrops: ['void_staff', 'dark_tome', 'mana_potion'],
+        dropRates: { common: 0.8, uncommon: 0.6, rare: 0.4 }
+    },
+    
+    hunter_master_forest: {
+        name: 'Beast Lord Fenris',
+        class: 'hunter',
+        unlocks: 'plains',
+        baseHp: 145,
+        baseDamage: 30,
+        baseDefense: 14,
+        level: 3,
+        requiredLevel: 3,
+        xp: 150,
+        gold: 200,
+        description: 'A master of beasts who commands wolves',
+        guaranteedDrops: ['hunters_bow', 'leather_armor', 'large_gem'],
+        possibleDrops: ['skinning_knife', 'wolf_pelt_armor', 'health_potion'],
+        dropRates: { common: 0.8, uncommon: 0.6, rare: 0.4 }
+    },
 
     // ═══════════════════════════════════════════════════════════════
     // PLAINS → CAVE MASTERS (Level 6 Required)
@@ -211,6 +245,40 @@ const CLASS_MASTERS = {
         description: 'A ranger who commands the beasts of the plains',
         guaranteedDrops: ['elven_bow', 'demon_leather', 'huge_gem'],
         possibleDrops: ['longbow', 'studded_leather', 'greater_health_potion'],
+        dropRates: { common: 0.7, uncommon: 0.5, rare: 0.3, epic: 0.1 }
+    },
+    
+    warlock_master_plains: {
+        name: 'Shadowlord Xalthar',
+        class: 'warlock',
+        unlocks: 'cave',
+        baseHp: 250,
+        baseDamage: 55,
+        baseDefense: 22,
+        level: 6,
+        requiredLevel: 6,
+        xp: 300,
+        gold: 400,
+        description: 'A dark warlock whose power grows with each sacrifice',
+        guaranteedDrops: ['void_staff', 'cursed_robes', 'huge_gem'],
+        possibleDrops: ['shadow_tome', 'dark_crystal', 'greater_mana_potion'],
+        dropRates: { common: 0.7, uncommon: 0.5, rare: 0.3, epic: 0.1 }
+    },
+    
+    hunter_master_plains: {
+        name: 'Alpha Commander Varg',
+        class: 'hunter',
+        unlocks: 'cave',
+        baseHp: 280,
+        baseDamage: 45,
+        baseDefense: 26,
+        level: 6,
+        requiredLevel: 6,
+        xp: 300,
+        gold: 400,
+        description: 'A hunter who leads a pack of dire wolves',
+        guaranteedDrops: ['composite_bow', 'wolf_pelt_armor', 'huge_gem'],
+        possibleDrops: ['hunters_bow', 'beast_fang_necklace', 'greater_health_potion'],
         dropRates: { common: 0.7, uncommon: 0.5, rare: 0.3, epic: 0.1 }
     },
 
@@ -319,6 +387,40 @@ const CLASS_MASTERS = {
         possibleDrops: ['elven_bow', 'dragon_scale', 'superior_health_potion'],
         dropRates: { uncommon: 0.6, rare: 0.4, epic: 0.2, legendary: 0.05 }
     },
+    
+    warlock_master_cave: {
+        name: 'Archfiend Malzahar',
+        class: 'warlock',
+        unlocks: 'crypt',
+        baseHp: 380,
+        baseDamage: 75,
+        baseDefense: 28,
+        level: 9,
+        requiredLevel: 9,
+        xp: 500,
+        gold: 600,
+        description: 'A warlock who has made pacts with demon lords',
+        guaranteedDrops: ['demon_staff', 'cursed_robes', 'pristine_gem'],
+        possibleDrops: ['void_staff', 'shadow_grimoire', 'superior_mana_potion'],
+        dropRates: { uncommon: 0.6, rare: 0.4, epic: 0.2, legendary: 0.05 }
+    },
+    
+    hunter_master_cave: {
+        name: 'Primal Huntmaster Fang',
+        class: 'hunter',
+        unlocks: 'crypt',
+        baseHp: 420,
+        baseDamage: 62,
+        baseDefense: 34,
+        level: 9,
+        requiredLevel: 9,
+        xp: 500,
+        gold: 600,
+        description: 'A legendary hunter who tamed a dragon whelp',
+        guaranteedDrops: ['dragonbone_bow', 'dragon_scale', 'pristine_gem'],
+        possibleDrops: ['composite_bow', 'beast_king_armor', 'superior_health_potion'],
+        dropRates: { uncommon: 0.6, rare: 0.4, epic: 0.2, legendary: 0.05 }
+    },
 
     // ═══════════════════════════════════════════════════════════════
     // CRYPT → VOLCANO MASTERS (Level 12 Required)
@@ -423,6 +525,40 @@ const CLASS_MASTERS = {
         description: 'A legendary beast hunter who has slain gods',
         guaranteedDrops: ['godbow', 'void_armor', 'pristine_gem', 'pristine_gem'],
         possibleDrops: ['dragonslayer', 'dragon_scale', 'fire_core'],
+        dropRates: { rare: 0.5, epic: 0.3, legendary: 0.15, mythic: 0.02 }
+    },
+    
+    warlock_master_crypt: {
+        name: 'Demonlord Azaroth',
+        class: 'warlock',
+        unlocks: 'volcano',
+        baseHp: 550,
+        baseDamage: 95,
+        baseDefense: 36,
+        level: 12,
+        requiredLevel: 12,
+        xp: 800,
+        gold: 1000,
+        description: 'An archwarlock who commands legions of demons',
+        guaranteedDrops: ['demon_staff', 'void_armor', 'pristine_gem', 'pristine_gem'],
+        possibleDrops: ['shadow_grimoire', 'cursed_crown', 'soul_stone'],
+        dropRates: { rare: 0.5, epic: 0.3, legendary: 0.15, mythic: 0.02 }
+    },
+    
+    hunter_master_crypt: {
+        name: 'Beast God Skoll',
+        class: 'hunter',
+        unlocks: 'volcano',
+        baseHp: 600,
+        baseDamage: 82,
+        baseDefense: 42,
+        level: 12,
+        requiredLevel: 12,
+        xp: 800,
+        gold: 1000,
+        description: 'A primordial hunter who commands all beasts',
+        guaranteedDrops: ['fenrir_bow', 'dragon_scale', 'pristine_gem', 'pristine_gem'],
+        possibleDrops: ['dragonbone_bow', 'beast_god_pelt', 'ancient_fang'],
         dropRates: { rare: 0.5, epic: 0.3, legendary: 0.15, mythic: 0.02 }
     }
 };

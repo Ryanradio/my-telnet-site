@@ -10200,6 +10200,19 @@ function consumePips(cs, amount, cooldown) {
         
         enemy.hp -= finalDamage;
         
+        // ── HUNTER PET ATTACK ──────────────────────────────────────────
+        // Hunter's pet attacks immediately after hunter deals damage
+        if (baseClass === 'hunter' && p.activePet && enemy.hp > 0) {
+            const petDamage = calculatePetDamage(p, finalDamage);
+            if (petDamage > 0) {
+                enemy.hp -= petDamage;
+                const pet = HUNTER_PETS[p.activePet];
+                modifierResult.messages.push(
+                    `${pet.icon} <span style="color:#88FF88;">${pet.name} attacks for <span class="dmg-enemy">${petDamage} damage</span>!</span>`
+                );
+            }
+        }
+        
         // Check for poison chance on daggers (Venom Spike, Serpent's Tooth, etc.)
         if (weapon.poisonChance && Math.random() < weapon.poisonChance && enemy.hp > 0) {
             applyStatusEffect(enemy, 'poisoned', false);

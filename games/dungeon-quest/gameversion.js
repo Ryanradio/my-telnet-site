@@ -6,7 +6,7 @@
 // If a player has an older version cached, they get a refresh banner.
 // ═══════════════════════════════════════════════════════════════════════
 
-const GAME_VERSION = '2025.02.17-r9';
+const GAME_VERSION = '2025.02.17-r10';
 
 // ── VERSION CHECK ──────────────────────────────────────────────────────
 // Call this on: game init, character select, enter dungeon, enter explore.
@@ -51,6 +51,24 @@ function checkGameVersion() {
 // Most recent first. Keep entries brief — one line per bullet.
 // ═══════════════════════════════════════════════════════════════════════
 const REVISION_HISTORY = [
+
+    {
+        version: '2025.02.17-r10',
+        date: 'Feb 17, 2025',
+        summary: 'Class Masters Fix + Hunter Pet System',
+        changes: [
+            'FIXED: Added missing Warlock and Hunter class masters for all zones',
+            'Warlock masters: Void Caller Malachar (forest), Shadowlord Xalthar (plains), etc.',
+            'Hunter masters: Beast Lord Fenris (forest), Alpha Commander Varg (plains), etc.',
+            'NEW: Hunter Pet System - hunters get pets instead of 2nd pip until level 6+',
+            'Pets attack automatically after hunter attacks for bonus damage',
+            'Pet damage = (weapon damage * %) + flat bonus',
+            'Pet progression: Dog (35%) → Wolf (40%) → Dire Wolf (45%) → Shadow Hound (50%) → Warg (55%) → Hellhound (60%) → Fenrir (70%)',
+            'Upgrade pets at Pet Trainer every 3 levels (3, 6, 9, 12, 15, 18, 21)',
+            'Pet attacks show in combat: "🐕 Hunting Dog attacks for 12 damage!"',
+            'Added hunter-pets.js with complete pet system',
+        ]
+    },
 
     {
         version: '2025.02.17-r9',
