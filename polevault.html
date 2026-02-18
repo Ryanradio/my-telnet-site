@@ -39,6 +39,7 @@
             color: white;
             padding: 2rem;
             text-align: center;
+            position: relative;
         }
 
         header h1 { margin: 0; font-size: 1.8rem; letter-spacing: -0.5px; }
@@ -72,8 +73,6 @@
             margin-bottom: 0.5rem;
             color: #334155;
         }
-
-        .input-group { position: relative; }
         
         input, select {
             width: 100%;
@@ -93,8 +92,15 @@
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
+        /* Button Group */
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
         .btn-calc {
-            width: 100%;
+            flex: 2;
             padding: 1rem;
             background: var(--accent);
             color: white;
@@ -103,12 +109,24 @@
             font-size: 1.1rem;
             font-weight: 700;
             cursor: pointer;
-            margin-top: 2rem;
             transition: transform 0.1s, background 0.2s;
         }
-
         .btn-calc:hover { background: #2563eb; }
         .btn-calc:active { transform: scale(0.98); }
+
+        .btn-reset {
+            flex: 1;
+            padding: 1rem;
+            background: white;
+            color: #64748b;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-reset:hover { background: #f1f5f9; color: var(--danger); border-color: var(--danger); }
 
         /* Results Section */
         #resultsArea {
@@ -150,6 +168,7 @@
         @media (max-width: 600px) {
             .grid { grid-template-columns: 1fr; }
             body { padding: 10px; }
+            .metric-val { font-size: 1.5rem; }
         }
     </style>
 </head>
@@ -204,7 +223,10 @@
                 </div>
             </div>
 
-            <button type="button" class="btn-calc" onclick="calculate()">Analyze Vault Dynamics</button>
+            <div class="btn-group">
+                <button type="button" class="btn-calc" onclick="calculate()">Analyze Vault Dynamics</button>
+                <button type="button" class="btn-reset" onclick="resetForm()">Clear</button>
+            </div>
         </form>
     </div>
 
@@ -228,7 +250,7 @@
             <div class="metric-box" style="border-left: 5px solid var(--accent);">
                 <div class="metric-val" id="reqSpeed">--</div>
                 <div class="metric-lbl">Required Approach Speed</div>
-                <div class="metric-sub">Velocity at Takeoff (m/s)</div>
+                <div class="metric-sub">Velocity at Takeoff</div>
             </div>
         </div>
     </div>
@@ -236,7 +258,11 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-    // 1. Populate Dropdowns on Load
+    initDropdowns();
+    updateFlex();
+});
+
+function initDropdowns() {
     const lengthSelect = document.getElementById('length');
     const ratingSelect = document.getElementById('rating');
 
@@ -259,12 +285,8 @@ document.addEventListener("DOMContentLoaded", function() {
         if(w === 150) opt.selected = true;
         ratingSelect.appendChild(opt);
     }
+}
 
-    // Initial Flex Estimate
-    updateFlex();
-});
-
-// 2. Dynamic Logic
 function updateFlex() {
     const brand = document.getElementById('brand').value;
     const rating = parseInt(document.getElementById('rating').value);
@@ -275,21 +297,24 @@ function updateFlex() {
     
     // Base Flex Algo
     let est = 19.0; 
-    est -= (rating - 140) * 0.05; // Higher weight = Lower flex number (stiffer)
-    est += (lenVal - 13) * 0.8;   // Longer pole = Higher flex number
+    est -= (rating - 140) * 0.05; 
+    est += (lenVal - 13) * 0.8;   
     est += (offsets[brand] || 0);
 
-    document.getElementById('flex').value = est.toFixed(1);
+    // If user hasn't manually typed a flex, update the placeholder
+    const flexInput = document.getElementById('flex');
+    if(flexInput.value === "") {
+        flexInput.placeholder = `~${est.toFixed(1)}`;
+    }
 }
 
 function calculate() {
-    // Gather Inputs
     const weight = parseFloat(document.getElementById('weight').value) || 0;
     const rating = parseFloat(document.getElementById('rating').value);
     const hFt = parseFloat(document.getElementById('hFt').value);
     const hIn = parseFloat(document.getElementById('hIn').value);
     
-    // Parse Length (stored as "14.6" for 14'6")
+    // Parse Length
     const lenRaw = document.getElementById('length').value;
     const feet = Math.floor(parseFloat(lenRaw));
     const inches = lenRaw.endsWith('.6') ? 6 : 0;
@@ -297,7 +322,7 @@ function calculate() {
 
     // Athlete Center of Mass
     const athHeightM = (hFt * 0.3048) + (hIn * 0.0254);
-    const com = athHeightM * 0.56; // Male avg COM
+    const com = athHeightM * 0.56; 
 
     // 1. Safety Engine
     const safetyBox = document.getElementById('safetyMsg');
@@ -313,29 +338,61 @@ function calculate() {
     }
 
     // 2. Height Physics
-    // Max Grip Rule: Top hand is 15cm (6") from top of pole
-    const maxGrip = poleLenM - 0.15;
+    const maxGrip = poleLenM - 0.15; // Grip limit
+    const pushOff = 0.60; // Fly-away
     
-    // Push-off (The "Fly-away"): Adds ~60-80cm for elite, 40-50cm for college
-    const pushOff = 0.60; 
-    
-    const maxTheoretical = maxGrip + pushOff + 0.2; // Perfect 100% efficiency
-    const maxRealistic = maxGrip + pushOff;         // Standard clean jump
+    const maxTheoretical = maxGrip + pushOff + 0.2; 
+    const maxRealistic = maxGrip + pushOff;         
 
-    // 3. Speed Physics (v = sqrt(2g * deltaH))
-    // Speed required to lift COM to the Peak Height
+    // 3. Speed Physics
     const gravity = 9.81;
     const liftNeeded = maxRealistic - com;
+    const reqSpeedMS = liftNeeded > 0 ? Math.sqrt(2 * gravity * liftNeeded) : 0;
     
-    // If liftNeeded is negative (pole shorter than person?), clamp to 0
-    const reqSpeed = liftNeeded > 0 ? Math.sqrt(2 * gravity * liftNeeded) : 0;
+    // Convert m/s to MPH (1 m/s = 2.23694 mph)
+    const reqSpeedMPH = reqSpeedMS * 2.23694;
 
     // Render Results
     document.getElementById('theoHeight').innerText = toFtIn(maxTheoretical);
     document.getElementById('realHeight').innerText = toFtIn(maxRealistic);
-    document.getElementById('reqSpeed').innerText = reqSpeed.toFixed(2);
     
-    document.getElementById('resultsArea').style.display = 'block';
+    // Display Speed in both M/S and MPH
+    document.getElementById('reqSpeed').innerHTML = 
+        `${reqSpeedMS.toFixed(2)} m/s <span style="display:block; font-size:0.6em; color:#64748b; font-weight:normal">(${reqSpeedMPH.toFixed(1)} mph)</span>`;
+    
+    const resultsDiv = document.getElementById('resultsArea');
+    resultsDiv.style.display = 'block';
+    resultsDiv.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+}
+
+function resetForm() {
+    // Clear specific text inputs
+    document.getElementById('weight').value = '';
+    document.getElementById('flex').value = '';
+    
+    // Reset Selects to defaults
+    document.getElementById('brand').selectedIndex = 0;
+    
+    // Re-find default 14'0" and 150lbs
+    const lenSel = document.getElementById('length');
+    for(let i=0; i<lenSel.options.length; i++) {
+        if(lenSel.options[i].text.includes("14' 0")) lenSel.selectedIndex = i;
+    }
+    
+    const rateSel = document.getElementById('rating');
+    for(let i=0; i<rateSel.options.length; i++) {
+        if(rateSel.options[i].value == "150") rateSel.selectedIndex = i;
+    }
+
+    // Reset Height
+    document.getElementById('hFt').value = 5;
+    document.getElementById('hIn').value = 10;
+
+    // Hide Results
+    document.getElementById('resultsArea').style.display = 'none';
+    
+    // Update Flex Placeholder
+    updateFlex();
 }
 
 function toFtIn(meters) {
