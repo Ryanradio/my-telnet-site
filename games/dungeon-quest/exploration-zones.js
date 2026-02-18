@@ -30,7 +30,7 @@ const EXPLORATION_ZONES = {
                      'mudskipper', 'river_pirate', 'snapping_turtle', 'kelp_strangler', 'bog_witch',
                      'harpy', 'gnoll', 'lizardfolk', 'giant_wasp', 'bandit_scout'],
         requiredLevel: 4,
-        locked: true,
+        locked: false,
         town: 'town1',
         unlockMessage: 'Defeat your class master in the forest to unlock this area!',
         adventureChance: 0.04

@@ -52,6 +52,17 @@ function checkGameVersion() {
 // ═══════════════════════════════════════════════════════════════════════
 const REVISION_HISTORY = [
 
+
+{
+        version: '2025.02.18-r12',
+        date: 'Feb 18, 2025',
+        summary: 'Updating Exploration-zones',
+        changes: [
+            'Riverside should now be available without beating the Class Master.',
+        ]
+    },
+
+
     {
         version: '2025.02.18-r11',
         date: 'Feb 18, 2025',
