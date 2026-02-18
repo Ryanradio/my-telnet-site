@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Vault Analytics | Collegiate Edition</title>
+    <style>
+        :root {
+            --primary: #0f172a;
+            --accent: #3b82f6;
+            --danger: #ef4444;
+            --success: #10b981;
+            --bg: #f1f5f9;
+            --card: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--primary);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: var(--card);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        header h1 { margin: 0; font-size: 1.8rem; letter-spacing: -0.5px; }
+        header p { margin: 0.5rem 0 0; opacity: 0.8; font-size: 0.9rem; }
+
+        .content { padding: 2rem; }
+
+        .section-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #64748b;
+            font-weight: 700;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        .section-title:first-child { margin-top: 0; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            color: #334155;
+        }
+
+        .input-group { position: relative; }
+        
+        input, select {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: #f8fafc;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .btn-calc {
+            width: 100%;
+            padding: 1rem;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 2rem;
+            transition: transform 0.1s, background 0.2s;
+        }
+
+        .btn-calc:hover { background: #2563eb; }
+        .btn-calc:active { transform: scale(0.98); }
+
+        /* Results Section */
+        #resultsArea {
+            display: none;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            padding: 2rem;
+            animation: slideDown 0.4s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .status-bar {
+            padding: 1rem;
+            border-radius: 8px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        .status-safe { background: #d1fae5; color: #065f46; border: 1px solid #34d399; }
+        .status-danger { background: #fee2e2; color: #991b1b; border: 1px solid #f87171; }
+
+        .metric-box {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
+
+        .metric-val { font-size: 2rem; font-weight: 800; color: var(--primary); line-height: 1.2; }
+        .metric-lbl { font-size: 0.8rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 0.5rem; }
+        .metric-sub { font-size: 0.85rem; color: var(--accent); margin-top: 0.25rem; font-weight: 600; }
+
+        @media (max-width: 600px) {
+            .grid { grid-template-columns: 1fr; }
+            body { padding: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>PV Performance Engine</h1>
+        <p>Global Pole Database & Trajectory Calculator</p>
+    </header>
+
+    <div class="content">
+        <form id="pvForm">
+            <div class="section-title">Athlete Profile</div>
+            <div class="grid">
+                <div>
+                    <label>Body Weight (lbs)</label>
+                    <input type="number" id="weight" placeholder="e.g. 145" required min="80" max="300">
+                </div>
+                <div>
+                    <label>Height</label>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                        <input type="number" id="hFt" placeholder="Ft" value="5">
+                        <input type="number" id="hIn" placeholder="In" value="10">
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-title">Equipment Database</div>
+            <div class="grid">
+                <div>
+                    <label>Manufacturer</label>
+                    <select id="brand" onchange="updateFlex()">
+                        <option value="UCS">UCS Spirit</option>
+                        <option value="Essx">Essx (Recoil+)</option>
+                        <option value="Pacer">Gill Pacer</option>
+                        <option value="Altius">Altius</option>
+                        <option value="Dynasty">Dynasty</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Pole Length</label>
+                    <select id="length" onchange="updateFlex()"></select>
+                </div>
+                <div>
+                    <label>Weight Rating (lbs)</label>
+                    <select id="rating" onchange="updateFlex()"></select>
+                </div>
+                <div>
+                    <label>Flex Number</label>
+                    <input type="number" id="flex" step="0.1" placeholder="Calculating..." title="Enter real flex if known">
+                </div>
+            </div>
+
+            <button type="button" class="btn-calc" onclick="calculate()">Analyze Vault Dynamics</button>
+        </form>
+    </div>
+
+    <div id="resultsArea">
+        <div id="safetyMsg" class="status-bar status-safe">Ready to Calculate</div>
+
+        <div class="grid">
+            <div class="metric-box">
+                <div class="metric-val" id="theoHeight">--</div>
+                <div class="metric-lbl">Theoretical Ceiling</div>
+                <div class="metric-sub">100% Energy Transfer</div>
+            </div>
+            <div class="metric-box">
+                <div class="metric-val" id="realHeight">--</div>
+                <div class="metric-lbl">Realistic Limit</div>
+                <div class="metric-sub">Grip + Push Off</div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 1.5rem;">
+            <div class="metric-box" style="border-left: 5px solid var(--accent);">
+                <div class="metric-val" id="reqSpeed">--</div>
+                <div class="metric-lbl">Required Approach Speed</div>
+                <div class="metric-sub">Velocity at Takeoff (m/s)</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // 1. Populate Dropdowns on Load
+    const lengthSelect = document.getElementById('length');
+    const ratingSelect = document.getElementById('rating');
+
+    // Lengths: 10' to 17' in 6" increments
+    for(let f = 10; f <= 17; f++) {
+        [0, 6].forEach(inches => {
+            let opt = document.createElement('option');
+            opt.value = `${f}.${inches}`; // Store as float-like string
+            opt.text = `${f}' ${inches}"`;
+            if(f === 14 && inches === 0) opt.selected = true;
+            lengthSelect.appendChild(opt);
+        });
+    }
+
+    // Ratings: 90lbs to 220lbs
+    for(let w = 90; w <= 220; w += 5) {
+        let opt = document.createElement('option');
+        opt.value = w;
+        opt.text = `${w} lbs`;
+        if(w === 150) opt.selected = true;
+        ratingSelect.appendChild(opt);
+    }
+
+    // Initial Flex Estimate
+    updateFlex();
+});
+
+// 2. Dynamic Logic
+function updateFlex() {
+    const brand = document.getElementById('brand').value;
+    const rating = parseInt(document.getElementById('rating').value);
+    const lenVal = parseFloat(document.getElementById('length').value);
+    
+    // Brand stiffness offsets (Heuristic)
+    const offsets = { "UCS": 0, "Essx": -0.4, "Pacer": 0.3, "Altius": 0.1, "Dynasty": -0.2 };
+    
+    // Base Flex Algo
+    let est = 19.0; 
+    est -= (rating - 140) * 0.05; // Higher weight = Lower flex number (stiffer)
+    est += (lenVal - 13) * 0.8;   // Longer pole = Higher flex number
+    est += (offsets[brand] || 0);
+
+    document.getElementById('flex').value = est.toFixed(1);
+}
+
+function calculate() {
+    // Gather Inputs
+    const weight = parseFloat(document.getElementById('weight').value) || 0;
+    const rating = parseFloat(document.getElementById('rating').value);
+    const hFt = parseFloat(document.getElementById('hFt').value);
+    const hIn = parseFloat(document.getElementById('hIn').value);
+    
+    // Parse Length (stored as "14.6" for 14'6")
+    const lenRaw = document.getElementById('length').value;
+    const feet = Math.floor(parseFloat(lenRaw));
+    const inches = lenRaw.endsWith('.6') ? 6 : 0;
+    const poleLenM = (feet * 0.3048) + (inches * 0.0254);
+
+    // Athlete Center of Mass
+    const athHeightM = (hFt * 0.3048) + (hIn * 0.0254);
+    const com = athHeightM * 0.56; // Male avg COM
+
+    // 1. Safety Engine
+    const safetyBox = document.getElementById('safetyMsg');
+    if (weight > rating) {
+        safetyBox.className = "status-bar status-danger";
+        safetyBox.innerHTML = `⚠️ DANGER: POLE TOO SOFT<br><span style="font-size:0.8em; font-weight:normal">Vaulter (${weight}lbs) exceeds Rating (${rating}lbs). Risk of breakage.</span>`;
+    } else if ((rating - weight) > 25) {
+         safetyBox.className = "status-bar status-danger";
+         safetyBox.innerHTML = `⚠️ WARNING: POLE TOO STIFF<br><span style="font-size:0.8em; font-weight:normal">Rating is +${rating-weight}lbs over weight. High risk of rejection (stall).</span>`;
+    } else {
+        safetyBox.className = "status-bar status-safe";
+        safetyBox.innerHTML = "✅ SAFE CONFIGURATION";
+    }
+
+    // 2. Height Physics
+    // Max Grip Rule: Top hand is 15cm (6") from top of pole
+    const maxGrip = poleLenM - 0.15;
+    
+    // Push-off (The "Fly-away"): Adds ~60-80cm for elite, 40-50cm for college
+    const pushOff = 0.60; 
+    
+    const maxTheoretical = maxGrip + pushOff + 0.2; // Perfect 100% efficiency
+    const maxRealistic = maxGrip + pushOff;         // Standard clean jump
+
+    // 3. Speed Physics (v = sqrt(2g * deltaH))
+    // Speed required to lift COM to the Peak Height
+    const gravity = 9.81;
+    const liftNeeded = maxRealistic - com;
+    
+    // If liftNeeded is negative (pole shorter than person?), clamp to 0
+    const reqSpeed = liftNeeded > 0 ? Math.sqrt(2 * gravity * liftNeeded) : 0;
+
+    // Render Results
+    document.getElementById('theoHeight').innerText = toFtIn(maxTheoretical);
+    document.getElementById('realHeight').innerText = toFtIn(maxRealistic);
+    document.getElementById('reqSpeed').innerText = reqSpeed.toFixed(2);
+    
+    document.getElementById('resultsArea').style.display = 'block';
+}
+
+function toFtIn(meters) {
+    const totalIn = meters * 39.37;
+    const f = Math.floor(totalIn / 12);
+    const i = Math.round(totalIn % 12);
+    return `${f}' ${i}"`;
+}
+</script>
+
+</body>
+</html>
