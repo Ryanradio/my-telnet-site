@@ -3,18 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Vault Analytics | Kinetic & Grip Engine</title>
+    <title>Pro Vault Analytics | Kinetic Zones</title>
     <style>
         :root {
-            --primary: #1e293b;
+            --primary: #0f172a;
             --accent: #3b82f6;
-            --accent-hover: #2563eb;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --success: #10b981;
+            --danger: #ef4444;  /* Red - Blow Through */
+            --warning: #f59e0b; /* Yellow - Under Powered */
+            --success: #10b981; /* Green - Optimal */
+            --stall: #94a3b8;   /* Grey - Stall */
             --bg: #f1f5f9;
             --card: #ffffff;
-            --stall: #64748b;
         }
 
         body {
@@ -33,7 +32,7 @@
             max-width: 900px;
             background: var(--card);
             border-radius: 20px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
             overflow: hidden;
             display: flex;
             flex-direction: column;
@@ -55,7 +54,7 @@
             gap: 2rem;
         }
 
-        /* Form Elements */
+        /* Form Styling */
         .section-label {
             font-size: 0.7rem;
             font-weight: 800;
@@ -63,26 +62,14 @@
             letter-spacing: 1px;
             color: #94a3b8;
             margin-bottom: 0.75rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 5px;
         }
-        .section-label::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
 
-        .input-row {
-            display: flex;
-            gap: 0.75rem;
-            margin-bottom: 1.25rem;
-        }
+        .input-row { display: flex; gap: 0.75rem; margin-bottom: 1.25rem; }
         .input-group { flex: 1; }
 
-        label {
-            display: block;
-            font-weight: 600;
-            font-size: 0.85rem;
-            margin-bottom: 0.4rem;
-            color: #475569;
-        }
+        label { display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem; color: #475569; }
 
         input, select {
             width: 100%;
@@ -91,16 +78,9 @@
             border-radius: 8px;
             font-size: 0.95rem;
             background: white;
-            transition: all 0.2s;
             box-sizing: border-box;
         }
-        input:focus, select:focus {
-            outline: none;
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
 
-        /* Buttons */
         .btn-calc {
             grid-column: span 2;
             background: var(--accent);
@@ -114,17 +94,17 @@
             transition: background 0.2s;
             margin-top: 1rem;
         }
-        .btn-calc:hover { background: var(--accent-hover); }
+        .btn-calc:hover { background: #2563eb; }
 
-        /* Results Area */
+        /* Results Section */
         .results-container {
             background: #f8fafc;
             border-top: 1px solid #e2e8f0;
             padding: 2rem;
-            display: none; /* Hidden initially */
+            display: none;
         }
 
-        /* Slider Section */
+        /* Advanced Slider */
         .slider-box {
             background: white;
             padding: 1.5rem;
@@ -140,50 +120,66 @@
             align-items: flex-end;
             margin-bottom: 1rem;
         }
-        .slider-title { font-weight: 700; color: var(--primary); }
-        .slider-val { font-size: 1.5rem; font-weight: 800; color: var(--accent); }
-        .slider-sub { font-size: 0.9rem; color: #64748b; font-weight: 500; }
+        .slider-val { font-size: 1.5rem; font-weight: 800; color: var(--primary); }
+        .slider-sub { font-size: 0.9rem; color: #64748b; font-weight: 500; text-align: right; }
 
+        /* The Rainbow Track */
         input[type=range] {
-            width: 100%;
-            height: 8px;
-            background: #e2e8f0;
-            border-radius: 4px;
-            outline: none;
             -webkit-appearance: none;
-            cursor: pointer;
-            border: none;
+            width: 100%;
+            height: 12px;
+            border-radius: 6px;
+            outline: none;
+            margin: 10px 0;
+            /* Background gradient is set by JS */
+            background: #e2e8f0; 
         }
+
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 24px;
-            height: 24px;
-            background: var(--accent);
+            width: 28px;
+            height: 28px;
+            background: white;
+            border: 4px solid var(--primary);
             border-radius: 50%;
-            border: 3px solid white;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-            transition: transform 0.1s;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            margin-top: -8px; /* Centering fix */
         }
-        input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.1); }
+        
+        /* Fix for Firefox/Standard */
+        input[type=range]::-moz-range-thumb {
+            width: 28px;
+            height: 28px;
+            background: white;
+            border: 4px solid var(--primary);
+            border-radius: 50%;
+            cursor: pointer;
+        }
 
-        /* Dynamic Status Banner */
-        .status-banner {
-            padding: 1rem;
+        /* Zone Legend Table */
+        .zone-legend {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 2rem;
+        }
+        .zone-item {
+            background: white;
+            padding: 10px;
             border-radius: 8px;
             text-align: center;
-            font-weight: 700;
-            font-size: 1rem;
-            margin-bottom: 2rem;
-            transition: all 0.3s ease;
-            border: 2px solid transparent;
+            border-bottom: 4px solid transparent;
+            font-size: 0.8rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
-        /* Status States */
-        .st-safe { background: #dcfce7; color: #166534; border-color: #86efac; }
-        .st-stall { background: #f1f5f9; color: #475569; border-color: #cbd5e1; } /* Grey/Neutral */
-        .st-warn { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
-        .st-danger { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+        .zone-item strong { display: block; font-size: 0.7rem; text-transform: uppercase; margin-bottom: 4px; }
+        .z-stall { border-color: var(--stall); color: var(--stall); }
+        .z-warn { border-color: var(--warning); color: #b45309; }
+        .z-safe { border-color: var(--success); color: var(--success); }
+        .z-danger { border-color: var(--danger); color: var(--danger); }
 
-        /* Metric Cards */
+        /* Main Metrics */
         .metrics-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -196,13 +192,12 @@
             text-align: center;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
-        .card-lbl { font-size: 0.75rem; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px; }
         .card-val { font-size: 2rem; font-weight: 800; color: var(--primary); margin: 0.5rem 0; }
-        .card-sub { font-size: 0.85rem; color: #94a3b8; }
+        .card-lbl { font-size: 0.75rem; text-transform: uppercase; color: #64748b; font-weight: 700; }
 
         @media (max-width: 700px) {
-            .content-grid { grid-template-columns: 1fr; padding: 1.5rem; gap: 1.5rem; }
-            .metrics-grid { grid-template-columns: 1fr; }
+            .content-grid { grid-template-columns: 1fr; padding: 1.5rem; gap: 1rem; }
+            .zone-legend { grid-template-columns: 1fr 1fr; }
             .btn-calc { grid-column: span 1; }
         }
     </style>
@@ -212,11 +207,11 @@
 <div class="container">
     <header>
         <h1>Vault Mechanics Engine</h1>
-        <p>Advanced Stiffness, Grip & Velocity Calculator</p>
+        <p>Kinetic Visualization & Stiffness Zones</p>
     </header>
 
     <div class="content-grid">
-        <!-- Left Column: Athlete & Grip -->
+        <!-- Left: Athlete -->
         <div>
             <div class="section-label">Athlete Profile</div>
             <div class="input-row">
@@ -259,9 +254,9 @@
             </div>
         </div>
 
-        <!-- Right Column: Pole Specs -->
+        <!-- Right: Pole -->
         <div>
-            <div class="section-label">Pole Configuration</div>
+            <div class="section-label">Pole Specs</div>
             <div class="input-row">
                 <div class="input-group">
                     <label>Brand</label>
@@ -270,7 +265,6 @@
                         <option value="Essx">Essx</option>
                         <option value="Pacer">Gill Pacer</option>
                         <option value="Altius">Altius</option>
-                        <option value="Dynasty">Dynasty</option>
                     </select>
                 </div>
                 <div class="input-group">
@@ -293,15 +287,14 @@
         <button class="btn-calc" onclick="initSimulation()">Initialize Simulation</button>
     </div>
 
-    <!-- Interactive Results Panel -->
+    <!-- RESULTS PANEL -->
     <div id="results" class="results-container">
         
-        <!-- The Kinetic Slider -->
+        <!-- 1. The Kinetic Slider -->
         <div class="slider-box">
             <div class="slider-header">
                 <div>
-                    <div class="slider-title">Approach Velocity</div>
-                    <div class="slider-sub">Slide to test Safe/Stall limits</div>
+                    <div style="font-weight:700; color:#64748b; font-size:0.8rem; text-transform:uppercase;">Approach Velocity</div>
                 </div>
                 <div style="text-align: right;">
                     <div class="slider-val" id="speedDisplayMPH">-- mph</div>
@@ -311,40 +304,55 @@
             
             <input type="range" id="speedSlider" min="5.0" max="11.0" step="0.05" oninput="runPhysicsEngine()">
             
-            <div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 0.75rem; color: #94a3b8;">
-                <span>Jog (11 mph)</span>
-                <span>Elite (24 mph)</span>
+            <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 0.7rem; color: #94a3b8; font-weight:bold;">
+                <span>SLOW (Jog)</span>
+                <span>FAST (Elite)</span>
             </div>
         </div>
 
-        <!-- Dynamic Status -->
-        <div id="statusBox" class="status-banner st-safe">
-            SYSTEM READY
+        <!-- 2. The Zone Ranges (New!) -->
+        <div class="zone-legend">
+            <div class="zone-item z-stall">
+                <strong>Stall / Reject</strong>
+                <span id="rngStall">--</span>
+            </div>
+            <div class="zone-item z-warn">
+                <strong>Under Powered</strong>
+                <span id="rngWarn">--</span>
+            </div>
+            <div class="zone-item z-safe">
+                <strong>Optimal Range</strong>
+                <span id="rngOpt">--</span>
+            </div>
+            <div class="zone-item z-danger">
+                <strong>Blow Through</strong>
+                <span id="rngBlow">--</span>
+            </div>
         </div>
 
-        <!-- Height Cards -->
+        <!-- 3. Height Metrics -->
         <div class="metrics-grid">
             <div class="card">
                 <div class="card-lbl">Realistic Limit</div>
                 <div class="card-val" id="hReal">--</div>
-                <div class="card-sub">Grip + Push Off (If Safe)</div>
+                <div style="font-size:0.8rem; color:#64748b;">Grip + Push Off</div>
             </div>
             <div class="card">
                 <div class="card-lbl">Theoretical Ceiling</div>
                 <div class="card-val" id="hTheo">--</div>
-                <div class="card-sub">Perfect Energy Transfer</div>
+                <div style="font-size:0.8rem; color:#64748b;">Max Energy Potential</div>
             </div>
         </div>
-        
+
         <div style="text-align: center; margin-top: 2rem;">
-            <button onclick="resetForm()" style="background:none; border:1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; color:#64748b; cursor:pointer;">Clear / Reset</button>
+            <button onclick="resetForm()" style="background:none; border:1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; color:#64748b; cursor:pointer;">Reset Console</button>
         </div>
 
     </div>
 </div>
 
 <script>
-    // -- Initialization --
+    // --- Init & Logic ---
     document.addEventListener("DOMContentLoaded", () => {
         populateDropdowns();
         updateFlexEstimate();
@@ -356,7 +364,7 @@
         const gripFt = document.getElementById('gripFt');
         const gripIn = document.getElementById('gripIn');
 
-        // Pole Lengths: 10' to 18'
+        // Pole Lengths
         for(let f = 10; f <= 18; f++) {
             [0, 6].forEach(i => {
                 if(f===18 && i===6) return;
@@ -364,12 +372,12 @@
                 let opt = document.createElement('option');
                 opt.value = val;
                 opt.text = `${f}' ${i}"`;
-                if(val === 15) opt.selected = true; // Default 15' for example
+                if(val === 15) opt.selected = true;
                 lenSel.appendChild(opt);
             });
         }
 
-        // Ratings: 90 to 220
+        // Ratings
         for(let w = 90; w <= 220; w += 5) {
             let opt = document.createElement('option');
             opt.value = w;
@@ -378,7 +386,7 @@
             rateSel.appendChild(opt);
         }
 
-        // Grip Feet (10-17)
+        // Grip Feet/Inches
         for(let f=10; f<=17; f++){
             let opt = document.createElement('option');
             opt.value = f;
@@ -386,8 +394,6 @@
             if(f===14) opt.selected = true;
             gripFt.appendChild(opt);
         }
-
-        // Grip Inches (0-11)
         for(let i=0; i<=11; i++){
             let opt = document.createElement('option');
             opt.value = i;
@@ -395,180 +401,155 @@
             if(i===9) opt.selected = true;
             gripIn.appendChild(opt);
         }
-        
-        // Set Fractional Grip to 1/8" (0.125) as requested default context
         document.getElementById('gripFrac').value = "0.125";
     }
 
-    // -- Logic 1: Flex Estimation --
     function updateFlexEstimate() {
-        // Only update if user hasn't typed specifically (optional polish, here we just overwrite for simplicity)
         const length = parseFloat(document.getElementById('length').value);
         const rating = parseInt(document.getElementById('rating').value);
         const brand = document.getElementById('brand').value;
         
         let base = 19.0;
-        // Stiffer (Higher rating) = Lower Flex
         base -= (rating - 150) * 0.05;
-        // Longer = Higher Flex number for same rating
         base += (length - 14) * 1.4;
         
-        // Brand Nuance
         if(brand === 'Essx') base -= 0.6; 
         if(brand === 'Pacer') base += 0.4;
         
         document.getElementById('flex').value = base.toFixed(1);
-        
-        // Validate Grip isn't higher than pole
-        validateGrip();
     }
 
-    function validateGrip() {
-        const poleLen = parseFloat(document.getElementById('length').value);
-        const gFt = parseInt(document.getElementById('gripFt').value);
-        const gIn = parseInt(document.getElementById('gripIn').value);
-        const gFr = parseFloat(document.getElementById('gripFrac').value);
-        
-        const gripTotal = gFt + ((gIn + gFr)/12);
-        
-        // If grip > pole, warn or clamp? Let's just color code for now.
-        const gripLbl = document.querySelector('.section-label:nth-of-type(2)');
-        if(gripTotal > poleLen) {
-            gripLbl.style.color = "var(--danger)";
-            gripLbl.innerText = "GRIP EXCEEDS POLE LENGTH!";
-        } else {
-            gripLbl.style.color = "#94a3b8";
-            gripLbl.innerText = "GRIP HEIGHT";
-        }
-    }
+    // --- SIMULATION CORE ---
+    
+    // Zone Thresholds (Global for access in slider event)
+    let zStall, zWarn, zOpt, zBlow;
 
-    // -- Logic 2: The Core Simulation --
-    
-    // Global calculation variables
-    let reqSpeedMS = 0; 
-    let stallSpeedMS = 0;
-    let blowThroughSpeedMS = 0;
-    
     function initSimulation() {
-        // 1. Calculate the Physics Baseline
         const weight = parseFloat(document.getElementById('weight').value);
         const rating = parseFloat(document.getElementById('rating').value);
-        const flex = parseFloat(document.getElementById('flex').value);
         
-        // Effective Stiffness Ratio
-        // Compare Pole Rating to Body Weight
-        // Also factor in Flex: Is this pole stiffer than a "standard" rating?
-        let stiffnessRatio = rating / weight;
+        // 1. Calculate Physics Baselines
+        // Stiffness Ratio: How heavy is the pole relative to the vaulter?
+        let ratio = rating / weight;
         
-        // Base speed needed to bend a pole matching your weight (Ratio 1.0)
-        // Approx 7.5 m/s is a good collegiate baseline for "safe bend"
-        let baseSpeed = 7.5; 
+        // Base "Optimal" Speed for a matched pole (ratio 1.0) is ~7.5 m/s
+        // If ratio is 1.2 (stiff pole), optimal speed must increase
+        let optimalSpeed = 7.5 * ratio; 
         
-        // Adjust based on Stiffness Ratio
-        // If Ratio = 1.2 (Pole is 20% over weight), need much more speed
-        // If Ratio = 0.9 (Pole is soft), need less speed
-        let physicsSpeed = baseSpeed * stiffnessRatio;
-        
-        // Clamp reasonably
-        if(physicsSpeed < 5) physicsSpeed = 5;
-        if(physicsSpeed > 10.5) physicsSpeed = 10.5;
-        
-        reqSpeedMS = physicsSpeed;
-        stallSpeedMS = reqSpeedMS - 0.8; // Speed where you definitely reject
-        blowThroughSpeedMS = reqSpeedMS + 1.5; // Speed where you crush the pole
+        // Clamp for realism
+        if(optimalSpeed < 6.0) optimalSpeed = 6.0;
+        if(optimalSpeed > 10.0) optimalSpeed = 10.0;
 
-        // 2. Set Slider to this "Optimal" Speed
-        const slider = document.getElementById('speedSlider');
-        slider.value = reqSpeedMS;
+        // 2. Define Zones relative to Optimal Speed
+        zStall = optimalSpeed - 1.2;  // Anything below this is a reject
+        zWarn  = optimalSpeed - 0.4;  // Between Stall and Warn is "Under Powered"
+        zOpt   = optimalSpeed;        // Start of optimal
+        zBlow  = optimalSpeed + 1.5;  // Start of blow through
+
+        // 3. Update Range Displays (Legend Box)
+        const toMph = (ms) => (ms * 2.237).toFixed(1);
         
-        // 3. Reveal & Run
+        document.getElementById('rngStall').innerText = `< ${toMph(zStall)} mph`;
+        document.getElementById('rngWarn').innerText  = `${toMph(zStall)} - ${toMph(zWarn)} mph`;
+        document.getElementById('rngOpt').innerText   = `${toMph(zWarn)} - ${toMph(zBlow)} mph`;
+        document.getElementById('rngBlow').innerText  = `> ${toMph(zBlow)} mph`;
+
+        // 4. Paint the Slider Gradient
+        paintSliderGradient();
+
+        // 5. Set Slider to Optimal and Run
+        const slider = document.getElementById('speedSlider');
+        slider.value = optimalSpeed;
+        
         document.getElementById('results').style.display = 'block';
         document.getElementById('results').scrollIntoView({behavior:'smooth'});
         
         runPhysicsEngine();
     }
 
-    function runPhysicsEngine() {
-        const sliderVal = parseFloat(document.getElementById('speedSlider').value);
-        const mph = sliderVal * 2.23694;
-        
-        // Update Speed Displays
-        document.getElementById('speedDisplayMPH').innerText = mph.toFixed(1) + " mph";
-        document.getElementById('speedDisplayMS').innerText = sliderVal.toFixed(2) + " m/s";
+    function paintSliderGradient() {
+        const slider = document.getElementById('speedSlider');
+        const min = parseFloat(slider.min);
+        const max = parseFloat(slider.max);
+        const range = max - min;
 
-        // -- Dynamic Safety Logic --
-        const statusBox = document.getElementById('statusBox');
+        // Convert MS speeds to Percentages of the slider width
+        const pStall = ((zStall - min) / range) * 100;
+        const pWarn  = ((zWarn - min) / range) * 100;
+        const pBlow  = ((zBlow - min) / range) * 100;
+
+        // CSS Linear Gradient syntax
+        // Grey (0 -> Stall) | Yellow (Stall -> Warn) | Green (Warn -> Blow) | Red (Blow -> 100)
+        const grad = `linear-gradient(to right, 
+            #94a3b8 0%, 
+            #94a3b8 ${pStall}%, 
+            #f59e0b ${pStall}%, 
+            #f59e0b ${pWarn}%, 
+            #10b981 ${pWarn}%, 
+            #10b981 ${pBlow}%, 
+            #ef4444 ${pBlow}%, 
+            #ef4444 100%)`;
+
+        slider.style.background = grad;
+    }
+
+    function runPhysicsEngine() {
+        const speed = parseFloat(document.getElementById('speedSlider').value);
+        const mph = speed * 2.23694;
         
-        // Get Grip Height Data
+        document.getElementById('speedDisplayMPH').innerText = mph.toFixed(1) + " mph";
+        document.getElementById('speedDisplayMS').innerText = speed.toFixed(2) + " m/s";
+
+        // Height Calculation
         const gFt = parseInt(document.getElementById('gripFt').value);
         const gIn = parseInt(document.getElementById('gripIn').value);
         const gFr = parseFloat(document.getElementById('gripFrac').value);
-        const gripFtTotal = gFt + ((gIn + gFr)/12);
-        const gripM = gripFtTotal * 0.3048;
-
-        // Push Off Potential (0.65m standard)
+        const gripM = (gFt + ((gIn + gFr)/12)) * 0.3048;
         const pushOff = 0.65; 
+
+        let realM = 0;
         
-        let realHeightM = 0;
-        let note = "";
-        
-        // Zone Logic
-        if (sliderVal < stallSpeedMS) {
-            // STALL ZONE
-            statusBox.className = "status-banner st-stall";
-            statusBox.innerHTML = "⚠️ STALL / REJECTION <br><span style='font-size:0.8em; font-weight:400'>Speed too low to penetrate. Land in box.</span>";
-            
-            // Height penalty: You don't clear the grip, you fall short
-            realHeightM = gripM * 0.8; // Fail to invert
-            note = "(Stalled)";
-            
-        } else if (sliderVal < reqSpeedMS) {
-            // DANGER / STRUGGLE ZONE
-            statusBox.className = "status-banner st-warn";
-            statusBox.innerHTML = "⚠️ UNDER POWERED <br><span style='font-size:0.8em; font-weight:400'>Flagging out. Shallow penetration.</span>";
-            
-            realHeightM = gripM + (pushOff * 0.2); // Minimal push off
-            
-        } else if (sliderVal > blowThroughSpeedMS) {
-            // BLOW THROUGH
-            statusBox.className = "status-banner st-danger";
-            statusBox.innerHTML = "⚠️ BLOW THROUGH RISK <br><span style='font-size:0.8em; font-weight:400'>Pole too soft for this speed. Mush out.</span>";
-            
-            realHeightM = gripM + (pushOff * 0.5); // Loss of lift due to mush
-            
+        // Zone Penalties
+        if (speed < zStall) {
+            // Stalled: Only reach 80% of grip height (didn't get vertical)
+            realM = gripM * 0.8;
+        } else if (speed < zWarn) {
+            // Under powered: Reach grip but no push off
+            realM = gripM; 
+        } else if (speed > zBlow) {
+            // Blow through: Mushy pole limits lift
+            realM = gripM + (pushOff * 0.4); 
         } else {
-            // SAFE / OPTIMAL
-            statusBox.className = "status-banner st-safe";
-            statusBox.innerHTML = "✅ OPTIMAL LAUNCH <br><span style='font-size:0.8em; font-weight:400'>Perfect energy transfer.</span>";
-            
-            realHeightM = gripM + pushOff;
+            // Optimal
+            realM = gripM + pushOff;
         }
 
-        // Theoretical (Energy based)
-        // h = v^2 / 2g
-        // But limited by pole length generally. 
-        // Theoretical max is if you caught it perfectly.
-        const theoM = (sliderVal * sliderVal) / (2 * 9.81); 
-        // *Correction*: In vault, Theo is usually Grip + MaxPush, but limited by Energy.
-        // We will display the Max Mechanical Potential of the Grip provided speed is adequate.
-        let mechanicsCeiling = gripM + 0.85; // Elite push off
+        // Theoretical limit (Physics ceiling if perfect)
+        const theoM = gripM + 0.85; // Elite mechanics
+
+        document.getElementById('hReal').innerText = toFtIn(realM);
+        document.getElementById('hTheo').innerText = toFtIn(theoM);
         
-        document.getElementById('hReal').innerText = toFtIn(realHeightM) + (note ? " *" : "");
-        document.getElementById('hTheo').innerText = toFtIn(mechanicsCeiling);
+        // Update Thumb Color based on current Zone
+        const slider = document.getElementById('speedSlider');
+        let thumbColor = "#10b981"; // Default Green
+        if(speed < zStall) thumbColor = "#94a3b8";
+        else if(speed < zWarn) thumbColor = "#f59e0b";
+        else if(speed > zBlow) thumbColor = "#ef4444";
+        
+        slider.style.setProperty('--primary', thumbColor);
     }
 
     function toFtIn(meters) {
         const totalIn = meters * 39.37;
         const f = Math.floor(totalIn / 12);
         const i = Math.round(totalIn % 12);
-        const frac = totalIn % 1; 
-        // Optional: Add fraction to display if needed, keeping simple for now
         return `${f}' ${i}"`;
     }
 
     function resetForm() {
         document.getElementById('results').style.display = 'none';
-        document.querySelector('.btn-calc').scrollIntoView({behavior:'smooth'});
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 </script>
 
