@@ -9,7 +9,7 @@ const CLASS_MASTERS = {
     warrior_master_forest: {
         name: 'Master Swordsman Gareth',
         class: 'warrior',
-        unlocks: 'plains',
+        unlocks: 'riverside',
         baseHp: 200,
         baseDamage: 30,
         baseDefense: 20,
@@ -26,7 +26,7 @@ const CLASS_MASTERS = {
     rogue_master_forest: {
         name: 'Shadow Master Vex',
         class: 'rogue',
-        unlocks: 'plains',
+        unlocks: 'riverside',
         baseHp: 150,
         baseDamage: 35,
         baseDefense: 12,
@@ -43,7 +43,7 @@ const CLASS_MASTERS = {
     paladin_master_forest: {
         name: 'Knight Commander Aldric',
         class: 'paladin',
-        unlocks: 'plains',
+        unlocks: 'riverside',
         baseHp: 180,
         baseDamage: 28,
         baseDefense: 22,
@@ -60,7 +60,7 @@ const CLASS_MASTERS = {
     mage_master_forest: {
         name: 'Arcane Tutor Zephyr',
         class: 'mage',
-        unlocks: 'plains',
+        unlocks: 'riverside',
         baseHp: 120,
         baseDamage: 40,
         baseDefense: 10,
@@ -77,7 +77,7 @@ const CLASS_MASTERS = {
     cleric_master_forest: {
         name: 'High Priest Luminus',
         class: 'cleric',
-        unlocks: 'plains',
+        unlocks: 'riverside',
         baseHp: 160,
         baseDamage: 25,
         baseDefense: 18,
@@ -94,7 +94,7 @@ const CLASS_MASTERS = {
     ranger_master_forest: {
         name: 'Hunt Master Theron',
         class: 'ranger',
-        unlocks: 'plains',
+        unlocks: 'riverside',
         baseHp: 140,
         baseDamage: 32,
         baseDefense: 15,
@@ -111,7 +111,7 @@ const CLASS_MASTERS = {
     warlock_master_forest: {
         name: 'Void Caller Malachar',
         class: 'warlock',
-        unlocks: 'plains',
+        unlocks: 'riverside',
         baseHp: 130,
         baseDamage: 38,
         baseDefense: 12,
@@ -128,7 +128,7 @@ const CLASS_MASTERS = {
     hunter_master_forest: {
         name: 'Beast Lord Fenris',
         class: 'hunter',
-        unlocks: 'plains',
+        unlocks: 'riverside',
         baseHp: 145,
         baseDamage: 30,
         baseDefense: 14,
