@@ -6,7 +6,7 @@
 // If a player has an older version cached, they get a refresh banner.
 // ═══════════════════════════════════════════════════════════════════════
 
-const GAME_VERSION = '2025.02.17-r10';
+const GAME_VERSION = '2025.02.17-r11';
 
 // ── VERSION CHECK ──────────────────────────────────────────────────────
 // Call this on: game init, character select, enter dungeon, enter explore.
@@ -51,6 +51,15 @@ function checkGameVersion() {
 // Most recent first. Keep entries brief — one line per bullet.
 // ═══════════════════════════════════════════════════════════════════════
 const REVISION_HISTORY = [
+
+    {
+        version: '2025.02.18-r11',
+        date: 'Feb 18, 2025',
+        summary: 'Updating Exploration-zones',
+        changes: [
+            'Riverside was not being called correctly.  Fixed',
+        ]
+    },
 
     {
         version: '2025.02.17-r10',
