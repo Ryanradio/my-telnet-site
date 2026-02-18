@@ -7459,14 +7459,11 @@ function stabilizeTerminalLayout() {
                 effects = cs.monsterStatusEffects[target.index];
             }
             
-            // Check if already has this status
-            if (effects.find(e => e.type === statusKey)) {
-                return; // Don't stack same status
-            }
-            
-            // Add status effect
+            // ALLOW STACKING: Each status application gets a unique ID
+            // Multiple instances of the same status can exist simultaneously
             const effect = {
                 type: statusKey,
+                id: `${statusKey}_${Date.now()}_${Math.random()}`, // Unique ID per instance
                 startTime: Date.now(),
                 duration: statusDef.duration
             };
@@ -7477,17 +7474,45 @@ function stabilizeTerminalLayout() {
             const applyMsg = statusDef.applyMessage
                 ? statusDef.applyMessage(targetName)
                 : statusDef.message(targetName, '');  // empty string avoids "undefined"
-            termAppend(applyMsg, 'term-warning');
             
-            // Start DOT ticks if applicable
+            // Count stacks for display
+            const stackCount = effects.filter(e => e.type === statusKey).length;
+            const stackTag = stackCount > 1 ? ` <span style="color:#FFD700;">[x${stackCount}]</span>` : '';
+            termAppend(applyMsg + stackTag, 'term-warning');
+            
+            // Start DOT ticks if applicable (each instance ticks independently)
             if (statusDef.type === 'dot') {
-                startDOTTicks(target, statusKey, isPlayer);
+                startDOTTicks(target, effect.id, statusKey, isPlayer);
             }
             
-            // Auto-remove after duration
+            // Auto-remove after duration (remove THIS specific instance)
             setTimeout(() => {
-                removeStatusEffect(target, statusKey, isPlayer);
+                removeStatusEffectById(target, effect.id, isPlayer);
             }, statusDef.duration);
+        }
+        
+        function removeStatusEffectById(target, effectId, isPlayer = false) {
+            const cs = gameState.combatState;
+            if (!cs) return;
+            
+            let effects;
+            if (isPlayer) {
+                effects = cs.playerStatusEffects;
+            } else {
+                effects = cs.monsterStatusEffects[target.index] || [];
+            }
+            
+            const index = effects.findIndex(e => e.id === effectId);
+            if (index > -1) {
+                effects.splice(index, 1);
+                
+                // Stop DOT timer for this specific instance
+                const timerKey = isPlayer ? `player_${effectId}` : `monster_${target.index}_${effectId}`;
+                if (cs.dotTimers[timerKey]) {
+                    clearInterval(cs.dotTimers[timerKey]);
+                    delete cs.dotTimers[timerKey];
+                }
+            }
         }
         
         function removeStatusEffect(target, statusKey, isPlayer = false) {
@@ -7501,29 +7526,33 @@ function stabilizeTerminalLayout() {
                 effects = cs.monsterStatusEffects[target.index] || [];
             }
             
-            const index = effects.findIndex(e => e.type === statusKey);
-            if (index > -1) {
-                effects.splice(index, 1);
-                
-                // Stop DOT timer if exists
-                const timerKey = isPlayer ? `player_${statusKey}` : `monster_${target.index}_${statusKey}`;
-                if (cs.dotTimers[timerKey]) {
-                    clearInterval(cs.dotTimers[timerKey]);
-                    delete cs.dotTimers[timerKey];
+            // Remove ALL instances of this status type (for cleanse/cure effects)
+            const toRemove = effects.filter(e => e.type === statusKey);
+            toRemove.forEach(effect => {
+                const index = effects.findIndex(e => e.id === effect.id);
+                if (index > -1) {
+                    effects.splice(index, 1);
+                    
+                    // Stop DOT timer if exists
+                    const timerKey = isPlayer ? `player_${effect.id}` : `monster_${target.index}_${effect.id}`;
+                    if (cs.dotTimers[timerKey]) {
+                        clearInterval(cs.dotTimers[timerKey]);
+                        delete cs.dotTimers[timerKey];
+                    }
                 }
-            }
+            });
         }
         
-        function startDOTTicks(target, statusKey, isPlayer = false) {
+        function startDOTTicks(target, effectId, statusKey, isPlayer = false) {
             const cs = gameState.combatState;
             if (!cs) return;
             
             const statusDef = STATUS_EFFECTS[statusKey];
             if (!statusDef || statusDef.type !== 'dot') return;
             
-            const timerKey = isPlayer ? `player_${statusKey}` : `monster_${target.index}_${statusKey}`;
+            const timerKey = isPlayer ? `player_${effectId}` : `monster_${target.index}_${effectId}`;
             
-            // Don't start if already ticking
+            // Don't start if already ticking (shouldn't happen with unique IDs but safety check)
             if (cs.dotTimers[timerKey]) return;
             
             cs.dotTimers[timerKey] = setInterval(() => {

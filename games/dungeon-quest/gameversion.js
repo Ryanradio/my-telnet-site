@@ -6,7 +6,7 @@
 // If a player has an older version cached, they get a refresh banner.
 // ═══════════════════════════════════════════════════════════════════════
 
-const GAME_VERSION = '2025.02.17-r7';
+const GAME_VERSION = '2025.02.17-r8';
 
 // ── VERSION CHECK ──────────────────────────────────────────────────────
 // Call this on: game init, character select, enter dungeon, enter explore.
@@ -51,6 +51,23 @@ function checkGameVersion() {
 // Most recent first. Keep entries brief — one line per bullet.
 // ═══════════════════════════════════════════════════════════════════════
 const REVISION_HISTORY = [
+
+    {
+        version: '2025.02.17-r8',
+        date: 'Feb 17, 2025',
+        summary: 'Status Effect Stacking System',
+        changes: [
+            'Status effects now STACK — multiple applications of the same status run independently',
+            'Rogue double-strike with poison: both hits apply poison = 2 independent DOT timers ticking',
+            'Each status instance gets a unique ID and its own damage timer',
+            'Status application messages show stack count: "Poisoned [x2]", "Burning [x3]"',
+            'All DOTs stack: poison, bleed, burning, bleeding, poisoned, etc.',
+            'All debuffs stack: blind, stun, frozen, weakened, etc.',
+            'Each stack expires independently after its own duration',
+            'removeStatusEffect() removes ALL stacks of a type (for cleanse/cure effects)',
+            'removeStatusEffectById() removes a single specific stack',
+        ]
+    },
 
     {
         version: '2025.02.17-r7',
