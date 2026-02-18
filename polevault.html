@@ -1,556 +1,483 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Vault Analytics | Kinetic Zones</title>
-    <style>
-        :root {
-            --primary: #0f172a;
-            --accent: #3b82f6;
-            --danger: #ef4444;  /* Red - Blow Through */
-            --warning: #f59e0b; /* Yellow - Under Powered */
-            --success: #10b981; /* Green - Optimal */
-            --stall: #94a3b8;   /* Grey - Stall */
-            --bg: #f1f5f9;
-            --card: #ffffff;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vault Mechanics Engine</title>
 
-        body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background-color: var(--bg);
-            color: var(--primary);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            min-height: 100vh;
-        }
+<style>
+:root {
+    --primary: #0f172a;
+    --accent: #3b82f6;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --success: #10b981;
+    --stall: #94a3b8;
+    --bg: #f1f5f9;
+    --card: #ffffff;
+}
 
-        .container {
-            width: 100%;
-            max-width: 900px;
-            background: var(--card);
-            border-radius: 20px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
+body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    margin:0;
+    padding:20px;
+    display:flex;
+    justify-content:center;
+}
 
-        header {
-            background: var(--primary);
-            color: white;
-            padding: 2rem 1.5rem;
-            text-align: center;
-        }
-        header h1 { margin: 0; font-size: 1.75rem; letter-spacing: -0.5px; }
-        header p { margin: 0.5rem 0 0; opacity: 0.7; font-size: 0.9rem; }
+.container {
+    width:100%;
+    max-width:900px;
+    background:white;
+    border-radius:20px;
+    box-shadow:0 20px 25px rgba(0,0,0,0.1);
+    overflow:hidden;
+}
 
-        .content-grid {
-            padding: 2rem;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-        }
+header {
+    background:var(--primary);
+    color:white;
+    padding:2rem;
+    text-align:center;
+}
 
-        /* Form Styling */
-        .section-label {
-            font-size: 0.7rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #94a3b8;
-            margin-bottom: 0.75rem;
-            border-bottom: 1px solid #e2e8f0;
-            padding-bottom: 5px;
-        }
+.content-grid {
+    padding:2rem;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:2rem;
+}
 
-        .input-row { display: flex; gap: 0.75rem; margin-bottom: 1.25rem; }
-        .input-group { flex: 1; }
+.section-label {
+    font-size:.7rem;
+    font-weight:800;
+    text-transform:uppercase;
+    color:#94a3b8;
+    margin-bottom:.75rem;
+    border-bottom:1px solid #e2e8f0;
+}
 
-        label { display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem; color: #475569; }
+.input-row { display:flex; gap:.75rem; margin-bottom:1.25rem; }
+.input-group { flex:1; }
 
-        input, select {
-            width: 100%;
-            padding: 0.7rem;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            font-size: 0.95rem;
-            background: white;
-            box-sizing: border-box;
-        }
+label {
+    display:block;
+    font-weight:600;
+    font-size:.85rem;
+    margin-bottom:.4rem;
+}
 
-        .btn-calc {
-            grid-column: span 2;
-            background: var(--accent);
-            color: white;
-            padding: 1rem;
-            border: none;
-            border-radius: 10px;
-            font-size: 1.1rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: background 0.2s;
-            margin-top: 1rem;
-        }
-        .btn-calc:hover { background: #2563eb; }
+input, select {
+    width:100%;
+    padding:.7rem;
+    border:1px solid #cbd5e1;
+    border-radius:8px;
+}
 
-        /* Results Section */
-        .results-container {
-            background: #f8fafc;
-            border-top: 1px solid #e2e8f0;
-            padding: 2rem;
-            display: none;
-        }
+.btn-calc {
+    grid-column:span 2;
+    background:var(--accent);
+    color:white;
+    padding:1rem;
+    border:none;
+    border-radius:10px;
+    font-size:1.1rem;
+    font-weight:700;
+    cursor:pointer;
+}
 
-        /* Advanced Slider */
-        .slider-box {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-            margin-bottom: 2rem;
-            border: 1px solid #e2e8f0;
-        }
+.results-container {
+    background:#f8fafc;
+    border-top:1px solid #e2e8f0;
+    padding:2rem;
+    display:none;
+}
 
-        .slider-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            margin-bottom: 1rem;
-        }
-        .slider-val { font-size: 1.5rem; font-weight: 800; color: var(--primary); }
-        .slider-sub { font-size: 0.9rem; color: #64748b; font-weight: 500; text-align: right; }
+.slider-box {
+    background:white;
+    padding:1.5rem;
+    border-radius:12px;
+    margin-bottom:2rem;
+}
 
-        /* The Rainbow Track */
-        input[type=range] {
-            -webkit-appearance: none;
-            width: 100%;
-            height: 12px;
-            border-radius: 6px;
-            outline: none;
-            margin: 10px 0;
-            /* Background gradient is set by JS */
-            background: #e2e8f0; 
-        }
+input[type=range] {
+    width:100%;
+    height:12px;
+    border-radius:6px;
+    outline:none;
+}
 
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 28px;
-            height: 28px;
-            background: white;
-            border: 4px solid var(--primary);
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-            margin-top: -8px; /* Centering fix */
-        }
-        
-        /* Fix for Firefox/Standard */
-        input[type=range]::-moz-range-thumb {
-            width: 28px;
-            height: 28px;
-            background: white;
-            border: 4px solid var(--primary);
-            border-radius: 50%;
-            cursor: pointer;
-        }
+.zone-legend {
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:10px;
+    margin-bottom:2rem;
+}
 
-        /* Zone Legend Table */
-        .zone-legend {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            margin-bottom: 2rem;
-        }
-        .zone-item {
-            background: white;
-            padding: 10px;
-            border-radius: 8px;
-            text-align: center;
-            border-bottom: 4px solid transparent;
-            font-size: 0.8rem;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        }
-        .zone-item strong { display: block; font-size: 0.7rem; text-transform: uppercase; margin-bottom: 4px; }
-        .z-stall { border-color: var(--stall); color: var(--stall); }
-        .z-warn { border-color: var(--warning); color: #b45309; }
-        .z-safe { border-color: var(--success); color: var(--success); }
-        .z-danger { border-color: var(--danger); color: var(--danger); }
+.zone-item {
+    background:white;
+    padding:10px;
+    border-radius:8px;
+    text-align:center;
+    border-bottom:4px solid;
+    font-size:.8rem;
+}
 
-        /* Main Metrics */
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-        }
-        .card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 12px;
-            text-align: center;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-        .card-val { font-size: 2rem; font-weight: 800; color: var(--primary); margin: 0.5rem 0; }
-        .card-lbl { font-size: 0.75rem; text-transform: uppercase; color: #64748b; font-weight: 700; }
+.metrics-grid {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:1.5rem;
+}
 
-        @media (max-width: 700px) {
-            .content-grid { grid-template-columns: 1fr; padding: 1.5rem; gap: 1rem; }
-            .zone-legend { grid-template-columns: 1fr 1fr; }
-            .btn-calc { grid-column: span 1; }
-        }
-    </style>
+.card {
+    background:white;
+    padding:1.5rem;
+    border-radius:12px;
+    text-align:center;
+}
+
+.card-val {
+    font-size:2rem;
+    font-weight:800;
+}
+
+@media(max-width:700px){
+    .content-grid{grid-template-columns:1fr;}
+    .btn-calc{grid-column:span 1;}
+}
+</style>
 </head>
+
 <body>
 
 <div class="container">
-    <header>
-        <h1>Vault Mechanics Engine</h1>
-        <p>Kinetic Visualization & Stiffness Zones</p>
-    </header>
 
-    <div class="content-grid">
-        <!-- Left: Athlete -->
-        <div>
-            <div class="section-label">Athlete Profile</div>
-            <div class="input-row">
-                <div class="input-group">
-                    <label>Weight (lbs)</label>
-                    <input type="number" id="weight" placeholder="150" value="150">
-                </div>
-                <div class="input-group">
-                    <label>Height</label>
-                    <div style="display:flex; gap:5px;">
-                        <input type="number" id="hFt" placeholder="Ft" value="5">
-                        <input type="number" id="hIn" placeholder="In" value="10">
-                    </div>
-                </div>
-            </div>
+<header>
+<h1>Vault Mechanics Engine</h1>
+<p>Physics-Based Pole Matching</p>
+</header>
 
-            <div class="section-label">Grip Height</div>
-            <div class="input-row">
-                <div class="input-group">
-                    <label>Feet</label>
-                    <select id="gripFt"></select>
-                </div>
-                <div class="input-group">
-                    <label>Inches</label>
-                    <select id="gripIn"></select>
-                </div>
-                <div class="input-group">
-                    <label>Fract</label>
-                    <select id="gripFrac">
-                        <option value="0">0"</option>
-                        <option value="0.125">1/8"</option>
-                        <option value="0.25">1/4"</option>
-                        <option value="0.375">3/8"</option>
-                        <option value="0.5">1/2"</option>
-                        <option value="0.625">5/8"</option>
-                        <option value="0.75">3/4"</option>
-                        <option value="0.875">7/8"</option>
-                    </select>
-                </div>
-            </div>
-        </div>
+<div class="content-grid">
 
-        <!-- Right: Pole -->
-        <div>
-            <div class="section-label">Pole Specs</div>
-            <div class="input-row">
-                <div class="input-group">
-                    <label>Brand</label>
-                    <select id="brand" onchange="updateFlexEstimate()">
-                        <option value="UCS">UCS Spirit</option>
-                        <option value="Essx">Essx</option>
-                        <option value="Pacer">Gill Pacer</option>
-                        <option value="Altius">Altius</option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <label>Length</label>
-                    <select id="length" onchange="updateFlexEstimate()"></select>
-                </div>
-            </div>
-            <div class="input-row">
-                <div class="input-group">
-                    <label>Rating (lbs)</label>
-                    <select id="rating" onchange="updateFlexEstimate()"></select>
-                </div>
-                <div class="input-group">
-                    <label>Flex (cm)</label>
-                    <input type="number" id="flex" step="0.1" placeholder="Auto">
-                </div>
-            </div>
-        </div>
+<div>
+<div class="section-label">Athlete</div>
 
-        <button class="btn-calc" onclick="initSimulation()">Initialize Simulation</button>
-    </div>
+<div class="input-row">
+<div class="input-group">
+<label>Weight (lbs)</label>
+<input id="weight" type="number" value="150">
+</div>
 
-    <!-- RESULTS PANEL -->
-    <div id="results" class="results-container">
-        
-        <!-- 1. The Kinetic Slider -->
-        <div class="slider-box">
-            <div class="slider-header">
-                <div>
-                    <div style="font-weight:700; color:#64748b; font-size:0.8rem; text-transform:uppercase;">Approach Velocity</div>
-                </div>
-                <div style="text-align: right;">
-                    <div class="slider-val" id="speedDisplayMPH">-- mph</div>
-                    <div class="slider-sub" id="speedDisplayMS">-- m/s</div>
-                </div>
-            </div>
-            
-            <input type="range" id="speedSlider" min="5.0" max="11.0" step="0.05" oninput="runPhysicsEngine()">
-            
-            <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 0.7rem; color: #94a3b8; font-weight:bold;">
-                <span>SLOW (Jog)</span>
-                <span>FAST (Elite)</span>
-            </div>
-        </div>
+<div class="input-group">
+<label>Height</label>
+<div style="display:flex;gap:5px;">
+<input id="hFt" type="number" value="5">
+<input id="hIn" type="number" value="10">
+</div>
+</div>
+</div>
 
-        <!-- 2. The Zone Ranges (New!) -->
-        <div class="zone-legend">
-            <div class="zone-item z-stall">
-                <strong>Stall / Reject</strong>
-                <span id="rngStall">--</span>
-            </div>
-            <div class="zone-item z-warn">
-                <strong>Under Powered</strong>
-                <span id="rngWarn">--</span>
-            </div>
-            <div class="zone-item z-safe">
-                <strong>Optimal Range</strong>
-                <span id="rngOpt">--</span>
-            </div>
-            <div class="zone-item z-danger">
-                <strong>Blow Through</strong>
-                <span id="rngBlow">--</span>
-            </div>
-        </div>
+<div class="section-label">Grip</div>
 
-        <!-- 3. Height Metrics -->
-        <div class="metrics-grid">
-            <div class="card">
-                <div class="card-lbl">Realistic Limit</div>
-                <div class="card-val" id="hReal">--</div>
-                <div style="font-size:0.8rem; color:#64748b;">Grip + Push Off</div>
-            </div>
-            <div class="card">
-                <div class="card-lbl">Theoretical Ceiling</div>
-                <div class="card-val" id="hTheo">--</div>
-                <div style="font-size:0.8rem; color:#64748b;">Max Energy Potential</div>
-            </div>
-        </div>
+<div class="input-row">
+<div class="input-group">
+<label>Feet</label>
+<select id="gripFt"></select>
+</div>
 
-        <div style="text-align: center; margin-top: 2rem;">
-            <button onclick="resetForm()" style="background:none; border:1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; color:#64748b; cursor:pointer;">Reset Console</button>
-        </div>
+<div class="input-group">
+<label>Inches</label>
+<select id="gripIn"></select>
+</div>
 
-    </div>
+<div class="input-group">
+<label>Frac</label>
+<select id="gripFrac">
+<option value="0">0</option>
+<option value="0.125">1/8</option>
+<option value="0.25">1/4</option>
+<option value="0.5">1/2</option>
+<option value="0.75">3/4</option>
+</select>
+</div>
+</div>
+</div>
+
+<div>
+<div class="section-label">Pole</div>
+
+<div class="input-row">
+<div class="input-group">
+<label>Length</label>
+<select id="length"></select>
+</div>
+
+<div class="input-group">
+<label>Rating</label>
+<select id="rating"></select>
+</div>
+</div>
+
+<div class="input-row">
+<div class="input-group">
+<label>Flex (cm)</label>
+<input id="flex" type="number" step="0.1" value="17">
+</div>
+</div>
+</div>
+
+<button class="btn-calc" onclick="initSimulation()">Initialize</button>
+
+</div>
+
+<div id="results" class="results-container">
+
+<div class="slider-box">
+
+<div style="display:flex;justify-content:space-between;">
+<div>Approach Velocity</div>
+<div>
+<div id="speedDisplayMPH">--</div>
+<div id="speedDisplayMS">--</div>
+</div>
+</div>
+
+<input id="speedSlider" type="range" min="5" max="11" step="0.05" oninput="runPhysics()">
+
+</div>
+
+<div class="zone-legend">
+<div class="zone-item" style="border-color:#94a3b8">Stall<br><span id="rngStall"></span></div>
+<div class="zone-item" style="border-color:#f59e0b">Under<br><span id="rngWarn"></span></div>
+<div class="zone-item" style="border-color:#10b981">Optimal<br><span id="rngOpt"></span></div>
+<div class="zone-item" style="border-color:#ef4444">Blow<br><span id="rngBlow"></span></div>
+</div>
+
+<div class="metrics-grid">
+<div class="card">
+<div>Realistic</div>
+<div class="card-val" id="hReal">--</div>
+</div>
+
+<div class="card">
+<div>Theoretical</div>
+<div class="card-val" id="hTheo">--</div>
+</div>
+</div>
+
+</div>
+
 </div>
 
 <script>
-    // --- Init & Logic ---
-    document.addEventListener("DOMContentLoaded", () => {
-        populateDropdowns();
-        updateFlexEstimate();
-    });
 
-    function populateDropdowns() {
-        const lenSel = document.getElementById('length');
-        const rateSel = document.getElementById('rating');
-        const gripFt = document.getElementById('gripFt');
-        const gripIn = document.getElementById('gripIn');
+/* ================= CONFIG ================= */
 
-        // Pole Lengths
-        for(let f = 10; f <= 18; f++) {
-            [0, 6].forEach(i => {
-                if(f===18 && i===6) return;
-                let val = f + (i/12);
-                let opt = document.createElement('option');
-                opt.value = val;
-                opt.text = `${f}' ${i}"`;
-                if(val === 15) opt.selected = true;
-                lenSel.appendChild(opt);
-            });
-        }
+const CONFIG = {
+BASE_SPEED: 7.2,
+PUSH_OPTIMAL: 0.7,
+PUSH_BLOW: 0.45,
+EFFICIENCY_BASE: 0.63,
+GRAVITY: 9.81
+};
 
-        // Ratings
-        for(let w = 90; w <= 220; w += 5) {
-            let opt = document.createElement('option');
-            opt.value = w;
-            opt.text = `${w} lbs`;
-            if(w === 160) opt.selected = true;
-            rateSel.appendChild(opt);
-        }
+let zones = null;
 
-        // Grip Feet/Inches
-        for(let f=10; f<=17; f++){
-            let opt = document.createElement('option');
-            opt.value = f;
-            opt.text = `${f}'`;
-            if(f===14) opt.selected = true;
-            gripFt.appendChild(opt);
-        }
-        for(let i=0; i<=11; i++){
-            let opt = document.createElement('option');
-            opt.value = i;
-            opt.text = `${i}"`;
-            if(i===9) opt.selected = true;
-            gripIn.appendChild(opt);
-        }
-        document.getElementById('gripFrac').value = "0.125";
-    }
+/* ================= INIT ================= */
 
-    function updateFlexEstimate() {
-        const length = parseFloat(document.getElementById('length').value);
-        const rating = parseInt(document.getElementById('rating').value);
-        const brand = document.getElementById('brand').value;
-        
-        let base = 19.0;
-        base -= (rating - 150) * 0.05;
-        base += (length - 14) * 1.4;
-        
-        if(brand === 'Essx') base -= 0.6; 
-        if(brand === 'Pacer') base += 0.4;
-        
-        document.getElementById('flex').value = base.toFixed(1);
-    }
+document.addEventListener("DOMContentLoaded", populateDropdowns);
 
-    // --- SIMULATION CORE ---
-    
-    // Zone Thresholds (Global for access in slider event)
-    let zStall, zWarn, zOpt, zBlow;
+function populateDropdowns(){
 
-    function initSimulation() {
-        const weight = parseFloat(document.getElementById('weight').value);
-        const rating = parseFloat(document.getElementById('rating').value);
-        
-        // 1. Calculate Physics Baselines
-        // Stiffness Ratio: How heavy is the pole relative to the vaulter?
-        let ratio = rating / weight;
-        
-        // Base "Optimal" Speed for a matched pole (ratio 1.0) is ~7.5 m/s
-        // If ratio is 1.2 (stiff pole), optimal speed must increase
-        let optimalSpeed = 7.5 * ratio; 
-        
-        // Clamp for realism
-        if(optimalSpeed < 6.0) optimalSpeed = 6.0;
-        if(optimalSpeed > 10.0) optimalSpeed = 10.0;
+const len = document.getElementById("length");
+for(let f=10; f<=18; f++){
+[0,6].forEach(i=>{
+if(f===18 && i===6) return;
+let val = f+(i/12);
+let o=document.createElement("option");
+o.value=val;
+o.text=`${f}' ${i}"`;
+if(val===15) o.selected=true;
+len.appendChild(o);
+});
+}
 
-        // 2. Define Zones relative to Optimal Speed
-        zStall = optimalSpeed - 1.2;  // Anything below this is a reject
-        zWarn  = optimalSpeed - 0.4;  // Between Stall and Warn is "Under Powered"
-        zOpt   = optimalSpeed;        // Start of optimal
-        zBlow  = optimalSpeed + 1.5;  // Start of blow through
+const rate=document.getElementById("rating");
+for(let w=90; w<=220; w+=5){
+let o=document.createElement("option");
+o.value=w;
+o.text=w;
+if(w===160)o.selected=true;
+rate.appendChild(o);
+}
 
-        // 3. Update Range Displays (Legend Box)
-        const toMph = (ms) => (ms * 2.237).toFixed(1);
-        
-        document.getElementById('rngStall').innerText = `< ${toMph(zStall)} mph`;
-        document.getElementById('rngWarn').innerText  = `${toMph(zStall)} - ${toMph(zWarn)} mph`;
-        document.getElementById('rngOpt').innerText   = `${toMph(zWarn)} - ${toMph(zBlow)} mph`;
-        document.getElementById('rngBlow').innerText  = `> ${toMph(zBlow)} mph`;
+const gripFt=document.getElementById("gripFt");
+for(let f=10; f<=17; f++){
+let o=document.createElement("option");
+o.value=f;
+o.text=f;
+if(f===14)o.selected=true;
+gripFt.appendChild(o);
+}
 
-        // 4. Paint the Slider Gradient
-        paintSliderGradient();
+const gripIn=document.getElementById("gripIn");
+for(let i=0;i<=11;i++){
+let o=document.createElement("option");
+o.value=i;
+o.text=i;
+if(i===9)o.selected=true;
+gripIn.appendChild(o);
+}
 
-        // 5. Set Slider to Optimal and Run
-        const slider = document.getElementById('speedSlider');
-        slider.value = optimalSpeed;
-        
-        document.getElementById('results').style.display = 'block';
-        document.getElementById('results').scrollIntoView({behavior:'smooth'});
-        
-        runPhysicsEngine();
-    }
+}
 
-    function paintSliderGradient() {
-        const slider = document.getElementById('speedSlider');
-        const min = parseFloat(slider.min);
-        const max = parseFloat(slider.max);
-        const range = max - min;
+/* ================= SIM ================= */
 
-        // Convert MS speeds to Percentages of the slider width
-        const pStall = ((zStall - min) / range) * 100;
-        const pWarn  = ((zWarn - min) / range) * 100;
-        const pBlow  = ((zBlow - min) / range) * 100;
+function initSimulation(){
 
-        // CSS Linear Gradient syntax
-        // Grey (0 -> Stall) | Yellow (Stall -> Warn) | Green (Warn -> Blow) | Red (Blow -> 100)
-        const grad = `linear-gradient(to right, 
-            #94a3b8 0%, 
-            #94a3b8 ${pStall}%, 
-            #f59e0b ${pStall}%, 
-            #f59e0b ${pWarn}%, 
-            #10b981 ${pWarn}%, 
-            #10b981 ${pBlow}%, 
-            #ef4444 ${pBlow}%, 
-            #ef4444 100%)`;
+const weight = parseFloat(weightEl().value);
+const flex = parseFloat(flexEl().value);
 
-        slider.style.background = grad;
-    }
+const stiffnessIndex = 20 / flex;
 
-    function runPhysicsEngine() {
-        const speed = parseFloat(document.getElementById('speedSlider').value);
-        const mph = speed * 2.23694;
-        
-        document.getElementById('speedDisplayMPH').innerText = mph.toFixed(1) + " mph";
-        document.getElementById('speedDisplayMS').innerText = speed.toFixed(2) + " m/s";
+let optimalSpeed =
+CONFIG.BASE_SPEED *
+Math.sqrt(stiffnessIndex * (weight/75));
 
-        // Height Calculation
-        const gFt = parseInt(document.getElementById('gripFt').value);
-        const gIn = parseInt(document.getElementById('gripIn').value);
-        const gFr = parseFloat(document.getElementById('gripFrac').value);
-        const gripM = (gFt + ((gIn + gFr)/12)) * 0.3048;
-        const pushOff = 0.65; 
+optimalSpeed = clamp(optimalSpeed,5.5,10);
 
-        let realM = 0;
-        
-        // Zone Penalties
-        if (speed < zStall) {
-            // Stalled: Only reach 80% of grip height (didn't get vertical)
-            realM = gripM * 0.8;
-        } else if (speed < zWarn) {
-            // Under powered: Reach grip but no push off
-            realM = gripM; 
-        } else if (speed > zBlow) {
-            // Blow through: Mushy pole limits lift
-            realM = gripM + (pushOff * 0.4); 
-        } else {
-            // Optimal
-            realM = gripM + pushOff;
-        }
+zones = {
+stall: optimalSpeed - 1.1,
+warn: optimalSpeed - 0.3,
+opt: optimalSpeed,
+blow: optimalSpeed + 1.2
+};
 
-        // Theoretical limit (Physics ceiling if perfect)
-        const theoM = gripM + 0.85; // Elite mechanics
+updateZoneDisplays();
 
-        document.getElementById('hReal').innerText = toFtIn(realM);
-        document.getElementById('hTheo').innerText = toFtIn(theoM);
-        
-        // Update Thumb Color based on current Zone
-        const slider = document.getElementById('speedSlider');
-        let thumbColor = "#10b981"; // Default Green
-        if(speed < zStall) thumbColor = "#94a3b8";
-        else if(speed < zWarn) thumbColor = "#f59e0b";
-        else if(speed > zBlow) thumbColor = "#ef4444";
-        
-        slider.style.setProperty('--primary', thumbColor);
-    }
+const slider = speedEl();
+slider.value = optimalSpeed;
 
-    function toFtIn(meters) {
-        const totalIn = meters * 39.37;
-        const f = Math.floor(totalIn / 12);
-        const i = Math.round(totalIn % 12);
-        return `${f}' ${i}"`;
-    }
+document.getElementById("results").style.display="block";
 
-    function resetForm() {
-        document.getElementById('results').style.display = 'none';
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+runPhysics();
+}
+
+/* ================= PHYSICS ================= */
+
+function runPhysics(){
+
+const speed = parseFloat(speedEl().value);
+const weight = parseFloat(weightEl().value);
+
+displaySpeed(speed);
+
+const mass = weight * 0.453592;
+
+const kinetic = 0.5 * mass * speed * speed;
+
+const gripM = getGripMeters();
+
+let efficiency = CONFIG.EFFICIENCY_BASE;
+
+let push = CONFIG.PUSH_OPTIMAL;
+
+if(speed < zones.stall){
+efficiency *= 0.4;
+push = 0;
+}
+else if(speed < zones.warn){
+efficiency *= 0.7;
+push = 0.15;
+}
+else if(speed > zones.blow){
+efficiency *= 0.85;
+push = CONFIG.PUSH_BLOW;
+}
+
+const potentialHeight =
+(kinetic * efficiency) /
+(mass * CONFIG.GRAVITY);
+
+const realistic =
+Math.min(gripM + push, potentialHeight);
+
+const theoretical =
+(kinetic * 0.75) /
+(mass * CONFIG.GRAVITY);
+
+document.getElementById("hReal").innerText = toFtIn(realistic);
+document.getElementById("hTheo").innerText = toFtIn(theoretical);
+
+}
+
+/* ================= HELPERS ================= */
+
+function updateZoneDisplays(){
+
+const toMph = m=> (m*2.237).toFixed(1);
+
+document.getElementById("rngStall").innerText =
+`< ${toMph(zones.stall)} mph`;
+
+document.getElementById("rngWarn").innerText =
+`${toMph(zones.stall)} - ${toMph(zones.warn)}`;
+
+document.getElementById("rngOpt").innerText =
+`${toMph(zones.warn)} - ${toMph(zones.blow)}`;
+
+document.getElementById("rngBlow").innerText =
+`> ${toMph(zones.blow)} mph`;
+
+}
+
+function getGripMeters(){
+
+const gFt = parseInt(gripFtEl().value);
+const gIn = parseInt(gripInEl().value);
+const gFr = parseFloat(gripFracEl().value);
+
+return (gFt + ((gIn+gFr)/12)) * 0.3048;
+
+}
+
+function displaySpeed(speed){
+
+const mph = speed * 2.23694;
+
+document.getElementById("speedDisplayMPH").innerText =
+mph.toFixed(1) + " mph";
+
+document.getElementById("speedDisplayMS").innerText =
+speed.toFixed(2) + " m/s";
+
+}
+
+function toFtIn(m){
+
+const inches = m * 39.37;
+
+const f = Math.floor(inches/12);
+const i = Math.round(inches%12);
+
+return `${f}' ${i}"`;
+
+}
+
+function clamp(v,min,max){
+return Math.max(min,Math.min(max,v));
+}
+
+/* ================= ELEMENTS ================= */
+
+const weightEl = ()=>document.getElementById("weight");
+const flexEl = ()=>document.getElementById("flex");
+const speedEl = ()=>document.getElementById("speedSlider");
+const gripFtEl = ()=>document.getElementById("gripFt");
+const gripInEl = ()=>document.getElementById("gripIn");
+const gripFracEl = ()=>document.getElementById("gripFrac");
+
 </script>
 
 </body>
