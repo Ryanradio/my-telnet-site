@@ -1918,6 +1918,20 @@ function loadAllClassSpells() {
         canRest: true,
         hasShop: true
     },
+    
+    riverside: {
+        name: 'Misty Riverside',
+        description: 'A foggy riverbank where strange creatures lurk in the shallows.',
+        enemyLevelRange: [4, 6],
+        encounters: ['river_troll', 'swamp_lurker', 'giant_frog', 'water_snake', 'bandit',
+                     'mudskipper', 'river_pirate', 'snapping_turtle', 'kelp_strangler', 'bog_witch',
+                     'harpy', 'gnoll', 'lizardfolk', 'giant_wasp', 'bandit_scout'],
+        requiredLevel: 4,
+        locked: true,
+        town: 'town1',
+        unlockMessage: 'Defeat your class master in the forest to unlock this area!',
+        
+    },
 
     forest: {
         name: 'Whispering Forest',
