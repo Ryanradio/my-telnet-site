@@ -22,8 +22,6 @@ padding:20px;
 box-shadow:0 10px 25px rgba(0,0,0,0.1);
 }
 
-h1{margin-top:0}
-
 .grid{
 display:grid;
 grid-template-columns:1fr 1fr;
@@ -54,10 +52,6 @@ border-radius:10px;
 margin-top:15px;
 }
 
-.toggle{
-margin-right:15px;
-}
-
 .big{
 font-size:28px;
 font-weight:bold;
@@ -84,6 +78,7 @@ font-size:13px;
 .grid{grid-template-columns:1fr}
 }
 </style>
+
 </head>
 
 <body>
@@ -112,7 +107,7 @@ font-size:13px;
 <label>Height</label>
 <div style="display:flex;gap:5px">
 <input id="hFt" value="5">
-<input id="hIn" value="10">
+<input id="hIn" value="9">
 </div>
 
 <label>Speed (mph)</label>
@@ -174,90 +169,66 @@ font-size:13px;
 
 const g = 9.81;
 
-/* ================= SKILL PROFILES ================= */
-
 const SKILL = {
-"High School":{
-eff:0.55,
-push:0.6,
-com:0.25
-},
-"College":{
-eff:0.65,
-push:0.8,
-com:0.35
-},
-"Professional":{
-eff:0.75,
-push:1.05,
-com:0.45
-}
+"High School":{eff:0.38,push:0.45,com:0.20},
+"College":{eff:0.46,push:0.55,com:0.25},
+"Professional":{eff:0.55,push:0.70,com:0.30}
 };
-
-/* ================= MAIN ================= */
 
 function run(){
 
-const weight = parseFloat(val("weight"));
-const speedMph = parseFloat(val("speed"));
+const weight = num("weight");
+const speedMph = num("speed");
 const speed = speedMph * 0.44704;
-const steps = parseFloat(val("steps"));
+const steps = num("steps");
 const skill = SKILL[val("skill")];
 
-const poleLength = parseFloat(val("poleLength"));
-const rating = parseFloat(val("rating"));
-const flex = parseFloat(val("flex"));
+const poleLength = num("poleLength");
+const rating = num("rating");
 
 const grip =
-(parseFloat(val("gFt")) +
-parseFloat(val("gIn"))/12) * 0.3048;
+(num("gFt") + num("gIn")/12) * 0.3048;
 
 const mass = weight * 0.453592;
 
-/* ===== Approach efficiency from steps ===== */
+/* Step contribution */
 
 let stepFactor = 1;
-if(steps<=10) stepFactor=0.85;
-else if(steps==12) stepFactor=0.92;
+if(steps<=10) stepFactor=0.9;
+else if(steps==12) stepFactor=0.95;
 else if(steps==14) stepFactor=1.0;
-else if(steps==16) stepFactor=1.05;
-else if(steps>=18) stepFactor=1.08;
+else if(steps==16) stepFactor=1.03;
+else stepFactor=1.05;
 
-/* ===== Kinetic Energy ===== */
+/* Kinetic Energy */
 
 const kinetic = 0.5 * mass * speed * speed;
 
-/* ===== Pole Match ===== */
+/* Pole match (realistic range only ±12%) */
 
-const stiffnessIndex = rating / flex;
-const demand = mass * speed * speed;
+let match = clamp((rating-weight)/40 + 1,0.88,1.12);
 
-let match = clamp((stiffnessIndex*100)/demand,0.5,1.5);
+/* Energy to height */
 
-/* ===== Swing Height ===== */
+const energyHeight =
+(kinetic * skill.eff * stepFactor * match) /
+(mass * g);
 
-const swing =
-(speed*speed/(2*g)) *
-skill.eff *
-stepFactor *
-match *
-0.65;
-
-/* ===== Heights ===== */
+/* Final heights */
 
 const realistic =
 grip +
-swing +
+energyHeight +
 skill.push +
 skill.com;
 
 const theoretical =
 grip +
-(speed*speed/(2*g))*0.9 +
+(kinetic * 0.6)/(mass*g) +
 skill.push +
 skill.com;
 
-/* ===== Safety ===== */
+/* Safety */
 
 let safety="Good";
 let safetyClass="good";
@@ -267,16 +238,14 @@ safety="Under-rated pole";
 safetyClass="bad";
 }
 
-if(grip > (poleLength*0.3048 - 0.2)){
-safety="Grip too high";
+if(grip > (poleLength*0.3048 - 0.15)){
+safety="Grip near top";
 safetyClass="warn";
 }
 
-/* ===== Coach Output ===== */
+/* Coach */
 
-if(el("toggleCoach").checked){
-
-el("coach").innerHTML = `
+document.getElementById("coach").innerHTML = `
 <h3>Coach View</h3>
 
 <div class="big">${toFt(realistic)}</div>
@@ -295,52 +264,36 @@ Safety: <span class="${safetyClass}">${safety}</span>
 Grip: ${toFt(grip)}
 
 `;
-}else el("coach").innerHTML="";
 
-/* ===== Physics Output ===== */
+/* Physics */
 
-if(el("togglePhysics").checked){
-
-el("physics").innerHTML = `
+document.getElementById("physics").innerHTML = `
 <h3>Physics</h3>
 
 Mass: ${mass.toFixed(1)} kg<br>
 Speed: ${speed.toFixed(2)} m/s<br>
 Kinetic Energy: ${kinetic.toFixed(0)} J<br>
-Efficiency: ${(skill.eff*100).toFixed(0)}%<br>
+Conversion Efficiency: ${(skill.eff*100).toFixed(0)}%<br>
 Step Factor: ${stepFactor.toFixed(2)}<br>
 Pole Match: ${match.toFixed(2)}<br>
-Swing Height: ${swing.toFixed(2)} m<br>
+Energy Height: ${energyHeight.toFixed(2)} m<br>
 Push: ${skill.push.toFixed(2)} m<br>
 COM Bonus: ${skill.com.toFixed(2)} m<br>
-
 `;
-}else el("physics").innerHTML="";
 
-/* ===== Recommendations ===== */
+/* Recommendations */
 
-if(el("toggleReco").checked){
-
-let table=`<h3>Recommended Poles</h3>
+let table=`<h3>Recommended Poles for Target</h3>
 <table class="table">
 <tr>
 <th>Pole</th>
-<th>Grip</th>
-<th>Speed Needed</th>
 <th>Safe</th>
+<th>Speed Needed</th>
 </tr>`;
 
-const target = parseFloat(val("target")) * 0.3048;
+const target = num("target") * 0.3048;
 
 for(let r=weight; r<=weight+40; r+=5){
-
-let flexGuess = flex - (r-rating)*0.12;
-
-let neededSpeed =
-Math.sqrt(
-2*g*(target - grip - skill.push - skill.com) /
-(skill.eff*0.65)
-);
 
 let safe="Yes";
 let cls="good";
@@ -350,28 +303,32 @@ safe="No";
 cls="bad";
 }
 
+let neededEnergy =
+(target - grip - skill.push - skill.com) *
+(mass*g);
+
+let neededSpeed =
+Math.sqrt(
+(neededEnergy)/(0.5*mass*skill.eff)
+);
+
 table += `
 <tr>
 <td>${poleLength}' ${r}</td>
-<td>${toFt(grip)}</td>
-<td>${(neededSpeed/0.44704).toFixed(1)} mph</td>
 <td class="${cls}">${safe}</td>
+<td>${(neededSpeed/0.44704).toFixed(1)} mph</td>
 </tr>
 `;
 }
 
 table+="</table>";
 
-el("reco").innerHTML = table;
-
-}else el("reco").innerHTML="";
+document.getElementById("reco").innerHTML = table;
 
 }
 
-/* ================= HELPERS ================= */
-
+function num(id){return parseFloat(document.getElementById(id).value);}
 function val(id){return document.getElementById(id).value;}
-function el(id){return document.getElementById(id);}
 
 function clamp(v,min,max){
 return Math.max(min,Math.min(max,v));
