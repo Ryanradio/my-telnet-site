@@ -6365,10 +6365,31 @@ window.addEventListener('beforeunload', () => {
                 const tMin = eqWeapon.baseDamage + qb;
                 const tMax = eqWeapon.maxDamage ? eqWeapon.maxDamage + getQualityBonus(eqWeapon.quality, eqWeapon.maxDamage - eqWeapon.baseDamage) : tMin;
                 const tMag = (eqWeapon.baseMagicDamage || 0) + Math.floor((eqWeapon.baseMagicDamage || 0) * (qc?.bonusPct || 0));
+                
+                // Build modifier display for equipped weapon
+                let eqModifierHtml = '';
+                if (eqWeapon.modifiers && eqWeapon.modifiers.length > 0) {
+                    eqModifierHtml = '<div style="margin-top:5px;font-size:12px;">';
+                    eqWeapon.modifiers.forEach(modKey => {
+                        if (typeof WEAPON_MODIFIERS === 'undefined') {
+                            eqModifierHtml += `<div style="color:#FF8800;">• ${modKey}</div>`;
+                            return;
+                        }
+                        const mod = WEAPON_MODIFIERS[modKey];
+                        if (mod) {
+                            eqModifierHtml += `<div style="color:${mod.color};">• ${mod.name}`;
+                            if (mod.minDamage) eqModifierHtml += ` (${mod.minDamage}-${mod.maxDamage})`;
+                            eqModifierHtml += `</div>`;
+                        }
+                    });
+                    eqModifierHtml += '</div>';
+                }
+                
                 invHtml += `
                     <div class="item-card equipped">
                         <div style="color:${qc?.color || '#0f0'};">⚔️ ${eqWeapon.name}</div>
                         <div>DMG: ${tMin}${tMax > tMin ? `-${tMax}` : ''}${tMag > 0 ? ` | MAG: ${tMag}` : ''}</div>
+                        ${eqModifierHtml}
                         <div style="color:var(--border-color);">EQUIPPED</div>
                         <button onclick="unequipItem('weapon')" style="border-color:#ff4444;color:#ff4444;margin-top:4px;">UNEQUIP</button>
                     </div>
@@ -6397,11 +6418,18 @@ window.addEventListener('beforeunload', () => {
                 if (weapon.modifiers && weapon.modifiers.length > 0) {
                     modifierHtml = '<div style="margin-top:5px;font-size:12px;">';
                     weapon.modifiers.forEach(modKey => {
+                        if (typeof WEAPON_MODIFIERS === 'undefined') {
+                            console.warn('WEAPON_MODIFIERS not loaded');
+                            modifierHtml += `<div style="color:#FF8800;">• ${modKey}</div>`;
+                            return;
+                        }
                         const mod = WEAPON_MODIFIERS[modKey];
                         if (mod) {
                             modifierHtml += `<div style="color:${mod.color};">• ${mod.name}`;
                             if (mod.minDamage) modifierHtml += ` (${mod.minDamage}-${mod.maxDamage})`;
                             modifierHtml += `</div>`;
+                        } else {
+                            console.warn(`Modifier ${modKey} not found in WEAPON_MODIFIERS`);
                         }
                     });
                     modifierHtml += '</div>';
@@ -6859,6 +6887,12 @@ function equipItem(type, key) {
                 if (key === 'town') return;
                 // Only auto-unlock zones that belong to this town
                 if (townZoneKeys && !townZoneKeys.includes(key)) return;
+                
+                // ALWAYS unlock forest (starter zone) regardless of level
+                if (key === 'forest' && !p.unlockedAreas.includes(key)) {
+                    p.unlockedAreas.push(key);
+                }
+                
                 if (!loc.locked && loc.requiredLevel && p.level >= loc.requiredLevel) {
                     if (!p.unlockedAreas.includes(key)) {
                         p.unlockedAreas.push(key);
@@ -10255,7 +10289,10 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                         const maxPower = spell.maxPower || spell.power;
                         const spellRoll = Math.floor(Math.random() * (maxPower - minPower + 1)) + minPower;
                         
-                        let dmg = Math.max(1, (spellRoll + p.magic + (p.wis || 0)) - Math.floor(enemy.defense / 2));
+                        // Add weapon modifier bonus to offensive spells
+                        const modifierBonus = getWeaponModifierSpellBonus();
+                        
+                        let dmg = Math.max(1, (spellRoll + p.magic + (p.wis || 0) + modifierBonus) - Math.floor(enemy.defense / 2));
                         let crit = false;
                         if (Math.random() * 100 < calcCritChance(p.lck || 0, p)) { 
                             dmg = Math.floor(dmg * 1.75); 
@@ -10309,7 +10346,10 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 const maxPower = spell.maxPower || spell.power;
                 const spellRoll = Math.floor(Math.random() * (maxPower - minPower + 1)) + minPower;
                 
-                let dmg = Math.max(1, (spellRoll + p.magic + (p.wis || 0)) - Math.floor(enemy.defense / 2));
+                // Add weapon modifier bonus to offensive spells
+                const modifierBonus = getWeaponModifierSpellBonus();
+                
+                let dmg = Math.max(1, (spellRoll + p.magic + (p.wis || 0) + modifierBonus) - Math.floor(enemy.defense / 2));
                 let crit = false;
                 if (Math.random() * 100 < calcCritChance(p.lck || 0, p)) { dmg = Math.floor(dmg * 1.75); crit = true; }
                 
@@ -10361,7 +10401,10 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 const maxPower = spell.maxPower || spell.power;
                 const spellRoll = Math.floor(Math.random() * (maxPower - minPower + 1)) + minPower;
                 
-                let   dmg   = Math.max(1, (spellRoll + p.magic + (p.wis||0)) - Math.floor(enemy.defense / 2));
+                // Add weapon modifier bonus to offensive spells
+                const modifierBonus = getWeaponModifierSpellBonus();
+                
+                let   dmg   = Math.max(1, (spellRoll + p.magic + (p.wis||0) + modifierBonus) - Math.floor(enemy.defense / 2));
                 let crit = false;
                 if (Math.random()*100 < calcCritChance(p.lck||0, p)) { dmg = Math.floor(dmg*1.75); crit = true; }
                 enemy.hp -= dmg;
@@ -12361,6 +12404,33 @@ function playerIsExhausted() {
             const weapon = WEAPONS[p.weapon] || { baseMagicDamage: 0, quality: 'poor' };
             const qBonus = getQualityBonus(weapon.quality, weapon.baseDamage);
             return (weapon.baseMagicDamage + qBonus) + (p.wis || 0);
+        }
+        
+        /**
+         * Get bonus damage from weapon modifiers for offensive spells
+         * Only applies to damage/lifesteal spells, not healing
+         */
+        function getWeaponModifierSpellBonus() {
+            const p = gameState.player;
+            if (!p || !p.weapon) return 0;
+            
+            const weapon = WEAPONS[p.weapon];
+            if (!weapon || !weapon.modifiers || weapon.modifiers.length === 0) return 0;
+            
+            // Check if WEAPON_MODIFIERS is available
+            if (typeof WEAPON_MODIFIERS === 'undefined') return 0;
+            
+            let totalBonus = 0;
+            weapon.modifiers.forEach(modKey => {
+                const mod = WEAPON_MODIFIERS[modKey];
+                if (mod && mod.minDamage) {
+                    // Roll for bonus damage (min to max)
+                    const bonusDmg = Math.floor(Math.random() * (mod.maxDamage - mod.minDamage + 1)) + mod.minDamage;
+                    totalBonus += bonusDmg;
+                }
+            });
+            
+            return totalBonus;
         }
         
         function calculateTotalDefense() {

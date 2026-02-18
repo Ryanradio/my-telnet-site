@@ -6,7 +6,7 @@
 // If a player has an older version cached, they get a refresh banner.
 // ═══════════════════════════════════════════════════════════════════════
 
-const GAME_VERSION = '2025.02.17-r5';
+const GAME_VERSION = '2025.02.17-r7';
 
 // ── VERSION CHECK ──────────────────────────────────────────────────────
 // Call this on: game init, character select, enter dungeon, enter explore.
@@ -51,6 +51,33 @@ function checkGameVersion() {
 // Most recent first. Keep entries brief — one line per bullet.
 // ═══════════════════════════════════════════════════════════════════════
 const REVISION_HISTORY = [
+
+    {
+        version: '2025.02.17-r7',
+        date: 'Feb 17, 2025',
+        summary: 'Equipped Weapon Modifier Display',
+        changes: [
+            'Fixed: Weapon modifiers now show on EQUIPPED weapons in inventory',
+            'Previously modifiers only showed on unequipped weapons',
+            'Equipped weapon card now displays: name, damage, modifiers, EQUIPPED status, UNEQUIP button',
+            'Modifier display uses same safety checks as unequipped weapons',
+        ]
+    },
+
+    {
+        version: '2025.02.17-r6',
+        date: 'Feb 17, 2025',
+        summary: 'Master Display Fix, Modifier Display, Spell Bonuses',
+        changes: [
+            'Fixed: Forest zone (starter area) now always unlocks when viewing Explore',
+            'Fixed: Class masters now show even if you skip to higher levels via /setlevel',
+            'Fixed: Weapon modifiers now display in inventory (added safety checks for undefined)',
+            'Fixed: Weapon modifier damage bonuses now apply to ALL offensive spells (damage, lifesteal, AOE)',
+            'Weapon modifier bonuses roll independently per spell cast (min-max damage range)',
+            'Healing spells do NOT get modifier bonuses (prevents self-damage)',
+            'Added getWeaponModifierSpellBonus() helper function for consistent spell bonus calculation',
+        ]
+    },
 
     {
         version: '2025.02.17-r5',
