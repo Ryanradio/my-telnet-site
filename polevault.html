@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Vault Analytics | True Physics Engine</title>
+    <title>Pro Vault Analytics | True Physics V5</title>
     <style>
         :root {
             --primary: #0f172a;
@@ -278,7 +278,7 @@
 
 <div class="container">
     <header>
-        <h1>Vault Mechanics V3 <span class="badge-beta">Physics Core</span></h1>
+        <h1>Vault Mechanics <span class="badge-beta">Physics Core V5</span></h1>
         <p>Stiffness ($k \propto 1/flex$) & Kinetic Energy ($E \propto v^2$) Simulator</p>
     </header>
 
@@ -290,13 +290,13 @@
             <div class="input-row">
                 <div class="input-group">
                     <label>Mass (lbs)</label>
-                    <input type="number" id="weight" placeholder="150" value="150">
+                    <input type="number" id="weight" placeholder="150" value="148">
                 </div>
                 <div class="input-group">
                     <label>Height</label>
                     <div style="display:flex; gap:8px;">
                         <input type="number" id="hFt" placeholder="Ft" value="5">
-                        <input type="number" id="hIn" placeholder="In" value="10">
+                        <input type="number" id="hIn" placeholder="In" value="9">
                     </div>
                 </div>
             </div>
@@ -362,7 +362,7 @@
                 </div>
                 <div class="input-group">
                     <label>Flex (cm)</label>
-                    <input type="number" id="flex" step="0.1" placeholder="Critial Input">
+                    <input type="number" id="flex" step="0.1" placeholder="20.0">
                     <small style="display:block; color:#ef4444; font-size:0.7rem; margin-top:2px;">*Primary Stiffness Variable</small>
                 </div>
             </div>
@@ -378,7 +378,7 @@
         <div class="kinetic-panel">
             <div class="k-header">
                 <div>
-                    <div class="k-title">Approach Kinetic Energy</div>
+                    <div class="k-title">Approach Velocity</div>
                     <div id="statusPill" class="status-pill" style="background:#e2e8f0; color:#64748b;">--</div>
                 </div>
                 <div class="speed-display">
@@ -413,14 +413,14 @@
         <!-- METRICS -->
         <div class="physics-grid">
             <div class="p-card">
-                <div class="p-label">Energy Potential</div>
-                <div class="p-value" id="hEnergy">--</div>
-                <div class="p-sub">Based on Speed ($v^2$)</div>
+                <div class="p-label">True Energy Ceiling</div>
+                <div class="p-value" id="hCeiling">--</div>
+                <div class="p-sub">Lift + COM (Theoretical)</div>
             </div>
             <div class="p-card" style="border-color: var(--accent); background: #f5f7ff;">
                 <div class="p-label" style="color:var(--accent);">Projected Height</div>
                 <div class="p-value" id="hProj" style="color:var(--accent);">--</div>
-                <div class="p-sub">Physics + Efficiency</div>
+                <div class="p-sub">Realized Potential</div>
             </div>
             <div class="p-card">
                 <div class="p-label">Stiffness Load</div>
@@ -470,7 +470,7 @@
             let opt = document.createElement('option');
             opt.value = w;
             opt.text = `${w} lbs`;
-            if(w === 160) opt.selected = true;
+            if(w === 165) opt.selected = true;
             rateSel.appendChild(opt);
         }
 
@@ -483,7 +483,7 @@
         for(let i=0; i<=11; i++){
             let opt = document.createElement('option');
             opt.value = i; opt.text = `${i}"`;
-            if(i===6) opt.selected = true; gIn.appendChild(opt);
+            if(i===9) opt.selected = true; gIn.appendChild(opt);
         }
     }
 
@@ -495,7 +495,7 @@
         // Heuristic Flex Estimation (Start point only)
         let base = 19.0;
         base -= (W - 150) * 0.05;
-        base += (L - 14) * 1.3; // Longer poles deflect more
+        base += (L - 14) * 1.3; 
         
         if(brand === 'Essx') base -= 0.5;
         if(brand === 'Pacer') base += 0.4;
@@ -505,41 +505,37 @@
         if(!fInput.value) fInput.value = base.toFixed(1);
     }
 
-    // --- CORE PHYSICS ENGINE V3 ---
+    // --- CORE PHYSICS ENGINE V5 (Restored & Corrected) ---
     function initPhysics() {
-        const weight = parseFloat(document.getElementById('weight').value); // lbs
-        const rating = parseFloat(document.getElementById('rating').value); // lbs
-        const flex = parseFloat(document.getElementById('flex').value); // cm
+        const weight = parseFloat(document.getElementById('weight').value);
+        const rating = parseFloat(document.getElementById('rating').value);
+        const flex = parseFloat(document.getElementById('flex').value);
         
         // 1. TRUE STIFFNESS (k)
         // stiffness is inversely proportional to flex number
-        // We define a "Stiffness Index" relative to a standard 150lb vaulter
-        // k ~ 1/flex. 
         const k_index = (20.0 / flex); 
         
         // 2. ENERGY REQUIREMENT (v_opt)
         // v ~ sqrt(k/m)
-        // We calibrate: A 150lb vaulter on a 150lb pole (flex ~19.0) needs ~7.8 m/s
-        // Base formula: v = C * sqrt(k_index / mass_index)
         const mass_index = weight / 150;
         
-        // The scaling factor 7.8 is our anchor point for "Matched" physics
+        // Calibrated: 150lb/150lb (19.5flex) needs ~7.8 m/s. 
+        // Your son: 148lb/165lb (20.0flex).
+        // Note: 20.0 flex is SOFTER than a standard 165lb pole (usually ~18.0).
+        // This means the pole is easier to bend than the rating implies.
         let v_optimal = 7.8 * Math.sqrt(k_index / mass_index);
         
-        // Adjust for Pole Length leverage (Longer poles act softer dynamically)
         const len = parseFloat(document.getElementById('length').value);
-        v_optimal -= (len - 14) * 0.1; 
+        v_optimal -= (len - 14) * 0.1; // Longer pole leverage bonus
 
-        // Clamp slightly for realism limits
         if(v_optimal < 6.0) v_optimal = 6.0;
         if(v_optimal > 10.8) v_optimal = 10.8;
 
-        // 3. DEFINE ASYMMETRIC ZONES
-        // Stall is a steep cliff. Blow through is a gradual slope.
-        zStall = v_optimal - 1.0; // < 6.8 rejection
-        zWarn = v_optimal - 0.3;  // 6.8 - 7.5 struggle
-        zOpt = v_optimal;         // 7.8 perfect
-        zBlow = v_optimal + 0.8;  // > 8.6 mush
+        // 3. ZONES
+        zStall = v_optimal - 1.0; 
+        zWarn = v_optimal - 0.3;  
+        zOpt = v_optimal;         
+        zBlow = v_optimal + 0.8; 
 
         // 4. RENDER LEGEND
         const toMph = (ms) => (ms * 2.237).toFixed(1);
@@ -548,11 +544,11 @@
         document.getElementById('lOpt').innerText = `${toMph(zWarn)} - ${toMph(zBlow)}`;
         document.getElementById('lBlow').innerText = `> ${toMph(zBlow)}`;
 
-        // Paint Slider
         paintGradient();
 
-        // Initialize Slider at Optimal
-        document.getElementById('kSlider').value = v_optimal;
+        // Init Slider (Default to User Speed 19mph approx 8.5m/s)
+        // Check if 8.5 falls in optimal?
+        document.getElementById('kSlider').value = 8.5; // Force to son's speed context
         
         document.getElementById('results').style.display = 'block';
         document.getElementById('results').scrollIntoView({behavior:'smooth'});
@@ -582,72 +578,68 @@
         const v = parseFloat(document.getElementById('kSlider').value);
         const mph = v * 2.23694;
         
-        // Update Display
         document.getElementById('dispMph').innerText = mph.toFixed(1);
         document.getElementById('dispMs').innerText = v.toFixed(2) + " m/s";
 
-        // --- HEIGHT CALCULATION ---
-        // H = (v^2 / 2g) * Efficiency
+        // --- CORRECTED MATH ---
+        // Efficiency Toggle
         const effTech = document.getElementById('effToggle').checked ? 0.96 : 0.88;
-        const energyHeight = (v * v) / (2 * G);
-        
-        // Grip Data
+
+        // 1. Center of Mass (COM)
+        const hFt = parseFloat(document.getElementById('hFt').value);
+        const hIn = parseFloat(document.getElementById('hIn').value);
+        const bodyH_m = (hFt * 0.3048) + (hIn * 0.0254);
+        const com_m = bodyH_m * 0.57; // Male COM approx 57% height
+
+        // 2. Energy Ceiling (The Fix)
+        // Previous version showed only Lift. We need Total Potential.
+        // Lift = v^2 / 2g
+        const lift_m = (v * v) / (2 * G);
+        const ceiling_m = lift_m + com_m; // This is the 15'6" number
+
+        // 3. Grip Data
         const gFt = parseInt(document.getElementById('gripFt').value);
         const gIn = parseInt(document.getElementById('gripIn').value);
         const gFr = parseFloat(document.getElementById('gripFrac').value);
-        const gripM = (gFt + ((gIn + gFr)/12)) * 0.3048;
-        const com = 1.0; // Approx Center of Mass height at takeoff
+        const grip_m = (gFt + ((gIn + gFr)/12)) * 0.3048;
 
-        // Calculate "Projected Height" based on Zones
+        // 4. Realized Height Logic
         let projM = 0;
         const status = document.getElementById('statusPill');
         
         if (v < zStall) {
-            // STALL: Energy < Potential to Vertical
-            // You land in the box. Height is irrelevant.
-            projM = gripM * 0.7; 
             status.style.background = "var(--stall)";
-            status.style.color = "white";
             status.innerText = "STALL / REJECT";
+            projM = grip_m * 0.8; // Fail
         } else if (v < zWarn) {
-            // UNDER: You penetrate but have no lift
-            // Efficiency tanks
-            projM = gripM + 0.1; // Barely above grip
             status.style.background = "var(--warning)";
-            status.style.color = "white";
             status.innerText = "UNDER POWERED";
+            projM = grip_m; // No push off
         } else if (v > zBlow) {
-            // BLOW THROUGH: Pole is too soft
-            // Energy is high, but converted to horizontal, not vertical
-            // Height is capped by pole geometry (mush)
-            projM = gripM + 0.4; // Capped
             status.style.background = "var(--danger)";
-            status.style.color = "white";
             status.innerText = "BLOW THROUGH";
+            projM = grip_m + 0.2; // Mushing out
         } else {
-            // OPTIMAL
-            // Height = Grip + PushOff (driven by excess energy)
-            // The faster you go in the optimal zone, the higher you push
-            let excessEnergy = energyHeight - (gripM - com);
-            let pushOff = Math.min(excessEnergy * 0.8, 1.1); // Cap push off at 1.1m (WR level)
-            
-            projM = gripM + pushOff;
             status.style.background = "var(--success)";
-            status.style.color = "white";
             status.innerText = "OPTIMAL LOCK";
+            
+            // OPTIMAL ZONE CALCULATION
+            // Height = (Lift * Efficiency) + COM
+            // We apply efficiency ONLY to the kinetic energy conversion part
+            projM = (lift_m * effTech) + com_m;
+            
+            // Mechanical Constraint: 
+            // Even with infinite speed, you can only push roughly 1.2m above grip
+            if (projM > grip_m + 1.25) projM = grip_m + 1.25;
         }
         
-        // Apply Tech Toggle
-        projM = projM * effTech;
-
         // Update Cards
-        document.getElementById('hEnergy').innerText = toFtIn(energyHeight);
+        document.getElementById('hCeiling').innerText = toFtIn(ceiling_m);
         document.getElementById('hProj').innerText = toFtIn(projM);
         
-        // Stiffness Load %
+        // Stiffness Load
         const weight = parseFloat(document.getElementById('weight').value);
         const rating = parseFloat(document.getElementById('rating').value);
-        // Simple load ratio for display
         const ratio = (weight/rating) * 100;
         document.getElementById('loadVal').innerText = ratio.toFixed(0) + "%";
     }
