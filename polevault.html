@@ -3,148 +3,85 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vault Mechanics Engine</title>
+<title>Pole Vault Biomechanics Engine</title>
 
 <style>
-:root {
-    --primary: #0f172a;
-    --accent: #3b82f6;
-    --danger: #ef4444;
-    --warning: #f59e0b;
-    --success: #10b981;
-    --stall: #94a3b8;
-    --bg: #f1f5f9;
-    --card: #ffffff;
+body{
+font-family:Arial, sans-serif;
+background:#eef2f7;
+margin:0;
+padding:20px;
 }
 
-body {
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    background: var(--bg);
-    margin:0;
-    padding:20px;
-    display:flex;
-    justify-content:center;
+.container{
+max-width:1100px;
+margin:auto;
+background:white;
+border-radius:14px;
+padding:20px;
+box-shadow:0 10px 25px rgba(0,0,0,0.1);
 }
 
-.container {
-    width:100%;
-    max-width:900px;
-    background:white;
-    border-radius:20px;
-    box-shadow:0 20px 25px rgba(0,0,0,0.1);
-    overflow:hidden;
+h1{margin-top:0}
+
+.grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:20px;
 }
 
-header {
-    background:var(--primary);
-    color:white;
-    padding:2rem;
-    text-align:center;
+label{font-size:14px;font-weight:bold}
+input,select{
+width:100%;
+padding:6px;
+margin-bottom:10px;
 }
 
-.content-grid {
-    padding:2rem;
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:2rem;
+button{
+padding:10px 16px;
+background:#2563eb;
+color:white;
+border:none;
+border-radius:8px;
+cursor:pointer;
+font-weight:bold;
 }
 
-.section-label {
-    font-size:.7rem;
-    font-weight:800;
-    text-transform:uppercase;
-    color:#94a3b8;
-    margin-bottom:.75rem;
-    border-bottom:1px solid #e2e8f0;
+.card{
+background:#f8fafc;
+padding:15px;
+border-radius:10px;
+margin-top:15px;
 }
 
-.input-row { display:flex; gap:.75rem; margin-bottom:1.25rem; }
-.input-group { flex:1; }
-
-label {
-    display:block;
-    font-weight:600;
-    font-size:.85rem;
-    margin-bottom:.4rem;
+.toggle{
+margin-right:15px;
 }
 
-input, select {
-    width:100%;
-    padding:.7rem;
-    border:1px solid #cbd5e1;
-    border-radius:8px;
+.big{
+font-size:28px;
+font-weight:bold;
 }
 
-.btn-calc {
-    grid-column:span 2;
-    background:var(--accent);
-    color:white;
-    padding:1rem;
-    border:none;
-    border-radius:10px;
-    font-size:1.1rem;
-    font-weight:700;
-    cursor:pointer;
+.table{
+width:100%;
+border-collapse:collapse;
+margin-top:10px;
 }
 
-.results-container {
-    background:#f8fafc;
-    border-top:1px solid #e2e8f0;
-    padding:2rem;
-    display:none;
+.table th,.table td{
+border:1px solid #ddd;
+padding:6px;
+text-align:center;
+font-size:13px;
 }
 
-.slider-box {
-    background:white;
-    padding:1.5rem;
-    border-radius:12px;
-    margin-bottom:2rem;
-}
+.good{color:#10b981;font-weight:bold}
+.warn{color:#f59e0b;font-weight:bold}
+.bad{color:#ef4444;font-weight:bold}
 
-input[type=range] {
-    width:100%;
-    height:12px;
-    border-radius:6px;
-    outline:none;
-}
-
-.zone-legend {
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:10px;
-    margin-bottom:2rem;
-}
-
-.zone-item {
-    background:white;
-    padding:10px;
-    border-radius:8px;
-    text-align:center;
-    border-bottom:4px solid;
-    font-size:.8rem;
-}
-
-.metrics-grid {
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:1.5rem;
-}
-
-.card {
-    background:white;
-    padding:1.5rem;
-    border-radius:12px;
-    text-align:center;
-}
-
-.card-val {
-    font-size:2rem;
-    font-weight:800;
-}
-
-@media(max-width:700px){
-    .content-grid{grid-template-columns:1fr;}
-    .btn-calc{grid-column:span 1;}
+@media(max-width:800px){
+.grid{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -153,330 +90,302 @@ input[type=range] {
 
 <div class="container">
 
-<header>
-<h1>Vault Mechanics Engine</h1>
-<p>Physics-Based Pole Matching</p>
-</header>
-
-<div class="content-grid">
+<h1>Pole Vault Performance Engine</h1>
 
 <div>
-<div class="section-label">Athlete</div>
 
-<div class="input-row">
-<div class="input-group">
+<label class="toggle"><input type="checkbox" id="toggleCoach" checked> Coach View</label>
+<label class="toggle"><input type="checkbox" id="togglePhysics"> Physics View</label>
+<label class="toggle"><input type="checkbox" id="toggleReco"> Recommendations</label>
+
+</div>
+
+<div class="grid">
+
+<div>
+
+<h3>Athlete</h3>
+
 <label>Weight (lbs)</label>
-<input id="weight" type="number" value="150">
-</div>
+<input id="weight" value="150">
 
-<div class="input-group">
 <label>Height</label>
-<div style="display:flex;gap:5px;">
-<input id="hFt" type="number" value="5">
-<input id="hIn" type="number" value="10">
-</div>
-</div>
+<div style="display:flex;gap:5px">
+<input id="hFt" value="5">
+<input id="hIn" value="10">
 </div>
 
-<div class="section-label">Grip</div>
+<label>Speed (mph)</label>
+<input id="speed" value="19">
 
-<div class="input-row">
-<div class="input-group">
-<label>Feet</label>
-<select id="gripFt"></select>
-</div>
-
-<div class="input-group">
-<label>Inches</label>
-<select id="gripIn"></select>
-</div>
-
-<div class="input-group">
-<label>Frac</label>
-<select id="gripFrac">
-<option value="0">0</option>
-<option value="0.125">1/8</option>
-<option value="0.25">1/4</option>
-<option value="0.5">1/2</option>
-<option value="0.75">3/4</option>
+<label>Approach Steps</label>
+<select id="steps">
+<option>10</option>
+<option>12</option>
+<option selected>14</option>
+<option>16</option>
+<option>18</option>
 </select>
-</div>
-</div>
+
+<label>Skill Level</label>
+<select id="skill">
+<option>High School</option>
+<option>College</option>
+<option>Professional</option>
+</select>
+
+<label>Target Height (ft)</label>
+<input id="target" value="15">
+
 </div>
 
 <div>
-<div class="section-label">Pole</div>
 
-<div class="input-row">
-<div class="input-group">
-<label>Length</label>
-<select id="length"></select>
-</div>
+<h3>Pole</h3>
 
-<div class="input-group">
-<label>Rating</label>
-<select id="rating"></select>
-</div>
-</div>
+<label>Pole Length (ft)</label>
+<input id="poleLength" value="15">
 
-<div class="input-row">
-<div class="input-group">
-<label>Flex (cm)</label>
-<input id="flex" type="number" step="0.1" value="17">
-</div>
-</div>
-</div>
+<label>Pole Rating (lbs)</label>
+<input id="rating" value="165">
 
-<button class="btn-calc" onclick="initSimulation()">Initialize</button>
+<label>Flex</label>
+<input id="flex" value="20">
+
+<label>Grip Height</label>
+<div style="display:flex;gap:5px">
+<input id="gFt" value="14">
+<input id="gIn" value="9">
+</div>
 
 </div>
 
-<div id="results" class="results-container">
-
-<div class="slider-box">
-
-<div style="display:flex;justify-content:space-between;">
-<div>Approach Velocity</div>
-<div>
-<div id="speedDisplayMPH">--</div>
-<div id="speedDisplayMS">--</div>
-</div>
 </div>
 
-<input id="speedSlider" type="range" min="5" max="11" step="0.05" oninput="runPhysics()">
+<button onclick="run()">Calculate</button>
 
-</div>
-
-<div class="zone-legend">
-<div class="zone-item" style="border-color:#94a3b8">Stall<br><span id="rngStall"></span></div>
-<div class="zone-item" style="border-color:#f59e0b">Under<br><span id="rngWarn"></span></div>
-<div class="zone-item" style="border-color:#10b981">Optimal<br><span id="rngOpt"></span></div>
-<div class="zone-item" style="border-color:#ef4444">Blow<br><span id="rngBlow"></span></div>
-</div>
-
-<div class="metrics-grid">
-<div class="card">
-<div>Realistic</div>
-<div class="card-val" id="hReal">--</div>
-</div>
-
-<div class="card">
-<div>Theoretical</div>
-<div class="card-val" id="hTheo">--</div>
-</div>
-</div>
-
-</div>
+<div id="coach" class="card"></div>
+<div id="physics" class="card"></div>
+<div id="reco" class="card"></div>
 
 </div>
 
 <script>
 
-/* ================= CONFIG ================= */
+const g = 9.81;
 
-const CONFIG = {
-BASE_SPEED: 7.2,
-PUSH_OPTIMAL: 0.7,
-PUSH_BLOW: 0.45,
-EFFICIENCY_BASE: 0.63,
-GRAVITY: 9.81
+/* ================= SKILL PROFILES ================= */
+
+const SKILL = {
+"High School":{
+eff:0.55,
+push:0.6,
+com:0.25
+},
+"College":{
+eff:0.65,
+push:0.8,
+com:0.35
+},
+"Professional":{
+eff:0.75,
+push:1.05,
+com:0.45
+}
 };
 
-let zones = null;
+/* ================= MAIN ================= */
 
-/* ================= INIT ================= */
+function run(){
 
-document.addEventListener("DOMContentLoaded", populateDropdowns);
+const weight = parseFloat(val("weight"));
+const speedMph = parseFloat(val("speed"));
+const speed = speedMph * 0.44704;
+const steps = parseFloat(val("steps"));
+const skill = SKILL[val("skill")];
 
-function populateDropdowns(){
+const poleLength = parseFloat(val("poleLength"));
+const rating = parseFloat(val("rating"));
+const flex = parseFloat(val("flex"));
 
-const len = document.getElementById("length");
-for(let f=10; f<=18; f++){
-[0,6].forEach(i=>{
-if(f===18 && i===6) return;
-let val = f+(i/12);
-let o=document.createElement("option");
-o.value=val;
-o.text=`${f}' ${i}"`;
-if(val===15) o.selected=true;
-len.appendChild(o);
-});
-}
-
-const rate=document.getElementById("rating");
-for(let w=90; w<=220; w+=5){
-let o=document.createElement("option");
-o.value=w;
-o.text=w;
-if(w===160)o.selected=true;
-rate.appendChild(o);
-}
-
-const gripFt=document.getElementById("gripFt");
-for(let f=10; f<=17; f++){
-let o=document.createElement("option");
-o.value=f;
-o.text=f;
-if(f===14)o.selected=true;
-gripFt.appendChild(o);
-}
-
-const gripIn=document.getElementById("gripIn");
-for(let i=0;i<=11;i++){
-let o=document.createElement("option");
-o.value=i;
-o.text=i;
-if(i===9)o.selected=true;
-gripIn.appendChild(o);
-}
-
-}
-
-/* ================= SIM ================= */
-
-function initSimulation(){
-
-const weight = parseFloat(weightEl().value);
-const flex = parseFloat(flexEl().value);
-
-const stiffnessIndex = 20 / flex;
-
-let optimalSpeed =
-CONFIG.BASE_SPEED *
-Math.sqrt(stiffnessIndex * (weight/75));
-
-optimalSpeed = clamp(optimalSpeed,5.5,10);
-
-zones = {
-stall: optimalSpeed - 1.1,
-warn: optimalSpeed - 0.3,
-opt: optimalSpeed,
-blow: optimalSpeed + 1.2
-};
-
-updateZoneDisplays();
-
-const slider = speedEl();
-slider.value = optimalSpeed;
-
-document.getElementById("results").style.display="block";
-
-runPhysics();
-}
-
-/* ================= PHYSICS ================= */
-
-function runPhysics(){
-
-const speed = parseFloat(speedEl().value);
-const weight = parseFloat(weightEl().value);
-
-displaySpeed(speed);
+const grip =
+(parseFloat(val("gFt")) +
+parseFloat(val("gIn"))/12) * 0.3048;
 
 const mass = weight * 0.453592;
 
+/* ===== Approach efficiency from steps ===== */
+
+let stepFactor = 1;
+if(steps<=10) stepFactor=0.85;
+else if(steps==12) stepFactor=0.92;
+else if(steps==14) stepFactor=1.0;
+else if(steps==16) stepFactor=1.05;
+else if(steps>=18) stepFactor=1.08;
+
+/* ===== Kinetic Energy ===== */
+
 const kinetic = 0.5 * mass * speed * speed;
 
-const gripM = getGripMeters();
+/* ===== Pole Match ===== */
 
-let efficiency = CONFIG.EFFICIENCY_BASE;
+const stiffnessIndex = rating / flex;
+const demand = mass * speed * speed;
 
-let push = CONFIG.PUSH_OPTIMAL;
+let match = clamp((stiffnessIndex*100)/demand,0.5,1.5);
 
-if(speed < zones.stall){
-efficiency *= 0.4;
-push = 0;
-}
-else if(speed < zones.warn){
-efficiency *= 0.7;
-push = 0.15;
-}
-else if(speed > zones.blow){
-efficiency *= 0.85;
-push = CONFIG.PUSH_BLOW;
-}
+/* ===== Swing Height ===== */
 
-const potentialHeight =
-(kinetic * efficiency) /
-(mass * CONFIG.GRAVITY);
+const swing =
+(speed*speed/(2*g)) *
+skill.eff *
+stepFactor *
+match *
+0.65;
+
+/* ===== Heights ===== */
 
 const realistic =
-Math.min(gripM + push, potentialHeight);
+grip +
+swing +
+skill.push +
+skill.com;
 
 const theoretical =
-(kinetic * 0.75) /
-(mass * CONFIG.GRAVITY);
+grip +
+(speed*speed/(2*g))*0.9 +
+skill.push +
+skill.com;
 
-document.getElementById("hReal").innerText = toFtIn(realistic);
-document.getElementById("hTheo").innerText = toFtIn(theoretical);
+/* ===== Safety ===== */
+
+let safety="Good";
+let safetyClass="good";
+
+if(rating < weight){
+safety="Under-rated pole";
+safetyClass="bad";
+}
+
+if(grip > (poleLength*0.3048 - 0.2)){
+safety="Grip too high";
+safetyClass="warn";
+}
+
+/* ===== Coach Output ===== */
+
+if(el("toggleCoach").checked){
+
+el("coach").innerHTML = `
+<h3>Coach View</h3>
+
+<div class="big">${toFt(realistic)}</div>
+Realistic Projection
+
+<br><br>
+
+Theoretical Ceiling: <b>${toFt(theoretical)}</b>
+
+<br><br>
+
+Safety: <span class="${safetyClass}">${safety}</span>
+
+<br><br>
+
+Grip: ${toFt(grip)}
+
+`;
+}else el("coach").innerHTML="";
+
+/* ===== Physics Output ===== */
+
+if(el("togglePhysics").checked){
+
+el("physics").innerHTML = `
+<h3>Physics</h3>
+
+Mass: ${mass.toFixed(1)} kg<br>
+Speed: ${speed.toFixed(2)} m/s<br>
+Kinetic Energy: ${kinetic.toFixed(0)} J<br>
+Efficiency: ${(skill.eff*100).toFixed(0)}%<br>
+Step Factor: ${stepFactor.toFixed(2)}<br>
+Pole Match: ${match.toFixed(2)}<br>
+Swing Height: ${swing.toFixed(2)} m<br>
+Push: ${skill.push.toFixed(2)} m<br>
+COM Bonus: ${skill.com.toFixed(2)} m<br>
+
+`;
+}else el("physics").innerHTML="";
+
+/* ===== Recommendations ===== */
+
+if(el("toggleReco").checked){
+
+let table=`<h3>Recommended Poles</h3>
+<table class="table">
+<tr>
+<th>Pole</th>
+<th>Grip</th>
+<th>Speed Needed</th>
+<th>Safe</th>
+</tr>`;
+
+const target = parseFloat(val("target")) * 0.3048;
+
+for(let r=weight; r<=weight+40; r+=5){
+
+let flexGuess = flex - (r-rating)*0.12;
+
+let neededSpeed =
+Math.sqrt(
+2*g*(target - grip - skill.push - skill.com) /
+(skill.eff*0.65)
+);
+
+let safe="Yes";
+let cls="good";
+
+if(r < weight){
+safe="No";
+cls="bad";
+}
+
+table += `
+<tr>
+<td>${poleLength}' ${r}</td>
+<td>${toFt(grip)}</td>
+<td>${(neededSpeed/0.44704).toFixed(1)} mph</td>
+<td class="${cls}">${safe}</td>
+</tr>
+`;
+}
+
+table+="</table>";
+
+el("reco").innerHTML = table;
+
+}else el("reco").innerHTML="";
 
 }
 
 /* ================= HELPERS ================= */
 
-function updateZoneDisplays(){
+function val(id){return document.getElementById(id).value;}
+function el(id){return document.getElementById(id);}
 
-const toMph = m=> (m*2.237).toFixed(1);
-
-document.getElementById("rngStall").innerText =
-`< ${toMph(zones.stall)} mph`;
-
-document.getElementById("rngWarn").innerText =
-`${toMph(zones.stall)} - ${toMph(zones.warn)}`;
-
-document.getElementById("rngOpt").innerText =
-`${toMph(zones.warn)} - ${toMph(zones.blow)}`;
-
-document.getElementById("rngBlow").innerText =
-`> ${toMph(zones.blow)} mph`;
-
+function clamp(v,min,max){
+return Math.max(min,Math.min(max,v));
 }
 
-function getGripMeters(){
+function toFt(m){
 
-const gFt = parseInt(gripFtEl().value);
-const gIn = parseInt(gripInEl().value);
-const gFr = parseFloat(gripFracEl().value);
-
-return (gFt + ((gIn+gFr)/12)) * 0.3048;
-
-}
-
-function displaySpeed(speed){
-
-const mph = speed * 2.23694;
-
-document.getElementById("speedDisplayMPH").innerText =
-mph.toFixed(1) + " mph";
-
-document.getElementById("speedDisplayMS").innerText =
-speed.toFixed(2) + " m/s";
-
-}
-
-function toFtIn(m){
-
-const inches = m * 39.37;
-
+const inches = m*39.37;
 const f = Math.floor(inches/12);
 const i = Math.round(inches%12);
 
 return `${f}' ${i}"`;
 
 }
-
-function clamp(v,min,max){
-return Math.max(min,Math.min(max,v));
-}
-
-/* ================= ELEMENTS ================= */
-
-const weightEl = ()=>document.getElementById("weight");
-const flexEl = ()=>document.getElementById("flex");
-const speedEl = ()=>document.getElementById("speedSlider");
-const gripFtEl = ()=>document.getElementById("gripFt");
-const gripInEl = ()=>document.getElementById("gripIn");
-const gripFracEl = ()=>document.getElementById("gripFrac");
 
 </script>
 
