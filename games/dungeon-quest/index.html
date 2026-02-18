@@ -1919,7 +1919,18 @@ function loadAllClassSpells() {
         hasShop: true
     },
     
-    riverside: {
+  
+
+    forest: {
+        name: 'Whispering Forest',
+        description: 'A dark forest filled with minor creatures.',
+        enemyLevelRange: [1, 5],
+        encounters: ['goblin', 'wolf', 'giant_spider'],
+        requiredLevel: 1,
+        locked: false
+    },
+
+  riverside: {
         name: 'Misty Riverside',
         description: 'A foggy riverbank where strange creatures lurk in the shallows.',
         enemyLevelRange: [4, 6],
@@ -1931,15 +1942,6 @@ function loadAllClassSpells() {
         town: 'town1',
         unlockMessage: 'Defeat your class master in the forest to unlock this area!',
         
-    },
-
-    forest: {
-        name: 'Whispering Forest',
-        description: 'A dark forest filled with minor creatures.',
-        enemyLevelRange: [1, 5],
-        encounters: ['goblin', 'wolf', 'giant_spider'],
-        requiredLevel: 1,
-        locked: false
     },
 
     plains: {
