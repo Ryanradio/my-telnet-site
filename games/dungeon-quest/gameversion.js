@@ -6,7 +6,7 @@
 // If a player has an older version cached, they get a refresh banner.
 // ═══════════════════════════════════════════════════════════════════════
 
-const GAME_VERSION = '2025.02.17-r8';
+const GAME_VERSION = '2025.02.17-r9';
 
 // ── VERSION CHECK ──────────────────────────────────────────────────────
 // Call this on: game init, character select, enter dungeon, enter explore.
@@ -51,6 +51,24 @@ function checkGameVersion() {
 // Most recent first. Keep entries brief — one line per bullet.
 // ═══════════════════════════════════════════════════════════════════════
 const REVISION_HISTORY = [
+
+    {
+        version: '2025.02.17-r9',
+        date: 'Feb 17, 2025',
+        summary: 'Dungeon Enemy Respawn System',
+        changes: [
+            'Dungeon enemies now respawn after 30 minutes (1800 seconds)',
+            'Defeated enemies moved to defeatedEnemies array with death timestamp',
+            'Respawn timer starts immediately when enemy dies',
+            'Enemies respawn in their original room with full HP',
+            'Chase state resets on respawn (not automatically chasing player)',
+            'Respawn check runs every time player enters a room',
+            'If player is in same room as respawned enemy, shows "♻️ [Enemy] has respawned in this room!"',
+            'defeatedEnemies array saved/loaded with game state',
+            'Console logs respawn events for debugging',
+            'Dungeons are now infinitely replayable - farm enemies every 30 minutes',
+        ]
+    },
 
     {
         version: '2025.02.17-r8',

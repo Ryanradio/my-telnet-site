@@ -2861,6 +2861,16 @@ function buildSaveSnapshot() {
                 currentRoom: e.currentRoom,
                 leash: e.leash,
                 drop: e.drop || null
+            })),
+            defeatedEnemies: (gameState.dungeon.defeatedEnemies || []).map(e => ({
+                id: e.id,
+                monsterId: e.monsterId,
+                name: e.name,
+                currentRoom: e.currentRoom,
+                leash: e.leash,
+                drop: e.drop || null,
+                deathTime: e.deathTime,
+                respawnTime: e.respawnTime
             }))
         } : null,
 
@@ -4939,6 +4949,9 @@ window.addEventListener('beforeunload', () => {
                             ...e,
                             isChasing: false,
                             roomsFollowed: 0
+                        })),
+                        defeatedEnemies: (data.dungeon.defeatedEnemies || []).map(e => ({
+                            ...e
                         }))
                     };
                     
@@ -9107,6 +9120,55 @@ function checkRoomEncounter(room) {
 }
 
 
+function checkDungeonRespawns() {
+    const ds = gameState.dungeon;
+    if (!ds || !ds.defeatedEnemies || ds.defeatedEnemies.length === 0) return;
+    
+    const now = Date.now();
+    const respawned = [];
+    
+    // Check each defeated enemy for respawn time
+    ds.defeatedEnemies = ds.defeatedEnemies.filter(deadEnemy => {
+        if (now >= deadEnemy.respawnTime) {
+            // Respawn this enemy - restore to original room with full HP
+            const respawnedEnemy = {
+                id: deadEnemy.id,
+                monsterId: deadEnemy.monsterId,
+                name: deadEnemy.name,
+                currentRoom: deadEnemy.currentRoom, // Original spawn room
+                leash: deadEnemy.leash,
+                roomsFollowed: 0,
+                drop: deadEnemy.drop,
+                isChasing: false, // Reset chase state
+                // Reset HP if it was stored (for wounded enemies)
+                hp: undefined,
+                maxHp: undefined
+            };
+            
+            ds.activeEnemies.push(respawnedEnemy);
+            respawned.push(respawnedEnemy);
+            
+            // Remove from defeated list (filter returns false)
+            return false;
+        }
+        // Keep in defeated list (filter returns true)
+        return true;
+    });
+    
+    // Log respawns
+    if (respawned.length > 0) {
+        console.log(`♻️ ${respawned.length} dungeon enemy(s) respawned after 30 minutes`);
+        
+        // Only show message if player is in same room as a respawned enemy
+        respawned.forEach(enemy => {
+            if (enemy.currentRoom === ds.currentRoom) {
+                termAppend(`♻️ <strong>${enemy.name}</strong> has respawned in this room!`, 'term-warning');
+            }
+        });
+    }
+}
+
+
 function updateDungeonEnemies() {
     const ds = gameState.dungeon;
     if (!ds || !ds.activeEnemies) return [];
@@ -9234,6 +9296,9 @@ function moveInDungeon(direction) {
         const exitList = buildExitList(destRoom);
         termAppend(`You see exits: ${exitList}.`, 'term-dim');
 
+        // ♻️ Check for enemy respawns (30min timer)
+        checkDungeonRespawns();
+
         checkTownExit(destRoom);
         triggerRoomTrap(destRoom);
         checkRunestone(destRoom);
@@ -9305,6 +9370,9 @@ function moveInDungeon(direction) {
     termAppend('', 'term-separator');
     termAppend(`<strong>${nextRoom.name || nextRoomId}</strong>`);
     termAppend(nextRoom.description || '', 'term-dim');
+
+    // ♻️ Check for enemy respawns (30min timer)
+    checkDungeonRespawns();
 
     // 🔥 Spawn encounter (once)
     checkRoomEncounter(nextRoom);
@@ -11575,12 +11643,27 @@ function endCombat(victory) {
             }
         });
 
-        // Remove all defeated enemies from the dungeon
+        // Move defeated enemies to defeatedEnemies with death timestamp for 30min respawn
         if (linkedIds.length > 0) {
+            if (!gameState.dungeon.defeatedEnemies) gameState.dungeon.defeatedEnemies = [];
+            
+            linkedIds.forEach(dungeonEnemyId => {
+                const defeatedEnemy = gameState.dungeon.activeEnemies.find(e => e.id === dungeonEnemyId);
+                if (defeatedEnemy) {
+                    // Store with death timestamp for respawn system
+                    gameState.dungeon.defeatedEnemies.push({
+                        ...defeatedEnemy,
+                        deathTime: Date.now(),
+                        respawnTime: Date.now() + (30 * 60 * 1000) // 30 minutes from now
+                    });
+                }
+            });
+            
+            // Remove from active enemies
             gameState.dungeon.activeEnemies = gameState.dungeon.activeEnemies.filter(
                 e => !linkedIds.includes(e.id)
             );
-            console.log(`🗑️ Removed ${linkedIds.length} dungeon enemy(s): ${linkedIds.join(', ')}`);
+            console.log(`🗑️ Removed ${linkedIds.length} dungeon enemy(s) - will respawn in 30min`);
         }
     }
 
