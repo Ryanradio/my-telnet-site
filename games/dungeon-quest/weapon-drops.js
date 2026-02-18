@@ -7,7 +7,7 @@
 // DROP CHANCE CONFIGURATION
 // ═══════════════════════════════════════════════════════════════
 const WEAPON_DROP_CONFIG = {
-    baseDropChance: 0.025, // 2.5% base chance for weapon drop (halved from 5%)
+    baseDropChance: 0.04, // 4% base chance for weapon drop
     
     // Chance increases with monster rarity
     rarityMultipliers: {
@@ -254,7 +254,7 @@ function calculateWeaponValue(level, quality, modifiers) {
 // ═══════════════════════════════════════════════════════════════
 
 const ARMOR_DROP_CONFIG = {
-    baseDropChance: 0.025, // same as weapons (2.5% base)
+    baseDropChance: 0.04, // 4% base chance (same as weapons)
     rarityMultipliers: {
         common:   1.0,
         uncommon: 1.5,

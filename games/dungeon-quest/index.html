@@ -608,8 +608,8 @@ body.terminal-mode .hud-stats span {
             inset: 0;
             border-radius: inherit;
             background: conic-gradient(
-                rgba(0,0,0,0.70) var(--pip-pct, 100%),
-                transparent      var(--pip-pct, 100%)
+                rgba(0,255,136,0.25) var(--pip-pct, 0%),
+                transparent           var(--pip-pct, 0%)
             );
             pointer-events: none;
             z-index: 1;
@@ -8044,11 +8044,6 @@ if (cs) {
             <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;">
                 <button onclick="showAttackMenu()" ${!canAct ? 'disabled' : ''} class="pip-btn" id="pipBtn-attack" title="Attack">⚔️</button>
                 <button onclick="showSpellMenu()"  ${!canAct ? 'disabled' : ''} class="pip-btn" id="pipBtn-spell" title="Spell">✨</button>
-                <button title="Potions (hold 3s = SYSOP)" style="border-color:#00FF00;"
-                    onpointerdown="potBtnDown(event,'showPotionMenu')"
-                    onpointerup="potBtnUp(event,'showPotionMenu')"
-                    onpointerleave="potBtnCancel()"
-                    oncontextmenu="return false;">🧪</button>
                 <button onclick="playerDefend()"   ${!canAct ? 'disabled' : ''} title="Defend">🛡️</button>
                 <button onclick="attemptFlee()"    ${!canAct ? 'disabled' : ''} title="Flee">🏃</button>
                 <button onclick="printStatsToTerminal()" title="Show Stats" style="border-color:#4488ff;">📊</button>
@@ -8527,11 +8522,7 @@ function dungeonNav(input) {
                         <div style="display:flex;gap:3px;width:100%;">
                             <button onclick="showAttackMenu()" ${!canAct?'disabled':''} class="action-icon-btn pip-btn" title="Attack [1]" id="pipBtn-attack">⚔️<span class="kb-hint">1</span></button>
                             <button onclick="showSpellMenu()"  ${!canAct?'disabled':''} class="action-icon-btn pip-btn" title="Cast Spell [2]" id="pipBtn-spell">✨<span class="kb-hint">2</span></button>
-                            <button class="action-icon-btn" title="Use Potion [3]" style="border-color:#00FF00;"
-                                onpointerdown="potBtnDown(event,'showPotionMenu')"
-                                onpointerup="potBtnUp(event,'showPotionMenu')"
-                                onpointerleave="potBtnCancel()"
-                                oncontextmenu="return false;">🧪<span class="kb-hint">3</span></button>
+                            <button onclick="showCombatInventory()" class="action-icon-btn" title="Inventory [3]" style="border-color:#00FF88;">🎒<span class="kb-hint">3</span></button>
                             <button onclick="playerDefend()"   ${!canAct?'disabled':''} class="action-icon-btn" title="Defend [4]">🛡️<span class="kb-hint">4</span></button>
                             <button onclick="attemptFlee()"    ${!canAct?'disabled':''} class="action-icon-btn" title="Flee [5]">🏃<span class="kb-hint">5</span></button>
                             <button onclick="printStatsToTerminal()" class="action-icon-btn" title="Show Stats [6]" style="border-color:#4488ff;">📊<span class="kb-hint">6</span></button>
@@ -8605,11 +8596,7 @@ function dungeonNav(input) {
                     ${pipWarning}
                     <div style="display:flex;gap:3px;width:100%;">
                         <button onclick="exploreLocation('${gameState.currentLocation}')" style="flex:2;" title="Explore [1]">🔍 Explore<span class="kb-hint">1</span></button>
-                        <button class="action-icon-btn" title="Potions [3]" style="border-color:#00FF00;"
-                            onpointerdown="potBtnDown(event,'showPotionMenuExplore')"
-                            onpointerup="potBtnUp(event,'showPotionMenuExplore')"
-                            onpointerleave="potBtnCancel()"
-                            oncontextmenu="return false;">🧪<span class="kb-hint">3</span></button>
+                        <button onclick="showCombatInventory()" class="action-icon-btn" title="Inventory [3]" style="border-color:#00FF88;">🎒<span class="kb-hint">3</span></button>
                         <button onclick="printStatsToTerminal()" class="action-icon-btn" title="Show Stats [4]" style="border-color:#4488ff;">📊<span class="kb-hint">4</span></button>
                         <button onclick="leaveExploreToTown()" ${canLeave ? '' : 'disabled'}
                             style="flex:1;${canLeave ? '' : 'opacity:0.4;'}border-color:${canLeave ? 'var(--text-color)' : '#888'};" title="Return to Town [5]">
@@ -10589,6 +10576,102 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
         // ═══════════════════════════════════════════════════════════════
         // POTION MENU (in action bar)
         // ═══════════════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════════════════════
+        // UNIFIED COMBAT INVENTORY (replaces old potion menu in exploration)
+        // ═══════════════════════════════════════════════════════════════
+        function showCombatInventory() {
+            const isDungeon = !!gameState.dungeon;
+            if (isDungeon) {
+                // In dungeon, use the full-screen overlay
+                showDungeonInventory();
+            } else {
+                // In exploration, show inline inventory in action bar
+                const ab = document.getElementById('actionBar');
+                const p  = gameState.player;
+                const cs = gameState.combatState;
+                const inCombat = cs && !cs.combatOver;
+
+                // Count potions
+                const potions = {};
+                p.inventory.forEach(ik => {
+                    const item = ITEMS[ik];
+                    if (!item) return;
+                    if (item.subtype === 'recall' && inCombat) return; // no recall during combat
+                    if (['heal_hp','heal_mp','full_restore','recall'].includes(item.subtype) || item.subtype?.startsWith('buff_')) {
+                        if (!potions[ik]) potions[ik] = { item, count: 0 };
+                        potions[ik].count++;
+                    }
+                });
+
+                const playerClass = p.baseClass || p.class;
+
+                // Get equippable weapons and armor
+                const weapons = p.inventory.filter(ik => {
+                    const w = WEAPONS[ik];
+                    return w && !w.unarmed;
+                });
+
+                const armors = p.inventory.filter(ik => {
+                    const a = ARMOR[ik];
+                    return a && !a.unarmored;
+                });
+
+                let html = `<div style="color:var(--highlight-color);font-size:12px;margin-bottom:4px;">
+                    🎒 INVENTORY — HP: ${p.hp}/${p.maxHp} | MP: ${p.mp}/${p.maxMp}
+                </div>`;
+
+                // Potions
+                const potKeys = Object.keys(potions);
+                if (potKeys.length > 0) {
+                    html += `<div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:6px;">`;
+                    potKeys.forEach(pk => {
+                        const pd = potions[pk];
+                        const col = pd.item.subtype === 'heal_hp' ? '#ff4444' : pd.item.subtype === 'heal_mp' ? '#4488ff' : pd.item.subtype === 'full_restore' ? '#FFD700' : '#00FF88';
+                        const atFull = (pd.item.subtype==='heal_hp' && p.hp>=p.maxHp) || (pd.item.subtype==='heal_mp' && p.mp>=p.maxMp) || (pd.item.subtype==='full_restore' && p.hp>=p.maxHp && p.mp>=p.maxMp);
+                        const useFn = inCombat ? `usePotion('${pk}')` : `usePotionExplore('${pk}')`;
+                        html += `<button onclick="${useFn};renderActionBar();" ${atFull?'disabled':''} style="min-width:60px;padding:3px 5px;font-size:11px;color:${col};border-color:${col};opacity:${atFull?0.4:1};">
+                            ${pd.item.name.substring(0,10)} x${pd.count}</button>`;
+                    });
+                    html += `</div>`;
+                }
+
+                // Weapons (show first 3)
+                if (weapons.length > 0) {
+                    html += `<div style="font-size:11px;color:#8aaa8a;margin-bottom:2px;">Weapons:</div>`;
+                    html += `<div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:6px;">`;
+                    weapons.slice(0, 3).forEach(ik => {
+                        if (ik === p.weapon) return;
+                        const w = WEAPONS[ik];
+                        const canEquip = canUseWeapon(playerClass, w);
+                        const qc = QUALITY_CONFIG[w.quality];
+                        html += `<button onclick="equipItem('weapon','${ik}');renderActionBar();" ${canEquip?'':'disabled'} style="padding:3px 5px;font-size:10px;color:${qc?.color||'#0f0'};opacity:${canEquip?1:0.4};">
+                            ${w.name.substring(0,12)}</button>`;
+                    });
+                    if (weapons.length > 3) html += `<span style="font-size:10px;color:#666;">+${weapons.length-3} more</span>`;
+                    html += `</div>`;
+                }
+
+                // Armor (show first 3)
+                if (armors.length > 0) {
+                    html += `<div style="font-size:11px;color:#8aaa8a;margin-bottom:2px;">Armor:</div>`;
+                    html += `<div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:6px;">`;
+                    armors.slice(0, 3).forEach(ik => {
+                        if (ik === p.armor) return;
+                        const a = ARMOR[ik];
+                        const canEquip = canUseArmor(playerClass, a);
+                        const qc = QUALITY_CONFIG[a.quality];
+                        html += `<button onclick="equipItem('armor','${ik}');renderActionBar();" ${canEquip?'':'disabled'} style="padding:3px 5px;font-size:10px;color:${qc?.color||'#0f0'};opacity:${canEquip?1:0.4};">
+                            ${a.name.substring(0,12)}</button>`;
+                    });
+                    if (armors.length > 3) html += `<span style="font-size:10px;color:#666;">+${armors.length-3} more</span>`;
+                    html += `</div>`;
+                }
+
+                html += `<button onclick="renderActionBar()" style="width:100%;padding:4px;">← BACK</button>`;
+                ab.innerHTML = html;
+            }
+        }
+
         function showPotionMenu() {
             const cs = gameState.combatState;
             if (!cs) return;

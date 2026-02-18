@@ -6,7 +6,7 @@
 // If a player has an older version cached, they get a refresh banner.
 // ═══════════════════════════════════════════════════════════════════════
 
-const GAME_VERSION = '2025.02.17-r4';
+const GAME_VERSION = '2025.02.17-r5';
 
 // ── VERSION CHECK ──────────────────────────────────────────────────────
 // Call this on: game init, character select, enter dungeon, enter explore.
@@ -51,6 +51,22 @@ function checkGameVersion() {
 // Most recent first. Keep entries brief — one line per bullet.
 // ═══════════════════════════════════════════════════════════════════════
 const REVISION_HISTORY = [
+
+    {
+        version: '2025.02.17-r5',
+        date: 'Feb 17, 2025',
+        summary: 'Class Masters, Drop Rates, Combat UI Polish',
+        changes: [
+            'Class masters now fully functional (file was incorrectly reported as empty)',
+            'Weapon and armor drop rates increased from 2.5% to 4%',
+            'Pip cooldown timer now shows bright green sweep instead of dark overlay (easier to see progress)',
+            'Removed potion button from dungeon combat panel (inventory button exists in nav)',
+            'Replaced potion button with inventory button in exploration (both combat and non-combat)',
+            'Combat inventory button (🎒) shows unified panel with potions, weapons, and armor',
+            'Back button in combat inventory now works correctly during both combat and exploration',
+            'NOTE: Weapon modifiers for spell damage and modifier display in inventory are in progress',
+        ]
+    },
 
     {
         version: '2025.02.17-r4',
