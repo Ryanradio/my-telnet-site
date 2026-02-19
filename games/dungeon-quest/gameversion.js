@@ -6,7 +6,7 @@
 // If a player has an older version cached, they get a refresh banner.
 // ═══════════════════════════════════════════════════════════════════════
 
-const GAME_VERSION = '2025.02.18-r14';
+const GAME_VERSION = '2025.02.18-r16';
 
 // ── VERSION CHECK ──────────────────────────────────────────────────────
 // Call this on: game init, character select, enter dungeon, enter explore.
@@ -51,6 +51,45 @@ function checkGameVersion() {
 // Most recent first. Keep entries brief — one line per bullet.
 // ═══════════════════════════════════════════════════════════════════════
 const REVISION_HISTORY = [
+
+
+    {
+        version: '2025.02.18-r16',
+        date: 'Feb 19, 2025',
+        summary: 'Hunter replaces Ranger',
+        changes: [
+            'In the code, the Ranger/Hunter class was being called',
+            'incorrectly.  Ranger class has been removed.'
+            
+        ]
+    },
+    {
+        version: '2025.02.18-r15',
+        date: 'Feb 18, 2025',
+        summary: 'Hunter Trap Ability - Enemy Slow',
+        changes: [
+            'HUNTER TRAP SYSTEM:',
+            '- New trap button (🪤) in combat for hunters only',
+            '- Costs 10 MP, does not consume a pip',
+            '- Slows enemy attack speed by 50% for entire combat',
+            '- Example: 15s enemy timer becomes 22.5s (adds 7.5s)',
+            '- 15% chance to fail when setting the trap',
+            '- Can only set one trap per combat',
+            '',
+            'TRAP MECHANICS:',
+            '- Dramatic 2-second pause while setting trap',
+            '- Success: "⚙️ SNAP! The enemies are caught in the trap!"',
+            '- Failure: "💨 The trap mechanism fails! The enemies avoid it!"',
+            '- Slow applies to all enemy attacks for rest of combat',
+            '- Enemy timer automatically gets slow bonus after each attack',
+            '- Keyboard shortcut: Press [T] to set trap',
+            '',
+            'COMBAT MESSAGES:',
+            '- "🪤 You carefully set a concealed trap..."',
+            '- "🐌 Enemy attack speed slowed by 50%! (+7s to attack timer)"',
+            '- Works on single enemies and multiple enemies',
+        ]
+    },
 
     {
         version: '2025.02.18-r14',

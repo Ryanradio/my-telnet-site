@@ -1485,8 +1485,21 @@ const OPPOSITE_DIR = {
                 startWeapon: 'mace',
                 startArmor: 'leather_armor'
             },
-            ranger: {
-                name: 'Ranger',
+            //ranger: {
+            //    name: 'Ranger',
+            //    hp: 85,
+            //    mp: 40,
+            //   strength: 11,
+            //    defense: 7,
+            //    magic: 6,
+            //    speed: 13,
+            //    description: 'Skilled archer with nature magic and tracking',
+            //    startWeapon: 'bow',
+            //    startArmor: 'leather_armor'
+            // },
+
+            hunter: {
+                name: 'Hunter',
                 hp: 85,
                 mp: 40,
                 strength: 11,
@@ -1497,6 +1510,8 @@ const OPPOSITE_DIR = {
                 startWeapon: 'bow',
                 startArmor: 'leather_armor'
             },
+
+            
             warlock: {
                 name: 'Warlock',
                 hp: 70,
@@ -1538,6 +1553,7 @@ const OPPOSITE_DIR = {
             mage    : { str:0, dex:1, wis:4, cha:1, con:1, lck:3 },
             cleric  : { str:1, dex:0, wis:4, cha:2, con:2, lck:1 },
             ranger  : { str:1, dex:3, wis:1, cha:1, con:2, lck:2 },
+            hunter  : { str:1, dex:3, wis:1, cha:1, con:2, lck:2 },
             warlock : { str:0, dex:1, wis:4, cha:2, con:1, lck:2 }
         };
         const CLASS_AFFINITIES = {
@@ -1546,6 +1562,7 @@ const OPPOSITE_DIR = {
             paladin :['str','wis','cha'],
             mage    :['wis','lck'],
             cleric  :['wis','cha'],
+            hunter  :['dex','lck'],
             ranger  :['dex','lck'],
             warlock :['wis','cha']
         };
@@ -2660,6 +2677,13 @@ gameState.hasRestoredGame = false;
                 switch (e.key) {
                     case 'Escape':
                         if (cs && mode !== 'main')          { e.preventDefault(); cancelAction(); }
+                        break;
+                    // Trap shortcut for hunters
+                    case 't': case 'T':
+                        if (cs && mode === 'main' && (gameState.player.baseClass || gameState.player.class) === 'hunter') {
+                            e.preventDefault();
+                            castTrap();
+                        }
                         break;
                     // Attack sub-menu letter shortcuts (legacy, still work)
                     case 'n': case 'N':
@@ -4497,6 +4521,7 @@ window.addEventListener('beforeunload', () => {
             paladin:  1.00,
             archer:   1.00,
             hunter:   1.00,
+            ranger:   1.00,
             rogue:    0.93,   // rogues level slightly faster
             acolyte:  1.08,   // casters slightly slower (AOE advantage)
             necrolyte:1.08,
@@ -4520,6 +4545,7 @@ window.addEventListener('beforeunload', () => {
             paladin:   _buildXpTable('paladin'),
             archer:    _buildXpTable('archer'),
             hunter:    _buildXpTable('hunter'),
+            ranger:    _buildXpTable('ranger'),
             rogue:     _buildXpTable('rogue'),
             acolyte:   _buildXpTable('acolyte'),
             necrolyte: _buildXpTable('necrolyte'),
@@ -5360,6 +5386,7 @@ window.addEventListener('beforeunload', () => {
                 baseClass: classKey,
                 // ── hunter pet system ──
                 activePet: classKey === 'hunter' ? null : undefined  // hunters start with no pet, others don't use this
+                
             };
             gameState.currentLocation = 'town';
             
@@ -8611,12 +8638,16 @@ function dungeonNav(input) {
 
                 if (mode === 'main') {
                     // Main combat menu — icons only, pip dots only
+                    const isHunter = (p.baseClass || p.class) === 'hunter';
+                    const trapBtn = isHunter ? `<button onclick="castTrap()" ${p.mp < 10 ? 'disabled' : ''} class="action-icon-btn" title="Set Trap [T] - 10 MP" style="border-color:#8B4513;">🪤<span class="kb-hint">T</span></button>` : '';
+                    
                     ab.innerHTML = `
                         <div style="color:var(--highlight-color);font-size:13px;line-height:1;margin-bottom:3px;text-align:center;letter-spacing:3px;">${pips}</div>
                         <div style="display:flex;gap:3px;width:100%;">
                             <button onclick="showAttackMenu()" ${!canAct?'disabled':''} class="action-icon-btn pip-btn" title="Attack [1]" id="pipBtn-attack">⚔️<span class="kb-hint">1</span></button>
                             <button onclick="showSpellMenu()"  ${!canAct?'disabled':''} class="action-icon-btn pip-btn" title="Cast Spell [2]" id="pipBtn-spell">✨<span class="kb-hint">2</span></button>
                             <button onclick="showCombatInventory()" class="action-icon-btn" title="Inventory [3]" style="border-color:#00FF88;">🎒<span class="kb-hint">3</span></button>
+                            ${trapBtn}
                             <button onclick="playerDefend()"   ${!canAct?'disabled':''} class="action-icon-btn" title="Defend [4]">🛡️<span class="kb-hint">4</span></button>
                             <button onclick="attemptFlee()"    ${!canAct?'disabled':''} class="action-icon-btn" title="Flee [5]">🏃<span class="kb-hint">5</span></button>
                             <button onclick="printStatsToTerminal()" class="action-icon-btn" title="Show Stats [6]" style="border-color:#4488ff;">📊<span class="kb-hint">6</span></button>
@@ -10623,6 +10654,71 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
             castSpellOnTarget(spell);
         }
 
+        // ═══════════════════════════════════════════════════════════════
+        // HUNTER TRAP ABILITY
+        // ═══════════════════════════════════════════════════════════════
+        
+        function castTrap() {
+            const cs = gameState.combatState;
+            const p = gameState.player;
+            
+            if (!cs || cs.combatOver) return;
+            
+            // Check if hunter
+            if ((p.baseClass || p.class) !== 'hunter') {
+                termAppend('Only hunters can set traps!', 'term-error');
+                return;
+            }
+            
+            // Check MP
+            if (p.mp < 10) {
+                termAppend('Not enough MP to set a trap! (Need 10 MP)', 'term-error');
+                return;
+            }
+            
+            // Check if trap already active
+            if (cs.trapActive) {
+                termAppend('A trap is already set!', 'term-warning');
+                return;
+            }
+            
+            // Consume MP
+            p.mp -= 10;
+            markMpAction();
+            
+            // Setting the trap...
+            termAppend('', 'term-separator');
+            termAppend('🪤 <span style="color:#8B4513;">You carefully set a concealed trap...</span>', null, () => {
+                // 2 second pause for dramatic effect
+                setTimeout(() => {
+                    // 15% fail rate
+                    const failed = Math.random() < 0.15;
+                    
+                    if (failed) {
+                        termAppend('<span style="color:#ff4444;">💨 The trap mechanism fails! The enemies avoid it!</span>', 'term-error');
+                    } else {
+                        // Success! Apply 50% slow to enemy timer
+                        const slowMultiplier = 0.5; // 50% slow = add 50% to timer
+                        const originalDelay = cs.enemyDelay;
+                        const slowAmount = Math.floor(originalDelay * slowMultiplier);
+                        
+                        // Mark trap as active for this combat
+                        cs.trapActive = true;
+                        cs.trapSlowAmount = slowAmount;
+                        
+                        // Apply slow to current enemy timer
+                        cs.enemyTimer += slowAmount;
+                        
+                        termAppend(`<span style="color:#00FF88;">⚙️ SNAP! The enemies are caught in the trap!</span>`, 'term-loot');
+                        termAppend(`<span style="color:#FFD700;">🐌 Enemy attack speed slowed by 50%! (+${slowAmount}s to attack timer)</span>`, 'term-highlight');
+                    }
+                    
+                    updateHud();
+                    renderActionBar();
+                }, 2000);
+            });
+        }
+
         function playerDefend() {
             const cs = gameState.combatState;
             if (!cs || cs.hitsLeft <= 0) return;
@@ -11475,6 +11571,12 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
             endCombat(false);
         } else {
             cs.enemyTimer = cs.enemyDelay;
+            
+            // Apply trap slow if active
+            if (cs.trapActive && cs.trapSlowAmount) {
+                cs.enemyTimer += cs.trapSlowAmount;
+            }
+            
             renderActionBar();
             startCombatTimer();
         }
