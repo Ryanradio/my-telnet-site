@@ -6,7 +6,7 @@
 // If a player has an older version cached, they get a refresh banner.
 // ═══════════════════════════════════════════════════════════════════════
 
-const GAME_VERSION = '2025.02.17-r12';
+const GAME_VERSION = '2025.02.18-r13';
 
 // ── VERSION CHECK ──────────────────────────────────────────────────────
 // Call this on: game init, character select, enter dungeon, enter explore.
@@ -51,6 +51,30 @@ function checkGameVersion() {
 // Most recent first. Keep entries brief — one line per bullet.
 // ═══════════════════════════════════════════════════════════════════════
 const REVISION_HISTORY = [
+
+    {
+        version: '2025.02.18-r13',
+        date: 'Feb 18, 2025',
+        summary: 'Hunter Pet System Complete + Weapon Modifiers for All Spells',
+        changes: [
+            'HUNTER PET SYSTEM NOW LIVE:',
+            '- Hunters initialize with activePet: null field',
+            '- Pet Trainer NPC added to Temple (hunters only)',
+            '- Upgrade pets every 3 levels: Dog → Wolf → Dire Wolf → Shadow Hound → Warg → Hellhound → Fenrir',
+            '- Pet damage shows in combat: "🐕 Hunting Dog attacks for 12 damage!"',
+            '- Pet progression UI shows current pet, available upgrades, and full progression path',
+            '- Pets cost gold to bond/upgrade (50g → 2000g)',
+            '',
+            'WEAPON MODIFIERS NOW APPLY TO ALL SPELLS:',
+            '- Staff/wand elemental damage (fire, lightning, acid, etc.) now applies to ALL offensive spells',
+            '- Status effects from weapon modifiers (burning, poisoned, etc.) apply when casting spells',
+            '- Spell damage displays: "45 damage! +8 Lightning Strike damage [⚡ Stunned!]"',
+            '- Applies to single-target, AOE, and lifesteal spells',
+            '- Healing spells do NOT apply weapon modifiers (prevents self-damage)',
+            '- Physical weapon damage does NOT apply (only elemental bonuses)',
+            '- Example: Mage with Lightning Staff casts Fireball → deals fire damage + lightning damage + 20% stun chance',
+        ]
+    },
 
 
 {

@@ -5357,7 +5357,9 @@ window.addEventListener('beforeunload', () => {
                 // ── stat point allocation ──
                 statPoints: 0,   // earned 3 per level-up, spent in Character Stats
                 // ── store base class so evolution doesn't lose class identity ──
-                baseClass: classKey
+                baseClass: classKey,
+                // ── hunter pet system ──
+                activePet: classKey === 'hunter' ? null : undefined  // hunters start with no pet, others don't use this
             };
             gameState.currentLocation = 'town';
             
@@ -10425,12 +10427,21 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                             crit = true; 
                         }
                         
-                        enemy.hp -= dmg;
-                        totalDamage += dmg;
+                        // Apply weapon modifiers to spell (status effects + elemental damage)
+                        const weapon = WEAPONS[p.weapon];
+                        const modifierResult = weapon ? applyWeaponModifiers(p, enemy, dmg, weapon) : { totalDamage: dmg, messages: [] };
+                        const finalDamage = modifierResult.totalDamage;
+                        
+                        enemy.hp -= finalDamage;
+                        totalDamage += finalDamage;
                         hitCount++;
                         
                         const critTag = crit ? ' <span style="color:#FFD700;">★ CRIT!</span>' : '';
-                        termAppend(`→ ${tName} takes <span class="dmg-enemy">${dmg} damage!</span>${critTag}`);
+                        let msg = `→ ${tName} takes <span class="dmg-enemy">${finalDamage} damage!</span>${critTag}`;
+                        if (modifierResult.messages.length > 0) {
+                            msg += ' ' + modifierResult.messages.join(' ');
+                        }
+                        termAppend(msg);
                         
                         // Apply burning to each enemy hit (AOE fire spells)
                         if (isFire && Math.random() < 0.5 && enemy.hp > 0) { // 50% chance per target
@@ -10479,15 +10490,25 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 let crit = false;
                 if (Math.random() * 100 < calcCritChance(p.lck || 0, p)) { dmg = Math.floor(dmg * 1.75); crit = true; }
                 
-                enemy.hp -= dmg;
+                // Apply weapon modifiers to spell (status effects + elemental damage)
+                const weapon = WEAPONS[p.weapon];
+                const modifierResult = weapon ? applyWeaponModifiers(p, enemy, dmg, weapon) : { totalDamage: dmg, messages: [] };
+                const finalDamage = modifierResult.totalDamage;
                 
-                // Heal based on lifesteal percentage
+                enemy.hp -= finalDamage;
+                
+                // Heal based on lifesteal percentage (from the final damage including modifiers)
                 const lifestealPercent = spell.lifestealPercent || 50;
-                const healAmount = Math.floor(dmg * (lifestealPercent / 100));
+                const healAmount = Math.floor(finalDamage * (lifestealPercent / 100));
                 p.hp = Math.min(p.maxHp, p.hp + healAmount);
                 
                 const critTag = crit ? ' <span style="color:#FFD700;">★ CRIT!</span>' : '';
-                termAppend(`You cast ${spell.name} on ${tName} for <span class="dmg-enemy">${dmg} damage!</span>${critTag}`, null, () => {
+                let spellMsg = `You cast ${spell.name} on ${tName} for <span class="dmg-enemy">${finalDamage} damage!</span>${critTag}`;
+                if (modifierResult.messages.length > 0) {
+                    spellMsg += '<br>' + modifierResult.messages.join('<br>');
+                }
+                
+                termAppend(spellMsg, null, () => {
                     termAppend(`<span style="color:#00FF00;">🩸 Drained ${healAmount} HP!</span>`, 'term-loot');
                     if (enemy.hp > 0) {
                         const hpPct = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
@@ -10533,7 +10554,13 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 let   dmg   = Math.max(1, (spellRoll + p.magic + (p.wis||0) + modifierBonus) - Math.floor(enemy.defense / 2));
                 let crit = false;
                 if (Math.random()*100 < calcCritChance(p.lck||0, p)) { dmg = Math.floor(dmg*1.75); crit = true; }
-                enemy.hp -= dmg;
+                
+                // Apply weapon modifiers to spell (status effects + elemental damage)
+                const weapon = WEAPONS[p.weapon];
+                const modifierResult = weapon ? applyWeaponModifiers(p, enemy, dmg, weapon) : { totalDamage: dmg, messages: [] };
+                const finalDamage = modifierResult.totalDamage;
+                
+                enemy.hp -= finalDamage;
                 
                 // Check for spell status effects (burning from fire spells, etc.)
                 const spellName = spell.name.toLowerCase();
@@ -10561,7 +10588,14 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 if (hpPct < 50) condition = 'wounded';
                 if (hpPct < 25) condition = 'severely wounded';
                 if (hpPct < 10) condition = 'barely standing';
-                termAppend(`You cast ${spell.name} on ${tName} for <span class="dmg-enemy">${dmg} damage!</span>${critTag}`, null, () => {
+                
+                // Build message with weapon modifier bonuses
+                let spellMsg = `You cast ${spell.name} on ${tName} for <span class="dmg-enemy">${finalDamage} damage!</span>${critTag}`;
+                if (modifierResult.messages.length > 0) {
+                    spellMsg += '<br>' + modifierResult.messages.join('<br>');
+                }
+                
+                termAppend(spellMsg, null, () => {
                     // Apply status effect if flagged
                     if (enemy.statusToApply && enemy.hp > 0) {
                         applyStatusEffect(enemy, enemy.statusToApply, false);
@@ -12625,11 +12659,12 @@ function playerIsExhausted() {
                         <strong>Welcome to the Temple of Rebirth</strong>
                     </p>
                     <p>
-                        Here, the priests offer spiritual services: spell training and personal rebirth.
+                        Here, the priests offer spiritual services: ${(p.baseClass || p.class) === 'hunter' ? 'pet training,' : ''} spell training${(p.baseClass || p.class) === 'hunter' ? ',' : ''} and personal rebirth.
                     </p>
                 </div>
                 
                 <div style="margin: 20px 0;">
+                    ${(p.baseClass || p.class) === 'hunter' ? '<div class="menu-option" onclick="showPetTrainer()">🐺 PET TRAINING</div>' : ''}
                     <div class="menu-option" onclick="showSpellShop()">📖 SPELL TRAINING</div>
                     <div class="menu-option" onclick="showRespec()">🔄 STAT RESPEC (${respecCost}g)</div>
                     <button onclick="showTown()">← BACK TO TOWN</button>
@@ -12911,6 +12946,127 @@ function playerIsExhausted() {
             saveGame();
             alert(`Learned ${spell.name}!`);
             showSpellShop();
+        }
+        
+        // ═══════════════════════════════════════════════════════════════
+        // PET TRAINER (Hunter Only)
+        // ═══════════════════════════════════════════════════════════════
+        
+        function showPetTrainer() {
+            const p = gameState.player;
+            const screen = document.getElementById('mainScreen');
+            
+            if ((p.baseClass || p.class) !== 'hunter') {
+                screen.innerHTML = `
+                    <div class="location-header">🐺 PET TRAINING</div>
+                    ${renderPlayerStats()}
+                    <div class="message" style="border-color:var(--error-color);">
+                        <p>The beast trainer shakes their head. "Only hunters may bond with beasts."</p>
+                    </div>
+                    <button onclick="showTemple()">← BACK TO TEMPLE</button>
+                `;
+                return;
+            }
+            
+            // Determine current and next pet
+            const currentPet = p.activePet ? HUNTER_PETS[p.activePet] : null;
+            const nextPetKey = currentPet?.upgradesTo || (p.level >= 3 ? 'hunting_dog' : null);
+            const nextPet = nextPetKey ? HUNTER_PETS[nextPetKey] : null;
+            
+            let html = `
+                <div class="location-header">🐺 PET TRAINING</div>
+                <button onclick="showTemple()" style="margin-bottom:10px;">← BACK</button>
+                ${renderPlayerStats()}
+                
+                <div class="message">
+                    <p style="color:var(--highlight-color);"><strong>The Beast Trainer greets you with a pack of loyal companions</strong></p>
+                    <p style="color:#8aaa8a;">Bond with a beast to fight alongside you in battle</p>
+                </div>
+            `;
+            
+            // Show current pet
+            if (currentPet) {
+                html += `
+                    <div class="message" style="border-color:#00FF00;">
+                        <h3 style="color:#00FF00;">Your Current Companion</h3>
+                        <p>${currentPet.icon} <strong style="color:#00FF00;">${currentPet.name}</strong> (Level ${currentPet.level})</p>
+                        <p style="font-size:14px;color:#8aaa8a;">${currentPet.description}</p>
+                        <p><span style="color:#FFD700;">Damage:</span> ${Math.floor(currentPet.damagePercent * 100)}% of weapon damage + ${currentPet.bonusDamage}</p>
+                        ${currentPet.upgradesTo ? '<p style="color:#FFD700;font-size:12px;">→ Upgrade available!</p>' : '<p style="color:#888;">Max level companion</p>'}
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="message" style="border-color:#666;">
+                        <p style="color:#888;">You don't have a companion yet.</p>
+                        ${p.level >= 3 ? '<p style="color:#FFD700;">You can bond with your first pet!</p>' : `<p style="color:#888;">Reach level 3 to bond with a pet.</p>`}
+                    </div>
+                `;
+            }
+            
+            // Show available upgrade
+            if (nextPet && p.level >= nextPet.level) {
+                const canAfford = p.gold >= nextPet.cost;
+                html += `
+                    <div class="message" style="border-color:#FFD700;">
+                        <h3 style="color:#FFD700;">${currentPet ? 'Available Upgrade' : 'First Companion'}</h3>
+                        <div style="margin:10px 0;padding:10px;border:1px solid ${canAfford ? '#FFD700' : '#666'};">
+                            <p>${nextPet.icon} <strong style="color:#FFD700;">${nextPet.name}</strong> ${currentPet ? '(Upgrade)' : '(Bond)'}</p>
+                            <p style="font-size:12px;color:#8aaa8a;">${nextPet.description}</p>
+                            <p><span style="color:#FFD700;">Damage:</span> ${Math.floor(nextPet.damagePercent * 100)}% of weapon damage + ${nextPet.bonusDamage}</p>
+                            <p style="font-size:12px;">Requires Level ${nextPet.level} | Cost: <span style="color:#FFD700;">${nextPet.cost}g</span></p>
+                            ${canAfford 
+                                ? `<button onclick="upgradePet('${nextPetKey}')" style="border-color:#FFD700;">💰 ${currentPet ? 'Upgrade' : 'Bond'} (${nextPet.cost}g)</button>`
+                                : `<button disabled style="opacity:0.5;">Need ${nextPet.cost - p.gold}g more</button>`
+                            }
+                        </div>
+                    </div>
+                `;
+            } else if (nextPet) {
+                html += `
+                    <div class="message" style="border-color:#444;">
+                        <h3 style="color:#888;">Coming Soon</h3>
+                        <div style="margin:8px 0;padding:8px;border:1px solid #333;opacity:0.6;">
+                            <p>${nextPet.icon} <strong style="color:#666;">${nextPet.name}</strong> — Unlocks at Level ${nextPet.level}</p>
+                            <p style="font-size:12px;color:#555;">${nextPet.description}</p>
+                            <p style="color:#666;">${Math.floor(nextPet.damagePercent * 100)}% weapon damage + ${nextPet.bonusDamage} | Cost: ${nextPet.cost}g</p>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Show pet progression path
+            html += `
+                <div class="message" style="border-color:#444;">
+                    <h3 style="color:#8aaa8a;">Companion Progression</h3>
+                    <p style="font-size:12px;color:#666;">
+                        Lv 3: 🐕 Dog (35%) → Lv 6: 🐺 Wolf (40%) → Lv 9: 🐺 Dire Wolf (45%) → <br>
+                        Lv 12: 👻🐕 Shadow Hound (50%) → Lv 15: 🐺 Warg (55%) → <br>
+                        Lv 18: 🔥🐕 Hellhound (60%) → Lv 21: 🌙🐺 Fenrir (70%)
+                    </p>
+                </div>
+            `;
+            
+            html += `<button onclick="showTemple()">← BACK</button>`;
+            screen.innerHTML = html;
+        }
+        
+        function upgradePet(petKey) {
+            const p = gameState.player;
+            const pet = HUNTER_PETS[petKey];
+            
+            if (!pet || p.gold < pet.cost || p.level < pet.level) {
+                alert('Cannot bond with this companion!');
+                return;
+            }
+            
+            // Deduct gold and set new pet
+            p.gold -= pet.cost;
+            p.activePet = petKey;
+            
+            saveGame();
+            alert(`${pet.icon} You bonded with ${pet.name}! They will fight by your side!`);
+            showPetTrainer();
         }
 
 
