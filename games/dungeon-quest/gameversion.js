@@ -6,7 +6,7 @@
 // If a player has an older version cached, they get a refresh banner.
 // ═══════════════════════════════════════════════════════════════════════
 
-const GAME_VERSION = '2025.02.18-r16';
+const GAME_VERSION = '2025.02.18-r18';
 
 // ── VERSION CHECK ──────────────────────────────────────────────────────
 // Call this on: game init, character select, enter dungeon, enter explore.
@@ -54,6 +54,15 @@ const REVISION_HISTORY = [
 
 
     {
+        version: '2025.02.18-r18',
+        date: 'Feb 19, 2025',
+        summary: 'Bug fix for Dungeon1 entrances',
+        changes: [
+            'Applied fixes.  Return to town only at entrance.',
+                        
+        ]
+    },
+      {
         version: '2025.02.18-r16',
         date: 'Feb 19, 2025',
         summary: 'Hunter replaces Ranger',
