@@ -6,7 +6,7 @@
 // If a player has an older version cached, they get a refresh banner.
 // ═══════════════════════════════════════════════════════════════════════
 
-const GAME_VERSION = '2025.02.19-r21';
+const GAME_VERSION = '2025.02.19-r23';
 
 // ── VERSION CHECK ──────────────────────────────────────────────────────
 // Call this on: game init, character select, enter dungeon, enter explore.
@@ -51,6 +51,67 @@ function checkGameVersion() {
 // Most recent first. Keep entries brief — one line per bullet.
 // ═══════════════════════════════════════════════════════════════════════
 const REVISION_HISTORY = [
+
+    {
+        version: '2025.02.19-r23',
+        date: 'Feb 19, 2025',
+        summary: 'Class Master Audit — 3 Bugs Fixed + Archer/Acolyte Masters Added',
+        changes: [
+            'BUG FIX #1: EVOLVED PLAYERS LOSE MASTER CHALLENGE BUTTONS',
+            '- At level 20, p.class is overwritten with the advanced class name (e.g. shadowmaster)',
+            '- showExplore() and getMasterKeyForArea() used p.class to build the master key',
+            '- Result: evolved players saw no master challenge buttons — zones permanently locked',
+            '- Fix: both functions now use p.baseClass || p.class for master key lookup',
+            '',
+            'BUG FIX #2: RIVERSIDE ZONE LOCKED WITH NO UNLOCK PATH IN UI',
+            '- getMasterKeyForArea() used a linear areaOrder array that did not include "riverside"',
+            '- "riverside" is locked: true but its master (forest master) was never shown',
+            '- Players could never see the master challenge button to unlock Riverside',
+            '- Fix: rewrote getMasterKeyForArea() with an explicit unlockedBy map',
+            '  { riverside: "forest", plains: "forest", cave: "plains", crypt: "cave", volcano: "crypt" }',
+            '',
+            'BUG FIX #3: ARCHER AND ACOLYTE CLASSES PERMANENTLY LOCKED OUT OF ALL ZONES',
+            '- class-masters.js had masters for warrior, rogue, paladin, mage, cleric, ranger, warlock, hunter',
+            '- archer and acolyte had zero masters — zones were locked with no challenge button possible',
+            '- Added 4 masters each for archer and acolyte (forest, plains, cave, crypt tiers)',
+            '',
+            'NEW MASTERS — ARCHER (class-masters.js):',
+            '- archer_master_forest: Marksman Rowan (Lv 3) → unlocks Riverside',
+            '- archer_master_plains: Siege Captain Lyra (Lv 6) → unlocks Cave',
+            '- archer_master_cave: Phantom Bowyer Isen (Lv 9) → unlocks Crypt',
+            '- archer_master_crypt: Death\'s Arrow Verath (Lv 12) → unlocks Volcano',
+            '',
+            'NEW MASTERS — ACOLYTE (class-masters.js):',
+            '- acolyte_master_forest: Elder Monk Silas (Lv 3) → unlocks Riverside',
+            '- acolyte_master_plains: Zealot Confessor Maren (Lv 6) → unlocks Cave',
+            '- acolyte_master_cave: Inquisitor Valdris (Lv 9) → unlocks Crypt',
+            '- acolyte_master_crypt: Grand Exorcist Theron (Lv 12) → unlocks Volcano',
+        ]
+    },
+
+    {
+        version: '2025.02.19-r22',
+        date: 'Feb 19, 2025',
+        summary: 'Bug Fix: /setlevel Soft-Lock + New /unlockmaster Sysop Command',
+        changes: [
+            'BUG FIX: /setlevel SKIPS CLASS MASTER FIGHTS (SOFT-LOCK)',
+            '- Using /setlevel to jump levels bypassed class master fights',
+            '- Locked zones (plains, cave, crypt, volcano) require a master defeat to unlock',
+            '- Master challenge button only shows on already-unlocked zones — catch-22!',
+            '- Fix: /setlevel now auto-defeats any class master whose requiredLevel the',
+            '  player meets or exceeds, and unlocks the zone that master guards',
+            '- Applies to all masters across all classes on level-up via sysop command',
+            '',
+            'NEW SYSOP COMMAND: /unlockmaster [area|all]',
+            '- Retroactively fixes already-leveled characters that are soft-locked',
+            '- /unlockmaster all     — defeats all pending class masters for this class',
+            '- /unlockmaster plains  — defeats only the plains master (unlocks cave)',
+            '- /unlockmaster cave    — defeats only the cave master (unlocks crypt)',
+            '- Valid areas: forest, riverside, plains, cave, crypt, volcano',
+            '- Saves game automatically after unlocking',
+            '- Added to /help output',
+        ]
+    },
 
     {
         version: '2025.02.19-r21',

@@ -3495,6 +3495,9 @@ window.addEventListener('beforeunload', () => {
                 case '/revealmap':
                     handleRevealMap(args);
                     break;
+                case '/unlockmaster':
+                    handleUnlockMaster(args);
+                    break;
                 default:
                     terminalPrint(`ERROR: Unknown command '${command}'. Type /help for available commands.`, 'error');
             }
@@ -3583,6 +3586,10 @@ window.addEventListener('beforeunload', () => {
             terminalPrint('  /revealmap [dungeon]     - Reveal entire dungeon map');
             terminalPrint('                             No arg = all dungeons');
             terminalPrint('                             /revealmap dungeon1');
+            terminalPrint('  /unlockmaster [area|all] - Mark class master(s) as defeated');
+            terminalPrint('                             and unlock the zone they guard');
+            terminalPrint('                             /unlockmaster all');
+            terminalPrint('                             /unlockmaster plains');
             terminalPrint('  /killmonster             - Instantly kill current enemy');
             terminalPrint('  /export <type>           - Export data (monsters/weapons/armor/items)');
             terminalPrint('  /clear                   - Clear terminal output');
@@ -3861,6 +3868,34 @@ window.addEventListener('beforeunload', () => {
                         if (!p.unlockedAreas.includes(key)) {
                             p.unlockedAreas.push(key);
                             terminalPrint(`✓ Unlocked zone: ${loc.name}`, 'success');
+                        }
+                    }
+                });
+            }
+
+            // ═══════════════════════════════════════════════════════════════
+            // AUTO-DEFEAT CLASS MASTERS for skipped levels
+            // Locked zones require a master fight — when /setlevel skips past
+            // a master's requiredLevel, mark that master as defeated and unlock
+            // the zone it guards so the player isn't permanently soft-locked.
+            // ═══════════════════════════════════════════════════════════════
+            if (typeof CLASS_MASTERS !== 'undefined') {
+                const areaOrder = ['forest', 'riverside', 'plains', 'cave', 'crypt', 'volcano'];
+                Object.keys(CLASS_MASTERS).forEach(masterKey => {
+                    const master = CLASS_MASTERS[masterKey];
+                    // Only process masters for this player's class
+                    const playerClass = p.baseClass || p.class;
+                    if (!masterKey.startsWith(playerClass + '_master_')) return;
+                    // If player meets or exceeds the master's required level, auto-defeat
+                    if (p.level >= master.requiredLevel && !p.defeatedMasters.includes(masterKey)) {
+                        p.defeatedMasters.push(masterKey);
+                        terminalPrint(`✓ Auto-defeated master: ${master.name}`, 'success');
+                        // Unlock the zone this master guards
+                        if (master.unlocks && typeof LOCATIONS !== 'undefined' && LOCATIONS[master.unlocks]) {
+                            if (!p.unlockedAreas.includes(master.unlocks)) {
+                                p.unlockedAreas.push(master.unlocks);
+                                terminalPrint(`✓ Unlocked zone: ${LOCATIONS[master.unlocks].name}`, 'success');
+                            }
                         }
                     }
                 });
@@ -4156,6 +4191,74 @@ window.addEventListener('beforeunload', () => {
             terminalPrint(`  Floors revealed: ${totalFloors}`, 'success');
             terminalPrint(`  Rooms revealed: ${totalRooms}`, 'success');
             terminalPrint('  Open dungeon map to see all rooms', 'success');
+            terminalPrint('═══════════════════════════════════════', 'success');
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // /unlockmaster [area|all]
+        // Marks class masters as defeated and unlocks the zones they guard.
+        // Usage:
+        //   /unlockmaster all        — unlock every master for this class
+        //   /unlockmaster forest     — unlock the master tied to "forest"
+        //   /unlockmaster plains     — unlock the master tied to "plains"
+        //   (etc. for cave, crypt, volcano, riverside)
+        // ─────────────────────────────────────────────────────────────────
+        function handleUnlockMaster(args) {
+            if (!gameState.player) {
+                terminalPrint('ERROR: No active player character', 'error');
+                return;
+            }
+            if (typeof CLASS_MASTERS === 'undefined') {
+                terminalPrint('ERROR: CLASS_MASTERS not loaded', 'error');
+                return;
+            }
+
+            const p = gameState.player;
+            const playerClass = p.baseClass || p.class;
+            const target = args[0] ? args[0].toLowerCase() : 'all';
+
+            let unlocked = 0;
+
+            Object.keys(CLASS_MASTERS).forEach(masterKey => {
+                // Only this class's masters
+                if (!masterKey.startsWith(playerClass + '_master_')) return;
+
+                // Filter by specific area if requested
+                if (target !== 'all') {
+                    if (!masterKey.endsWith('_' + target)) return;
+                }
+
+                const master = CLASS_MASTERS[masterKey];
+
+                if (p.defeatedMasters.includes(masterKey)) {
+                    terminalPrint(`  (already defeated: ${master.name})`, 'info');
+                    return;
+                }
+
+                p.defeatedMasters.push(masterKey);
+                terminalPrint(`✓ Defeated master: ${master.name}`, 'success');
+                unlocked++;
+
+                // Unlock the zone this master guards
+                if (master.unlocks && typeof LOCATIONS !== 'undefined' && LOCATIONS[master.unlocks]) {
+                    if (!p.unlockedAreas.includes(master.unlocks)) {
+                        p.unlockedAreas.push(master.unlocks);
+                        terminalPrint(`✓ Unlocked zone: ${LOCATIONS[master.unlocks].name}`, 'success');
+                    } else {
+                        terminalPrint(`  (zone already unlocked: ${LOCATIONS[master.unlocks].name})`, 'info');
+                    }
+                }
+            });
+
+            if (unlocked === 0 && target !== 'all') {
+                terminalPrint(`ERROR: No undefeated master found for area "${target}" and class "${playerClass}"`, 'error');
+                terminalPrint(`Valid areas: forest, riverside, plains, cave, crypt, volcano`, 'warning');
+                return;
+            }
+
+            saveGame();
+            terminalPrint('═══════════════════════════════════════', 'success');
+            terminalPrint(`  ${unlocked} master(s) unlocked. Re-open Explore to see zones.`, 'success');
             terminalPrint('═══════════════════════════════════════', 'success');
         }
 
@@ -7013,7 +7116,7 @@ function equipItem(type, key) {
                         </div>
                     `;
                     // Show master challenge if available
-                    const masterKey = `${p.class}_master_${key}`;
+                    const masterKey = `${p.baseClass || p.class}_master_${key}`;
                     if (typeof CLASS_MASTERS !== 'undefined' && CLASS_MASTERS[masterKey] && !p.defeatedMasters.includes(masterKey)) {
                         const master = CLASS_MASTERS[masterKey];
                         if (p.level >= master.requiredLevel) {
@@ -7060,12 +7163,23 @@ function equipItem(type, key) {
         }
 
         function getMasterKeyForArea(areaKey) {
-            // Find which area unlocks this one
-            const areaOrder = ['forest', 'plains', 'cave', 'crypt', 'volcano'];
-            const index = areaOrder.indexOf(areaKey);
-            if (index > 0) {
-                const previousArea = areaOrder[index - 1];
-                return `${gameState.player.class}_master_${previousArea}`;
+            // Find which master unlocks this area.
+            // 'riverside' is unlocked by the forest master (index 0 → forest master unlocks riverside).
+            // All other areas are unlocked by the master of the previous area in order.
+            const playerClass = gameState.player.baseClass || gameState.player.class;
+
+            // Map: area → the zone whose master unlocks it
+            const unlockedBy = {
+                riverside: 'forest',
+                plains:    'forest',
+                cave:      'plains',
+                crypt:     'cave',
+                volcano:   'crypt'
+            };
+
+            const sourceArea = unlockedBy[areaKey];
+            if (sourceArea) {
+                return `${playerClass}_master_${sourceArea}`;
             }
             return null;
         }

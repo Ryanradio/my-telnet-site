@@ -142,6 +142,40 @@ const CLASS_MASTERS = {
         dropRates: { common: 0.8, uncommon: 0.6, rare: 0.4 }
     },
 
+    archer_master_forest: {
+        name: 'Marksman Rowan',
+        class: 'archer',
+        unlocks: 'riverside',
+        baseHp: 135,
+        baseDamage: 33,
+        baseDefense: 13,
+        level: 3,
+        requiredLevel: 3,
+        xp: 150,
+        gold: 200,
+        description: 'A sharpshooter whose arrows never miss their mark',
+        guaranteedDrops: ['longbow', 'studded_leather', 'large_gem'],
+        possibleDrops: ['elven_bow', 'leather_armor', 'health_potion'],
+        dropRates: { common: 0.8, uncommon: 0.6, rare: 0.4 }
+    },
+
+    acolyte_master_forest: {
+        name: 'Elder Monk Silas',
+        class: 'acolyte',
+        unlocks: 'riverside',
+        baseHp: 150,
+        baseDamage: 26,
+        baseDefense: 16,
+        level: 3,
+        requiredLevel: 3,
+        xp: 150,
+        gold: 200,
+        description: 'A devoted acolyte who channels divine energy through ancient rites',
+        guaranteedDrops: ['holy_mace', 'enchanted_robes', 'large_gem'],
+        possibleDrops: ['wooden_staff', 'padded_armor', 'health_potion'],
+        dropRates: { common: 0.8, uncommon: 0.6, rare: 0.4 }
+    },
+
     // ═══════════════════════════════════════════════════════════════
     // PLAINS → CAVE MASTERS (Level 6 Required)
     // ═══════════════════════════════════════════════════════════════
@@ -279,6 +313,40 @@ const CLASS_MASTERS = {
         description: 'A hunter who leads a pack of dire wolves',
         guaranteedDrops: ['composite_bow', 'wolf_pelt_armor', 'huge_gem'],
         possibleDrops: ['hunters_bow', 'beast_fang_necklace', 'greater_health_potion'],
+        dropRates: { common: 0.7, uncommon: 0.5, rare: 0.3, epic: 0.1 }
+    },
+
+    archer_master_plains: {
+        name: 'Siege Captain Lyra',
+        class: 'archer',
+        unlocks: 'cave',
+        baseHp: 260,
+        baseDamage: 50,
+        baseDefense: 22,
+        level: 6,
+        requiredLevel: 6,
+        xp: 300,
+        gold: 400,
+        description: 'A battle-hardened captain who led armies with nothing but a bow',
+        guaranteedDrops: ['elven_bow', 'studded_leather', 'huge_gem'],
+        possibleDrops: ['longbow', 'demon_leather', 'greater_health_potion'],
+        dropRates: { common: 0.7, uncommon: 0.5, rare: 0.3, epic: 0.1 }
+    },
+
+    acolyte_master_plains: {
+        name: 'Zealot Confessor Maren',
+        class: 'acolyte',
+        unlocks: 'cave',
+        baseHp: 275,
+        baseDamage: 40,
+        baseDefense: 24,
+        level: 6,
+        requiredLevel: 6,
+        xp: 300,
+        gold: 400,
+        description: 'A fanatical acolyte whose faith has been tested and hardened in battle',
+        guaranteedDrops: ['divine_hammer', 'battlemage_robes', 'huge_gem'],
+        possibleDrops: ['holy_mace', 'padded_armor', 'elixir'],
         dropRates: { common: 0.7, uncommon: 0.5, rare: 0.3, epic: 0.1 }
     },
 
@@ -422,6 +490,40 @@ const CLASS_MASTERS = {
         dropRates: { uncommon: 0.6, rare: 0.4, epic: 0.2, legendary: 0.05 }
     },
 
+    archer_master_cave: {
+        name: 'Phantom Bowyer Isen',
+        class: 'archer',
+        unlocks: 'crypt',
+        baseHp: 390,
+        baseDamage: 70,
+        baseDefense: 30,
+        level: 9,
+        requiredLevel: 9,
+        xp: 500,
+        gold: 600,
+        description: 'A ghostly archer whose arrows pass through walls and armor alike',
+        guaranteedDrops: ['godbow', 'void_armor', 'pristine_gem'],
+        possibleDrops: ['elven_bow', 'dragon_scale', 'superior_health_potion'],
+        dropRates: { uncommon: 0.6, rare: 0.4, epic: 0.2, legendary: 0.05 }
+    },
+
+    acolyte_master_cave: {
+        name: 'Inquisitor Valdris',
+        class: 'acolyte',
+        unlocks: 'crypt',
+        baseHp: 430,
+        baseDamage: 55,
+        baseDefense: 36,
+        level: 9,
+        requiredLevel: 9,
+        xp: 500,
+        gold: 600,
+        description: 'A hardened inquisitor who hunts the undead in their own domain',
+        guaranteedDrops: ['mjolnir', 'archmage_vestments', 'pristine_gem'],
+        possibleDrops: ['divine_hammer', 'mithril_chainmail', 'elixir'],
+        dropRates: { uncommon: 0.6, rare: 0.4, epic: 0.2, legendary: 0.05 }
+    },
+
     // ═══════════════════════════════════════════════════════════════
     // CRYPT → VOLCANO MASTERS (Level 12 Required)
     // ═══════════════════════════════════════════════════════════════
@@ -559,6 +661,40 @@ const CLASS_MASTERS = {
         description: 'A primordial hunter who commands all beasts',
         guaranteedDrops: ['fenrir_bow', 'dragon_scale', 'pristine_gem', 'pristine_gem'],
         possibleDrops: ['dragonbone_bow', 'beast_god_pelt', 'ancient_fang'],
+        dropRates: { rare: 0.5, epic: 0.3, legendary: 0.15, mythic: 0.02 }
+    },
+
+    archer_master_crypt: {
+        name: 'Death\'s Arrow Verath',
+        class: 'archer',
+        unlocks: 'volcano',
+        baseHp: 560,
+        baseDamage: 90,
+        baseDefense: 38,
+        level: 12,
+        requiredLevel: 12,
+        xp: 800,
+        gold: 1000,
+        description: 'An undead archer lord who has haunted this crypt for centuries',
+        guaranteedDrops: ['godbow', 'void_armor', 'pristine_gem', 'pristine_gem'],
+        possibleDrops: ['dragonbone_bow', 'dragon_scale', 'fire_core'],
+        dropRates: { rare: 0.5, epic: 0.3, legendary: 0.15, mythic: 0.02 }
+    },
+
+    acolyte_master_crypt: {
+        name: 'Grand Exorcist Theron',
+        class: 'acolyte',
+        unlocks: 'volcano',
+        baseHp: 610,
+        baseDamage: 70,
+        baseDefense: 46,
+        level: 12,
+        requiredLevel: 12,
+        xp: 800,
+        gold: 1000,
+        description: 'The greatest exorcist ever born — now the only thing standing between the crypt and the volcano',
+        guaranteedDrops: ['mjolnir', 'phoenix_robes', 'pristine_gem', 'pristine_gem'],
+        possibleDrops: ['divine_hammer', 'celestial_plate', 'phylactery'],
         dropRates: { rare: 0.5, epic: 0.3, legendary: 0.15, mythic: 0.02 }
     }
 };
