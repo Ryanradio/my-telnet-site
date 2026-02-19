@@ -2542,9 +2542,9 @@ gameState.hasRestoredGame = false;
 
         // ── Fullscreen toggle button (⛶) still triggers modal on iOS ────
         function toggleFullscreen() {
-            const el = document.documentElement;
+           const el = document.documentElement;
             if (!document.fullscreenElement && !document.webkitFullscreenElement &&
-                !document.mozFullScreenElement) {
+               !document.mozFullScreenElement) {
                 const req = el.requestFullscreen || el.webkitRequestFullscreen ||
                             el.mozRequestFullScreen || el.msRequestFullscreen;
                 if (req) {
