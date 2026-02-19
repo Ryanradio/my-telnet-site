@@ -1,1042 +1,1204 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Vault Analytics | True Physics V6 - Pole Recommendation Engine</title>
-    <style>
-        :root {
-            --primary: #0f172a;
-            --accent: #6366f1;
-            --danger: #ef4444;  
-            --warning: #f59e0b; 
-            --success: #10b981; 
-            --stall: #64748b;   
-            --bg: #f8fafc;
-            --card: #ffffff;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VaultIQ — Pole Vault Performance Engine</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink:     #0a0f1e;
+  --ink2:    #1a2035;
+  --panel:   #111827;
+  --border:  #1e2a3a;
+  --muted:   #4b5e73;
+  --text:    #c8d6e4;
+  --white:   #f0f6ff;
+  --green:   #00e5a0;
+  --amber:   #ffb827;
+  --red:     #ff4d6a;
+  --slate:   #607B9B;
+  --accent:  #3d8bff;
+  --accent2: #6eb7ff;
+}
 
-        body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background-color: var(--bg);
-            color: var(--primary);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            min-height: 100vh;
-        }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        .container {
-            width: 100%;
-            max-width: 1100px;
-            background: var(--card);
-            border-radius: 24px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
+body {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  background: var(--ink);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 24px 16px 60px;
+}
 
-        header {
-            background: var(--primary);
-            color: white;
-            padding: 2.5rem 2rem;
-            text-align: center;
-            position: relative;
-        }
-        header h1 { margin: 0; font-size: 2rem; font-weight: 800; letter-spacing: -1px; }
-        header p { margin: 0.5rem 0 0; opacity: 0.7; font-size: 0.95rem; font-weight: 400; }
-        
-        .badge-beta {
-            background: var(--accent);
-            color: white;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.7rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            vertical-align: middle;
-            margin-left: 10px;
-        }
+/* ─── LAYOUT ─── */
+.wrap { max-width: 1080px; margin: 0 auto; }
 
-        .content-grid {
-            padding: 2.5rem;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 3rem;
-        }
+/* ─── HEADER ─── */
+header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 0 36px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 36px;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.logo-mark {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.logo-icon {
+  width: 44px; height: 44px;
+  background: var(--accent);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+.logo-text h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.7rem;
+  color: var(--white);
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+.logo-text p {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 4px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.tag {
+  background: rgba(61,139,255,0.15);
+  border: 1px solid rgba(61,139,255,0.35);
+  color: var(--accent2);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  align-self: flex-start;
+}
 
-        /* Inputs */
-        .section-label {
-            font-size: 0.75rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 1.2px;
-            color: #94a3b8;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .section-label::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
+/* ─── INPUT GRID ─── */
+.input-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  background: var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+.input-section {
+  background: var(--panel);
+  padding: 28px;
+}
+.input-section:first-child { border-radius: 16px 0 0 16px; }
+.input-section:last-child { border-radius: 0 16px 16px 0; }
 
-        .input-row { display: flex; gap: 1rem; margin-bottom: 1.5rem; }
-        .input-group { flex: 1; }
+.sec-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--accent);
+  margin-bottom: 22px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
 
-        label { display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 0.5rem; color: #475569; }
-        
-        input, select {
-            width: 100%;
-            padding: 0.85rem;
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            font-size: 1rem;
-            background: white;
-            color: var(--primary);
-            font-weight: 600;
-            transition: all 0.2s;
-            box-sizing: border-box;
-        }
-        input:focus, select:focus {
-            outline: none;
-            border-color: var(--accent);
-            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
-        }
+.field-row { display: flex; gap: 12px; margin-bottom: 16px; }
+.field { flex: 1; }
+.field-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 8px;
+}
+input[type=number], select {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--ink);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--white);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  -webkit-appearance: none;
+}
+input[type=number]:focus, select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(61,139,255,0.15);
+}
+select option { background: var(--ink2); }
+.field-hint {
+  display: block;
+  font-size: 0.65rem;
+  color: var(--muted);
+  margin-top: 5px;
+  font-style: italic;
+}
 
-        /* Toggle Switch */
-        .toggle-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: #f1f5f9;
-            padding: 1rem;
-            border-radius: 10px;
-            margin-top: 1rem;
-        }
-        .toggle-label { font-size: 0.9rem; font-weight: 700; }
-        .toggle-sub { font-size: 0.75rem; color: #64748b; display: block; }
-        
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 50px;
-            height: 28px;
-        }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #cbd5e1;
-            transition: .4s;
-            border-radius: 34px;
-        }
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 20px;
-            width: 20px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-        input:checked + .slider { background-color: var(--accent); }
-        input:checked + .slider:before { transform: translateX(22px); }
+/* Tech Toggle */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--ink);
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  margin-top: 6px;
+}
+.toggle-info { flex: 1; }
+.toggle-title { font-size: 0.85rem; font-weight: 600; color: var(--white); }
+.toggle-sub { font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+.switch {
+  position: relative; display: inline-block;
+  width: 44px; height: 24px; flex-shrink: 0;
+}
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider {
+  position: absolute; cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--border);
+  transition: 0.3s; border-radius: 24px;
+}
+.slider:before {
+  position: absolute; content: "";
+  height: 18px; width: 18px;
+  left: 3px; bottom: 3px;
+  background: var(--white);
+  transition: 0.3s; border-radius: 50%;
+}
+input:checked + .slider { background: var(--accent); }
+input:checked + .slider:before { transform: translateX(20px); }
 
-        /* Action Button */
-        .btn-calc {
-            grid-column: span 2;
-            background: var(--primary);
-            color: white;
-            padding: 1.2rem;
-            border: none;
-            border-radius: 12px;
-            font-size: 1.1rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: transform 0.1s, box-shadow 0.2s;
-            box-shadow: 0 10px 20px -5px rgba(15, 23, 42, 0.3);
-        }
-        .btn-calc:hover { transform: translateY(-2px); }
-        .btn-calc:active { transform: translateY(0); }
+/* ─── CTA BUTTON ─── */
+.btn-run {
+  width: 100%;
+  padding: 16px;
+  background: var(--accent);
+  color: var(--ink);
+  border: none;
+  border-radius: 12px;
+  font-family: 'Syne', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: transform 0.15s, box-shadow 0.2s, background 0.2s;
+  box-shadow: 0 8px 24px -6px rgba(61,139,255,0.5);
+  margin-bottom: 20px;
+}
+.btn-run:hover {
+  background: var(--accent2);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px -6px rgba(61,139,255,0.6);
+}
+.btn-run:active { transform: translateY(0); }
 
-        /* Results Dashboard */
-        .results-container {
-            background: #f8fafc;
-            border-top: 1px solid #e2e8f0;
-            padding: 3rem;
-            display: none;
-        }
+/* ─── RESULTS ─── */
+#results { display: none; }
 
-        /* Kinetic Slider Component */
-        .kinetic-panel {
-            background: white;
-            padding: 2rem;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px -2px rgba(0,0,0,0.06);
-            margin-bottom: 2rem;
-            border: 1px solid #e2e8f0;
-        }
+/* Velocity Panel */
+.vel-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  margin-bottom: 20px;
+}
+.vel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  flex-wrap: wrap; gap: 12px;
+}
+.vel-left .label {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem; text-transform: uppercase; letter-spacing: 2px;
+  color: var(--accent); margin-bottom: 8px;
+}
+.status-chip {
+  display: inline-block;
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  background: rgba(96,123,155,0.2); color: var(--slate);
+}
+.vel-right { text-align: right; }
+.big-speed {
+  font-family: 'Syne', sans-serif;
+  font-size: 3rem;
+  color: var(--white);
+  line-height: 1;
+}
+.speed-units {
+  font-size: 0.8rem; color: var(--accent); font-weight: 600;
+  display: flex; align-items: center; justify-content: flex-end;
+  gap: 10px; margin-top: 4px;
+}
+.speed-ms { color: var(--muted); font-family: 'DM Mono', monospace; }
 
-        .k-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-        }
-        .k-title { font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 800; color: #64748b; }
-        
-        .speed-display { text-align: right; }
-        .speed-val { font-size: 2.2rem; font-weight: 800; color: var(--primary); line-height: 1; }
-        .speed-unit { font-size: 1rem; color: var(--accent); font-weight: 600; }
+/* Range Slider */
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%; height: 14px;
+  border-radius: 7px;
+  outline: none;
+  margin: 12px 0;
+  cursor: pointer;
+  background: var(--border);
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 28px; height: 28px;
+  background: var(--white);
+  border: 4px solid var(--ink);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  margin-top: -7px;
+  transition: transform 0.1s, border-color 0.2s;
+}
+input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.15); border-color: var(--accent); }
 
-        /* Slider Track */
-        input[type=range] {
-            -webkit-appearance: none;
-            width: 100%;
-            height: 16px;
-            border-radius: 8px;
-            outline: none;
-            margin: 1.5rem 0;
-            background: #e2e8f0;
-        }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 32px;
-            height: 32px;
-            background: white;
-            border: 5px solid var(--primary);
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            margin-top: -8px;
-            transition: transform 0.1s;
-        }
-        input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.1); }
+/* Zone Legend */
+.zone-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 8px; margin-top: 14px;
+}
+.zone-item {
+  background: var(--ink);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  text-align: center;
+}
+.zone-name { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.zone-val { display: block; font-family: 'DM Mono', monospace; font-size: 0.8rem; margin-top: 4px; font-weight: 500; }
 
-        /* Legend */
-        .legend-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1px;
-            background: #e2e8f0;
-            border-radius: 8px;
-            overflow: hidden;
-            margin-top: 1rem;
-        }
-        .legend-item {
-            background: white;
-            padding: 0.8rem;
-            text-align: center;
-            font-size: 0.75rem;
-        }
-        .li-val { display: block; font-weight: 800; font-size: 0.9rem; margin-top: 4px; }
+/* ─── METRICS ROW ─── */
+.metrics-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.m-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 18px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.m-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--border);
+}
+.m-card.highlight::before { background: var(--accent); }
+.m-card.good::before { background: var(--green); }
+.m-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--muted); margin-bottom: 10px;
+}
+.m-val {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.9rem; color: var(--white); line-height: 1;
+}
+.m-card.highlight .m-val { color: var(--accent); }
+.m-card.good .m-val { color: var(--green); }
+.m-sub { font-size: 0.7rem; color: var(--muted); margin-top: 6px; }
 
-        /* Physics Cards */
-        .physics-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1.5rem;
-            margin-top: 2rem;
-        }
-        .p-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 14px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.04);
-            border: 1px solid #e2e8f0;
-            text-align: center;
-        }
-        .p-label { font-size: 0.7rem; text-transform: uppercase; font-weight: 700; color: #94a3b8; letter-spacing: 0.5px; }
-        .p-value { font-size: 1.8rem; font-weight: 800; color: var(--primary); margin: 0.5rem 0; }
-        .p-sub { font-size: 0.8rem; color: var(--accent); font-weight: 600; }
+/* Load bar */
+.load-bar-wrap { margin-top: 8px; }
+.load-bar-bg {
+  height: 6px; background: var(--ink); border-radius: 3px; overflow: hidden;
+}
+.load-bar-fill {
+  height: 100%; border-radius: 3px; transition: width 0.6s ease;
+}
 
-        /* Status Banner */
-        .status-pill {
-            display: inline-block;
-            padding: 6px 16px;
-            border-radius: 30px;
-            font-weight: 700;
-            font-size: 0.85rem;
-            margin-bottom: 0.5rem;
-        }
 
-        /* NEW: Pole Recommendation Section */
-        .recommendation-panel {
-            background: white;
-            padding: 2rem;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px -2px rgba(0,0,0,0.06);
-            margin-bottom: 2rem;
-            border: 2px solid var(--accent);
-        }
-        
-        .rec-header {
-            font-size: 1.1rem;
-            font-weight: 800;
-            color: var(--accent);
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .rec-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-        }
-        
-        .rec-card {
-            background: #f8fafc;
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 1.2rem;
-            text-align: center;
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-        
-        .rec-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        
-        .rec-card.best {
-            border-color: var(--success);
-            background: #ecfdf5;
-        }
-        
-        .rec-card.blow {
-            border-color: var(--danger);
-            background: #fef2f2;
-        }
-        
-        .rec-card.stall {
-            border-color: var(--stall);
-            background: #f1f5f9;
-        }
-        
-        .rec-pole {
-            font-size: 1.2rem;
-            font-weight: 800;
-            color: var(--primary);
-            margin-bottom: 0.3rem;
-        }
-        
-        .rec-height {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--success);
-            margin: 0.5rem 0;
-        }
-        
-        .rec-diff {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: #64748b;
-        }
-        
-        .rec-status {
-            font-size: 0.7rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            padding: 4px 8px;
-            border-radius: 20px;
-            margin-top: 0.5rem;
-            display: inline-block;
-        }
 
-        /* NEW: Grip Optimizer */
-        .grip-panel {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 12px;
-            border: 1px solid #e2e8f0;
-            margin-top: 1.5rem;
-        }
-        
-        .grip-optimizer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 2rem;
-        }
-        
-        .grip-current, .grip-optimal {
-            flex: 1;
-            text-align: center;
-        }
-        
-        .grip-label {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            color: #94a3b8;
-            font-weight: 700;
-        }
-        
-        .grip-value {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--primary);
-            margin: 0.3rem 0;
-        }
-        
-        .grip-arrow {
-            font-size: 2rem;
-            color: var(--accent);
-        }
+/* ─── RECOMMENDATIONS ─── */
+.rec-section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap; gap: 8px;
+}
+.rec-section-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.1rem; color: var(--white); font-weight: 700;
+}
+.rec-sub { font-size: 0.75rem; color: var(--muted); }
 
-        @media (max-width: 800px) {
-            .content-grid { grid-template-columns: 1fr; padding: 1.5rem; gap: 1.5rem; }
-            .physics-grid { grid-template-columns: 1fr; }
-            .legend-grid { grid-template-columns: 1fr 1fr; gap: 10px; background: transparent; }
-            .legend-item { border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-            header h1 { font-size: 1.5rem; }
-            .btn-calc { grid-column: span 1; }
-            .rec-grid { grid-template-columns: 1fr; }
-            .grip-optimizer { flex-direction: column; gap: 1rem; }
-        }
-    </style>
+.rec-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.rec-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px;
+  cursor: pointer;
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.rec-card:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(0,0,0,0.3); }
+.rec-card.best { border-color: var(--green); }
+.rec-card.best::after {
+  content: 'NEXT STEP';
+  position: absolute; top: 12px; right: 12px;
+  font-size: 0.55rem; font-weight: 700; letter-spacing: 1.2px;
+  text-transform: uppercase;
+  background: var(--green); color: var(--ink);
+  padding: 3px 8px; border-radius: 20px;
+}
+.rec-card.blow { border-color: rgba(255,77,106,0.4); }
+.rec-card.stall { border-color: rgba(96,123,155,0.4); opacity: 0.7; }
+.rec-card.current { border-color: var(--accent); }
+.rec-card.current::after {
+  content: 'CURRENT';
+  position: absolute; top: 12px; right: 12px;
+  font-size: 0.55rem; font-weight: 700; letter-spacing: 1.2px;
+  text-transform: uppercase;
+  background: var(--accent); color: var(--ink);
+  padding: 3px 8px; border-radius: 20px;
+}
+
+.rec-pole-name {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.15rem; color: var(--white); margin-bottom: 2px;
+}
+.rec-type { font-size: 0.7rem; color: var(--muted); margin-bottom: 14px; }
+.rec-height {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.7rem; color: var(--green); line-height: 1;
+}
+.rec-card.blow .rec-height { color: var(--red); }
+.rec-card.stall .rec-height { color: var(--slate); }
+.rec-card.current .rec-height { color: var(--accent); }
+.rec-diff { font-size: 0.75rem; margin-top: 4px; font-weight: 500; }
+.rec-status-chip {
+  display: inline-block; margin-top: 10px;
+  padding: 3px 10px; border-radius: 20px;
+  font-size: 0.6rem; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* ─── INSIGHT BOX ─── */
+.insight-box {
+  background: var(--ink2);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: 10px;
+  padding: 16px 18px;
+  margin-bottom: 20px;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--text);
+}
+.insight-box strong { color: var(--accent2); }
+
+/* Reset */
+.btn-reset {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 10px 24px;
+  border-radius: 30px;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: border-color 0.2s, color 0.2s;
+  margin-top: 12px;
+}
+.btn-reset:hover { border-color: var(--text); color: var(--text); }
+
+.divider {
+  height: 1px; background: var(--border);
+  margin: 28px 0;
+}
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 720px) {
+  .input-grid { grid-template-columns: 1fr; }
+  .input-section:first-child { border-radius: 16px 16px 0 0; }
+  .input-section:last-child { border-radius: 0 0 16px 16px; }
+  .metrics-row { grid-template-columns: 1fr; }
+  .zone-grid { grid-template-columns: 1fr 1fr; }
+
+  .big-speed { font-size: 2.2rem; }
+}
+</style>
 </head>
 <body>
+<div class="wrap">
 
-<div class="container">
-    <header>
-        <h1>Vault Mechanics <span class="badge-beta">Physics Core V6</span></h1>
-        <p>Stiffness ($k \propto 1/flex$) & Kinetic Energy ($E \propto v^2$) Simulator with Pole Recommendations</p>
-    </header>
+  <!-- HEADER -->
+  <header>
+    <div class="logo-mark">
+      <div class="logo-icon">🏃</div>
+      <div class="logo-text">
+        <h1>VaultIQ</h1>
+        <p>Pole Vault Performance Engine</p>
+      </div>
+    </div>
+    <span class="tag">Physics Core v7</span>
+  </header>
 
-    <div class="content-grid">
-        
-        <!-- SECTION 1: ATHLETE -->
-        <div>
-            <div class="section-label">Athlete Biometrics</div>
-            <div class="input-row">
-                <div class="input-group">
-                    <label>Mass (lbs)</label>
-                    <input type="number" id="weight" placeholder="150" value="148">
-                </div>
-                <div class="input-group">
-                    <label>Height</label>
-                    <div style="display:flex; gap:8px;">
-                        <input type="number" id="hFt" placeholder="Ft" value="5">
-                        <input type="number" id="hIn" placeholder="In" value="9">
-                    </div>
-                </div>
-            </div>
+  <!-- INPUT SECTION -->
+  <div class="input-grid">
 
-            <div class="section-label">Grip Height</div>
-            <div class="input-row">
-                <div class="input-group">
-                    <label>Feet</label>
-                    <select id="gripFt"></select>
-                </div>
-                <div class="input-group">
-                    <label>Inches</label>
-                    <select id="gripIn"></select>
-                </div>
-                <div class="input-group">
-                    <label>Fract</label>
-                    <select id="gripFrac">
-                        <option value="0">0"</option>
-                        <option value="0.125">1/8"</option>
-                        <option value="0.25">1/4"</option>
-                        <option value="0.375">3/8"</option>
-                        <option value="0.5">1/2"</option>
-                        <option value="0.625">5/8"</option>
-                        <option value="0.75">3/4"</option>
-                    </select>
-                </div>
-            </div>
+    <!-- ATHLETE -->
+    <div class="input-section">
+      <div class="sec-title">01 — Athlete Data</div>
 
-            <div class="toggle-row">
-                <div>
-                    <span class="toggle-label">Technical Efficiency</span>
-                    <span class="toggle-sub">Free Takeoff / Plant Angle</span>
-                </div>
-                <label class="switch">
-                    <input type="checkbox" id="effToggle" checked>
-                    <span class="slider"></span>
-                </label>
-            </div>
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label">Body Weight (lbs)</label>
+          <input type="number" id="weight" value="148" min="90" max="260">
         </div>
-
-        <!-- SECTION 2: POLE PHYSICS -->
-        <div>
-            <div class="section-label">Stiffness Parameters</div>
-            <div class="input-row">
-                <div class="input-group">
-                    <label>Manufacturer</label>
-                    <select id="brand" onchange="estimateFlex()">
-                        <option value="UCS">UCS Spirit</option>
-                        <option value="Essx">Essx</option>
-                        <option value="Pacer">Gill Pacer</option>
-                        <option value="Altius">Altius</option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <label>Length</label>
-                    <select id="length" onchange="estimateFlex()"></select>
-                </div>
-            </div>
-            <div class="input-row">
-                <div class="input-group">
-                    <label>Rating (lbs)</label>
-                    <select id="rating" onchange="estimateFlex()"></select>
-                </div>
-                <div class="input-group">
-                    <label>Flex (cm)</label>
-                    <input type="number" id="flex" step="0.1" placeholder="20.0">
-                    <small style="display:block; color:#ef4444; font-size:0.7rem; margin-top:2px;">*Primary Stiffness Variable</small>
-                </div>
-            </div>
-            
-            <!-- NEW: Current PR Input -->
-            <div class="input-row" style="margin-top: 1rem;">
-                <div class="input-group">
-                    <label>Current PR (ft)</label>
-                    <input type="number" id="currentPR" step="0.1" placeholder="15.0" value="15.0">
-                    <small style="display:block; color:#64748b; font-size:0.7rem; margin-top:2px;">For comparison calculations</small>
-                </div>
-                <div class="input-group">
-                    <label>Standing Reach (ft)</label>
-                    <input type="number" id="standingReach" step="0.1" placeholder="7.5">
-                    <small style="display:block; color:#64748b; font-size:0.7rem; margin-top:2px;">Auto-calculated if empty</small>
-                </div>
-            </div>
+        <div class="field">
+          <label class="field-label">Height</label>
+          <div style="display:flex;gap:8px;">
+            <input type="number" id="hFt" value="5" min="4" max="7" placeholder="ft">
+            <input type="number" id="hIn" value="9" min="0" max="11" placeholder="in">
+          </div>
         </div>
+      </div>
 
-        <button class="btn-calc" onclick="initPhysics()">Initialize Physics Engine & Find Better Poles</button>
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label">Standing Reach (ft)</label>
+          <input type="number" id="standingReach" step="0.1" placeholder="Auto (height × 1.27)">
+          <span class="field-hint">Fingertip reach, arms fully extended</span>
+        </div>
+        <div class="field">
+          <label class="field-label">Current PR</label>
+          <div style="display:flex;gap:8px;">
+            <select id="prFt"></select>
+            <select id="prIn"></select>
+          </div>
+          <span class="field-hint">Personal record for comparison</span>
+        </div>
+      </div>
+
+      <div class="sec-title" style="margin-top:20px;">02 — Grip Height</div>
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label">Feet</label>
+          <select id="gripFt"></select>
+        </div>
+        <div class="field">
+          <label class="field-label">Inches</label>
+          <select id="gripIn"></select>
+        </div>
+        <div class="field">
+          <label class="field-label">Fraction</label>
+          <select id="gripFrac">
+            <option value="0">0"</option>
+            <option value="0.125">⅛"</option>
+            <option value="0.25">¼"</option>
+            <option value="0.375">⅜"</option>
+            <option value="0.5">½"</option>
+            <option value="0.625">⅝"</option>
+            <option value="0.75">¾"</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-title">Advanced Technique Mode</div>
+          <div class="toggle-sub">Free takeoff / proper plant angle / hip drive</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="effToggle" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
     </div>
 
-    <!-- RESULTS -->
-    <div id="results" class="results-container">
-        
-        <!-- KINETIC SLIDER -->
-        <div class="kinetic-panel">
-            <div class="k-header">
-                <div>
-                    <div class="k-title">Approach Velocity</div>
-                    <div id="statusPill" class="status-pill" style="background:#e2e8f0; color:#64748b;">--</div>
-                </div>
-                <div class="speed-display">
-                    <div class="speed-val" id="dispMph">--</div>
-                    <div class="speed-unit">MPH</div>
-                    <div style="font-size:0.8rem; color:#94a3b8;" id="dispMs">-- m/s</div>
-                </div>
-            </div>
+    <!-- POLE -->
+    <div class="input-section">
+      <div class="sec-title">03 — Pole Parameters</div>
 
-            <input type="range" id="kSlider" min="5.0" max="11.5" step="0.05" oninput="updateSimulation()">
-            
-            <div class="legend-grid">
-                <div class="legend-item" style="color: var(--stall);">
-                    STALL
-                    <span class="li-val" id="lStall">--</span>
-                </div>
-                <div class="legend-item" style="color: var(--warning);">
-                    UNDER
-                    <span class="li-val" id="lWarn">--</span>
-                </div>
-                <div class="legend-item" style="color: var(--success);">
-                    OPTIMAL
-                    <span class="li-val" id="lOpt">--</span>
-                </div>
-                <div class="legend-item" style="color: var(--danger);">
-                    BLOW THRU
-                    <span class="li-val" id="lBlow">--</span>
-                </div>
-            </div>
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label">Manufacturer</label>
+          <select id="brand" onchange="estimateFlex()">
+            <option value="UCS">UCS Spirit</option>
+            <option value="Essx">Essx</option>
+            <option value="Pacer">Gill Pacer</option>
+            <option value="Altius">Altius</option>
+            <option value="Skypole">Skypole</option>
+            <option value="Nordic">Nordic</option>
+          </select>
         </div>
-
-        <!-- NEW: GRIP OPTIMIZER -->
-        <div class="grip-panel">
-            <div class="section-label" style="margin-top:0;">Grip Optimization</div>
-            <div class="grip-optimizer">
-                <div class="grip-current">
-                    <div class="grip-label">Current Grip</div>
-                    <div class="grip-value" id="currentGripDisplay">--</div>
-                    <div style="font-size:0.75rem; color:#64748b;">Selected above</div>
-                </div>
-                <div class="grip-arrow">→</div>
-                <div class="grip-optimal">
-                    <div class="grip-label">Recommended Grip</div>
-                    <div class="grip-value" id="optimalGripDisplay" style="color:var(--success);">--</div>
-                    <div style="font-size:0.75rem; color:#64748b;" id="gripReason">Based on your speed</div>
-                </div>
-            </div>
+        <div class="field">
+          <label class="field-label">Length</label>
+          <select id="length" onchange="estimateFlex()"></select>
         </div>
+      </div>
 
-        <!-- NEW: POLE RECOMMENDATIONS -->
-        <div class="recommendation-panel">
-            <div class="rec-header">
-                <span>🏆</span>
-                <span>Pole Recommendations (Ranked by Projected Height)</span>
-            </div>
-            <div id="recContainer" class="rec-grid">
-                <!-- Dynamically populated -->
-            </div>
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label">Weight Rating (lbs)</label>
+          <select id="rating" onchange="estimateFlex()"></select>
         </div>
-
-        <!-- METRICS -->
-        <div class="physics-grid">
-            <div class="p-card">
-                <div class="p-label">True Energy Ceiling</div>
-                <div class="p-value" id="hCeiling">--</div>
-                <div class="p-sub">Lift + COM (Theoretical)</div>
-            </div>
-            <div class="p-card" style="border-color: var(--accent); background: #f5f7ff;">
-                <div class="p-label" style="color:var(--accent);">Projected Height</div>
-                <div class="p-value" id="hProj" style="color:var(--accent);">--</div>
-                <div class="p-sub">Realized Potential</div>
-            </div>
-            <div class="p-card">
-                <div class="p-label">Stiffness Load</div>
-                <div class="p-value" id="loadVal">--</div>
-                <div class="p-sub">Relative to Mass</div>
-            </div>
+        <div class="field">
+          <label class="field-label">Flex Number (cm)</label>
+          <input type="number" id="flex" step="0.1" placeholder="20.0">
+          <span class="field-hint" style="color:var(--amber);">★ Primary stiffness variable</span>
         </div>
+      </div>
 
-        <div style="text-align: center; margin-top: 3rem;">
-            <button onclick="resetAll()" style="background:none; border:1px solid #cbd5e1; padding: 10px 24px; border-radius: 30px; color:#64748b; font-weight:700; cursor:pointer;">Reset Simulation</button>
+      <div style="background: var(--ink); border:1px solid var(--border); border-radius:10px; padding: 14px 16px; margin-top: 8px;">
+        <div style="font-size:0.65rem; font-family:'DM Mono',monospace; text-transform:uppercase; letter-spacing:1.5px; color:var(--accent); margin-bottom:8px;">Physics Reference</div>
+        <div style="font-size:0.78rem; color:var(--muted); line-height:1.6;">
+          <strong style="color:var(--text);">Lower flex #</strong> = stiffer pole = needs more speed<br>
+          <strong style="color:var(--text);">Higher flex #</strong> = softer pole = loads easier<br>
+          Ideal load zone: <strong style="color:var(--green);">85–100%</strong> of rating
         </div>
+      </div>
 
+      <!-- Stiffness Load Preview -->
+      <div class="load-bar-wrap" style="margin-top:16px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-size:0.7rem;color:var(--muted);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:1px;">Weight / Rating Load</span>
+          <span id="loadPreview" style="font-size:0.7rem;color:var(--amber);font-weight:600;">--</span>
+        </div>
+        <div class="load-bar-bg">
+          <div id="loadBarLive" class="load-bar-fill" style="width:0%;background:var(--amber);"></div>
+        </div>
+      </div>
     </div>
-</div>
+  </div>
+
+  <!-- CALCULATE BUTTON -->
+  <button class="btn-run" onclick="initPhysics()">⚡ Calculate Vault Projections & Pole Recommendations</button>
+
+  <!-- ─── RESULTS ─── -->
+  <div id="results">
+
+    <!-- VELOCITY SLIDER -->
+    <div class="vel-panel">
+      <div class="vel-header">
+        <div class="vel-left">
+          <div class="label">Approach Velocity Simulator</div>
+          <div id="statusChip" class="status-chip">—</div>
+        </div>
+        <div class="vel-right">
+          <div class="big-speed" id="dispMph">—</div>
+          <div class="speed-units">
+            <span>MPH</span>
+            <span class="speed-ms" id="dispMs">— m/s</span>
+          </div>
+        </div>
+      </div>
+
+      <input type="range" id="kSlider" min="5.0" max="11.5" step="0.05" oninput="updateSim()">
+
+      <div class="zone-grid">
+        <div class="zone-item" style="border-color:rgba(96,123,155,0.3);">
+          <span class="zone-name" style="color:var(--slate);">Stall / Reject</span>
+          <span class="zone-val" id="lStall" style="color:var(--slate);">—</span>
+        </div>
+        <div class="zone-item" style="border-color:rgba(255,184,39,0.3);">
+          <span class="zone-name" style="color:var(--amber);">Under Power</span>
+          <span class="zone-val" id="lWarn" style="color:var(--amber);">—</span>
+        </div>
+        <div class="zone-item" style="border-color:rgba(0,229,160,0.3);">
+          <span class="zone-name" style="color:var(--green);">Optimal Lock</span>
+          <span class="zone-val" id="lOpt" style="color:var(--green);">—</span>
+        </div>
+        <div class="zone-item" style="border-color:rgba(255,77,106,0.3);">
+          <span class="zone-name" style="color:var(--red);">Blow Through</span>
+          <span class="zone-val" id="lBlow" style="color:var(--red);">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- METRICS -->
+    <div class="metrics-row">
+      <div class="m-card">
+        <div class="m-label">Energy Ceiling</div>
+        <div class="m-val" id="hCeiling">—</div>
+        <div class="m-sub">Theoretical max (no losses)</div>
+      </div>
+      <div class="m-card good">
+        <div class="m-label">Projected Height</div>
+        <div class="m-val" id="hProj">—</div>
+        <div class="m-sub">With current pole + grip</div>
+      </div>
+      <div class="m-card highlight">
+        <div class="m-label">Stiffness Load</div>
+        <div class="m-val" id="loadVal">—</div>
+        <div class="m-sub">Body weight vs. rating</div>
+        <div class="load-bar-wrap" style="margin-top:10px;">
+          <div class="load-bar-bg">
+            <div id="loadBarResult" class="load-bar-fill" style="width:0%;background:var(--green);"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COACHING INSIGHT -->
+    <div id="insightBox" class="insight-box"></div>
+
+    <div class="divider"></div>
+
+    <!-- POLE RECOMMENDATIONS -->
+    <div class="rec-section-header">
+      <div>
+        <div class="rec-section-title">Pole Progression Recommendations</div>
+        <div class="rec-sub">Current pole shown first, then next logical steps ranked by projected height</div>
+      </div>
+    </div>
+    <div id="recContainer" class="rec-grid"></div>
+
+    <div style="text-align:center;">
+      <button class="btn-reset" onclick="resetAll()">↑ Reset Simulation</button>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
 
 <script>
-    // --- Physics Constants ---
-    const G = 9.81;
-    let zStall, zWarn, zOpt, zBlow;
-    let currentPoleData = {};
+// ════════════════════════════════════════════
+//  CONSTANTS & STATE
+// ════════════════════════════════════════════
+const G = 9.80665;
+let zStall, zWarn, zOpt, zBlow;
+let currentPoleData = {};
 
-    document.addEventListener("DOMContentLoaded", () => {
-        initUI();
-        estimateFlex();
+// ════════════════════════════════════════════
+//  INIT UI
+// ════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  buildSelects();
+  estimateFlex();
+  // Live load bar
+  ['rating','weight'].forEach(id =>
+    document.getElementById(id).addEventListener('input', updateLoadPreview)
+  );
+  document.getElementById('rating').addEventListener('change', updateLoadPreview);
+  updateLoadPreview();
+});
+
+function buildSelects() {
+  const lenSel = document.getElementById('length');
+  const rateSel = document.getElementById('rating');
+  const gFt = document.getElementById('gripFt');
+  const gIn = document.getElementById('gripIn');
+  const pFt = document.getElementById('prFt');
+  const pIn = document.getElementById('prIn');
+
+  // Pole lengths 10'0" to 18'0" in 6" steps
+  for (let f = 10; f <= 18; f++) {
+    [0, 6].forEach(i => {
+      if (f === 18 && i === 6) return;
+      const val = f + i / 12;
+      const opt = new Option(`${f}' ${i === 0 ? '0"' : '6"'}`, val);
+      if (val === 15) opt.selected = true;
+      lenSel.add(opt);
     });
+  }
 
-    function initUI() {
-        const lenSel = document.getElementById('length');
-        const rateSel = document.getElementById('rating');
-        const gFt = document.getElementById('gripFt');
-        const gIn = document.getElementById('gripIn');
+  // Ratings 90–230 in 5 lb steps
+  for (let w = 90; w <= 230; w += 5) {
+    const opt = new Option(`${w} lbs`, w);
+    if (w === 165) opt.selected = true;
+    rateSel.add(opt);
+  }
 
-        // Lengths
-        for(let f = 10; f <= 18; f++) {
-            [0, 6].forEach(i => {
-                if(f===18 && i===6) return;
-                let val = f + (i/12);
-                let opt = document.createElement('option');
-                opt.value = val;
-                opt.text = `${f}' ${i}"`;
-                if(val === 15) opt.selected = true;
-                lenSel.appendChild(opt);
-            });
-        }
+  // Grip feet 10–17
+  for (let f = 10; f <= 17; f++) {
+    const opt = new Option(`${f}'`, f);
+    if (f === 14) opt.selected = true;
+    gFt.add(opt);
+  }
 
-        // Ratings
-        for(let w = 90; w <= 230; w += 5) {
-            let opt = document.createElement('option');
-            opt.value = w;
-            opt.text = `${w} lbs`;
-            if(w === 165) opt.selected = true;
-            rateSel.appendChild(opt);
-        }
+  // Grip inches 0–11
+  for (let i = 0; i <= 11; i++) {
+    const opt = new Option(`${i}"`, i);
+    if (i === 9) opt.selected = true;
+    gIn.add(opt);
+  }
 
-        // Grip
-        for(let f=10; f<=17; f++){
-            let opt = document.createElement('option');
-            opt.value = f; opt.text = `${f}'`;
-            if(f===14) opt.selected = true; gFt.appendChild(opt);
-        }
-        for(let i=0; i<=11; i++){
-            let opt = document.createElement('option');
-            opt.value = i; opt.text = `${i}"`;
-            if(i===9) opt.selected = true; gIn.appendChild(opt);
-        }
-    }
+  // PR feet 8–20
+  for (let f = 8; f <= 20; f++) {
+    const opt = new Option(`${f}'`, f);
+    if (f === 14) opt.selected = true;
+    pFt.add(opt);
+  }
 
-    function estimateFlex() {
-        const L = parseFloat(document.getElementById('length').value);
-        const W = parseInt(document.getElementById('rating').value);
-        const brand = document.getElementById('brand').value;
-        
-        // Heuristic Flex Estimation (Start point only)
-        let base = 19.0;
-        base -= (W - 150) * 0.05;
-        base += (L - 14) * 1.3; 
-        
-        if(brand === 'Essx') base -= 0.5;
-        if(brand === 'Pacer') base += 0.4;
+  // PR inches 0–11
+  for (let i = 0; i <= 11; i++) {
+    const opt = new Option(`${i}"`, i);
+    if (i === 11) opt.selected = true;
+    pIn.add(opt);
+  }
+}
 
-        // Only set if empty to allow user override
-        const fInput = document.getElementById('flex');
-        if(!fInput.value) fInput.value = base.toFixed(1);
-    }
+function updateLoadPreview() {
+  const w = parseFloat(document.getElementById('weight').value) || 0;
+  const r = parseFloat(document.getElementById('rating').value) || 165;
+  const ratio = (w / r) * 100;
+  document.getElementById('loadPreview').innerText = ratio.toFixed(0) + '%';
+  const bar = document.getElementById('loadBarLive');
+  bar.style.width = Math.min(ratio, 130) + '%';
+  bar.style.background = ratio >= 80 && ratio <= 110 ? 'var(--green)' :
+                          ratio > 110 ? 'var(--red)' : 'var(--amber)';
+}
 
-    // --- IMPROVED STIFFNESS CALCULATION ---
-    function calculateTrueStiffness(rating, flex, length) {
-        // Normalize to standard 14' 150lb reference
-        const lengthFactor = Math.pow(length / 14, 3); // Stiffness ∝ L³
-        const flexFactor = Math.pow(20.0 / flex, 1.5); // Non-linear flex response
-        const ratingFactor = rating / 150;
-        
-        return lengthFactor * flexFactor * ratingFactor;
-    }
+// ════════════════════════════════════════════
+//  FLEX ESTIMATOR (heuristic seed only)
+// ════════════════════════════════════════════
+function estimateFlex() {
+  const L = parseFloat(document.getElementById('length').value) || 15;
+  const W = parseInt(document.getElementById('rating').value) || 165;
+  const brand = document.getElementById('brand').value;
+  let base = 20.5 - (W - 150) * 0.05 + (L - 14) * 1.4;
+  if (brand === 'Essx')   base -= 0.6;
+  if (brand === 'Pacer')  base += 0.4;
+  if (brand === 'Nordic') base -= 0.3;
+  const fInput = document.getElementById('flex');
+  if (!fInput.value) fInput.value = Math.max(14, base).toFixed(1);
+  updateLoadPreview();
+}
 
-    // --- GRIP OPTIMIZATION ---
-    function calculateOptimalGrip(vaulterHeight, standingReach, currentSpeed, poleLength, stiffness) {
-        // Max functional grip is standing reach + 18-22 inches for elite vaulters
-        // But must have speed to rotate the pole
-        
-        const standingReachM = standingReach ? standingReach * 0.3048 : vaulterHeight * 0.3048 * 1.25;
-        const maxFunctionalGrip = standingReachM + 0.55; // ~22" max
-        
-        // Speed requirement increases with grip height
-        // Base speed needed for a grip
-        const gripFt = Math.floor(poleLength);
-        const baseGripM = gripFt * 0.3048;
-        
-        // Can he grip higher?
-        let optimalGrip = baseGripM;
-        
-        // If he has excess speed, recommend gripping up
-        const speedBuffer = currentSpeed - zOpt;
-        if (speedBuffer > 0.3) {
-            // Every 0.1 m/s excess allows ~1.5" higher grip
-            const extraInches = speedBuffer * 10 * 0.0254; // Convert to meters
-            optimalGrip = Math.min(baseGripM + extraInches, maxFunctionalGrip);
-        }
-        
-        return optimalGrip;
-    }
+// ════════════════════════════════════════════
+//  STIFFNESS INDEX
+//  k ∝ rating × (ref_flex/flex)^1.5 × (L/14)^2.5
+//  Longer poles need more speed to load (empirical exponent 2.5)
+// ════════════════════════════════════════════
+function calcStiffness(rating, flex, length) {
+  const rateFactor = rating / 150;
+  const flexFactor = Math.pow(20.0 / Math.max(flex, 10), 1.5);
+  const lenFactor  = Math.pow(length / 14, 2.5);     // tuned exponent
+  return rateFactor * flexFactor * lenFactor;
+}
 
-    // --- POLE RECOMMENDATION ENGINE ---
-    function generatePoleRecommendations(weight, height, currentSpeed, currentPole) {
-        const recommendations = [];
-        const currentStiffness = calculateTrueStiffness(
-            currentPole.rating, 
-            currentPole.flex, 
-            currentPole.length
-        );
-        
-        // Generate candidate poles
-        const candidates = [];
-        
-        // Same length, different ratings/flexes
-        const currentRating = parseInt(currentPole.rating);
-        const currentLen = parseFloat(currentPole.length);
-        
-        // Stiffer same length (if blowing through)
-        if (currentSpeed > zBlow) {
-            candidates.push({
-                length: currentLen,
-                rating: currentRating + 10,
-                flex: Math.max(15, currentPole.flex - 1.0),
-                type: 'Stiffer Same Length'
-            });
-        }
-        
-        // Longer poles (primary path to height)
-        const longerLengths = [15.5, 16, 16.5, 17].filter(l => l > currentLen);
-        longerLengths.forEach(len => {
-            // Calculate ideal flex for this length at his weight/speed
-            const targetStiffness = currentStiffness * 0.95; // Slightly softer for longer
-            const idealFlex = 20.0 / Math.pow(targetStiffness / Math.pow(len/14, 3) / (currentRating/150), 1/1.5);
-            
-            candidates.push({
-                length: len,
-                rating: currentRating,
-                flex: Math.round(idealFlex * 10) / 10,
-                type: `Longer ${len}'`
-            });
-            
-            // Also try one rating up on longer pole
-            candidates.push({
-                length: len,
-                rating: currentRating + 5,
-                flex: Math.round((idealFlex - 0.5) * 10) / 10,
-                type: `Longer ${len}' Stiffer`
-            });
-        });
-        
-        // Calculate projected height for each
-        candidates.forEach(pole => {
-            const proj = simulatePole(pole, weight, height, currentSpeed);
-            recommendations.push({
-                ...pole,
-                ...proj
-            });
-        });
-        
-        // Sort by projected height
-        recommendations.sort((a, b) => b.projectedHeight - a.projectedHeight);
-        
-        return recommendations.slice(0, 4); // Top 4
-    }
+// ════════════════════════════════════════════
+//  OPTIMAL SPEED FOR A GIVEN POLE
+//  Calibrated so: 165lb/20flex/15' → v_opt ≈ 7.9 m/s (~17.7 mph)
+// ════════════════════════════════════════════
+function calcVopt(rating, flex, length, athleteWeight) {
+  const k = calcStiffness(rating, flex, length);
+  const massRatio = athleteWeight / 150;
+  let v = 6.7 * Math.sqrt(k / massRatio);
+  // Clamp to realistic range: 5.5–11.5 m/s
+  return Math.max(5.5, Math.min(11.5, v));
+}
 
-    function simulatePole(pole, weight, height, v) {
-        const mass = weight * 0.453592;
-        const bodyH = height;
-        const com = bodyH * 0.57;
-        
-        // Calculate stiffness for this pole
-        const stiffness = calculateTrueStiffness(pole.rating, pole.flex, pole.length);
-        const massIndex = weight / 150;
-        const kIndex = stiffness / 1.0; // Normalized
-        
-        // Optimal speed for this pole
-        let vOpt = 7.8 * Math.sqrt(kIndex / massIndex);
-        vOpt -= (pole.length - 14) * 0.1;
-        
-        // Determine zone
-        const zStallPole = vOpt - 1.0;
-        const zWarnPole = vOpt - 0.3;
-        const zBlowPole = vOpt + 0.8;
-        
-        let status, projectedHeight, efficiency;
-        const effTech = document.getElementById('effToggle').checked ? 0.96 : 0.88;
-        
-        // Calculate grip for this pole length
-        const gripM = Math.floor(pole.length) * 0.3048;
-        
-        if (v < zStallPole) {
-            status = 'STALL';
-            projectedHeight = gripM * 0.8;
-            efficiency = 0.6;
-        } else if (v < zWarnPole) {
-            status = 'UNDER';
-            projectedHeight = gripM;
-            efficiency = 0.85;
-        } else if (v > zBlowPole) {
-            status = 'BLOW';
-            projectedHeight = gripM + 0.2;
-            efficiency = 0.75;
-        } else {
-            status = 'OPTIMAL';
-            const lift = (v * v) / (2 * G);
-            projectedHeight = (lift * effTech) + com;
-            if (projectedHeight > gripM + 1.25) projectedHeight = gripM + 1.25;
-            efficiency = effTech;
-        }
-        
-        return {
-            projectedHeight,
-            status,
-            efficiency,
-            vOptimal: vOpt
-        };
-    }
+// ════════════════════════════════════════════
+//  PROJECTED HEIGHT  (FIXED PHYSICS MODEL)
+//
+//  Core insight: pole vault height is NOT simply v²/2g + COM.
+//  The vaulter's active muscular work (swing, push-off, rotation)
+//  contributes significant additional energy above the run KE.
+//  We model this via an "overhead above grip" formula:
+//
+//    overhead = base + speed_coeff × max(0, v_surplus + 0.3)
+//    h_proj   = grip_m + overhead   (capped at overhead_max)
+//
+//  This correctly centers projected height on GRIP HEIGHT,
+//  not COM, and matches real-world college vault data.
+// ════════════════════════════════════════════
+function projectHeight(v, vOpt, grip_m, effToggle) {
+  const vSurplus  = v - vOpt;
+  const isElite   = effToggle;
 
-    // --- CORE PHYSICS ENGINE V6 ---
-    function initPhysics() {
-        const weight = parseFloat(document.getElementById('weight').value);
-        const rating = parseFloat(document.getElementById('rating').value);
-        const flex = parseFloat(document.getElementById('flex').value);
-        const length = parseFloat(document.getElementById('length').value);
-        
-        // Store current pole data
-        currentPoleData = { weight, rating, flex, length };
-        
-        // 1. TRUE STIFFNESS (k)
-        const k_index = calculateTrueStiffness(rating, flex, length);
-        
-        // 2. ENERGY REQUIREMENT (v_opt)
-        const mass_index = weight / 150;
-        let v_optimal = 7.8 * Math.sqrt(k_index / mass_index);
-        v_optimal -= (length - 14) * 0.1;
-        
-        if(v_optimal < 6.0) v_optimal = 6.0;
-        if(v_optimal > 10.8) v_optimal = 10.8;
+  // Zone determination
+  const zS = vOpt - 1.0;
+  const zW = vOpt - 0.3;
+  const zB = vOpt + 0.8;
 
-        // 3. ZONES
-        zStall = v_optimal - 1.0; 
-        zWarn = v_optimal - 0.3;  
-        zOpt = v_optimal;         
-        zBlow = v_optimal + 0.8; 
+  if (v < zS) {
+    // Stall — pole doesn't load, bar drops
+    return { h: grip_m * 0.88, status: 'STALL' };
+  }
+  if (v < zW) {
+    // Under — partial load, limited overhead
+    const fraction = (v - zS) / (zW - zS); // 0→1
+    const overhead = (isElite ? 0.12 : 0.08) * fraction;
+    return { h: grip_m + overhead, status: 'UNDER' };
+  }
+  if (v > zB) {
+    // Blow through — pole too stiff, athlete passes grip angle poorly
+    return { h: grip_m + 0.14, status: 'BLOW' };
+  }
 
-        // 4. RENDER LEGEND
-        const toMph = (ms) => (ms * 2.237).toFixed(1);
-        document.getElementById('lStall').innerText = `< ${toMph(zStall)}`;
-        document.getElementById('lWarn').innerText = `${toMph(zStall)} - ${toMph(zWarn)}`;
-        document.getElementById('lOpt').innerText = `${toMph(zWarn)} - ${toMph(zBlow)}`;
-        document.getElementById('lBlow').innerText = `> ${toMph(zBlow)}`;
+  // ✅ OPTIMAL ZONE
+  const base_oh   = isElite ? 0.24 : 0.16;  // m overhead at v = vOpt
+  const spd_coeff = isElite ? 0.44 : 0.30;  // m per m/s surplus
+  const cap_oh    = isElite ? 0.80 : 0.52;  // absolute max overhead (m)
+  const overhead  = Math.min(base_oh + spd_coeff * Math.max(0, vSurplus + 0.3), cap_oh);
+  return { h: grip_m + overhead, status: 'OPTIMAL' };
+}
 
-        paintGradient();
+// Theoretical energy ceiling (for display only — not the vault prediction)
+function energyCeiling(v, h_com) {
+  return (v * v) / (2 * G) + h_com;
+}
 
-        // Set slider to calculated optimal (not fixed 8.5)
-        document.getElementById('kSlider').value = v_optimal.toFixed(2);
-        
-        document.getElementById('results').style.display = 'block';
-        document.getElementById('results').scrollIntoView({behavior:'smooth'});
-        
-        updateSimulation();
-    }
+// ════════════════════════════════════════════
+//  OPTIMAL GRIP HEIGHT
+//  Max grip = min(standing_reach + 20–24", pole_length – 14")
+// ════════════════════════════════════════════
+function optimalGrip(vaulterHeightFt, standingReachFt, poleLength_ft, v, vOpt) {
+  const reachFt = standingReachFt > 0 ? standingReachFt : vaulterHeightFt * 1.27;
+  const reachM  = reachFt * 0.3048;
+  const maxFromReach = reachM + 0.55;            // ~22" above standing reach
+  const maxFromPole  = (poleLength_ft - 1.17) * 0.3048;  // 14" from top
+  const anatomicMax  = Math.min(maxFromReach, maxFromPole);
+  // Reduce if speed is below optimal
+  const speedFraction = Math.max(0.7, Math.min(1.0, v / vOpt));
+  return anatomicMax * speedFraction;
+}
 
-    function paintGradient() {
-        const s = document.getElementById('kSlider');
-        const min = parseFloat(s.min);
-        const max = parseFloat(s.max);
-        const range = max - min;
-        
-        const pStall = Math.max(0, Math.min(100, ((zStall - min)/range)*100));
-        const pWarn = Math.max(0, Math.min(100, ((zWarn - min)/range)*100));
-        const pBlow = Math.max(0, Math.min(100, ((zBlow - min)/range)*100));
+// ════════════════════════════════════════════
+//  POLE RECOMMENDATION ENGINE
+//  Generates current + next 2 logical steps (6" and 12" longer)
+//  and a "stiffer same length" option if blowing through
+// ════════════════════════════════════════════
+function genRecommendations(athleteWeight, heightFt, v, currentPole, effToggle) {
+  const recs = [];
+  const cLen = parseFloat(currentPole.length);
+  const cRat = parseFloat(currentPole.rating);
+  const cFlex = parseFloat(currentPole.flex);
+  const hFt = heightFt;
 
-        const g = `linear-gradient(to right, 
-            #64748b 0%, #64748b ${pStall}%, 
-            #f59e0b ${pStall}%, #f59e0b ${pWarn}%, 
-            #10b981 ${pWarn}%, #10b981 ${pBlow}%, 
-            #ef4444 ${pBlow}%, #ef4444 100%)`;
-        s.style.background = g;
-    }
+  // Helper to compute projected height for a candidate pole
+  function evalPole(pole) {
+    const vO = calcVopt(pole.rating, pole.flex, pole.length, athleteWeight);
+    // Grip for this pole: athlete's natural grip + increment from length
+    const lengthIncrease = pole.length - cLen;
+    const baseFt = parseInt(document.getElementById('gripFt').value);
+    const baseIn = parseInt(document.getElementById('gripIn').value) +
+                   parseFloat(document.getElementById('gripFrac').value);
+    const baseGripM  = (baseFt + baseIn / 12) * 0.3048;
+    // On a longer pole, grip can go up proportionally (~0.5" per inch of pole)
+    const extraGripM  = (lengthIncrease * 0.3048) * 0.55;
+    const grip_m      = baseGripM + extraGripM;
+    const { h, status } = projectHeight(v, vO, grip_m, effToggle);
+    return { ...pole, vOpt: vO, grip_m, projH: h, status };
+  }
 
-    function updateSimulation() {
-        const v = parseFloat(document.getElementById('kSlider').value);
-        const mph = v * 2.23694;
-        
-        document.getElementById('dispMph').innerText = mph.toFixed(1);
-        document.getElementById('dispMs').innerText = v.toFixed(2) + " m/s";
+  // --- CURRENT POLE ---
+  const gFt = parseInt(document.getElementById('gripFt').value);
+  const gIn = parseInt(document.getElementById('gripIn').value) +
+              parseFloat(document.getElementById('gripFrac').value);
+  const currentGrip_m = (gFt + gIn / 12) * 0.3048;
+  const currentVopt   = calcVopt(cRat, cFlex, cLen, athleteWeight);
+  const { h: curH, status: curStatus } = projectHeight(v, currentVopt, currentGrip_m, effToggle);
 
-        // Efficiency Toggle
-        const effTech = document.getElementById('effToggle').checked ? 0.96 : 0.88;
+  recs.push({
+    length: cLen, rating: cRat, flex: cFlex,
+    type: `${lenLabel(cLen)} · Current Pole`,
+    isCurrent: true,
+    vOpt: currentVopt, grip_m: currentGrip_m,
+    projH: curH, status: curStatus
+  });
 
-        // Body metrics
-        const hFt = parseFloat(document.getElementById('hFt').value);
-        const hIn = parseFloat(document.getElementById('hIn').value);
-        const bodyH_m = (hFt * 0.3048) + (hIn * 0.0254);
-        const com_m = bodyH_m * 0.57;
+  // --- BLOW-THROUGH OPTION: stiffer same length ---
+  if (curStatus === 'BLOW') {
+    const stifferPole = {
+      length: cLen,
+      rating: Math.min(cRat + 15, 235),
+      flex: Math.max(14, cFlex - 1.5),
+      type: `${lenLabel(cLen)} · Stiffer (Blow Fix)`
+    };
+    recs.push(evalPole(stifferPole));
+  }
 
-        // Energy Ceiling
-        const lift_m = (v * v) / (2 * G);
-        const ceiling_m = lift_m + com_m;
+  // --- NEXT STEP: +6 inches ---
+  if (cLen < 18) {
+    const next6Len = cLen + 0.5;
+    // Typical rating increase when going up 6": +5 to +10 lbs to maintain load zone
+    const next6Rat = cRat + 5;
+    const next6Flex = estimateFlexForPole(next6Len, next6Rat, document.getElementById('brand').value);
+    recs.push(evalPole({ length: next6Len, rating: next6Rat, flex: next6Flex, type: `${lenLabel(next6Len)} · Next Step (+6")` }));
+    // Also same rating on +6"
+    const next6SameRat = { length: next6Len, rating: cRat, flex: next6Flex, type: `${lenLabel(next6Len)} · Same Rating (+6")` };
+    recs.push(evalPole(next6SameRat));
+  }
 
-        // Grip Data
-        const gFt = parseInt(document.getElementById('gripFt').value);
-        const gIn = parseInt(document.getElementById('gripIn').value);
-        const gFr = parseFloat(document.getElementById('gripFrac').value);
-        const grip_m = (gFt + ((gIn + gFr)/12)) * 0.3048;
-        
-        // Update grip displays
-        document.getElementById('currentGripDisplay').innerText = toFtIn(grip_m);
+  // --- REACH POLE: +12 inches ---
+  if (cLen < 17.5) {
+    const next12Len = cLen + 1.0;
+    const next12Rat = cRat + 10;
+    const next12Flex = estimateFlexForPole(next12Len, next12Rat, document.getElementById('brand').value);
+    recs.push(evalPole({ length: next12Len, rating: next12Rat, flex: next12Flex, type: `${lenLabel(next12Len)} · Reach Pole (+12")` }));
+  }
 
-        // Standing reach calculation
-        const standingReachInput = document.getElementById('standingReach').value;
-        const standingReach = standingReachInput ? parseFloat(standingReachInput) : (hFt + hIn/12) * 1.25;
+  // Sort non-current by projected height desc
+  const current = recs.filter(r => r.isCurrent);
+  const others  = recs.filter(r => !r.isCurrent).sort((a, b) => b.projH - a.projH);
+  return [...current, ...others];
+}
 
-        // Calculate optimal grip
-        const optimalGrip = calculateOptimalGrip(bodyH_m, standingReach, v, currentPoleData.length, currentPoleData.flex);
-        document.getElementById('optimalGripDisplay').innerText = toFtIn(optimalGrip);
-        
-        // Grip reason
-        const speedBuffer = v - zOpt;
-        if (speedBuffer > 0.5) {
-            document.getElementById('gripReason').innerText = 'Speed surplus - grip up!';
-        } else if (speedBuffer < -0.3) {
-            document.getElementById('gripReason').innerText = 'Need more speed to grip higher';
-        } else {
-            document.getElementById('gripReason').innerText = 'Current grip appropriate';
-        }
+function estimateFlexForPole(length, rating, brand) {
+  let base = 20.5 - (rating - 150) * 0.05 + (length - 14) * 1.4;
+  if (brand === 'Essx')   base -= 0.6;
+  if (brand === 'Pacer')  base += 0.4;
+  if (brand === 'Nordic') base -= 0.3;
+  return Math.max(14, Math.round(base * 10) / 10);
+}
 
-        // Realized Height Logic
-        let projM = 0;
-        const status = document.getElementById('statusPill');
-        
-        if (v < zStall) {
-            status.style.background = "var(--stall)";
-            status.innerText = "STALL / REJECT";
-            projM = grip_m * 0.8;
-        } else if (v < zWarn) {
-            status.style.background = "var(--warning)";
-            status.innerText = "UNDER POWERED";
-            projM = grip_m;
-        } else if (v > zBlow) {
-            status.style.background = "var(--danger)";
-            status.innerText = "BLOW THROUGH";
-            projM = grip_m + 0.2;
-        } else {
-            status.style.background = "var(--success)";
-            status.innerText = "OPTIMAL LOCK";
-            
-            projM = (lift_m * effTech) + com_m;
-            if (projM > grip_m + 1.25) projM = grip_m + 1.25;
-        }
-        
-        // Update Cards
-        document.getElementById('hCeiling').innerText = toFtIn(ceiling_m);
-        document.getElementById('hProj').innerText = toFtIn(projM);
-        
-        // Stiffness Load
-        const weight = parseFloat(document.getElementById('weight').value);
-        const rating = parseFloat(document.getElementById('rating').value);
-        const ratio = (weight/rating) * 100;
-        document.getElementById('loadVal').innerText = ratio.toFixed(0) + "%";
-        
-        // Generate and display pole recommendations
-        displayRecommendations(weight, hFt + hIn/12, v);
-    }
+function lenLabel(len) {
+  const ft = Math.floor(len);
+  const inches = Math.round((len - ft) * 12);
+  return inches === 0 ? `${ft}'` : `${ft}' ${inches}"`;
+}
 
-    function displayRecommendations(weight, height, v) {
-        const recs = generatePoleRecommendations(weight, height, v, currentPoleData);
-        const container = document.getElementById('recContainer');
-        const currentPR = parseFloat(document.getElementById('currentPR').value) || 0;
-        
-        container.innerHTML = '';
-        
-        recs.forEach((rec, index) => {
-            const card = document.createElement('div');
-            card.className = 'rec-card';
-            
-            // Determine styling based on status
-            if (rec.status === 'OPTIMAL') card.classList.add('best');
-            else if (rec.status === 'BLOW') card.classList.add('blow');
-            else if (rec.status === 'STALL') card.classList.add('stall');
-            
-            // Calculate height difference from PR
-            const prM = currentPR * 0.3048;
-            const diffM = rec.projectedHeight - prM;
-            const diffStr = diffM > 0 ? `+${(diffM * 3.28084 * 12).toFixed(0)}"` : `${(diffM * 3.28084 * 12).toFixed(0)}"`;
-            const diffColor = diffM > 0 ? 'var(--success)' : (diffM < 0 ? 'var(--danger)' : '#64748b');
-            
-            card.innerHTML = `
-                <div class="rec-pole">${rec.length}' ${rec.rating}lbs <span style="font-size:0.8rem;color:#64748b;">(${rec.flex})</span></div>
-                <div style="font-size:0.75rem;color:#64748b;margin-bottom:0.5rem;">${rec.type}</div>
-                <div class="rec-height">${toFtIn(rec.projectedHeight)}</div>
-                <div class="rec-diff" style="color:${diffColor};">${diffStr} from PR</div>
-                <span class="rec-status" style="background:${getStatusColor(rec.status)}20;color:${getStatusColor(rec.status)};">
-                    ${rec.status}
-                </span>
-            `;
-            
-            container.appendChild(card);
-        });
-    }
+// ════════════════════════════════════════════
+//  PAINT SLIDER GRADIENT
+// ════════════════════════════════════════════
+function paintGradient() {
+  const s = document.getElementById('kSlider');
+  const min = parseFloat(s.min), max = parseFloat(s.max), range = max - min;
+  const pct = v => Math.max(0, Math.min(100, ((v - min) / range) * 100));
+  s.style.background = `linear-gradient(to right,
+    #607B9B 0%, #607B9B ${pct(zStall)}%,
+    #ffb827 ${pct(zStall)}%, #ffb827 ${pct(zWarn)}%,
+    #00e5a0 ${pct(zWarn)}%, #00e5a0 ${pct(zBlow)}%,
+    #ff4d6a ${pct(zBlow)}%, #ff4d6a 100%)`;
+}
 
-    function getStatusColor(status) {
-        switch(status) {
-            case 'OPTIMAL': return 'var(--success)';
-            case 'BLOW': return 'var(--danger)';
-            case 'STALL': return 'var(--stall)';
-            case 'UNDER': return 'var(--warning)';
-            default: return '#64748b';
-        }
-    }
+// ════════════════════════════════════════════
+//  FT/IN FORMATTER
+// ════════════════════════════════════════════
+function toFtIn(m) {
+  const total_in = Math.round(m * 39.3701);
+  let ft = Math.floor(total_in / 12);
+  let inc = total_in % 12;
+  return `${ft}' ${inc}"`;
+}
 
-    function toFtIn(m) {
-        let ft = Math.floor(m * 3.28084);
-        let inc = Math.round((m * 3.28084 - ft)*12);
-        if(inc===12){ft++; inc=0;}
-        return `${ft}' ${inc}"`;
-    }
+// ════════════════════════════════════════════
+//  MAIN INIT
+// ════════════════════════════════════════════
+function initPhysics() {
+  const weight = parseFloat(document.getElementById('weight').value);
+  const rating = parseFloat(document.getElementById('rating').value);
+  const flex   = parseFloat(document.getElementById('flex').value);
+  const length = parseFloat(document.getElementById('length').value);
 
-    function resetAll() {
-        document.getElementById('results').style.display = 'none';
-        window.scrollTo({top:0, behavior:'smooth'});
-    }
+  if (!flex || isNaN(flex)) {
+    estimateFlex();
+    return setTimeout(initPhysics, 50);
+  }
+
+  currentPoleData = { weight, rating, flex, length };
+
+  // Compute zones
+  zOpt   = calcVopt(rating, flex, length, weight);
+  zStall = zOpt - 1.0;
+  zWarn  = zOpt - 0.3;
+  zBlow  = zOpt + 0.8;
+
+  // Update zone labels
+  const mph = v => (v * 2.23694).toFixed(1);
+  document.getElementById('lStall').textContent = `< ${mph(zStall)} mph`;
+  document.getElementById('lWarn').textContent  = `${mph(zStall)}–${mph(zWarn)} mph`;
+  document.getElementById('lOpt').textContent   = `${mph(zWarn)}–${mph(zBlow)} mph`;
+  document.getElementById('lBlow').textContent  = `> ${mph(zBlow)} mph`;
+
+  paintGradient();
+
+  // Set slider to optimal speed
+  document.getElementById('kSlider').value = zOpt.toFixed(2);
+
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+  updateSim();
+}
+
+// ════════════════════════════════════════════
+//  UPDATE ON SLIDER MOVE
+// ════════════════════════════════════════════
+function updateSim() {
+  const v      = parseFloat(document.getElementById('kSlider').value);
+  const effOn  = document.getElementById('effToggle').checked;
+
+  // Speed display
+  document.getElementById('dispMph').textContent = (v * 2.23694).toFixed(1);
+  document.getElementById('dispMs').textContent  = v.toFixed(2) + ' m/s';
+
+  // Athlete metrics
+  const hFt  = parseFloat(document.getElementById('hFt').value);
+  const hIn  = parseFloat(document.getElementById('hIn').value);
+  const hM   = hFt * 0.3048 + hIn * 0.0254;
+  const com_m = hM * 0.57;
+
+  // Grip
+  const gFt  = parseInt(document.getElementById('gripFt').value);
+  const gIn  = parseInt(document.getElementById('gripIn').value);
+  const gFrac = parseFloat(document.getElementById('gripFrac').value);
+  const grip_m = (gFt + (gIn + gFrac) / 12) * 0.3048;
+
+  // Standing reach
+  const reachInput = parseFloat(document.getElementById('standingReach').value);
+  const reachFt    = reachInput > 0 ? reachInput : (hFt + hIn / 12) * 1.27;
+
+  // Project height with current pole
+  const { h: projM, status } = projectHeight(v, zOpt, grip_m, effOn);
+
+  // Energy ceiling (theoretical, for display)
+  const ceiling_m = energyCeiling(v, com_m);
+
+  // Status chip
+  const chip = document.getElementById('statusChip');
+  const statusConfig = {
+    STALL:   { label: 'Stall / Reject',  bg: 'rgba(96,123,155,0.25)',  color: 'var(--slate)' },
+    UNDER:   { label: 'Under Power',     bg: 'rgba(255,184,39,0.2)',   color: 'var(--amber)' },
+    OPTIMAL: { label: 'Optimal Lock',    bg: 'rgba(0,229,160,0.2)',    color: 'var(--green)' },
+    BLOW:    { label: 'Blow Through',    bg: 'rgba(255,77,106,0.2)',   color: 'var(--red)'   }
+  };
+  const sc = statusConfig[status] || statusConfig.OPTIMAL;
+  chip.textContent = sc.label;
+  chip.style.background = sc.bg;
+  chip.style.color = sc.color;
+
+  // Metrics cards
+  document.getElementById('hCeiling').textContent = toFtIn(ceiling_m);
+  document.getElementById('hProj').textContent    = toFtIn(projM);
+
+  const weight = parseFloat(document.getElementById('weight').value);
+  const rating = parseFloat(document.getElementById('rating').value);
+  const loadPct = (weight / rating) * 100;
+  document.getElementById('loadVal').textContent = loadPct.toFixed(0) + '%';
+  const lBar = document.getElementById('loadBarResult');
+  lBar.style.width   = Math.min(loadPct, 130) + '%';
+  lBar.style.background = loadPct >= 80 && loadPct <= 110 ? 'var(--green)' :
+                           loadPct > 110 ? 'var(--red)' : 'var(--amber)';
+
+  // Coaching insight
+  buildInsight(status, v, grip_m, projM, weight, rating);
+
+  // Recommendations
+  const heightFt = hFt + hIn / 12;
+  const recs = genRecommendations(weight, heightFt, v, currentPoleData, effOn);
+  renderRecs(recs);
+}
+
+// ════════════════════════════════════════════
+//  COACHING INSIGHT
+// ════════════════════════════════════════════
+function buildInsight(status, v, grip_m, projM, weight, rating) {
+  const prFt = parseInt(document.getElementById('prFt').value) || 0;
+  const prIn = parseInt(document.getElementById('prIn').value) || 0;
+  const prM  = (prFt + prIn / 12) * 0.3048;
+  const prDiff = projM - prM;
+  const prStr  = prDiff >= 0
+    ? `<strong>+${toFtIn(prDiff)}</strong> above your current PR`
+    : `<strong>${toFtIn(Math.abs(prDiff))}</strong> below your current PR`;
+
+  const loadPct = (weight / rating) * 100;
+  let loadMsg = '';
+  if (loadPct < 80)       loadMsg = 'Pole rating is too heavy — consider a lighter-rated pole.';
+  else if (loadPct > 110) loadMsg = 'Pole rating is too light — you may be over-loading it (injury risk).';
+  else                    loadMsg = `Weight-to-rating ratio of <strong>${loadPct.toFixed(0)}%</strong> is in the ideal loading zone.`;
+
+  const msgs = {
+    STALL:   `⚠️ At this approach speed, the pole is not loading properly — the vaulter will likely flat-out or pit-crash. Increase runway speed or move to a softer pole. ${loadMsg}`,
+    UNDER:   `🔶 Approach speed is in the underpowered zone. The pole is loading partially but the vaulter can't fully invert. Projected: ${toFtIn(projM)} — ${prStr}. ${loadMsg}`,
+    OPTIMAL: `✅ Approach speed is in the <strong>optimal loading zone</strong> for this pole. Projected clearance: <strong>${toFtIn(projM)}</strong> — ${prStr}. ${loadMsg}`,
+    BLOW:    `🔴 Speed is too high for this pole — the vaulter will blow through without being able to load the bend. Drop grip or move to a stiffer/longer pole. ${loadMsg}`
+  };
+  document.getElementById('insightBox').innerHTML = msgs[status] || '';
+}
+
+// ════════════════════════════════════════════
+//  RENDER REC CARDS
+// ════════════════════════════════════════════
+function renderRecs(recs) {
+  const container = document.getElementById('recContainer');
+  const prFt = parseInt(document.getElementById('prFt').value) || 0;
+  const prIn = parseInt(document.getElementById('prIn').value) || 0;
+  const prM  = (prFt + prIn / 12) * 0.3048;
+  container.innerHTML = '';
+
+  // Find best non-current optimal
+  const bestH = Math.max(...recs.filter(r => !r.isCurrent && r.status !== 'STALL').map(r => r.projH));
+
+  recs.forEach(rec => {
+    const card = document.createElement('div');
+    card.className = 'rec-card';
+
+    const isNext = !rec.isCurrent && rec.projH === bestH && rec.status !== 'STALL';
+    if (rec.isCurrent) card.classList.add('current');
+    else if (isNext)   card.classList.add('best');
+    else if (rec.status === 'BLOW')  card.classList.add('blow');
+    else if (rec.status === 'STALL') card.classList.add('stall');
+
+    const diffM  = rec.projH - prM;
+    const diffStr = Math.abs(diffM) < 0.01 ? 'at PR'
+      : diffM > 0 ? `+${toFtIn(diffM)} from PR` : `${toFtIn(diffM)} from PR`;
+    const diffColor = diffM > 0.01 ? 'var(--green)' : diffM < -0.01 ? 'var(--red)' : 'var(--muted)';
+
+    const statusColors = {
+      OPTIMAL: { bg: 'rgba(0,229,160,0.15)', fg: 'var(--green)' },
+      UNDER:   { bg: 'rgba(255,184,39,0.15)', fg: 'var(--amber)' },
+      BLOW:    { bg: 'rgba(255,77,106,0.15)', fg: 'var(--red)' },
+      STALL:   { bg: 'rgba(96,123,155,0.15)', fg: 'var(--slate)' }
+    };
+    const sc = statusColors[rec.status] || statusColors.OPTIMAL;
+
+    const vOptMph = (rec.vOpt * 2.23694).toFixed(1);
+
+    card.innerHTML = `
+      <div class="rec-pole-name">${lenLabel(rec.length)} · ${rec.rating}lbs</div>
+      <div class="rec-type">${rec.type}</div>
+      <div class="rec-height">${toFtIn(rec.projH)}</div>
+      <div class="rec-diff" style="color:${diffColor}">${diffStr}</div>
+      <div style="font-size:0.68rem;color:var(--muted);margin-top:6px;">Optimal speed: ${vOptMph} mph · Flex est. ${rec.flex}</div>
+      <span class="rec-status-chip" style="background:${sc.bg};color:${sc.fg};">${rec.status}</span>
+    `;
+    container.appendChild(card);
+  });
+}
+
+// ════════════════════════════════════════════
+//  RESET
+// ════════════════════════════════════════════
+function resetAll() {
+  document.getElementById('results').style.display = 'none';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 </script>
-
 </body>
 </html>
