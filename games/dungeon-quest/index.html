@@ -8337,7 +8337,7 @@ if (cs) {
     utilCol.appendChild(mapBtn);
 
     // Entrance/town-exit button
-    if (ds.currentRoom === floor.startRoom) {
+    if (ds.currentRoom === floor.startRoom && gameState.dungeon.floor === 1) {
         const startRoom = floor.rooms[floor.startRoom];
         const exitTown  = startRoom.flags?.townExit || null;
         const exitLabel = startRoom.flags?.townExitLabel || '⬅ Town';
