@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Vault Analytics | True Physics V5</title>
+    <title>Pro Vault Analytics | True Physics V6 - Pole Recommendation Engine</title>
     <style>
         :root {
             --primary: #0f172a;
@@ -29,7 +29,7 @@
 
         .container {
             width: 100%;
-            max-width: 950px;
+            max-width: 1100px;
             background: var(--card);
             border-radius: 24px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
@@ -201,7 +201,7 @@
             border-radius: 8px;
             outline: none;
             margin: 1.5rem 0;
-            background: #e2e8f0; /* Dynamic gradient applied via JS */
+            background: #e2e8f0;
         }
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
@@ -212,7 +212,7 @@
             border-radius: 50%;
             cursor: pointer;
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            margin-top: -8px; /* Center tweak */
+            margin-top: -8px;
             transition: transform 0.1s;
         }
         input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.1); }
@@ -264,6 +264,132 @@
             margin-bottom: 0.5rem;
         }
 
+        /* NEW: Pole Recommendation Section */
+        .recommendation-panel {
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px -2px rgba(0,0,0,0.06);
+            margin-bottom: 2rem;
+            border: 2px solid var(--accent);
+        }
+        
+        .rec-header {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--accent);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .rec-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        
+        .rec-card {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1.2rem;
+            text-align: center;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        
+        .rec-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .rec-card.best {
+            border-color: var(--success);
+            background: #ecfdf5;
+        }
+        
+        .rec-card.blow {
+            border-color: var(--danger);
+            background: #fef2f2;
+        }
+        
+        .rec-card.stall {
+            border-color: var(--stall);
+            background: #f1f5f9;
+        }
+        
+        .rec-pole {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 0.3rem;
+        }
+        
+        .rec-height {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--success);
+            margin: 0.5rem 0;
+        }
+        
+        .rec-diff {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #64748b;
+        }
+        
+        .rec-status {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 4px 8px;
+            border-radius: 20px;
+            margin-top: 0.5rem;
+            display: inline-block;
+        }
+
+        /* NEW: Grip Optimizer */
+        .grip-panel {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            margin-top: 1.5rem;
+        }
+        
+        .grip-optimizer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 2rem;
+        }
+        
+        .grip-current, .grip-optimal {
+            flex: 1;
+            text-align: center;
+        }
+        
+        .grip-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: #94a3b8;
+            font-weight: 700;
+        }
+        
+        .grip-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin: 0.3rem 0;
+        }
+        
+        .grip-arrow {
+            font-size: 2rem;
+            color: var(--accent);
+        }
+
         @media (max-width: 800px) {
             .content-grid { grid-template-columns: 1fr; padding: 1.5rem; gap: 1.5rem; }
             .physics-grid { grid-template-columns: 1fr; }
@@ -271,6 +397,8 @@
             .legend-item { border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
             header h1 { font-size: 1.5rem; }
             .btn-calc { grid-column: span 1; }
+            .rec-grid { grid-template-columns: 1fr; }
+            .grip-optimizer { flex-direction: column; gap: 1rem; }
         }
     </style>
 </head>
@@ -278,8 +406,8 @@
 
 <div class="container">
     <header>
-        <h1>Vault Mechanics <span class="badge-beta">Physics Core V5</span></h1>
-        <p>Stiffness ($k \propto 1/flex$) & Kinetic Energy ($E \propto v^2$) Simulator</p>
+        <h1>Vault Mechanics <span class="badge-beta">Physics Core V6</span></h1>
+        <p>Stiffness ($k \propto 1/flex$) & Kinetic Energy ($E \propto v^2$) Simulator with Pole Recommendations</p>
     </header>
 
     <div class="content-grid">
@@ -366,9 +494,23 @@
                     <small style="display:block; color:#ef4444; font-size:0.7rem; margin-top:2px;">*Primary Stiffness Variable</small>
                 </div>
             </div>
+            
+            <!-- NEW: Current PR Input -->
+            <div class="input-row" style="margin-top: 1rem;">
+                <div class="input-group">
+                    <label>Current PR (ft)</label>
+                    <input type="number" id="currentPR" step="0.1" placeholder="15.0" value="15.0">
+                    <small style="display:block; color:#64748b; font-size:0.7rem; margin-top:2px;">For comparison calculations</small>
+                </div>
+                <div class="input-group">
+                    <label>Standing Reach (ft)</label>
+                    <input type="number" id="standingReach" step="0.1" placeholder="7.5">
+                    <small style="display:block; color:#64748b; font-size:0.7rem; margin-top:2px;">Auto-calculated if empty</small>
+                </div>
+            </div>
         </div>
 
-        <button class="btn-calc" onclick="initPhysics()">Initialize Physics Engine</button>
+        <button class="btn-calc" onclick="initPhysics()">Initialize Physics Engine & Find Better Poles</button>
     </div>
 
     <!-- RESULTS -->
@@ -410,6 +552,35 @@
             </div>
         </div>
 
+        <!-- NEW: GRIP OPTIMIZER -->
+        <div class="grip-panel">
+            <div class="section-label" style="margin-top:0;">Grip Optimization</div>
+            <div class="grip-optimizer">
+                <div class="grip-current">
+                    <div class="grip-label">Current Grip</div>
+                    <div class="grip-value" id="currentGripDisplay">--</div>
+                    <div style="font-size:0.75rem; color:#64748b;">Selected above</div>
+                </div>
+                <div class="grip-arrow">→</div>
+                <div class="grip-optimal">
+                    <div class="grip-label">Recommended Grip</div>
+                    <div class="grip-value" id="optimalGripDisplay" style="color:var(--success);">--</div>
+                    <div style="font-size:0.75rem; color:#64748b;" id="gripReason">Based on your speed</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- NEW: POLE RECOMMENDATIONS -->
+        <div class="recommendation-panel">
+            <div class="rec-header">
+                <span>🏆</span>
+                <span>Pole Recommendations (Ranked by Projected Height)</span>
+            </div>
+            <div id="recContainer" class="rec-grid">
+                <!-- Dynamically populated -->
+            </div>
+        </div>
+
         <!-- METRICS -->
         <div class="physics-grid">
             <div class="p-card">
@@ -440,6 +611,7 @@
     // --- Physics Constants ---
     const G = 9.81;
     let zStall, zWarn, zOpt, zBlow;
+    let currentPoleData = {};
 
     document.addEventListener("DOMContentLoaded", () => {
         initUI();
@@ -505,29 +677,178 @@
         if(!fInput.value) fInput.value = base.toFixed(1);
     }
 
-    // --- CORE PHYSICS ENGINE V5 (Restored & Corrected) ---
+    // --- IMPROVED STIFFNESS CALCULATION ---
+    function calculateTrueStiffness(rating, flex, length) {
+        // Normalize to standard 14' 150lb reference
+        const lengthFactor = Math.pow(length / 14, 3); // Stiffness ∝ L³
+        const flexFactor = Math.pow(20.0 / flex, 1.5); // Non-linear flex response
+        const ratingFactor = rating / 150;
+        
+        return lengthFactor * flexFactor * ratingFactor;
+    }
+
+    // --- GRIP OPTIMIZATION ---
+    function calculateOptimalGrip(vaulterHeight, standingReach, currentSpeed, poleLength, stiffness) {
+        // Max functional grip is standing reach + 18-22 inches for elite vaulters
+        // But must have speed to rotate the pole
+        
+        const standingReachM = standingReach ? standingReach * 0.3048 : vaulterHeight * 0.3048 * 1.25;
+        const maxFunctionalGrip = standingReachM + 0.55; // ~22" max
+        
+        // Speed requirement increases with grip height
+        // Base speed needed for a grip
+        const gripFt = Math.floor(poleLength);
+        const baseGripM = gripFt * 0.3048;
+        
+        // Can he grip higher?
+        let optimalGrip = baseGripM;
+        
+        // If he has excess speed, recommend gripping up
+        const speedBuffer = currentSpeed - zOpt;
+        if (speedBuffer > 0.3) {
+            // Every 0.1 m/s excess allows ~1.5" higher grip
+            const extraInches = speedBuffer * 10 * 0.0254; // Convert to meters
+            optimalGrip = Math.min(baseGripM + extraInches, maxFunctionalGrip);
+        }
+        
+        return optimalGrip;
+    }
+
+    // --- POLE RECOMMENDATION ENGINE ---
+    function generatePoleRecommendations(weight, height, currentSpeed, currentPole) {
+        const recommendations = [];
+        const currentStiffness = calculateTrueStiffness(
+            currentPole.rating, 
+            currentPole.flex, 
+            currentPole.length
+        );
+        
+        // Generate candidate poles
+        const candidates = [];
+        
+        // Same length, different ratings/flexes
+        const currentRating = parseInt(currentPole.rating);
+        const currentLen = parseFloat(currentPole.length);
+        
+        // Stiffer same length (if blowing through)
+        if (currentSpeed > zBlow) {
+            candidates.push({
+                length: currentLen,
+                rating: currentRating + 10,
+                flex: Math.max(15, currentPole.flex - 1.0),
+                type: 'Stiffer Same Length'
+            });
+        }
+        
+        // Longer poles (primary path to height)
+        const longerLengths = [15.5, 16, 16.5, 17].filter(l => l > currentLen);
+        longerLengths.forEach(len => {
+            // Calculate ideal flex for this length at his weight/speed
+            const targetStiffness = currentStiffness * 0.95; // Slightly softer for longer
+            const idealFlex = 20.0 / Math.pow(targetStiffness / Math.pow(len/14, 3) / (currentRating/150), 1/1.5);
+            
+            candidates.push({
+                length: len,
+                rating: currentRating,
+                flex: Math.round(idealFlex * 10) / 10,
+                type: `Longer ${len}'`
+            });
+            
+            // Also try one rating up on longer pole
+            candidates.push({
+                length: len,
+                rating: currentRating + 5,
+                flex: Math.round((idealFlex - 0.5) * 10) / 10,
+                type: `Longer ${len}' Stiffer`
+            });
+        });
+        
+        // Calculate projected height for each
+        candidates.forEach(pole => {
+            const proj = simulatePole(pole, weight, height, currentSpeed);
+            recommendations.push({
+                ...pole,
+                ...proj
+            });
+        });
+        
+        // Sort by projected height
+        recommendations.sort((a, b) => b.projectedHeight - a.projectedHeight);
+        
+        return recommendations.slice(0, 4); // Top 4
+    }
+
+    function simulatePole(pole, weight, height, v) {
+        const mass = weight * 0.453592;
+        const bodyH = height;
+        const com = bodyH * 0.57;
+        
+        // Calculate stiffness for this pole
+        const stiffness = calculateTrueStiffness(pole.rating, pole.flex, pole.length);
+        const massIndex = weight / 150;
+        const kIndex = stiffness / 1.0; // Normalized
+        
+        // Optimal speed for this pole
+        let vOpt = 7.8 * Math.sqrt(kIndex / massIndex);
+        vOpt -= (pole.length - 14) * 0.1;
+        
+        // Determine zone
+        const zStallPole = vOpt - 1.0;
+        const zWarnPole = vOpt - 0.3;
+        const zBlowPole = vOpt + 0.8;
+        
+        let status, projectedHeight, efficiency;
+        const effTech = document.getElementById('effToggle').checked ? 0.96 : 0.88;
+        
+        // Calculate grip for this pole length
+        const gripM = Math.floor(pole.length) * 0.3048;
+        
+        if (v < zStallPole) {
+            status = 'STALL';
+            projectedHeight = gripM * 0.8;
+            efficiency = 0.6;
+        } else if (v < zWarnPole) {
+            status = 'UNDER';
+            projectedHeight = gripM;
+            efficiency = 0.85;
+        } else if (v > zBlowPole) {
+            status = 'BLOW';
+            projectedHeight = gripM + 0.2;
+            efficiency = 0.75;
+        } else {
+            status = 'OPTIMAL';
+            const lift = (v * v) / (2 * G);
+            projectedHeight = (lift * effTech) + com;
+            if (projectedHeight > gripM + 1.25) projectedHeight = gripM + 1.25;
+            efficiency = effTech;
+        }
+        
+        return {
+            projectedHeight,
+            status,
+            efficiency,
+            vOptimal: vOpt
+        };
+    }
+
+    // --- CORE PHYSICS ENGINE V6 ---
     function initPhysics() {
         const weight = parseFloat(document.getElementById('weight').value);
         const rating = parseFloat(document.getElementById('rating').value);
         const flex = parseFloat(document.getElementById('flex').value);
+        const length = parseFloat(document.getElementById('length').value);
+        
+        // Store current pole data
+        currentPoleData = { weight, rating, flex, length };
         
         // 1. TRUE STIFFNESS (k)
-        // stiffness is inversely proportional to flex number
-        const k_index = (20.0 / flex); 
+        const k_index = calculateTrueStiffness(rating, flex, length);
         
         // 2. ENERGY REQUIREMENT (v_opt)
-        // v ~ sqrt(k/m)
         const mass_index = weight / 150;
-        
-        // Calibrated: 150lb/150lb (19.5flex) needs ~7.8 m/s. 
-        // Your son: 148lb/165lb (20.0flex).
-        // Note: 20.0 flex is SOFTER than a standard 165lb pole (usually ~18.0).
-        // This means the pole is easier to bend than the rating implies.
         let v_optimal = 7.8 * Math.sqrt(k_index / mass_index);
+        v_optimal -= (length - 14) * 0.1;
         
-        const len = parseFloat(document.getElementById('length').value);
-        v_optimal -= (len - 14) * 0.1; // Longer pole leverage bonus
-
         if(v_optimal < 6.0) v_optimal = 6.0;
         if(v_optimal > 10.8) v_optimal = 10.8;
 
@@ -546,9 +867,8 @@
 
         paintGradient();
 
-        // Init Slider (Default to User Speed 19mph approx 8.5m/s)
-        // Check if 8.5 falls in optimal?
-        document.getElementById('kSlider').value = 8.5; // Force to son's speed context
+        // Set slider to calculated optimal (not fixed 8.5)
+        document.getElementById('kSlider').value = v_optimal.toFixed(2);
         
         document.getElementById('results').style.display = 'block';
         document.getElementById('results').scrollIntoView({behavior:'smooth'});
@@ -562,9 +882,9 @@
         const max = parseFloat(s.max);
         const range = max - min;
         
-        const pStall = ((zStall - min)/range)*100;
-        const pWarn = ((zWarn - min)/range)*100;
-        const pBlow = ((zBlow - min)/range)*100;
+        const pStall = Math.max(0, Math.min(100, ((zStall - min)/range)*100));
+        const pWarn = Math.max(0, Math.min(100, ((zWarn - min)/range)*100));
+        const pBlow = Math.max(0, Math.min(100, ((zBlow - min)/range)*100));
 
         const g = `linear-gradient(to right, 
             #64748b 0%, #64748b ${pStall}%, 
@@ -581,55 +901,67 @@
         document.getElementById('dispMph').innerText = mph.toFixed(1);
         document.getElementById('dispMs').innerText = v.toFixed(2) + " m/s";
 
-        // --- CORRECTED MATH ---
         // Efficiency Toggle
         const effTech = document.getElementById('effToggle').checked ? 0.96 : 0.88;
 
-        // 1. Center of Mass (COM)
+        // Body metrics
         const hFt = parseFloat(document.getElementById('hFt').value);
         const hIn = parseFloat(document.getElementById('hIn').value);
         const bodyH_m = (hFt * 0.3048) + (hIn * 0.0254);
-        const com_m = bodyH_m * 0.57; // Male COM approx 57% height
+        const com_m = bodyH_m * 0.57;
 
-        // 2. Energy Ceiling (The Fix)
-        // Previous version showed only Lift. We need Total Potential.
-        // Lift = v^2 / 2g
+        // Energy Ceiling
         const lift_m = (v * v) / (2 * G);
-        const ceiling_m = lift_m + com_m; // This is the 15'6" number
+        const ceiling_m = lift_m + com_m;
 
-        // 3. Grip Data
+        // Grip Data
         const gFt = parseInt(document.getElementById('gripFt').value);
         const gIn = parseInt(document.getElementById('gripIn').value);
         const gFr = parseFloat(document.getElementById('gripFrac').value);
         const grip_m = (gFt + ((gIn + gFr)/12)) * 0.3048;
+        
+        // Update grip displays
+        document.getElementById('currentGripDisplay').innerText = toFtIn(grip_m);
 
-        // 4. Realized Height Logic
+        // Standing reach calculation
+        const standingReachInput = document.getElementById('standingReach').value;
+        const standingReach = standingReachInput ? parseFloat(standingReachInput) : (hFt + hIn/12) * 1.25;
+
+        // Calculate optimal grip
+        const optimalGrip = calculateOptimalGrip(bodyH_m, standingReach, v, currentPoleData.length, currentPoleData.flex);
+        document.getElementById('optimalGripDisplay').innerText = toFtIn(optimalGrip);
+        
+        // Grip reason
+        const speedBuffer = v - zOpt;
+        if (speedBuffer > 0.5) {
+            document.getElementById('gripReason').innerText = 'Speed surplus - grip up!';
+        } else if (speedBuffer < -0.3) {
+            document.getElementById('gripReason').innerText = 'Need more speed to grip higher';
+        } else {
+            document.getElementById('gripReason').innerText = 'Current grip appropriate';
+        }
+
+        // Realized Height Logic
         let projM = 0;
         const status = document.getElementById('statusPill');
         
         if (v < zStall) {
             status.style.background = "var(--stall)";
             status.innerText = "STALL / REJECT";
-            projM = grip_m * 0.8; // Fail
+            projM = grip_m * 0.8;
         } else if (v < zWarn) {
             status.style.background = "var(--warning)";
             status.innerText = "UNDER POWERED";
-            projM = grip_m; // No push off
+            projM = grip_m;
         } else if (v > zBlow) {
             status.style.background = "var(--danger)";
             status.innerText = "BLOW THROUGH";
-            projM = grip_m + 0.2; // Mushing out
+            projM = grip_m + 0.2;
         } else {
             status.style.background = "var(--success)";
             status.innerText = "OPTIMAL LOCK";
             
-            // OPTIMAL ZONE CALCULATION
-            // Height = (Lift * Efficiency) + COM
-            // We apply efficiency ONLY to the kinetic energy conversion part
             projM = (lift_m * effTech) + com_m;
-            
-            // Mechanical Constraint: 
-            // Even with infinite speed, you can only push roughly 1.2m above grip
             if (projM > grip_m + 1.25) projM = grip_m + 1.25;
         }
         
@@ -642,6 +974,55 @@
         const rating = parseFloat(document.getElementById('rating').value);
         const ratio = (weight/rating) * 100;
         document.getElementById('loadVal').innerText = ratio.toFixed(0) + "%";
+        
+        // Generate and display pole recommendations
+        displayRecommendations(weight, hFt + hIn/12, v);
+    }
+
+    function displayRecommendations(weight, height, v) {
+        const recs = generatePoleRecommendations(weight, height, v, currentPoleData);
+        const container = document.getElementById('recContainer');
+        const currentPR = parseFloat(document.getElementById('currentPR').value) || 0;
+        
+        container.innerHTML = '';
+        
+        recs.forEach((rec, index) => {
+            const card = document.createElement('div');
+            card.className = 'rec-card';
+            
+            // Determine styling based on status
+            if (rec.status === 'OPTIMAL') card.classList.add('best');
+            else if (rec.status === 'BLOW') card.classList.add('blow');
+            else if (rec.status === 'STALL') card.classList.add('stall');
+            
+            // Calculate height difference from PR
+            const prM = currentPR * 0.3048;
+            const diffM = rec.projectedHeight - prM;
+            const diffStr = diffM > 0 ? `+${(diffM * 3.28084 * 12).toFixed(0)}"` : `${(diffM * 3.28084 * 12).toFixed(0)}"`;
+            const diffColor = diffM > 0 ? 'var(--success)' : (diffM < 0 ? 'var(--danger)' : '#64748b');
+            
+            card.innerHTML = `
+                <div class="rec-pole">${rec.length}' ${rec.rating}lbs <span style="font-size:0.8rem;color:#64748b;">(${rec.flex})</span></div>
+                <div style="font-size:0.75rem;color:#64748b;margin-bottom:0.5rem;">${rec.type}</div>
+                <div class="rec-height">${toFtIn(rec.projectedHeight)}</div>
+                <div class="rec-diff" style="color:${diffColor};">${diffStr} from PR</div>
+                <span class="rec-status" style="background:${getStatusColor(rec.status)}20;color:${getStatusColor(rec.status)};">
+                    ${rec.status}
+                </span>
+            `;
+            
+            container.appendChild(card);
+        });
+    }
+
+    function getStatusColor(status) {
+        switch(status) {
+            case 'OPTIMAL': return 'var(--success)';
+            case 'BLOW': return 'var(--danger)';
+            case 'STALL': return 'var(--stall)';
+            case 'UNDER': return 'var(--warning)';
+            default: return '#64748b';
+        }
     }
 
     function toFtIn(m) {
