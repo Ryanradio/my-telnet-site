@@ -8072,7 +8072,8 @@ ${mapAscii}
                
                // Draw room with markers
                const isPlayer = roomId === currentRoom;
-               const isStart = roomId === floor.startRoom;
+               const isStart = roomId === floor.startRoom && gameState.dungeon.floor === 1;
+               
                const hasTrap = room.contents?.trap;
                
                grid[y + 1][x] = '[';
