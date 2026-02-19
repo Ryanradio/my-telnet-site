@@ -1612,8 +1612,19 @@ const OPPOSITE_DIR = {
             }
             
             // ROGUE: daggers only — no exceptions
+            // Also allow dropped weapons with type 'dagger' or 'poison_dagger' / 'assassin_blade' etc.
             if (playerClass === 'rogue') {
-                return !!weapon.classRestriction && weapon.classRestriction === 'rogue';
+                const isDagger = weapon.classRestriction === 'rogue'
+                    || weapon.type === 'dagger'
+                    || weapon.type === 'poison_dagger'
+                    || weapon.type === 'assassin_blade'
+                    || weapon.type === 'short_sword'
+                    || (weapon.name && weapon.name.toLowerCase().includes('dagger'))
+                    || (weapon.name && weapon.name.toLowerCase().includes('shiv'))
+                    || (weapon.name && weapon.name.toLowerCase().includes('stiletto'))
+                    || (weapon.name && weapon.name.toLowerCase().includes('dirk'))
+                    || (weapon.name && weapon.name.toLowerCase().includes('blade'));
+                return isDagger;
             }
 
             // Default restrictions based on weapon type/name
@@ -1632,6 +1643,12 @@ const OPPOSITE_DIR = {
             
             // Also catch high-magic weapons by baseMagicDamage ratio
             if (weapon.baseMagicDamage > weapon.baseDamage) {
+                return SPELL_CLASSES.includes(playerClass);
+            }
+
+            // Tomes, orbs, shadow_orb — magic users only (drop types with no keyword in name)
+            if (weapon.type === 'tome' || weapon.type === 'orb' || weapon.type === 'shadow_orb'
+                || weaponName.includes('tome') || weaponName.includes(' orb')) {
                 return SPELL_CLASSES.includes(playerClass);
             }
             

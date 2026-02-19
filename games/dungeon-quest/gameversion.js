@@ -6,7 +6,7 @@
 // If a player has an older version cached, they get a refresh banner.
 // ═══════════════════════════════════════════════════════════════════════
 
-const GAME_VERSION = '2025.02.18-r19';
+const GAME_VERSION = '2025.02.19-r21';
 
 // ── VERSION CHECK ──────────────────────────────────────────────────────
 // Call this on: game init, character select, enter dungeon, enter explore.
@@ -51,6 +51,46 @@ function checkGameVersion() {
 // Most recent first. Keep entries brief — one line per bullet.
 // ═══════════════════════════════════════════════════════════════════════
 const REVISION_HISTORY = [
+
+    {
+        version: '2025.02.19-r21',
+        date: 'Feb 19, 2025',
+        summary: 'Bug Fix: Mage/Warlock Tome & Orb Drops Equippable By Anyone',
+        changes: [
+            'BUG FIX: MAGIC CLASS DROPPED WEAPON EQUIP',
+            '- Tomes and orbs now correctly restricted to spell classes only',
+            '- Issue: canUseWeapon() had no keyword match for "tome", "orb", or "shadow_orb"',
+            '- These drop types fell through to the default "return true" — any class could equip them',
+            '- Fix: added explicit type and name checks for tome/orb/shadow_orb drop types',
+            '- Affected drop types: tome, orb, shadow_orb (mage + warlock pools)',
+            '- Spell classes (mage, warlock, cleric, acolyte, necrolyte, druid, sorceror) still equip normally',
+            '',
+            'AUDIT: All other class weapon drops verified correct:',
+            '- Warrior: sword, axe, hammer, greatsword, battleaxe, warhammer ✓',
+            '- Paladin: sword, mace, hammer, holy_mace, crusader_sword ✓',
+            '- Ranger/Hunter/Archer: bow, longbow, crossbow and variants ✓',
+            '- Mage: staff, wand ✓  tome, orb — FIXED',
+            '- Warlock: staff, wand, dark_staff ✓  shadow_orb — FIXED',
+            '- Cleric: mace, staff, holy_staff, blessed_mace ✓',
+            '- Acolyte: mace, staff, holy_staff ✓',
+        ]
+    },
+
+    {
+        version: '2025.02.19-r20',
+        date: 'Feb 19, 2025',
+        summary: 'Bug Fix: Rogue Cannot Equip Dropped Daggers',
+        changes: [
+            'BUG FIX: ROGUE DROPPED WEAPON EQUIP',
+            '- Rogues can now equip daggers received as enemy drops',
+            '- Issue: canUseWeapon() only allowed weapons with classRestriction: "rogue"',
+            '- Dropped weapons are procedurally generated and use type: "dagger" instead',
+            '- Fix: rogue equip check now also matches weapon.type and weapon name keywords',
+            '- Allowed rogue weapon types: dagger, poison_dagger, assassin_blade, short_sword',
+            '- Allowed rogue name keywords: dagger, shiv, stiletto, dirk, blade',
+            '- Static shop/class weapons (classRestriction: "rogue") still work as before',
+        ]
+    },
 
     {
         version: '2025.02.18-r19',
