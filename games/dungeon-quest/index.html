@@ -7725,13 +7725,13 @@ function stabilizeTerminalLayout() {
         // COMBAT FUNCTIONS
         // ═══════════════════════════════════════════════════════════════
         
-        function startCombat(enemyKeys) {
+        function startCombat(enemyKeys, useZoneLevel = true) {
             // Stop resting when combat starts
             stopResting();
             
             if (!Array.isArray(enemyKeys)) enemyKeys = [enemyKeys];
             const monsters = enemyKeys.map((k, index) => {
-                const monster = spawnMonsterWithRarity(k, true); // true = use zone level
+                const monster = spawnMonsterWithRarity(k, useZoneLevel); // useZoneLevel: true for exploration, false for dungeons
                 monster.index = index; // Add index for status effect tracking
                 return monster;
             });
@@ -7795,10 +7795,10 @@ function stabilizeTerminalLayout() {
             const rarity   = rollRarity();
             const mult     = RARITY_CONFIG[rarity].multiplier;
             
-            // Determine monster level (use zone level if provided, otherwise template level)
+            // Determine monster level (use template level for dungeons, zone level for exploration)
             let monsterLevel = template.level;
-            if (zoneLevel !== null) {
-                // Random level within zone range
+            if (zoneLevel !== null && zoneLevel !== false) {
+                // Random level within zone range (exploration zones only)
                 const location = LOCATIONS[gameState.currentLocation];
                 if (location && location.enemyLevelRange) {
                     const [minLvl, maxLvl] = location.enemyLevelRange;
@@ -7809,13 +7809,20 @@ function stabilizeTerminalLayout() {
             // Scale stats based on monster level
             const levelMult = 1 + (monsterLevel - 1) * 0.15; // 15% increase per level
             
-            // ── Damage variance: ±33% around the average, scaled by level gap vs player ──
-            // baseDamage is the AVERAGE. min = 67%, max = 133%.
-            // Level gap further shifts the range: each level above player = +5% to both ends
-            // each level below player = -5%, capped at ±50% total shift.
-            const scaledAvg   = Math.floor(template.baseDamage * mult * levelMult);
-            const rawMin      = Math.max(1, Math.round(scaledAvg * 0.67));
-            const rawMax      = Math.max(rawMin + 1, Math.round(scaledAvg * 1.33));
+            // ── Damage variance: use template min/max if available, otherwise calculate from baseDamage ──
+            let scaledMin, scaledMax, scaledAvg;
+            
+            if (template.minDamage !== undefined && template.maxDamage !== undefined) {
+                // Use template's predefined min/max damage
+                scaledMin = Math.max(1, Math.floor(template.minDamage * mult * levelMult));
+                scaledMax = Math.max(scaledMin + 1, Math.floor(template.maxDamage * mult * levelMult));
+                scaledAvg = Math.floor((scaledMin + scaledMax) / 2);
+            } else {
+                // Fallback: calculate from baseDamage (±33% variance)
+                scaledAvg = Math.floor(template.baseDamage * mult * levelMult);
+                scaledMin = Math.max(1, Math.round(scaledAvg * 0.67));
+                scaledMax = Math.max(scaledMin + 1, Math.round(scaledAvg * 1.33));
+            }
 
             const monster = {
                 key: enemyKey, 
@@ -7826,8 +7833,8 @@ function stabilizeTerminalLayout() {
                 maxHp: Math.floor(template.baseHp * mult * levelMult),
                 // damage is the average (kept for backwards-compat); min/max used in combat
                 damage:    scaledAvg,
-                minDamage: rawMin,
-                maxDamage: rawMax,
+                minDamage: scaledMin,
+                maxDamage: scaledMax,
                 defense: Math.floor(template.baseDefense * mult * levelMult),
                 xp: Math.floor(template.baseXp * mult * levelMult),
                 gold: Math.floor(template.baseGold * mult * levelMult),
@@ -9669,7 +9676,7 @@ function checkEnemiesInRoom(roomId, newArrivals) {
 
         joining.forEach(de => {
             if (!de.monsterId) return;
-            const newMonster = spawnMonsterWithRarity(de.monsterId, true);
+            const newMonster = spawnMonsterWithRarity(de.monsterId, false); // false = use template level
             newMonster.index = cs.monsters.length;
             if (de.hp !== undefined && de.hp < de.maxHp) {
                 newMonster.hp    = de.hp;
@@ -9722,8 +9729,8 @@ function startDungeonCombat(dungeonEnemies) {
         return;
     }
 
-    // Start combat with all enemies in room
-    startCombat(monsterIds);
+    // Start combat with all enemies in room (useZoneLevel=false for dungeons)
+    startCombat(monsterIds, false);
 
     if (!gameState.combatState) return;
 

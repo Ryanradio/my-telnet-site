@@ -6,7 +6,7 @@
 // If a player has an older version cached, they get a refresh banner.
 // ═══════════════════════════════════════════════════════════════════════
 
-const GAME_VERSION = '2025.02.18-r18';
+const GAME_VERSION = '2025.02.18-r19';
 
 // ── VERSION CHECK ──────────────────────────────────────────────────────
 // Call this on: game init, character select, enter dungeon, enter explore.
@@ -51,6 +51,38 @@ function checkGameVersion() {
 // Most recent first. Keep entries brief — one line per bullet.
 // ═══════════════════════════════════════════════════════════════════════
 const REVISION_HISTORY = [
+
+    {
+        version: '2025.02.18-r19',
+        date: 'Feb 19, 2025',
+        summary: 'Dungeon Enemy Levels Fixed + Monster Damage Ranges',
+        changes: [
+            'BUG FIX #1: DUNGEON ENEMY LEVELS',
+            '- Dungeon enemies now spawn at their correct template level',
+            '- Zombies (level 7) now hit with level 7 damage, not level 1-3',
+            '- Issue: dungeons were using zone level system (1-3 for forest)',
+            '- Fix: dungeons now use template.level directly',
+            '- Exploration zones still use zone level ranges (working as intended)',
+            '',
+            'FEATURE #2: MONSTER DAMAGE RANGES',
+            '- ALL monsters now have minDamage and maxDamage',
+            '- Damage rolls between min/max for variety in combat',
+            '- Default range: ±30% of baseDamage',
+            '- Examples:',
+            '  - Zombie: baseDamage 17 → rolls 11-22 damage',
+            '  - Goblin: baseDamage 8 → rolls 5-10 damage',
+            '  - Dragon: baseDamage 100 → rolls 70-130 damage',
+            '- Rarity and level multipliers apply to entire range',
+            '- Epic zombie might roll 22-44 damage!',
+            '',
+            'TECHNICAL CHANGES:',
+            '- Added minDamage/maxDamage fields to all 100+ monsters',
+            '- Modified spawnMonsterWithRarity() to use template ranges',
+            '- startCombat() now accepts useZoneLevel parameter',
+            '- Dungeon combat passes useZoneLevel=false',
+            '- Exploration combat passes useZoneLevel=true (default)',
+        ]
+    },
 
 
     {
