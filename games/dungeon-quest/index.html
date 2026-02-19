@@ -10870,9 +10870,82 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                     html += `</div>`;
                 }
 
+                // Healing Spells (available out of combat)
+                if (!inCombat && p.knownSpells && p.knownSpells.length > 0) {
+                    const classKey = p.baseClass || p.class;
+                    const spellTree = CLASS_SPELL_TREES[classKey]?.spellTree || {};
+                    
+                    // Find healing spells
+                    const healingSpells = p.knownSpells.filter(sk => {
+                        const spell = SPELLS[sk] || spellTree[sk];
+                        return spell && (spell.type === 'heal' || spell.type === 'lifesteal');
+                    });
+                    
+                    if (healingSpells.length > 0) {
+                        html += `<div style="font-size:11px;color:#8aaa8a;margin-bottom:2px;">Healing Spells:</div>`;
+                        html += `<div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:6px;">`;
+                        healingSpells.forEach(sk => {
+                            const spell = SPELLS[sk] || spellTree[sk];
+                            const atFull = p.hp >= p.maxHp;
+                            const notEnoughMp = p.mp < spell.mpCost;
+                            const disabled = atFull || notEnoughMp;
+                            html += `<button onclick="castHealingSpellOutOfCombat('${sk}');renderActionBar();" ${disabled?'disabled':''} style="padding:3px 5px;font-size:10px;color:#00FF00;border-color:#00FF00;opacity:${disabled?0.4:1};">
+                                ${spell.name} (${spell.mpCost} MP)</button>`;
+                        });
+                        html += `</div>`;
+                    }
+                }
+
                 html += `<button onclick="renderActionBar()" style="width:100%;padding:4px;">← BACK</button>`;
                 ab.innerHTML = html;
             }
+        }
+
+        function castHealingSpellOutOfCombat(spellKey) {
+            const p = gameState.player;
+            const classKey = p.baseClass || p.class;
+            const spellTree = CLASS_SPELL_TREES[classKey]?.spellTree || {};
+            const spell = SPELLS[spellKey] || spellTree[spellKey];
+            
+            if (!spell) {
+                termAppend('Spell not found!', 'term-error');
+                return;
+            }
+            
+            // Check if player has enough MP
+            if (p.mp < spell.mpCost) {
+                termAppend(`Not enough MP to cast ${spell.name}! (Need ${spell.mpCost} MP)`, 'term-error');
+                return;
+            }
+            
+            // Check if already at full HP
+            if (p.hp >= p.maxHp) {
+                termAppend(`You're already at full health!`, 'term-warning');
+                return;
+            }
+            
+            // Consume MP
+            p.mp -= spell.mpCost;
+            
+            // Calculate healing amount
+            const minPower = spell.minPower || spell.power;
+            const maxPower = spell.maxPower || spell.power;
+            const healRoll = Math.floor(Math.random() * (maxPower - minPower + 1)) + minPower;
+            const healAmount = healRoll + (p.wis || 0);
+            
+            // Apply healing
+            const actualHeal = Math.min(healAmount, p.maxHp - p.hp);
+            p.hp = Math.min(p.maxHp, p.hp + actualHeal);
+            
+            // Show message
+            termAppend(`<span style="color:#00FF00;">✨ You cast ${spell.name} and restore <strong>${actualHeal} HP</strong>!</span>`, 'term-loot');
+            termAppend(`HP: ${p.hp}/${p.maxHp} | MP: ${p.mp}/${p.maxMp}`, 'term-dim');
+            
+            // Save game
+            saveGame();
+            
+            // Update UI
+            updateHud();
         }
 
         function showPotionMenu() {

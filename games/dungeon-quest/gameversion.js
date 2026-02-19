@@ -6,7 +6,7 @@
 // If a player has an older version cached, they get a refresh banner.
 // ═══════════════════════════════════════════════════════════════════════
 
-const GAME_VERSION = '2025.02.18-r13';
+const GAME_VERSION = '2025.02.18-r14';
 
 // ── VERSION CHECK ──────────────────────────────────────────────────────
 // Call this on: game init, character select, enter dungeon, enter explore.
@@ -51,6 +51,22 @@ function checkGameVersion() {
 // Most recent first. Keep entries brief — one line per bullet.
 // ═══════════════════════════════════════════════════════════════════════
 const REVISION_HISTORY = [
+
+    {
+        version: '2025.02.18-r14',
+        date: 'Feb 18, 2025',
+        summary: 'Healing Spells in Inventory (Out of Combat)',
+        changes: [
+            'Healing spells now accessible from inventory button (🎒) when out of combat',
+            'New "Healing Spells" section appears in inventory panel alongside potions/weapons/armor',
+            'Cast healing spells to restore HP without entering combat',
+            'Spells show MP cost and are disabled if: (1) already at full HP, or (2) not enough MP',
+            'Healing applies: spell power + WIS bonus',
+            'Message shows: "✨ You cast Minor Heal and restore 25 HP!"',
+            'Works in exploration zones - easy access to healing between battles',
+            'Automatically updates HP/MP display and saves game after healing',
+        ]
+    },
 
     {
         version: '2025.02.18-r13',
