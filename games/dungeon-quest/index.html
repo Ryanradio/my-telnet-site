@@ -9144,8 +9144,8 @@ function dungeonNav(input) {
         // ─────────────────────────────────────────
         if (cs.enemyTimer > 0) cs.enemyTimer--;
 
-        // Telegraph intent 1 second before attack
-        if (cs.enemyTimer === 1 && !cs.enemyIntent) {
+        // Telegraph intent 2 second before attack
+        if (cs.enemyTimer === 2 && !cs.enemyIntent) {
             const enemy = cs.monsters[cs.currentTarget];
             if (enemy) {
                 cs.enemyIntent = selectEnemyIntent(enemy);
@@ -10668,7 +10668,7 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 enemy.hp -= finalDamage;
                 
                 // Heal based on lifesteal percentage (from the final damage including modifiers)
-                const lifestealPercent = spell.lifestealPercent || 50;
+                const lifestealPercent = spell.lifestealPercent || 25;
                 const healAmount = Math.floor(finalDamage * (lifestealPercent / 100));
                 p.hp = Math.min(p.maxHp, p.hp + healAmount);
                 

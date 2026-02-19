@@ -6,7 +6,7 @@
 // If a player has an older version cached, they get a refresh banner.
 // ═══════════════════════════════════════════════════════════════════════
 
-const GAME_VERSION = '2025.02.19-r23';
+const GAME_VERSION = '2025.02.19-r24';
 
 // ── VERSION CHECK ──────────────────────────────────────────────────────
 // Call this on: game init, character select, enter dungeon, enter explore.
@@ -52,6 +52,16 @@ function checkGameVersion() {
 // ═══════════════════════════════════════════════════════════════════════
 const REVISION_HISTORY = [
 
+
+    {
+        version: '2025.02.19-r24',
+        date: 'Feb 19, 2025',
+        summary: 'Minor updates',
+        changes: [
+            'Drain life went from 50% to 25%',
+            'Monsters telegraph their attack increase from 1 second to 2 seconds'
+        ]
+    },
     {
         version: '2025.02.19-r23',
         date: 'Feb 19, 2025',
