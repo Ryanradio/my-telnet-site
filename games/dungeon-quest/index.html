@@ -5626,7 +5626,7 @@ window.addEventListener('beforeunload', () => {
                     <div class="menu-option" onclick="showShop()">► VISIT SHOP</div>
                     <div class="menu-option" onclick="showBank()">► 🏦 BANK (${p.bankGold || 0}g stored)</div>
                     <div class="menu-option" onclick="showCharacterStats()">► 📊 CHARACTER STATS</div>
-                    <div class="menu-option" onclick="showTemple()">► ⛪ TEMPLE OF REBIRTH</div>
+                    <div class="menu-option" onclick="showTemple()">► ⛪ TEMPLE</div>
                     ${dungeonOption}
                     <div class="menu-option" onclick="restAtInn()">► REST AT INN (${calcInnCost(p.cha)} Gold)</div>
                     <div class="menu-option" onclick="showInventory()">► INVENTORY</div>
@@ -12964,13 +12964,13 @@ function playerIsExhausted() {
             const respecCost = calculateRespecCost(p.level);
             
             screen.innerHTML = `
-                <div class="location-header">⛪ TEMPLE OF REBIRTH</div>
+                <div class="location-header">⛪ TEMPLE</div>
                 <button onclick="showTown()" style="margin-bottom:10px;">← BACK TO TOWN</button>
                 ${renderPlayerStats()}
                 
                 <div class="message">
                     <p style="color:var(--highlight-color);font-size:16px;">
-                        <strong>Welcome to the Temple of Rebirth</strong>
+                        <strong>Welcome to the Temple</strong>
                     </p>
                     <p>
                         Here, the priests offer spiritual services: ${(p.baseClass || p.class) === 'hunter' ? 'pet training,' : ''} spell training${(p.baseClass || p.class) === 'hunter' ? ',' : ''} and personal rebirth.

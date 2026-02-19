@@ -6,7 +6,7 @@
 // If a player has an older version cached, they get a refresh banner.
 // ═══════════════════════════════════════════════════════════════════════
 
-const GAME_VERSION = '2025.02.19-r24';
+const GAME_VERSION = '2025.02.19-r25';
 
 // ── VERSION CHECK ──────────────────────────────────────────────────────
 // Call this on: game init, character select, enter dungeon, enter explore.
@@ -53,6 +53,14 @@ function checkGameVersion() {
 const REVISION_HISTORY = [
 
 
+      {
+        version: '2025.02.19-r25',
+        date: 'Feb 19, 2025',
+        summary: 'Minor update',
+        changes: [
+            'Changed temple name to just "Temple"',
+            ]
+    },
     {
         version: '2025.02.19-r24',
         date: 'Feb 19, 2025',
