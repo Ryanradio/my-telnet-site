@@ -477,7 +477,7 @@ const CLASS_SPELL_TREES = {
                 mpCost: 12,
                 minPower: 5,
 
-                maxPower: 25,
+                maxPower: 20,
                 type: 'damage',
                 cost: 0,
                 description: 'A bolt of pure holy energy',
@@ -489,7 +489,7 @@ const CLASS_SPELL_TREES = {
                 mpCost: 18,
                 minPower: 10,
 
-                maxPower: 50,
+                maxPower: 35,
                 type: 'damage',
                 cost: 4500,
                 description: 'Pierce enemies with holy light',
@@ -502,7 +502,7 @@ const CLASS_SPELL_TREES = {
                 mpCost: 26,
                 minPower: 15,
 
-                maxPower: 100,
+                maxPower: 75,
                 type: 'damage',
                 cost: 4500,
                 description: 'Consecrate the ground with holy fire',
