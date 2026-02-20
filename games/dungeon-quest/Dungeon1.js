@@ -1087,7 +1087,7 @@ window.DUNGEONS.Dungeon1 = {
               {
                 "key": "giant_scorpion",
                 "drop": "bronze_key",
-                "rarity": "common"
+                "rarity": "epic"
               },
               {
                 "key": "cave_orc",
