@@ -6,7 +6,7 @@
 // If a player has an older version cached, they get a refresh banner.
 // ═══════════════════════════════════════════════════════════════════════
 
-const GAME_VERSION = '2025.02.19-r26';
+const GAME_VERSION = '2025.02.19-r27';
 
 // ── VERSION CHECK ──────────────────────────────────────────────────────
 // Call this on: game init, character select, enter dungeon, enter explore.
@@ -52,6 +52,16 @@ function checkGameVersion() {
 // ═══════════════════════════════════════════════════════════════════════
 const REVISION_HISTORY = [
 
+
+    {
+        version: '2025.02.19-r27',
+        date: 'Feb 19, 2025',
+        summary: 'Warrior shield update',
+        changes: [
+            'Warrior shield was only active for one attack per encounter.  Fixed to entire encouter for all enemies.',
+            
+        ]
+    },
     {
         version: '2025.02.19-r26',
         date: 'Feb 19, 2025',

@@ -5180,21 +5180,22 @@ window.addEventListener('beforeunload', () => {
                     const pipReady  = ac.pipsReady || Array(pipCount).fill(true);
                     
                     gameState.combatState = {
-                        monsters:           ac.monsters,
-                        currentTarget:      ac.currentTarget || 0,
-                        messages:           [],
-                        defeatedMonsters:   [],
-                        pipTimers:          pipTimers,
-                        pipAvailable:       pipReady,
-                        enemyTimer:         ac.enemyDelay || 15,
-                        enemyDelay:         ac.enemyDelay || 15,
-                        enemyHits:          ac.enemyHits  || 1,
-                        enemyHitsLeft:      ac.enemyHitsLeft || 1,
-                        playerStatusEffects:  [],
-                        monsterStatusEffects: {},
-                        dotTimers:            {},
-                        actionMode:           'main'
-                    };
+    monsters:           ac.monsters,
+    currentTarget:      ac.currentTarget || 0,
+    messages:           [],
+    defeatedMonsters:   [],
+    pipTimers:          pipTimers,
+    pipAvailable:       pipReady,
+    enemyTimer:         ac.enemyDelay || 15,
+    enemyDelay:         ac.enemyDelay || 15,
+    enemyHits:          ac.enemyHits  || 1,
+    enemyHitsLeft:      ac.enemyHitsLeft || 1,
+    playerStatusEffects:  [],
+    monsterStatusEffects: {},
+    dotTimers:            {},
+    actionMode:           'main',
+    shieldActive:         false  // Warrior shield starts inactive
+};
                     
                     // Open the terminal view for the saved location
                     const loc = ac.location || gameState.currentLocation;
@@ -11648,10 +11649,9 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
     const qBonus = getQualityBonus(armor.quality, armor.baseDefense);
     let totalDef = armor.baseDefense + qBonus + (p.con || 0);
 
-    // ── Warrior Shield: 70% chance to halve ALL incoming damage this attack ──
-    // cs.shieldActive is set by playerDefend() and consumed here.
+        // ── Warrior Shield: 70% chance to halve ALL incoming damage each attack ──
+    // cs.shieldActive is set by playerDefend() and persists until combat ends.
     const shieldTriggered = cs.shieldActive && (Math.random() < 0.70);
-    cs.shieldActive = false;
 
     // Pull intent (or fallback)
     const intent = cs.enemyIntent || {
