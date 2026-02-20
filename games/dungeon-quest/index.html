@@ -7246,7 +7246,8 @@ function equipItem(type, key) {
                 xp: master.xp, gold: master.gold, level: master.level,
                 possibleDrops: master.possibleDrops, dropRates: master.dropRates,
                 isMaster: true, masterKey: masterKey,
-                guaranteedDrops: master.guaranteedDrops
+                guaranteedDrops: master.guaranteedDrops,
+                index: 0  // required by applyStatusEffect for monsterStatusEffects lookup
             };
             const maxHits   = calcPlayerHits(gameState.player);
             const pipTimers = [];
@@ -7261,7 +7262,10 @@ function equipItem(type, key) {
                 enemyTimer:    18,
                 enemyDelay:    18,
                 enemyHits:     3,
-                enemyHitsLeft: 3
+                enemyHitsLeft: 3,
+                playerStatusEffects:  [],    // required by applyStatusEffect / weapon modifiers
+                monsterStatusEffects: { 0: [] },  // pre-init slot 0 for the master
+                dotTimers:            {}     // required by cleanupCombatStatusEffects
             };
             // Open the terminal view (clear it fresh for a boss)
             openTerminalView(gameState.currentLocation);
@@ -8793,7 +8797,7 @@ function dungeonNav(input) {
                     // Main combat menu — icons only, pip dots only
                     const isHunter  = (p.baseClass || p.class) === 'hunter';
                     const isWarrior = (p.baseClass || p.class) === 'warrior';
-                    const trapBtn   = isHunter ? `<button onclick="()" ${p.mp < 10 ? 'disabled' : ''} class="action-icon-btn" title="Set Trap [T] - 10 MP" style="border-color:#8B4513;">🪤<span class="kb-hint">T</span></button>` : '';
+                    const trapBtn   = isHunter ? `<button onclick="castTrap()" ${p.mp < 10 ? 'disabled' : ''} class="action-icon-btn" title="Set Trap [T] - 10 MP" style="border-color:#8B4513;">🪤<span class="kb-hint">T</span></button>` : '';
                     const shieldBtn = isWarrior ? `<button onclick="playerDefend()" ${!canAct?'disabled':''} class="action-icon-btn" title="Shield [4] — 70% to halve damage" style="border-color:#00CCFF;">🛡️<span class="kb-hint">4</span></button>` : '';
                     
                     ab.innerHTML = `
