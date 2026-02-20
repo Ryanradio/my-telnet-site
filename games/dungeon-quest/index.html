@@ -2788,6 +2788,10 @@ function buildSaveSnapshot() {
             
             // Stat points
             statPoints: p.statPoints || 0,
+
+            // Defeated Masters/unlocked areas
+            defeatedMasters: [...(p.defeatedMasters || [])],  // Explicit copy
+            unlockedAreas: [...(p.unlockedAreas || [])],
             
             // Base class (for evolution tracking)
             baseClass: p.baseClass,
@@ -8789,7 +8793,7 @@ function dungeonNav(input) {
                     // Main combat menu — icons only, pip dots only
                     const isHunter  = (p.baseClass || p.class) === 'hunter';
                     const isWarrior = (p.baseClass || p.class) === 'warrior';
-                    const trapBtn   = isHunter ? `<button onclick="castTrap()" ${p.mp < 10 ? 'disabled' : ''} class="action-icon-btn" title="Set Trap [T] - 10 MP" style="border-color:#8B4513;">🪤<span class="kb-hint">T</span></button>` : '';
+                    const trapBtn   = isHunter ? `<button onclick="()" ${p.mp < 10 ? 'disabled' : ''} class="action-icon-btn" title="Set Trap [T] - 10 MP" style="border-color:#8B4513;">🪤<span class="kb-hint">T</span></button>` : '';
                     const shieldBtn = isWarrior ? `<button onclick="playerDefend()" ${!canAct?'disabled':''} class="action-icon-btn" title="Shield [4] — 70% to halve damage" style="border-color:#00CCFF;">🛡️<span class="kb-hint">4</span></button>` : '';
                     
                     ab.innerHTML = `
