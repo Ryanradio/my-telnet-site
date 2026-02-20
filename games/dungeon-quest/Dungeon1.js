@@ -77,7 +77,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "orc",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -115,7 +116,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "cave_orc",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -154,7 +156,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "orc",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -193,7 +196,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "orc",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -238,7 +242,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "giant_scorpion",
-                "drop": "copper_key"
+                "drop": "copper_key",
+                "rarity": "common"
               }
             ]
           },
@@ -327,7 +332,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "giant_scorpion",
-                "drop": "brass_key"
+                "drop": "brass_key",
+                "rarity": "common"
               }
             ]
           },
@@ -367,7 +373,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "orc",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -406,7 +413,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "cave_gnoll",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -446,7 +454,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "orc",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -499,7 +508,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "dungeon_bat",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -537,7 +547,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "orc",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -593,7 +604,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "orc",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -646,7 +658,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "orc",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -685,7 +698,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "orc",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -724,7 +738,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "orc",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -747,11 +762,13 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "orc",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               },
               {
                 "key": "orc",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -822,7 +839,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "giant_scorpion",
-                "drop": "iron_key"
+                "drop": "iron_key",
+                "rarity": "common"
               }
             ]
           },
@@ -845,7 +863,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "orc",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -899,7 +918,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "orc",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -954,7 +974,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "stone_crawler",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -1009,7 +1030,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "dungeon_spider",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -1064,11 +1086,13 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "giant_scorpion",
-                "drop": "bronze_key"
+                "drop": "bronze_key",
+                "rarity": "common"
               },
               {
                 "key": "cave_orc",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ],
             "doors": {
@@ -1148,7 +1172,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "orc",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -1187,7 +1212,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "hobgoblin",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -1227,7 +1253,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "dungeon_spider",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -1282,7 +1309,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "zombie",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -1321,7 +1349,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "skeleton",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -1375,7 +1404,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "stone_crawler",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -1398,7 +1428,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "orc",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -1453,7 +1484,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "dark_stalker",
-                "drop": ""
+                "drop": "",
+                "rarity": "uncommon"
               }
             ]
           },
@@ -1508,7 +1540,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "fungal_horror",
-                "drop": ""
+                "drop": "",
+                "rarity": "uncommon"
               }
             ]
           },
@@ -1547,7 +1580,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "hobgoblin",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -1603,7 +1637,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "spirit",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -1626,7 +1661,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "dungeon_spider",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -1665,7 +1701,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "giant_scorpion",
-                "drop": "silver_key"
+                "drop": "silver_key",
+                "rarity": "common"
               }
             ]
           },
@@ -1688,7 +1725,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "zombie",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -1743,7 +1781,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "orc",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -1798,7 +1837,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "dark_stalker",
-                "drop": ""
+                "drop": "",
+                "rarity": "uncommon"
               }
             ]
           },
@@ -1837,7 +1877,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "fungal_horror",
-                "drop": ""
+                "drop": "",
+                "rarity": "uncommon"
               }
             ]
           },
@@ -1875,7 +1916,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "stone_crawler",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -1930,7 +1972,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "skeleton",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -1986,7 +2029,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "shadow_hound",
-                "drop": ""
+                "drop": "",
+                "rarity": "uncommon"
               }
             ]
           },
@@ -2024,7 +2068,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "dark_stalker",
-                "drop": ""
+                "drop": "",
+                "rarity": "uncommon"
               }
             ]
           },
@@ -2079,7 +2124,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "grave_knight",
-                "drop": ""
+                "drop": "",
+                "rarity": "rare"
               }
             ]
           },
@@ -2234,7 +2280,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "zombie",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -2322,7 +2369,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "shadow_hound",
-                "drop": ""
+                "drop": "",
+                "rarity": "uncommon"
               }
             ]
           },
@@ -2361,7 +2409,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "skeleton",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -2402,7 +2451,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "dark_stalker",
-                "drop": ""
+                "drop": "",
+                "rarity": "uncommon"
               }
             ]
           },
@@ -2442,7 +2492,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "fungal_horror",
-                "drop": ""
+                "drop": "",
+                "rarity": "uncommon"
               }
             ]
           },
@@ -2464,7 +2515,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "ghoul",
-                "drop": ""
+                "drop": "",
+                "rarity": "uncommon"
               }
             ]
           },
@@ -2502,7 +2554,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "bone_archer",
-                "drop": ""
+                "drop": "",
+                "rarity": "uncommon"
               }
             ]
           },
@@ -2556,7 +2609,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "minotaur_scout",
-                "drop": ""
+                "drop": "",
+                "rarity": "uncommon"
               }
             ]
           },
@@ -2579,7 +2633,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "zombie",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -2618,7 +2673,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "grave_knight",
-                "drop": ""
+                "drop": "",
+                "rarity": "rare"
               }
             ]
           },
@@ -2656,7 +2712,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "orc_berserker",
-                "drop": ""
+                "drop": "",
+                "rarity": "uncommon"
               }
             ]
           },
@@ -2775,7 +2832,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "fungal_horror",
-                "drop": ""
+                "drop": "",
+                "rarity": "uncommon"
               }
             ]
           },
@@ -2831,7 +2889,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "shadow_hound",
-                "drop": ""
+                "drop": "",
+                "rarity": "uncommon"
               }
             ]
           },
@@ -2870,7 +2929,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "will_o_wisp",
-                "drop": ""
+                "drop": "",
+                "rarity": "uncommon"
               }
             ]
           },
@@ -2958,7 +3018,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "grave_knight",
-                "drop": ""
+                "drop": "",
+                "rarity": "rare"
               }
             ]
           },
@@ -2980,7 +3041,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "ghoul",
-                "drop": ""
+                "drop": "",
+                "rarity": "uncommon"
               }
             ]
           },
@@ -3052,7 +3114,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "dark_stalker",
-                "drop": ""
+                "drop": "",
+                "rarity": "uncommon"
               }
             ]
           },
@@ -3090,7 +3153,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "giant_scorpion",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -3145,7 +3209,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "ghoul",
-                "drop": ""
+                "drop": "",
+                "rarity": "uncommon"
               }
             ]
           },
@@ -3183,7 +3248,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "minotaur_scout",
-                "drop": ""
+                "drop": "",
+                "rarity": "uncommon"
               }
             ]
           },
@@ -3206,7 +3272,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "orc_berserker",
-                "drop": ""
+                "drop": "",
+                "rarity": "uncommon"
               }
             ]
           },
@@ -3245,7 +3312,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "plague_bearer",
-                "drop": ""
+                "drop": "",
+                "rarity": "rare"
               }
             ]
           },
@@ -3268,7 +3336,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "minotaur_scout",
-                "drop": ""
+                "drop": "",
+                "rarity": "uncommon"
               }
             ]
           },
@@ -3308,7 +3377,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "will_o_wisp",
-                "drop": ""
+                "drop": "",
+                "rarity": "uncommon"
               }
             ]
           },
@@ -3347,7 +3417,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "giant_beetle",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -3370,7 +3441,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "orc_berserker",
-                "drop": ""
+                "drop": "",
+                "rarity": "uncommon"
               }
             ]
           },
@@ -3408,7 +3480,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "minotaur_scout",
-                "drop": ""
+                "drop": "",
+                "rarity": "uncommon"
               }
             ]
           },
@@ -3447,7 +3520,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "plague_bearer",
-                "drop": ""
+                "drop": "",
+                "rarity": "rare"
               }
             ]
           },
@@ -3486,7 +3560,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "giant_beetle",
-                "drop": ""
+                "drop": "",
+                "rarity": "common"
               }
             ]
           },
@@ -3509,7 +3584,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "orc_berserker",
-                "drop": ""
+                "drop": "",
+                "rarity": "uncommon"
               }
             ]
           },
@@ -3538,7 +3614,8 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "wraith",
-                "drop": "electrum_key"
+                "drop": "electrum_key",
+                "rarity": "epic"
               }
             ]
           },

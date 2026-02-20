@@ -3181,44 +3181,44 @@ Object.assign(ENEMIES, {
 
 // Rarity multipliers and colors
 const RARITY_CONFIG = {
-    common: { 
-        multiplier: 1.0, 
-        color: '#FFFFFF', 
+    common: {
+        multiplier: 1.0,   // base — 0% bonus
+        color: '#FFFFFF',
         spawnWeight: 60,
         dropBonus: 0,
         name: 'Common'
     },
-    uncommon: { 
-        multiplier: 1.3, 
-        color: '#00FF00', 
+    uncommon: {
+        multiplier: 1.1,   // +10%
+        color: '#00FF00',
         spawnWeight: 25,
         dropBonus: 1,
         name: 'Uncommon'
     },
-    rare: { 
-        multiplier: 1.6, 
-        color: '#0099FF', 
+    rare: {
+        multiplier: 1.2,   // +20%
+        color: '#0099FF',
         spawnWeight: 10,
         dropBonus: 2,
         name: 'Rare'
     },
-    epic: { 
-        multiplier: 2.0, 
-        color: '#9933FF', 
+    epic: {
+        multiplier: 1.3,   // +30%
+        color: '#9933FF',
         spawnWeight: 4,
         dropBonus: 3,
         name: 'Epic'
     },
-    legendary: { 
-        multiplier: 2.5, 
-        color: '#FF9900', 
+    legendary: {
+        multiplier: 1.4,   // +40%
+        color: '#FF9900',
         spawnWeight: 0.9,
         dropBonus: 5,
         name: 'Legendary'
     },
-    mythic: { 
-        multiplier: 3.5, 
-        color: '#FF0000', 
+    mythic: {
+        multiplier: 1.5,   // +50%
+        color: '#FF0000',
         spawnWeight: 0.1,
         dropBonus: 8,
         name: 'Mythic'

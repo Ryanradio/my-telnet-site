@@ -6,7 +6,7 @@
 // If a player has an older version cached, they get a refresh banner.
 // ═══════════════════════════════════════════════════════════════════════
 
-const GAME_VERSION = '2025.02.19-r25';
+const GAME_VERSION = '2025.02.19-r26';
 
 // ── VERSION CHECK ──────────────────────────────────────────────────────
 // Call this on: game init, character select, enter dungeon, enter explore.
@@ -52,106 +52,69 @@ function checkGameVersion() {
 // ═══════════════════════════════════════════════════════════════════════
 const REVISION_HISTORY = [
 
+    {
+        version: '2025.02.19-r26',
+        date: 'Feb 19, 2025',
+        summary: 'Damage Rebalance, Warrior Shield, Dungeon Rarity System',
+        changes: [
+            'Fixed: Legendary Wraith (Lv10) hitting Lv6 player for 245 — rarity multipliers were stacking 8×',
+            'Rarity multipliers changed to flat +10% per tier: 1.0/1.1/1.2/1.3/1.4/1.5 (was 1.0/1.3/1.6/2.0/2.5/3.5)',
+            'Shield button (🛡️) is now warrior-only — removed from all other classes',
+            'Shield: 70% chance to halve all incoming damage; shows 🛡️ SHIELD! (−50%) on trigger',
+            'Dungeon enemies no longer roll random rarity — quality is set in the room definition',
+            'Dungeon1.js: all 77 enemies given explicit rarity (common/uncommon/rare/epic)',
+        ]
+    },
 
-      {
+    {
         version: '2025.02.19-r25',
         date: 'Feb 19, 2025',
         summary: 'Minor update',
         changes: [
             'Changed temple name to just "Temple"',
-            ]
+        ]
     },
+
     {
         version: '2025.02.19-r24',
         date: 'Feb 19, 2025',
         summary: 'Minor updates',
         changes: [
-            'Drain life went from 50% to 25%',
-            'Monsters telegraph their attack increase from 1 second to 2 seconds'
+            'Drain life reduced from 50% to 25%',
+            'Monster attack telegraph delay increased from 1s to 2s',
         ]
     },
+
     {
         version: '2025.02.19-r23',
         date: 'Feb 19, 2025',
-        summary: 'Class Master Audit — 3 Bugs Fixed + Archer/Acolyte Masters Added',
+        summary: 'Class Master Audit — 3 Bug Fixes + Archer/Acolyte Masters Added',
         changes: [
-            'BUG FIX #1: EVOLVED PLAYERS LOSE MASTER CHALLENGE BUTTONS',
-            '- At level 20, p.class is overwritten with the advanced class name (e.g. shadowmaster)',
-            '- showExplore() and getMasterKeyForArea() used p.class to build the master key',
-            '- Result: evolved players saw no master challenge buttons — zones permanently locked',
-            '- Fix: both functions now use p.baseClass || p.class for master key lookup',
-            '',
-            'BUG FIX #2: RIVERSIDE ZONE LOCKED WITH NO UNLOCK PATH IN UI',
-            '- getMasterKeyForArea() used a linear areaOrder array that did not include "riverside"',
-            '- "riverside" is locked: true but its master (forest master) was never shown',
-            '- Players could never see the master challenge button to unlock Riverside',
-            '- Fix: rewrote getMasterKeyForArea() with an explicit unlockedBy map',
-            '  { riverside: "forest", plains: "forest", cave: "plains", crypt: "cave", volcano: "crypt" }',
-            '',
-            'BUG FIX #3: ARCHER AND ACOLYTE CLASSES PERMANENTLY LOCKED OUT OF ALL ZONES',
-            '- class-masters.js had masters for warrior, rogue, paladin, mage, cleric, ranger, warlock, hunter',
-            '- archer and acolyte had zero masters — zones were locked with no challenge button possible',
-            '- Added 4 masters each for archer and acolyte (forest, plains, cave, crypt tiers)',
-            '',
-            'NEW MASTERS — ARCHER (class-masters.js):',
-            '- archer_master_forest: Marksman Rowan (Lv 3) → unlocks Riverside',
-            '- archer_master_plains: Siege Captain Lyra (Lv 6) → unlocks Cave',
-            '- archer_master_cave: Phantom Bowyer Isen (Lv 9) → unlocks Crypt',
-            '- archer_master_crypt: Death\'s Arrow Verath (Lv 12) → unlocks Volcano',
-            '',
-            'NEW MASTERS — ACOLYTE (class-masters.js):',
-            '- acolyte_master_forest: Elder Monk Silas (Lv 3) → unlocks Riverside',
-            '- acolyte_master_plains: Zealot Confessor Maren (Lv 6) → unlocks Cave',
-            '- acolyte_master_cave: Inquisitor Valdris (Lv 9) → unlocks Crypt',
-            '- acolyte_master_crypt: Grand Exorcist Theron (Lv 12) → unlocks Volcano',
+            'Fixed: Evolved players (Lv20+) lost master challenge buttons — now uses baseClass for key lookup',
+            'Fixed: Riverside zone was locked with no master button — rewrote getMasterKeyForArea()',
+            'Fixed: Archer and Acolyte had no class masters — permanently locked out of all zones',
+            'Added 4 masters each for Archer and Acolyte (forest/plains/cave/crypt tiers)',
         ]
     },
 
     {
         version: '2025.02.19-r22',
         date: 'Feb 19, 2025',
-        summary: 'Bug Fix: /setlevel Soft-Lock + New /unlockmaster Sysop Command',
+        summary: 'Bug Fix: /setlevel Soft-Lock + New /unlockmaster Command',
         changes: [
-            'BUG FIX: /setlevel SKIPS CLASS MASTER FIGHTS (SOFT-LOCK)',
-            '- Using /setlevel to jump levels bypassed class master fights',
-            '- Locked zones (plains, cave, crypt, volcano) require a master defeat to unlock',
-            '- Master challenge button only shows on already-unlocked zones — catch-22!',
-            '- Fix: /setlevel now auto-defeats any class master whose requiredLevel the',
-            '  player meets or exceeds, and unlocks the zone that master guards',
-            '- Applies to all masters across all classes on level-up via sysop command',
-            '',
-            'NEW SYSOP COMMAND: /unlockmaster [area|all]',
-            '- Retroactively fixes already-leveled characters that are soft-locked',
-            '- /unlockmaster all     — defeats all pending class masters for this class',
-            '- /unlockmaster plains  — defeats only the plains master (unlocks cave)',
-            '- /unlockmaster cave    — defeats only the cave master (unlocks crypt)',
-            '- Valid areas: forest, riverside, plains, cave, crypt, volcano',
-            '- Saves game automatically after unlocking',
-            '- Added to /help output',
+            'Fixed: /setlevel bypassed class masters, soft-locking zone progression',
+            '/setlevel now auto-defeats any master whose requiredLevel the player meets',
+            'New sysop command: /unlockmaster [area|all] — retroactively fixes soft-locked characters',
         ]
     },
 
     {
         version: '2025.02.19-r21',
         date: 'Feb 19, 2025',
-        summary: 'Bug Fix: Mage/Warlock Tome & Orb Drops Equippable By Anyone',
+        summary: 'Bug Fix: Tome & Orb Drops Equippable By Anyone',
         changes: [
-            'BUG FIX: MAGIC CLASS DROPPED WEAPON EQUIP',
-            '- Tomes and orbs now correctly restricted to spell classes only',
-            '- Issue: canUseWeapon() had no keyword match for "tome", "orb", or "shadow_orb"',
-            '- These drop types fell through to the default "return true" — any class could equip them',
-            '- Fix: added explicit type and name checks for tome/orb/shadow_orb drop types',
-            '- Affected drop types: tome, orb, shadow_orb (mage + warlock pools)',
-            '- Spell classes (mage, warlock, cleric, acolyte, necrolyte, druid, sorceror) still equip normally',
-            '',
-            'AUDIT: All other class weapon drops verified correct:',
-            '- Warrior: sword, axe, hammer, greatsword, battleaxe, warhammer ✓',
-            '- Paladin: sword, mace, hammer, holy_mace, crusader_sword ✓',
-            '- Ranger/Hunter/Archer: bow, longbow, crossbow and variants ✓',
-            '- Mage: staff, wand ✓  tome, orb — FIXED',
-            '- Warlock: staff, wand, dark_staff ✓  shadow_orb — FIXED',
-            '- Cleric: mace, staff, holy_staff, blessed_mace ✓',
-            '- Acolyte: mace, staff, holy_staff ✓',
+            'Fixed: tomes and orbs had no equip restriction — any class could equip them',
+            'canUseWeapon() now restricts tome/orb/shadow_orb to spell classes only',
         ]
     },
 
@@ -160,154 +123,84 @@ const REVISION_HISTORY = [
         date: 'Feb 19, 2025',
         summary: 'Bug Fix: Rogue Cannot Equip Dropped Daggers',
         changes: [
-            'BUG FIX: ROGUE DROPPED WEAPON EQUIP',
-            '- Rogues can now equip daggers received as enemy drops',
-            '- Issue: canUseWeapon() only allowed weapons with classRestriction: "rogue"',
-            '- Dropped weapons are procedurally generated and use type: "dagger" instead',
-            '- Fix: rogue equip check now also matches weapon.type and weapon name keywords',
-            '- Allowed rogue weapon types: dagger, poison_dagger, assassin_blade, short_sword',
-            '- Allowed rogue name keywords: dagger, shiv, stiletto, dirk, blade',
-            '- Static shop/class weapons (classRestriction: "rogue") still work as before',
+            'Fixed: rogues could not equip procedurally dropped daggers',
+            'canUseWeapon() now matches rogue-valid weapon types and name keywords',
         ]
     },
 
     {
         version: '2025.02.18-r19',
-        date: 'Feb 19, 2025',
+        date: 'Feb 18, 2025',
         summary: 'Dungeon Enemy Levels Fixed + Monster Damage Ranges',
         changes: [
-            'BUG FIX #1: DUNGEON ENEMY LEVELS',
-            '- Dungeon enemies now spawn at their correct template level',
-            '- Zombies (level 7) now hit with level 7 damage, not level 1-3',
-            '- Issue: dungeons were using zone level system (1-3 for forest)',
-            '- Fix: dungeons now use template.level directly',
-            '- Exploration zones still use zone level ranges (working as intended)',
-            '',
-            'FEATURE #2: MONSTER DAMAGE RANGES',
-            '- ALL monsters now have minDamage and maxDamage',
-            '- Damage rolls between min/max for variety in combat',
-            '- Default range: ±30% of baseDamage',
-            '- Examples:',
-            '  - Zombie: baseDamage 17 → rolls 11-22 damage',
-            '  - Goblin: baseDamage 8 → rolls 5-10 damage',
-            '  - Dragon: baseDamage 100 → rolls 70-130 damage',
-            '- Rarity and level multipliers apply to entire range',
-            '- Epic zombie might roll 22-44 damage!',
-            '',
-            'TECHNICAL CHANGES:',
-            '- Added minDamage/maxDamage fields to all 100+ monsters',
-            '- Modified spawnMonsterWithRarity() to use template ranges',
-            '- startCombat() now accepts useZoneLevel parameter',
-            '- Dungeon combat passes useZoneLevel=false',
-            '- Exploration combat passes useZoneLevel=true (default)',
+            'Fixed: dungeon enemies were spawning at zone level instead of their template level',
+            'Added minDamage/maxDamage to all 100+ monsters — damage rolls within a range per hit',
         ]
     },
-
 
     {
         version: '2025.02.18-r18',
-        date: 'Feb 19, 2025',
-        summary: 'Bug fix for Dungeon1 entrances',
+        date: 'Feb 18, 2025',
+        summary: 'Dungeon entrance fixes',
         changes: [
-            'Applied fixes.  Return to town only at entrance.',
-                        
+            'Return to town only available at dungeon entrance',
         ]
     },
-      {
+
+    {
         version: '2025.02.18-r16',
-        date: 'Feb 19, 2025',
+        date: 'Feb 18, 2025',
         summary: 'Hunter replaces Ranger',
         changes: [
-            'In the code, the Ranger/Hunter class was being called',
-            'incorrectly.  Ranger class has been removed.'
-            
+            'Ranger class removed and replaced by Hunter throughout codebase',
         ]
     },
+
     {
         version: '2025.02.18-r15',
         date: 'Feb 18, 2025',
-        summary: 'Hunter Trap Ability - Enemy Slow',
+        summary: 'Hunter Trap Ability',
         changes: [
-            'HUNTER TRAP SYSTEM:',
-            '- New trap button (🪤) in combat for hunters only',
-            '- Costs 10 MP, does not consume a pip',
-            '- Slows enemy attack speed by 50% for entire combat',
-            '- Example: 15s enemy timer becomes 22.5s (adds 7.5s)',
-            '- 15% chance to fail when setting the trap',
-            '- Can only set one trap per combat',
-            '',
-            'TRAP MECHANICS:',
-            '- Dramatic 2-second pause while setting trap',
-            '- Success: "⚙️ SNAP! The enemies are caught in the trap!"',
-            '- Failure: "💨 The trap mechanism fails! The enemies avoid it!"',
-            '- Slow applies to all enemy attacks for rest of combat',
-            '- Enemy timer automatically gets slow bonus after each attack',
-            '- Keyboard shortcut: Press [T] to set trap',
-            '',
-            'COMBAT MESSAGES:',
-            '- "🪤 You carefully set a concealed trap..."',
-            '- "🐌 Enemy attack speed slowed by 50%! (+7s to attack timer)"',
-            '- Works on single enemies and multiple enemies',
+            'New trap button (🪤) for hunters — costs 10 MP, slows enemy attacks 50% for entire combat',
+            '15% chance to fail; only one trap per combat',
         ]
     },
 
     {
         version: '2025.02.18-r14',
         date: 'Feb 18, 2025',
-        summary: 'Healing Spells in Inventory (Out of Combat)',
+        summary: 'Healing Spells Out of Combat',
         changes: [
-            'Healing spells now accessible from inventory button (🎒) when out of combat',
-            'New "Healing Spells" section appears in inventory panel alongside potions/weapons/armor',
-            'Cast healing spells to restore HP without entering combat',
-            'Spells show MP cost and are disabled if: (1) already at full HP, or (2) not enough MP',
-            'Healing applies: spell power + WIS bonus',
-            'Message shows: "✨ You cast Minor Heal and restore 25 HP!"',
-            'Works in exploration zones - easy access to healing between battles',
-            'Automatically updates HP/MP display and saves game after healing',
+            'Healing spells now castable from inventory (🎒) outside of combat',
         ]
     },
 
     {
         version: '2025.02.18-r13',
         date: 'Feb 18, 2025',
-        summary: 'Hunter Pet System Complete + Weapon Modifiers for All Spells',
+        summary: 'Hunter Pet System + Weapon Modifiers for Spells',
         changes: [
-            'HUNTER PET SYSTEM NOW LIVE:',
-            '- Hunters initialize with activePet: null field',
-            '- Pet Trainer NPC added to Temple (hunters only)',
-            '- Upgrade pets every 3 levels: Dog → Wolf → Dire Wolf → Shadow Hound → Warg → Hellhound → Fenrir',
-            '- Pet damage shows in combat: "🐕 Hunting Dog attacks for 12 damage!"',
-            '- Pet progression UI shows current pet, available upgrades, and full progression path',
-            '- Pets cost gold to bond/upgrade (50g → 2000g)',
-            '',
-            'WEAPON MODIFIERS NOW APPLY TO ALL SPELLS:',
-            '- Staff/wand elemental damage (fire, lightning, acid, etc.) now applies to ALL offensive spells',
-            '- Status effects from weapon modifiers (burning, poisoned, etc.) apply when casting spells',
-            '- Spell damage displays: "45 damage! +8 Lightning Strike damage [⚡ Stunned!]"',
-            '- Applies to single-target, AOE, and lifesteal spells',
-            '- Healing spells do NOT apply weapon modifiers (prevents self-damage)',
-            '- Physical weapon damage does NOT apply (only elemental bonuses)',
-            '- Example: Mage with Lightning Staff casts Fireball → deals fire damage + lightning damage + 20% stun chance',
+            'Hunter pets attack automatically after hunter; upgrade at Pet Trainer every 3 levels',
+            'Pet chain: Dog → Wolf → Dire Wolf → Shadow Hound → Warg → Hellhound → Fenrir',
+            'Weapon elemental modifiers now apply to all offensive spells',
         ]
     },
 
-
-{
+    {
         version: '2025.02.18-r12',
         date: 'Feb 18, 2025',
-        summary: 'Updating Exploration-zones',
+        summary: 'Exploration zone fix',
         changes: [
-            'Riverside should now be available without beating the Class Master.',
+            'Riverside now available without beating Class Master',
         ]
     },
-
 
     {
         version: '2025.02.18-r11',
         date: 'Feb 18, 2025',
-        summary: 'Updating Exploration-zones',
+        summary: 'Exploration zone fix',
         changes: [
-            'Riverside was not being called correctly.  Fixed',
+            'Fixed Riverside zone not loading correctly',
         ]
     },
 
@@ -316,51 +209,27 @@ const REVISION_HISTORY = [
         date: 'Feb 17, 2025',
         summary: 'Class Masters Fix + Hunter Pet System',
         changes: [
-            'FIXED: Added missing Warlock and Hunter class masters for all zones',
-            'Warlock masters: Void Caller Malachar (forest), Shadowlord Xalthar (plains), etc.',
-            'Hunter masters: Beast Lord Fenris (forest), Alpha Commander Varg (plains), etc.',
-            'NEW: Hunter Pet System - hunters get pets instead of 2nd pip until level 6+',
-            'Pets attack automatically after hunter attacks for bonus damage',
-            'Pet damage = (weapon damage * %) + flat bonus',
-            'Pet progression: Dog (35%) → Wolf (40%) → Dire Wolf (45%) → Shadow Hound (50%) → Warg (55%) → Hellhound (60%) → Fenrir (70%)',
-            'Upgrade pets at Pet Trainer every 3 levels (3, 6, 9, 12, 15, 18, 21)',
-            'Pet attacks show in combat: "🐕 Hunting Dog attacks for 12 damage!"',
-            'Added hunter-pets.js with complete pet system',
+            'Added missing Warlock and Hunter class masters for all zones',
+            'Hunter pets attack automatically; upgrade at Pet Trainer every 3 levels',
         ]
     },
 
     {
         version: '2025.02.17-r9',
         date: 'Feb 17, 2025',
-        summary: 'Dungeon Enemy Respawn System',
+        summary: 'Dungeon Enemy Respawn',
         changes: [
-            'Dungeon enemies now respawn after 30 minutes (1800 seconds)',
-            'Defeated enemies moved to defeatedEnemies array with death timestamp',
-            'Respawn timer starts immediately when enemy dies',
-            'Enemies respawn in their original room with full HP',
-            'Chase state resets on respawn (not automatically chasing player)',
-            'Respawn check runs every time player enters a room',
-            'If player is in same room as respawned enemy, shows "♻️ [Enemy] has respawned in this room!"',
-            'defeatedEnemies array saved/loaded with game state',
-            'Console logs respawn events for debugging',
-            'Dungeons are now infinitely replayable - farm enemies every 30 minutes',
+            'Dungeon enemies respawn 30 minutes after death in their original room',
         ]
     },
 
     {
         version: '2025.02.17-r8',
         date: 'Feb 17, 2025',
-        summary: 'Status Effect Stacking System',
+        summary: 'Status Effect Stacking',
         changes: [
-            'Status effects now STACK — multiple applications of the same status run independently',
-            'Rogue double-strike with poison: both hits apply poison = 2 independent DOT timers ticking',
-            'Each status instance gets a unique ID and its own damage timer',
-            'Status application messages show stack count: "Poisoned [x2]", "Burning [x3]"',
-            'All DOTs stack: poison, bleed, burning, bleeding, poisoned, etc.',
-            'All debuffs stack: blind, stun, frozen, weakened, etc.',
-            'Each stack expires independently after its own duration',
-            'removeStatusEffect() removes ALL stacks of a type (for cleanse/cure effects)',
-            'removeStatusEffectById() removes a single specific stack',
+            'Status effects now stack independently with separate DOT timers',
+            'Stack count shown in messages: "Poisoned [x2]", "Burning [x3]"',
         ]
     },
 
@@ -369,10 +238,7 @@ const REVISION_HISTORY = [
         date: 'Feb 17, 2025',
         summary: 'Equipped Weapon Modifier Display',
         changes: [
-            'Fixed: Weapon modifiers now show on EQUIPPED weapons in inventory',
-            'Previously modifiers only showed on unequipped weapons',
-            'Equipped weapon card now displays: name, damage, modifiers, EQUIPPED status, UNEQUIP button',
-            'Modifier display uses same safety checks as unequipped weapons',
+            'Weapon modifiers now display on equipped weapons in inventory',
         ]
     },
 
@@ -381,13 +247,8 @@ const REVISION_HISTORY = [
         date: 'Feb 17, 2025',
         summary: 'Master Display Fix, Modifier Display, Spell Bonuses',
         changes: [
-            'Fixed: Forest zone (starter area) now always unlocks when viewing Explore',
-            'Fixed: Class masters now show even if you skip to higher levels via /setlevel',
-            'Fixed: Weapon modifiers now display in inventory (added safety checks for undefined)',
-            'Fixed: Weapon modifier damage bonuses now apply to ALL offensive spells (damage, lifesteal, AOE)',
-            'Weapon modifier bonuses roll independently per spell cast (min-max damage range)',
-            'Healing spells do NOT get modifier bonuses (prevents self-damage)',
-            'Added getWeaponModifierSpellBonus() helper function for consistent spell bonus calculation',
+            'Fixed: Forest zone always unlocks on Explore; masters show after /setlevel',
+            'Weapon modifiers display in inventory and apply to all offensive spells',
         ]
     },
 
@@ -396,14 +257,9 @@ const REVISION_HISTORY = [
         date: 'Feb 17, 2025',
         summary: 'Class Masters, Drop Rates, Combat UI Polish',
         changes: [
-            'Class masters now fully functional (file was incorrectly reported as empty)',
-            'Weapon and armor drop rates increased from 2.5% to 4%',
-            'Pip cooldown timer now shows bright green sweep instead of dark overlay (easier to see progress)',
-            'Removed potion button from dungeon combat panel (inventory button exists in nav)',
-            'Replaced potion button with inventory button in exploration (both combat and non-combat)',
-            'Combat inventory button (🎒) shows unified panel with potions, weapons, and armor',
-            'Back button in combat inventory now works correctly during both combat and exploration',
-            'NOTE: Weapon modifiers for spell damage and modifier display in inventory are in progress',
+            'Class masters now fully functional',
+            'Weapon/armor drop rates increased from 2.5% to 4%',
+            'Combat inventory button (🎒) shows unified potions/weapons/armor panel',
         ]
     },
 
@@ -412,32 +268,19 @@ const REVISION_HISTORY = [
         date: 'Feb 17, 2025',
         summary: 'Version Check, Inventory Display, Zone Fixes',
         changes: [
-            'Version check now runs on EVERY menu option from town (Shop, Bank, Inventory, Temple, Explore, Stats, Main Menu)',
-            'PWA/desktop icon users will now see update prompts when navigating menus (no manual refresh needed)',
-            'All weapons and armor now show in inventory regardless of class restrictions',
-            'Unusable items display as dimmed with "CANNOT EQUIP" button (rogues see swords, mages see axes, etc.)',
-            'Rogues can equip non-dagger weapons but only get double-strike with daggers',
-            'Fixed: Haunted Graveyard (Lv 7-9) moved from town1 to town2 where it belongs',
-            'Fixed: Town2 exploration now shows correct zones (Haunted Graveyard, Plains, Cave, Swamp, Ruins)',
-            'Town1 exploration now only shows Forest and Riverside',
+            'Version check runs on every town menu option',
+            'All inventory items visible; unusable items dimmed with "CANNOT EQUIP"',
+            'Fixed: Haunted Graveyard moved to Town2; Town1 shows only Forest and Riverside',
         ]
     },
 
     {
         version: '2025.02.17-r3',
         date: 'Feb 17, 2025',
-        summary: 'Enemy Join Fix, Instructions Expanded, UI Polish',
+        summary: 'Enemy Join Fix, Instructions, UI Polish',
         changes: [
-            'Fixed: Enemies that follow into a room with pre-existing enemies now ALL appear instantly',
-            'Fixed: Followers now show up immediately on attack buttons (not after they attack first)',
-            'Instructions screen expanded with dungeon warning, color guide, and drop mechanics',
-            'Rarity color guide: all 6 enemy tiers from Common (white) to Mythic (red)',
-            'Quality color guide: all 6 equipment tiers from Poor (gray) to Godly (red)',
-            'Drop mechanics explained: quality scales with enemy rarity and player level',
-            'Dungeon Inventory overlay now only covers playable area (not entire screen)',
-            'Added bottom CLOSE button to Dungeon Inventory panel (was top-right only)',
-            'All screens with BACK buttons now have duplicate button at top and bottom',
-            'Revision History screen accessible from main menu',
+            'Fixed: Enemies following into a room now appear instantly in combat',
+            'Instructions expanded with rarity/quality color charts and drop mechanics',
         ]
     },
 
@@ -446,22 +289,11 @@ const REVISION_HISTORY = [
         date: 'Feb 17, 2025',
         summary: 'Enemy AI, Inventory Overhaul, Spell Shop, Version System',
         changes: [
-            'Dungeon enemies now all follow you into a room and JOIN active combat instantly',
-            'Followers attack the player correctly — combat timer no longer stalls',
-            'Multiple enemies entering a room during combat are added to the fight in real time',
-            'Dungeon keys are now PERMANENT — never removed from inventory or on exit',
-            'Keys do not get consumed when unlocking a door (door stays unlocked per session)',
-            'Replaced dungeon keyboard direction input with 🎒 Inventory button (shows potion counts)',
-            'New full-screen Dungeon Inventory panel: use potions, swap weapons/armor mid-dungeon',
-            'Potion menu no longer breaks combat buttons when enemy attacks during it',
-            'Spell slot ordering fixed: single-target = slot 1, AOE = slot 2 (always)',
-            'Healer classes: damage spell = slot 1, healing spell = slot 2',
-            'Spell shop no longer re-shows already-learned spells at 0 gold',
-            'Spell shop shows "Coming Soon" section for spells locked by level',
-            'Version watermark added to main menu (bottom-right corner)',
-            'Added version check: stale cache triggers a "Please Refresh" banner',
-            'gameversion.js created as single source of truth for version + patch notes',
-            'Revision History added to main menu',
+            'Dungeon enemies follow and join active combat in real time',
+            'Dungeon keys are permanent — never consumed or removed on exit',
+            'Full-screen Dungeon Inventory: use potions, swap gear mid-dungeon',
+            'Spell shop hides learned spells; shows locked spells as "Coming Soon"',
+            'gameversion.js created; Revision History added to main menu',
         ]
     },
 
@@ -470,16 +302,9 @@ const REVISION_HISTORY = [
         date: 'Feb 17, 2025',
         summary: 'Dungeon Maps, Combat Fixes, Shop & UI Polish',
         changes: [
-            'Runestone pip now displays next to player name (not town name)',
-            'Enemy critical hits show in red 💀 to distinguish from player crits',
-            'Returning from dungeon map mid-combat correctly restores attack buttons',
-            'Dungeon map shows [T] trap markers (red) and [H] home/start marker (yellow)',
-            'Floor-scoped room discovery: Floor 1 and Floor 2 maps are fully independent',
-            'Dungeon maps now persist across floor changes and logout/login',
-            '/revealmap sysop command added to reveal entire dungeon layout',
-            'Shop sell: duplicate items with different quality now stack separately',
-            'Multiple dungeon enemies now show in combat and attack the player',
-            'Key-carrying enemies drop their key on death correctly',
+            'Dungeon map with trap [T] and start [H] markers; persists across floors and sessions',
+            '/revealmap sysop command added',
+            'Shop sell: duplicate items with different quality stack separately',
         ]
     },
 
@@ -489,12 +314,8 @@ const REVISION_HISTORY = [
         summary: 'Rogue Rework, Spell/Wand Balance, Sysop Tools',
         changes: [
             'Rogue double-strike and weapon restrictions reworked',
-            'Spell attack menu unified across all casting classes',
-            'Wand and staff damage rebalanced',
-            'Zone auto-unlock added to /setlevel sysop command',
-            'Mobile sysop teleport fixed',
-            'Hash-based sysop credential system added',
-            'Username capitalization fixed on character select',
+            'Wand/staff damage rebalanced; spell attack menu unified',
+            'Hash-based sysop credential system; zone auto-unlock added to /setlevel',
         ]
     },
 
@@ -503,11 +324,8 @@ const REVISION_HISTORY = [
         date: 'Feb 16, 2025',
         summary: 'UI Polish, Dungeon Editor, Shop Sell System',
         changes: [
-            'Runestone pip sizing and positioning improved',
-            'Dungeon editor grid layout fixes',
-            'Shop sell system implemented with sell value display',
-            'Gem sellValue added to items',
-            'Character select layout improved for mobile',
+            'Shop sell system with sell value display',
+            'Dungeon editor grid layout fixes; mobile character select improved',
         ]
     },
 

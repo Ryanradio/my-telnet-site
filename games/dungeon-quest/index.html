@@ -7856,13 +7856,14 @@ function stabilizeTerminalLayout() {
         // COMBAT FUNCTIONS
         // ═══════════════════════════════════════════════════════════════
         
-        function startCombat(enemyKeys, useZoneLevel = true) {
+        function startCombat(enemyKeys, useZoneLevel = true, forcedRarities = null) {
             // Stop resting when combat starts
             stopResting();
             
             if (!Array.isArray(enemyKeys)) enemyKeys = [enemyKeys];
             const monsters = enemyKeys.map((k, index) => {
-                const monster = spawnMonsterWithRarity(k, useZoneLevel); // useZoneLevel: true for exploration, false for dungeons
+                const fr = forcedRarities ? (forcedRarities[index] || null) : null;
+                const monster = spawnMonsterWithRarity(k, useZoneLevel, fr);
                 monster.index = index; // Add index for status effect tracking
                 return monster;
             });
@@ -7921,9 +7922,11 @@ function stabilizeTerminalLayout() {
             startCombatTimer();
         }
 
-        function spawnMonsterWithRarity(enemyKey, zoneLevel = null) {
+        function spawnMonsterWithRarity(enemyKey, zoneLevel = null, forcedRarity = null) {
             const template = ENEMIES[enemyKey];
-            const rarity   = rollRarity();
+            // Dungeon enemies pass a forcedRarity (default 'common' = no random roll).
+            // Exploration enemies always roll randomly (forcedRarity = null).
+            const rarity   = (forcedRarity && RARITY_CONFIG[forcedRarity]) ? forcedRarity : rollRarity();
             const mult     = RARITY_CONFIG[rarity].multiplier;
             
             // Determine monster level (use template level for dungeons, zone level for exploration)
@@ -8299,12 +8302,16 @@ if (cs) {
     /* ───────── MAIN COMBAT MENU ───────── */
     if (mode === 'main') {
         const p = gameState.player;
+        const isWarrior = (p.baseClass || p.class) === 'warrior';
+        const shieldBtn = isWarrior
+            ? `<button onclick="playerDefend()" ${!canAct ? 'disabled' : ''} title="Shield — 70% to halve damage">🛡️</button>`
+            : '';
         combatDiv.innerHTML = `
             <div style="color:var(--highlight-color);font-size:13px;margin-bottom:3px;text-align:center;letter-spacing:3px;">${pips}</div>
             <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;">
                 <button onclick="showAttackMenu()" ${!canAct ? 'disabled' : ''} class="pip-btn" id="pipBtn-attack" title="Attack">⚔️</button>
                 <button onclick="showSpellMenu()"  ${!canAct ? 'disabled' : ''} class="pip-btn" id="pipBtn-spell" title="Spell">✨</button>
-                <button onclick="playerDefend()"   ${!canAct ? 'disabled' : ''} title="Defend">🛡️</button>
+                ${shieldBtn}
                 <button onclick="attemptFlee()"    ${!canAct ? 'disabled' : ''} title="Flee">🏃</button>
                 <button onclick="printStatsToTerminal()" title="Show Stats" style="border-color:#4488ff;">📊</button>
             </div>
@@ -8777,8 +8784,10 @@ function dungeonNav(input) {
 
                 if (mode === 'main') {
                     // Main combat menu — icons only, pip dots only
-                    const isHunter = (p.baseClass || p.class) === 'hunter';
-                    const trapBtn = isHunter ? `<button onclick="castTrap()" ${p.mp < 10 ? 'disabled' : ''} class="action-icon-btn" title="Set Trap [T] - 10 MP" style="border-color:#8B4513;">🪤<span class="kb-hint">T</span></button>` : '';
+                    const isHunter  = (p.baseClass || p.class) === 'hunter';
+                    const isWarrior = (p.baseClass || p.class) === 'warrior';
+                    const trapBtn   = isHunter ? `<button onclick="castTrap()" ${p.mp < 10 ? 'disabled' : ''} class="action-icon-btn" title="Set Trap [T] - 10 MP" style="border-color:#8B4513;">🪤<span class="kb-hint">T</span></button>` : '';
+                    const shieldBtn = isWarrior ? `<button onclick="playerDefend()" ${!canAct?'disabled':''} class="action-icon-btn" title="Shield [4] — 70% to halve damage" style="border-color:#00CCFF;">🛡️<span class="kb-hint">4</span></button>` : '';
                     
                     ab.innerHTML = `
                         <div style="color:var(--highlight-color);font-size:13px;line-height:1;margin-bottom:3px;text-align:center;letter-spacing:3px;">${pips}</div>
@@ -8787,7 +8796,7 @@ function dungeonNav(input) {
                             <button onclick="showSpellMenu()"  ${!canAct?'disabled':''} class="action-icon-btn pip-btn" title="Cast Spell [2]" id="pipBtn-spell">✨<span class="kb-hint">2</span></button>
                             <button onclick="showCombatInventory()" class="action-icon-btn" title="Inventory [3]" style="border-color:#00FF88;">🎒<span class="kb-hint">3</span></button>
                             ${trapBtn}
-                            <button onclick="playerDefend()"   ${!canAct?'disabled':''} class="action-icon-btn" title="Defend [4]">🛡️<span class="kb-hint">4</span></button>
+                            ${shieldBtn}
                             <button onclick="attemptFlee()"    ${!canAct?'disabled':''} class="action-icon-btn" title="Flee [5]">🏃<span class="kb-hint">5</span></button>
                             <button onclick="printStatsToTerminal()" class="action-icon-btn" title="Show Stats [6]" style="border-color:#4488ff;">📊<span class="kb-hint">6</span></button>
                         </div>
@@ -9256,7 +9265,8 @@ function checkRoomEncounter(room) {
     if (!ds.activeEnemies) ds.activeEnemies = [];
 
     // ── NEW FORMAT: contents.enemies[] from dungeon editor ────────────
-    // Each entry: { key: 'giant_scorpion', drop: 'copper_key' } or plain string.
+    // Each entry: { key: 'giant_scorpion', drop: 'copper_key', rarity: 'epic' }
+    // rarity is optional — omit or leave blank for base/common stats (no random roll in dungeons).
     // Only spawn once per room per dungeon session.
     if (room.contents && Array.isArray(room.contents.enemies) && room.contents.enemies.length > 0) {
         if (!ds.spawnedRooms) ds.spawnedRooms = new Set();
@@ -9266,12 +9276,16 @@ function checkRoomEncounter(room) {
         room.contents.enemies.forEach(entry => {
             const monsterId = typeof entry === 'string' ? entry : entry.key;
             const drop      = typeof entry === 'string' ? null  : (entry.drop || null);
+            // Default to 'common' so dungeons never get a random rarity roll
+            const rarity    = (typeof entry === 'object' && entry.rarity && RARITY_CONFIG?.[entry.rarity])
+                              ? entry.rarity : 'common';
             const enemyDef  = ENEMIES[monsterId];
             if (!enemyDef) { console.warn('Dungeon enemy not found:', monsterId); return; }
 
             const inst = {
                 id: crypto.randomUUID(),
                 monsterId,
+                rarity,
                 name:          enemyDef.name,
                 currentRoom:   ds.currentRoom,
                 leash:         enemyDef.isBoss ? 6 : 3,
@@ -9807,7 +9821,7 @@ function checkEnemiesInRoom(roomId, newArrivals) {
 
         joining.forEach(de => {
             if (!de.monsterId) return;
-            const newMonster = spawnMonsterWithRarity(de.monsterId, false); // false = use template level
+            const newMonster = spawnMonsterWithRarity(de.monsterId, false, de.rarity || 'common');
             newMonster.index = cs.monsters.length;
             if (de.hp !== undefined && de.hp < de.maxHp) {
                 newMonster.hp    = de.hp;
@@ -9860,8 +9874,12 @@ function startDungeonCombat(dungeonEnemies) {
         return;
     }
 
+    // Each dungeon enemy carries its rarity from the room definition (default 'common').
+    // This prevents any random rarity rolls — dungeon difficulty is author-controlled.
+    const forcedRarities = dungeonEnemies.map(e => e.rarity || 'common');
+
     // Start combat with all enemies in room (useZoneLevel=false for dungeons)
-    startCombat(monsterIds, false);
+    startCombat(monsterIds, false, forcedRarities);
 
     if (!gameState.combatState) return;
 
@@ -10860,11 +10878,13 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
 
         function playerDefend() {
             const cs = gameState.combatState;
+            const p  = gameState.player;
             if (!cs || cs.hitsLeft <= 0) return;
-            cs.defending = true;
-            cs.hitsLeft  = 0;            // end player's turn
+            if ((p.baseClass || p.class) !== 'warrior') return; // Warriors only
+            cs.shieldActive = true;
+            cs.hitsLeft     = 0;   // end player's turn
             renderActionBar();
-            termAppend('You brace for impact…');  // timer keeps ticking → enemy phase
+            termAppend('🛡️ You raise your shield — bracing for the blow…');
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -11626,12 +11646,12 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
     }
     
     const qBonus = getQualityBonus(armor.quality, armor.baseDefense);
-    let totalDef   = armor.baseDefense + qBonus + (p.con || 0);
+    let totalDef = armor.baseDefense + qBonus + (p.con || 0);
 
-    if (cs.defending) {
-        totalDef *= 2;
-        cs.defending = false;
-    }
+    // ── Warrior Shield: 70% chance to halve ALL incoming damage this attack ──
+    // cs.shieldActive is set by playerDefend() and consumed here.
+    const shieldTriggered = cs.shieldActive && (Math.random() < 0.70);
+    cs.shieldActive = false;
 
     // Pull intent (or fallback)
     const intent = cs.enemyIntent || {
@@ -11686,17 +11706,20 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
             return;
         }
 
-        p.hp -= result.damage;
+        let finalDmg = result.damage;
+        let shieldBlocked = false;
+        if (shieldTriggered) {
+            finalDmg     = Math.max(1, Math.floor(finalDmg * 0.5));
+            shieldBlocked = true;
+        }
 
-        // ── Passive hooks (future-safe) ──
-        // if (enemy.passives?.includes('lifedrain')) {
-        //     enemy.hp = Math.min(enemy.maxHp, enemy.hp + Math.floor(result.damage * 0.3));
-        // }
+        p.hp -= finalDmg;
 
         hits.push({
             eName,
-            dmg: result.damage,
-            crit: result.crit
+            dmg:          finalDmg,
+            crit:         result.crit,
+            shieldBlocked
         });
     });
 
@@ -11737,12 +11760,15 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 isLast ? afterAttack : null
             );
         } else {
-            const critTag = hit.crit
+            const critTag    = hit.crit
                 ? ' <span style="color:#FF4444;">💀 ENEMY CRITICAL!</span>'
+                : '';
+            const shieldTag  = hit.shieldBlocked
+                ? ' <span style="color:#00CCFF;">🛡️ SHIELD! (−50%)</span>'
                 : '';
 
             termAppend(
-                `${hit.eName} attacks for <span class="dmg-player">${hit.dmg} damage!</span>${critTag}`,
+                `${hit.eName} attacks for <span class="dmg-player">${hit.dmg} damage!</span>${critTag}${shieldTag}`,
                 null,
                 isLast ? afterAttack : null
             );
