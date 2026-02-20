@@ -404,7 +404,7 @@ const ITEMS = {
         maxStack: 1,
         icon: '🪄',
         description: 'A length of petrified dragon-wood, warm to the touch.',
-        lore: 'Carved from a tree that grew beside a dragon's lair for five centuries.'
+        lore: "Carved from a tree that grew beside a dragon's lair for five centuries."
     },
     staff_piece_3: {
         name: 'Staff Piece III — The Binding',
