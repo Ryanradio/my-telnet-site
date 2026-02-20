@@ -377,6 +377,108 @@ const ITEMS = {
         icon: '✦'
     },
 
+    // ═══════════════════════════════════════════════════════════════
+    // STAFF OF ANCIENTS — 8 Collectible Pieces
+    // Collect all 8 pieces and bring them to the Staff Pedestal room
+    // to trigger a blinding teleportation event.
+    // ═══════════════════════════════════════════════════════════════
+    staff_piece_1: {
+        name: 'Staff Piece I — The Base',
+        subtype: 'staff_piece',
+        staffPieceNumber: 1,
+        power: 0,
+        cost: 0,
+        sellValue: 0,
+        maxStack: 1,
+        icon: '🪄',
+        description: 'A gnarled obsidian base, humming faintly with trapped energy.',
+        lore: 'The first of eight. The journey of a thousand years begins here.'
+    },
+    staff_piece_2: {
+        name: 'Staff Piece II — The Shaft',
+        subtype: 'staff_piece',
+        staffPieceNumber: 2,
+        power: 0,
+        cost: 0,
+        sellValue: 0,
+        maxStack: 1,
+        icon: '🪄',
+        description: 'A length of petrified dragon-wood, warm to the touch.',
+        lore: 'Carved from a tree that grew beside a dragon's lair for five centuries.'
+    },
+    staff_piece_3: {
+        name: 'Staff Piece III — The Binding',
+        subtype: 'staff_piece',
+        staffPieceNumber: 3,
+        power: 0,
+        cost: 0,
+        sellValue: 0,
+        maxStack: 1,
+        icon: '🪄',
+        description: 'Coils of ancient copper wire wrapped in worn leather strips.',
+        lore: 'These bindings once held together a weapon of immeasurable power.'
+    },
+    staff_piece_4: {
+        name: 'Staff Piece IV — The Rune Ring',
+        subtype: 'staff_piece',
+        staffPieceNumber: 4,
+        power: 0,
+        cost: 0,
+        sellValue: 0,
+        maxStack: 1,
+        icon: '🪄',
+        description: 'A ring of carved rune-stone that crackles with static.',
+        lore: 'The runes shift when no one is watching. Do not look away.'
+    },
+    staff_piece_5: {
+        name: 'Staff Piece V — The Conduit',
+        subtype: 'staff_piece',
+        staffPieceNumber: 5,
+        power: 0,
+        cost: 0,
+        sellValue: 0,
+        maxStack: 1,
+        icon: '🪄',
+        description: 'A hollow crystal tube that channels raw magical current.',
+        lore: 'Touch it and feel the pulse of something ancient and hungry.'
+    },
+    staff_piece_6: {
+        name: 'Staff Piece VI — The Focus Lens',
+        subtype: 'staff_piece',
+        staffPieceNumber: 6,
+        power: 0,
+        cost: 0,
+        sellValue: 0,
+        maxStack: 1,
+        icon: '🪄',
+        description: 'A fractured emerald lens that bends light unnaturally.',
+        lore: 'Stare through it too long and you may see where the staff wants to take you.'
+    },
+    staff_piece_7: {
+        name: 'Staff Piece VII — The Collar',
+        subtype: 'staff_piece',
+        staffPieceNumber: 7,
+        power: 0,
+        cost: 0,
+        sellValue: 0,
+        maxStack: 1,
+        icon: '🪄',
+        description: 'A tight silver collar etched with celestial star maps.',
+        lore: 'The stars it depicts do not match any known sky.'
+    },
+    staff_piece_8: {
+        name: 'Staff Piece VIII — The Crown Gem',
+        subtype: 'staff_piece',
+        staffPieceNumber: 8,
+        power: 0,
+        cost: 0,
+        sellValue: 0,
+        maxStack: 1,
+        icon: '🪄',
+        description: 'A pulsing violet gemstone that hovers above your palm.',
+        lore: 'The final piece. It trembles in your hand, eager to be reunited with the others.'
+    },
+
     // ─── RECALL POTION ───────────────────────────────────────────────
     recall_potion: {
         name: 'Recall Potion',
