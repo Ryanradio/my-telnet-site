@@ -9030,9 +9030,10 @@ function dungeonNav(input) {
             const spell = SPELLS[spellKey];
             cs.pendingSpell = spell;
             cs.pendingSpellKey = spellKey;
+             
             
-            // AOE spells don't need target selection - cast immediately
-            if (spell && spell.type === 'aoe_damage') {
+            // AOE spells and healing spells don't need target selection - cast immediately
+            if (spell && (spell.type === 'aoe_damage' || spell.type === 'heal')) {
                 castSpellOnTarget(spell);
                 cs.actionMode = 'main';
                 cs.pendingSpell = null;
