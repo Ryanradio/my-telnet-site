@@ -10567,11 +10567,22 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
             markMpAction();  // reset 15s MP regen countdown on every spell cast
 
             if (spell.type === 'heal') {
-                const heal = spell.power + Math.floor(p.magic * 1.5) + (p.wis || 0);
-                p.hp = Math.min(p.maxHp, p.hp + heal);
-                updateHud();
-                renderActionBar();
-                termAppend(`You cast ${spell.name} and restore <span style="color:#88ff88;">${heal} HP!</span>`);
+                // Healing spells: 5% chance to fail, random between minPower and maxPower
+                const spellFailed = Math.random() < 0.05;
+                if (spellFailed) {
+                    termAppend(`You cast ${spell.name} but it <span style="color:#ff6666;">fizzles!</span> The gods did not answer.`);
+                } else {
+                    // Calculate random heal between minPower and maxPower
+                    const minHeal = spell.minPower || 10;
+                    const maxHeal = spell.maxPower || minHeal;
+                    const baseHeal = Math.floor(Math.random() * (maxHeal - minHeal + 1)) + minHeal;
+                    const heal = baseHeal + Math.floor(p.magic * 1.5) + (p.wis || 0);
+                    const actualHeal = Math.min(p.maxHp - p.hp, heal);
+                    p.hp = Math.min(p.maxHp, p.hp + actualHeal);
+                    updateHud();
+                    renderActionBar();
+                    termAppend(`You cast ${spell.name} and restore <span style="color:#88ff88;">${actualHeal} HP!</span>`);
+                }
             } else if (spell.type === 'aoe_damage') {
                 // AOE DAMAGE - Hit all enemies for reduced damage each
                 const monsters = cs.monsters;
@@ -11351,7 +11362,7 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
 
             if (potion.subtype === 'heal_hp') {
                 const actual = Math.min(p.maxHp - p.hp, potion.power);
-                p.hp = Math.min(p.maxHp, p.hp + potion.power);
+                p.hp = Math.min(p.maxHp, p.hp + actual);
                 msg = `Used ${potion.name} – restored <span style="color:#88ff88;">${actual} HP!</span>`;
             } else if (potion.subtype === 'heal_mp') {
                 const actual = Math.min(p.maxMp - p.mp, potion.power);
@@ -11592,7 +11603,7 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 if (actual === 0) {
                     msg = `You're already at full HP!`;
                 } else {
-                    p.hp = Math.min(p.maxHp, p.hp + potion.power);
+                    p.hp = Math.min(p.maxHp, p.hp + actual);
                     msg = `Used ${potion.name} – restored <span style="color:#88ff88;">${actual} HP!</span>`;
                 }
             } else if (potion.subtype === 'heal_mp') {

@@ -6,7 +6,7 @@
 // If a player has an older version cached, they get a refresh banner.
 // ═══════════════════════════════════════════════════════════════════════
 
-const GAME_VERSION = '2025.02.19-r28';
+const GAME_VERSION = '2025.02.19-r29';
 
 // ── VERSION CHECK ──────────────────────────────────────────────────────
 // Call this on: game init, character select, enter dungeon, enter explore.
@@ -52,6 +52,15 @@ function checkGameVersion() {
 // ═══════════════════════════════════════════════════════════════════════
 const REVISION_HISTORY = [
 
+    {
+        version: '2025.02.19-r29',
+        date: 'Feb 19, 2025',
+        summary: 'Cleric healing spell issues',
+        changes: [
+            'Healing spells are now min/max.  Potions stay static.',
+            
+        ]
+    },
 
     {
         version: '2025.02.19-r28',
