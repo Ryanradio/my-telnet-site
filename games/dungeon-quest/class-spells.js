@@ -591,10 +591,10 @@ const CLASS_SPELL_TREES = {
             cleric_heal_1: {
                 name: 'Minor Heal',
                 level: 2,
-                mpCost: 8,
-                minPower: 15,
+                mpCost: 10,
+                minPower: 5,
 
-                maxPower: 75,
+                maxPower: 50,
                 type: 'heal',
                 cost: 600,
                 description: 'Basic healing prayer'
@@ -602,10 +602,10 @@ const CLASS_SPELL_TREES = {
             cleric_heal_2: {
                 name: 'Greater Heal',
                 level: 5,
-                mpCost: 14,
-                minPower: 27,
+                mpCost: 15,
+                minPower: 20,
 
-                maxPower: 137,
+                maxPower: 75,
                 type: 'heal',
                 cost: 800,
                 description: 'More powerful healing',
@@ -615,10 +615,10 @@ const CLASS_SPELL_TREES = {
             cleric_heal_3: {
                 name: 'Mass Healing',
                 level: 8,
-                mpCost: 22,
-                minPower: 42,
+                mpCost: 20,
+                minPower: 35,
 
-                maxPower: 212,
+                maxPower: 150,
                 type: 'heal',
                 cost: 6000,
                 description: 'Powerful restorative magic',
@@ -628,10 +628,10 @@ const CLASS_SPELL_TREES = {
             cleric_heal_4: {
                 name: 'Divine Restoration',
                 level: 11,
-                mpCost: 32,
-                minPower: 60,
+                mpCost: 25,
+                minPower: 50,
 
-                maxPower: 300,
+                maxPower: 200,
                 type: 'heal',
                 cost: 4500,
                 description: 'Restore vast amounts of health',
@@ -641,10 +641,10 @@ const CLASS_SPELL_TREES = {
             cleric_heal_5: {
                 name: 'Benediction',
                 level: 14,
-                mpCost: 44,
-                minPower: 82,
+                mpCost: 30,
+                minPower: 75,
 
-                maxPower: 412,
+                maxPower: 300,
                 type: 'heal',
                 cost: 8500,
                 description: 'A powerful blessing of healing',
@@ -654,10 +654,10 @@ const CLASS_SPELL_TREES = {
             cleric_heal_6: {
                 name: 'Holy Sanctuary',
                 level: 17,
-                mpCost: 58,
-                minPower: 110,
+                mpCost: 35,
+                minPower: 100,
 
-                maxPower: 550,
+                maxPower: 400,
                 type: 'heal',
                 cost: 14000,
                 description: 'Create a sanctuary of healing light',
@@ -667,10 +667,10 @@ const CLASS_SPELL_TREES = {
             cleric_heal_7: {
                 name: 'Regeneration',
                 level: 20,
-                mpCost: 74,
-                minPower: 145,
+                mpCost: 40,
+                minPower: 125,
 
-                maxPower: 725,
+                maxPower: 500,
                 type: 'heal',
                 cost: 22000,
                 description: 'Rapid regeneration of wounds',
@@ -680,10 +680,10 @@ const CLASS_SPELL_TREES = {
             cleric_heal_8: {
                 name: 'Divine Intervention',
                 level: 23,
-                mpCost: 92,
-                minPower: 190,
+                mpCost: 45,
+                minPower: 175,
 
-                maxPower: 950,
+                maxPower: 600,
                 type: 'heal',
                 cost: 38000,
                 description: 'The gods themselves intervene to heal you',
@@ -693,10 +693,10 @@ const CLASS_SPELL_TREES = {
             cleric_heal_9: {
                 name: 'Rebirth',
                 level: 25,
-                mpCost: 110,
-                minPower: 250,
+                mpCost: 50,
+                minPower: 200,
 
-                maxPower: 1250,
+                maxPower: 800,
                 type: 'heal',
                 cost: 150000,
                 description: 'Complete restoration - as if reborn',
