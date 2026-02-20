@@ -103,7 +103,7 @@ body.terminal-mode #gameWrapper {
 }
 body.terminal-mode #hud {
     display: block;
-    order: 3;   /* terminal=1, hud=3, actionBar=4, statusBars=5 */
+    order: 3;   /* terminal=1, statusBars=2, hud=3, actionBar=4 */
 }
 
 /* ── Mobile HUD text strip — hidden in terminal mode (bars replace it) */
@@ -137,6 +137,8 @@ body.terminal-mode #terminalWindow { display: block; }
     box-sizing: border-box;
     order: 4;
     padding: 4px;
+    /* safe area so buttons clear iPhone home indicator */
+    padding-bottom: max(4px, env(safe-area-inset-bottom, 4px));
 }
 body.terminal-mode #actionBar { display: block; }
 
@@ -148,16 +150,14 @@ body.terminal-mode #actionBar { display: block; }
     font-size: 20px;
 }
 
-/* ── Status bars (HP/MP/XP) — always at very bottom ────────────── */
+/* ── Status bars (HP/MP/XP) — sits just below terminal, above action bar ── */
 #statusBars {
     flex: 0 0 auto;
     display: none;
-    order: 5;
+    order: 2;
     padding: 0;
     box-sizing: border-box;
     background: #000;
-    /* safe area so bars clear iPhone home indicator */
-    padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 body.terminal-mode #statusBars { display: block; }
 
@@ -283,12 +283,12 @@ body.terminal-mode #statusBars { display: block; }
         }
 
         .dmg-player {
-            animation: flashRed 0.6s ease-in-out infinite;
+            animation: flashOrange 0.6s ease-in-out infinite;
             font-weight: bold;
         }
 
         .dmg-enemy {
-            animation: flashOrange 0.6s ease-in-out infinite;
+            animation: flashRed 0.6s ease-in-out infinite;
             font-weight: bold;
         }
 

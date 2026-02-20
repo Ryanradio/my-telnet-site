@@ -6,7 +6,7 @@
 // If a player has an older version cached, they get a refresh banner.
 // ═══════════════════════════════════════════════════════════════════════
 
-const GAME_VERSION = '2025.02.19-r30';
+const GAME_VERSION = '2025.02.19-r29';
 
 // ── VERSION CHECK ──────────────────────────────────────────────────────
 // Call this on: game init, character select, enter dungeon, enter explore.
@@ -51,18 +51,6 @@ function checkGameVersion() {
 // Most recent first. Keep entries brief — one line per bullet.
 // ═══════════════════════════════════════════════════════════════════════
 const REVISION_HISTORY = [
-
-
-    {
-        version: '2025.02.19-r30',
-        date: 'Feb 19, 2025',
-        summary: 'Cleric balancing',
-        changes: [
-            'Cleric hits too hard for level one charecter.  Has a large min/max like Mage.',
-            'Swapped damage done colors with enemies and players.'
-            
-        ]
-    },
 
     {
         version: '2025.02.19-r29',
