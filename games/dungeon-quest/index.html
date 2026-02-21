@@ -8331,7 +8331,7 @@ if (cs) {
     if (mode === 'main') {
         const p = gameState.player;
         const isHunter  = (p.baseClass || p.class) === 'hunter';
-        const trapBtn   = isHunter ? `<button onclick="(castTrap())" ${p.mp < 10 ? 'disabled' : ''} class="action-icon-btn" title="Set Trap [T] - 10 MP" style="border-color:#8B4513;">🪤<span class="kb-hint">T</span></button>` : '';
+        const trapBtn = isHunter ? `<button onclick="(castTrap())" ${p.mp < 10 ? 'disabled' : ''} class="pip-btn" title="Set Trap [T] - 10 MP" style="border-color:#8B4513;">🪤<span class="kb-hint">T</span></button>` : '';
         const isWarrior = (p.baseClass || p.class) === 'warrior';
         const shieldBtn = isWarrior
             ? `<button onclick="playerDefend()" ${!canAct ? 'disabled' : ''} title="Shield — 70% to halve damage">🛡️</button>`
