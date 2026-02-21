@@ -1400,6 +1400,19 @@ body.terminal-mode #fsBtn { bottom: calc(env(safe-area-inset-bottom, 0px) + 70px
 // gameState.hasRestoredGame = false;
 
 
+// ═══════════════════════════════════════════════════════
+// RARITY CONFIG
+// ═══════════════════════════════════════════════════════
+const RARITY_CONFIG = {
+    common: { name: "Common", color: "#cccccc", multiplier: 1.0, spawnWeight: 60, dropBonus: 0 },
+    uncommon: { name: "Uncommon", color: "#4caf50", multiplier: 1.3, spawnWeight: 25, dropBonus: 1 },
+    rare: { name: "Rare", color: "#2196f3", multiplier: 1.6, spawnWeight: 10, dropBonus: 2 },
+    epic: { name: "Epic", color: "#9c27b0", multiplier: 2.1, spawnWeight: 4, dropBonus: 3 },
+    legendary: { name: "Legendary", color: "#ff9800", multiplier: 2.8, spawnWeight: 0.9, dropBonus: 4 },
+    mythic: { name: "Mythic", color: "#ff4444", multiplier: 3.6, spawnWeight: 0.1, dropBonus: 5 }
+};
+
+
 function updateTerminalSafeArea() {
     // No-op: layout handled by fixed-position flex column.
     // Terminal fills remaining space; actionBar sits below it naturally.
@@ -5622,6 +5635,14 @@ window.addEventListener('beforeunload', () => {
                 }).join('');
             }
 
+            // ── Custom town renderer hook ─────────────────────────────────
+            // If townDef defines a render() function, it owns the entire screen.
+            // Used by town3 for its full elemental UI.
+            if (townDef && typeof townDef.render === 'function') {
+                townDef.render(screen, p, dungeonOption, portalOption);
+                return;
+            }
+
             screen.innerHTML = `
                 <div class="location-header">${townName}</div>
                 ${renderPlayerStats()}
@@ -8310,12 +8331,8 @@ if (cs) {
     if (mode === 'main') {
         const p = gameState.player;
         const isWarrior = (p.baseClass || p.class) === 'warrior';
-        const isHunter  = (p.baseClass || p.class) === 'hunter';
         const shieldBtn = isWarrior
             ? `<button onclick="playerDefend()" ${!canAct ? 'disabled' : ''} title="Shield — 70% to halve damage">🛡️</button>`
-            : '';
-        const trapBtn = isHunter
-            ? `<button onclick="castTrap()" ${p.mp < 10 ? 'disabled' : ''} title="Set Trap — 10 MP" style="border-color:#8B4513;">🪤</button>`
             : '';
         combatDiv.innerHTML = `
             <div style="color:var(--highlight-color);font-size:13px;margin-bottom:3px;text-align:center;letter-spacing:3px;">${pips}</div>
@@ -8323,7 +8340,6 @@ if (cs) {
                 <button onclick="showAttackMenu()" ${!canAct ? 'disabled' : ''} class="pip-btn" id="pipBtn-attack" title="Attack">⚔️</button>
                 <button onclick="showSpellMenu()"  ${!canAct ? 'disabled' : ''} class="pip-btn" id="pipBtn-spell" title="Spell">✨</button>
                 ${shieldBtn}
-                ${trapBtn}
                 <button onclick="attemptFlee()"    ${!canAct ? 'disabled' : ''} title="Flee">🏃</button>
                 <button onclick="printStatsToTerminal()" title="Show Stats" style="border-color:#4488ff;">📊</button>
             </div>
@@ -8798,7 +8814,7 @@ function dungeonNav(input) {
                     // Main combat menu — icons only, pip dots only
                     const isHunter  = (p.baseClass || p.class) === 'hunter';
                     const isWarrior = (p.baseClass || p.class) === 'warrior';
-                    const trapBtn   = isHunter ? `<button onclick="castTrap()" ${p.mp < 10 ? 'disabled' : ''} class="action-icon-btn" title="Set Trap [T] - 10 MP" style="border-color:#8B4513;">🪤<span class="kb-hint">T</span></button>` : '';
+                    const trapBtn   = isHunter ? `<button onclick="()" ${p.mp < 10 ? 'disabled' : ''} class="action-icon-btn" title="Set Trap [T] - 10 MP" style="border-color:#8B4513;">🪤<span class="kb-hint">T</span></button>` : '';
                     const shieldBtn = isWarrior ? `<button onclick="playerDefend()" ${!canAct?'disabled':''} class="action-icon-btn" title="Shield [4] — 70% to halve damage" style="border-color:#00CCFF;">🛡️<span class="kb-hint">4</span></button>` : '';
                     
                     ab.innerHTML = `
