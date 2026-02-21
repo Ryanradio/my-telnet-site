@@ -1086,13 +1086,13 @@ window.DUNGEONS.Dungeon1 = {
             "enemies": [
               {
                 "key": "cave_orc",
-                "drop": "bronze_key",
-                "rarity": "rare"
+                "drop": "",
+                "rarity": "common"
               },
               {
                 "key": "war_boar",
-                "drop": "",
-                "rarity": "common"
+                "drop": "bronze_key",
+                "rarity": "rare"
               }
             ],
             "doors": {
