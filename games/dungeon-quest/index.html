@@ -1595,21 +1595,12 @@ const OPPOSITE_DIR = {
                 function calcPlayerHits(p) {
             const baseClass = p.baseClass || p.class;
             
-            // ROGUE: Dagger specialist — pip count scales with mastery
-            // Each pip fires TWICE (double-strike with daggers)
-            // Lv1=1pip  Lv5=2pips  Lv10=3pips  Lv15=4pips (hard cap)
-            if (baseClass === 'rogue') {
-                if (p.level >= 15) return 4;
-                if (p.level >= 10) return 3;
-                if (p.level >= 5)  return 2;
-                return 1;
-            }
-            
-            // OTHER CLASSES: Standard progression
-            let h = 1;
-            h += Math.floor((p.level || 1) / 4);    // +1 every 4 levels
-            h += Math.floor(Math.max(0, (p.str||0) - 8) / 6);  // STR scaling
-            return h;
+            // ALL CLASSES: Pip progression — Lv1=1  Lv5=2  Lv10=3  Lv15=4  (hard cap 4)
+            // Rogue pips also fire twice (double-strike with daggers)
+            if (p.level >= 15) return 4;
+            if (p.level >= 10) return 3;
+            if (p.level >= 5)  return 2;
+            return 1;
         }
         function calcChaDiscount(cha) { return Math.min(30, (cha||0) * 2); }   // buy %  off
         
