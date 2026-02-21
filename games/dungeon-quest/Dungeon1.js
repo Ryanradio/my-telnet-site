@@ -1085,12 +1085,12 @@ window.DUNGEONS.Dungeon1 = {
           "contents": {
             "enemies": [
               {
-                "key": "giant_scorpion",
+                "key": "cave_orc",
                 "drop": "bronze_key",
-                "rarity": "epic"
+                "rarity": "rare"
               },
               {
-                "key": "cave_orc",
+                "key": "war_boar",
                 "drop": "",
                 "rarity": "common"
               }
@@ -1101,9 +1101,6 @@ window.DUNGEONS.Dungeon1 = {
                 "locked": true
               }
             }
-          },
-          "flags": {
-            "discovered": false
           }
         },
         "R57": {
