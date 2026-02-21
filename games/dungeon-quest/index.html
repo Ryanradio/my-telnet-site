@@ -1055,6 +1055,69 @@ body.terminal-mode .hud-stats span {
         .syo-input:focus { border-color: #00FF41; }
         select.syo-input { font-size: 16px; }
 
+        /* ── Sysop list panel ──────────────────────────────────────── */
+        .syo-list-panel {
+            border: 1px solid #1a3a1a;
+            background: #020a02;
+            margin-top: 8px;
+        }
+        .syo-list-search {
+            display: flex;
+            gap: 6px;
+            padding: 8px 8px 0;
+        }
+        .syo-list-search input {
+            flex: 1;
+            background: #000;
+            border: 1px solid #00FF41;
+            color: #00FF41;
+            font-family: 'VT323', monospace;
+            font-size: 20px;
+            padding: 4px 8px;
+            outline: none;
+        }
+        .syo-list-body {
+            max-height: 340px;
+            overflow-y: auto;
+            padding: 6px 8px 10px;
+        }
+        .syo-list-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 5px 4px;
+            border-bottom: 1px solid #0d1f0d;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        .syo-list-row:hover { background: #0a1a0a; }
+        .syo-list-key {
+            color: #ff8c00;
+            font-family: 'VT323', monospace;
+            font-size: 14px;
+            min-width: 140px;
+            word-break: break-all;
+        }
+        .syo-list-name {
+            color: #00FF41;
+            font-family: 'VT323', monospace;
+            font-size: 16px;
+            flex: 1;
+        }
+        .syo-list-meta {
+            color: #5a8a5a;
+            font-family: 'VT323', monospace;
+            font-size: 14px;
+            text-align: right;
+            min-width: 80px;
+        }
+        .syo-list-count {
+            color: #5a8a5a;
+            font-family: 'VT323', monospace;
+            font-size: 13px;
+            padding: 4px 8px 0;
+        }
+
         /* Login form */
         .syo-login-art {
             color: #ff4444;
@@ -1382,6 +1445,7 @@ body.terminal-mode #fsBtn { bottom: calc(env(safe-area-inset-bottom, 0px) + 70px
     <script src="Dungeon1.js"></script>
     <script src="town1.js"></script>
     <script src="town2.js"></script>
+    <script src="town3.js"></script>
     <script src="monsters-expanded.js"></script>
     <script src="weapons.js"></script>
     <script src="armor.js"></script>
@@ -3190,6 +3254,18 @@ window.addEventListener('beforeunload', () => {
                 const isGod = gameState.player?._godMode;
                 html += `
                 <div class="syo-section">
+                    <div class="syo-section-title">⌨️ COMMAND</div>
+                    <div style="display:flex;gap:6px;">
+                        <input class="syo-input" id="sysocmdInput" placeholder="/help — type a command..." 
+                            autocomplete="off" autocorrect="off" spellcheck="false" style="margin-bottom:0;font-size:18px;"
+                            oninput="_sysoLiveHelp(this.value)"
+                            onkeydown="if(event.key==='Enter'){const v=this.value.trim();if(v){sysoExec(v);this.value='';_sysoLiveHelp('');}}">
+                        <button class="syo-btn" style="white-space:nowrap;padding:6px 10px;"
+                            onclick="(function(){const v=document.getElementById('sysocmdInput')?.value?.trim();if(v){sysoExec(v);document.getElementById('sysocmdInput').value='';_sysoLiveHelp('');}})()">▶ RUN</button>
+                    </div>
+                    <div id="sysoCmdHints" style="font-family:'VT323',monospace;font-size:14px;color:#3a6a3a;padding:3px 4px 0;min-height:16px;"></div>
+                </div>
+                <div class="syo-section">
                     <div class="syo-section-title">👤 PLAYER</div>
                     <div class="syo-grid">
                         <button class="syo-btn" onclick="sysoExec('/heal');_refreshSysoLog();">❤️ FULL HEAL</button>
@@ -3212,10 +3288,10 @@ window.addEventListener('beforeunload', () => {
                 <div class="syo-section">
                     <div class="syo-section-title">📋 LISTS</div>
                     <div class="syo-grid">
-                        <button class="syo-btn" onclick="sysoExec('/listweapons')">⚔️ Weapons</button>
-                        <button class="syo-btn" onclick="sysoExec('/listarmor')">🛡️ Armor</button>
-                        <button class="syo-btn" onclick="sysoExec('/listmonsters')">👹 Monsters</button>
-                        <button class="syo-btn" onclick="sysoExec('/listitems')">🎒 Items</button>
+                        <button class="syo-btn" onclick="_sysoShowListPanel('weapons')">⚔️ Weapons</button>
+                        <button class="syo-btn" onclick="_sysoShowListPanel('armor')">🛡️ Armor</button>
+                        <button class="syo-btn" onclick="_sysoShowListPanel('monsters')">👹 Monsters</button>
+                        <button class="syo-btn" onclick="_sysoShowListPanel('items')">🎒 Items</button>
                     </div>
                 </div>
 
@@ -3325,6 +3401,7 @@ window.addEventListener('beforeunload', () => {
                     <div class="syo-grid" style="margin-bottom:8px;">
                         <button class="syo-btn" onclick="sysoExec('/teleport town1')">🏘 Silverdale</button>
                         <button class="syo-btn" onclick="sysoExec('/teleport town2')">🌋 Ashen Harbor</button>
+                        <button class="syo-btn" onclick="sysoExec('/teleport town3')">🏙 Town 3</button>
                     </div>
                     <div class="syo-label">Dungeon</div>
                     <select class="syo-input" id="sysoTpDungeon" style="font-size:18px;padding:6px;">
@@ -3365,43 +3442,153 @@ window.addEventListener('beforeunload', () => {
             const sub = document.getElementById('sysoSub');
             if (!sub) return;
 
-            let items = [];
-            if (type === 'weapon') items = Object.keys(WEAPONS).filter(k => !WEAPONS[k].unarmed && !WEAPONS[k].isDropped);
-            else if (type === 'armor')  items = Object.keys(ARMOR).filter(k => !ARMOR[k].unarmored && !ARMOR[k].isDropped);
-            else if (type === 'item')   items = typeof ITEMS  !== 'undefined' ? Object.keys(ITEMS)  : [];
-            else if (type === 'spell')  items = typeof SPELLS !== 'undefined' ? Object.keys(SPELLS) : [];
+            let allKeys = [];
+            if (type === 'weapon') allKeys = Object.keys(WEAPONS).filter(k => !WEAPONS[k].unarmed && !WEAPONS[k].isDropped);
+            else if (type === 'armor')  allKeys = Object.keys(ARMOR).filter(k => !ARMOR[k].unarmored && !ARMOR[k].isDropped);
+            else if (type === 'item')   allKeys = typeof ITEMS  !== 'undefined' ? Object.keys(ITEMS)  : [];
+            else if (type === 'spell')  allKeys = typeof SPELLS !== 'undefined' ? Object.keys(SPELLS) : [];
 
             const needsQuality = type === 'weapon' || type === 'armor';
             const qualities = ['poor','normal','rare','epic','legendary','godly'];
             const db = type==='weapon' ? WEAPONS : type==='armor' ? ARMOR : type==='item' ? ITEMS : SPELLS;
-            const itemOpts = items.map(k => {
-                const label = (db && db[k]?.name) ? db[k].name : k;
-                return `<option value="${k}">${label}</option>`;
-            }).join('');
+
+            // Store for autocomplete handler
+            window._sysoGiveKeys = allKeys;
+            window._sysoGiveDb = db;
+
+            const qualityHtml = needsQuality ? `
+                <div class="syo-label">Quality</div>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:6px;">
+                    ${qualities.map(q => `<button class="syo-btn" id="sysoGiveQ_${q}"
+                        onclick="window._sysoGiveQuality='${q}';document.querySelectorAll('[id^=sysoGiveQ_]').forEach(b=>b.style.borderColor='');this.style.borderColor='#00FF41';"
+                        style="${q==='normal'?'border-color:#00FF41;':''}">${q}</button>`).join('')}
+                </div>` : '';
 
             sub.innerHTML = `
             <div class="syo-sub">
                 <div class="syo-sub-title">🎁 GIVE ${type.toUpperCase()}</div>
-                <div class="syo-label">Choose ${type}</div>
-                <select class="syo-input" id="sysoGiveId">${itemOpts}</select>
-                ${needsQuality ? `
-                <div class="syo-label">Quality</div>
-                <select class="syo-input" id="sysoGiveQ">
-                    ${qualities.map(q=>`<option value="${q}">${q.charAt(0).toUpperCase()+q.slice(1)}</option>`).join('')}
-                </select>` : ''}
+                <div class="syo-label">Search (type to filter)</div>
+                <input class="syo-input" id="sysoGiveSearch" placeholder="Type name or key..."
+                    autocorrect="off" spellcheck="false"
+                    oninput="(function(v){
+                        const q=v.toLowerCase();
+                        const keys=window._sysoGiveKeys||[];
+                        const db=window._sysoGiveDb||{};
+                        const matches=keys.filter(k=>!q||k.toLowerCase().includes(q)||(db[k]?.name||'').toLowerCase().includes(q));
+                        const sel=document.getElementById('sysoGiveId');
+                        if(!sel) return;
+                        sel.innerHTML=matches.length===0
+                            ? '<option value=\"\">No matches</option>'
+                            : matches.map(k=>'<option value=\"'+k+'\">'+(db[k]?.name||k)+' ['+k+']</option>').join('');
+                        document.getElementById('sysoGiveCount').textContent=matches.length+' / '+keys.length;
+                    })(this.value)">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
+                    <div class="syo-label">Select</div>
+                    <span id="sysoGiveCount" style="color:#5a8a5a;font-family:'VT323',monospace;font-size:13px;">${allKeys.length} / ${allKeys.length}</span>
+                </div>
+                <select class="syo-input" id="sysoGiveId" size="6" style="height:auto;">
+                    ${allKeys.map(k => `<option value="${k}">${db[k]?.name||k} [${k}]</option>`).join('')}
+                </select>
+                ${qualityHtml}
                 <button class="syo-btn full" style="margin-top:6px;" onclick="sysoExecGive('${type}');">✔ GIVE</button>
             </div>`;
-            sub.scrollIntoView({ behavior:'smooth', block:'nearest' });
+
+            // Default quality
+            window._sysoGiveQuality = 'normal';
+
+            sub.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            setTimeout(() => document.getElementById('sysoGiveSearch')?.focus(), 100);
         }
+
         function sysoExecGive(type) {
             const id  = document.getElementById('sysoGiveId')?.value;
-            const qEl = document.getElementById('sysoGiveQ');
-            const q   = qEl ? qEl.value : '';
+            if (!id) { sysoLog('No item selected', 'error'); return; }
+            const needsQuality = type === 'weapon' || type === 'armor';
+            const q = needsQuality ? (window._sysoGiveQuality || 'normal') : '';
             const cmd = q ? `/give ${type} ${id} ${q}` : `/give ${type} ${id}`;
             sysoExec(cmd);
         }
 
-        // ── Keep old names alive so nothing else breaks ───────────────
+        // ── Live command help / autocomplete ─────────────────────────
+        function _sysoLiveHelp(raw) {
+            const hintsEl = document.getElementById('sysoCmdHints');
+            if (!hintsEl) return;
+
+            const input = raw.trim().toLowerCase();
+            if (!input) { hintsEl.innerHTML = ''; return; }
+
+            // ── All available commands with signatures ────────────────
+            const COMMANDS = [
+                { cmd: '/help',           sig: '',                            desc: 'Show all commands' },
+                { cmd: '/heal',           sig: '',                            desc: 'Full heal player' },
+                { cmd: '/godmode',        sig: 'on|off',                      desc: 'Toggle god mode' },
+                { cmd: '/setlevel',       sig: '<1-25>',                      desc: 'Set player level' },
+                { cmd: '/setgold',        sig: '<amount>',                    desc: 'Set gold amount' },
+                { cmd: '/give',           sig: 'weapon|armor|item|spell <id> [quality]', desc: 'Give item to player' },
+                { cmd: '/giveweapon',     sig: '<id> [quality]',              desc: 'Give weapon — type name to search' },
+                { cmd: '/givearmor',      sig: '<id> [quality]',              desc: 'Give armor — type name to search' },
+                { cmd: '/giveitem',       sig: '<id>',                        desc: 'Give item — type name to search' },
+                { cmd: '/givespell',      sig: '<id>',                        desc: 'Give spell — type name to search' },
+                { cmd: '/listweapons',    sig: '',                            desc: 'Browse all weapons' },
+                { cmd: '/listarmor',      sig: '',                            desc: 'Browse all armor' },
+                { cmd: '/listitems',      sig: '',                            desc: 'Browse all items' },
+                { cmd: '/listmonsters',   sig: '',                            desc: 'Browse all monsters' },
+                { cmd: '/teleport',       sig: 'town1|town2|town3|<dungeon> [fN] [roomId]', desc: 'Teleport anywhere' },
+                { cmd: '/killmonster',    sig: '',                            desc: 'Kill current enemy' },
+                { cmd: '/revealmap',      sig: '[dungeonKey]',                desc: 'Reveal dungeon map' },
+                { cmd: '/unlockmaster',   sig: '<masterId>',                  desc: 'Unlock class master' },
+                { cmd: '/export',         sig: 'save|stats',                  desc: 'Export data' },
+            ];
+
+            const parts = input.split(/\s+/);
+            const cmdPart = parts[0];
+            const argPart = parts.slice(1).join(' ');
+
+            // ── If first token matches a full command, show arg hints ──
+            const exact = COMMANDS.find(c => c.cmd === cmdPart);
+            if (exact) {
+                let extraHints = '';
+
+                // Context-aware arg autocomplete
+                if ((cmdPart === '/giveweapon' || cmdPart === '/give weapon') && argPart) {
+                    const q = argPart.split(' ')[0].toLowerCase();
+                    const matches = Object.keys(WEAPONS).filter(k => !WEAPONS[k].unarmed && !WEAPONS[k].isDropped &&
+                        (k.includes(q) || (WEAPONS[k].name||'').toLowerCase().includes(q))).slice(0,5);
+                    if (matches.length) extraHints = ' → ' + matches.map(k=>`<span style="color:#00FF41;cursor:pointer;" onclick="document.getElementById('sysocmdInput').value='/give weapon ${k} normal';_sysoLiveHelp('/give weapon ${k} normal');">${k}</span>`).join('  ');
+                } else if ((cmdPart === '/givearmor' || cmdPart === '/give armor') && argPart) {
+                    const q = argPart.split(' ')[0].toLowerCase();
+                    const matches = Object.keys(ARMOR).filter(k => !ARMOR[k].unarmored && !ARMOR[k].isDropped &&
+                        (k.includes(q) || (ARMOR[k].name||'').toLowerCase().includes(q))).slice(0,5);
+                    if (matches.length) extraHints = ' → ' + matches.map(k=>`<span style="color:#00FF41;cursor:pointer;" onclick="document.getElementById('sysocmdInput').value='/give armor ${k} normal';_sysoLiveHelp('/give armor ${k} normal');">${k}</span>`).join('  ');
+                } else if ((cmdPart === '/giveitem' || cmdPart === '/give item') && argPart) {
+                    const q = argPart.split(' ')[0].toLowerCase();
+                    const matches = Object.keys(ITEMS||{}).filter(k => k.includes(q) || (ITEMS[k].name||'').toLowerCase().includes(q)).slice(0,5);
+                    if (matches.length) extraHints = ' → ' + matches.map(k=>`<span style="color:#00FF41;cursor:pointer;" onclick="document.getElementById('sysocmdInput').value='/give item ${k}';_sysoLiveHelp('/give item ${k}');">${k}</span>`).join('  ');
+                } else if (cmdPart === '/teleport' && argPart) {
+                    const q = argPart.toLowerCase();
+                    const towns = ['town1','town2','town3'].filter(t => t.includes(q));
+                    const dungeons = typeof DUNGEONS !== 'undefined' ? Object.keys(DUNGEONS).filter(k => k.toLowerCase().includes(q)) : [];
+                    const all = [...towns, ...dungeons].slice(0, 6);
+                    if (all.length) extraHints = ' → ' + all.map(d=>`<span style="color:#00FF41;cursor:pointer;" onclick="document.getElementById('sysocmdInput').value='/teleport ${d}';_sysoLiveHelp('/teleport ${d}');">${d}</span>`).join('  ');
+                } else if (cmdPart === '/setlevel' && argPart) {
+                    const lvl = parseInt(argPart);
+                    if (!isNaN(lvl)) extraHints = lvl < 1 || lvl > 25 ? ' <span style="color:#ff4444;">⚠ Level must be 1–25</span>' : ` <span style="color:#00FF41;">→ Set level to ${lvl}</span>`;
+                }
+
+                hintsEl.innerHTML = `<span style="color:#ff8c00;">${exact.cmd}</span> <span style="color:#5a8a5a;">${exact.sig}</span>  <span style="color:#3a6a3a;">${exact.desc}</span>${extraHints}`;
+                return;
+            }
+
+            // ── Partial match — show suggestions ──────────────────────
+            const suggestions = COMMANDS.filter(c => c.cmd.startsWith(cmdPart) || c.cmd.includes(cmdPart)).slice(0, 6);
+            if (suggestions.length === 0) {
+                hintsEl.innerHTML = `<span style="color:#ff4444;">Unknown command. Try /help</span>`;
+                return;
+            }
+            hintsEl.innerHTML = suggestions.map(c =>
+                `<span style="color:#ff8c00;cursor:pointer;" onclick="document.getElementById('sysocmdInput').value='${c.cmd} ';document.getElementById('sysocmdInput').focus();_sysoLiveHelp('${c.cmd} ');">${c.cmd}</span> <span style="color:#3a6a3a;">${c.desc}</span>`
+            ).join('  <span style="color:#1a3a1a;">|</span>  ');
+        }
         function toggleMobileSysop()   { openSysopOverlay(); }
         function renderMobileSysop()   { renderSysopOverlay(); }
         function msysopLog(msg, type)  { sysoLog(msg, type); }
@@ -3599,6 +3786,7 @@ window.addEventListener('beforeunload', () => {
             terminalPrint('  /teleport <dest>               - Teleport anywhere');
             terminalPrint('    /teleport town1              - Go to Silverdale');
             terminalPrint('    /teleport town2              - Go to Ashen Harbor');
+            terminalPrint('    /teleport town3              - Go to Town 3');
             terminalPrint('    /teleport dungeon1           - Dungeon1 Floor 1 start');
             terminalPrint('    /teleport dungeon1 f2        - Dungeon1 Floor 2 start');
             terminalPrint('    /teleport dungeon1 f1 R57    - Dungeon1 Floor 1 Room R57');
@@ -3984,6 +4172,7 @@ window.addEventListener('beforeunload', () => {
                 terminalPrint('ERROR: Usage: /teleport <destination>', 'error');
                 terminalPrint('  /teleport town1               — Silverdale', 'warning');
                 terminalPrint('  /teleport town2               — Ashen Harbor', 'warning');
+                terminalPrint('  /teleport town3               — Town 3', 'warning');
                 terminalPrint('  /teleport dungeon1            — Dungeon1 Floor 1 start', 'warning');
                 terminalPrint('  /teleport dungeon1 f2         — Dungeon1 Floor 2 start', 'warning');
                 terminalPrint('  /teleport dungeon1 f3         — Dungeon1 Floor 3 start', 'warning');
@@ -3995,7 +4184,7 @@ window.addEventListener('beforeunload', () => {
             const dest = args[0].toLowerCase();
 
             // ── Town teleport ──────────────────────────────────────────────
-            if (dest === 'town1' || dest === 'town2') {
+            if (dest === 'town1' || dest === 'town2' || dest === 'town3') {
                 // Clear any dungeon/combat state
                 gameState.dungeon = null;
                 gameState.combatState = null;
@@ -4283,35 +4472,103 @@ window.addEventListener('beforeunload', () => {
         }
 
         function listMonsters() {
-            terminalPrint('═══ ALL MONSTERS ═══', 'warning');
-            Object.keys(ENEMIES).forEach(key => {
-                const m = ENEMIES[key];
-                terminalPrint(`${key}: ${m.name} (Lv${m.level}, HP:${m.hp}, DMG:${m.damage})`);
-            });
+            _sysoShowListPanel('monsters');
         }
-
         function listWeapons() {
-            terminalPrint('═══ ALL WEAPONS ═══', 'warning');
-            Object.keys(WEAPONS).forEach(key => {
-                const w = WEAPONS[key];
-                terminalPrint(`${key}: ${w.name} (Lv${w.level}, DMG:${w.damage}, MAG:${w.magicDamage})`);
-            });
+            _sysoShowListPanel('weapons');
         }
-
         function listArmor() {
-            terminalPrint('═══ ALL ARMOR ═══', 'warning');
-            Object.keys(ARMOR).forEach(key => {
-                const a = ARMOR[key];
-                terminalPrint(`${key}: ${a.name} (Lv${a.level}, DEF:${a.defense})`);
-            });
+            _sysoShowListPanel('armor');
+        }
+        function listItems() {
+            _sysoShowListPanel('items');
         }
 
-        function listItems() {
-            terminalPrint('═══ ALL ITEMS ═══', 'warning');
-            Object.keys(ITEMS).forEach(key => {
-                const i = ITEMS[key];
-                terminalPrint(`${key}: ${i.name} (${i.type}, Lv${i.level})`);
-            });
+        function _sysoShowListPanel(type) {
+            const sub = document.getElementById('sysoSub');
+            if (!sub) return;
+
+            const configs = {
+                weapons:  { title: '⚔️ WEAPONS',  icon: '⚔️', db: () => WEAPONS, filter: k => !WEAPONS[k].unarmed && !WEAPONS[k].isDropped,
+                            meta: (k,v) => `Lv${v.level||'?'} | DMG:${v.baseDamage||v.damage||'?'}`, desc: (k,v) => v.description||'' },
+                armor:    { title: '🛡️ ARMOR',    icon: '🛡️', db: () => ARMOR,   filter: k => !ARMOR[k].unarmored && !ARMOR[k].isDropped,
+                            meta: (k,v) => `Lv${v.level||'?'} | DEF:${v.baseDefense||v.defense||'?'}`, desc: (k,v) => v.description||'' },
+                items:    { title: '🎒 ITEMS',    icon: '🎒', db: () => (typeof ITEMS!=='undefined'?ITEMS:{}), filter: ()=>true,
+                            meta: (k,v) => v.type||'', desc: (k,v) => v.description||'' },
+                monsters: { title: '👹 MONSTERS', icon: '👹', db: () => ENEMIES,  filter: ()=>true,
+                            meta: (k,v) => `Lv${v.level||'?'} | HP:${v.baseHp||v.hp||'?'}`, desc: (k,v) => v.description||'' },
+            };
+            const cfg = configs[type];
+            if (!cfg) return;
+
+            const db = cfg.db();
+            const allKeys = Object.keys(db).filter(cfg.filter);
+
+            const renderRows = (filter) => {
+                const q = filter.toLowerCase();
+                const matches = allKeys.filter(k => {
+                    if (!q) return true;
+                    const v = db[k];
+                    return k.toLowerCase().includes(q) || (v.name||'').toLowerCase().includes(q) || (v.description||'').toLowerCase().includes(q);
+                });
+                const countEl = document.getElementById('sysoListCount');
+                if (countEl) countEl.textContent = `${matches.length} / ${allKeys.length} entries`;
+                const body = document.getElementById('sysoListBody');
+                if (!body) return;
+                if (matches.length === 0) {
+                    body.innerHTML = `<div style="color:#5a8a5a;font-family:'VT323',monospace;padding:10px;">No matches for "${filter}"</div>`;
+                    return;
+                }
+                body.innerHTML = matches.map(k => {
+                    const v = db[k];
+                    const name = v.name || k;
+                    const meta = cfg.meta(k, v);
+                    const desc = cfg.desc(k, v);
+                    // Clicking a list row copies the key into the give panel or fills the search
+                    const clickable = (type !== 'monsters')
+                        ? `onclick="document.getElementById('sysoListSearch').value='${k}';document.getElementById('sysoListSearch').dispatchEvent(new Event('input'));"`
+                        : '';
+                    return `<div class="syo-list-row" ${clickable}>
+                        <div class="syo-list-key">${k}</div>
+                        <div class="syo-list-name">${name}${desc ? `<br><span style="color:#3a6a3a;font-size:13px;">${desc}</span>` : ''}</div>
+                        <div class="syo-list-meta">${meta}</div>
+                    </div>`;
+                }).join('');
+            };
+
+            sub.innerHTML = `
+            <div class="syo-list-panel">
+                <div style="padding:8px 8px 0;display:flex;justify-content:space-between;align-items:center;">
+                    <span style="color:#ff8c00;font-family:'VT323',monospace;font-size:18px;">${cfg.title}</span>
+                    <span class="syo-list-count" id="sysoListCount">${allKeys.length} entries</span>
+                </div>
+                <div class="syo-list-search">
+                    <input id="sysoListSearch" placeholder="🔍 Filter by name, key, or description..." autocorrect="off" spellcheck="false"
+                        oninput="(function(v){
+                            const db=window._sysoListDb; const cfg=window._sysoListCfg;
+                            if(!db||!cfg) return;
+                            const q=v.toLowerCase();
+                            const allKeys=Object.keys(db).filter(cfg.filter);
+                            const matches=allKeys.filter(k=>!q||k.toLowerCase().includes(q)||(db[k].name||'').toLowerCase().includes(q)||(db[k].description||'').toLowerCase().includes(q));
+                            document.getElementById('sysoListCount').textContent=matches.length+' / '+allKeys.length+' entries';
+                            document.getElementById('sysoListBody').innerHTML=matches.length===0
+                                ? '<div style=\"color:#5a8a5a;font-family:VT323,monospace;padding:10px;\">No matches</div>'
+                                : matches.map(k=>{
+                                    const v=db[k];
+                                    return '<div class=\"syo-list-row\"><div class=\"syo-list-key\">'+k+'</div><div class=\"syo-list-name\">'+(v.name||k)+(v.description?'<br><span style=\"color:#3a6a3a;font-size:13px;\">'+v.description+'</span>':'')+'</div><div class=\"syo-list-meta\">'+cfg.meta(k,v)+'</div></div>';
+                                }).join('');
+                        })(this.value)">
+                </div>
+                <div class="syo-list-body" id="sysoListBody"></div>
+            </div>`;
+
+            // Store db and cfg on window for the inline oninput handler
+            window._sysoListDb = db;
+            window._sysoListCfg = cfg;
+
+            renderRows('');
+            sub.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            setTimeout(() => document.getElementById('sysoListSearch')?.focus(), 100);
         }
 
         function openAddMonsterForm() {
@@ -5137,19 +5394,30 @@ window.addEventListener('beforeunload', () => {
                     
                     // ═══════════════════════════════════════════════════════════════
                     // MERGE: Load persistent map + current session discovered rooms
-                    // This ensures all previously discovered rooms are remembered
+                    // Only merge rooms that belong to the current floor to prevent
+                    // cross-floor contamination when room IDs are shared across floors.
                     // ═══════════════════════════════════════════════════════════════
                     const floorNum = data.dungeon.floor;
                     const persistentMap = loadDungeonMap(p, dungeonKey, floorNum);
                     const sessionRooms = new Set(data.dungeon.discoveredRooms || []);
                     
-                    // Merge session rooms into persistent map
+                    // Merge session rooms into persistent map — current floor only
                     sessionRooms.forEach(roomKey => {
-                        persistentMap.add(roomKey);
-                        // Also save to persistent storage
                         if (roomKey.includes(':')) {
                             const [floor, roomId] = roomKey.split(':');
-                            saveRoomDiscovery(p, dungeonKey, parseInt(floor), roomId);
+                            const roomFloor = parseInt(floor);
+                            // Only merge rooms belonging to the current floor
+                            if (roomFloor === floorNum) {
+                                persistentMap.add(roomKey);
+                                saveRoomDiscovery(p, dungeonKey, roomFloor, roomId);
+                            } else {
+                                // Save other floors to their own persistent maps but don't pollute current
+                                saveRoomDiscovery(p, dungeonKey, roomFloor, roomId);
+                            }
+                        } else {
+                            // Old unscoped format — scope to current floor
+                            persistentMap.add(`${floorNum}:${roomKey}`);
+                            saveRoomDiscovery(p, dungeonKey, floorNum, roomKey);
                         }
                     });
                     
@@ -5170,14 +5438,17 @@ window.addEventListener('beforeunload', () => {
                     };
                     
                     // ═══════════════════════════════════════════════════════════════
-                    // MIGRATION: Convert old discoveredRooms format (roomId) to new format (floorNum:roomId)
+                    // MIGRATION: Ensure discoveredRooms only contains current-floor keys
                     // ═══════════════════════════════════════════════════════════════
                     const ds = gameState.dungeon;
                     const migratedSet = new Set();
                     ds.discoveredRooms.forEach(entry => {
                         if (entry.includes(':')) {
-                            // Already new format
-                            migratedSet.add(entry);
+                            const [floor] = entry.split(':');
+                            // Only keep entries for the current floor
+                            if (parseInt(floor) === ds.floor) {
+                                migratedSet.add(entry);
+                            }
                         } else {
                             // Old format (just roomId) — scope to current floor
                             migratedSet.add(`${ds.floor}:${entry}`);

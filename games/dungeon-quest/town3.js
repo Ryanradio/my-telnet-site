@@ -8,8 +8,6 @@ window.TOWNS = window.TOWNS || {};
 
 // ─────────────────────────────────────────────────────────────────────────
 //  ELEMENTAL DEFINITIONS
-//  Each element owns a direction, color palette, lore, and future dungeonKey.
-//  Set dungeonKey to the matching DUNGEONS key when that wing is built.
 // ─────────────────────────────────────────────────────────────────────────
 const T3_ELEMENTS = {
     earth: {
@@ -21,16 +19,10 @@ const T3_ELEMENTS = {
         colorDim:    'rgba(124,252,0,0.08)',
         colorGlow:   'rgba(124,252,0,0.28)',
         colorBorder: '#2f6200',
-        dungeon:     null,   // → set to dungeonKey when North wing is built
+        dungeon:     null,
         tagline:     'The living rock never forgets.',
-        description: `Deep beneath the Crossroads, roots older than civilization
-                      strangle the stone walls of the <strong style="color:#7CFC00;">Stone Labyrinth</strong>.
-                      Mossy corridors descend in spirals. Ancient golems stand frozen mid-step,
-                      waiting for a heartbeat to wake them. The earth here is alive —
-                      and it is very, very hungry.`,
-        lore:        `"TERRA INFINITUM — We carved our names into the first stone we found.
-                      By the final chamber, we had forgotten our names entirely."
-                      — Last journal entry found at the North Gate`
+        description: `Deep beneath the Crossroads, roots older than civilization strangle the stone walls of the <strong style="color:#7CFC00;">Stone Labyrinth</strong>. Mossy corridors descend in spirals. Ancient golems stand frozen mid-step, waiting for a heartbeat to wake them. The earth here is alive — and it is very, very hungry.`,
+        lore:        `"TERRA INFINITUM — We carved our names into the first stone we found. By the final chamber, we had forgotten our names entirely." — Last journal entry found at the North Gate`
     },
     fire: {
         label:       'FIRE',
@@ -41,16 +33,10 @@ const T3_ELEMENTS = {
         colorDim:    'rgba(255,106,0,0.08)',
         colorGlow:   'rgba(255,106,0,0.28)',
         colorBorder: '#8a2900',
-        dungeon:     null,   // → set to dungeonKey when East wing is built
+        dungeon:     null,
         tagline:     'Only the fearless emerge reforged.',
-        description: `Heat warps the air at the Eastern arch. The <strong style="color:#FF6A00;">Ember Vault</strong>
-                      stretches through volcanic caverns where the walls sweat molten gold.
-                      Flame elementals patrol corridors of obsidian. The treasure within is
-                      immense — but so is the cost. Adventurers who enter smelling of hesitation
-                      never come back.`,
-        lore:        `"IGNIS ETERNUM — I lost my sword on the second level. My fear on the third.
-                      By the fourth, I had become something new entirely."
-                      — Inscription burned into the East Gate stone`
+        description: `Heat warps the air at the Eastern arch. The <strong style="color:#FF6A00;">Ember Vault</strong> stretches through volcanic caverns where the walls sweat molten gold. Flame elementals patrol corridors of obsidian. The treasure within is immense — but so is the cost. Adventurers who enter smelling of hesitation never come back.`,
+        lore:        `"IGNIS ETERNUM — I lost my sword on the second level. My fear on the third. By the fourth, I had become something new entirely." — Inscription burned into the East Gate stone`
     },
     wind: {
         label:       'WIND',
@@ -61,16 +47,10 @@ const T3_ELEMENTS = {
         colorDim:    'rgba(0,221,255,0.07)',
         colorGlow:   'rgba(0,221,255,0.22)',
         colorBorder: '#005f7a',
-        dungeon:     null,   // → set to dungeonKey when West wing is built
+        dungeon:     null,
         tagline:     'The wind whispers every name it has ever carried.',
-        description: `The Western arch howls even when the air is still.
-                      The <strong style="color:#00DDFF;">Sky Spire</strong> coils upward through
-                      cloud-piercing heights. Platforms of floating stone shift without warning.
-                      Invisible currents throw unprepared travelers into the abyss.
-                      Those with light feet and lighter minds reach summits no map has ever shown.`,
-        lore:        `"VENTUS AETERNUS — It doesn't push you. It tests whether you were
-                      ever really standing still to begin with."
-                      — Chiseled into the West Gate by an unknown hand, at an impossible height`
+        description: `The Western arch howls even when the air is still. The <strong style="color:#00DDFF;">Sky Spire</strong> coils upward through cloud-piercing heights. Platforms of floating stone shift without warning. Invisible currents throw unprepared travelers into the abyss. Those with light feet and lighter minds reach summits no map has ever shown.`,
+        lore:        `"VENTUS AETERNUS — It doesn't push you. It tests whether you were ever really standing still to begin with." — Chiseled into the West Gate by an unknown hand, at an impossible height`
     },
     water: {
         label:       'WATER',
@@ -81,16 +61,10 @@ const T3_ELEMENTS = {
         colorDim:    'rgba(51,153,255,0.07)',
         colorGlow:   'rgba(51,153,255,0.22)',
         colorBorder: '#0d3a7a',
-        dungeon:     null,   // → set to dungeonKey when South wing is built
+        dungeon:     null,
         tagline:     'The deep does not give back what it takes.',
-        description: `Cold seeps through the Southern arch even on the warmest days.
-                      The <strong style="color:#3399FF;">Drowned Archive</strong> lies submerged —
-                      a library of a civilization that chose the ocean over the sky.
-                      Half-flooded corridors hide creatures that evolved in total darkness.
-                      The treasures are real. So are the things guarding them.`,
-        lore:        `"AQUA PROFUNDIS — Every time the tide came in, we lost someone.
-                      Every time it went out, we found something we hadn't known to look for."
-                      — Final log of the Deepwater Expedition, South Archive Level 9`
+        description: `Cold seeps through the Southern arch even on the warmest days. The <strong style="color:#3399FF;">Drowned Archive</strong> lies submerged — a library of a civilization that chose the ocean over the sky. Half-flooded corridors hide creatures that evolved in total darkness. The treasures are real. So are the things guarding them.`,
+        lore:        `"AQUA PROFUNDIS — Every time the tide came in, we lost someone. Every time it went out, we found something we hadn't known to look for." — Final log of the Deepwater Expedition, South Archive Level 9`
     }
 };
 
@@ -117,8 +91,6 @@ window.TOWNS.town3 = {
 
     // ─────────────────────────────────────────────────────────────────────
     //  CUSTOM RENDERER
-    //  Called by showTown() when townDef.render exists.
-    //  Owns the entire screen — full creative control.
     // ─────────────────────────────────────────────────────────────────────
     render(screen, p, dungeonOption, portalOption) {
 
@@ -489,7 +461,6 @@ window.TOWNS.town3 = {
 
 // ─────────────────────────────────────────────────────────────────────────
 //  ELEMENTAL LORE POPUP
-//  Shown when a player taps a sealed wing — reveals flavour + teaser lore.
 // ─────────────────────────────────────────────────────────────────────────
 window.t3ShowElement = function(key) {
     const el = T3_ELEMENTS[key];
