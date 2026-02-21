@@ -6792,7 +6792,7 @@ window.addEventListener('beforeunload', () => {
                         <div class="item-card">
                             <div style="color: var(--highlight-color);">${spell.name}</div>
                             <div>MP Cost: ${spell.mpCost}</div>
-                            <div>Power: ${spell.power}</div>
+                            <div>${spell.minPower !== undefined ? `Power: ${spell.minPower}–${spell.maxPower}` : ''}</div>
                             <div>${spell.description}</div>
                         </div>
                     `;
@@ -13024,9 +13024,9 @@ function playerIsExhausted() {
         
         function calculateMagicDamage() {
             const p = gameState.player;
-            const weapon = WEAPONS[p.weapon] || { baseMagicDamage: 0, quality: 'poor' };
-            const qBonus = getQualityBonus(weapon.quality, weapon.baseDamage);
-            return (weapon.baseMagicDamage + qBonus) + (p.wis || 0);
+            const weapon = WEAPONS[p.weapon] || { baseMagicDamage: 0, baseDamage: 0, quality: 'poor' };
+            const qBonus = getQualityBonus(weapon.quality, weapon.baseMagicDamage || 0);
+            return (weapon.baseMagicDamage || 0) + qBonus + (p.magic || 0) + (p.wis || 0);
         }
         
         /**
@@ -13257,16 +13257,22 @@ function playerIsExhausted() {
                 const hasSpell       = p.knownSpells.includes(key);
                 const levelReq       = p.level >= spell.level;
                 const meetsReq       = !spell.requires || p.knownSpells.includes(spell.requires);
-                // A spell whose prereq is still in knownSpells (not yet upgraded away) = still "known"
-                const prereqKnown    = spell.requires && p.knownSpells.includes(spell.requires);
                 const canAfford      = p.gold >= spell.cost;
+
+                // Check if this spell has already been superseded — i.e. the player knows
+                // a spell that lists this one as its 'requires' (meaning they skipped past it).
+                const alreadySuperseded = Object.values(spellTree.spellTree).some(
+                    s => s.requires === key && p.knownSpells.includes(s.requires === key ? s.requires : null)
+                ) || p.knownSpells.some(known => {
+                    const knownSpell = spellTree.spellTree[known];
+                    return knownSpell && knownSpell.requires === key;
+                });
 
                 if (hasSpell) {
                     currentSpells.push({ key, spell });
-                } else if (levelReq && meetsReq) {
-                    // Only offer if the spell is a true upgrade (old spell removed) or brand new
+                } else if (!alreadySuperseded && levelReq && meetsReq) {
                     availableSpells.push({ key, spell, canAfford });
-                } else if (!hasSpell && !levelReq && meetsReq) {
+                } else if (!hasSpell && !levelReq && meetsReq && !alreadySuperseded) {
                     // Coming soon — player hasn't reached the level yet
                     upcomingSpells.push({ key, spell });
                 }
@@ -13291,7 +13297,8 @@ function playerIsExhausted() {
                     const typeIcon = spell.type === 'heal' ? '💚' : spell.type === 'lifesteal' ? '🩸' : spell.type === 'aoe_damage' ? '🔥' : '💥';
                     const lifestealInfo = spell.lifestealPercent ? ` (${spell.lifestealPercent}%)` : '';
                     const aoeTag = spell.type === 'aoe_damage' ? ' <span style="color:#FF8800;">[AOE]</span>' : '';
-                    html += `<p>${typeIcon} <strong>${spell.name}${aoeTag}</strong> - <span style="color:${typeColor};">${spell.power} ${spell.type === 'heal' ? 'HP' : 'DMG'}${lifestealInfo}</span> (${spell.mpCost} MP)${spell.upgradesTo ? `<br><span style="color:#FFD700;font-size:12px;">→ Upgrade available</span>` : ''}</p>`;
+                    const powerDisplay = spell.minPower !== undefined ? `${spell.minPower}–${spell.maxPower}` : '?';
+                    html += `<p>${typeIcon} <strong>${spell.name}${aoeTag}</strong> - <span style="color:${typeColor};">${powerDisplay} ${spell.type === 'heal' ? 'HP' : 'DMG'}${lifestealInfo}</span> (${spell.mpCost} MP)${spell.upgradesTo ? `<br><span style="color:#FFD700;font-size:12px;">→ Upgrade available</span>` : ''}</p>`;
                 });
                 html += `</div>`;
             }
@@ -13306,7 +13313,8 @@ function playerIsExhausted() {
                     const aoeTag = spell.type === 'aoe_damage' ? ' <span style="color:#FF8800;">[AOE]</span>' : '';
                     const isUpgrade = spell.requires && p.knownSpells.includes(spell.requires);
                     
-                    html += `<div style="margin:10px 0;padding:10px;border:1px solid ${canAfford ? '#FFD700' : '#666'};"><p>${typeIcon} <strong style="color:${typeColor};">${spell.name}${aoeTag}</strong> ${isUpgrade ? '(Upgrade)' : '(New)'}<br><span style="font-size:12px;">${spell.description}</span><br><span style="color:${typeColor};">${spell.power} ${spell.type === 'heal' ? 'HP' : 'DMG'}${lifestealInfo}</span> | ${spell.mpCost} MP | Level ${spell.level}<br><span style="color:#FFD700;">Cost: ${spell.cost}g</span></p>${canAfford ? `<button onclick="learnSpell('${key}')" style="border-color:#FFD700;">💰 Learn (${spell.cost}g)</button>` : `<button disabled style="opacity:0.5;">Need ${spell.cost - p.gold}g more</button>`}</div>`;
+                    const powerDisplay2 = spell.minPower !== undefined ? `${spell.minPower}–${spell.maxPower}` : '?';
+                    html += `<div style="margin:10px 0;padding:10px;border:1px solid ${canAfford ? '#FFD700' : '#666'};"><p>${typeIcon} <strong style="color:${typeColor};">${spell.name}${aoeTag}</strong> ${isUpgrade ? '(Upgrade)' : '(New)'}<br><span style="font-size:12px;">${spell.description}</span><br><span style="color:${typeColor};">${powerDisplay2} ${spell.type === 'heal' ? 'HP' : 'DMG'}${lifestealInfo}</span> | ${spell.mpCost} MP | Level ${spell.level}<br><span style="color:#FFD700;">Cost: ${spell.cost}g</span></p>${canAfford ? `<button onclick="learnSpell('${key}')" style="border-color:#FFD700;">💰 Learn (${spell.cost}g)</button>` : `<button disabled style="opacity:0.5;">Need ${spell.cost - p.gold}g more</button>`}</div>`;
                 });
                 html += `</div>`;
             } else {
