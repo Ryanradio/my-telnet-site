@@ -10950,8 +10950,8 @@ function consumePips(cs, amount, cooldown) {
     // Calculate enemy dodge chance based on level difference
     const enemyDodgeChance = calculateEnemyDodge(p.level, enemy.level);
 
-    // ── HEAVY ATTACK: extra 35% miss chance on top of dodge ──────────
-    if (attackType === 'heavy' && Math.random() < 0.35) {
+    // ── HEAVY ATTACK: extra 15% miss chance on top of dodge ──────────
+    if (attackType === 'heavy' && Math.random() < 0.15) {
         const missVerb = unarmed ? 'swing wildly' : 'overswing';
         termAppend(
             `You ${attackName} but ${missVerb} and <span style="color:#ff8c00;">MISS!</span>`,
