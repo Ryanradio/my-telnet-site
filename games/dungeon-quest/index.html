@@ -1392,11 +1392,25 @@ body.terminal-mode #fsBtn { bottom: calc(env(safe-area-inset-bottom, 0px) + 70px
     <script src="weapon-drops.js"></script>
     <script src="exploration-zones.js"></script>
     <script src="adventures.js"></script>
+    <script src="hunter-pets.js"></script>
 
     <script>
 
         // 🔑 Prevent UI reset after restore (mobile fix)
 // gameState.hasRestoredGame = false;
+
+
+// ═══════════════════════════════════════════════════════
+// RARITY CONFIG
+// ═══════════════════════════════════════════════════════
+const RARITY_CONFIG = {
+    common: { name: "Common", color: "#cccccc", multiplier: 1.0, spawnWeight: 60, dropBonus: 0 },
+    uncommon: { name: "Uncommon", color: "#4caf50", multiplier: 1.3, spawnWeight: 25, dropBonus: 1 },
+    rare: { name: "Rare", color: "#2196f3", multiplier: 1.6, spawnWeight: 10, dropBonus: 2 },
+    epic: { name: "Epic", color: "#9c27b0", multiplier: 2.1, spawnWeight: 4, dropBonus: 3 },
+    legendary: { name: "Legendary", color: "#ff9800", multiplier: 2.8, spawnWeight: 0.9, dropBonus: 4 },
+    mythic: { name: "Mythic", color: "#ff4444", multiplier: 3.6, spawnWeight: 0.1, dropBonus: 5 }
+};
 
 
 function updateTerminalSafeArea() {
@@ -2779,6 +2793,7 @@ function buildSaveSnapshot() {
             // Equipment
             weapon: p.weapon,
             armor: p.armor,
+            activePet: p.activePet || null,
             
             // Inventory & spells
             inventory: [...(p.inventory || [])],
@@ -2786,6 +2801,10 @@ function buildSaveSnapshot() {
             
             // Stat points
             statPoints: p.statPoints || 0,
+
+            // Defeated Masters/unlocked areas
+            defeatedMasters: [...(p.defeatedMasters || [])],  // Explicit copy
+            unlockedAreas: [...(p.unlockedAreas || [])],
             
             // Base class (for evolution tracking)
             baseClass: p.baseClass,
@@ -7240,7 +7259,8 @@ function equipItem(type, key) {
                 xp: master.xp, gold: master.gold, level: master.level,
                 possibleDrops: master.possibleDrops, dropRates: master.dropRates,
                 isMaster: true, masterKey: masterKey,
-                guaranteedDrops: master.guaranteedDrops
+                guaranteedDrops: master.guaranteedDrops,
+                index: 0  // required by applyStatusEffect for monsterStatusEffects lookup
             };
             const maxHits   = calcPlayerHits(gameState.player);
             const pipTimers = [];
@@ -7255,7 +7275,10 @@ function equipItem(type, key) {
                 enemyTimer:    18,
                 enemyDelay:    18,
                 enemyHits:     3,
-                enemyHitsLeft: 3
+                enemyHitsLeft: 3,
+                playerStatusEffects:  [],    // required by applyStatusEffect / weapon modifiers
+                monsterStatusEffects: { 0: [] },  // pre-init slot 0 for the master
+                dotTimers:            {}     // required by cleanupCombatStatusEffects
             };
             // Open the terminal view (clear it fresh for a boss)
             openTerminalView(gameState.currentLocation);
