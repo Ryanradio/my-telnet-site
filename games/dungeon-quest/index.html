@@ -8331,11 +8331,12 @@ if (cs) {
     if (mode === 'main') {
         const p = gameState.player;
         const isHunter  = (p.baseClass || p.class) === 'hunter';
+        const trapBtn   = isHunter ? `<button onclick="(castTrap())" ${p.mp < 10 ? 'disabled' : ''} class="action-icon-btn" title="Set Trap [T] - 10 MP" style="border-color:#8B4513;">🪤<span class="kb-hint">T</span></button>` : '';
         const isWarrior = (p.baseClass || p.class) === 'warrior';
         const shieldBtn = isWarrior
             ? `<button onclick="playerDefend()" ${!canAct ? 'disabled' : ''} title="Shield — 70% to halve damage">🛡️</button>`
             : '';
-        const trapBtn   = isHunter ? `<button onclick="(castTrap())" ${p.mp < 10 ? 'disabled' : ''} class="action-icon-btn" title="Set Trap [T] - 10 MP" style="border-color:#8B4513;">🪤<span class="kb-hint">T</span></button>` : '';
+        
         combatDiv.innerHTML = `
             <div style="color:var(--highlight-color);font-size:13px;margin-bottom:3px;text-align:center;letter-spacing:3px;">${pips}</div>
             <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;">
