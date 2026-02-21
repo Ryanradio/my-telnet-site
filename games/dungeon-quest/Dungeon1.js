@@ -1136,7 +1136,7 @@ window.DUNGEONS.Dungeon1 = {
       "rooms": {
         "R58": {
           "name": "The Ascent Chamber",
-          "description": "You are in a stone chamber at the base of the shaft from above. The ladder only goes down from here.",
+          "description": "You are in a stone chamber at the base of the shaft from above. There is a ladder that goes down from here.",
           "map": {
             "x": 21,
             "y": 5
