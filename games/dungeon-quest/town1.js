@@ -1,8 +1,9 @@
 // town1.js - Silverdale (Starting Town)
 // ═══════════════════════════════════════════════════════════════
 // The first town players start in. Contains early-game content,
-// a dungeon entrance (Dungeon1) unlocked at level 3, and a portal
-// to Ashen Harbor once the White Runestone is earned.
+// a dungeon entrance (Dungeon1) unlocked at level 3, and portals:
+//   → Ashen Harbor (town2): requires White Runestone or portalUnlocked
+//   → Crossroads of the World (town3): requires Yellow Runestone
 // ═══════════════════════════════════════════════════════════════
 
 window.TOWNS = window.TOWNS || {};
@@ -29,7 +30,9 @@ window.TOWNS.town1 = {
         temple:  true
     },
 
-    // Special: portal destination once White Runestone earned
+    // Portal destinations — logic lives in index.html showTown()
+    // town2: visible when hasWhiteRune || portalUnlocked
+    // town3: visible when hasYellowRune
     portalDestination: 'town2',
     portalName: 'Portal to Ashen Harbor',
     portalDescription: 'A shimmering portal leading to Ashen Harbor, the city of ash and iron.',

@@ -1,8 +1,9 @@
 // town2.js - Ashen Harbor (Second Town)
 // ═══════════════════════════════════════════════════════════════
 // Discovered by completing Dungeon1. Has higher-level zones (6-18),
-// its own dungeon (Dungeon2 - to be created), and a portal back to
-// Silverdale once the White Runestone is earned.
+// its own dungeon (Dungeon2 - to be created), and portals:
+//   → Silverdale (town1): always visible (first use sets portalUnlocked)
+//   → Crossroads of the World (town3): requires Yellow Runestone
 // ═══════════════════════════════════════════════════════════════
 
 window.TOWNS = window.TOWNS || {};
@@ -29,7 +30,9 @@ window.TOWNS.town2 = {
         temple:  true
     },
 
-    // Portal back to town1 (and forward to town3 once discovered)
+    // Portal destinations — logic lives in index.html showTown()
+    // town1: always visible (first use sets portalUnlocked for bidirectional travel)
+    // town3: visible when hasYellowRune
     portalDestination: 'town1',
     portalName: 'Portal to Silverdale',
     portalDescription: 'A shimmering portal leading back to Silverdale.',
