@@ -1415,9 +1415,10 @@ body.terminal-mode #fsBtn { bottom: calc(env(safe-area-inset-bottom, 0px) + 70px
     <div class="terminal-container" id="terminalContainer">
         <div class="terminal-header">═══ SYSOP TERMINAL ═══</div>
         <div class="terminal-output" id="terminalOutput"></div>
+        <div id="termHints" style="display:none;font-family:'VT323',monospace;font-size:14px;padding:3px 8px;border-top:1px solid #1a3a1a;border-bottom:1px solid #1a3a1a;background:#020a02;max-height:80px;overflow-y:auto;line-height:1.4;"></div>
         <div class="terminal-input-line">
             <span class="terminal-prompt">root@dungeon:~#</span>
-            <input type="text" class="terminal-input" id="terminalInput" autocomplete="off">
+            <input type="text" class="terminal-input" id="terminalInput" autocomplete="off" spellcheck="false" autocorrect="off">
         </div>
     </div>
 
@@ -1445,7 +1446,6 @@ body.terminal-mode #fsBtn { bottom: calc(env(safe-area-inset-bottom, 0px) + 70px
     <script src="Dungeon1.js"></script>
     <script src="town1.js"></script>
     <script src="town2.js"></script>
-    <script src="town3.js"></script>
     <script src="monsters-expanded.js"></script>
     <script src="weapons.js"></script>
     <script src="armor.js"></script>
@@ -3129,8 +3129,28 @@ window.addEventListener('beforeunload', () => {
         }
 
         // ═══════════════════════════════════════════════════════════════
-        // 🧪 POTION BUTTON LONG-PRESS → SYSOP (3 seconds)
+        // 🎒 INVENTORY BUTTON LONG-PRESS → SYSOP (3 seconds)
+        // Works in both dungeon action bar and town menu
         // ═══════════════════════════════════════════════════════════════
+        let _invMenuHoldTimer = null, _invMenuFired = false;
+        function _invMenuDown(e) {
+            if (e.cancelable) e.preventDefault();
+            _invMenuFired = false;
+            _invMenuHoldTimer = setTimeout(() => {
+                _invMenuHoldTimer = null;
+                _invMenuFired = true;
+                openSysopOverlay();
+            }, POT_HOLD_MS);
+        }
+        function _invMenuUp() {
+            if (_invMenuHoldTimer) { clearTimeout(_invMenuHoldTimer); _invMenuHoldTimer = null; }
+            if (!_invMenuFired) showInventory();
+            _invMenuFired = false;
+        }
+        function _invMenuCancel() {
+            if (_invMenuHoldTimer) { clearTimeout(_invMenuHoldTimer); _invMenuHoldTimer = null; }
+            _invMenuFired = false;
+        }
         let _potHoldTimer  = null;
         let _potFired      = false;
         const POT_HOLD_MS  = 3000;
@@ -3439,8 +3459,14 @@ window.addEventListener('beforeunload', () => {
 
         // ── Give item sub-panel ───────────────────────────────────────
         function sysoShowGive(type) {
-            const sub = document.getElementById('sysoSub');
-            if (!sub) return;
+            if (!document.getElementById('sysopOverlay')?.classList.contains('open')) {
+                openSysopOverlay();
+            }
+            let sub = document.getElementById('sysoSub');
+            if (!sub) {
+                setTimeout(() => sysoShowGive(type), 80);
+                return;
+            }
 
             let allKeys = [];
             if (type === 'weapon') allKeys = Object.keys(WEAPONS).filter(k => !WEAPONS[k].unarmed && !WEAPONS[k].isDropped);
@@ -3610,17 +3636,214 @@ window.addEventListener('beforeunload', () => {
         }
 
         // Terminal input handler
+        // ── Detect touch/mobile device ────────────────────────────────
+        const _isMobile = () => navigator.maxTouchPoints > 0 || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+
+        // ── Terminal command history ──────────────────────────────────
+        let _termHistIdx = -1;
+
+        // ── Inline hint engine (PC only) ──────────────────────────────
+        function _termHint(raw) {
+            const hintsEl = document.getElementById('termHints');
+            if (!hintsEl || _isMobile()) { if (hintsEl) hintsEl.style.display = 'none'; return; }
+
+            const input = raw.trim();
+            if (!input || !input.startsWith('/')) { hintsEl.style.display = 'none'; return; }
+
+            const parts  = input.split(/\s+/);
+            const cmd    = parts[0].toLowerCase();
+            const args   = parts.slice(1);
+            const argStr = args.join(' ').toLowerCase();
+
+            const CMDS = [
+                { c:'/help',          s:'',                                   d:'List all commands' },
+                { c:'/heal',          s:'',                                   d:'Full heal player' },
+                { c:'/godmode',       s:'on | off',                           d:'Toggle god mode' },
+                { c:'/setlevel',      s:'<1–25>',                             d:'Set player level' },
+                { c:'/setgold',       s:'<amount>',                           d:'Set gold' },
+                { c:'/give',          s:'weapon|armor|item|spell <id> [quality]', d:'Give item' },
+                { c:'/listweapons',   s:'',                                   d:'List all weapons' },
+                { c:'/listarmor',     s:'',                                   d:'List all armor' },
+                { c:'/listitems',     s:'',                                   d:'List all items' },
+                { c:'/listmonsters',  s:'',                                   d:'List all monsters' },
+                { c:'/teleport',      s:'town1|town2|town3|<dungeon> [fN] [roomId]', d:'Teleport anywhere' },
+                { c:'/killmonster',   s:'',                                   d:'Kill current enemy' },
+                { c:'/revealmap',     s:'[dungeonKey]',                       d:'Reveal dungeon map' },
+                { c:'/unlockmaster',  s:'<masterId>',                         d:'Unlock class master' },
+                { c:'/export',        s:'save | stats',                       d:'Export data' },
+                { c:'/clear',         s:'',                                   d:'Clear terminal' },
+                { c:'/logout',        s:'',                                   d:'Logout of sysop' },
+            ];
+
+            let html = '';
+
+            // ── Exact command match — show arg hints + live suggestions ──
+            const exact = CMDS.find(x => x.c === cmd);
+            if (exact) {
+                html += `<span style="color:#ff8c00;">${exact.c}</span> <span style="color:#5a8a5a;">${exact.s}</span>  <span style="color:#3a6a3a;">${exact.d}</span>`;
+
+                // Arg-level autocomplete
+                const q = (args[0] || '').toLowerCase();
+                let suggestions = [];
+
+                if (cmd === '/give') {
+                    const sub = (args[0]||'').toLowerCase();
+                    const id  = (args[1]||'').toLowerCase();
+                    const qual= (args[2]||'').toLowerCase();
+                    if (!sub || ['weapon','armor','item','spell'].some(x=>x.startsWith(sub) && x!==sub)) {
+                        suggestions = ['weapon','armor','item','spell'].filter(x=>x.startsWith(sub));
+                        html += _hintRow('Subtype:', suggestions, s => `/give ${s} `);
+                    } else if (sub === 'weapon' && id !== undefined) {
+                        const db = Object.keys(WEAPONS).filter(k=>!WEAPONS[k].unarmed && !WEAPONS[k].isDropped);
+                        suggestions = db.filter(k=>k.includes(id)||(WEAPONS[k].name||'').toLowerCase().includes(id)).slice(0,5);
+                        if (suggestions.length) html += _hintRow('Weapons:', suggestions, s=>`/give weapon ${s} `, k=>WEAPONS[k]?.name);
+                        if (qual !== undefined && args.length >= 3) {
+                            const qs = ['poor','normal','rare','epic','legendary','godly'].filter(x=>x.startsWith(qual));
+                            if (qs.length) html += _hintRow('Quality:', qs, q=>`/give weapon ${args[1]} ${q}`);
+                        }
+                    } else if (sub === 'armor' && id !== undefined) {
+                        const db = Object.keys(ARMOR).filter(k=>!ARMOR[k].unarmored && !ARMOR[k].isDropped);
+                        suggestions = db.filter(k=>k.includes(id)||(ARMOR[k].name||'').toLowerCase().includes(id)).slice(0,5);
+                        if (suggestions.length) html += _hintRow('Armor:', suggestions, s=>`/give armor ${s} `, k=>ARMOR[k]?.name);
+                        if (qual !== undefined && args.length >= 3) {
+                            const qs = ['poor','normal','rare','epic','legendary','godly'].filter(x=>x.startsWith(qual));
+                            if (qs.length) html += _hintRow('Quality:', qs, q=>`/give armor ${args[1]} ${q}`);
+                        }
+                    } else if (sub === 'item' && id !== undefined) {
+                        const db = typeof ITEMS!=='undefined' ? Object.keys(ITEMS) : [];
+                        suggestions = db.filter(k=>k.includes(id)||(ITEMS[k]?.name||'').toLowerCase().includes(id)).slice(0,5);
+                        if (suggestions.length) html += _hintRow('Items:', suggestions, s=>`/give item ${s}`, k=>ITEMS[k]?.name);
+                    } else if (sub === 'spell' && id !== undefined) {
+                        const db = typeof SPELLS!=='undefined' ? Object.keys(SPELLS) : [];
+                        suggestions = db.filter(k=>k.includes(id)||(SPELLS[k]?.name||'').toLowerCase().includes(id)).slice(0,5);
+                        if (suggestions.length) html += _hintRow('Spells:', suggestions, s=>`/give spell ${s}`, k=>SPELLS[k]?.name);
+                    }
+                } else if (cmd === '/teleport') {
+                    const towns = ['town1','town2','town3'].filter(t=>t.startsWith(q)||!q);
+                    const dungeons = typeof DUNGEONS!=='undefined' ? Object.keys(DUNGEONS).filter(k=>k.toLowerCase().startsWith(q)||!q) : [];
+                    const dest = [...towns, ...dungeons].slice(0,8);
+                    if (dest.length && args.length <= 1) html += _hintRow('Destinations:', dest, d=>`/teleport ${d}`);
+                } else if (cmd === '/setlevel' && q) {
+                    const n = parseInt(q);
+                    if (!isNaN(n)) html += (n<1||n>25) ? `  <span style="color:#ff4444;">⚠ must be 1–25</span>` : `  <span style="color:#88ff88;">→ set to level ${n}</span>`;
+                } else if (cmd === '/godmode' && q) {
+                    ['on','off'].filter(x=>x.startsWith(q)).forEach(x=>{ html += `  <span class="_termFill" data-fill="/godmode ${x}" style="color:#00FF41;cursor:pointer;text-decoration:underline;">${x}</span>`; });
+                } else if (cmd === '/export' && q) {
+                    ['save','stats'].filter(x=>x.startsWith(q)).forEach(x=>{ html += `  <span class="_termFill" data-fill="/export ${x}" style="color:#00FF41;cursor:pointer;text-decoration:underline;">${x}</span>`; });
+                }
+
+                hintsEl.innerHTML = html;
+                hintsEl.style.display = 'block';
+                _bindTermFill();
+                return;
+            }
+
+            // ── Partial command — show matching commands ──────────────
+            const matches = CMDS.filter(x => x.c.startsWith(cmd) || (cmd.length > 1 && x.c.includes(cmd)));
+            if (!matches.length) {
+                hintsEl.innerHTML = `<span style="color:#ff4444;">Unknown command — try /help</span>`;
+                hintsEl.style.display = 'block';
+                return;
+            }
+            html = matches.map(x =>
+                `<span class="_termFill" data-fill="${x.c} " style="color:#ff8c00;cursor:pointer;text-decoration:underline;">${x.c}</span><span style="color:#3a6a3a;"> ${x.d}</span>`
+            ).join('  <span style="color:#1a2a1a;">·</span>  ');
+            hintsEl.innerHTML = html;
+            hintsEl.style.display = 'block';
+            _bindTermFill();
+        }
+
+        function _hintRow(label, keys, fillFn, nameFn) {
+            if (!keys.length) return '';
+            const items = keys.map(k => {
+                const name = nameFn ? nameFn(k) : null;
+                const display = name ? `${k}<span style="color:#3a6a3a;"> ${name}</span>` : k;
+                const fill = fillFn(k);
+                return `<span class="_termFill" data-fill="${fill}" style="color:#00FF41;cursor:pointer;text-decoration:underline;white-space:nowrap;margin-right:12px;">${display}</span>`;
+            }).join('');
+            return `<br><span style="color:#5a8a5a;">${label}</span> ${items}`;
+        }
+
+        function _bindTermFill() {
+            document.querySelectorAll('._termFill').forEach(el => {
+                el.onclick = () => {
+                    const inp = document.getElementById('terminalInput');
+                    inp.value = el.dataset.fill;
+                    inp.focus();
+                    _termHint(inp.value);
+                };
+            });
+        }
+
+        // ── List/Give routing: overlay on mobile, terminal print on PC ─
+        function _routeList(type) {
+            if (_isMobile()) {
+                _sysoShowListPanel(type);
+            } else {
+                // Print to terminal in a compact readable format
+                const configs = {
+                    weapons:  { db: WEAPONS,  filter: k=>!WEAPONS[k].unarmed&&!WEAPONS[k].isDropped, meta: (k,v)=>`Lv${v.level||'?'} DMG:${v.baseDamage||'?'}` },
+                    armor:    { db: ARMOR,    filter: k=>!ARMOR[k].unarmored&&!ARMOR[k].isDropped,   meta: (k,v)=>`Lv${v.level||'?'} DEF:${v.baseDefense||'?'}` },
+                    items:    { db: typeof ITEMS!=='undefined'?ITEMS:{}, filter:()=>true, meta:(k,v)=>v.type||'' },
+                    monsters: { db: ENEMIES,  filter: ()=>true, meta: (k,v)=>`Lv${v.level||'?'} HP:${v.baseHp||'?'}` },
+                };
+                const cfg = configs[type];
+                if (!cfg) return;
+                const keys = Object.keys(cfg.db).filter(cfg.filter);
+                terminalPrint(`═══ ${type.toUpperCase()} (${keys.length}) ═══`, 'warning');
+                keys.forEach(k => {
+                    const v = cfg.db[k];
+                    terminalPrint(`  ${k.padEnd(28)} ${(v.name||k).padEnd(28)} ${cfg.meta(k,v)}`);
+                });
+                terminalPrint(`═══ END ${type.toUpperCase()} ═══`, 'warning');
+            }
+        }
+
         document.getElementById('terminalInput').addEventListener('keydown', (e) => {
+            const inp = e.target;
+            const hist = gameState.sysop.commandHistory || [];
+
+            // ── Up/Down arrow: command history ────────────────────────
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (_termHistIdx < hist.length - 1) _termHistIdx++;
+                inp.value = hist[hist.length - 1 - _termHistIdx] || '';
+                _termHint(inp.value);
+                return;
+            }
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (_termHistIdx > 0) { _termHistIdx--; inp.value = hist[hist.length - 1 - _termHistIdx] || ''; }
+                else { _termHistIdx = -1; inp.value = ''; }
+                _termHint(inp.value);
+                return;
+            }
+
+            // ── Tab: autocomplete first suggestion ────────────────────
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const first = document.querySelector('._termFill');
+                if (first) { inp.value = first.dataset.fill; _termHint(inp.value); }
+                return;
+            }
+
+            // ── Enter: execute ────────────────────────────────────────
             if (e.key === 'Enter') {
-                const input = e.target.value.trim();
-                e.target.value = '';
-                
-                if (input) {
-                    terminalPrint(`root@dungeon:~# ${input}`, 'normal');
-                    gameState.sysop.commandHistory.push(input);
-                    executeCommand(input);
+                const val = inp.value.trim();
+                inp.value = '';
+                _termHistIdx = -1;
+                document.getElementById('termHints').style.display = 'none';
+                if (val) {
+                    terminalPrint(`root@dungeon:~# ${val}`, 'normal');
+                    gameState.sysop.commandHistory.push(val);
+                    executeCommand(val);
                 }
             }
+        });
+
+        document.getElementById('terminalInput').addEventListener('input', (e) => {
+            _termHistIdx = -1;
+            _termHint(e.target.value);
         });
 
         function executeCommand(input) {
@@ -4471,22 +4694,22 @@ window.addEventListener('beforeunload', () => {
             terminalPrint('═══════════════════════════════════════', 'success');
         }
 
-        function listMonsters() {
-            _sysoShowListPanel('monsters');
-        }
-        function listWeapons() {
-            _sysoShowListPanel('weapons');
-        }
-        function listArmor() {
-            _sysoShowListPanel('armor');
-        }
-        function listItems() {
-            _sysoShowListPanel('items');
-        }
+        function listMonsters() { _routeList('monsters'); }
+        function listWeapons()  { _routeList('weapons');  }
+        function listArmor()    { _routeList('armor');    }
+        function listItems()    { _routeList('items');    }
 
         function _sysoShowListPanel(type) {
-            const sub = document.getElementById('sysoSub');
-            if (!sub) return;
+            // Ensure the sysop overlay is open and rendered
+            if (!document.getElementById('sysopOverlay')?.classList.contains('open')) {
+                openSysopOverlay();
+            }
+            // sysoSub may not exist yet if overlay just opened — give it a tick
+            let sub = document.getElementById('sysoSub');
+            if (!sub) {
+                setTimeout(() => _sysoShowListPanel(type), 80);
+                return;
+            }
 
             const configs = {
                 weapons:  { title: '⚔️ WEAPONS',  icon: '⚔️', db: () => WEAPONS, filter: k => !WEAPONS[k].unarmed && !WEAPONS[k].isDropped,
@@ -5961,7 +6184,9 @@ window.addEventListener('beforeunload', () => {
                     <div class="menu-option" onclick="showTemple()">► ⛪ TEMPLE</div>
                     ${dungeonOption}
                     <div class="menu-option" onclick="restAtInn()">► REST AT INN (${calcInnCost(p.cha)} Gold)</div>
-                    <div class="menu-option" onclick="showInventory()">► INVENTORY</div>
+                    <div class="menu-option" id="townInvBtn" onclick="showInventory()" 
+                        onmousedown="_invMenuDown(event)" onmouseup="_invMenuUp()" onmouseleave="_invMenuCancel()"
+                        ontouchstart="_invMenuDown(event)" ontouchend="_invMenuUp()" ontouchcancel="_invMenuCancel()">► INVENTORY</div>
                     <div class="menu-option" onclick="showExplore()">► EXPLORE WORLD</div>
                     ${portalOption}
                     <div class="menu-option" onclick="showModemSettings()">► MODEM SETTINGS</div>
@@ -8879,9 +9104,19 @@ if (cs) {
         if (it.subtype === 'heal_mp' || it.subtype === 'full_restore') mpPotCount++;
     });
     invBtn.innerHTML = `🎒 Inv<br><span style="font-size:10px;color:#ff6666;">❤️${hpPotCount}</span> <span style="font-size:10px;color:#6688ff;">💙${mpPotCount}</span>`;
-    invBtn.title = 'Dungeon Inventory';
-    invBtn.onclick = showDungeonInventory;
+    invBtn.title = '';
     invBtn.style.cssText = 'padding:4px 6px;font-size:12px;border-color:#8aaa8a;line-height:1.3;';
+    // Long-press (3s) → sysop; short tap → inventory
+    let _invHoldTimer = null, _invFired = false;
+    const _invDown = (e) => { e.preventDefault(); _invFired = false; _invHoldTimer = setTimeout(() => { _invHoldTimer = null; _invFired = true; openSysopOverlay(); }, POT_HOLD_MS); };
+    const _invUp   = ()  => { if (_invHoldTimer) { clearTimeout(_invHoldTimer); _invHoldTimer = null; } if (!_invFired) showDungeonInventory(); _invFired = false; };
+    const _invCancel = () => { if (_invHoldTimer) { clearTimeout(_invHoldTimer); _invHoldTimer = null; } _invFired = false; };
+    invBtn.addEventListener('mousedown',  _invDown);
+    invBtn.addEventListener('mouseup',    _invUp);
+    invBtn.addEventListener('mouseleave', _invCancel);
+    invBtn.addEventListener('touchstart', _invDown, { passive: false });
+    invBtn.addEventListener('touchend',   _invUp);
+    invBtn.addEventListener('touchcancel',_invCancel);
     utilCol.appendChild(invBtn);
 
     navWrap.appendChild(utilCol);
