@@ -1490,7 +1490,7 @@ const OPPOSITE_DIR = {
             cleric: {
                 name: 'Cleric',
                 hp: 90,
-                mp: 70,
+                mp: 100,
                 strength: 8,
                 defense: 8,
                 magic: 12,
@@ -4998,6 +4998,25 @@ window.addEventListener('beforeunload', () => {
                 
                 // Restore current town
                 gameState.currentTown = data.currentTown || 'town1';
+
+                // ═══════════════════════════════════════════════════════════════
+                // MIGRATIONS — patch existing saves when base values change
+                // ═══════════════════════════════════════════════════════════════
+                const _p = gameState.player;
+                const _class = _p.baseClass || _p.class;
+
+                // Cleric MP raised from 70 → 100 starting (same as mage).
+                // Each level gains +10 MP, so expected maxMp = 100 + (level-1)*10.
+                // If their maxMp is below that, they were created before the change.
+                if (_class === 'cleric') {
+                    const expectedMaxMp = 100 + (_p.level - 1) * 10;
+                    if (_p.maxMp < expectedMaxMp) {
+                        const diff = expectedMaxMp - _p.maxMp;
+                        _p.maxMp += diff;
+                        _p.mp = Math.min(_p.mp + diff, _p.maxMp);
+                        console.log(`🔧 Cleric MP migration: +${diff} MP (now ${_p.mp}/${_p.maxMp})`);
+                    }
+                }
                 
                 // ═══════════════════════════════════════════════════════════════
                 // RESTORE GENERATED WEAPONS - Must happen BEFORE equipment check!
@@ -11767,13 +11786,15 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
         }
 
         // ── Pick a random damage roll within the enemy's min/max range ──
-        // Stats are already scaled for level and rarity at spawn — no further level adjustment needed.
+        // Stats are already scaled for level and rarity at spawn.
+        // enemyDealt applies an additional 5% reduction per level the player is above the enemy.
         const eMin = Math.max(1, enemy.minDamage ?? Math.round(enemy.damage * 0.67));
         const eMax = Math.max(eMin + 1, enemy.maxDamage ?? Math.round(enemy.damage * 1.33));
         const rolledDamage = eMin + Math.floor(Math.random() * (eMax - eMin + 1));
 
+        const _lvlMult = getLevelDamageMult(p.level, enemy.level);
         const _scaledBase = Math.max(1,
-            Math.floor(rolledDamage * intent.damageMult * DAMAGE_SCALING.monsterDamageMult)
+            Math.floor(rolledDamage * intent.damageMult * DAMAGE_SCALING.monsterDamageMult * _lvlMult.enemyDealt)
         );
 
         const result = calculateDamage({
