@@ -3610,14 +3610,11 @@ window.DUNGEONS.Dungeon1 = {
             },
             "enemies": [
               {
-                "key": "wraith",
+                "key": "will_o_wisp",
                 "drop": "electrum_key",
                 "rarity": "epic"
               }
             ]
-          },
-          "flags": {
-            "discovered": false
           }
         },
         "R127": {
