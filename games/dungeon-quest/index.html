@@ -1404,12 +1404,12 @@ body.terminal-mode #fsBtn { bottom: calc(env(safe-area-inset-bottom, 0px) + 70px
 // RARITY CONFIG
 // ═══════════════════════════════════════════════════════
 const RARITY_CONFIG = {
-    common: { name: "Common", color: "#cccccc", multiplier: 1.0, spawnWeight: 60, dropBonus: 0 },
-    uncommon: { name: "Uncommon", color: "#4caf50", multiplier: 1.3, spawnWeight: 25, dropBonus: 1 },
-    rare: { name: "Rare", color: "#2196f3", multiplier: 1.6, spawnWeight: 10, dropBonus: 2 },
-    epic: { name: "Epic", color: "#9c27b0", multiplier: 2.1, spawnWeight: 4, dropBonus: 3 },
-    legendary: { name: "Legendary", color: "#ff9800", multiplier: 2.8, spawnWeight: 0.9, dropBonus: 4 },
-    mythic: { name: "Mythic", color: "#ff4444", multiplier: 3.6, spawnWeight: 0.1, dropBonus: 5 }
+    common:    { name: "Common",    color: "#cccccc", multiplier: 1.0, spawnWeight: 60,  dropBonus: 0 },
+    uncommon:  { name: "Uncommon",  color: "#4caf50", multiplier: 1.1, spawnWeight: 25,  dropBonus: 1 },
+    rare:      { name: "Rare",      color: "#2196f3", multiplier: 1.2, spawnWeight: 10,  dropBonus: 2 },
+    epic:      { name: "Epic",      color: "#9c27b0", multiplier: 1.3, spawnWeight: 4,   dropBonus: 3 },
+    legendary: { name: "Legendary", color: "#ff9800", multiplier: 1.4, spawnWeight: 0.9, dropBonus: 4 },
+    mythic:    { name: "Mythic",    color: "#ff4444", multiplier: 1.5, spawnWeight: 0.1, dropBonus: 5 }
 };
 
 
@@ -2834,11 +2834,21 @@ function buildSaveSnapshot() {
                 for (const dungeonKey in (p.dungeonMaps || {})) {
                     maps[dungeonKey] = {};
                     for (const floorNum in p.dungeonMaps[dungeonKey]) {
-                        // Convert Set to Array for JSON serialization
                         maps[dungeonKey][floorNum] = [...p.dungeonMaps[dungeonKey][floorNum]];
                     }
                 }
                 return maps;
+            })(),
+
+            // Persistent enemy respawn timers (survive town visits)
+            dungeonTimers: (() => {
+                const timers = {};
+                const now = Date.now();
+                for (const dk in (p.dungeonTimers || {})) {
+                    const valid = (p.dungeonTimers[dk] || []).filter(e => now < e.respawnTime);
+                    if (valid.length > 0) timers[dk] = valid;
+                }
+                return timers;
             })()
         },
         
@@ -4970,6 +4980,19 @@ window.addEventListener('beforeunload', () => {
                             }
                         }
                         return maps;
+                    })(),
+
+                    // Restore enemy respawn timers (prune any that expired while offline)
+                    dungeonTimers: (() => {
+                        const timers = {};
+                        const now = Date.now();
+                        if (data.player.dungeonTimers) {
+                            for (const dk in data.player.dungeonTimers) {
+                                const valid = (data.player.dungeonTimers[dk] || []).filter(e => now < e.respawnTime);
+                                if (valid.length > 0) timers[dk] = valid;
+                            }
+                        }
+                        return timers;
                     })()
                 };
                 
@@ -5849,6 +5872,23 @@ window.addEventListener('beforeunload', () => {
                 discoveredRooms: persistentMap, // Load from persistent map
                 activeEnemies: []
             };
+
+            // ── Restore persisted enemy respawn timers ──────────────────────
+            // Enemies killed in a previous visit keep their 30-min timer.
+            // Expired ones (timer has elapsed) are removed so they spawn normally.
+            const savedTimers = (gameState.player.dungeonTimers && gameState.player.dungeonTimers[dungeonKey]) || [];
+            if (savedTimers.length > 0) {
+                const now = Date.now();
+                const stillPending = savedTimers.filter(e => now < e.respawnTime);
+                const justRespawned = savedTimers.filter(e => now >= e.respawnTime);
+                gameState.dungeon.defeatedEnemies = stillPending;
+                if (!gameState.player.dungeonTimers) gameState.player.dungeonTimers = {};
+                gameState.player.dungeonTimers[dungeonKey] = stillPending; // prune expired
+                if (justRespawned.length > 0)
+                    console.log(`♻️ ${justRespawned.length} enemy timer(s) expired — enemies will spawn normally`);
+                if (stillPending.length > 0)
+                    console.log(`⏱️ ${stillPending.length} enemy timer(s) still active for ${dungeonKey}`);
+            }
 
             openTerminalView(dungeonKey);
 
@@ -7912,13 +7952,8 @@ function stabilizeTerminalLayout() {
                 msg = `${monsters.length} enemies appear: ${names}!`;
             }
 
-            // enemy multi-hit based on rarity of first monster
-            const rar0 = monsters[0].rarity;
-            let eHits = 1;
-            if      (rar0==='rare')      eHits = Math.random()<0.5 ? 2 : 1;
-            else if (rar0==='epic')      eHits = 2;
-            else if (rar0==='legendary') eHits = 2 + (Math.random()<0.5 ? 1 : 0);
-            else if (rar0==='mythic')    eHits = 3;
+            // All enemies attack once per cycle regardless of rarity
+            const eHits = 1;
 
             const enemyDelay = 12 + Math.floor(Math.random()*4);  // 12-15s, fixed for this combat
             const maxHits    = calcPlayerHits(gameState.player);
@@ -7969,7 +8004,7 @@ function stabilizeTerminalLayout() {
             }
             
             // Scale stats based on monster level
-            const levelMult = 1 + (monsterLevel - 1) * 0.15; // 15% increase per level
+            const levelMult = 1 + (monsterLevel - 1) * 0.10; // 10% increase per level
             
             // ── Damage variance: use template min/max if available, otherwise calculate from baseDamage ──
             let scaledMin, scaledMax, scaledAvg;
@@ -9944,6 +9979,20 @@ function returnToTown(townId) {
     console.log('⬅ returnToTown() called');
     // ── Dungeon keys persist in inventory — they are permanent collectibles ──
 
+    // ── Persist defeated-enemy respawn timers so farming is prevented ──
+    if (gameState.dungeon && gameState.dungeon.defeatedEnemies && gameState.dungeon.defeatedEnemies.length > 0) {
+        const dKey = gameState.dungeon.dungeonKey;
+        if (dKey) {
+            if (!gameState.player.dungeonTimers) gameState.player.dungeonTimers = {};
+            // Merge with any existing timers for this dungeon
+            const existing = gameState.player.dungeonTimers[dKey] || [];
+            const existingIds = new Set(existing.map(e => e.id));
+            const fresh = gameState.dungeon.defeatedEnemies.filter(e => !existingIds.has(e.id));
+            gameState.player.dungeonTimers[dKey] = [...existing, ...fresh];
+            console.log(`💾 Preserved ${gameState.player.dungeonTimers[dKey].length} enemy timer(s) for ${dKey}`);
+        }
+    }
+
     // Clear dungeon state
     gameState.dungeon = null;
     gameState.combatState = null;
@@ -11717,19 +11766,14 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
             return;
         }
 
-        // Level scaling: enemy deals more/less based on level gap
-        const _lvlMult = getLevelDamageMult(p.level, enemy.level);
-
         // ── Pick a random damage roll within the enemy's min/max range ──
-        // Then shift the range based on level gap: +5% per level above player, -5% per level below
-        const levelDiff   = enemy.level - p.level;   // positive = enemy is stronger
-        const gapShift    = Math.max(-0.5, Math.min(0.5, levelDiff * 0.05)); // ±5% per level, cap ±50%
-        const eMin = Math.max(1, Math.round((enemy.minDamage ?? enemy.damage * 0.67) * (1 + gapShift)));
-        const eMax = Math.max(eMin + 1, Math.round((enemy.maxDamage ?? enemy.damage * 1.33) * (1 + gapShift)));
+        // Stats are already scaled for level and rarity at spawn — no further level adjustment needed.
+        const eMin = Math.max(1, enemy.minDamage ?? Math.round(enemy.damage * 0.67));
+        const eMax = Math.max(eMin + 1, enemy.maxDamage ?? Math.round(enemy.damage * 1.33));
         const rolledDamage = eMin + Math.floor(Math.random() * (eMax - eMin + 1));
 
         const _scaledBase = Math.max(1,
-            Math.floor(rolledDamage * intent.damageMult * DAMAGE_SCALING.monsterDamageMult * _lvlMult.enemyDealt)
+            Math.floor(rolledDamage * intent.damageMult * DAMAGE_SCALING.monsterDamageMult)
         );
 
         const result = calculateDamage({
