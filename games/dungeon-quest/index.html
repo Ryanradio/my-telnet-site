@@ -10828,9 +10828,11 @@ function consumePips(cs, amount, cooldown) {
 
   defense *= (1 - armorPiercing);
 
-  // Minimum damage guarantee: defense can never reduce a hit below 40% of base.
-  // Without this, low-level weapons (3-5 dmg) get nearly zeroed by any defense.
-  const minDamage = Math.max(1, Math.floor(base * 0.40));
+  // Minimum damage guarantee: defense can never reduce a hit below 15% of base.
+  // Lowered from 40% — the old floor was capping Lv6+ enemy hits at 6-7 dmg
+  // regardless of their actual damage range (18-34), making armor too dominant.
+  // 15% still guarantees something always lands while letting armor actually work.
+  const minDamage = Math.max(1, Math.floor(base * 0.15));
   damage = Math.max(minDamage, Math.floor(damage - defense));
 
   // Crit check

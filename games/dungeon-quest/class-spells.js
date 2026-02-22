@@ -950,6 +950,231 @@ const CLASS_SPELL_TREES = {
                 requires: 'drain_8'
             }
         }
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    // RUNESMITH — RUNE STRIKE (Physical/Magic Hybrid) + RUNE OF WARDING (Defense)
+    // Unique: Casting 3 spells charges RUNE OVERLOAD — melee button glows,
+    // next weapon attack gets massive bonus damage + armor pierce.
+    // ═══════════════════════════════════════════════════════════════
+    runesmith: {
+        startingSpell: 'rune_strike_1',
+        spellTree: {
+            // ── RUNE STRIKE LINE (Hybrid damage — scales with both STR and WIS) ──
+            rune_strike_1: {
+                name: 'Rune Strike',
+                level: 1,
+                mpCost: 14,
+                minPower: 6,
+                maxPower: 22,
+                type: 'damage',
+                cost: 0,
+                description: 'Inscribe a killing rune in the air — hybrid physical/arcane blast',
+                upgradesTo: 'rune_strike_2'
+            },
+            rune_strike_2: {
+                name: 'Shatter Rune',
+                level: 4,
+                mpCost: 20,
+                minPower: 12,
+                maxPower: 45,
+                type: 'damage',
+                cost: 4500,
+                description: 'A rune that detonates on contact, cracking armor',
+                upgradesTo: 'rune_strike_3',
+                requires: 'rune_strike_1'
+            },
+            rune_strike_3: {
+                name: 'Earthrend',
+                level: 7,
+                mpCost: 28,
+                minPower: 20,
+                maxPower: 75,
+                type: 'damage',
+                cost: 4500,
+                description: 'A rune so powerful it tears open the ground beneath the foe',
+                upgradesTo: 'rune_strike_4',
+                requires: 'rune_strike_2'
+            },
+            rune_strike_4: {
+                name: 'Stonefist Rune',
+                level: 10,
+                mpCost: 38,
+                minPower: 32,
+                maxPower: 130,
+                type: 'damage',
+                cost: 10500,
+                description: 'A fist of compressed stone magic driven by rune force',
+                upgradesTo: 'rune_strike_5',
+                requires: 'rune_strike_3'
+            },
+            rune_strike_5: {
+                name: 'Magma Rune',
+                level: 13,
+                mpCost: 50,
+                minPower: 48,
+                maxPower: 195,
+                type: 'damage',
+                cost: 63000,
+                description: 'Rune heated to magma temperatures — sears through everything',
+                upgradesTo: 'rune_strike_6',
+                requires: 'rune_strike_4'
+            },
+            rune_strike_6: {
+                name: 'Seismic Rune',
+                level: 16,
+                mpCost: 64,
+                minPower: 68,
+                maxPower: 272,
+                type: 'damage',
+                cost: 108000,
+                description: 'Rune triggers a localised earthquake under the target',
+                upgradesTo: 'rune_strike_7',
+                requires: 'rune_strike_5'
+            },
+            rune_strike_7: {
+                name: 'Tectonic Strike',
+                level: 19,
+                mpCost: 80,
+                minPower: 90,
+                maxPower: 360,
+                type: 'damage',
+                cost: 180000,
+                description: 'Tectonic plates shift. Your enemy is between them.',
+                upgradesTo: 'rune_strike_8',
+                requires: 'rune_strike_6'
+            },
+            rune_strike_8: {
+                name: 'Cataclysm Rune',
+                level: 22,
+                mpCost: 100,
+                minPower: 118,
+                maxPower: 472,
+                type: 'damage',
+                cost: 105000,
+                description: 'A rune of civilisation-ending force',
+                upgradesTo: 'rune_strike_9',
+                requires: 'rune_strike_7'
+            },
+            rune_strike_9: {
+                name: 'World Rune',
+                level: 25,
+                mpCost: 125,
+                minPower: 160,
+                maxPower: 650,
+                type: 'damage',
+                cost: 150000,
+                description: 'The rune the world itself was made with. Unleash it.',
+                requires: 'rune_strike_8'
+            },
+
+            // ── RUNE OF WARDING LINE (Defense — reduces incoming damage for combat) ──
+            warding_rune_1: {
+                name: 'Rune of Warding',
+                level: 2,
+                mpCost: 12,
+                minPower: 8,
+                maxPower: 25,
+                type: 'heal',
+                cost: 900,
+                description: 'Etch a warding rune on yourself — restores HP and hardens your skin'
+            },
+            warding_rune_2: {
+                name: 'Iron Ward',
+                level: 5,
+                mpCost: 18,
+                minPower: 18,
+                maxPower: 55,
+                type: 'heal',
+                cost: 2700,
+                description: 'Iron rune turns your flesh briefly as hard as forged steel',
+                upgradesTo: 'warding_rune_3',
+                requires: 'warding_rune_1'
+            },
+            warding_rune_3: {
+                name: 'Stone Rune',
+                level: 8,
+                mpCost: 26,
+                minPower: 30,
+                maxPower: 90,
+                type: 'heal',
+                cost: 6000,
+                description: 'Your body becomes briefly stone-like, absorbing punishment',
+                upgradesTo: 'warding_rune_4',
+                requires: 'warding_rune_2'
+            },
+            warding_rune_4: {
+                name: 'Bulwark Rune',
+                level: 11,
+                mpCost: 36,
+                minPower: 48,
+                maxPower: 145,
+                type: 'heal',
+                cost: 4500,
+                description: 'Rune of the ancient bulwark — you heal and ignore punishment',
+                upgradesTo: 'warding_rune_5',
+                requires: 'warding_rune_3'
+            },
+            warding_rune_5: {
+                name: 'Deepstone Ward',
+                level: 14,
+                mpCost: 48,
+                minPower: 72,
+                maxPower: 215,
+                type: 'heal',
+                cost: 9000,
+                description: 'Deepstone rune makes you temporarily invulnerable to minor blows',
+                upgradesTo: 'warding_rune_6',
+                requires: 'warding_rune_4'
+            },
+            warding_rune_6: {
+                name: 'Aegis Rune',
+                level: 17,
+                mpCost: 62,
+                minPower: 100,
+                maxPower: 300,
+                type: 'heal',
+                cost: 14000,
+                description: 'The ancient aegis rune — smithed by gods, worn by survivors',
+                upgradesTo: 'warding_rune_7',
+                requires: 'warding_rune_5'
+            },
+            warding_rune_7: {
+                name: 'Mountain Rune',
+                level: 20,
+                mpCost: 78,
+                minPower: 135,
+                maxPower: 400,
+                type: 'heal',
+                cost: 22000,
+                description: 'You become the mountain. Nothing scratches the mountain.',
+                upgradesTo: 'warding_rune_8',
+                requires: 'warding_rune_6'
+            },
+            warding_rune_8: {
+                name: 'God\'s Aegis',
+                level: 23,
+                mpCost: 96,
+                minPower: 180,
+                maxPower: 540,
+                type: 'heal',
+                cost: 38000,
+                description: 'Divine ward from before mortals could die — briefly, you cannot',
+                upgradesTo: 'warding_rune_9',
+                requires: 'warding_rune_7'
+            },
+            warding_rune_9: {
+                name: 'Eternal Ward',
+                level: 25,
+                mpCost: 115,
+                minPower: 240,
+                maxPower: 720,
+                type: 'heal',
+                cost: 150000,
+                description: 'The rune that grants eternity. You are not done yet.',
+                requires: 'warding_rune_8'
+            }
+        }
     }
 };
 
