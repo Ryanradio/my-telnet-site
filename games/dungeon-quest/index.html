@@ -152,6 +152,11 @@ body.terminal-mode #actionBar { display: block; }
     border-radius: 5px;
     font-size: 20px;
 }
+/* Compass direction buttons have fixed sizes — don't let min-height bloat them */
+#dungeonCompass button {
+    min-height: 0 !important;
+    min-width: 0 !important;
+}
 
 /* ── Status bars (HP/MP/XP) — sits just below terminal, above action bar ── */
 #statusBars {
@@ -208,9 +213,9 @@ body.terminal-mode #statusBars { display: block; }
     50%       { opacity: 0.75; }
 }
 @keyframes runeOverloadPulse {
-    0%   { border-color:#FF4400; box-shadow:0 0 6px #FF4400, 0 0 14px #FF8800; }
-    50%  { border-color:#FFaa00; box-shadow:0 0 14px #FF8800, 0 0 28px #FFaa00; }
-    100% { border-color:#FF4400; box-shadow:0 0 6px #FF4400, 0 0 14px #FF8800; }
+    0%   { border-color:#FF4400; border-width:2px; box-shadow:0 0 8px #FF4400, 0 0 18px #FF6600, inset 0 0 4px rgba(255,100,0,0.15); }
+    50%  { border-color:#FFcc00; border-width:3px; box-shadow:0 0 18px #FFaa00, 0 0 36px #FF8800, inset 0 0 8px rgba(255,200,0,0.25); }
+    100% { border-color:#FF4400; border-width:2px; box-shadow:0 0 8px #FF4400, 0 0 18px #FF6600, inset 0 0 4px rgba(255,100,0,0.15); }
 }
 @keyframes hpLowPulse {
     0%, 100% { opacity: 1;    box-shadow: 0 0 6px #ff0000, 0 0 12px rgba(255,0,0,0.6); }
@@ -1299,35 +1304,7 @@ body.terminal-mode #menuContainer {
     display: none;
 }
 
-/* ── Fullscreen toggle button ──────────────────────────────────────── */
-#fsBtn {
-    position: fixed;
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);
-    right: 8px;
-    z-index: 1500;
-    background: rgba(0,0,0,0.7);
-    border: 1px solid #2a5a2a;
-    color: #00FF41;
-    font-size: 18px;
-    width: 34px;
-    height: 34px;
-    border-radius: 6px;
-    cursor: pointer;
-    display: none;         /* shown only on mobile */
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    line-height: 1;
-    opacity: 0.75;
-    transition: opacity 0.2s;
-}
-#fsBtn:active { opacity: 1; transform: scale(0.92); }
-/* Show on touch devices */
-@media (hover: none) and (pointer: coarse) {
-    #fsBtn { display: flex; }
-}
-/* Hide when game wrapper is active (move above status bars) */
-body.terminal-mode #fsBtn { bottom: calc(env(safe-area-inset-bottom, 0px) + 70px); opacity: 0.45; }
+
 
 /* ── Install modal overlay ──────────────────────────────────────────── */
 #installModal.open { display: flex !important; }
@@ -1349,7 +1326,7 @@ body.terminal-mode #fsBtn { bottom: calc(env(safe-area-inset-bottom, 0px) + 70px
     <div class="scanline"></div>
 
     <!-- Fullscreen toggle (mobile only) -->
-    <button id="fsBtn" onclick="toggleFullscreen()" title="Fullscreen">⛶</button>
+
 
     <!-- Install modal (replaces old bottom-strip banner) -->
     <div id="installModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:3000;align-items:center;justify-content:center;">
@@ -2919,33 +2896,7 @@ gameState.hasRestoredGame = false;
             if (e.target === this) closeInstallModal();
         });
 
-        // ── Fullscreen toggle button (⛶) still triggers modal on iOS ────
-        function toggleFullscreen() {
-           const el = document.documentElement;
-            if (!document.fullscreenElement && !document.webkitFullscreenElement &&
-               !document.mozFullScreenElement) {
-                const req = el.requestFullscreen || el.webkitRequestFullscreen ||
-                            el.mozRequestFullScreen || el.msRequestFullscreen;
-                if (req) {
-                    req.call(el).catch(() => {});
-                } else {
-                    // iOS — can't programmatic fullscreen, show install modal
-                    openInstallModal();
-                }
-            } else {
-                const exit = document.exitFullscreen || document.webkitExitFullscreen ||
-                             document.mozCancelFullScreen || document.msExitFullscreen;
-                if (exit) exit.call(document);
-            }
-        }
 
-        document.addEventListener('fullscreenchange',       _onFsChange);
-        document.addEventListener('webkitfullscreenchange', _onFsChange);
-        function _onFsChange() {
-            const inFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
-            const btn = document.getElementById('fsBtn');
-            if (btn) btn.textContent = inFs ? '⊠' : '⛶';
-        }
 
         // Toggle terminal with ~ key
         document.addEventListener('keydown', (e) => {
@@ -9169,7 +9120,7 @@ if (cs) {
         const pip2 = overloadPips >= 2 ? '🔶' : '⬛';
         const pip3 = overloadPips >= 3 ? '🔶' : '⬛';
         const attackBtn = isRunesmith
-            ? `<button onclick="showAttackMenu()" ${!canAct?'disabled':''} class="pip-btn" id="pipBtn-attack" style="${overloadReady ? 'border-color:#FF4400;box-shadow:0 0 8px #FF4400,0 0 16px #FF8800;animation:runeOverloadPulse 0.7s ease-in-out infinite;' : ''}">${overloadReady ? '🔥⚒️' : '⚒️'}</button>`
+            ? `<button onclick="showAttackMenu()" ${!canAct?'disabled':''} class="pip-btn" id="pipBtn-attack" style="${overloadReady ? 'border-color:#FF4400;box-shadow:0 0 8px #FF4400,0 0 16px #FF8800;animation:runeOverloadPulse 0.7s ease-in-out infinite;' : ''}">⚒️</button>`
             : `<button onclick="showAttackMenu()" ${!canAct?'disabled':''} class="pip-btn" id="pipBtn-attack" title="Attack">⚔️</button>`;
         const spellBtn = isRunesmith
             ? `<button onclick="showSpellMenu()" ${!canAct?'disabled':''} class="pip-btn" id="pipBtn-spell" title="Cast Rune" style="border-color:#c8a000;"><span style="font-size:9px;display:block;line-height:1;">${overloadReady ? '⚡READY' : pip1+pip2+pip3}</span>✨</button>`
@@ -9288,7 +9239,7 @@ if (cs) {
     // Layout: NW N NE / W · E / SW S SE
     const compassGrid = document.createElement('div');
     compassGrid.id = 'dungeonCompass';
-    compassGrid.style.cssText = 'display:grid;grid-template-columns:repeat(3,36px);grid-template-rows:repeat(3,32px);gap:3px;';
+    compassGrid.style.cssText = 'display:grid;grid-template-columns:repeat(3,40px);grid-template-rows:repeat(3,36px);gap:3px;';
 
     // [row][col] → direction key (null = centre cell)
     const compassMap = [
@@ -9303,7 +9254,7 @@ if (cs) {
             if (dir === null) {
                 // Centre cell — blank spacer
                 const spacer = document.createElement('div');
-                spacer.style.cssText = 'width:36px;height:32px;display:flex;align-items:center;justify-content:center;';
+                spacer.style.cssText = 'width:40px;height:36px;display:flex;align-items:center;justify-content:center;';
                 spacer.innerHTML = '<span style="color:#1a3a1a;font-size:10px;">✦</span>';
                 compassGrid.appendChild(spacer);
                 return;
@@ -9317,21 +9268,21 @@ if (cs) {
             if (hasExit && canMove) {
                 btn.onclick = () => dungeonNav(dir);
                 btn.style.cssText = `
-                    width:36px;height:32px;padding:0;font-size:12px;font-weight:bold;
+                    width:40px;height:36px;padding:0;font-size:13px;font-weight:bold;
                     border:2px solid var(--border-color);background:#0a1a0a;
                     color:var(--text-color);cursor:pointer;`;
             } else if (hasExit && !canMove) {
                 // Exit exists but pips not ready
                 btn.disabled = true;
                 btn.style.cssText = `
-                    width:36px;height:32px;padding:0;font-size:12px;font-weight:bold;
+                    width:40px;height:36px;padding:0;font-size:13px;font-weight:bold;
                     border:2px solid #1a3a1a;background:#050a05;
                     color:#2a5a2a;cursor:not-allowed;opacity:0.5;`;
             } else {
                 // Wall — no exit
                 btn.disabled = true;
                 btn.style.cssText = `
-                    width:36px;height:32px;padding:0;font-size:12px;font-weight:bold;
+                    width:40px;height:36px;padding:0;font-size:13px;font-weight:bold;
                     border:2px solid #111;background:#070707;
                     color:#1a1a1a;cursor:default;`;
             }
@@ -9416,43 +9367,62 @@ if (cs) {
     invBtn.addEventListener('touchcancel',_invCancel);
     utilCol.appendChild(invBtn);
 
+    // STAT POINTS button — only when points available
+    const _sp = gameState.player.statPoints || 0;
+    if (_sp > 0) {
+        const statBtn = document.createElement('button');
+        statBtn.innerHTML = `⬆ ${_sp} pts`;
+        statBtn.title = `${_sp} stat point${_sp>1?'s':''} to spend`;
+        statBtn.style.cssText = 'padding:4px 6px;font-size:12px;border-color:#FFD700;color:#FFD700;font-weight:bold;animation:hpLowPulse 1.2s ease-in-out infinite;';
+        statBtn.onclick = () => { showLevelUpModal(); };
+        utilCol.appendChild(statBtn);
+    }
+
     navWrap.appendChild(utilCol);
     ab.appendChild(navWrap);
 }
 
 
 // ── Full-screen dungeon inventory (replaces old potion menu) ─────────
-function showDungeonInventory() {
-    const ab = document.getElementById('actionBar');
+function showDungeonInventory() { showInventoryOverlay(); }
+
+// ── Unified full-screen inventory overlay (dungeon + exploration, combat + not) ──
+function showInventoryOverlay() {
     const p  = gameState.player;
     const cs = gameState.combatState;
     const inCombat = cs && !cs.combatOver;
+    const inDungeon = !!gameState.dungeon;
+    const playerClass = p.baseClass || p.class;
+    const hasStatPoints = (p.statPoints || 0) > 0;
+
+    function closeOverlay() {
+        const ov = document.getElementById('dungeonInvOverlay');
+        if (ov) ov.remove();
+        if (inDungeon) renderDungeonActionBar();
+        else renderActionBar();
+    }
 
     function potColor(st) {
-        if (st==='heal_hp') return '#ff4444';
-        if (st==='heal_mp') return '#4488ff';
+        if (st==='heal_hp')      return '#ff4444';
+        if (st==='heal_mp')      return '#4488ff';
         if (st==='full_restore') return '#FFD700';
-        if (st==='recall') return '#AA88FF';
+        if (st==='recall')       return '#AA88FF';
         if (st?.startsWith('buff_')) return '#00FF88';
         return '#00FF00';
     }
     function potIcon(st) {
-        if (st==='heal_hp') return '❤️';
-        if (st==='heal_mp') return '💙';
+        if (st==='heal_hp')      return '❤️';
+        if (st==='heal_mp')      return '💙';
         if (st==='full_restore') return '✨';
-        if (st==='recall') return '🌀';
-        if (st==='buff_str') return '💪';
-        if (st==='buff_def') return '🛡️';
-        if (st==='buff_magic') return '🔮';
-        if (st==='buff_damage') return '⚔️';
-        if (st==='buff_regen') return '💚';
-        if (st==='buff_crit') return '🎯';
+        if (st==='recall')       return '🌀';
+        if (st==='buff_str')     return '💪';
+        if (st==='buff_def')     return '🛡️';
+        if (st==='buff_magic')   return '🔮';
+        if (st==='buff_damage')  return '⚔️';
+        if (st==='buff_regen')   return '💚';
+        if (st==='buff_crit')    return '🎯';
         if (st?.startsWith('buff_')) return '🧪';
         return '🧪';
-    }
-    function backFn() {
-        if (inCombat) renderDungeonActionBar();
-        else renderDungeonActionBar();
     }
 
     // ── Potions ──────────────────────────────────────────────────────
@@ -9460,7 +9430,7 @@ function showDungeonInventory() {
     p.inventory.forEach(ik => {
         const item = ITEMS[ik];
         if (!item) return;
-        if (item.subtype === 'recall' && inCombat) return; // no recall during combat
+        if (item.subtype === 'recall' && inCombat) return;
         if (['heal_hp','heal_mp','full_restore','recall'].includes(item.subtype) || item.subtype?.startsWith('buff_')) {
             if (!potions[ik]) potions[ik] = { item, count: 0 };
             potions[ik].count++;
@@ -9468,7 +9438,6 @@ function showDungeonInventory() {
     });
 
     // ── Weapons ──────────────────────────────────────────────────────
-    const playerClass = p.baseClass || p.class;
     const weapons = p.inventory.filter(ik => {
         const w = WEAPONS[ik];
         return w && !w.unarmed && canUseWeapon(playerClass, w);
@@ -9480,30 +9449,74 @@ function showDungeonInventory() {
         return a && !a.unarmored && canUseArmor(playerClass, a);
     });
 
-    let html = `
-    <div style="
-        position:fixed;inset:0;z-index:9999;
-        background:rgba(0,0,0,0.5);
-        display:flex;align-items:center;justify-content:center;
-        padding:10px;box-sizing:border-box;
-    ">
-        <div style="
-            max-width:800px;width:100%;max-height:90vh;
-            background:#000d00;border:2px solid var(--border-color);
-            overflow-y:auto;padding:10px;box-sizing:border-box;
-            font-family:'VT323',monospace;
-        ">
-        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:6px;margin-bottom:10px;">
-            <span style="color:var(--highlight-color);font-size:18px;letter-spacing:3px;">🎒 DUNGEON INVENTORY</span>
-            <button onclick="document.getElementById('dungeonInvOverlay').remove(); renderDungeonActionBar();" style="font-size:14px;padding:4px 10px;border-color:#ff4444;color:#ff4444;">✕ CLOSE</button>
-        </div>
-        <div style="color:#8aaa8a;font-size:13px;margin-bottom:8px;">
-            ❤️ ${p.hp}/${p.maxHp} HP &nbsp;|&nbsp; 💙 ${p.mp}/${p.maxMp} MP
-            ${inCombat ? ' &nbsp;|&nbsp; <span style="color:#ff4444;">⚔️ IN COMBAT</span>' : ''}
-        </div>
-    `;
+    // ── Healing spells (out of combat only) ──────────────────────────
+    let healingSpellsHtml = '';
+    if (!inCombat && p.knownSpells && p.knownSpells.length > 0) {
+        const spellTree = CLASS_SPELL_TREES[playerClass]?.spellTree || {};
+        const healSpells = p.knownSpells.filter(sk => {
+            const sp = SPELLS[sk] || spellTree[sk];
+            return sp && (sp.type === 'heal' || sp.type === 'lifesteal');
+        });
+        if (healSpells.length > 0) {
+            healingSpellsHtml = `<div style="color:var(--highlight-color);font-size:15px;letter-spacing:2px;margin:10px 0 6px;">— HEALING SPELLS —</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">`;
+            healSpells.forEach(sk => {
+                const sp = SPELLS[sk] || spellTree[sk];
+                const atFull = p.hp >= p.maxHp;
+                const noMp   = p.mp < sp.mpCost;
+                const dis    = atFull || noMp;
+                healingSpellsHtml += `<button onclick="castHealingSpellOutOfCombat('${sk}');showInventoryOverlay();"
+                    ${dis?'disabled':''} style="padding:8px 10px;font-size:14px;
+                    color:#00FF00;border:2px solid #00FF00;background:#050a05;opacity:${dis?0.4:1};">
+                    ✨ ${sp.name}<br><span style="color:#aaa;font-size:11px;">${sp.mpCost} MP</span>
+                </button>`;
+            });
+            healingSpellsHtml += `</div>`;
+        }
+    }
 
-    // POTIONS SECTION
+    // ── Build HTML ───────────────────────────────────────────────────
+    let html = `
+    <div id="dungeonInvOverlay" style="
+        position:fixed;inset:0;z-index:2500;
+        background:#000d00;
+        display:flex;flex-direction:column;
+        font-family:'VT323',monospace;
+        overflow:hidden;
+    ">
+        <!-- Fixed header -->
+        <div style="flex:0 0 auto;padding:10px 12px 8px;border-bottom:2px solid var(--border-color);
+                    display:flex;justify-content:space-between;align-items:center;background:#000d00;">
+            <span style="color:var(--highlight-color);font-size:20px;letter-spacing:3px;">🎒 INVENTORY</span>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <span style="color:#8aaa8a;font-size:14px;">
+                    ❤️ ${p.hp}/${p.maxHp} &nbsp; 💙 ${p.mp}/${p.maxMp}
+                    ${inCombat ? ' &nbsp;<span style="color:#ff4444;">⚔️ COMBAT</span>' : ''}
+                </span>
+                <button onclick="(document.getElementById('dungeonInvOverlay').remove(),${inDungeon?'renderDungeonActionBar()':'renderActionBar()'})"
+                    style="font-size:14px;padding:4px 12px;border-color:#ff4444;color:#ff4444;">✕ CLOSE</button>
+            </div>
+        </div>
+
+        <!-- Scrollable body -->
+        <div style="flex:1 1 0;overflow-y:auto;padding:10px 12px;-webkit-overflow-scrolling:touch;">`;
+
+    // STAT POINTS BUTTON — only when points available
+    if (hasStatPoints) {
+        html += `
+        <div style="margin-bottom:14px;">
+            <button onclick="document.getElementById('dungeonInvOverlay').remove();
+                             ${inDungeon ? 'renderDungeonActionBar();' : 'renderActionBar();'}
+                             showLevelUpModal();"
+                style="width:100%;padding:12px;font-size:18px;font-weight:bold;
+                       border:2px solid #FFD700;color:#FFD700;background:#0a0800;
+                       animation:hpLowPulse 1.2s ease-in-out infinite;">
+                ⬆ ${p.statPoints} STAT POINT${p.statPoints>1?'S':''} TO SPEND — Tap to Allocate
+            </button>
+        </div>`;
+    }
+
+    // POTIONS
     html += `<div style="color:var(--highlight-color);font-size:15px;letter-spacing:2px;margin-bottom:6px;">— POTIONS —</div>`;
     const potKeys = Object.keys(potions);
     if (potKeys.length === 0) {
@@ -9517,33 +9530,34 @@ function showDungeonInventory() {
             const atFull = (pd.item.subtype==='heal_hp' && p.hp>=p.maxHp) ||
                            (pd.item.subtype==='heal_mp' && p.mp>=p.maxMp) ||
                            (pd.item.subtype==='full_restore' && p.hp>=p.maxHp && p.mp>=p.maxMp);
-            const useFn = inCombat ? `usePotion('${pk}');document.getElementById('dungeonInvOverlay').remove();renderDungeonActionBar();`
-                                   : `usePotionExplore('${pk}');document.getElementById('dungeonInvOverlay').remove();renderDungeonActionBar();`;
-            html += `
-            <button onclick="${useFn}" ${atFull?'disabled':''} style="
-                min-width:100px;padding:8px 10px;
+            const useFn = inCombat
+                ? `usePotion('${pk}');showInventoryOverlay();`
+                : `usePotionExplore('${pk}');showInventoryOverlay();`;
+            html += `<button onclick="${useFn}" ${atFull?'disabled':''} style="
+                min-width:110px;padding:10px 12px;
                 color:${col};border:2px solid ${col};
-                background:#050a05;font-size:14px;
-                opacity:${atFull?0.4:1};text-align:center;
-            ">
+                background:#050a05;font-size:15px;
+                opacity:${atFull?0.4:1};text-align:center;">
                 ${ico} ${pd.item.name}<br>
-                <span style="color:#aaa;font-size:12px;">x${pd.count} — Use (no pip)</span>
+                <span style="color:#aaa;font-size:12px;">x${pd.count}</span>
             </button>`;
         });
         html += `</div>`;
     }
 
-    // WEAPONS SECTION
+    // HEALING SPELLS
+    html += healingSpellsHtml;
+
+    // WEAPONS
     html += `<div style="color:var(--highlight-color);font-size:15px;letter-spacing:2px;margin-bottom:6px;">— WEAPONS —</div>`;
     html += `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">`;
-    // Equipped slot
     const eqW = WEAPONS[p.weapon];
     if (eqW && !eqW.unarmed) {
         const qc = QUALITY_CONFIG[eqW.quality];
-        html += `<div style="min-width:120px;padding:8px;border:2px solid ${qc?.color||'#0f0'};background:#050a05;font-size:13px;">
+        html += `<div style="min-width:130px;padding:10px;border:2px solid ${qc?.color||'#0f0'};background:#050a05;font-size:14px;">
             <div style="color:${qc?.color||'#0f0'};">${eqW.name}</div>
-            <div style="color:#aaa;font-size:11px;">DMG ${eqW.baseDamage}-${eqW.maxDamage||eqW.baseDamage}</div>
-            <div style="color:var(--highlight-color);font-size:11px;">★ EQUIPPED</div>
+            <div style="color:#aaa;font-size:12px;">DMG ${eqW.baseDamage}–${eqW.maxDamage||eqW.baseDamage}</div>
+            <div style="color:var(--highlight-color);font-size:12px;">★ EQUIPPED</div>
         </div>`;
     }
     if (weapons.length === 0 && (!eqW || eqW.unarmed)) {
@@ -9553,26 +9567,27 @@ function showDungeonInventory() {
         if (ik === p.weapon) return;
         const w = WEAPONS[ik];
         const qc = QUALITY_CONFIG[w.quality];
-        html += `<button onclick="equipItem('weapon','${ik}');document.getElementById('dungeonInvOverlay').remove();renderDungeonActionBar();" style="
-            min-width:120px;padding:8px;border:2px solid ${qc?.color||'#0f0'};
-            background:#050a05;font-size:13px;text-align:left;cursor:pointer;">
+        const closeFn = inDungeon ? 'renderDungeonActionBar()' : 'renderActionBar()';
+        html += `<button onclick="equipItem('weapon','${ik}');document.getElementById('dungeonInvOverlay').remove();${closeFn};" style="
+            min-width:130px;padding:10px;border:2px solid ${qc?.color||'#0f0'};
+            background:#050a05;font-size:14px;text-align:left;cursor:pointer;">
             <div style="color:${qc?.color||'#0f0'};">${w.name}</div>
-            <div style="color:#aaa;font-size:11px;">DMG ${w.baseDamage}-${w.maxDamage||w.baseDamage}</div>
-            <div style="color:#FFD700;font-size:11px;">▶ EQUIP</div>
+            <div style="color:#aaa;font-size:12px;">DMG ${w.baseDamage}–${w.maxDamage||w.baseDamage}</div>
+            <div style="color:#FFD700;font-size:12px;">▶ EQUIP</div>
         </button>`;
     });
     html += `</div>`;
 
-    // ARMOR SECTION
+    // ARMOR
     html += `<div style="color:var(--highlight-color);font-size:15px;letter-spacing:2px;margin-bottom:6px;">— ARMOR —</div>`;
-    html += `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">`;
+    html += `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px;">`;
     const eqA = ARMOR[p.armor];
     if (eqA && !eqA.unarmored) {
         const qc = QUALITY_CONFIG[eqA.quality];
-        html += `<div style="min-width:120px;padding:8px;border:2px solid ${qc?.color||'#0f0'};background:#050a05;font-size:13px;">
+        html += `<div style="min-width:130px;padding:10px;border:2px solid ${qc?.color||'#0f0'};background:#050a05;font-size:14px;">
             <div style="color:${qc?.color||'#0f0'};">${eqA.name}</div>
-            <div style="color:#aaa;font-size:11px;">DEF ${eqA.baseDefense}</div>
-            <div style="color:var(--highlight-color);font-size:11px;">★ EQUIPPED</div>
+            <div style="color:#aaa;font-size:12px;">DEF ${eqA.baseDefense}</div>
+            <div style="color:var(--highlight-color);font-size:12px;">★ EQUIPPED</div>
         </div>`;
     }
     if (armors.length === 0 && (!eqA || eqA.unarmored)) {
@@ -9582,32 +9597,34 @@ function showDungeonInventory() {
         if (ik === p.armor) return;
         const a = ARMOR[ik];
         const qc = QUALITY_CONFIG[a.quality];
-        html += `<button onclick="equipItem('armor','${ik}');document.getElementById('dungeonInvOverlay').remove();renderDungeonActionBar();" style="
-            min-width:120px;padding:8px;border:2px solid ${qc?.color||'#0f0'};
-            background:#050a05;font-size:13px;text-align:left;cursor:pointer;">
+        const closeFn = inDungeon ? 'renderDungeonActionBar()' : 'renderActionBar()';
+        html += `<button onclick="equipItem('armor','${ik}');document.getElementById('dungeonInvOverlay').remove();${closeFn};" style="
+            min-width:130px;padding:10px;border:2px solid ${qc?.color||'#0f0'};
+            background:#050a05;font-size:14px;text-align:left;cursor:pointer;">
             <div style="color:${qc?.color||'#0f0'};">${a.name}</div>
-            <div style="color:#aaa;font-size:11px;">DEF ${a.baseDefense}</div>
-            <div style="color:#FFD700;font-size:11px;">▶ EQUIP</div>
+            <div style="color:#aaa;font-size:12px;">DEF ${a.baseDefense}</div>
+            <div style="color:#FFD700;font-size:12px;">▶ EQUIP</div>
         </button>`;
     });
     html += `</div>`;
 
-    // Bottom CLOSE button
-    html += `
-    <div style="margin-top:16px;text-align:center;padding-top:10px;border-top:1px solid var(--border-color);">
-        <button onclick="document.getElementById('dungeonInvOverlay').remove(); renderDungeonActionBar();" style="font-size:16px;padding:8px 24px;border-color:#ff4444;color:#ff4444;">✕ CLOSE</button>
-    </div>`;
-
-    html += `</div>`; // end inner container
+    html += `</div>`; // end scrollable body
     html += `</div>`; // end overlay
 
-    // Inject as overlay div (not into actionBar — covers whole screen)
     const existing = document.getElementById('dungeonInvOverlay');
     if (existing) existing.remove();
     const overlay = document.createElement('div');
     overlay.id = 'dungeonInvOverlay';
     overlay.innerHTML = html;
-    document.body.appendChild(overlay);
+    // Move the actual overlay div (not wrapper) to body
+    const innerEl = overlay.firstElementChild;
+    if (innerEl) {
+        innerEl.id = 'dungeonInvOverlay';
+        overlay.id = '';
+        document.body.appendChild(innerEl);
+    } else {
+        document.body.appendChild(overlay);
+    }
 }
 
 // ── Central dungeon navigation handler (buttons + keyboard) ──────────
@@ -9675,7 +9692,7 @@ function dungeonNav(input) {
                     const rsReady = rsPips >= 3;
                     const rp1 = rsPips >= 1 ? '🔶' : '⬛'; const rp2 = rsPips >= 2 ? '🔶' : '⬛'; const rp3 = rsPips >= 3 ? '🔶' : '⬛';
                     const attackBtnHTML = isRunesmith
-                        ? `<button onclick="showAttackMenu()" ${!canAct?'disabled':''} class="action-icon-btn pip-btn" id="pipBtn-attack" title="${rsReady ? 'OVERLOAD — Strike! [1]' : 'Attack [1]'}" style="${rsReady ? 'border-color:#FF4400;box-shadow:0 0 8px #FF4400,0 0 16px #FF8800;animation:runeOverloadPulse 0.7s ease-in-out infinite;' : ''}">${rsReady ? '🔥⚒️' : '⚒️'}<span class="kb-hint">1</span></button>`
+                        ? `<button onclick="showAttackMenu()" ${!canAct?'disabled':''} class="action-icon-btn pip-btn" id="pipBtn-attack" title="${rsReady ? 'OVERLOAD — Strike! [1]' : 'Attack [1]'}" style="${rsReady ? 'border-color:#FF4400;box-shadow:0 0 8px #FF4400,0 0 16px #FF8800;animation:runeOverloadPulse 0.7s ease-in-out infinite;' : ''}">⚒️<span class="kb-hint">1</span></button>`
                         : `<button onclick="showAttackMenu()" ${!canAct?'disabled':''} class="action-icon-btn pip-btn" title="Attack [1]" id="pipBtn-attack">⚔️<span class="kb-hint">1</span></button>`;
                     const spellBtnHTML = isRunesmith
                         ? `<button onclick="showSpellMenu()" ${!canAct?'disabled':''} class="action-icon-btn pip-btn" id="pipBtn-spell" title="Cast Rune [2]" style="border-color:#c8a000;"><span style="font-size:9px;line-height:1;display:block;">${rsReady ? '⚡READY' : rp1+rp2+rp3}</span>✨<span class="kb-hint">2</span></button>`
@@ -9757,12 +9774,13 @@ function dungeonNav(input) {
                             ⏳ Pips recovering: ${'●'.repeat(ready) + '○'.repeat(total-ready)} — wait to leave</div>`;
                     }
                 }
+                const _xpSp = gameState.player.statPoints || 0;
                 ab.innerHTML = `
                     ${pipWarning}
-                    <div style="display:flex;gap:3px;width:100%;">
+                    <div style="display:flex;gap:3px;width:100%;flex-wrap:wrap;">
                         <button onclick="exploreLocation('${gameState.currentLocation}')" style="flex:2;" title="Explore [1]">🔍 Explore<span class="kb-hint">1</span></button>
                         <button onclick="showCombatInventory()" class="action-icon-btn" title="Inventory [3]" style="border-color:#00FF88;">🎒<span class="kb-hint">3</span></button>
-                        <button onclick="printStatsToTerminal()" class="action-icon-btn" title="Show Stats [4]" style="border-color:#4488ff;">📊<span class="kb-hint">4</span></button>
+                        ${_xpSp > 0 ? `<button onclick="showLevelUpModal()" class="action-icon-btn" title="${_xpSp} stat points to spend" style="border-color:#FFD700;color:#FFD700;font-weight:bold;animation:hpLowPulse 1.2s ease-in-out infinite;">⬆${_xpSp}<span class="kb-hint">S</span></button>` : ''}
                         <button onclick="leaveExploreToTown()" ${canLeave ? '' : 'disabled'}
                             style="flex:1;${canLeave ? '' : 'opacity:0.4;'}border-color:${canLeave ? 'var(--text-color)' : '#888'};" title="Return to Town [5]">
                             🏘️<span class="kb-hint">5</span>
@@ -12097,124 +12115,7 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
         // ═══════════════════════════════════════════════════════════════
         // UNIFIED COMBAT INVENTORY (replaces old potion menu in exploration)
         // ═══════════════════════════════════════════════════════════════
-        function showCombatInventory() {
-            const isDungeon = !!gameState.dungeon;
-            if (isDungeon) {
-                // In dungeon, use the full-screen overlay
-                showDungeonInventory();
-            } else {
-                // In exploration, show inline inventory in action bar
-                const ab = document.getElementById('actionBar');
-                const p  = gameState.player;
-                const cs = gameState.combatState;
-                const inCombat = cs && !cs.combatOver;
-
-                // Count potions
-                const potions = {};
-                p.inventory.forEach(ik => {
-                    const item = ITEMS[ik];
-                    if (!item) return;
-                    if (item.subtype === 'recall' && inCombat) return; // no recall during combat
-                    if (['heal_hp','heal_mp','full_restore','recall'].includes(item.subtype) || item.subtype?.startsWith('buff_')) {
-                        if (!potions[ik]) potions[ik] = { item, count: 0 };
-                        potions[ik].count++;
-                    }
-                });
-
-                const playerClass = p.baseClass || p.class;
-
-                // Get equippable weapons and armor
-                const weapons = p.inventory.filter(ik => {
-                    const w = WEAPONS[ik];
-                    return w && !w.unarmed;
-                });
-
-                const armors = p.inventory.filter(ik => {
-                    const a = ARMOR[ik];
-                    return a && !a.unarmored;
-                });
-
-                let html = `<div style="color:var(--highlight-color);font-size:12px;margin-bottom:4px;">
-                    🎒 INVENTORY — HP: ${p.hp}/${p.maxHp} | MP: ${p.mp}/${p.maxMp}
-                </div>`;
-
-                // Potions
-                const potKeys = Object.keys(potions);
-                if (potKeys.length > 0) {
-                    html += `<div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:6px;">`;
-                    potKeys.forEach(pk => {
-                        const pd = potions[pk];
-                        const col = pd.item.subtype === 'heal_hp' ? '#ff4444' : pd.item.subtype === 'heal_mp' ? '#4488ff' : pd.item.subtype === 'full_restore' ? '#FFD700' : '#00FF88';
-                        const atFull = (pd.item.subtype==='heal_hp' && p.hp>=p.maxHp) || (pd.item.subtype==='heal_mp' && p.mp>=p.maxMp) || (pd.item.subtype==='full_restore' && p.hp>=p.maxHp && p.mp>=p.maxMp);
-                        const useFn = inCombat ? `usePotion('${pk}')` : `usePotionExplore('${pk}')`;
-                        html += `<button onclick="${useFn};renderActionBar();" ${atFull?'disabled':''} style="min-width:60px;padding:3px 5px;font-size:11px;color:${col};border-color:${col};opacity:${atFull?0.4:1};">
-                            ${pd.item.name.substring(0,10)} x${pd.count}</button>`;
-                    });
-                    html += `</div>`;
-                }
-
-                // Weapons (show first 3)
-                if (weapons.length > 0) {
-                    html += `<div style="font-size:11px;color:#8aaa8a;margin-bottom:2px;">Weapons:</div>`;
-                    html += `<div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:6px;">`;
-                    weapons.slice(0, 3).forEach(ik => {
-                        if (ik === p.weapon) return;
-                        const w = WEAPONS[ik];
-                        const canEquip = canUseWeapon(playerClass, w);
-                        const qc = QUALITY_CONFIG[w.quality];
-                        html += `<button onclick="equipItem('weapon','${ik}');renderActionBar();" ${canEquip?'':'disabled'} style="padding:3px 5px;font-size:10px;color:${qc?.color||'#0f0'};opacity:${canEquip?1:0.4};">
-                            ${w.name.substring(0,12)}</button>`;
-                    });
-                    if (weapons.length > 3) html += `<span style="font-size:10px;color:#666;">+${weapons.length-3} more</span>`;
-                    html += `</div>`;
-                }
-
-                // Armor (show first 3)
-                if (armors.length > 0) {
-                    html += `<div style="font-size:11px;color:#8aaa8a;margin-bottom:2px;">Armor:</div>`;
-                    html += `<div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:6px;">`;
-                    armors.slice(0, 3).forEach(ik => {
-                        if (ik === p.armor) return;
-                        const a = ARMOR[ik];
-                        const canEquip = canUseArmor(playerClass, a);
-                        const qc = QUALITY_CONFIG[a.quality];
-                        html += `<button onclick="equipItem('armor','${ik}');renderActionBar();" ${canEquip?'':'disabled'} style="padding:3px 5px;font-size:10px;color:${qc?.color||'#0f0'};opacity:${canEquip?1:0.4};">
-                            ${a.name.substring(0,12)}</button>`;
-                    });
-                    if (armors.length > 3) html += `<span style="font-size:10px;color:#666;">+${armors.length-3} more</span>`;
-                    html += `</div>`;
-                }
-
-                // Healing Spells (available out of combat)
-                if (!inCombat && p.knownSpells && p.knownSpells.length > 0) {
-                    const classKey = p.baseClass || p.class;
-                    const spellTree = CLASS_SPELL_TREES[classKey]?.spellTree || {};
-                    
-                    // Find healing spells
-                    const healingSpells = p.knownSpells.filter(sk => {
-                        const spell = SPELLS[sk] || spellTree[sk];
-                        return spell && (spell.type === 'heal' || spell.type === 'lifesteal');
-                    });
-                    
-                    if (healingSpells.length > 0) {
-                        html += `<div style="font-size:11px;color:#8aaa8a;margin-bottom:2px;">Healing Spells:</div>`;
-                        html += `<div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:6px;">`;
-                        healingSpells.forEach(sk => {
-                            const spell = SPELLS[sk] || spellTree[sk];
-                            const atFull = p.hp >= p.maxHp;
-                            const notEnoughMp = p.mp < spell.mpCost;
-                            const disabled = atFull || notEnoughMp;
-                            html += `<button onclick="castHealingSpellOutOfCombat('${sk}');renderActionBar();" ${disabled?'disabled':''} style="padding:3px 5px;font-size:10px;color:#00FF00;border-color:#00FF00;opacity:${disabled?0.4:1};">
-                                ${spell.name} (${spell.mpCost} MP)</button>`;
-                        });
-                        html += `</div>`;
-                    }
-                }
-
-                html += `<button onclick="renderActionBar()" style="width:100%;padding:4px;">← BACK</button>`;
-                ab.innerHTML = html;
-            }
-        }
+        function showCombatInventory() { showInventoryOverlay(); }
 
         function castHealingSpellOutOfCombat(spellKey) {
             const p = gameState.player;
@@ -12875,7 +12776,8 @@ function checkCombatEnd() {
         if (p.xp >= p.xpToNext) {
             levelUp();
             termAppend(`<span style="color:var(--highlight-color);font-size:18px;">⬆️ LEVEL UP! You are now level ${p.level}!</span>`, 'term-victory');
-            termAppend(`<span style="color:#FFD700;">+3 Stat Points! </span><span style="color:#00FFFF;">→ Spend them at CHARACTER STATS in town.</span>`, 'term-loot');
+            termAppend(`<span style="color:#FFD700;">+3 Stat Points earned!</span>`, 'term-loot');
+            termAppend(`<span style="color:#00FFFF;">→ A stat allocation screen will appear — or tap </span><span style="color:#FFD700;font-weight:bold;">⬆ pts</span><span style="color:#00FFFF;"> in the compass panel, or open </span><span style="color:#00FF88;font-weight:bold;">🎒 Inventory</span><span style="color:#00FFFF;">.</span>`, 'term-loot');
         }
         
         // Add to defeated list and remove from active combat
@@ -13250,8 +13152,13 @@ function endCombat(victory) {
     // Check for level-up (possibly multiple levels)
     while (gameState.player.xp >= gameState.player.xpToNext && gameState.player.level < 25) {
         levelUp();
-        termAppend(`⬆️ LEVEL UP! You are now level ${gameState.player.level}!`, 'term-victory');
-        termAppend(`<span style="color:#00FFFF;">+3 Stat Points! → Spend them at CHARACTER STATS in town.</span>`, 'term-loot');
+        termAppend(`<span style="color:var(--highlight-color);font-size:18px;">⬆️ LEVEL UP! You are now level ${gameState.player.level}!</span>`, 'term-victory');
+        termAppend(`<span style="color:#FFD700;">+3 Stat Points earned!</span>`, 'term-loot');
+        if (gameState.dungeon) {
+            termAppend(`<span style="color:#00FFFF;">→ Tap </span><span style="color:#FFD700;font-weight:bold;">⬆ pts</span><span style="color:#00FFFF;"> in the compass panel, or open </span><span style="color:#00FF88;font-weight:bold;">🎒 Inventory</span><span style="color:#00FFFF;"> to spend them now.</span>`, 'term-loot');
+        } else {
+            termAppend(`<span style="color:#00FFFF;">→ Tap </span><span style="color:#00FF88;font-weight:bold;">🎒 Inventory</span><span style="color:#00FFFF;"> to spend them now, or visit </span><span style="color:#FFD700;font-weight:bold;">CHARACTER STATS</span><span style="color:#00FFFF;"> in town.</span>`, 'term-loot');
+        }
         
         // Check for class evolution announcement
         if (gameState.player._justEvolved) {
@@ -13545,6 +13452,104 @@ function playerIsExhausted() {
         // END ADVANCED CLASS SYSTEM
         // ═══════════════════════════════════════════════════════════════
 
+        // ── Dungeon level-up modal — appears over the action bar when levelling in-dungeon ──
+        function showLevelUpModal() {
+            // Remove any existing modal
+            const old = document.getElementById('levelUpModal');
+            if (old) old.remove();
+            window._statPending = {};
+            _renderLevelUpModal();
+        }
+
+        function _renderLevelUpModal() {
+            const p = gameState.player;
+            const old = document.getElementById('levelUpModal');
+            if (old) old.remove();
+
+            const pointsLeft   = p.statPoints;
+            const pointsQueued = STAT_NAMES.reduce((a,s) => a + (window._statPending[s]||0), 0);
+            const hasChanges   = pointsQueued > 0;
+            const allSpent     = pointsLeft === 0;
+
+            const modal = document.createElement('div');
+            modal.id = 'levelUpModal';
+            modal.style.cssText = `
+                position:fixed;top:0;left:0;right:0;bottom:0;
+                background:rgba(0,0,0,0.88);z-index:3000;
+                display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+                overflow-y:auto;padding:16px 12px 24px;box-sizing:border-box;
+            `;
+
+            const affinities = CLASS_AFFINITIES[p.baseClass || p.class] || [];
+            let rows = '';
+            STAT_NAMES.forEach(s => {
+                const isAff  = affinities.includes(s);
+                const canUp  = pointsLeft > 0;
+                const base   = p[s] || 0;
+                const queued = window._statPending[s] || 0;
+                rows += `
+                <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #1a4a1a;flex-wrap:wrap;">
+                    <span style="min-width:38px;color:${isAff?'#FFD700':'#00FF00'};font-weight:bold;">${STAT_LABELS[s]}</span>
+                    <span style="flex:1;min-width:100px;font-size:14px;color:#8aaa8a;">${STAT_DESCS[s]}${isAff?' ★':''}</span>
+                    <span style="min-width:28px;text-align:center;color:#FFD700;font-size:22px;">${base}</span>
+                    ${queued > 0
+                        ? `<span style="color:#00FF00;font-size:16px;min-width:24px;">+${queued}</span>`
+                        : `<span style="min-width:24px;"></span>`}
+                    <button onclick="_statPend('${s}')" ${canUp?'':'disabled'}
+                        style="width:38px;height:38px;padding:0;font-size:22px;font-weight:bold;
+                               border-color:${canUp?'#00FF00':'#333'};color:${canUp?'#00FF00':'#333'};">+</button>
+                </div>`;
+            });
+
+            modal.innerHTML = `
+                <div style="width:100%;max-width:480px;">
+                    <div style="color:#FFD700;font-size:22px;font-weight:bold;text-align:center;margin-bottom:4px;">
+                        ⬆ LEVEL UP! — Now Level ${p.level}
+                    </div>
+                    <div style="color:#00FF00;font-size:13px;text-align:center;margin-bottom:12px;">
+                        HP and MP fully restored.
+                    </div>
+
+                    <div style="background:#0a1a0a;border:1px solid ${pointsLeft>0?'#FFD700':'#1a4a1a'};
+                                border-radius:6px;padding:8px 12px;margin-bottom:10px;display:flex;align-items:center;gap:10px;">
+                        <span style="color:${pointsLeft>0?'#FFD700':'#8aaa8a'};">Points to spend:</span>
+                        <span style="font-size:26px;color:${pointsLeft>0?'#fff':'#555'};">${pointsLeft}</span>
+                        ${pointsLeft>0 ? '<span style="color:#00FF00;font-size:13px;">— tap + to allocate</span>' : ''}
+                        <span style="color:#666;font-size:12px;margin-left:auto;">(★ = class affinity)</span>
+                    </div>
+
+                    <div style="background:#050f05;border:1px solid #1a3a1a;border-radius:6px;padding:4px 12px;margin-bottom:12px;">
+                        ${rows}
+                    </div>
+
+                    <div style="background:#0a0a1a;border:1px solid #1a1a3a;border-radius:6px;
+                                padding:8px 12px;font-size:13px;color:#8aaa8a;margin-bottom:14px;">
+                        HP ${p.hp}/${p.maxHp} &nbsp;|&nbsp; MP ${p.mp}/${p.maxMp} &nbsp;|&nbsp;
+                        Crit ${calcCritChance(p.lck,p)}% &nbsp;|&nbsp; Dodge ${calcDodgeChance(p.dex||0)}%
+                    </div>
+
+                    ${allSpent ? `
+                        <button onclick="_saveStatChanges(()=>{ document.getElementById('levelUpModal').remove(); })"
+                            style="width:100%;font-size:18px;padding:12px;border-color:#FFD700;color:#FFD700;font-weight:bold;margin-bottom:8px;">
+                            💾 SAVE &amp; CONTINUE
+                        </button>
+                    ` : `
+                        <button onclick="_saveStatChanges(()=>{ document.getElementById('levelUpModal').remove(); })"
+                            style="width:100%;font-size:16px;padding:10px;border-color:#555;color:#555;margin-bottom:8px;"
+                            ${hasChanges?'':'disabled'}>
+                            💾 SAVE &amp; CONTINUE${pointsLeft>0?' ('+pointsLeft+' unspent)':''}
+                        </button>
+                    `}
+                    <button onclick="document.getElementById('levelUpModal').remove();"
+                        style="width:100%;font-size:14px;padding:8px;border-color:#336633;color:#336633;">
+                        ✕ CLOSE (spend points later in Character Stats)
+                    </button>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+        }
+
         function levelUp() {
             const p = gameState.player;
             
@@ -13614,6 +13619,12 @@ function playerIsExhausted() {
             }
             
             // Spells are no longer auto-learned - must be purchased at temple!
+
+            // ── If player is in a dungeon, show the level-up stat modal immediately ──
+            if (gameState.dungeon && gameState.dungeon.active) {
+                // Small delay so the level-up terminal messages render first
+                setTimeout(showLevelUpModal, 400);
+            }
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -13865,7 +13876,9 @@ function playerIsExhausted() {
                 // Check for level up
                 while (p.xp >= p.xpToNext && p.level < 25) {
                     levelUp();
-                    termAppend(`⬆️ LEVEL UP! You are now level ${p.level}!`, 'term-victory');
+                    termAppend(`<span style="color:var(--highlight-color);font-size:18px;">⬆️ LEVEL UP! You are now level ${p.level}!</span>`, 'term-victory');
+                    termAppend(`<span style="color:#FFD700;">+3 Stat Points earned!</span>`, 'term-loot');
+                    termAppend(`<span style="color:#00FFFF;">→ Tap </span><span style="color:#00FF88;font-weight:bold;">🎒 Inventory</span><span style="color:#00FFFF;"> or the </span><span style="color:#FFD700;font-weight:bold;">⬆ pts</span><span style="color:#00FFFF;"> button to spend them now.</span>`, 'term-loot');
                     
                     // Check for class evolution
                     if (p._justEvolved) {
@@ -13922,73 +13935,109 @@ function playerIsExhausted() {
         // CHARACTER STATS & STAT ALLOCATION
         // ═══════════════════════════════════════════════════════════════
         
+        // ── Shared stat-allocation row builder (used by stats page + level-up modal) ──
+        // pending = object tracking how many points queued for each stat this session
+        function renderLiveStatRows(p, pending, pointsLeft) {
+            const affinities = CLASS_AFFINITIES[p.baseClass || p.class] || [];
+            let rows = '';
+            STAT_NAMES.forEach(s => {
+                const isAff  = affinities.includes(s);
+                const canUp  = pointsLeft > 0;
+                const base   = p[s] || 0;
+                const queued = pending[s] || 0;
+                const total  = base + queued;
+                rows += `
+                <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #1a4a1a;flex-wrap:wrap;">
+                    <span style="min-width:38px;color:${isAff?'var(--highlight-color)':'var(--text-color)'};font-weight:bold;">${STAT_LABELS[s]}</span>
+                    <span style="flex:1;min-width:110px;font-size:15px;color:#8aaa8a;">${STAT_DESCS[s]}${isAff?' ★':''}</span>
+                    <span style="min-width:28px;text-align:center;color:var(--highlight-color);font-size:22px;">${base}</span>
+                    ${queued > 0 ? `<span style="color:#00FF00;font-size:16px;">+${queued}</span>` : '<span style="min-width:20px;"></span>'}
+                    <button onclick="_statPend('${s}')" ${canUp?'':'disabled'}
+                        style="width:36px;height:36px;padding:0;font-size:22px;font-weight:bold;
+                               border-color:${canUp?'var(--text-color)':'#333'};
+                               color:${canUp?'var(--text-color)':'#333'};">+</button>
+                </div>`;
+            });
+            return rows;
+        }
+
+        // Pending points state (reset each time the stats page / modal opens)
+        window._statPending = {};
+        window._statPend = function(s) {
+            const p = gameState.player;
+            if (p.statPoints <= 0) return;
+            window._statPending[s] = (window._statPending[s] || 0) + 1;
+            p.statPoints--;
+            // If in dungeon modal, re-render that; otherwise re-render stats page
+            if (document.getElementById('levelUpModal')) {
+                _renderLevelUpModal();
+            } else {
+                showCharacterStats();
+            }
+        };
+
+        window._saveStatChanges = function(backFn) {
+            const p = gameState.player;
+            // Apply pending to actual stats
+            STAT_NAMES.forEach(s => {
+                const gained = window._statPending[s] || 0;
+                if (gained > 0) {
+                    p[s] = (p[s] || 0) + gained;
+                    if (s === 'con') { p.maxHp += gained; p.hp = Math.min(p.hp, p.maxHp); }
+                }
+            });
+            window._statPending = {};
+            saveGame();
+            if (backFn) backFn();
+        };
+
         function showCharacterStats() {
             checkGameVersion();
             const p = gameState.player;
             const screen = document.getElementById('mainScreen');
-            
-            // Initialize stat points if not present (old saves)
             if (p.statPoints === undefined) p.statPoints = 0;
-            
-            const hasPoints = p.statPoints > 0;
-            
+            // Reset pending when page first loads (not on re-render from +)
+            if (!window._statsPageOpen) {
+                window._statPending = {};
+                window._statsPageOpen = true;
+            }
+            const pointsLeft   = p.statPoints;
+            const pointsQueued = STAT_NAMES.reduce((a,s) => a + (window._statPending[s]||0), 0);
+            const hasChanges   = pointsQueued > 0;
+
             screen.innerHTML = `
                 <div class="location-header">📊 CHARACTER STATS</div>
-                <button onclick="showTown()" style="margin-bottom:10px;">← BACK TO TOWN</button>
-                ${renderPlayerStats()}
-                
-                <div class="message" style="border-color:${hasPoints ? '#FFD700' : 'var(--border-color)'};">
-                    <p><strong style="color:${hasPoints ? '#FFD700' : 'var(--highlight-color)'};">Available Stat Points: ${p.statPoints}</strong></p>
-                    ${hasPoints ? '<p style="color:#00FF00;">You have unspent stat points! Allocate them below.</p>' : '<p style="color:#888;">You gain 3 stat points per level up.</p>'}
+                <button onclick="window._statsPageOpen=false;showTown();" style="margin-bottom:10px;">← BACK TO TOWN</button>
+
+                <div class="message" style="border-color:${pointsLeft>0||hasChanges?'#FFD700':'var(--border-color)'};">
+                    <span style="color:${pointsLeft>0?'#FFD700':'var(--highlight-color)'};">Points to spend: </span>
+                    <span style="color:${pointsLeft>0?'var(--text-color)':'#888'};font-size:22px;">${pointsLeft}</span>
+                    ${pointsLeft>0 ? '<span style="color:#00FF00;font-size:14px;"> — click + to allocate</span>' : ''}
+                    <span style="color:#8aaa8a;font-size:13px;"> (★ = class affinity)</span>
                 </div>
-                
-                <div class="message">
-                    <h3 style="color:var(--highlight-color);">Core Stats</h3>
-                    ${renderStatRow('STR (Strength)', p.str, 'Increases physical damage')}
-                    ${renderStatRow('DEX (Dexterity)', p.dex, 'Increases dodge, accuracy, crit chance')}
-                    ${renderStatRow('CON (Constitution)', p.con, 'Increases HP gain per level')}
-                    ${renderStatRow('WIS (Wisdom)', p.wis, 'Increases spell damage and magic defense')}
-                    ${renderStatRow('CHA (Charisma)', p.cha, 'Reduces shop prices and inn costs')}
-                    ${renderStatRow('LCK (Luck)', p.lck, 'Increases crit chance and rare drops')}
+
+                <div style="max-width:520px;margin:0 auto;">
+                    ${renderLiveStatRows(p, window._statPending, pointsLeft)}
                 </div>
-                
-                <div class="message">
-                    <h3 style="color:var(--highlight-color);">Derived Stats</h3>
-                    <p><span class="stat-label">Level:</span> ${p.level}</p>
-                    <p><span class="stat-label">XP:</span> ${p.xp} / ${p.xpToNext}</p>
-                    <p><span class="stat-label">HP:</span> ${p.hp} / ${p.maxHp}</p>
-                    <p><span class="stat-label">MP:</span> ${p.mp} / ${p.maxMp}</p>
-                    <p><span class="stat-label">Physical Damage:</span> ${calculatePhysicalDamage()}</p>
-                    <p><span class="stat-label">Magic Damage:</span> ${calculateMagicDamage()}</p>
-                    <p><span class="stat-label">Defense:</span> ${calculateTotalDefense()}</p>
-                    <p><span class="stat-label">Crit Chance:</span> ${calcCritChance(p.lck, p)}%</p>
+
+                <div class="message" style="border-color:#005500;margin-top:12px;font-size:15px;">
+                    <span style="color:#8aaa8a;">DERIVED STATS</span><br>
+                    <span style="color:var(--highlight-color);">Lv ${p.level}</span>
+                    <span style="color:#8aaa8a;"> | </span>
+                    <span style="color:#ff6666;">HP ${p.hp}/${p.maxHp}</span>
+                    <span style="color:#8aaa8a;"> | </span>
+                    <span style="color:#6688ff;">MP ${p.mp}/${p.maxMp}</span><br>
+                    <span style="color:#aaa;">XP: ${p.xp}/${p.xpToNext} | Crit: ${calcCritChance(p.lck,p)}% | Dodge: ${calcDodgeChance(p.dex||0)}%</span><br>
+                    <span style="color:#ffcc88;">Melee: ${calculatePhysicalDamage()} | Magic: ${calculateMagicDamage()} | Def: ${calculateTotalDefense()}</span>
                 </div>
-                
-                ${hasPoints ? `
-                    <div class="message" style="border-color:#FFD700;">
-                        <h3 style="color:#FFD700;">Allocate Stat Points (${p.statPoints} remaining)</h3>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
-                            <button onclick="allocateStat('str')">+1 STR</button>
-                            <button onclick="allocateStat('dex')">+1 DEX</button>
-                            <button onclick="allocateStat('con')">+1 CON</button>
-                            <button onclick="allocateStat('wis')">+1 WIS</button>
-                            <button onclick="allocateStat('cha')">+1 CHA</button>
-                            <button onclick="allocateStat('lck')">+1 LCK</button>
-                        </div>
-                    </div>
+
+                ${hasChanges ? `
+                    <button onclick="_saveStatChanges(()=>{window._statsPageOpen=false;showCharacterStats();})"
+                        style="margin-top:12px;font-size:18px;border-color:#00FF00;color:#00FF00;width:100%;">
+                        💾 SAVE CHANGES
+                    </button>
                 ` : ''}
-                
-                <button onclick="showTown()">← BACK TO TOWN</button>
-            `;
-        }
-        
-        function renderStatRow(name, value, description) {
-            return `
-                <p>
-                    <span class="stat-label">${name}:</span> 
-                    <span style="color:#FFD700;">${value}</span>
-                    <span style="color:#888;font-size:12px;"> - ${description}</span>
-                </p>
+                <button onclick="window._statsPageOpen=false;showTown();" style="margin-top:8px;">← BACK TO TOWN</button>
             `;
         }
         
@@ -14042,26 +14091,7 @@ function playerIsExhausted() {
             return armor.baseDefense + qBonus + (p.con || 0);
         }
         
-        function allocateStat(statName) {
-            const p = gameState.player;
-            
-            if (p.statPoints <= 0) {
-                alert('No stat points available!');
-                return;
-            }
-            
-            p[statName]++;
-            p.statPoints--;
-            
-            // Update max HP if CON was increased
-            if (statName === 'con') {
-                p.maxHp += 1; // Small bonus for increasing CON
-                p.hp = Math.min(p.hp, p.maxHp);
-            }
-            
-            saveGame();
-            showCharacterStats(); // Refresh display
-        }
+
         
 
         // ═══════════════════════════════════════════════════════════════
