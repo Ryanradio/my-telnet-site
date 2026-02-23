@@ -84,7 +84,7 @@ const ARMOR = {
         baseMagicBonus: 0,
         cost: 400,
         level: 3,
-        quality: 'rare',
+        quality: 'normal',
         slot: 'armor',
         allowedClasses: ['rogue', 'ranger', 'hunter', 'archer']
     },
@@ -105,7 +105,7 @@ const ARMOR = {
         baseMagicBonus: 6,
         cost: 600,
         level: 4,
-        quality: 'rare',
+        quality: 'normal',
         slot: 'armor'
     },
     
@@ -125,7 +125,7 @@ const ARMOR = {
         baseMagicBonus: 0,
         cost: 1400,
         level: 6,
-        quality: 'rare',
+        quality: 'normal',
         slot: 'armor',
         allowedClasses: ['rogue', 'ranger', 'hunter', 'archer']
     },
@@ -146,7 +146,7 @@ const ARMOR = {
         baseMagicBonus: 15,
         cost: 2500,
         level: 8,
-        quality: 'epic',
+        quality: 'normal',
         slot: 'armor'
     },
     
@@ -157,7 +157,7 @@ const ARMOR = {
         baseMagicBonus: 5,
         cost: 6000,
         level: 12,
-        quality: 'epic',
+        quality: 'normal',
         slot: 'armor'
     },
     
@@ -168,7 +168,7 @@ const ARMOR = {
         baseMagicBonus: 10,
         cost: 13000,
         level: 16,
-        quality: 'legendary',
+        quality: 'normal',
         slot: 'armor'
     },
     
@@ -179,7 +179,7 @@ const ARMOR = {
         baseMagicBonus: 20,
         cost: 28000,
         level: 20,
-        quality: 'legendary',
+        quality: 'normal',
         slot: 'armor'
     },
     
