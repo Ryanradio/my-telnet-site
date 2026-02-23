@@ -207,6 +207,11 @@ body.terminal-mode #statusBars { display: block; }
     0%, 100% { opacity: 1; }
     50%       { opacity: 0.75; }
 }
+@keyframes runeOverloadPulse {
+    0%   { border-color:#FF4400; box-shadow:0 0 6px #FF4400, 0 0 14px #FF8800; }
+    50%  { border-color:#FFaa00; box-shadow:0 0 14px #FF8800, 0 0 28px #FFaa00; }
+    100% { border-color:#FF4400; box-shadow:0 0 6px #FF4400, 0 0 14px #FF8800; }
+}
 @keyframes hpLowPulse {
     0%, 100% { opacity: 1;    box-shadow: 0 0 6px #ff0000, 0 0 12px rgba(255,0,0,0.6); }
     50%       { opacity: 0.6; box-shadow: 0 0 2px #ff0000; }
@@ -1480,6 +1485,171 @@ const RARITY_CONFIG = {
 };
 
 
+
+// ═══════════════════════════════════════════════════════════════
+// GEM SYSTEM — Raw gems drop from enemies, cut at blacksmith,
+// socket into weapons for permanent bonuses.
+// Tier by enemy level: 1-6=T1, 7-12=T2, 13-18=T3, 19-24=T4
+// ═══════════════════════════════════════════════════════════════
+const GEM_TYPES = {
+    ruby:     { name: 'Ruby',     color: '#FF2244', emoji: '🔴', tier_color: '#FF2244',
+                desc: 'Red — Damage & Lifesteal',
+                stats: ['weaponDmg','weaponDmg','lifesteal'],
+                rolls: { weaponDmg: [2,8], lifesteal: [3,10] } },
+    sapphire: { name: 'Sapphire', color: '#2266FF', emoji: '🔵', tier_color: '#2266FF',
+                desc: 'Blue — Spell Power & MP',
+                stats: ['spellPower','spellPower','mpBonus'],
+                rolls: { spellPower: [3,10], mpBonus: [8,25] } },
+    topaz:    { name: 'Topaz',    color: '#FFD700', emoji: '🟡', tier_color: '#FFD700',
+                desc: 'Yellow — Crit Chance & Lightning Dmg',
+                stats: ['critBonus','critBonus','lightningDmg'],
+                rolls: { critBonus: [2,6], lightningDmg: [3,9] } },
+    emerald:  { name: 'Emerald',  color: '#00CC44', emoji: '🟢', tier_color: '#00CC44',
+                desc: 'Green — Poison & STR',
+                stats: ['poisonChance','poisonChance','strBonus'],
+                rolls: { poisonChance: [5,15], strBonus: [1,4] } },
+    amethyst: { name: 'Amethyst', color: '#AA44FF', emoji: '🟣', tier_color: '#AA44FF',
+                desc: 'Purple — Defense & HP',
+                stats: ['defenseBonus','defenseBonus','hpBonus'],
+                rolls: { defenseBonus: [2,7], hpBonus: [10,30] } },
+    onyx:     { name: 'Onyx',     color: '#888888', emoji: '⬛', tier_color: '#888888',
+                desc: 'Black — Armor Pierce & Speed',
+                stats: ['armorPierce','armorPierce','speedBonus'],
+                rolls: { armorPierce: [3,10], speedBonus: [2,5] } },
+    opal:     { name: 'Opal',     color: '#AADDFF', emoji: '🔷', tier_color: '#AADDFF',
+                desc: 'White — Luck & Gold Find',
+                stats: ['lckBonus','lckBonus','goldFind'],
+                rolls: { lckBonus: [1,4], goldFind: [5,15] } },
+    garnet:   { name: 'Garnet',   color: '#CC1133', emoji: '🟤', tier_color: '#CC1133',
+                desc: 'Garnet — STR & CON',
+                stats: ['strBonus','conBonus','strBonus'],
+                rolls: { strBonus: [1,4], conBonus: [1,4] } },
+
+    // ── EXPANSION GEMS ────────────────────────────────────────────
+    bloodstone: { name: 'Bloodstone', color: '#880022', emoji: '🩸', tier_color: '#880022',
+                desc: 'Dark Red — Max HP & HP Regeneration',
+                stats: ['hpBonus','hpBonus','hpRegen'],
+                rolls: { hpBonus: [15,40], hpRegen: [1,4] } },
+
+    moonstone:  { name: 'Moonstone',  color: '#CCEEFF', emoji: '🌙', tier_color: '#CCEEFF',
+                desc: 'Silver-White — MP Regen & Spell Cooldown',
+                stats: ['mpRegen','mpRegen','cdReduce'],
+                rolls: { mpRegen: [2,6], cdReduce: [3,8] } },
+
+    sunstone:   { name: 'Sunstone',   color: '#FF7700', emoji: '☀️', tier_color: '#FF7700',
+                desc: 'Amber — Fire Damage & STR (universal)',
+                stats: ['fireDmg','fireDmg','strBonus'],
+                rolls: { fireDmg: [4,12], strBonus: [1,3] } },
+
+    voidstone:  { name: 'Voidstone',  color: '#6600BB', emoji: '🔮', tier_color: '#6600BB',
+                desc: 'Dark Purple — Spell Leech & WIS',
+                stats: ['spellLeech','spellLeech','wisBonus'],
+                rolls: { spellLeech: [3,10], wisBonus: [1,3] } },
+
+    ironheart:  { name: 'Ironheart',  color: '#AAAAAA', emoji: '🩶', tier_color: '#AAAAAA',
+                desc: 'Iron-Grey — Defense & CON',
+                stats: ['defenseBonus','defenseBonus','conBonus'],
+                rolls: { defenseBonus: [3,9], conBonus: [1,4] } },
+
+    stormglass: { name: 'Stormglass', color: '#44DDFF', emoji: '⛈️', tier_color: '#44DDFF',
+                desc: 'Ice-Blue — Lightning & Frost (universal, both elements stack)',
+                stats: ['lightningDmg','frostDmg','lightningDmg'],
+                rolls: { lightningDmg: [4,12], frostDmg: [3,10] } },
+};
+
+// Gem tier multiplier for rolls (higher tier = stronger bonuses)
+const GEM_TIER_MULT = { 1: 1.0, 2: 1.5, 3: 2.2, 4: 3.2 };
+
+// Get tier from enemy level
+function getGemTier(enemyLevel) {
+    if (enemyLevel <= 6)  return 1;
+    if (enemyLevel <= 12) return 2;
+    if (enemyLevel <= 18) return 3;
+    return 4;
+}
+
+// Gem types as an array for random selection
+const GEM_KEYS = Object.keys(GEM_TYPES);
+
+// Cut a raw gem into a finished gem with permanent random stats
+function cutGem(gemKey) {
+    const tier = gemKey.includes('_t') ? parseInt(gemKey.split('_t')[1]) : 1;
+    const typeKey = gemKey.replace(/_t\d+$/, '').replace('raw_','');
+    const gemDef = GEM_TYPES[typeKey];
+    if (!gemDef) return null;
+    const mult = GEM_TIER_MULT[tier] || 1.0;
+    // Roll 2 stats from the gem's stat pool
+    const statPool = [...gemDef.stats];
+    const chosen = [];
+    const statValues = {};
+    // Pick up to 2 unique stats
+    const shuffled = statPool.sort(() => Math.random()-0.5);
+    const picked = [...new Set(shuffled)].slice(0, 2);
+    for (const stat of picked) {
+        const [lo, hi] = gemDef.rolls[stat];
+        const val = Math.floor((lo + Math.random()*(hi-lo+1)) * mult);
+        statValues[stat] = (statValues[stat] || 0) + val;
+    }
+    return {
+        id: `gem_${typeKey}_t${tier}_${Date.now()}`,
+        type: typeKey,
+        tier,
+        name: `${['','T1 ','T2 ','T3 ','T4 '][tier]}${gemDef.name}`,
+        color: gemDef.color,
+        emoji: gemDef.emoji,
+        cut: true,
+        stats: statValues,
+        description: describeGemStats(statValues)
+    };
+}
+
+function describeGemStats(stats) {
+    const labels = {
+        weaponDmg:    'Weapon DMG',   lifesteal:    'Lifesteal %',
+        spellPower:   'Spell Power',  mpBonus:      'Max MP',
+        critBonus:    'Crit %',       lightningDmg: 'Lightning DMG',
+        poisonChance: 'Poison %',     strBonus:     'STR',
+        conBonus:     'CON',          defenseBonus: 'Defense',
+        hpBonus:      'Max HP',       armorPierce:  'Armor Pierce %',
+        speedBonus:   'Speed',        lckBonus:     'LCK',
+        goldFind:     'Gold Find %',
+        // New gem stats
+        hpRegen:      'HP Regen/turn', mpRegen:     'MP Regen/turn',
+        cdReduce:     'Cooldown %',    fireDmg:     'Fire DMG',
+        frostDmg:     'Frost DMG',     spellLeech:  'Spell Leech %',
+        wisBonus:     'WIS',
+    };
+    return Object.entries(stats).map(([k,v]) => `+${v} ${labels[k]||k}`).join(', ');
+}
+
+// How many gem slots does a weapon quality get?
+function getGemSlots(quality) {
+    const map = { poor:0, normal:1, uncommon:1, rare:1, epic:2, legendary:3, godly:4 };
+    return map[quality] || 1;
+}
+
+// Apply socketed gem stats to player during combat (additive bonuses)
+function applyGemBonuses(player, weapon) {
+    if (!weapon || !weapon.gems || weapon.gems.length === 0) return;
+    for (const gem of weapon.gems) {
+        if (!gem || !gem.stats) continue;
+        const s = gem.stats;
+        if (s.hpBonus)      player._gemHpBonus  = (player._gemHpBonus  || 0) + s.hpBonus;
+        if (s.mpBonus)      player._gemMpBonus  = (player._gemMpBonus  || 0) + s.mpBonus;
+        if (s.strBonus)     player._gemStr      = (player._gemStr      || 0) + s.strBonus;
+        if (s.conBonus)     player._gemCon      = (player._gemCon      || 0) + s.conBonus;
+        if (s.lckBonus)     player._gemLck      = (player._gemLck      || 0) + s.lckBonus;
+        if (s.defenseBonus) player._gemDef      = (player._gemDef      || 0) + s.defenseBonus;
+        if (s.critBonus)    player._gemCrit     = (player._gemCrit     || 0) + s.critBonus;
+        if (s.weaponDmg)    player._gemWepDmg   = (player._gemWepDmg   || 0) + s.weaponDmg;
+        if (s.spellPower)   player._gemSpell    = (player._gemSpell    || 0) + s.spellPower;
+        if (s.lifesteal)    player._gemLifesteal= (player._gemLifesteal|| 0) + s.lifesteal;
+        if (s.armorPierce)  player._gemPierce   = (player._gemPierce   || 0) + s.armorPierce;
+        if (s.goldFind)     player._gemGold     = (player._gemGold     || 0) + s.goldFind;
+        if (s.poisonChance) player._gemPoison   = (player._gemPoison   || 0) + s.poisonChance;
+    }
+}
+
 function updateTerminalSafeArea() {
     // No-op: layout handled by fixed-position flex column.
     // Terminal fills remaining space; actionBar sits below it naturally.
@@ -1604,6 +1774,18 @@ const OPPOSITE_DIR = {
                 description: 'Dark mage who drains life from enemies with shadow magic',
                 startWeapon: 'staff',
                 startArmor: 'cloth_robes'
+            },
+            runesmith: {
+                name: 'Runesmith',
+                hp: 95,
+                mp: 70,
+                strength: 12,
+                defense: 9,
+                magic: 10,
+                speed: 8,
+                description: 'Cast 3 runes to charge Overload — then strike for devastating armor-piercing damage. Master of hybrid physical/arcane combat.',
+                startWeapon: 'chipped_mattock',
+                startArmor: 'leather_armor'
             }
         };
 
@@ -1635,7 +1817,8 @@ const OPPOSITE_DIR = {
             cleric  : { str:1, dex:0, wis:4, cha:2, con:2, lck:1 },
             ranger  : { str:1, dex:3, wis:1, cha:1, con:2, lck:2 },
             hunter  : { str:1, dex:3, wis:1, cha:1, con:2, lck:2 },
-            warlock : { str:0, dex:1, wis:4, cha:2, con:1, lck:2 }
+            warlock : { str:0, dex:1, wis:4, cha:2, con:1, lck:2 },
+            runesmith: { str:2, dex:0, wis:3, cha:1, con:3, lck:1 }
         };
         const CLASS_AFFINITIES = {
             warrior :['str','con'],
@@ -1645,7 +1828,8 @@ const OPPOSITE_DIR = {
             cleric  :['wis','cha'],
             hunter  :['dex','lck'],
             ranger  :['dex','lck'],
-            warlock :['wis','cha']
+            warlock :['wis','cha'],
+            runesmith:['str','wis']
         };
 
         // ── derived-stat helpers ──────────────────────────────────────
@@ -1675,6 +1859,49 @@ const OPPOSITE_DIR = {
         // CLASS EQUIPMENT RESTRICTIONS
         // ═══════════════════════════════════════════════════════════════
         
+
+        // ── Build gem slot display for a weapon card ──────────────────
+        function buildGemSlotHtml(weapon) {
+            if (!weapon) return '';
+            const slots = getGemSlots(weapon.quality);
+            if (slots === 0) return '';
+            const socketed = weapon.gems || [];
+            let html = '<div style="margin-top:5px;font-size:11px;line-height:1.5;">';
+            for (let i = 0; i < slots; i++) {
+                const gem = socketed[i];
+                if (gem) {
+                    // Filled slot — colored gem circle + buff text
+                    html += `<div style="display:flex;align-items:center;gap:5px;">
+                        <span style="color:${gem.color};font-size:14px;">⬤</span>
+                        <span style="color:${gem.color};">${gem.emoji} ${gem.name}</span>
+                        <span style="color:#888;font-size:10px;">${gem.description}</span>
+                    </div>`;
+                } else {
+                    // Empty slot — black circle
+                    html += `<div style="display:flex;align-items:center;gap:5px;">
+                        <span style="color:#222;font-size:14px;">⬤</span>
+                        <span style="color:#444;font-size:10px;">[ empty gem slot ]</span>
+                    </div>`;
+                }
+            }
+            html += '</div>';
+            return html;
+        }
+
+        // ── Build damage line for a weapon (MELEE / MAGIC clearly split) ──
+        function buildWeaponDmgLine(weapon, quality) {
+            const qc = QUALITY_CONFIG[quality || weapon.quality];
+            const qb = getQualityBonus(weapon.quality, weapon.baseDamage);
+            const tMin = weapon.baseDamage + qb;
+            const tMax = weapon.maxDamage ? weapon.maxDamage + getQualityBonus(weapon.quality, weapon.maxDamage - weapon.baseDamage) : tMin;
+            const tMag = (weapon.baseMagicDamage || 0) + Math.floor((weapon.baseMagicDamage || 0) * (qc?.bonusPct || 0));
+            let line = `<span style="color:#ffcc88;">MELEE: ${tMin}${tMax > tMin ? '-'+tMax : ''}</span>`;
+            if (tMag > 0) {
+                line += ` <span style="color:#88aaff;">| MAGIC: +${tMag}</span>`;
+            }
+            return line;
+        }
+
         function canUseWeapon(playerClass, weapon) {
             // Bare fists — always usable by everyone
             if (weapon.unarmed) return true;
@@ -1682,6 +1909,8 @@ const OPPOSITE_DIR = {
             if (weapon.allowedClasses) {
                 return weapon.allowedClasses.includes(playerClass);
             }
+            // RUNESMITH: only allowedClasses weapons (all caught above) — block everything else
+            if (playerClass === 'runesmith') return false;
             
             // ROGUE: daggers only — no exceptions
             // Also allow dropped weapons with type 'dagger' or 'poison_dagger' / 'assassin_blade' etc.
@@ -5153,6 +5382,7 @@ window.addEventListener('beforeunload', () => {
             mage:     1.05,
             cleric:   1.00,
             warlock:  1.05,
+            runesmith:1.02,
         };
 
         function _buildXpTable(cls) {
@@ -5177,6 +5407,7 @@ window.addEventListener('beforeunload', () => {
             mage:      _buildXpTable('mage'),
             cleric:    _buildXpTable('cleric'),
             warlock:   _buildXpTable('warlock'),
+            runesmith: _buildXpTable('runesmith'),
         };
         
         function getXpForLevel(playerClass, level) {
@@ -6055,7 +6286,8 @@ window.addEventListener('beforeunload', () => {
                 // ── store base class so evolution doesn't lose class identity ──
                 baseClass: classKey,
                 // ── hunter pet system ──
-                activePet: classKey === 'hunter' ? null : undefined  // hunters start with no pet, others don't use this
+                activePet: classKey === 'hunter' ? null : undefined,  // hunters start with no pet, others don't use this
+                runeOverloadPips: classKey === 'runesmith' ? 0 : undefined  // runesmith overload charge tracker
                 
             };
             gameState.currentLocation = 'town';
@@ -6185,6 +6417,7 @@ window.addEventListener('beforeunload', () => {
                     <div class="menu-option" onclick="showBank()">► 🏦 BANK (${p.bankGold || 0}g stored)</div>
                     <div class="menu-option" onclick="showCharacterStats()">► 📊 CHARACTER STATS</div>
                     <div class="menu-option" onclick="showTemple()">► ⛪ TEMPLE</div>
+                    <div class="menu-option" onclick="showBlacksmith()">► ⚒️ BLACKSMITH</div>
                     ${dungeonOption}
                     <div class="menu-option" onclick="restAtInn()">► REST AT INN (${calcInnCost(p.cha)} Gold)</div>
                     <div class="menu-option" id="townInvBtn" onclick="showInventory()" 
@@ -6631,8 +6864,9 @@ window.addEventListener('beforeunload', () => {
             Object.keys(WEAPONS).forEach(key => {
                 const weapon = WEAPONS[key];
                 
-                // Filter by level and class — never show bare_fists in shop
-                if (!weapon.unarmed && weapon.level <= p.level + 2 && canUseWeapon(playerClass, weapon)) {
+                // Filter by level, class, and quality — shop only sells common (normal) gear.
+                // Higher quality items come from drops only. Also enforce class restrictions.
+                if (!weapon.unarmed && weapon.quality === 'normal' && weapon.level <= p.level + 2 && canUseWeapon(playerClass, weapon)) {
                     const owned = p.inventory.includes(key);
                     const equipped = p.weapon === key;
                     const qualityColor = QUALITY_CONFIG[weapon.quality].color;
@@ -6656,8 +6890,9 @@ window.addEventListener('beforeunload', () => {
                     shopHtml += `
                         <div class="item-card ${equipped ? 'equipped' : ''}">
                             <div style="color: ${qualityColor};">${weapon.name}</div>
-                            <div>DMG: ${totalDmg}${weapon.maxDamage ? `-${weapon.maxDamage + getQualityBonus(weapon.quality, weapon.maxDamage - weapon.baseDamage)}` : ''}${totalMag > 0 ? ` | MAG: ${totalMag}` : ''}</div>
+                            <div style="font-size:12px;">${buildWeaponDmgLine(weapon)}</div>
                             ${modifierHtml}
+                            <div style="font-size:11px;color:#666;">Slots: ${'⬤'.repeat(getGemSlots(weapon.quality)) || '—'}</div>
                             <div>Level: ${weapon.level}</div>
                             ${owned ? '<div style="color: var(--border-color);">OWNED</div>' : 
                               `<button onclick="buyItem('weapon', '${key}', ${weapon.cost})">Buy ${weapon.cost}G</button>`}
@@ -6676,8 +6911,9 @@ window.addEventListener('beforeunload', () => {
             Object.keys(ARMOR).forEach(key => {
                 const armor = ARMOR[key];
                 
-                // Filter by level and class
-                if (armor.level <= p.level + 2 && canUseArmor(playerClass, armor)) {
+                // Filter: shop only sells normal quality, class-appropriate armor.
+                // Better armor drops from enemies. Skip virtual slots and drop-only pieces.
+                if (!armor.unarmored && !armor.isDropped && armor.quality === 'normal' && armor.level <= p.level + 2 && canUseArmor(playerClass, armor)) {
                     const owned = p.inventory.includes(key);
                     const equipped = p.armor === key;
                     const qualityColor = QUALITY_CONFIG[armor.quality].color;
@@ -6726,8 +6962,8 @@ window.addEventListener('beforeunload', () => {
                                 <div style="color:#ff8800;font-size:13px;">⚠ Dungeon use only · 1 per adventure</div>
                                 ${alreadyOwned
                                     ? '<div style="color:#AA88FF;font-size:14px;margin-top:4px;">ALREADY OWNED</div>'
-                                    : `<button onclick="buyItem('item', 'recall_potion', 5000)"
-                                        style="border-color:#AA88FF;color:#AA88FF;margin-top:6px;">Buy 5000G</button>`
+                                    : `<button onclick="buyItem('item', 'recall_potion', 1000)"
+                                        style="border-color:#AA88FF;color:#AA88FF;margin-top:6px;">Buy 1000G</button>`
                                 }
                             </div>
                         `;
@@ -7143,8 +7379,9 @@ window.addEventListener('beforeunload', () => {
                 invHtml += `
                     <div class="item-card equipped">
                         <div style="color:${qc?.color || '#0f0'};">⚔️ ${eqWeapon.name}</div>
-                        <div>DMG: ${tMin}${tMax > tMin ? `-${tMax}` : ''}${tMag > 0 ? ` | MAG: ${tMag}` : ''}</div>
+                        <div style="font-size:12px;">${buildWeaponDmgLine(eqWeapon)}</div>
                         ${eqModifierHtml}
+                        ${buildGemSlotHtml(eqWeapon)}
                         <div style="color:var(--border-color);">EQUIPPED</div>
                         <button onclick="unequipItem('weapon')" style="border-color:#ff4444;color:#ff4444;margin-top:4px;">UNEQUIP</button>
                     </div>
@@ -7193,8 +7430,9 @@ window.addEventListener('beforeunload', () => {
                 invHtml += `
                     <div class="item-card${canEquip ? '' : ' unusable'}" style="${canEquip ? '' : 'opacity:0.5;border-color:#555;'}">
                         <div style="color: ${qualityColor};">${weapon.name}</div>
-                        <div>DMG: ${totalDmg}${totalMax > totalDmg ? `-${totalMax}` : ''}${totalMag > 0 ? ` | MAG: ${totalMag}` : ''}</div>
+                        <div style="font-size:12px;">${buildWeaponDmgLine(weapon)}</div>
                         ${modifierHtml}
+                        ${buildGemSlotHtml(weapon)}
                         ${canEquip 
                             ? `<button onclick="equipItem('weapon', '${key}')">EQUIP</button>`
                             : `<button disabled style="opacity:0.4;">CANNOT EQUIP</button>`
@@ -8874,18 +9112,30 @@ if (cs) {
     /* ───────── MAIN COMBAT MENU ───────── */
     if (mode === 'main') {
         const p = gameState.player;
-        const isHunter  = (p.baseClass || p.class) === 'hunter';
-        const trapBtn = isHunter ? `<button onclick="(castTrap())" ${p.mp < 10 ? 'disabled' : ''} class="pip-btn" title="Set Trap [T] - 10 MP" style="border-color:#8B4513;">🪤<span class="kb-hint">T</span></button>` : '';
-        const isWarrior = (p.baseClass || p.class) === 'warrior';
-        const shieldBtn = isWarrior
-            ? `<button onclick="playerDefend()" ${!canAct ? 'disabled' : ''} title="Shield — 70% to halve damage">🛡️</button>`
-            : '';
-        
+        const isHunter    = (p.baseClass || p.class) === 'hunter';
+        const isWarrior   = (p.baseClass || p.class) === 'warrior';
+        const isRunesmith = (p.baseClass || p.class) === 'runesmith';
+        const trapBtn   = isHunter  ? `<button onclick="(castTrap())" ${p.mp < 10 ? 'disabled' : ''} class="pip-btn" title="Set Trap [T]" style="border-color:#8B4513;">🪤<span class="kb-hint">T</span></button>` : '';
+        const shieldBtn = isWarrior ? `<button onclick="playerDefend()" ${!canAct ? 'disabled' : ''} title="Shield — 70% to halve damage">🛡️</button>` : '';
+
+        // Runesmith: overload pip display on spell button, fire glow on attack when charged
+        const overloadPips = isRunesmith ? (p.runeOverloadPips || 0) : 0;
+        const overloadReady = overloadPips >= 3;
+        const pip1 = overloadPips >= 1 ? '🔶' : '⬛';
+        const pip2 = overloadPips >= 2 ? '🔶' : '⬛';
+        const pip3 = overloadPips >= 3 ? '🔶' : '⬛';
+        const attackBtn = isRunesmith
+            ? `<button onclick="showAttackMenu()" ${!canAct?'disabled':''} class="pip-btn" id="pipBtn-attack" style="${overloadReady ? 'border-color:#FF4400;box-shadow:0 0 8px #FF4400,0 0 16px #FF8800;animation:runeOverloadPulse 0.7s ease-in-out infinite;' : ''}">${overloadReady ? '🔥⚒️' : '⚒️'}</button>`
+            : `<button onclick="showAttackMenu()" ${!canAct?'disabled':''} class="pip-btn" id="pipBtn-attack" title="Attack">⚔️</button>`;
+        const spellBtn = isRunesmith
+            ? `<button onclick="showSpellMenu()" ${!canAct?'disabled':''} class="pip-btn" id="pipBtn-spell" title="Cast Rune" style="border-color:#c8a000;"><span style="font-size:9px;display:block;line-height:1;">${overloadReady ? '⚡READY' : pip1+pip2+pip3}</span>✨</button>`
+            : `<button onclick="showSpellMenu()"  ${!canAct?'disabled':''} class="pip-btn" id="pipBtn-spell" title="Spell">✨</button>`;
+
         combatDiv.innerHTML = `
             <div style="color:var(--highlight-color);font-size:13px;margin-bottom:3px;text-align:center;letter-spacing:3px;">${pips}</div>
             <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;">
-                <button onclick="showAttackMenu()" ${!canAct ? 'disabled' : ''} class="pip-btn" id="pipBtn-attack" title="Attack">⚔️</button>
-                <button onclick="showSpellMenu()"  ${!canAct ? 'disabled' : ''} class="pip-btn" id="pipBtn-spell" title="Spell">✨</button>
+                ${attackBtn}
+                ${spellBtn}
                 ${shieldBtn}
                 ${trapBtn}
                 <button onclick="attemptFlee()"    ${!canAct ? 'disabled' : ''} title="Flee">🏃</button>
@@ -9370,16 +9620,28 @@ function dungeonNav(input) {
 
                 if (mode === 'main') {
                     // Main combat menu — icons only, pip dots only
-                    const isHunter  = (p.baseClass || p.class) === 'hunter';
-                    const isWarrior = (p.baseClass || p.class) === 'warrior';
-                    const trapBtn   = isHunter ? `<button onclick="(castTrap())" ${p.mp < 10 ? 'disabled' : ''} class="action-icon-btn" title="Set Trap [T] - 10 MP" style="border-color:#8B4513;">🪤<span class="kb-hint">T</span></button>` : '';
+                    const isHunter    = (p.baseClass || p.class) === 'hunter';
+                    const isWarrior   = (p.baseClass || p.class) === 'warrior';
+                    const isRunesmith = (p.baseClass || p.class) === 'runesmith';
+                    const trapBtn   = isHunter  ? `<button onclick="(castTrap())" ${p.mp < 10 ? 'disabled' : ''} class="action-icon-btn" title="Set Trap [T] - 10 MP" style="border-color:#8B4513;">🪤<span class="kb-hint">T</span></button>` : '';
                     const shieldBtn = isWarrior ? `<button onclick="playerDefend()" ${!canAct?'disabled':''} class="action-icon-btn" title="Shield [4] — 70% to halve damage" style="border-color:#00CCFF;">🛡️<span class="kb-hint">4</span></button>` : '';
-                    
+
+                    // Runesmith overload UI
+                    const rsPips = isRunesmith ? (p.runeOverloadPips || 0) : 0;
+                    const rsReady = rsPips >= 3;
+                    const rp1 = rsPips >= 1 ? '🔶' : '⬛'; const rp2 = rsPips >= 2 ? '🔶' : '⬛'; const rp3 = rsPips >= 3 ? '🔶' : '⬛';
+                    const attackBtnHTML = isRunesmith
+                        ? `<button onclick="showAttackMenu()" ${!canAct?'disabled':''} class="action-icon-btn pip-btn" id="pipBtn-attack" title="${rsReady ? 'OVERLOAD — Strike! [1]' : 'Attack [1]'}" style="${rsReady ? 'border-color:#FF4400;box-shadow:0 0 8px #FF4400,0 0 16px #FF8800;animation:runeOverloadPulse 0.7s ease-in-out infinite;' : ''}">${rsReady ? '🔥⚒️' : '⚒️'}<span class="kb-hint">1</span></button>`
+                        : `<button onclick="showAttackMenu()" ${!canAct?'disabled':''} class="action-icon-btn pip-btn" title="Attack [1]" id="pipBtn-attack">⚔️<span class="kb-hint">1</span></button>`;
+                    const spellBtnHTML = isRunesmith
+                        ? `<button onclick="showSpellMenu()" ${!canAct?'disabled':''} class="action-icon-btn pip-btn" id="pipBtn-spell" title="Cast Rune [2]" style="border-color:#c8a000;"><span style="font-size:9px;line-height:1;display:block;">${rsReady ? '⚡READY' : rp1+rp2+rp3}</span>✨<span class="kb-hint">2</span></button>`
+                        : `<button onclick="showSpellMenu()"  ${!canAct?'disabled':''} class="action-icon-btn pip-btn" title="Cast Spell [2]" id="pipBtn-spell">✨<span class="kb-hint">2</span></button>`;
+
                     ab.innerHTML = `
                         <div style="color:var(--highlight-color);font-size:13px;line-height:1;margin-bottom:3px;text-align:center;letter-spacing:3px;">${pips}</div>
                         <div style="display:flex;gap:3px;width:100%;">
-                            <button onclick="showAttackMenu()" ${!canAct?'disabled':''} class="action-icon-btn pip-btn" title="Attack [1]" id="pipBtn-attack">⚔️<span class="kb-hint">1</span></button>
-                            <button onclick="showSpellMenu()"  ${!canAct?'disabled':''} class="action-icon-btn pip-btn" title="Cast Spell [2]" id="pipBtn-spell">✨<span class="kb-hint">2</span></button>
+                            ${attackBtnHTML}
+                            ${spellBtnHTML}
                             <button onclick="showCombatInventory()" class="action-icon-btn" title="Inventory [3]" style="border-color:#00FF88;">🎒<span class="kb-hint">3</span></button>
                             ${trapBtn}
                             ${shieldBtn}
@@ -9717,6 +9979,26 @@ function dungeonNav(input) {
         }
         // Always update pip sweep animation each tick
         updatePipButtons();
+
+        // ── GEM REGEN: bloodstone (HP) and moonstone (MP) tick every second ──
+        const _p = gameState.player;
+        const _w = _p && _p.weapon ? WEAPONS[_p.weapon] : null;
+        if (_p && _w && _w.gems && !cs.combatOver) {
+            let totalHpRegen = 0, totalMpRegen = 0;
+            for (const _g of _w.gems) {
+                if (!_g || !_g.stats) continue;
+                totalHpRegen += _g.stats.hpRegen || 0;
+                totalMpRegen += _g.stats.mpRegen || 0;
+            }
+            if (totalHpRegen > 0 && _p.hp < _p.maxHp) {
+                _p.hp = Math.min(_p.maxHp, _p.hp + totalHpRegen);
+                updateHud();
+            }
+            if (totalMpRegen > 0 && _p.mp < _p.maxMp) {
+                _p.mp = Math.min(_p.maxMp, _p.mp + totalMpRegen);
+                updateHud();
+            }
+        }
 
         // ─────────────────────────────────────────
         // POST-COMBAT RECOVERY CLEANUP
@@ -10931,18 +11213,48 @@ function consumePips(cs, amount, cooldown) {
         termAppend('⚫ <span style="color:#8888FF;font-weight:bold;">You leap from the shadows!</span> ⚫', 'term-highlight');
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    // RUNESMITH: RUNE OVERLOAD — 3 pips → devastating armor-piercing strike
+    // ═══════════════════════════════════════════════════════════════
+    let runeOverloadActive = false;
+    if (baseClass === 'runesmith' && (p.runeOverloadPips || 0) >= 3) {
+        runeOverloadActive = true;
+        p.runeOverloadPips = 0;
+        termAppend('', 'term-separator');
+        termAppend('🔥⚒️ <span style="color:#FF8800;font-weight:bold;">RUNE OVERLOAD!</span> <span style="color:#FFaa00;">The runes detonate — armor is nothing!</span> 🔥⚒️', 'term-highlight');
+    }
+
     // Calculate base damage WITH RANGE ROLLING
     // Roll between baseDamage and maxDamage
     const minDmg = weapon.baseDamage + qBonus;
     const maxDmg = (weapon.maxDamage || weapon.baseDamage) + qBonus;
     let weaponDamage = Math.floor(Math.random() * (maxDmg - minDmg + 1)) + minDmg;
 
+    // ── Apply socketed gem bonuses ──────────────────────────────────
+    const socketed = weapon.gems || [];
+    let gemMeleeDmg = 0, gemMagicDmg = 0, gemCritBonus = 0, gemPierceBonus = 0;
+    let gemPoisonChance = 0, gemLightningDmg = 0, gemLifesteal = 0;
+    let gemFireDmg = 0, gemFrostDmg = 0, gemSpellLeech = 0;
+    for (const gem of socketed) {
+        if (!gem || !gem.stats) continue;
+        gemMeleeDmg     += gem.stats.weaponDmg    || 0;
+        gemMagicDmg     += gem.stats.spellPower   || 0;
+        gemCritBonus    += gem.stats.critBonus    || 0;
+        gemPierceBonus  += gem.stats.armorPierce  || 0;
+        gemPoisonChance += gem.stats.poisonChance || 0;
+        gemLightningDmg += gem.stats.lightningDmg || 0;
+        gemLifesteal    += gem.stats.lifesteal     || 0;
+        gemFireDmg      += gem.stats.fireDmg      || 0;   // sunstone — universal
+        gemFrostDmg     += gem.stats.frostDmg     || 0;   // stormglass — universal
+        gemSpellLeech   += gem.stats.spellLeech   || 0;   // voidstone — applies to spells too
+    }
+
     const physicalBase =
-        weaponDamage + Math.floor((p.str || 0) * 1.5);
+        weaponDamage + Math.floor((p.str || 0) * 1.5) + gemMeleeDmg;
 
     const magicBase =
         (weapon.baseMagicDamage || 0) +
-        Math.floor((p.wis || 0) * 1.5);  // WIS (point-buy) drives magic-weapon bonus
+        Math.floor((p.wis || 0) * 1.5) + gemMagicDmg;  // WIS (point-buy) drives magic-weapon bonus
 
     // Use whichever damage type is higher for this weapon — don't add both
     let totalBase = Math.floor(
@@ -10972,15 +11284,30 @@ function consumePips(cs, amount, cooldown) {
     const lvlMult = getLevelDamageMult(p.level, enemy.level);
     totalBase = Math.max(1, Math.floor(totalBase * lvlMult.playerDealt));
 
+    // ── RUNESMITH OVERLOAD: +50% damage + STR + WIS bonus, full armor pierce, undodgeable ──
+    if (runeOverloadActive) {
+        const overloadBonus = Math.floor(totalBase * 0.50)
+            + Math.floor((p.str || 0) * 2)
+            + Math.floor((p.wis || 0) * 2);
+        totalBase += overloadBonus;
+        armorPiercing = 1.0;
+    }
+
+    // Apply gem universal bonuses (lightning, fire, frost) to totalBase (both melee and magic)
+    totalBase += gemLightningDmg + gemFireDmg + gemFrostDmg;
+
+    // Apply gem armor pierce (stacks additively)
+    const effectiveArmorPierce = Math.min(1.0, armorPiercing + (gemPierceBonus / 100));
+
     // Resolve damage
     const result = calculateDamage({
         attacker: p,
         defender: enemy,
         base: totalBase,
         type: magicBase > physicalBase ? 'magic' : 'physical',
-        critChance: shadowStrike ? 1.0 : (calcCritChance(p.lck || 0, p) / 100),  // 100% crit if Shadow Strike
-        dodgeChance: enemyDodgeChance, // Use level-based dodge
-        armorPiercing
+        critChance: shadowStrike ? 1.0 : Math.min(0.75, (calcCritChance(p.lck || 0, p) / 100) + (gemCritBonus / 100)),
+        dodgeChance: runeOverloadActive ? 0 : enemyDodgeChance,  // Overload cannot be dodged
+        armorPiercing: effectiveArmorPierce
     });
 
     const tName = cs.monsters.length > 1
@@ -11026,6 +11353,23 @@ function consumePips(cs, amount, cooldown) {
         if (weapon.poisonChance && Math.random() < weapon.poisonChance && enemy.hp > 0) {
             applyStatusEffect(enemy, 'poisoned', false);
             modifierResult.messages.push('<span style="color:#00FF00;">💀 Poisoned!</span>');
+        }
+
+        // ── GEM PROCS: poison (universal) and lifesteal (melee only) ──
+        if (gemPoisonChance > 0 && Math.random() < (gemPoisonChance / 100) && enemy.hp > 0) {
+            applyStatusEffect(enemy, 'poisoned', false);
+            modifierResult.messages.push('<span style="color:#00EE00;">💎 Emerald: Poisoned!</span>');
+        }
+        if (gemLifesteal > 0 && finalDamage > 0) {
+            const steal = Math.max(1, Math.floor(finalDamage * (gemLifesteal / 100)));
+            p.hp = Math.min(p.maxHp, p.hp + steal);
+            modifierResult.messages.push(`<span style="color:#FF4488;">💎 Ruby: Lifesteal +${steal} HP</span>`);
+        }
+        // Voidstone spell leech — converts portion of melee hit to MP (unique: restores mana, not HP)
+        if (gemSpellLeech > 0 && finalDamage > 0) {
+            const mpSteal = Math.max(1, Math.floor(finalDamage * (gemSpellLeech / 100)));
+            p.mp = Math.min(p.maxMp, p.mp + mpSteal);
+            modifierResult.messages.push(`<span style="color:#AA55FF;">💎 Voidstone: Drained +${mpSteal} MP</span>`);
         }
 
         // ── ROGUE DOUBLE-STRIKE ───────────────────────────────────────
@@ -11167,6 +11511,18 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
             p.mp -= spell.mpCost;
             markMpAction();  // reset 15s MP regen countdown on every spell cast
 
+            // ── RUNESMITH: charge Rune Overload pip on every spell cast ──
+            if ((p.baseClass || p.class) === 'runesmith' && (p.runeOverloadPips || 0) < 3) {
+                p.runeOverloadPips = (p.runeOverloadPips || 0) + 1;
+                const rp = p.runeOverloadPips;
+                const rp1 = rp >= 1 ? '🔶' : '⬛'; const rp2 = rp >= 2 ? '🔶' : '⬛'; const rp3 = rp >= 3 ? '🔶' : '⬛';
+                if (rp >= 3) {
+                    termAppend('⚒️ <span style="color:#FF8800;font-weight:bold;">RUNE OVERLOAD CHARGED!</span> <span style="color:#FFaa00;">Strike now for devastating, armor-piercing power!</span> 🔥');
+                } else {
+                    termAppend(`⚒️ <span style="color:#c8a000;">Rune charged: ${rp1}${rp2}${rp3}</span>`);
+                }
+            }
+
             if (spell.type === 'heal') {
                 // Healing spells: 5% chance to fail, random between minPower and maxPower
                 const spellFailed = Math.random() < 0.05;
@@ -11287,16 +11643,60 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 
                 // Add weapon modifier bonus to offensive spells
                 const modifierBonus = getWeaponModifierSpellBonus();
+
+                // ── Gem bonuses for spells ────────────────────────────────
+                const spellWeapon = WEAPONS[p.weapon];
+                let gemSpellBonus = 0, gemSpellCrit = 0, gemSpellPoison = 0;
+                let gemSpellUniversal = 0; // lightning + fire + frost all apply to spells
+                let gemSpellLeechPct = 0;  // voidstone: spell leech → MP
+                if (spellWeapon && spellWeapon.gems) {
+                    for (const sg of spellWeapon.gems) {
+                        if (!sg || !sg.stats) continue;
+                        gemSpellBonus    += sg.stats.spellPower    || 0;  // magic-only
+                        gemSpellCrit     += sg.stats.critBonus     || 0;  // universal
+                        gemSpellPoison   += sg.stats.poisonChance  || 0;  // universal
+                        gemSpellUniversal += (sg.stats.lightningDmg || 0)
+                                          + (sg.stats.fireDmg       || 0)
+                                          + (sg.stats.frostDmg      || 0); // universal elements
+                        gemSpellLeechPct += sg.stats.spellLeech    || 0;  // voidstone: MP leech
+                    }
+                }
                 
-                let dmg = Math.max(1, (spellRoll + p.magic + (p.wis || 0) + modifierBonus) - Math.floor(enemy.defense / 2));
+                let dmg = Math.max(1, (spellRoll + p.magic + (p.wis || 0) + modifierBonus + gemSpellBonus + gemSpellUniversal) - Math.floor(enemy.defense / 2));
                 let crit = false;
-                if (Math.random() * 100 < calcCritChance(p.lck || 0, p)) { dmg = Math.floor(dmg * 1.75); crit = true; }
+                const spellCritChance = Math.min(75, calcCritChance(p.lck || 0, p) + gemSpellCrit);
+                if (Math.random() * 100 < spellCritChance) { dmg = Math.floor(dmg * 1.75); crit = true; }
                 
                 // Apply weapon modifiers to spell (status effects + elemental damage)
                 const weapon = WEAPONS[p.weapon];
                 const modifierResult = weapon ? applyWeaponModifiers(p, enemy, dmg, weapon) : { totalDamage: dmg, messages: [] };
                 const finalDamage = modifierResult.totalDamage;
+
+                // Gem poison proc on spell (universal gem)
+                if (gemSpellPoison > 0 && Math.random() < (gemSpellPoison / 100) && enemy.hp > 0) {
+                    applyStatusEffect(enemy, 'poisoned', false);
+                    modifierResult.messages.push('<span style="color:#00EE00;">💎 Emerald: Poisoned!</span>');
+                }
                 
+                // Gem lifesteal on spells (ruby — works on both melee and spells per design)
+                let gemSpellLifesteal = 0;
+                if (spellWeapon && spellWeapon.gems) {
+                    for (const sg of spellWeapon.gems) {
+                        if (sg && sg.stats) gemSpellLifesteal += sg.stats.lifesteal || 0;
+                    }
+                }
+                if (gemSpellLifesteal > 0) {
+                    const lsHeal = Math.max(1, Math.floor(finalDamage * (gemSpellLifesteal / 100)));
+                    p.hp = Math.min(p.maxHp, p.hp + lsHeal);
+                    modifierResult.messages.push(`<span style="color:#FF4488;">💎 Ruby: Lifesteal +${lsHeal} HP</span>`);
+                }
+                // Voidstone spell leech → drains MP from enemy (magic absorb, not HP)
+                if (gemSpellLeechPct > 0) {
+                    const mpDrain = Math.max(1, Math.floor(finalDamage * (gemSpellLeechPct / 100)));
+                    p.mp = Math.min(p.maxMp, p.mp + mpDrain);
+                    modifierResult.messages.push(`<span style="color:#AA55FF;">💎 Voidstone: Absorbed +${mpDrain} MP</span>`);
+                }
+
                 enemy.hp -= finalDamage;
                 
                 // Heal based on lifesteal percentage (from the final damage including modifiers)
@@ -13206,6 +13606,14 @@ function playerIsExhausted() {
                     terminalPrint('⚠️⚠️⚠️ ULTRA RARE DROP: MAGICAL BUTTERKNIFE! ⚠️⚠️⚠️', 'success');
                 }
             }
+
+            // ── GEM DROP: 2% base chance, any enemy, tier by enemy level ──
+            if (Math.random() < 0.02) {
+                const tier = getGemTier(monster.level || 1);
+                const gemTypeKey = GEM_KEYS[Math.floor(Math.random() * GEM_KEYS.length)];
+                const rawGemId = `raw_${gemTypeKey}_t${tier}`;
+                loot.push(rawGemId);
+            }
             
             return loot;
         }
@@ -13215,6 +13623,18 @@ function playerIsExhausted() {
             if (ARMOR[itemKey]) return ARMOR[itemKey].name;
             if (ITEMS[itemKey]) return ITEMS[itemKey].name;
             if (SPELLS[itemKey]) return SPELLS[itemKey].name;
+            // Raw gems: raw_ruby_t1, raw_sapphire_t2, etc.
+            if (typeof itemKey === 'string' && itemKey.startsWith('raw_')) {
+                const parts = itemKey.split('_');
+                const typeKey = parts[1];
+                const tier = parts[2] ? parts[2].replace('t','') : '1';
+                const gem = GEM_TYPES[typeKey];
+                return gem ? `T${tier} Raw ${gem.name}` : itemKey;
+            }
+            // Cut gems stored as objects in inventory
+            if (typeof itemKey === 'object' && itemKey && itemKey.cut) {
+                return `${itemKey.name} [${itemKey.description}]`;
+            }
             return itemKey;
         }
 
@@ -13224,6 +13644,11 @@ function playerIsExhausted() {
             }
             if (ARMOR[itemKey]) {
                 return QUALITY_CONFIG[ARMOR[itemKey].quality].color;
+            }
+            // Raw gems
+            if (typeof itemKey === 'string' && itemKey.startsWith('raw_')) {
+                const typeKey = itemKey.split('_')[1];
+                return (GEM_TYPES[typeKey] && GEM_TYPES[typeKey].color) || '#AAFFEE';
             }
             // Default green for items
             return '#00FF00';
@@ -13586,6 +14011,230 @@ function playerIsExhausted() {
             showCharacterStats(); // Refresh display
         }
         
+
+        // ═══════════════════════════════════════════════════════════════
+        // BLACKSMITH — Cut gems (200g) and Socket gems (100g)
+        // ═══════════════════════════════════════════════════════════════
+        function showBlacksmith(subview) {
+            const p = gameState.player;
+            const screen = document.getElementById('mainScreen');
+            subview = subview || 'main';
+
+            // ── Helper: find raw gems in inventory ──
+            function getRawGems() {
+                return (p.inventory || []).filter(k => typeof k === 'string' && k.startsWith('raw_'));
+            }
+            // ── Helper: find cut gems (objects) in inventory ──
+            function getCutGems() {
+                return (p.inventory || []).filter(k => typeof k === 'object' && k && k.cut);
+            }
+
+            const anvil = `<pre style="color:#cc5500;font-size:9.5px;line-height:1.18;text-align:center;font-family:'Courier New',monospace;">
+            ___________________
+      _____/                   \_____
+     /    /   V A L D R A K ' S \    \
+    /    /        F O R G E      \    \
+   /    /___________________________\   \
+   |   /  .  .  A N V I L  .  .  \   |
+   |  /____________________________\  |
+   | /  _________________________  \ |
+   |/ /  ~~~~~~~ FIRE ~~~~~~~~~~  \ \|
+   | |   🔥   🔥   🔥   🔥   🔥  | |
+   |_|_________________________________|_|
+     |        ⚒️  SMITH  ⚒️           |
+     |___________________________________|</pre>`;
+
+            if (subview === 'main') {
+                const rawCount = getRawGems().length;
+                const cutCount = getCutGems().length;
+                screen.innerHTML = `
+                    <div class="location-header">⚒️ VALDRAK'S FORGE</div>
+                    ${anvil}
+                    <div class="message" style="color:#cc7733;font-style:italic;text-align:center;margin-bottom:12px;">
+                        "Bring me your rough stones and I'll make them sing."<br>
+                        <span style="font-size:11px;color:#664422;">— Valdrak, Master Smith</span>
+                    </div>
+                    <div style="margin:16px 0;">
+                        <div class="menu-option" onclick="showBlacksmith('cut')" style="border-color:#FF7722;">
+                            ► 💎 CUT GEMS <span style="color:#888;font-size:12px;">(200g each — ${rawCount} raw gem${rawCount!==1?'s':''} in bag)</span>
+                        </div>
+                        <div class="menu-option" onclick="showBlacksmith('socket')" style="border-color:#c8a000;">
+                            ► ⚙️ SOCKET GEM INTO WEAPON <span style="color:#888;font-size:12px;">(100g — ${cutCount} cut gem${cutCount!==1?'s':''} available)</span>
+                        </div>
+                        <div class="menu-option" onclick="showBlacksmith('info')" style="border-color:#444;">
+                            ► 📖 HOW GEMS WORK
+                        </div>
+                        <div class="menu-option" onclick="showTown()">← BACK TO TOWN</div>
+                    </div>`;
+            }
+
+            else if (subview === 'cut') {
+                const rawGems = getRawGems();
+                if (rawGems.length === 0) {
+                    screen.innerHTML = `
+                        <div class="location-header">⚒️ CUT GEMS</div>
+                        ${anvil}
+                        <div class="message" style="color:#888;text-align:center;padding:20px;">
+                            You have no raw gems to cut.<br>
+                            <span style="font-size:12px;color:#555;">Gems drop from enemies (2% chance). Keep adventuring!</span>
+                        </div>
+                        <button onclick="showBlacksmith()" style="margin-top:10px;">← BACK</button>`;
+                    return;
+                }
+                let gemListHtml = rawGems.map(gk => {
+                    const parts = gk.split('_');
+                    const typeKey = parts[1];
+                    const tier = parts[2] ? parseInt(parts[2].replace('t','')) : 1;
+                    const gem = GEM_TYPES[typeKey];
+                    const canAfford = p.gold >= 200;
+                    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;margin:4px 0;border:1px solid ${gem?gem.color:'#444'};background:rgba(0,0,0,0.3);">
+                        <span style="color:${gem?gem.color:'#ccc'};">${gem?gem.emoji:'💎'} T${tier} Raw ${gem?gem.name:typeKey} <span style="color:#555;font-size:11px;">${gem?gem.desc:''}</span></span>
+                        <button onclick="doCutGem('${gk}')" ${canAfford?'':'disabled title="Not enough gold"'}
+                            style="border-color:#FF7722;color:#FF7722;font-size:12px;padding:4px 10px;">CUT (200g)</button>
+                    </div>`;
+                }).join('');
+                screen.innerHTML = `
+                    <div class="location-header">⚒️ CUT GEMS — ${p.gold}g</div>
+                    ${anvil}
+                    <div class="message" style="color:#888;font-size:12px;text-align:center;">
+                        Cutting reveals a gem's permanent stats at random. Stats cannot be rerolled.
+                    </div>
+                    <div style="margin:10px 0;">${gemListHtml}</div>
+                    <button onclick="showBlacksmith()" style="margin-top:8px;">← BACK</button>`;
+            }
+
+            else if (subview === 'socket') {
+                const weapon = p.weapon ? WEAPONS[p.weapon] : null;
+                const cutGems = getCutGems();
+                if (!weapon) {
+                    screen.innerHTML = `<div class="location-header">⚒️ SOCKET GEM</div>${anvil}
+                        <div class="message" style="color:#888;text-align:center;padding:20px;">You have no weapon equipped.</div>
+                        <button onclick="showBlacksmith()">← BACK</button>`;
+                    return;
+                }
+                const slots = getGemSlots(weapon.quality);
+                const usedSlots = (weapon.gems || []).length;
+                const openSlots = slots - usedSlots;
+                if (cutGems.length === 0) {
+                    screen.innerHTML = `<div class="location-header">⚒️ SOCKET GEM</div>${anvil}
+                        <div class="message" style="color:#888;text-align:center;padding:20px;">
+                            You have no cut gems to socket.<br>
+                            <span style="font-size:12px;">Cut a raw gem first at the forge.</span>
+                        </div>
+                        <button onclick="showBlacksmith()">← BACK</button>`;
+                    return;
+                }
+                const slotsHtml = Array.from({length:slots}).map((_,i) => {
+                    const g = (weapon.gems||[])[i];
+                    return g
+                        ? `<span style="color:${g.color};">${g.emoji} ${g.name} [${g.description}]</span>`
+                        : `<span style="color:#444;">[ OPEN SLOT ]</span>`;
+                }).join('<br>');
+                const gemButtons = openSlots > 0 ? cutGems.map((g,idx) =>
+                    `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;margin:4px 0;border:1px solid ${g.color};background:rgba(0,0,0,0.3);">
+                        <span style="color:${g.color};">${g.emoji} ${g.name}<br><span style="color:#888;font-size:11px;">${g.description}</span></span>
+                        <button onclick="doSocketGem(${idx})" ${p.gold>=100?'':'disabled title="Need 100g"'}
+                            style="border-color:#c8a000;color:#c8a000;font-size:12px;padding:4px 10px;">SOCKET (100g)</button>
+                    </div>`).join('')
+                : `<div style="color:#888;text-align:center;padding:10px;">No open slots. Gems are permanent once socketed.</div>`;
+
+                screen.innerHTML = `
+                    <div class="location-header">⚒️ SOCKET GEM — ${p.gold}g</div>
+                    ${anvil}
+                    <div style="padding:10px 16px;border:1px solid #333;margin:8px 0;">
+                        <div style="color:#ccc;font-size:13px;margin-bottom:4px;">⚒️ ${weapon.name} <span style="color:#888;font-size:11px;">[${weapon.quality}]</span></div>
+                        <div style="font-size:12px;color:#888;">Slots: ${usedSlots}/${slots} used</div>
+                        <div style="margin-top:4px;font-size:12px;">${slotsHtml}</div>
+                    </div>
+                    <div style="margin-top:10px;color:#aaa;font-size:12px;text-align:center;">⚠️ Socketed gems are permanent and cannot be removed.</div>
+                    <div style="margin:8px 0;">${gemButtons}</div>
+                    <button onclick="showBlacksmith()" style="margin-top:8px;">← BACK</button>`;
+            }
+
+            else if (subview === 'info') {
+                screen.innerHTML = `
+                    <div class="location-header">⚒️ HOW GEMS WORK</div>
+                    ${anvil}
+                    <div class="message" style="font-size:13px;line-height:1.6;">
+                        <p><strong style="color:#FF7722;">Finding Gems</strong><br>
+                        Raw gems have a <strong>2% drop chance</strong> from any enemy. Enemy level determines gem tier:<br>
+                        Lv1-6 = Tier 1 &nbsp;|&nbsp; Lv7-12 = Tier 2 &nbsp;|&nbsp; Lv13-18 = Tier 3 &nbsp;|&nbsp; Lv19+ = Tier 4</p>
+                        <p><strong style="color:#c8a000;">Cutting (200g)</strong><br>
+                        Cutting a raw gem gives it permanent random stats. Higher tier gems roll stronger bonuses. Stats cannot be rerolled — choose wisely.</p>
+                        <p><strong style="color:#00FF88;">Socketing (100g)</strong><br>
+                        Socket a cut gem into your equipped weapon. Once socketed, a gem <strong>cannot be removed or replaced</strong>.</p>
+                        <p><strong style="color:#AA88FF;">Gem Slots by Quality</strong><br>
+                        Normal/Rare: 1 slot &nbsp;|&nbsp; Epic: 2 slots &nbsp;|&nbsp; Legendary: 3 slots &nbsp;|&nbsp; Godly: 4 slots</p>
+                        <p><strong style="color:#FF6688;">Gem Colors — Original</strong><br>
+                        🔴 Ruby: Weapon DMG + Lifesteal &nbsp;|&nbsp; 🔵 Sapphire: Spell Power + MP<br>
+                        🟡 Topaz: Crit + Lightning &nbsp;|&nbsp; 🟢 Emerald: Poison + STR<br>
+                        🟣 Amethyst: Defense + HP &nbsp;|&nbsp; ⬛ Onyx: Armor Pierce + Speed<br>
+                        🔷 Opal: Luck + Gold Find &nbsp;|&nbsp; 🟤 Garnet: STR + CON</p>
+                        <p><strong style="color:#FF6688;">Gem Colors — Rare</strong><br>
+                        🩸 Bloodstone: Max HP + HP Regen per turn<br>
+                        🌙 Moonstone: MP Regen per turn + Cooldown reduction<br>
+                        ☀️ Sunstone: Fire DMG + STR (works on spells)<br>
+                        🔮 Voidstone: Spell Leech → absorbs MP + WIS<br>
+                        🩶 Ironheart: Defense + CON<br>
+                        ⛈️ Stormglass: Lightning DMG + Frost DMG (both elements, both damage types)</p>
+                        <p style="color:#888;font-size:11px;">Lightning, Fire, Frost, Poison all apply to both melee and spells.<br>
+                        Weapon DMG (Ruby) is melee only. Spell Power (Sapphire) is spells only.<br>
+                        Lifesteal (Ruby) works on both melee and spells.</p>
+                    </div>
+                    <button onclick="showBlacksmith()">← BACK</button>`;
+            }
+        }
+
+        function doCutGem(rawGemKey) {
+            const p = gameState.player;
+            if (p.gold < 200) { alert("You need 200 gold to cut a gem."); return; }
+            const idx = p.inventory.indexOf(rawGemKey);
+            if (idx < 0) { alert("Gem not found in inventory."); return; }
+            p.gold -= 200;
+            p.inventory.splice(idx, 1);
+            const cut = cutGem(rawGemKey);
+            if (!cut) { alert("Could not cut gem — unknown type."); p.gold += 200; return; }
+            p.inventory.push(cut);
+            saveGame();
+            const parts = rawGemKey.split('_');
+            const typeKey = parts[1];
+            const gem = GEM_TYPES[typeKey];
+            // Show result flash
+            const flash = document.createElement('div');
+            flash.style.cssText = `position:fixed;top:15px;left:50%;transform:translateX(-50%);background:#0a0a0a;border:2px solid ${gem?gem.color:'#FF7722'};padding:14px 24px;color:${gem?gem.color:'#FF7722'};font-size:15px;z-index:9999;text-align:center;max-width:340px;`;
+            flash.innerHTML = `⚒️ <strong>Gem Cut!</strong><br><span style="font-size:12px;color:#ccc;">${cut.name}<br>${cut.description}</span>`;
+            document.body.appendChild(flash);
+            setTimeout(() => flash.remove(), 3500);
+            showBlacksmith('cut');
+        }
+
+        function doSocketGem(cutGemInventoryIndex) {
+            const p = gameState.player;
+            if (p.gold < 100) { alert("You need 100 gold to socket a gem."); return; }
+            const weapon = p.weapon ? WEAPONS[p.weapon] : null;
+            if (!weapon) { alert("No weapon equipped."); return; }
+            if (!weapon.gems) weapon.gems = [];
+            const slots = getGemSlots(weapon.quality);
+            if (weapon.gems.length >= slots) { alert("No open slots on this weapon."); return; }
+            // Find cut gems in inventory
+            const cutGems = p.inventory.filter(k => typeof k === 'object' && k && k.cut);
+            const gem = cutGems[cutGemInventoryIndex];
+            if (!gem) { alert("Gem not found."); return; }
+            const invIdx = p.inventory.indexOf(gem);
+            if (invIdx < 0) { alert("Gem not in inventory."); return; }
+            if (!confirm(`Socket ${gem.name} into ${weapon.name}? This is permanent and cannot be undone.`)) return;
+            p.gold -= 100;
+            p.inventory.splice(invIdx, 1);
+            weapon.gems.push(gem);
+            saveGame();
+            const flash = document.createElement('div');
+            flash.style.cssText = `position:fixed;top:15px;left:50%;transform:translateX(-50%);background:#0a0a0a;border:2px solid ${gem.color};padding:14px 24px;color:${gem.color};font-size:15px;z-index:9999;text-align:center;max-width:340px;`;
+            flash.innerHTML = `⚙️ <strong>Gem Socketed!</strong><br><span style="font-size:12px;color:#ccc;">${gem.name} fused into ${weapon.name} permanently.</span>`;
+            document.body.appendChild(flash);
+            setTimeout(() => flash.remove(), 3500);
+            showBlacksmith('socket');
+        }
+
         // ═══════════════════════════════════════════════════════════════
         // TEMPLE OF REBIRTH (Stat Reset)
         // ═══════════════════════════════════════════════════════════════
