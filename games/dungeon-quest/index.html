@@ -11146,20 +11146,22 @@ function consumePips(cs, amount, cooldown) {
   // Base damage roll
   let damage = base;
 
-  // Defense mitigation
-  let defense =
+  // Defense mitigation — percentage-based damage reduction (DR)
+  // Each point of defense = 2.8% DR, hard-capped at 75%.
+  // This replaces flat subtraction which let even tiny armor eat huge chunks of
+  // low-roll damage while leaving high-roll damage almost untouched.
+  // DR is consistent regardless of the hit size — cloth feels like cloth,
+  // plate feels like plate, at every level of the game.
+  let rawDefense =
     type === 'magic'
       ? (defender.magicDefense || 0)
       : (defender.defense || 0);
 
-  defense *= (1 - armorPiercing);
+  const DR_PER_POINT = 0.028;
+  const DR_CAP       = 0.75;
+  const effectiveDR  = Math.min(DR_CAP, rawDefense * DR_PER_POINT) * (1 - armorPiercing);
 
-  // Minimum damage guarantee: defense can never reduce a hit below 15% of base.
-  // Lowered from 40% — the old floor was capping Lv6+ enemy hits at 6-7 dmg
-  // regardless of their actual damage range (18-34), making armor too dominant.
-  // 15% still guarantees something always lands while letting armor actually work.
-  const minDamage = Math.max(1, Math.floor(base * 0.15));
-  damage = Math.max(minDamage, Math.floor(damage - defense));
+  damage = Math.max(1, Math.floor(damage * (1 - effectiveDR)));
 
   // Crit check
   let crit = false;
