@@ -140,8 +140,8 @@ body.terminal-mode #terminalWindow { display: block; }
     box-sizing: border-box;
     order: 4;
     padding: 4px;
-    /* safe area so buttons clear iPhone home indicator */
-    padding-bottom: max(4px, env(safe-area-inset-bottom, 4px));
+    /* safe area handled by XP bar below — just normal padding here */
+    padding-bottom: 4px;
 }
 body.terminal-mode #actionBar { display: block; }
 
@@ -217,20 +217,33 @@ body.terminal-mode #statusBars { display: block; }
     50%       { opacity: 0.6; box-shadow: 0 0 2px #ff0000; }
 }
 
-/* XP track — full width below */
+/* XP bar wrapper — pinned below action bar, very bottom of screen */
+#sbXpBar {
+    flex: 0 0 auto;
+    display: none;
+    order: 5;   /* below actionBar (order:4) */
+    padding: 0;
+    box-sizing: border-box;
+    background: #000;
+    /* safe area for iPhone home indicator sits BELOW the XP bar */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+body.terminal-mode #sbXpBar { display: block; }
+
+/* XP track — full width, doubled height */
 #sbXpTrack {
-    height: 4px;
+    height: 8px;
     background: #0d0d00;
-    margin: 2px 2px 0;
-    border-radius: 1px;
+    margin: 0;
+    border-radius: 0;
     overflow: hidden;
 }
 #sbXpFill {
     height: 100%;
     background: linear-gradient(90deg, #886600, #ffdd00);
-    box-shadow: 0 0 3px #ffaa00;
+    box-shadow: 0 0 4px #ffaa00, 0 0 8px #cc8800;
     transition: width 0.5s ease;
-    border-radius: 1px;
+    border-radius: 0;
 }
 
         @import url('https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap');
@@ -1405,14 +1418,17 @@ body.terminal-mode #fsBtn { bottom: calc(env(safe-area-inset-bottom, 0px) + 70px
     <!-- ACTION BAR -->
     <div id="actionBar"></div>
 
-    <!-- STATUS BARS — HP/MP/XP thin bars, always at very bottom -->
+    <!-- STATUS BARS — HP/MP thin bars, above action bar -->
     <div id="statusBars">
         <!-- HP + MP row -->
         <div id="sbHpMpRow">
             <div id="sbHpTrack"><div id="sbHpFill"></div></div>
             <div id="sbMpTrack"><div id="sbMpFill"></div></div>
         </div>
-        <!-- XP row -->
+    </div>
+
+    <!-- XP BAR — pinned to very bottom of screen, below action bar -->
+    <div id="sbXpBar">
         <div id="sbXpTrack"><div id="sbXpFill"></div></div>
     </div>
 
