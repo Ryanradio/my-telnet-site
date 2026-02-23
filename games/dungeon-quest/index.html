@@ -1918,8 +1918,22 @@ const OPPOSITE_DIR = {
             if (weapon.allowedClasses) {
                 return weapon.allowedClasses.includes(playerClass);
             }
-            // RUNESMITH: only allowedClasses weapons (all caught above) — block everything else
-            if (playerClass === 'runesmith') return false;
+            // RUNESMITH: can use staves, hammers, maces, and swords — the hybrid fighter/caster
+            if (playerClass === 'runesmith') {
+                if (!weapon.name) return false;
+                const wn = weapon.name.toLowerCase();
+                return weapon.weaponSubtype === 'staff'
+                    || wn.includes('staff')
+                    || wn.includes('hammer')
+                    || wn.includes('mace')
+                    || wn.includes('sword')
+                    || wn.includes('mattock')
+                    || wn.includes('maul')
+                    || wn.includes('axe')
+                    || weapon.type === 'hammer'
+                    || weapon.type === 'staff'
+                    || weapon.type === 'sword';
+            }
             
             // ROGUE: daggers only — no exceptions
             // Also allow dropped weapons with type 'dagger' or 'poison_dagger' / 'assassin_blade' etc.
@@ -1939,7 +1953,7 @@ const OPPOSITE_DIR = {
 
             // Default restrictions based on weapon type/name
             const weaponName = weapon.name.toLowerCase();
-            const SPELL_CLASSES = ['mage', 'warlock', 'cleric', 'acolyte', 'necrolyte', 'druid', 'sorceror'];
+            const SPELL_CLASSES = ['mage', 'warlock', 'cleric', 'acolyte', 'necrolyte', 'druid', 'sorceror', 'runesmith'];
             
             // Staffs - magic users only
             if (weaponName.includes('staff') || weapon.weaponSubtype === 'staff') {
@@ -1997,24 +2011,29 @@ const OPPOSITE_DIR = {
             // Default restrictions based on armor type/name
             const armorName = armor.name.toLowerCase();
             
-            // Robes - magic users only
+            // Robes - magic users only (runesmith cannot — too fragile for frontline)
             if (armorName.includes('robe')) {
                 return ['mage', 'warlock', 'cleric', 'acolyte', 'necrolyte', 'druid', 'sorceror'].includes(playerClass);
             }
             
-            // Plate armor - heavy fighters only
+            // Plate armor - heavy fighters only (runesmith cannot — too restrictive for rune casting)
             if (armorName.includes('plate')) {
                 return ['warrior', 'paladin'].includes(playerClass);
             }
             
-            // Chainmail - medium armor users
+            // Chainmail - medium armor (runesmith can wear — mobile enough for rune work)
             if (armorName.includes('chain')) {
-                return ['warrior', 'paladin', 'cleric', 'ranger'].includes(playerClass);
+                return ['warrior', 'paladin', 'cleric', 'ranger', 'runesmith'].includes(playerClass);
+            }
+            
+            // Scale / hide / studded — medium-heavy, runesmith fits here
+            if (armorName.includes('scale') || armorName.includes('hide') || armorName.includes('studded')) {
+                return ['warrior', 'paladin', 'cleric', 'ranger', 'hunter', 'runesmith'].includes(playerClass);
             }
             
             // Leather - light armor, most classes
             if (armorName.includes('leather')) {
-                return ['warrior', 'rogue', 'ranger', 'hunter', 'cleric', 'paladin'].includes(playerClass);
+                return ['warrior', 'rogue', 'ranger', 'hunter', 'cleric', 'paladin', 'runesmith'].includes(playerClass);
             }
             
             // Cloth - everyone can wear
