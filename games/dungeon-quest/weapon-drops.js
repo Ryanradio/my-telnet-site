@@ -34,16 +34,20 @@ const WEAPON_DROP_CONFIG = {
 // What weapons each class can use/receive
 // ═══════════════════════════════════════════════════════════════
 const CLASS_WEAPON_POOLS = {
-    warrior: ['sword', 'axe', 'hammer', 'greatsword', 'battleaxe', 'warhammer'],
-    paladin: ['sword', 'mace', 'hammer', 'holy_mace', 'crusader_sword'],
-    rogue: ['dagger', 'short_sword', 'poison_dagger', 'assassin_blade'],
-    ranger: ['bow', 'longbow', 'crossbow', 'composite_bow'],
-    hunter: ['bow', 'longbow', 'crossbow', 'hunting_bow'],
-    archer: ['bow', 'longbow', 'crossbow', 'war_bow'],
-    mage: ['staff', 'wand', 'tome', 'orb'],
-    warlock: ['staff', 'wand', 'dark_staff', 'shadow_orb'],
-    cleric: ['mace', 'staff', 'holy_staff', 'blessed_mace'],
-    acolyte: ['mace', 'staff', 'holy_staff']
+    warrior:   ['sword', 'axe', 'hammer', 'greatsword', 'battleaxe', 'warhammer'],
+    paladin:   ['sword', 'mace', 'hammer', 'holy_mace', 'crusader_sword'],
+    rogue:     ['dagger', 'short_sword', 'poison_dagger', 'assassin_blade'],
+    ranger:    ['bow', 'longbow', 'crossbow', 'composite_bow'],
+    hunter:    ['bow', 'longbow', 'crossbow', 'hunting_bow'],
+    archer:    ['bow', 'longbow', 'crossbow', 'war_bow'],
+    mage:      ['staff', 'wand', 'tome', 'orb'],
+    warlock:   ['staff', 'wand', 'dark_staff', 'shadow_orb'],
+    cleric:    ['mace', 'staff', 'holy_staff', 'blessed_mace'],
+    acolyte:   ['mace', 'staff', 'holy_staff'],
+    runesmith: ['hammer', 'warhammer', 'sword', 'axe', 'staff', 'mattock'],
+    necrolyte: ['staff', 'wand', 'tome', 'shadow_orb'],
+    druid:     ['staff', 'wand', 'tome'],
+    sorceror:  ['staff', 'wand', 'orb', 'tome']
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -70,7 +74,9 @@ function generateWeaponDrop(player, enemyLevel, enemyRarity = 'common') {
     }
     
     // Determine weapon level (player level or +1)
-    const weaponLevel = player.level + (Math.random() < 0.3 ? 1 : 0);
+    // Weapon level: player level, with 50% chance of +1, 10% chance of +2
+    const lvlRoll = Math.random();
+    const weaponLevel = player.level + (lvlRoll < 0.10 ? 2 : lvlRoll < 0.60 ? 1 : 0);
     
     // Get class weapon pool
     const playerClass = player.baseClass || player.class;
@@ -266,16 +272,21 @@ const ARMOR_DROP_CONFIG = {
 
 // Which armor types each class can receive as drops
 const CLASS_ARMOR_POOLS = {
-    warrior:  ['chain_mail', 'scale_mail', 'plate_armor', 'full_plate', 'iron_armor'],
-    paladin:  ['chain_mail', 'scale_mail', 'plate_armor', 'full_plate', 'iron_armor'],
-    rogue:    ['leather_armor', 'leather_vest', 'studded_leather'],
-    ranger:   ['leather_armor', 'studded_leather', 'hide_armor'],
-    hunter:   ['leather_armor', 'studded_leather', 'hide_armor'],
-    archer:   ['leather_armor', 'studded_leather', 'hide_armor'],
-    mage:     ['cloth_robe', 'mage_robes', 'silk_robe'],
-    warlock:  ['cloth_robe', 'dark_robes'],
-    cleric:   ['padded_armor', 'chain_mail', 'holy_vestments'],
-    acolyte:  ['cloth_robe', 'padded_armor']
+    // Real keys from armor.js only — no phantom entries
+    warrior:   ['chain_mail', 'scale_armor', 'plate_armor', 'dragon_scale', 'divine_plate'],
+    paladin:   ['chain_mail', 'scale_armor', 'plate_armor', 'dragon_scale', 'divine_plate'],
+    rogue:     ['leather_armor', 'leather_vest', 'studded_leather', 'shadow_cloak', 'assassin_garb'],
+    ranger:    ['leather_armor', 'studded_leather', 'hide_armor', 'shadow_cloak'],
+    hunter:    ['leather_armor', 'studded_leather', 'hide_armor'],
+    archer:    ['leather_armor', 'studded_leather', 'hide_armor'],
+    mage:      ['cloth_robe', 'mage_robes', 'archmage_robes'],
+    warlock:   ['cloth_robe', 'mage_robes', 'archmage_robes'],
+    cleric:    ['padded_armor', 'chain_mail', 'scale_armor', 'plate_armor'],
+    acolyte:   ['cloth_robe', 'padded_armor', 'chain_mail'],
+    runesmith: ['leather_armor', 'studded_leather', 'hide_armor', 'chain_mail', 'scale_armor'],
+    necrolyte: ['cloth_robe', 'mage_robes', 'archmage_robes'],
+    druid:     ['cloth_robe', 'leather_armor', 'hide_armor', 'mage_robes'],
+    sorceror:  ['cloth_robe', 'mage_robes', 'archmage_robes']
 };
 
 /**
@@ -294,7 +305,7 @@ function generateArmorDrop(player, enemyLevel, enemyRarity = 'common') {
     if (Math.random() > baseChance * rarityMult) return null;
 
     const playerClass = player.baseClass || player.class;
-    const maxLevel    = player.level + 2;
+    const maxLevel    = player.level + 3;
 
     // Build candidate list from class pool
     const poolKeys   = CLASS_ARMOR_POOLS[playerClass] || [];
