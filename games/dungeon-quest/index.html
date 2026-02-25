@@ -169,48 +169,59 @@ body.terminal-mode #actionBar { display: block; }
 }
 body.terminal-mode #statusBars { display: block; }
 
-/* HP + MP side-by-side row */
+/* HP + MP stacked rows */
 #sbHpMpRow {
     display: flex;
-    height: 7px;
-    gap: 2px;
-    padding: 0 2px;
+    flex-direction: column;
+    gap: 4px;
+    padding: 4px 10px 2px;
 }
 
-/* HP track */
-#sbHpTrack {
-    flex: 1;
-    background: #1a0000;
-    border-radius: 2px;
+/* Shared track style for HP and MP */
+#sbHpTrack, #sbMpTrack {
+    height: 28px;
+    border-radius: 14px;
     overflow: hidden;
+    border: 1px solid #222;
     position: relative;
 }
+#sbHpTrack { background: #1a0000; border-color: #330000; }
+#sbMpTrack { background: #00001a; border-color: #000033; }
+
+/* Fill bars */
 #sbHpFill {
     height: 100%;
     background: linear-gradient(90deg, #cc0000, #ff3333);
     box-shadow: 0 0 4px #ff0000, 0 0 8px rgba(255,0,0,0.4);
     transition: width 0.4s ease;
-    border-radius: 2px;
-}
-
-/* MP track */
-#sbMpTrack {
-    flex: 1;
-    background: #00001a;
-    border-radius: 2px;
-    overflow: hidden;
+    border-radius: 14px;
 }
 #sbMpFill {
     height: 100%;
     background: linear-gradient(90deg, #0044cc, #4499ff);
     box-shadow: 0 0 4px #0066ff, 0 0 8px rgba(0,102,255,0.4);
     transition: width 0.4s ease;
-    border-radius: 2px;
+    border-radius: 14px;
     animation: mpPulse 3s ease-in-out infinite;
 }
 @keyframes mpPulse {
     0%, 100% { opacity: 1; }
-    50%       { opacity: 0.75; }
+    50%       { opacity: 0.85; }
+}
+
+/* Labels overlaid on bars */
+#sbHpLabel, #sbMpLabel {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-family: 'VT323', monospace;
+    color: rgba(255,255,255,0.9);
+    text-shadow: 0 0 4px #000, 0 0 6px #000, 1px 1px 0 #000;
+    pointer-events: none;
+    letter-spacing: 1px;
 }
 @keyframes runeOverloadPulse {
     0%   {
@@ -1452,10 +1463,10 @@ body.terminal-mode #menuContainer {
 
     <!-- STATUS BARS — HP/MP thin bars, above action bar -->
     <div id="statusBars">
-        <!-- HP + MP row -->
+        <!-- HP + MP stacked rows with labels -->
         <div id="sbHpMpRow">
-            <div id="sbHpTrack"><div id="sbHpFill"></div></div>
-            <div id="sbMpTrack"><div id="sbMpFill"></div></div>
+            <div id="sbHpTrack"><div id="sbHpFill"></div><div id="sbHpLabel">HP</div></div>
+            <div id="sbMpTrack"><div id="sbMpFill"></div><div id="sbMpLabel">MP</div></div>
         </div>
     </div>
 
@@ -8225,6 +8236,12 @@ function equipItem(type, key) {
     setBar('sbHpFill', hpPct);
     setBar('sbMpFill', mpPct);
     setBar('sbXpFill', xpPct);
+
+    // Update HP/MP labels
+    const hpLabel = document.getElementById('sbHpLabel');
+    if (hpLabel) hpLabel.textContent = `HP  ${p.hp} / ${p.maxHp}`;
+    const mpLabel = document.getElementById('sbMpLabel');
+    if (mpLabel) mpLabel.textContent = `MP  ${p.mp} / ${p.maxMp}`;
     const xpLabel = document.getElementById('sbXpLabel');
     if (xpLabel) {
         const xpNeeded = xpLevelEnd - xpLevelStart;
