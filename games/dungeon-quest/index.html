@@ -106,15 +106,31 @@ body.terminal-mode #gameWrapper {
 }
 body.terminal-mode #hud {
     display: block;
-    order: 3;   /* terminal=1, statusBars=2, hud=3, actionBar=4 */
+    order: 2;   /* terminal=1, hud=2, statusBars=3, actionBar=4, XP=5 */
 }
 
-/* ── Mobile HUD text strip — hidden in terminal mode (bars replace it) */
+/* ── Mobile HUD text strip ── */
 #mobileHud {
     display: none;
     flex: 0 0 auto;
     box-sizing: border-box;
     order: 2;
+}
+/* On mobile, show mobileHud in terminal mode so player name/gold are visible */
+@media (max-width: 768px) {
+    body.terminal-mode #mobileHud {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 2px 8px;
+        background: #000;
+        font-family: 'VT323', monospace;
+        font-size: 16px;
+        gap: 8px;
+    }
+    body.terminal-mode #mobileHud span { display: inline !important; }
+    body.terminal-mode #mobileHud .mhud-xp   { display: none !important; }
+    body.terminal-mode #mobileHud .mhud-gold  { display: inline !important; }
 }
 
 /* ── Legacy bottomHud — always hidden ──────────────────────────── */
@@ -158,11 +174,11 @@ body.terminal-mode #actionBar { display: block; }
     min-width: 0 !important;
 }
 
-/* ── Status bars (HP/MP/XP) — sits just below terminal, above action bar ── */
+/* ── Status bars (HP/MP) — order:3, sits just above actionBar(4) ── */
 #statusBars {
     flex: 0 0 auto;
     display: none;
-    order: 2;
+    order: 3;
     padding: 0;
     padding-bottom: 4px;
     box-sizing: border-box;
@@ -1460,7 +1476,7 @@ body.terminal-mode #menuContainer {
     <!-- ACTION BAR -->
     <div id="actionBar"></div>
 
-    <!-- STATUS BARS — HP/MP thin bars, above action bar -->
+    <!-- STATUS BARS — HP/MP bars, order:2 places them above actionBar visually -->
     <div id="statusBars">
         <!-- HP + MP side by side -->
         <div id="sbHpMpRow">
@@ -1469,7 +1485,7 @@ body.terminal-mode #menuContainer {
         </div>
     </div>
 
-    <!-- XP BAR — pinned to very bottom of screen, below action bar -->
+    <!-- XP BAR — below action bar -->
     <div id="sbXpBar">
         <div id="sbXpTrack"><div id="sbXpFill"></div><div id="sbXpLabel">XP</div></div>
     </div>
@@ -8221,6 +8237,11 @@ function equipItem(type, key) {
     set('hudMpNums', `✨ ${p.mp}/${p.maxMp}`);
     set('hudXpNums', `⭐ ${p.xp}/${p.xpToNext}`);
     set('hudGold',   `💰 ${p.gold}g`);
+
+    // ── Mobile HUD strip — name + gold shown on small screens ──
+    set('mhHp',   `❤️ ${p.name} Lv${p.level}`);
+    set('mhMp',   `${p.className}`);
+    set('mhGold', `💰 ${p.gold}g`);
 
     // ── Status bars (HP / MP / XP) ──
     const hpPct = p.maxHp  > 0 ? (p.hp  / p.maxHp)  * 100 : 0;
