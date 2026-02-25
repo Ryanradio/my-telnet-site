@@ -164,61 +164,58 @@ body.terminal-mode #actionBar { display: block; }
     display: none;
     order: 2;
     padding: 0;
+    padding-bottom: 4px;
     box-sizing: border-box;
     background: #000;
 }
 body.terminal-mode #statusBars { display: block; }
 
-/* HP + MP stacked rows */
+/* HP + MP side-by-side row — each 50% width, same pill style as XP bar */
 #sbHpMpRow {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
+    flex-direction: row;
+    gap: 6px;
     padding: 4px 10px 2px;
-}
-
-/* Shared track style for HP and MP */
-#sbHpTrack, #sbMpTrack {
-    width: 100%;
-    height: 28px;
-    border-radius: 14px;
-    overflow: hidden;
-    border: 1px solid #222;
-    position: relative;
+    background: #000;
     box-sizing: border-box;
+}
+#sbHpTrack, #sbMpTrack {
+    flex: 1;
+    height: 22px;
+    border-radius: 11px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid #222;
 }
 #sbHpTrack { background: #1a0000; border-color: #330000; }
 #sbMpTrack { background: #00001a; border-color: #000033; }
 
-/* Fill bars */
 #sbHpFill {
     height: 100%;
     background: linear-gradient(90deg, #cc0000, #ff3333);
     box-shadow: 0 0 4px #ff0000, 0 0 8px rgba(255,0,0,0.4);
     transition: width 0.4s ease;
-    border-radius: 14px;
+    border-radius: 11px;
 }
 #sbMpFill {
     height: 100%;
     background: linear-gradient(90deg, #0044cc, #4499ff);
     box-shadow: 0 0 4px #0066ff, 0 0 8px rgba(0,102,255,0.4);
     transition: width 0.4s ease;
-    border-radius: 14px;
+    border-radius: 11px;
     animation: mpPulse 3s ease-in-out infinite;
 }
 @keyframes mpPulse {
     0%, 100% { opacity: 1; }
     50%       { opacity: 0.85; }
 }
-
-/* Labels overlaid on bars */
 #sbHpLabel, #sbMpLabel {
     position: absolute;
     inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 15px;
+    font-size: 13px;
     font-family: 'VT323', monospace;
     color: rgba(255,255,255,0.9);
     text-shadow: 0 0 4px #000, 0 0 6px #000, 1px 1px 0 #000;
@@ -1465,7 +1462,7 @@ body.terminal-mode #menuContainer {
 
     <!-- STATUS BARS — HP/MP thin bars, above action bar -->
     <div id="statusBars">
-        <!-- HP + MP stacked rows with labels -->
+        <!-- HP + MP side by side -->
         <div id="sbHpMpRow">
             <div id="sbHpTrack"><div id="sbHpFill"></div><div id="sbHpLabel">HP</div></div>
             <div id="sbMpTrack"><div id="sbMpFill"></div><div id="sbMpLabel">MP</div></div>
