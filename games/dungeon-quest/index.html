@@ -120,17 +120,28 @@ body.terminal-mode #hud {
 @media (max-width: 768px) {
     body.terminal-mode #mobileHud {
         display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
         justify-content: space-between;
         align-items: center;
-        padding: 2px 8px;
+        padding: 3px 8px;
         background: #000;
         font-family: 'VT323', monospace;
-        font-size: 16px;
-        gap: 8px;
+        font-size: 15px;
+        gap: 6px;
+        white-space: nowrap;
+        overflow: hidden;
     }
-    body.terminal-mode #mobileHud span { display: inline !important; }
-    body.terminal-mode #mobileHud .mhud-xp   { display: none !important; }
-    body.terminal-mode #mobileHud .mhud-gold  { display: inline !important; }
+    body.terminal-mode #mobileHud span {
+        display: inline !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    body.terminal-mode #mhHp   { color: #00ff88; flex: 1 1 auto; min-width: 0; }
+    body.terminal-mode #mhMp   { color: #aaaaaa; flex: 0 0 auto; }
+    body.terminal-mode #mhGold { color: #FFD700; flex: 0 0 auto; }
+    body.terminal-mode #mobileHud .mhud-xp { display: none !important; }
 }
 
 /* ── Legacy bottomHud — always hidden ──────────────────────────── */
@@ -8238,8 +8249,8 @@ function equipItem(type, key) {
     set('hudXpNums', `⭐ ${p.xp}/${p.xpToNext}`);
     set('hudGold',   `💰 ${p.gold}g`);
 
-    // ── Mobile HUD strip — name + gold shown on small screens ──
-    set('mhHp',   `❤️ ${p.name} Lv${p.level}`);
+    // ── Mobile HUD strip — single line: name/level | class | gold ──
+    set('mhHp',   `${p.name}  Lv${p.level}`);
     set('mhMp',   `${p.className}`);
     set('mhGold', `💰 ${p.gold}g`);
 
