@@ -179,11 +179,13 @@ body.terminal-mode #statusBars { display: block; }
 
 /* Shared track style for HP and MP */
 #sbHpTrack, #sbMpTrack {
+    width: 100%;
     height: 28px;
     border-radius: 14px;
     overflow: hidden;
     border: 1px solid #222;
     position: relative;
+    box-sizing: border-box;
 }
 #sbHpTrack { background: #1a0000; border-color: #330000; }
 #sbMpTrack { background: #00001a; border-color: #000033; }
