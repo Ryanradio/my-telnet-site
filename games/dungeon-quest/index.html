@@ -5961,7 +5961,8 @@ function navigateChronicle(dir) {
 function renderBestiaryList() {
     const p = gameState.player;
     if (!p) return;
-    closeBestiaryReader();
+    // Do NOT call closeBestiaryReader() here — openBestiaryEntry calls this
+    // after opening, which would immediately close the reader.
 
     const list = document.getElementById('bestiary-list');
     if (!list) return;
@@ -6023,6 +6024,7 @@ function renderBestiaryList() {
 
             html += `
                 <div class="bestiary-entry-row ${CUI.activeMonsterId === key ? 'active' : ''}"
+                     data-key="${key}"
                      onclick="openBestiaryEntry('${key}')">
                     <div class="bestiary-monster-icon ${discovered ? '' : 'undiscovered'}">
                         ${discovered ? (def.icon || '?') : '?'}
@@ -6048,13 +6050,29 @@ function renderBestiaryList() {
     refreshAllBadges();
 }
 
+function buildBestiaryProgressBar(kills) {
+    if (kills <= 0) return '';
+    var tiers = [{t:1,label:'Seen'},{t:5,label:'Studying'},{t:10,label:'Known'},{t:25,label:'Hunter'}];
+    var next  = tiers.filter(function(t){ return kills < t.t; })[0];
+    if (!next) return '<div style="color:#00ff88;font-size:12px;padding:4px 0;">&#9733; Hunter &mdash; fully mastered</div>';
+    var prev  = tiers[tiers.indexOf(next) - 1] || { t: 0 };
+    var pct   = Math.min(100, Math.round(((kills - prev.t) / (next.t - prev.t)) * 100));
+    var filled = Math.floor(pct / 10);
+    var bar   = '\u2588'.repeat(filled) + '\u2591'.repeat(10 - filled);
+    return '<div style="font-size:12px;color:#7a6040;margin:4px 0 6px;">'
+        + '<span style="color:#a07840;">[' + bar + ']</span>'
+        + ' ' + pct + '% &rarr; <b style="color:#c8a050;">' + next.label + '</b>'
+        + ' <span style="color:#5a4020;">(' + (next.t - kills) + ' more kill' + (next.t - kills !== 1 ? 's' : '') + ')</span>'
+        + '</div>';
+}
+
 function openBestiaryEntry(key) {
     const p = gameState.player;
     if (!p) return;
-    const def   = BESTIARY_DATA[key];
+    const def = BESTIARY_DATA[key];
     if (!def) return;
 
-    // Mark this entry as read at the current tier — clears the badge for it
+    // Mark as read at current tier so badge clears
     if (!p.bestiaryRead) p.bestiaryRead = {};
     p.bestiaryRead[key] = getBestiaryTier(key);
     refreshAllBadges();
@@ -6063,83 +6081,71 @@ function openBestiaryEntry(key) {
     const kills = (p.kills && p.kills[key]) || 0;
     const tier  = getBestiaryTier(key);
 
-    // Show reader
+    // Hide list, show reader
     document.getElementById('bestiary-list').style.display = 'none';
     const reader = document.getElementById('bestiary-reader');
     reader.classList.add('open');
 
-    const statReveal  = tier >= BESTIARY_TIERS.STUDYING;
-    const fullReveal  = tier >= BESTIARY_TIERS.KNOWN;
-    const hunterReveal= tier >= BESTIARY_TIERS.HUNTER;
-    const lock        = `<span class="bestiary-locked-stat">— Requires ${statReveal ? 10 : 5} kills —</span>`;
+    const statReveal   = tier >= BESTIARY_TIERS.STUDYING;
+    const fullReveal   = tier >= BESTIARY_TIERS.KNOWN;
+    const hunterReveal = tier >= BESTIARY_TIERS.HUNTER;
+    const lockMsg      = statReveal
+        ? '<span class="bestiary-locked-stat">&mdash; Requires 10 kills &mdash;</span>'
+        : '<span class="bestiary-locked-stat">&mdash; Requires 5 kills &mdash;</span>';
 
     // Stat grid
     const stats = def.stats || {};
-    const statGrid = `
-        <div class="bestiary-stat-grid">
-            <div class="bestiary-stat-row">
-                <span class="bestiary-stat-label">HP</span>
-                <span class="bestiary-stat-value">${statReveal ? (stats.hp || '?') : lock}</span>
-            </div>
-            <div class="bestiary-stat-row">
-                <span class="bestiary-stat-label">Level</span>
-                <span class="bestiary-stat-value">${statReveal ? (stats.level || '?') : lock}</span>
-            </div>
-            <div class="bestiary-stat-row">
-                <span class="bestiary-stat-label">Damage</span>
-                <span class="bestiary-stat-value">${statReveal ? (stats.damage || '?') : lock}</span>
-            </div>
-            <div class="bestiary-stat-row">
-                <span class="bestiary-stat-label">Defense</span>
-                <span class="bestiary-stat-value">${statReveal ? (stats.defense || '?') : lock}</span>
-            </div>
-            <div class="bestiary-stat-row">
-                <span class="bestiary-stat-label">XP</span>
-                <span class="bestiary-stat-value">${statReveal ? (stats.xp || '?') : lock}</span>
-            </div>
-            <div class="bestiary-stat-row">
-                <span class="bestiary-stat-label">Gold</span>
-                <span class="bestiary-stat-value">${statReveal ? (stats.gold || '?') : lock}</span>
-            </div>
-        </div>`;
+    function statVal(v) { return statReveal ? (v || '?') : lockMsg; }
+    const statGrid = '<div class="bestiary-stat-grid">'
+        + '<div class="bestiary-stat-row"><span class="bestiary-stat-label">HP</span><span class="bestiary-stat-value">'     + statVal(stats.hp)     + '</span></div>'
+        + '<div class="bestiary-stat-row"><span class="bestiary-stat-label">Level</span><span class="bestiary-stat-value">'  + statVal(stats.level)  + '</span></div>'
+        + '<div class="bestiary-stat-row"><span class="bestiary-stat-label">Damage</span><span class="bestiary-stat-value">' + statVal(stats.damage) + '</span></div>'
+        + '<div class="bestiary-stat-row"><span class="bestiary-stat-label">Defense</span><span class="bestiary-stat-value">'+ statVal(stats.defense)+ '</span></div>'
+        + '<div class="bestiary-stat-row"><span class="bestiary-stat-label">XP</span><span class="bestiary-stat-value">'     + statVal(stats.xp)     + '</span></div>'
+        + '<div class="bestiary-stat-row"><span class="bestiary-stat-label">Gold</span><span class="bestiary-stat-value">'   + statVal(stats.gold)   + '</span></div>'
+        + '</div>';
 
-    document.getElementById('bestiary-detail-content').innerHTML = `
-        <div class="bestiary-detail-name">
-            ${def.icon || ''} ${def.name}
-            ${kills > 0 && !p.kills._legacy ? '' : `<span class="bestiary-legacy-tag">Legacy</span>`}
-        </div>
-        <div class="bestiary-detail-class">${def.category} · ${kills} kill${kills !== 1 ? 's' : ''}</div>
+    // Lore note
+    let loreBlock = '';
+    if (fullReveal && def.lore) {
+        loreBlock = '<div class="bestiary-lore-note"><strong style="color:#c8a050;font-style:normal;">Lore Note</strong><br>' + def.lore + '</div>';
+    } else if (!statReveal) {
+        const remaining = 5 - kills;
+        loreBlock = '<div style="color:#3a2810;font-size:13px;font-style:italic;padding:8px 0;">Defeat this creature ' + remaining + ' more time' + (remaining !== 1 ? 's' : '') + ' to reveal its stats.</div>';
+    }
 
-        ${kills === 0 ? `<div class="bestiary-flavor" style="text-align:center;opacity:0.5;">
-            Something moved through the dark.<br>You haven't faced it yet.
-        </div>` : `
+    // Hunter note
+    let hunterBlock = '';
+    if (hunterReveal && def.hunterNote) {
+        hunterBlock = '<div class="bestiary-hunters-note"><strong style="color:#7a9a60;font-style:normal;">Hunter\'s Note</strong><br>' + def.hunterNote(p.name || 'hunter') + '</div>';
+    } else if (fullReveal && !hunterReveal) {
+        const remaining = 25 - kills;
+        hunterBlock = '<div style="color:#3a2810;font-size:13px;font-style:italic;padding:8px 0;">Defeat this creature ' + remaining + ' more time' + (remaining !== 1 ? 's' : '') + ' to unlock the Hunter\'s Note.</div>';
+    }
 
-        <div class="bestiary-flavor">${def.flavor}</div>
+    // Body content
+    let body = '';
+    if (kills === 0) {
+        body = '<div class="bestiary-flavor" style="text-align:center;opacity:0.5;">Something moved through the dark.<br>You haven\'t faced it yet.</div>';
+    } else {
+        body = '<div class="bestiary-flavor">' + def.flavor + '</div>' + statGrid + loreBlock + hunterBlock;
+    }
 
-        ${statGrid}
+    const legacyTag = (p.kills && p.kills._legacy) ? '<span class="bestiary-legacy-tag">Legacy</span>' : '';
 
-        ${fullReveal && def.lore ? `
-            <div class="bestiary-lore-note">
-                <strong style="color:#c8a050;font-style:normal;">Lore Note</strong><br>
-                ${def.lore}
-            </div>` : (!statReveal ? `
-            <div style="color:#3a2810;font-size:13px;font-style:italic;padding:8px 0;">
-                Defeat this creature ${5 - kills} more time${5 - kills !== 1 ? 's' : ''} to reveal its stats.
-            </div>` : '')}
-
-        ${hunterReveal && def.hunterNote ? `
-            <div class="bestiary-hunters-note">
-                <strong style="color:#7a9a60;font-style:normal;">Hunter's Note</strong><br>
-                ${def.hunterNote(p.name || 'hunter')}
-            </div>` : (fullReveal && !hunterReveal ? `
-            <div style="color:#3a2810;font-size:13px;font-style:italic;padding:8px 0;">
-                Defeat this creature ${25 - kills} more time${25 - kills !== 1 ? 's' : ''} to unlock the Hunter's Note.
-            </div>` : '')}
-        `}
-    `;
+    document.getElementById('bestiary-detail-content').innerHTML =
+        '<div class="bestiary-detail-name">' + (def.icon || '') + ' ' + def.name + ' ' + legacyTag + '</div>'
+        + '<div class="bestiary-detail-class">' + def.category + ' &middot; ' + kills + ' kill' + (kills !== 1 ? 's' : '') + '</div>'
+        + buildBestiaryProgressBar(kills)
+        + body;
 
     document.getElementById('chronicle-body').scrollTop = 0;
-    renderBestiaryList();
+    refreshAllBadges();
+
+    // Highlight active row in list without re-rendering
+    document.querySelectorAll('.bestiary-entry-row').forEach(function(row) {
+        row.classList.toggle('active', row.dataset.key === key);
+    });
 }
 
 function closeBestiaryReader() {
@@ -12252,13 +12258,13 @@ function equipItem(type, key) {
     // ── Status bars (HP / MP / XP) ──
     const hpPct = p.maxHp  > 0 ? (p.hp  / p.maxHp)  * 100 : 0;
     const mpPct = p.maxMp  > 0 ? (p.mp  / p.maxMp)  * 100 : 0;
-    // XP bar shows cumulative progress toward xpToNext (running total)
+    // XP bar: progress within current level only (0% at level-up, 100% at next level)
     const hudCls = p.baseClass || p.class;
     const xpLevelStart = getXpForLevel(hudCls, p.level);
     const xpLevelEnd   = p.xpToNext;
-    const xpInLevel    = p.xp - xpLevelStart;
-    const xpSpan       = xpLevelEnd - xpLevelStart;
-    const xpPct = p.xpToNext > 0 ? Math.min(100, (p.xp / p.xpToNext) * 100) : 100;
+    const xpInLevel    = Math.max(0, p.xp - xpLevelStart);
+    const xpSpan       = Math.max(1, xpLevelEnd - xpLevelStart);
+    const xpPct        = Math.min(100, (xpInLevel / xpSpan) * 100);
     setBar('sbHpFill', hpPct);
     setBar('sbMpFill', mpPct);
     setBar('sbXpFill', xpPct);
@@ -12270,7 +12276,8 @@ function equipItem(type, key) {
     if (mpLabel) mpLabel.textContent = `MP  ${p.mp} / ${p.maxMp}`;
     const xpLabel = document.getElementById('sbXpLabel');
     if (xpLabel) {
-        xpLabel.textContent = `XP  ${p.xp.toLocaleString()} / ${p.xpToNext.toLocaleString()}`;
+        // Show accumulated XP / total needed — bar fills from level floor to xpToNext
+        xpLabel.textContent = 'XP  ' + p.xp.toLocaleString() + ' / ' + p.xpToNext.toLocaleString();
     }
 
     // ── Low-HP: change HP bar colour and add heartbeat ──
@@ -12909,8 +12916,23 @@ function stabilizeTerminalLayout() {
                 gold: Math.floor(template.baseGold * mult * levelMult),
                 level: monsterLevel, 
                 possibleDrops: template.possibleDrops, 
-                dropRates: template.dropRates
+                dropRates: template.dropRates,
+                // Copy abilities array from template (these are read-only behavior data,
+                // not scaled — they reference the original objects directly)
+                abilities: template.abilities || [],
+                isBoss: template.isBoss || false,
+                magicAttack: template.magicAttack || false,
             };
+
+            // ── Phase II: enemy MP ───────────────────────────────────
+            // Each ability that costs MP gets exactly 2 casts worth of MP.
+            // If multiple abilities have mpCost, use the highest (one pool).
+            // Enemies with no mpCost abilities get 0 MP (irrelevant).
+            const _abils = monster.abilities || [];
+            const _maxMpCost = _abils.reduce((max, a) => Math.max(max, a.mpCost || 0), 0);
+            monster.baseMp = _maxMpCost * 2;   // enough for exactly 2 ability uses
+            monster.mp     = monster.baseMp;
+            monster.mpDepleted = false;         // flag: fires "exhausted" debug once
             
             return monster;
         }
@@ -15287,8 +15309,293 @@ function getPipCooldown(player){
 
 
 
+
+// ═══════════════════════════════════════════════════════════════════════
+// MONSTER ABILITY SIDE-EFFECTS
+// Called after the damage of an ability attack lands.
+// Types: dot_attack, debuff, stun, heavy_hit, drain_hp, drain_mp,
+//        rend, burn, intimidate, leech, dispel, summon, aoe
+// ═══════════════════════════════════════════════════════════════════════
+function executeAbilitySideEffect(abilityDef, p, cs, enemy) {
+    const type = abilityDef.type;
+    const enemyName   = (enemy && enemy.name) ? enemy.name : 'Enemy';
+    const playerClass = p.className || p.class || 'adventurer';
+
+    // ── PHASE II STUB: deduct enemy MP when the system is wired up ──
+    // if (enemy && abilityDef.mpCost) {
+    //     enemy.mp = Math.max(0, (enemy.mp || 0) - abilityDef.mpCost);
+    // }
+
+    // ── helper: start a DOT timer (shared by dot_attack and burn) ───
+    function _startDOT(dot) {
+        let ticksLeft = dot.ticks;
+        const dotTimer = setInterval(() => {
+            if (!gameState.combatState || p.hp <= 0) { clearInterval(dotTimer); return; }
+            p.hp = Math.max(0, p.hp - dot.damage);
+            updateHud();
+            termAppend(`<span style="color:#ff8800;">${dot.icon || '💀'} ${dot.name}: ${dot.damage} damage!</span>`, 'term-dim');
+            if (p.hp <= 0) { clearInterval(dotTimer); endCombat(false); return; }
+            ticksLeft--;
+            if (ticksLeft <= 0) {
+                clearInterval(dotTimer);
+                termAppend(`<span style="color:#888;">${dot.name} fades.</span>`, 'term-dim');
+            }
+        }, dot.tickInterval);
+        if (!cs.dotTimers) cs.dotTimers = {};
+        cs.dotTimers[`ability_${abilityDef.id}_${Date.now()}`] = dotTimer;
+    }
+
+    // ── helper: display ability message ─────────────────────────────
+    function _msg(fallback) {
+        const txt = abilityDef.applyMessage
+            ? abilityDef.applyMessage(enemyName, playerClass)
+            : fallback;
+        termAppend(`<span style="color:#ff8800;">${txt}</span>`, 'term-warning');
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // 1. DOT_ATTACK — physical hit followed by a damage-over-time
+    // ════════════════════════════════════════════════════════════════
+    if (type === 'dot_attack' && abilityDef.dot) {
+        _msg(`💀 ${abilityDef.dot.name}!`);
+        _startDOT(abilityDef.dot);
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // 2. DEBUFF — applies a combat-math penalty to the player
+    // ════════════════════════════════════════════════════════════════
+    else if (type === 'debuff') {
+        _msg(`💀 ${abilityDef.debuff}!`);
+        const dur = abilityDef.debuffDuration || 4000;
+
+        if (abilityDef.debuff === 'blinded') {
+            cs.playerBlindedMissChance = abilityDef.hitMissChance || 0.30;
+            cs.playerBlindedHits = 1;
+        }
+        if (abilityDef.debuff === 'constricted') {
+            cs.playerConstricted = true;
+            setTimeout(() => {
+                if (gameState.combatState) {
+                    gameState.combatState.playerConstricted = false;
+                    termAppend('<span style="color:#888;">You break free from the constriction.</span>', 'term-dim');
+                }
+            }, dur);
+        }
+        if (abilityDef.debuff === 'intimidated') {
+            cs.playerIntimidated = abilityDef.damagePenalty || 0.25;
+            setTimeout(() => {
+                if (gameState.combatState) {
+                    gameState.combatState.playerIntimidated = 0;
+                    termAppend('<span style="color:#888;">Your courage returns.</span>', 'term-dim');
+                }
+            }, dur);
+        }
+        if (abilityDef.debuff === 'silenced') {
+            cs.playerSilenced = true;
+            setTimeout(() => {
+                if (gameState.combatState) {
+                    gameState.combatState.playerSilenced = false;
+                    termAppend('<span style="color:#888;">You can speak again.</span>', 'term-dim');
+                }
+            }, dur);
+        }
+        if (abilityDef.debuff === 'slowed') {
+            cs.playerSlowed = true;
+            setTimeout(() => {
+                if (gameState.combatState) {
+                    gameState.combatState.playerSlowed = false;
+                    termAppend('<span style="color:#888;">Your movement returns to normal.</span>', 'term-dim');
+                }
+            }, dur);
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // 3. STUN — locks player pip charges
+    // ════════════════════════════════════════════════════════════════
+    else if (type === 'stun') {
+        _msg('💀 Stunned!');
+        const stunPips = abilityDef.stunPips || 1;
+        const stunSecs = abilityDef.stunDuration || 5;
+        let stolen = 0;
+        if (cs.pipTimers) {
+            for (let i = 0; i < cs.pipTimers.length && stolen < stunPips; i++) {
+                cs.pipTimers[i] = Math.max(cs.pipTimers[i] || 0, stunSecs);
+                cs.pipAvailable[i] = false;
+                stolen++;
+            }
+        }
+        updateHud();
+        renderActionBar();
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // 4. HEAVY_HIT — pure damage amplifier (damageMult handles it)
+    // ════════════════════════════════════════════════════════════════
+    else if (type === 'heavy_hit') {
+        _msg(`💥 ${enemyName} strikes with crushing force!`);
+        // damage multiplier already applied via intent.damageMult — nothing extra needed
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // 5. DRAIN_HP — enemy steals HP from player and heals itself
+    // ════════════════════════════════════════════════════════════════
+    else if (type === 'drain_hp') {
+        const drain = abilityDef.drainAmount || 15;
+        const healRatio = abilityDef.healPercent !== undefined ? abilityDef.healPercent : 1.0;
+        const actualDrain = Math.min(drain, p.hp - 1); // can't drain to 0 via this mechanic alone
+        if (actualDrain > 0) {
+            p.hp -= actualDrain;
+            const healAmt = Math.floor(actualDrain * healRatio);
+            if (enemy && healAmt > 0) {
+                enemy.hp = Math.min(enemy.maxHp || enemy.hp, enemy.hp + healAmt);
+                updateEnemyCards();
+            }
+            updateHud();
+            _msg(`🩸 ${enemyName} drains ${actualDrain} HP from the ${playerClass}!`);
+            termAppend(`<span style="color:#ff4488;">❤️ ${enemyName} heals for ${healAmt}!</span>`, 'term-dim');
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // 6. DRAIN_MP — enemy drains player mana
+    // ════════════════════════════════════════════════════════════════
+    else if (type === 'drain_mp') {
+        const drain = abilityDef.drainAmount || 20;
+        const actualDrain = Math.min(drain, p.mp);
+        if (actualDrain > 0) {
+            p.mp -= actualDrain;
+            updateHud();
+        }
+        _msg(`💙 ${enemyName} siphons ${actualDrain} MP from the ${playerClass}!`);
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // 7. REND — tears armor, temporarily reducing player defense
+    // ════════════════════════════════════════════════════════════════
+    else if (type === 'rend') {
+        const reduction = abilityDef.defReduction || 0.25;
+        const dur = abilityDef.rendDuration || 8000;
+        if (!cs.playerRendReduction) cs.playerRendReduction = 0;
+        cs.playerRendReduction = Math.min(0.60, cs.playerRendReduction + reduction); // cap at 60% total
+        _msg(`⚔️ ${enemyName} RENDS the ${playerClass}'s armor! Defense reduced!`);
+        setTimeout(() => {
+            if (gameState.combatState) {
+                gameState.combatState.playerRendReduction = Math.max(0,
+                    (gameState.combatState.playerRendReduction || 0) - reduction);
+                termAppend('<span style="color:#888;">Your armor holds together again.</span>', 'term-dim');
+            }
+        }, dur);
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // 8. BURN — ranged fire DOT (no physical hit required)
+    // ════════════════════════════════════════════════════════════════
+    else if (type === 'burn' && abilityDef.dot) {
+        _msg(`🔥 ${enemyName} engulfs the ${playerClass} in flames!`);
+        _startDOT(abilityDef.dot);
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // 9. INTIMIDATE — enemy roar/presence reduces player damage output
+    // ════════════════════════════════════════════════════════════════
+    else if (type === 'intimidate') {
+        const penalty = abilityDef.damagePenalty || 0.25;
+        const dur = abilityDef.intimidateDuration || 6000;
+        cs.playerIntimidated = penalty;
+        _msg(`😨 ${enemyName} lets out a terrifying roar! You hesitate...`);
+        setTimeout(() => {
+            if (gameState.combatState) {
+                gameState.combatState.playerIntimidated = 0;
+                termAppend('<span style="color:#888;">You shake off the fear.</span>', 'term-dim');
+            }
+        }, dur);
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // 10. LEECH — physical hit heals enemy for a fraction of damage dealt
+    //     (healRatio applied to the damage already dealt this hit)
+    // ════════════════════════════════════════════════════════════════
+    else if (type === 'leech') {
+        const ratio = abilityDef.healRatio || 0.5;
+        // cs.lastEnemyDamageDealt is set by enemyAttackSingle after damage lands
+        const dmgDealt = cs.lastEnemyDamageDealt || 0;
+        const healAmt = Math.max(1, Math.floor(dmgDealt * ratio));
+        if (enemy && healAmt > 0) {
+            enemy.hp = Math.min(enemy.maxHp || enemy.hp, enemy.hp + healAmt);
+            updateEnemyCards();
+        }
+        _msg(`🩸 ${enemyName} leeches life from the ${playerClass}!`);
+        if (healAmt > 0) termAppend(`<span style="color:#ff4488;">❤️ ${enemyName} heals for ${healAmt}!</span>`, 'term-dim');
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // 11. DISPEL — removes player's active buff potions
+    // ════════════════════════════════════════════════════════════════
+    else if (type === 'dispel') {
+        const slots = abilityDef.buffSlots || 1;
+        const buffs = p.activeBuffs || [];
+        let removed = 0;
+        for (let i = buffs.length - 1; i >= 0 && removed < slots; i--) {
+            const buff = buffs[i];
+            if (buff && buff.name) {
+                termAppend(`<span style="color:#ff8800;">✨ ${buff.name} dispelled!</span>`, 'term-warning');
+                buffs.splice(i, 1);
+                removed++;
+            }
+        }
+        if (removed === 0) {
+            termAppend(`<span style="color:#888;">${enemyName} attempts to dispel — nothing to cancel.</span>`, 'term-dim');
+        } else {
+            _msg(`✨ ${enemyName} tears your magical protections away!`);
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // 12. SUMMON — calls additional enemies into the fight
+    // ════════════════════════════════════════════════════════════════
+    else if (type === 'summon') {
+        const summonKey = abilityDef.summonKey;
+        const count     = abilityDef.summonCount || 1;
+        const maxSummons = abilityDef.maxSummons || 2;
+        if (!cs.summonCount) cs.summonCount = 0;
+        if (cs.summonCount >= maxSummons) {
+            if (gameState.sysop && gameState.sysop.authenticated) {
+                termAppend('<span style="color:#664400;">  [SUMMON] cap reached — skipped</span>', 'term-dim');
+            }
+            return;
+        }
+        _msg(`💀 ${enemyName} calls for reinforcements!`);
+        for (let s = 0; s < count && cs.summonCount < maxSummons; s++) {
+            if (ENEMIES && ENEMIES[summonKey]) {
+                const summoned = spawnMonsterWithRarity(summonKey, false, 'common');
+                summoned.index = cs.monsters.length;
+                cs.monsters.push(summoned);
+                cs.monsterStatusEffects[summoned.index] = [];
+                cs.summonCount++;
+                termAppend(`<span style="color:#ff4400;">⚡ A ${summoned.name} joins the fight!</span>`, 'term-warning');
+            }
+        }
+        updateEnemyCards();
+        renderActionBar();
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // 13. AOE — splash damage hits player regardless of dodge
+    // ════════════════════════════════════════════════════════════════
+    else if (type === 'aoe') {
+        _msg(`💥 ${enemyName} unleashes a devastating shockwave!`);
+        // damageMult on the intent already handled base damage;
+        // AOE ignores dodge — handled via intent.armorPiercing + dodge suppression
+        cs.playerConstricted = true; // borrow constrict flag to suppress dodge for this hit
+        setTimeout(() => {
+            if (gameState.combatState) gameState.combatState.playerConstricted = false;
+        }, 500);
+    }
+}
+
 function selectEnemyIntent(enemy) {
-    // Default / basic attack
+    // ── Default basic attack ─────────────────────────────────────────
     let intent = {
         type: 'basic',
         damageMult: 1,
@@ -15296,7 +15603,7 @@ function selectEnemyIntent(enemy) {
         telegraph: 'prepares to strike...'
     };
 
-    // Bosses and elites sometimes wind up a heavy hit
+    // ── Boss heavy hit ───────────────────────────────────────────────
     if (enemy.isBoss && Math.random() < 0.4) {
         intent = {
             type: 'heavy',
@@ -15304,6 +15611,97 @@ function selectEnemyIntent(enemy) {
             armorPiercing: 0.3,
             telegraph: 'draws in power for a devastating attack!'
         };
+    }
+
+    // ── Monster ability rolls ────────────────────────────────────────
+    // Each ability is checked in order. First one that passes its roll wins.
+    // This creates simple AI priority: put scarier abilities first in the array.
+    const _dbgAbility = gameState.sysop && gameState.sysop.authenticated;
+
+    // Pure-debuff types replace the physical hit entirely (no damage roll)
+    const PURE_DEBUFF_TYPES = ['debuff', 'drain_mp', 'rend', 'intimidate', 'dispel', 'stun', 'burn'];
+
+    if (enemy.abilities && enemy.abilities.length > 0) {
+        for (const ability of enemy.abilities) {
+            // ── HP threshold check ────────────────────────────────────
+            if (ability.hpThreshold !== undefined && ability.hpThreshold !== null) {
+                const hpPct = enemy.hp / (enemy.maxHp || enemy.hp);
+                if (hpPct < ability.hpThreshold) {
+                    if (_dbgAbility) termAppend('<span style="color:#664400;">  [ABILITY] ' + ability.name
+                        + ' — skipped (HP ' + Math.round(hpPct*100) + '% < threshold '
+                        + Math.round(ability.hpThreshold*100) + '%)</span>', 'term-dim');
+                    continue;
+                }
+            }
+            // ── Low-HP threshold check ────────────────────────────────
+            if (ability.lowHpThreshold !== undefined && ability.lowHpThreshold !== null) {
+                const hpPct = enemy.hp / (enemy.maxHp || enemy.hp);
+                if (hpPct > ability.lowHpThreshold) {
+                    if (_dbgAbility) termAppend('<span style="color:#664400;">  [ABILITY] ' + ability.name
+                        + ' — skipped (HP ' + Math.round(hpPct*100) + '% > lowHP threshold '
+                        + Math.round(ability.lowHpThreshold*100) + '%)</span>', 'term-dim');
+                    continue;
+                }
+            }
+
+            // ── Phase II: MP check ────────────────────────────────────
+            const _cost = ability.mpCost || 0;
+            const _canAfford = _cost === 0 || (enemy.mp || 0) >= _cost;
+            if (!_canAfford) {
+                // Only show "exhausted" message once per enemy per fight
+                if (_dbgAbility) {
+                    const _label = enemy.mpDepleted ? '' : ' ← OUT OF MP';
+                    termAppend('<span style="color:#664400;">  [ABILITY] ' + ability.name
+                        + ' — NO MP (' + (enemy.mp||0) + '/' + (enemy.baseMp||0) + ' needed ' + _cost + ')' + _label
+                        + '</span>', 'term-dim');
+                    enemy.mpDepleted = true;  // suppress repeated messages
+                }
+                continue;  // skip this ability, try next (or fall through to basic attack)
+            }
+
+            // ── Roll for this ability ─────────────────────────────────
+            const _abilityRoll = Math.random();
+            const _abilityHit  = _abilityRoll < ability.chance;
+
+            if (_dbgAbility) {
+                const _mpTag = _cost > 0 ? ' | MP: ' + (enemy.mp||0) + '→' + ((enemy.mp||0) - _cost) : ' | free';
+                const _typeTag = PURE_DEBUFF_TYPES.includes(ability.type) ? ' [DEBUFF-ONLY]' : ' [DMG×' + (ability.damageMult||1) + ']';
+                termAppend('<span style="color:#664400;">  🎯 [ABILITY] ' + ability.name
+                    + ': rolled ' + (_abilityRoll * 100).toFixed(2) + '% / need ≤'
+                    + (ability.chance * 100).toFixed(0) + '% → '
+                    + (_abilityHit ? '✅ FIRES' : '❌ miss')
+                    + _typeTag + _mpTag
+                    + '</span>', 'term-dim');
+            }
+
+            if (_abilityHit) {
+                // Mark whether this is a pure debuff (replaces hit) or a damage ability
+                const _isPureDebuff = PURE_DEBUFF_TYPES.includes(ability.type);
+                intent = {
+                    type:          ability.type,
+                    abilityId:     ability.id,
+                    abilityDef:    ability,
+                    abilityMpCost: _cost,            // stored so enemyAttackSingle can deduct
+                    isPureDebuff:  _isPureDebuff,    // true = skip damage roll
+                    damageMult:    _isPureDebuff ? 0 : (ability.damageMult || 1.3),  // default +30%
+                    armorPiercing: ability.armorPiercing || 0,
+                    telegraph:     ability.telegraph,
+                };
+                break;
+            }
+        }
+    }
+
+    if (_dbgAbility) {
+        const _mpStr = (enemy.baseMp||0) > 0
+            ? ' | MP: ' + (enemy.mp||0) + '/' + (enemy.baseMp||0)
+            : '';
+        termAppend('<span style="color:#664400;">  → intent: <b>' + intent.type + '</b>'
+            + (intent.abilityId ? ' [' + intent.abilityId + ']' : '')
+            + (intent.isPureDebuff ? ' <b>DEBUFF-ONLY (no damage)</b>' : ' | ×dmg: ' + (intent.damageMult||1))
+            + ' | pierce: ' + ((intent.armorPiercing||0)*100).toFixed(0) + '%'
+            + _mpStr
+            + '</span>', 'term-dim');
     }
 
     return intent;
@@ -15566,6 +15964,38 @@ function consumePips(cs, amount, cooldown) {
     // Calculate enemy dodge chance based on level difference
     const enemyDodgeChance = calculateEnemyDodge(p.level, enemy.level);
 
+    // ── INTIMIDATED: enemy roar reduces player damage output ────────
+    if ((cs.playerIntimidated || 0) > 0) {
+        if (gameState.sysop && gameState.sysop.authenticated) {
+            termAppend('<span style="color:#003355;">  ⚠️ [INTIMIDATED] damage penalty: -' + Math.round((cs.playerIntimidated||0)*100) + '%</span>', 'term-dim');
+        }
+        // Applied as a multiplier after all other damage calcs
+        // We store it in cs so executeAttack can read it
+    }
+
+    // ── SILENCED: prevents spell casting ─────────────────────────────
+    // (checked in castSpell before pip consumption)
+
+    // ── BLINDED: goblin dirty strike — player has extra miss chance ───
+    if ((cs.playerBlindedMissChance || 0) > 0) {
+        const _blindRoll = Math.random();
+        const _blindChance = cs.playerBlindedMissChance;
+        if (gameState.sysop && gameState.sysop.authenticated) {
+            termAppend('<span style="color:#003355;">  ⚠️ [BLIND] miss roll: ' + (_blindRoll*100).toFixed(2) + '% / need >' + (_blindChance*100).toFixed(0) + '% to hit</span>', 'term-dim');
+        }
+        cs.playerBlindedHits = (cs.playerBlindedHits || 1) - 1;
+        if (cs.playerBlindedHits <= 0) {
+            cs.playerBlindedMissChance = 0;
+            termAppend('<span style="color:#888;">Your vision clears.</span>', 'term-dim');
+        }
+        if (_blindRoll < _blindChance) {
+            const missVerb = unarmed ? 'swing wildly' : 'swing wide';
+            termAppend('You ' + missVerb + ' — dirt in your eyes! <span style="color:#ff8c00;">MISS!</span>', 'term-warning');
+            updateEnemyCards(); updateHud(); renderActionBar();
+            return;
+        }
+    }
+
     // ── HEAVY ATTACK: extra 15% miss chance on top of dodge ──────────
     if (attackType === 'heavy' && Math.random() < 0.15) {
         const missVerb = unarmed ? 'swing wildly' : 'overswing';
@@ -15670,7 +16100,11 @@ function consumePips(cs, amount, cooldown) {
 
         // Apply weapon modifiers (elemental damage, status effects, lifesteal)
         const modifierResult = applyWeaponModifiers(p, enemy, result.damage, weapon);
-        const finalDamage = modifierResult.totalDamage;
+        // ── INTIMIDATED: enemy roar penalty reduces player output ────
+        const _intimidPenalty = cs && (cs.playerIntimidated || 0);
+        const finalDamage = _intimidPenalty > 0
+            ? Math.max(1, Math.floor(modifierResult.totalDamage * (1 - _intimidPenalty)))
+            : modifierResult.totalDamage;
         
         if (_dbgAtk) {
             const _modExtra = finalDamage - result.damage;
@@ -15841,6 +16275,14 @@ function consumePips(cs, amount, cooldown) {
                 termAppend('Not enough MP!', 'term-error');
                 return;
             }
+            // ── SILENCED: enemy ability prevents spellcasting ────────
+            if (cs.playerSilenced) {
+                termAppend('<span style="color:#ff8800;">💀 You are silenced and cannot cast spells!</span>', 'term-warning');
+                cs.actionMode = 'main';
+                cs.pendingSpellKey = null;
+                renderActionBar();
+                return;
+            }
             
 
 // --- Pip check for spells ---
@@ -15873,16 +16315,33 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
 
             if (spell.type === 'heal') {
                 // Healing spells: 5% chance to fail, random between minPower and maxPower
-                const spellFailed = Math.random() < 0.05;
+                const _dbgSpell = gameState.sysop && gameState.sysop.authenticated;
+                const _fizzRoll = Math.random();
+                const spellFailed = _fizzRoll < 0.05;
+                if (_dbgSpell) {
+                    termAppend('<span style="color:#004466;">✨ [HEAL] ' + spell.name
+                        + ' | cost: ' + spell.mpCost + ' MP'
+                        + ' | range: ' + (spell.minPower||10) + '–' + (spell.maxPower||spell.minPower||10)
+                        + ' | fizzle roll: ' + (_fizzRoll*100).toFixed(2) + '% / need ≤5% → ' + (spellFailed ? '💀 FIZZLE' : '✅ ok')
+                        + '</span>', 'term-dim');
+                }
                 if (spellFailed) {
                     termAppend(`You cast ${spell.name} but it <span style="color:#ff6666;">fizzles!</span> The gods did not answer.`);
                 } else {
                     // Calculate random heal between minPower and maxPower
                     const minHeal = spell.minPower || 10;
                     const maxHeal = spell.maxPower || minHeal;
-                    const baseHeal = Math.floor(Math.random() * (maxHeal - minHeal + 1)) + minHeal;
+                    const _healRoll = Math.floor(Math.random() * (maxHeal - minHeal + 1)) + minHeal;
+                    const baseHeal = _healRoll;
                     const heal = baseHeal + Math.floor(p.magic * 1.5) + (p.wis || 0);
                     const actualHeal = Math.min(p.maxHp - p.hp, heal);
+                    if (_dbgSpell) {
+                        termAppend('<span style="color:#004466;">  rolled: ' + _healRoll
+                            + ' | +magic ' + Math.floor(p.magic*1.5) + ' | +WIS ' + (p.wis||0)
+                            + ' → heal: ' + heal + ' | actual: ' + actualHeal
+                            + ' (HP cap: ' + p.hp + '/' + p.maxHp + ')'
+                            + '</span>', 'term-dim');
+                    }
                     p.hp = Math.min(p.maxHp, p.hp + actualHeal);
                     updateHud();
                     renderActionBar();
@@ -15894,6 +16353,13 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 let totalDamage = 0;
                 let hitCount = 0;
                 
+                if (gameState.sysop && gameState.sysop.authenticated) {
+                    const _aoeminP = spell.minPower||spell.power, _aoemaxP = spell.maxPower||spell.power;
+                    termAppend('<span style="color:#004466;">✨ [AOE] ' + spell.name
+                        + ' | cost: ' + spell.mpCost + ' MP | range: ' + _aoeminP + '–' + _aoemaxP
+                        + ' | targets: ' + cs.monsters.filter(m=>m.hp>0).length
+                        + '</span>', 'term-dim');
+                }
                 termAppend(`You cast ${spell.name}!`, 'term-highlight');
                 termAppend(`<span style="color:#FF8800;">🔥 AREA OF EFFECT! 🔥</span>`, 'term-victory');
                 
@@ -15913,7 +16379,13 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                             : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
                         
                         // Check if enemy dodges
-                        if (Math.random() < enemyDodgeChance) {
+                        const _aoeDbg = gameState.sysop && gameState.sysop.authenticated;
+                        const _aoeDodgeRoll = Math.random();
+                        const _aoeDodged = _aoeDodgeRoll < enemyDodgeChance;
+                        if (_aoeDbg) termAppend('<span style="color:#004466;">  [AOE→' + enemy.name + '] dodge: rolled '
+                            + (_aoeDodgeRoll*100).toFixed(2) + '% / need ≤' + (enemyDodgeChance*100).toFixed(1) + '% → '
+                            + (_aoeDodged ? '✅ DODGE' : '❌ hit') + '</span>', 'term-dim');
+                        if (_aoeDodged) {
                             termAppend(`→ ${tName} <span style="color:#88ff88;">DODGES!</span>`);
                             return; // Skip this enemy
                         }
@@ -15926,12 +16398,20 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                         // Add weapon modifier bonus to offensive spells
                         const modifierBonus = getWeaponModifierSpellBonus();
                         
+                        const _aoeCritRoll = Math.random() * 100;
+                        const _aoeCritChance = calcCritChance(p.lck || 0, p);
                         let dmg = Math.max(1, (spellRoll + p.magic + (p.wis || 0) + modifierBonus) - Math.floor(enemy.defense / 2));
                         let crit = false;
-                        if (Math.random() * 100 < calcCritChance(p.lck || 0, p)) { 
+                        if (_aoeCritRoll < _aoeCritChance) { 
                             dmg = Math.floor(dmg * 1.75); 
                             crit = true; 
                         }
+                        if (_aoeDbg) termAppend('<span style="color:#004466;">  roll: ' + spellRoll
+                            + ' | +magic ' + p.magic + ' | +WIS ' + (p.wis||0) + ' | +mod ' + modifierBonus
+                            + ' | -eDef/2 ' + Math.floor(enemy.defense/2)
+                            + ' → pre-crit: ' + Math.max(1, spellRoll + p.magic + (p.wis||0) + modifierBonus - Math.floor(enemy.defense/2))
+                            + ' | crit: ' + _aoeCritRoll.toFixed(2) + ' / need ≤' + _aoeCritChance.toFixed(1) + ' → ' + (crit ? '★ CRIT ×1.75' : 'no crit')
+                            + '</span>', 'term-dim');
                         
                         // Apply weapon modifiers to spell (status effects + elemental damage)
                         const weapon = WEAPONS[p.weapon];
@@ -15974,7 +16454,14 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                     : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
                 
                 // Check if enemy dodges
-                if (Math.random() < enemyDodgeChance) {
+                const _lsDbg = gameState.sysop && gameState.sysop.authenticated;
+                const _lsDodgeRoll = Math.random();
+                const _lsDodged = _lsDodgeRoll < enemyDodgeChance;
+                if (_lsDbg) termAppend('<span style="color:#004466;">✨ [LIFESTEAL] ' + spell.name
+                    + ' | cost: ' + spell.mpCost + ' MP | range: ' + (spell.minPower||spell.power) + '–' + (spell.maxPower||spell.power)
+                    + ' | dodge: rolled ' + (_lsDodgeRoll*100).toFixed(2) + '% / need ≤' + (enemyDodgeChance*100).toFixed(1) + '% → '
+                    + (_lsDodged ? '✅ DODGE' : '❌ hit') + '</span>', 'term-dim');
+                if (_lsDodged) {
                     termAppend(`You cast ${spell.name} but ${tName} <span style="color:#88ff88;">DODGES!</span>`);
                     updateEnemyCards();
                     updateHud();
@@ -16010,10 +16497,19 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                     }
                 }
                 
+                const _lsCritRoll = Math.random() * 100;
+                const spellCritChance = Math.min(75, calcCritChance(p.lck || 0, p) + gemSpellCrit);
                 let dmg = Math.max(1, (spellRoll + p.magic + (p.wis || 0) + modifierBonus + gemSpellBonus + gemSpellUniversal) - Math.floor(enemy.defense / 2));
                 let crit = false;
-                const spellCritChance = Math.min(75, calcCritChance(p.lck || 0, p) + gemSpellCrit);
-                if (Math.random() * 100 < spellCritChance) { dmg = Math.floor(dmg * 1.75); crit = true; }
+                if (_lsCritRoll < spellCritChance) { dmg = Math.floor(dmg * 1.75); crit = true; }
+                if (_lsDbg) termAppend('<span style="color:#004466;">  roll: ' + spellRoll
+                    + ' | +magic ' + p.magic + ' | +WIS ' + (p.wis||0) + ' | +mod ' + modifierBonus
+                    + ' | +gemSP ' + gemSpellBonus + ' | +elem ' + gemSpellUniversal
+                    + ' | -eDef/2 ' + Math.floor(enemy.defense/2)
+                    + ' → pre-crit: ' + Math.max(1, spellRoll + p.magic + (p.wis||0) + modifierBonus + gemSpellBonus + gemSpellUniversal - Math.floor(enemy.defense/2))
+                    + ' | crit: ' + _lsCritRoll.toFixed(2) + ' / need ≤' + spellCritChance.toFixed(1) + ' → ' + (crit ? '★ CRIT ×1.75' : 'no crit')
+                    + ' | lifesteal: ' + (spell.lifestealPercent||25) + '%'
+                    + '</span>', 'term-dim');
                 
                 // Apply weapon modifiers to spell (status effects + elemental damage)
                 const weapon = WEAPONS[p.weapon];
@@ -16080,10 +16576,17 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 const enemyDodgeChance = calculateEnemyDodge(p.level, enemy.level);
                 
                 // Check if enemy dodges the spell
-                if (Math.random() < enemyDodgeChance) {
-                    const tName = cs.monsters.length > 1
-                        ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${ti+1}</span>`
-                        : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
+                const _regDbg = gameState.sysop && gameState.sysop.authenticated;
+                const _regDodgeRoll = Math.random();
+                const _regDodged = _regDodgeRoll < enemyDodgeChance;
+                const tName = cs.monsters.length > 1
+                    ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${ti+1}</span>`
+                    : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
+                if (_regDbg) termAppend('<span style="color:#004466;">✨ [SPELL] ' + spell.name
+                    + ' | cost: ' + spell.mpCost + ' MP | range: ' + (spell.minPower||spell.power) + '–' + (spell.maxPower||spell.power)
+                    + ' | eDodge: rolled ' + (_regDodgeRoll*100).toFixed(2) + '% / need ≤' + (enemyDodgeChance*100).toFixed(1) + '% → '
+                    + (_regDodged ? '✅ enemy DODGES' : '❌ hit') + '</span>', 'term-dim');
+                if (_regDodged) {
                     termAppend(`You cast ${spell.name} but ${tName} <span style="color:#88ff88;">DODGES!</span>`);
                     updateEnemyCards();
                     updateHud();
@@ -16101,9 +16604,18 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 // Add weapon modifier bonus to offensive spells
                 const modifierBonus = getWeaponModifierSpellBonus();
                 
-                let   dmg   = Math.max(1, (spellRoll + p.magic + (p.wis||0) + modifierBonus) - Math.floor(enemy.defense / 2));
+                const _regCritRoll = Math.random() * 100;
+                const _regCritChance = calcCritChance(p.lck||0, p);
+                let dmg = Math.max(1, (spellRoll + p.magic + (p.wis||0) + modifierBonus) - Math.floor(enemy.defense / 2));
                 let crit = false;
-                if (Math.random()*100 < calcCritChance(p.lck||0, p)) { dmg = Math.floor(dmg*1.75); crit = true; }
+                if (_regCritRoll < _regCritChance) { dmg = Math.floor(dmg*1.75); crit = true; }
+                if (_regDbg) termAppend('<span style="color:#004466;">  roll: ' + spellRoll
+                    + ' | +magic ' + p.magic + ' | +WIS ' + (p.wis||0) + ' | +mod ' + modifierBonus
+                    + ' | -eDef/2 ' + Math.floor(enemy.defense/2)
+                    + ' → pre-crit: ' + Math.max(1, spellRoll + p.magic + (p.wis||0) + modifierBonus - Math.floor(enemy.defense/2))
+                    + ' | crit: ' + _regCritRoll.toFixed(2) + ' / need ≤' + _regCritChance.toFixed(1) + ' → ' + (crit ? '★ CRIT ×1.75' : 'no crit')
+                    + ' | final: ' + dmg
+                    + '</span>', 'term-dim');
                 
                 // Apply weapon modifiers to spell (status effects + elemental damage)
                 const weapon = WEAPONS[p.weapon];
@@ -16127,10 +16639,6 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                     enemy.statusToApply = 'blinded';
                 }
                 
-                const tName = cs.monsters.length > 1
-                    ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${ti+1}</span>`
-                    : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
-              
                 const critTag = crit ? ' <span style="color:#FFD700;">★ CRIT!</span>' : '';
                 const hpPct = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
                 let condition = 'healthy';
@@ -16897,6 +17405,11 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
     
     const qBonus = getQualityBonus(armor.quality, armor.baseDefense);
     let totalDef = armor.baseDefense + qBonus + (p.con || 0);
+    // ── REND: temporarily reduced defense ───────────────────────────
+    if (cs.playerRendReduction && cs.playerRendReduction > 0) {
+        const rendLoss = Math.floor(totalDef * cs.playerRendReduction);
+        totalDef = Math.max(0, totalDef - rendLoss);
+    }
 
         // ── Warrior Shield: 70% chance to halve ALL incoming damage each attack ──
     // cs.shieldActive is set by playerDefend() and persists until combat ends.
@@ -16933,12 +17446,33 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
         if (gameState.sysop && gameState.sysop.authenticated) {
             const eMin0 = Math.max(1, enemy.minDamage ?? Math.round(enemy.damage * 0.67));
             const eMax0 = Math.max(eMin0 + 1, enemy.maxDamage ?? Math.round(enemy.damage * 1.33));
+            const _mpDisplay = (enemy.baseMp||0) > 0
+                ? ` | MP: ${enemy.mp||0}/${enemy.baseMp||0}` : '';
             termAppend(`<span style="color:#553300;">` +
                 `📋 [${enemy.name}] HP: ${enemy.hp}/${enemy.maxHp||enemy.hp} | Lv${enemy.level} ${enemy.rarity||'common'}` +
                 ` | dmg range: ${eMin0}–${eMax0} | def: ${enemy.defense||0}` +
+                _mpDisplay +
                 `${enemy.magicAttack ? ' | ✨magic atk' : ''}` +
                 `${(enemy.statusEffects||[]).length ? ` | status: ${enemy.statusEffects.map(s=>s.name||s).join(',')}` : ''}` +
                 `</span>`, 'term-dim');
+        }
+
+        // ── Phase II: deduct MP and handle pure-debuff abilities ──────
+        // Pure debuffs (rend, intimidate, blind, stun, etc.) replace the
+        // physical hit entirely — no damage is rolled or applied.
+        if (intent.isPureDebuff && intent.abilityDef) {
+            // Deduct MP
+            if ((intent.abilityMpCost || 0) > 0) {
+                enemy.mp = Math.max(0, (enemy.mp || 0) - intent.abilityMpCost);
+            }
+            if (_debugCombat) {
+                const _mpLeft = enemy.mp || 0;
+                termAppend(`<span style="color:#553300;">  💙 [PURE DEBUFF] ${intent.abilityId} | MP cost: ${intent.abilityMpCost||0} | MP remaining: ${_mpLeft}</span>`, 'term-dim');
+            }
+            // Execute the debuff side-effect directly (no damage)
+            executeAbilitySideEffect(intent.abilityDef, p, cs, enemy);
+            hits.push({ eName, dmg: 0, isPureDebuff: true, abilityName: intent.abilityDef.name });
+            return; // skip damage roll for this enemy
         }
 
         // ── Pick a random damage roll within the enemy's min/max range ──
@@ -16955,9 +17489,12 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
 
         // ── SYSOP DEBUG: pre-roll dodge so we can show the number ──
         const _debugCombat = gameState.sysop && gameState.sysop.authenticated;
-        const _dodgeChance = calcDodgeChance(p.dex || 0) / 100;
+        // Constricted: player cannot dodge (water snake ability)
+        const _constricted = cs.playerConstricted || false;
+        const _dodgeChance = _constricted ? 0 : (calcDodgeChance(p.dex || 0) / 100);
         const _dodgeRoll   = Math.random();
-        const _didDodge    = _dodgeRoll < _dodgeChance;
+        const _didDodge    = !_constricted && _dodgeRoll < _dodgeChance;
+        if (_constricted && _debugCombat) termAppend('<span style="color:#553300;">  ⚠️ Player is constricted — dodge suppressed!</span>', 'term-dim');
 
         if (_debugCombat) {
             const DR_PER_POINT = 0.028;
@@ -17008,11 +17545,30 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
         }
 
         p.hp -= finalDmg;
+        cs.lastEnemyDamageDealt = finalDmg;   // used by leech ability
+
+        // ── Execute ability side-effects ─────────────────────────────
+        // Only runs if this attack was powered by an ability with a type
+        // that has additional effects beyond damage.
+        const _abilityDef = intent && intent.abilityDef;
+        if (_abilityDef) {
+            // Deduct enemy MP for damage-dealing abilities
+            if ((intent.abilityMpCost || 0) > 0) {
+                enemy.mp = Math.max(0, (enemy.mp || 0) - intent.abilityMpCost);
+                if (_debugCombat) {
+                    termAppend(`<span style="color:#553300;">  💙 MP cost: ${intent.abilityMpCost} | ${enemy.name} MP remaining: ${enemy.mp}/${enemy.baseMp||0}</span>`, 'term-dim');
+                }
+            }
+            if (p.hp > 0) {
+                executeAbilitySideEffect(_abilityDef, p, cs, enemy);
+            }
+        }
 
         hits.push({
             eName,
-            dmg:   finalDmg,
-            crit:  result.crit,
+            dmg:        finalDmg,
+            crit:       result.crit,
+            abilityName: _abilityDef ? _abilityDef.name : null,
             shieldBlocked: shieldTriggered
         });
     });
@@ -17061,11 +17617,23 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 ? ' <span style="color:#00CCFF;">🛡️ SHIELD! (+50% DEF)</span>'
                 : '';
 
-            termAppend(
-                `${hit.eName} attacks for <span class="dmg-player">${hit.dmg} damage!</span>${critTag}${shieldTag}`,
-                null,
-                isLast ? afterAttack : null
-            );
+            const abilityTag = hit.abilityName
+                ? ` <span style="color:#FF8800;font-size:12px;">[${hit.abilityName}]</span>`
+                : '';
+            // Pure-debuff abilities replace the hit — no "X damage" message
+            if (hit.isPureDebuff) {
+                termAppend(
+                    `${hit.eName} uses ${abilityTag}`,
+                    null,
+                    isLast ? afterAttack : null
+                );
+            } else {
+                termAppend(
+                    `${hit.eName} attacks for <span class="dmg-player">${hit.dmg} damage!</span>${critTag}${shieldTag}${abilityTag}`,
+                    null,
+                    isLast ? afterAttack : null
+                );
+            }
         }
     });
 }

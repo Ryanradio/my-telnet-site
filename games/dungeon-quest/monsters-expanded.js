@@ -1,6 +1,172 @@
 // monsters.js - Enemy Database (EXPANDED - 100+ Monsters!)
 // Add new monsters here to expand the game!
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// MONSTER SPECIAL ABILITIES — COMPLETE REFERENCE
+// ═══════════════════════════════════════════════════════════════════════════════
+//
+// Each enemy can have an `abilities: [ ... ]` array.
+// On every enemy turn, abilities are rolled through IN ORDER — first hit wins.
+// Put your most dangerous / dramatic abilities FIRST for proper AI priority.
+//
+// ── PHASE II NOTE ───────────────────────────────────────────────────────────
+// Enemy MP costs are stubbed into every ability below via `mpCost`.
+// When Phase II is implemented, the engine will deduct enemy.mp before firing
+// and skip the ability if the enemy can't afford it.
+// For now, mpCost is recorded but not enforced.
+//
+// ── ABILITY SKELETON ────────────────────────────────────────────────────────
+//
+//   {
+//     id:           'unique_id',          // snake_case string, must be unique per enemy
+//     name:         'Display Name',       // shown in terminal on hit
+//     chance:       0.25,                 // 0.0–1.0 roll each turn (0.25 = 25%)
+//     mpCost:       10,                   // [PHASE II] MP the enemy spends to use this
+//     hpThreshold:  0.50,                 // optional — only fires when enemy HP% is ABOVE this
+//     lowHpThreshold: 0.30,               // optional — only fires when enemy HP% is BELOW this
+//     telegraph:    'winds up...',        // message shown 2s before attack lands
+//     type:         'dot_attack',         // see TYPE LIST below
+//     damageMult:   1.0,                  // multiplier on the physical hit that triggers this (1.0 = normal)
+//     armorPiercing: 0.0,                 // 0.0–1.0 fraction of armor bypassed
+//     applyMessage: (enemyName, playerClass) => `...`,  // flavor text on activation
+//     // ...type-specific fields below
+//   }
+//
+// ═══════════════════════════════════════════════════════════════════════════════
+// TYPE LIST  (copy the matching block below into your ability object)
+// ═══════════════════════════════════════════════════════════════════════════════
+//
+// ── 1. DOT_ATTACK ── damage-over-time applied after a physical hit ───────────
+//   type: 'dot_attack',
+//   dot: {
+//     name:         'Bleeding',          // display name for tick messages
+//     icon:         '🩸',               // icon shown each tick
+//     damage:       4,                   // flat damage per tick
+//     tickInterval: 3000,               // ms between ticks (3000 = every 3 seconds)
+//     ticks:        3,                   // total number of ticks
+//   },
+//   -- FLAVORS --
+//   • Bleeding     icon:'🩸'  damage:3-6   ticks:2-3  tickInterval:3000   (wolves, ghouls, razorbeaks)
+//   • Poisoned     icon:'💚'  damage:4-8   ticks:3-5  tickInterval:3000   (spiders, snakes, wasps)
+//   • Burning      icon:'🔥'  damage:5-10  ticks:3-4  tickInterval:2000   (fire elementals, dragons)
+//   • Corroding    icon:'🟤'  damage:3-5   ticks:4-6  tickInterval:3000   (slimes, acid beetles)
+//   • Frostbite    icon:'❄️'  damage:2-4   ticks:5-8  tickInterval:4000   (ice elementals, yeti)
+//   • Cursed       icon:'💜'  damage:6-12  ticks:2-4  tickInterval:4000   (liches, wraiths, demons)
+//   • Plague       icon:'☣️'  damage:5-8   ticks:4-6  tickInterval:2500   (plague rats, zombies)
+//   • Withering    icon:'🌑'  damage:4-7   ticks:3-5  tickInterval:3500   (void creatures, nihil)
+//
+// ── 2. DEBUFF ── applies a status that changes combat math ───────────────────
+//   type: 'debuff',
+//   debuff: 'blinded',                   // see DEBUFF NAMES below
+//   debuffDuration: 4000,               // ms before the debuff auto-expires (if applicable)
+//   hitMissChance:  0.30,               // [blinded only] fraction of player attacks that miss
+//   dodgePenalty:   1.0,                // [constricted only] fraction of dodge removed
+//   -- DEBUFF NAMES (currently implemented) --
+//   • 'blinded'      — player's next N attacks have hitMissChance miss chance
+//                      cs.playerBlindedMissChance, cs.playerBlindedHits
+//   • 'constricted'  — player dodge set to 0 for debuffDuration ms
+//                      cs.playerConstricted
+//   -- DEBUFF NAMES (ready to implement in Phase II) --
+//   • 'intimidated'  — player deals -25% damage for 2 turns  → cs.playerIntimidated
+//   • 'weakened'     — player STR reduced by flat amount for duration → cs.playerWeakenedStr
+//   • 'silenced'     — player cannot cast spells for 1-2 turns → cs.playerSilenced
+//   • 'cursed_aim'   — player crit chance reduced to 0 for duration → cs.playerCursedAim
+//   • 'exposed'      — player armor reduced by % for duration (rend result) → cs.playerArmorReduced
+//   • 'slowed'       — player pip recharge slowed by 50% for duration → cs.playerSlowed
+//   • 'terrified'    — player has chance to skip their turn (flee instinct) → cs.playerTerrified
+//
+// ── 3. STUN ── disables player pip charges ───────────────────────────────────
+//   type: 'stun',
+//   stunPips: 1,                         // number of pip charges drained/locked
+//   stunDuration: 5,                     // seconds the pip stays locked
+//   -- USE FOR: bats (screech), gorgons (gaze), lightning enemies, concussive attacks
+//
+// ── 4. HEAVY_HIT ── pure damage amplifier, no side effect ───────────────────
+//   type: 'heavy_hit',
+//   damageMult: 2.0,                     // damage multiplier (stacks with rarity)
+//   armorPiercing: 0.0,                  // 0.0–1.0 armor bypass
+//   -- USE FOR: charges, power strikes, berserker smashes, leaping attacks
+//   -- GOOD COMBOS: boar charge (2.0x + pierce), giant smash (1.8x + stun)
+//
+// ── 5. DRAIN_HP ── enemy steals player HP and heals itself ──────────────────
+//   type: 'drain_hp',
+//   drainAmount: 15,                     // flat HP stolen from player
+//   healPercent: 1.0,                    // fraction of drained HP that heals the enemy (1.0 = all of it)
+//   -- USE FOR: vampires, leeches, soul-suckers, void wraiths, liches
+//   -- EXAMPLE: vampire drains 15 HP → heals for 15 HP
+//
+// ── 6. DRAIN_MP ── enemy drains player mana (disrupts spellcasters) ─────────
+//   type: 'drain_mp',
+//   drainAmount: 20,                     // flat MP drained from player
+//   -- USE FOR: mana leeches, dispel elementals, anti-mage constructs, nihil creatures
+//   -- NOTE: called "Mana Drain", "Arcane Leech", "Dispel", "Siphon"
+//
+// ── 7. REND ── tears through armor, reducing player defense temporarily ──────
+//   type: 'rend',
+//   defReduction: 0.25,                  // fraction of player's total defense removed
+//   rendDuration: 8000,                  // ms the armor penalty lasts
+//   -- USE FOR: demons, trolls, rust monsters, corrosive slimes, wyverns
+//   -- EXAMPLE: 25% rend on 40 DEF → -10 DEF for 8 seconds
+//
+// ── 8. BURN ── fire DOT applied WITHOUT a preceding physical hit ─────────────
+//   type: 'burn',
+//   dot: {
+//     name: 'Burning', icon: '🔥',
+//     damage: 8, tickInterval: 2000, ticks: 4,
+//   },
+//   damageMult: 0,                       // set 0 for pure ranged burn (no physical contact)
+//   -- USE FOR: fire mages, dragons, lava elementals (ranged fireball)
+//   -- DIFFERENCE FROM dot_attack: no physical hit component; pure status delivery
+//
+// ── 9. INTIMIDATE ── enemy roars/screams, reducing player damage output ──────
+//   type: 'intimidate',
+//   damagePenalty: 0.25,                 // fraction of player damage removed (0.25 = -25%)
+//   intimidateDuration: 6000,            // ms the penalty lasts
+//   -- USE FOR: dragons (roar), orcs (warcry), demons (presence), banshees
+//   -- NOTE: stacks interestingly with rend — shaken AND exposed
+//
+// ── 10. LEECH ── hybrid drain: deals damage AND heals enemy simultaneously ───
+//   type: 'leech',
+//   damageMult: 0.8,                     // physical hit strength
+//   healRatio: 0.5,                      // enemy heals for this fraction of damage dealt
+//   -- USE FOR: vampires (bite), succubi, soul-eaters, energy parasites
+//   -- DIFFERENCE FROM drain_hp: leech scales with actual damage; drain is a flat steal
+//
+// ── 11. DISPEL ── removes player active buffs ────────────────────────────────
+//   type: 'dispel',
+//   buffSlots: 1,                        // number of active buffs cancelled
+//   -- USE FOR: demons, arcane constructs, elder spirits, boss encounters
+//   -- EFFECT: removes the most recently applied buff potion effect
+//
+// ── 12. SUMMON ── calls additional enemies into the fight ────────────────────
+//   type: 'summon',
+//   summonKey: 'goblin',                 // ENEMIES key of creature to summon
+//   summonCount: 1,                      // how many to add
+//   maxSummons: 2,                       // cap total summons per fight
+//   -- USE FOR: necromancers, shaman leaders, spider mothers, demon lords
+//   -- NOTE: won't fire again once maxSummons cap is reached
+//
+// ── 13. AOE ── hits ALL monsters' targets / splashes onto player from one hit ─
+//   type: 'aoe',
+//   aoeTargets: 'player',               // 'player' (always) — damages with splash
+//   damageMult: 0.6,                     // reduced damage (spread effect)
+//   -- USE FOR: explosions, shockwaves, poison clouds, breath weapons
+//
+// ═══════════════════════════════════════════════════════════════════════════════
+// AI BEHAVIOR TIPS
+// ═══════════════════════════════════════════════════════════════════════════════
+//
+//  hpThreshold:    0.50   → only fires when enemy is ABOVE 50% HP  (aggressive opener)
+//  lowHpThreshold: 0.30   → only fires when enemy is BELOW 30% HP  (desperate / enraged)
+//  (omit both)            → fires at any HP level
+//
+//  Ordering examples:
+//    [drain_hp first, dot_attack second]  → tries to heal itself first, poisons if heal misses
+//    [intimidate first, heavy_hit second] → tries to soften you up, then crush
+//    [summon first @ low HP]              → calls for help when desperate
+//    [rend first, dot_attack second]      → strips your armor then bleeds you out
+//
+// ═══════════════════════════════════════════════════════════════════════════════
 // RARITY SYSTEM:
 // common: 60% spawn rate, 1.0x stats, white color
 // uncommon: 25% spawn rate, 1.3x stats, green color
@@ -18,7 +184,7 @@ Object.assign(ENEMIES, {
     
     // Your child's monster! 💩
     poop_slime: { 
-        name: 'Gigantic Poop Slime', 
+        name: 'Poop Slime', 
         baseHp: 200, 
         baseDamage: 10,
         minDamage: 7,
@@ -28,7 +194,7 @@ Object.assign(ENEMIES, {
         baseGold: 1000, 
         level: 1,
         description: '💩 A smelly, slimy creature that makes funny sounds!',
-        possibleDrops: ['health_potion', 'golden_poop', 'rough_crystal'],
+        possibleDrops: ['health_potion', 'golden_poop', 'small_gem'],
         dropRates: { common: 0.5, uncommon: 0.3, rare: 0.15, epic: 0.05 }
     },
     
@@ -43,8 +209,25 @@ Object.assign(ENEMIES, {
         baseGold: 15, 
         level: 1,
         description: 'A small, sneaky creature with crude weapons',
-        possibleDrops: ['health_potion', 'dagger', 'cloth_armor', 'rough_crystal'],
-        dropRates: { common: 0.4, uncommon: 0.2, rare: 0.05, epic: 0.01 }
+        possibleDrops: ['health_potion', 'dagger', 'cloth_armor', 'small_gem'],
+        dropRates: { common: 0.4, uncommon: 0.2, rare: 0.05, epic: 0.01 },
+        abilities: [
+            {
+                id: 'dirty_strike',
+                name: 'Dirty Strike',
+                chance: 0.20,
+                mpCost: 8,                    // 20% chance each attack turn
+                telegraph: 'reaches for a handful of dirt...',
+                type: 'debuff',
+                debuff: 'blinded',               // applied to player
+                debuffDuration: 2000,            // 2 seconds
+                debuffMessage: (name) => `💀 ${name} throws dirt in your eyes! Your next attack has a 30% miss chance.`,
+                // Engine reads this as: apply cs.playerBlinded = true for 1 hit
+                hitMissChance: 0.30,
+                damageMult: 0.8,                 // Does slightly less damage on dirty strike turn
+                armorPiercing: 0
+            }
+        ]
     },
     
     wolf: { 
@@ -58,8 +241,28 @@ Object.assign(ENEMIES, {
         baseGold: 10, 
         level: 1,
         description: 'A wild predator with sharp fangs',
-        possibleDrops: ['health_potion', 'wolf_pelt', 'rough_crystal'],
-        dropRates: { common: 0.5, uncommon: 0.15, rare: 0.03 }
+        possibleDrops: ['health_potion', 'wolf_pelt', 'small_gem'],
+        dropRates: { common: 0.5, uncommon: 0.15, rare: 0.03 },
+        abilities: [
+            {
+                id: 'maul',
+                name: 'Maul',
+                chance: 0.20,
+                mpCost: 10,                    // 20% per turn
+                telegraph: 'lowers its head and snarls...',
+                type: 'dot_attack',              // attack + apply bleed dot to player
+                dot: {
+                    name: 'Bleeding',
+                    icon: '🩸',
+                    damage: 3,                   // 3 damage per tick
+                    tickInterval: 3000,          // every 3 seconds
+                    ticks: 2,                    // 2 ticks total (6 seconds)
+                },
+                damageMult: 1.0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🩸 The ${enemyName} tears into the ${playerClass}'s flesh — <b>Bleeding!</b>`
+            }
+        ]
     },
     
     giant_spider: { 
@@ -73,8 +276,28 @@ Object.assign(ENEMIES, {
         baseGold: 20, 
         level: 2,
         description: 'A massive arachnid with venomous fangs',
-        possibleDrops: ['health_potion', 'mana_potion', 'spider_silk', 'rough_crystal'],
-        dropRates: { common: 0.4, uncommon: 0.25, rare: 0.08, epic: 0.02 }
+        possibleDrops: ['health_potion', 'mana_potion', 'spider_silk', 'small_gem'],
+        dropRates: { common: 0.4, uncommon: 0.25, rare: 0.08, epic: 0.02 },
+        abilities: [
+            {
+                id: 'venom_bite',
+                name: 'Venom Bite',
+                chance: 0.35,
+                mpCost: 12,                   // 35% per turn — spiders are venomous, should feel threatening
+                telegraph: 'rears up and bares its fangs...',
+                type: 'dot_attack',
+                dot: {
+                    name: 'Poisoned',
+                    icon: '💚',
+                    damage: 4,                  // 4 damage per tick
+                    tickInterval: 3000,         // every 3 seconds
+                    ticks: 3,                   // 3 ticks (9 seconds of poison)
+                },
+                damageMult: 0.7,               // Weaker hit — spider prioritizes injecting venom
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `💚 The ${enemyName} sinks its fangs in! <b>Poisoned!</b>`
+            }
+        ]
     },
     
     wild_boar: {
@@ -88,8 +311,23 @@ Object.assign(ENEMIES, {
         baseGold: 12,
         level: 1,
         description: 'An aggressive tusked beast',
-        possibleDrops: ['health_potion', 'boar_hide', 'rough_crystal'],
-        dropRates: { common: 0.5, uncommon: 0.2, rare: 0.05 }
+        possibleDrops: ['health_potion', 'boar_hide', 'small_gem'],
+        dropRates: { common: 0.5, uncommon: 0.2, rare: 0.05 },
+        abilities: [
+            {
+                id: 'charge',
+                name: 'Charge',
+                chance: 0.30,
+                mpCost: 14,                   // 30% per turn
+                hpThreshold: 0.50,              // AI: only charges when above 50% HP (still has energy)
+                telegraph: 'snorts and begins to paw at the ground...',
+                type: 'heavy_hit',
+                damageMult: 2.0,               // Double damage — tusks hit hard
+                armorPiercing: 0.25,           // Tusks go under armor
+                armorPiercing: 0.25,
+                applyMessage: (enemyName, playerClass) => `🐗 The ${enemyName} CHARGES! Tusks pierce the ${playerClass}'s armor!`
+            }
+        ]
     },
     
     slime: {
@@ -103,7 +341,7 @@ Object.assign(ENEMIES, {
         baseGold: 8,
         level: 1,
         description: 'A gelatinous blob that absorbs everything',
-        possibleDrops: ['health_potion', 'slime_gel', 'rough_crystal'],
+        possibleDrops: ['health_potion', 'slime_gel', 'small_gem'],
         dropRates: { common: 0.6, uncommon: 0.15, rare: 0.02 }
     },
     
@@ -118,7 +356,7 @@ Object.assign(ENEMIES, {
         baseGold: 12,
         level: 1,
         description: 'A small reptilian humanoid with a spear',
-        possibleDrops: ['health_potion', 'dagger', 'rough_crystal'],
+        possibleDrops: ['health_potion', 'dagger', 'small_gem'],
         dropRates: { common: 0.5, uncommon: 0.2, rare: 0.05 }
     },
     
@@ -133,7 +371,7 @@ Object.assign(ENEMIES, {
         baseGold: 8,
         level: 1,
         description: 'A diseased rodent the size of a dog',
-        possibleDrops: ['health_potion', 'rat_tail', 'rough_crystal'],
+        possibleDrops: ['health_potion', 'rat_tail', 'small_gem'],
         dropRates: { common: 0.6, uncommon: 0.1, rare: 0.02 }
     },
     
@@ -148,7 +386,7 @@ Object.assign(ENEMIES, {
         baseGold: 18,
         level: 2,
         description: 'A mischievous fey creature with dark magic',
-        possibleDrops: ['mana_potion', 'imp_horn', 'rough_crystal'],
+        possibleDrops: ['mana_potion', 'imp_horn', 'small_gem'],
         dropRates: { common: 0.4, uncommon: 0.25, rare: 0.08, epic: 0.02 }
     },
     
@@ -163,7 +401,7 @@ Object.assign(ENEMIES, {
         baseGold: 50, 
         level: 3,
         description: 'A cunning thief who preys on travelers',
-        possibleDrops: ['health_potion', 'mana_potion', 'poison_dagger', 'polished_crystal', 'gold_coins'],
+        possibleDrops: ['health_potion', 'mana_potion', 'poison_dagger', 'medium_gem', 'gold_coins'],
         dropRates: { common: 0.3, uncommon: 0.3, rare: 0.15, epic: 0.06, legendary: 0.01 }
     },
     
@@ -179,7 +417,7 @@ Object.assign(ENEMIES, {
         baseGold: 20,
         level: 3,
         description: 'A mossy troll that lurks by the water',
-        possibleDrops: ['health_potion', 'troll_moss', 'polished_crystal'],
+        possibleDrops: ['health_potion', 'troll_moss', 'medium_gem'],
         dropRates: { common: 0.4, uncommon: 0.25, rare: 0.1, epic: 0.03 }
     },
     
@@ -194,7 +432,7 @@ Object.assign(ENEMIES, {
         baseGold: 18,
         level: 3,
         description: 'A creature that hides beneath the murky water',
-        possibleDrops: ['health_potion', 'swamp_essence', 'polished_crystal'],
+        possibleDrops: ['health_potion', 'swamp_essence', 'medium_gem'],
         dropRates: { common: 0.45, uncommon: 0.2, rare: 0.08, epic: 0.02 }
     },
     
@@ -209,7 +447,7 @@ Object.assign(ENEMIES, {
         baseGold: 15,
         level: 2,
         description: 'A huge amphibian with a sticky tongue',
-        possibleDrops: ['health_potion', 'frog_legs', 'rough_crystal'],
+        possibleDrops: ['health_potion', 'frog_legs', 'small_gem'],
         dropRates: { common: 0.5, uncommon: 0.2, rare: 0.05 }
     },
     
@@ -224,8 +462,42 @@ Object.assign(ENEMIES, {
         baseGold: 12,
         level: 3,
         description: 'A venomous serpent that strikes from the water',
-        possibleDrops: ['health_potion', 'snake_venom', 'snake_skin', 'rough_crystal'],
-        dropRates: { common: 0.4, uncommon: 0.25, rare: 0.1, epic: 0.03 }
+        possibleDrops: ['health_potion', 'snake_venom', 'snake_skin', 'small_gem'],
+        dropRates: { common: 0.4, uncommon: 0.25, rare: 0.1, epic: 0.03 },
+        abilities: [
+            {
+                id: 'venom_strike',
+                name: 'Venom Strike',
+                chance: 0.25,
+                mpCost: 12,                   // 25% per turn
+                telegraph: 'coils tightly and flicks its tongue...',
+                type: 'dot_attack',
+                dot: {
+                    name: 'Poisoned',
+                    icon: '💚',
+                    damage: 5,                  // Stronger venom than the spider
+                    tickInterval: 3000,
+                    ticks: 3,
+                },
+                damageMult: 0.8,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `💚 The ${enemyName}'s fangs inject venom! <b>Poisoned!</b>`
+            },
+            {
+                id: 'constrict',
+                name: 'Constrict',
+                chance: 0.20,
+                mpCost: 10,                   // 20% per turn
+                hpThreshold: null,              // Any HP
+                telegraph: 'lunges and wraps around you...',
+                type: 'debuff',
+                debuff: 'constricted',          // Custom: player dodge = 0 for 1 turn, reduced dodge for 1 more
+                dodgePenalty: 1.0,              // 100% dodge reduction this turn
+                damageMult: 1.2,               // Extra crush damage
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🐍 The ${enemyName} CONSTRICTS the ${playerClass}! You cannot dodge!`
+            }
+        ]
     },
 
     // ═══════════════════════════════════════════════════════════════
@@ -243,7 +515,7 @@ Object.assign(ENEMIES, {
         baseGold: 35, 
         level: 6,
         description: 'A brutish warrior with a battle axe',
-        possibleDrops: ['health_potion', 'iron_sword', 'leather_armor', 'polished_crystal', 'warhammer'],
+        possibleDrops: ['health_potion', 'iron_sword', 'leather_armor', 'medium_gem', 'warhammer'],
         dropRates: { common: 0.35, uncommon: 0.25, rare: 0.12, epic: 0.05, legendary: 0.01 }
     },
     
@@ -258,7 +530,7 @@ Object.assign(ENEMIES, {
         baseGold: 30, 
         level: 7,
         description: 'An enormous wolf, twice the size of normal',
-        possibleDrops: ['health_potion', 'dire_pelt', 'polished_crystal'],
+        possibleDrops: ['health_potion', 'dire_pelt', 'medium_gem'],
         dropRates: { common: 0.4, uncommon: 0.2, rare: 0.08, epic: 0.03 }
     },
     
@@ -273,7 +545,7 @@ Object.assign(ENEMIES, {
         baseGold: 40,
         level: 7,
         description: 'A majestic predator that rules the grasslands',
-        possibleDrops: ['health_potion', 'lion_mane', 'polished_crystal'],
+        possibleDrops: ['health_potion', 'lion_mane', 'medium_gem'],
         dropRates: { common: 0.4, uncommon: 0.25, rare: 0.1, epic: 0.04 }
     },
     
@@ -288,7 +560,7 @@ Object.assign(ENEMIES, {
         baseGold: 55,
         level: 8,
         description: 'A half-human, half-horse warrior with a spear',
-        possibleDrops: ['health_potion', 'longbow', 'leather_armor', 'polished_crystal'],
+        possibleDrops: ['health_potion', 'longbow', 'leather_armor', 'medium_gem'],
         dropRates: { common: 0.35, uncommon: 0.25, rare: 0.12, epic: 0.05, legendary: 0.02 }
     },
     
@@ -303,7 +575,7 @@ Object.assign(ENEMIES, {
         baseGold: 60,
         level: 7,
         description: 'A nomadic warrior on horseback',
-        possibleDrops: ['health_potion', 'steel_sword', 'gold_coins', 'polished_crystal'],
+        possibleDrops: ['health_potion', 'steel_sword', 'gold_coins', 'medium_gem'],
         dropRates: { common: 0.35, uncommon: 0.3, rare: 0.15, epic: 0.05 }
     },
     
@@ -318,7 +590,7 @@ Object.assign(ENEMIES, {
         baseGold: 38,
         level: 8,
         description: 'A massive arachnid with a poisonous stinger',
-        possibleDrops: ['health_potion', 'scorpion_venom', 'chitin_armor', 'polished_crystal'],
+        possibleDrops: ['health_potion', 'scorpion_venom', 'chitin_armor', 'medium_gem'],
         dropRates: { common: 0.35, uncommon: 0.25, rare: 0.15, epic: 0.06, legendary: 0.01 }
     },
     
@@ -334,7 +606,7 @@ Object.assign(ENEMIES, {
         baseGold: 25,
         level: 7,
         description: 'A shambling corpse hungry for flesh',
-        possibleDrops: ['health_potion', 'bone_dust', 'polished_crystal'],
+        possibleDrops: ['health_potion', 'bone_dust', 'medium_gem'],
         dropRates: { common: 0.45, uncommon: 0.2, rare: 0.08, epic: 0.02 }
     },
     
@@ -349,7 +621,7 @@ Object.assign(ENEMIES, {
         baseGold: 30,
         level: 8,
         description: 'A flesh-eating undead with razor claws',
-        possibleDrops: ['health_potion', 'ghoul_claw', 'cursed_bone', 'polished_crystal'],
+        possibleDrops: ['health_potion', 'ghoul_claw', 'cursed_bone', 'medium_gem'],
         dropRates: { common: 0.4, uncommon: 0.25, rare: 0.1, epic: 0.03 }
     },
     
@@ -364,7 +636,7 @@ Object.assign(ENEMIES, {
         baseGold: 28,
         level: 7,
         description: 'An animated pile of bones with rusty weapons',
-        possibleDrops: ['health_potion', 'bone_dust', 'rusty_sword', 'polished_crystal'],
+        possibleDrops: ['health_potion', 'bone_dust', 'rusty_sword', 'medium_gem'],
         dropRates: { common: 0.45, uncommon: 0.2, rare: 0.08, epic: 0.02 }
     },
     
@@ -379,7 +651,7 @@ Object.assign(ENEMIES, {
         baseGold: 60,
         level: 10,
         description: 'A spectral horror that feeds on life force',
-        possibleDrops: ['greater_health_potion', 'shadowblade', 'soul_essence', 'prismatic_crystal'],
+        possibleDrops: ['greater_health_potion', 'shadowblade', 'soul_essence', 'large_gem'],
         dropRates: { common: 0.3, uncommon: 0.25, rare: 0.2, epic: 0.12, legendary: 0.05 }
     },
     
@@ -394,7 +666,7 @@ Object.assign(ENEMIES, {
         baseGold: 80,
         level: 9,
         description: 'A living criminal who steals from the dead',
-        possibleDrops: ['health_potion', 'gold_coins', 'lockpicks', 'polished_crystal'],
+        possibleDrops: ['health_potion', 'gold_coins', 'lockpicks', 'medium_gem'],
         dropRates: { common: 0.35, uncommon: 0.3, rare: 0.15, epic: 0.08, legendary: 0.02 }
     },
     
@@ -409,7 +681,7 @@ Object.assign(ENEMIES, {
         baseGold: 35,
         level: 7,
         description: 'A ghostly apparition bound to the graveyard',
-        possibleDrops: ['mana_potion', 'ectoplasm', 'spirit_essence', 'polished_crystal'],
+        possibleDrops: ['mana_potion', 'ectoplasm', 'spirit_essence', 'medium_gem'],
         dropRates: { common: 0.4, uncommon: 0.25, rare: 0.12, epic: 0.04 }
     },
 
@@ -428,7 +700,7 @@ Object.assign(ENEMIES, {
         baseGold: 32,
         level: 5,
         description: 'A pale orc who has never seen sunlight and is furious about it',
-        possibleDrops: ['health_potion', 'iron_sword', 'leather_armor', 'polished_crystal'],
+        possibleDrops: ['health_potion', 'iron_sword', 'leather_armor', 'medium_gem'],
         dropRates: { common: 0.4, uncommon: 0.25, rare: 0.1, epic: 0.03 }
     },
 
@@ -443,7 +715,7 @@ Object.assign(ENEMIES, {
         baseGold: 28,
         level: 5,
         description: 'A hyena-headed scavenger that hunts in underground tunnels',
-        possibleDrops: ['health_potion', 'gnoll_hide', 'bone_club', 'rough_crystal'],
+        possibleDrops: ['health_potion', 'gnoll_hide', 'bone_club', 'small_gem'],
         dropRates: { common: 0.45, uncommon: 0.2, rare: 0.08, epic: 0.02 }
     },
 
@@ -458,8 +730,22 @@ Object.assign(ENEMIES, {
         baseGold: 20,
         level: 5,
         description: 'A massive bat with a wingspan that fills narrow corridors',
-        possibleDrops: ['health_potion', 'bat_wing', 'rough_crystal'],
-        dropRates: { common: 0.5, uncommon: 0.18, rare: 0.05 }
+        possibleDrops: ['health_potion', 'bat_wing', 'small_gem'],
+        dropRates: { common: 0.5, uncommon: 0.18, rare: 0.05 },
+        abilities: [
+            {
+                id: 'screech',
+                name: 'Screech',
+                chance: 0.20,
+                mpCost: 10,                   // 20% per turn
+                telegraph: 'opens its mouth wide and inhales sharply...',
+                type: 'stun',                   // Skip player's next pip recovery
+                stunPips: 1,                    // Player loses 1 pip charge
+                damageMult: 0.5,               // Weak physical hit alongside screech
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🦇 The ${enemyName} SCREECHES! The sound is disorienting — you lose an attack charge!`
+            }
+        ]
     },
 
     stone_crawler: {
@@ -473,7 +759,7 @@ Object.assign(ENEMIES, {
         baseGold: 25,
         level: 6,
         description: 'An armored beetle the size of a cart horse that feeds on cave minerals',
-        possibleDrops: ['health_potion', 'chitin_shard', 'rough_crystal', 'polished_crystal'],
+        possibleDrops: ['health_potion', 'chitin_shard', 'small_gem', 'medium_gem'],
         dropRates: { common: 0.4, uncommon: 0.25, rare: 0.1, epic: 0.03 }
     },
 
@@ -488,7 +774,7 @@ Object.assign(ENEMIES, {
         baseGold: 18,
         level: 5,
         description: 'A diseased rat that has grown bloated feasting on dungeon refuse',
-        possibleDrops: ['health_potion', 'rat_tail', 'rough_crystal'],
+        possibleDrops: ['health_potion', 'rat_tail', 'small_gem'],
         dropRates: { common: 0.55, uncommon: 0.15, rare: 0.04 }
     },
 
@@ -503,7 +789,7 @@ Object.assign(ENEMIES, {
         baseGold: 26,
         level: 6,
         description: 'A pale web-spinning predator that has claimed entire corridors as its own',
-        possibleDrops: ['health_potion', 'spider_silk', 'venom_gland', 'rough_crystal'],
+        possibleDrops: ['health_potion', 'spider_silk', 'venom_gland', 'small_gem'],
         dropRates: { common: 0.42, uncommon: 0.22, rare: 0.09, epic: 0.02 }
     },
 
@@ -518,7 +804,7 @@ Object.assign(ENEMIES, {
         baseGold: 38,
         level: 7,
         description: 'A shadow-cloaked humanoid that hunts by heat and heartbeat',
-        possibleDrops: ['health_potion', 'shadow_cloth', 'dark_essence', 'polished_crystal'],
+        possibleDrops: ['health_potion', 'shadow_cloth', 'dark_essence', 'medium_gem'],
         dropRates: { common: 0.38, uncommon: 0.25, rare: 0.12, epic: 0.04 }
     },
 
@@ -533,7 +819,7 @@ Object.assign(ENEMIES, {
         baseGold: 30,
         level: 7,
         description: 'A shambling mass of animated fungus that releases toxic spores',
-        possibleDrops: ['health_potion', 'spore_sac', 'fungal_extract', 'polished_crystal'],
+        possibleDrops: ['health_potion', 'spore_sac', 'fungal_extract', 'medium_gem'],
         dropRates: { common: 0.4, uncommon: 0.25, rare: 0.1, epic: 0.03 }
     },
 
@@ -552,7 +838,7 @@ Object.assign(ENEMIES, {
         baseGold: 80, 
         level: 11,
         description: 'A massive regenerating beast with incredible strength',
-        possibleDrops: ['greater_health_potion', 'steel_sword', 'steel_plate', 'prismatic_crystal', 'warhammer'],
+        possibleDrops: ['greater_health_potion', 'steel_sword', 'steel_plate', 'large_gem', 'warhammer'],
         dropRates: { common: 0.3, uncommon: 0.25, rare: 0.2, epic: 0.1, legendary: 0.03 }
     },
     
@@ -567,7 +853,7 @@ Object.assign(ENEMIES, {
         baseGold: 60, 
         level: 11,
         description: 'An animated skeleton in ancient armor',
-        possibleDrops: ['health_potion', 'bone_dust', 'cursed_sword', 'prismatic_crystal'],
+        possibleDrops: ['health_potion', 'bone_dust', 'cursed_sword', 'large_gem'],
         dropRates: { common: 0.35, uncommon: 0.25, rare: 0.15, epic: 0.08, legendary: 0.02 }
     },
     
@@ -582,7 +868,7 @@ Object.assign(ENEMIES, {
         baseGold: 100, 
         level: 12,
         description: 'A corrupted spellcaster wielding shadow magic',
-        possibleDrops: ['mana_potion', 'greater_mana_potion', 'flame_staff', 'enchanted_robes', 'prismatic_crystal'],
+        possibleDrops: ['mana_potion', 'greater_mana_potion', 'flame_staff', 'enchanted_robes', 'large_gem'],
         dropRates: { common: 0.25, uncommon: 0.3, rare: 0.2, epic: 0.12, legendary: 0.05 }
     },
     
@@ -597,7 +883,7 @@ Object.assign(ENEMIES, {
         baseGold: 95,
         level: 13,
         description: 'A lesser dragon that dwells in caves',
-        possibleDrops: ['greater_health_potion', 'drake_scale', 'dragon_tooth', 'prismatic_crystal'],
+        possibleDrops: ['greater_health_potion', 'drake_scale', 'dragon_tooth', 'large_gem'],
         dropRates: { common: 0.25, uncommon: 0.25, rare: 0.22, epic: 0.15, legendary: 0.08 }
     },
     
@@ -612,7 +898,7 @@ Object.assign(ENEMIES, {
         baseGold: 70,
         level: 13,
         description: 'An animated construct of living stone',
-        possibleDrops: ['greater_health_potion', 'golem_core', 'stone_armor', 'prismatic_crystal'],
+        possibleDrops: ['greater_health_potion', 'golem_core', 'stone_armor', 'large_gem'],
         dropRates: { common: 0.3, uncommon: 0.25, rare: 0.2, epic: 0.12, legendary: 0.05 }
     },
     
@@ -627,7 +913,7 @@ Object.assign(ENEMIES, {
         baseGold: 90,
         level: 12,
         description: 'A dim-witted giant with a massive club',
-        possibleDrops: ['greater_health_potion', 'warhammer', 'steel_plate', 'prismatic_crystal'],
+        possibleDrops: ['greater_health_potion', 'warhammer', 'steel_plate', 'large_gem'],
         dropRates: { common: 0.3, uncommon: 0.25, rare: 0.18, epic: 0.1, legendary: 0.03 }
     },
     
@@ -643,7 +929,7 @@ Object.assign(ENEMIES, {
         baseGold: 90,
         level: 13,
         description: 'A wicked witch who lives in the bog',
-        possibleDrops: ['greater_mana_potion', 'witch_brew', 'cursed_amulet', 'prismatic_crystal'],
+        possibleDrops: ['greater_mana_potion', 'witch_brew', 'cursed_amulet', 'large_gem'],
         dropRates: { common: 0.25, uncommon: 0.3, rare: 0.2, epic: 0.12, legendary: 0.06 }
     },
     
@@ -658,7 +944,7 @@ Object.assign(ENEMIES, {
         baseGold: 70,
         level: 12,
         description: 'A diseased undead that spreads infection',
-        possibleDrops: ['greater_health_potion', 'plague_sample', 'bone_dust', 'prismatic_crystal'],
+        possibleDrops: ['greater_health_potion', 'plague_sample', 'bone_dust', 'large_gem'],
         dropRates: { common: 0.35, uncommon: 0.25, rare: 0.15, epic: 0.08, legendary: 0.02 }
     },
     
@@ -673,7 +959,7 @@ Object.assign(ENEMIES, {
         baseGold: 65,
         level: 12,
         description: 'A blood-sucking parasite the size of a person',
-        possibleDrops: ['health_potion', 'leech_extract', 'blood_vial', 'polished_crystal'],
+        possibleDrops: ['health_potion', 'leech_extract', 'blood_vial', 'medium_gem'],
         dropRates: { common: 0.4, uncommon: 0.25, rare: 0.15, epic: 0.05 }
     },
     
@@ -688,7 +974,7 @@ Object.assign(ENEMIES, {
         baseGold: 105,
         level: 14,
         description: 'A monstrous creature made of mud and vines',
-        possibleDrops: ['greater_health_potion', 'swamp_heart', 'bog_armor', 'prismatic_crystal'],
+        possibleDrops: ['greater_health_potion', 'swamp_heart', 'bog_armor', 'large_gem'],
         dropRates: { common: 0.25, uncommon: 0.25, rare: 0.22, epic: 0.15, legendary: 0.08 }
     },
     
@@ -719,7 +1005,7 @@ Object.assign(ENEMIES, {
         baseGold: 110,
         level: 14,
         description: 'A fallen warrior bound to guard these ruins',
-        possibleDrops: ['greater_health_potion', 'cursed_blade', 'ancient_armor', 'prismatic_crystal'],
+        possibleDrops: ['greater_health_potion', 'cursed_blade', 'ancient_armor', 'large_gem'],
         dropRates: { common: 0.25, uncommon: 0.25, rare: 0.22, epic: 0.15, legendary: 0.08 }
     },
     
@@ -734,7 +1020,7 @@ Object.assign(ENEMIES, {
         baseGold: 100,
         level: 14,
         description: 'A creature born from darkness itself',
-        possibleDrops: ['greater_health_potion', 'shadowblade', 'dark_essence', 'prismatic_crystal'],
+        possibleDrops: ['greater_health_potion', 'shadowblade', 'dark_essence', 'large_gem'],
         dropRates: { common: 0.3, uncommon: 0.25, rare: 0.2, epic: 0.12, legendary: 0.06 }
     },
     
@@ -764,7 +1050,7 @@ Object.assign(ENEMIES, {
         baseGold: 105,
         level: 15,
         description: 'The ghost of a legendary warrior',
-        possibleDrops: ['greater_health_potion', 'spectral_blade', 'ghost_essence', 'prismatic_crystal'],
+        possibleDrops: ['greater_health_potion', 'spectral_blade', 'ghost_essence', 'large_gem'],
         dropRates: { common: 0.25, uncommon: 0.25, rare: 0.22, epic: 0.15, legendary: 0.08 }
     },
     
@@ -1393,7 +1679,7 @@ Object.assign(ENEMIES, {
         baseGold: 9,
         level: 1,
         description: 'A bad-tempered crustacean that snaps at anything that moves',
-        possibleDrops: ['health_potion', 'crab_claw', 'rough_crystal'],
+        possibleDrops: ['health_potion', 'crab_claw', 'small_gem'],
         dropRates: { common: 0.6, uncommon: 0.15, rare: 0.02 }
     },
 
@@ -1408,7 +1694,7 @@ Object.assign(ENEMIES, {
         baseGold: 5,
         level: 1,
         description: 'Do NOT let the cute face fool you. It is absolutely feral',
-        possibleDrops: ['health_potion', 'rough_crystal'],
+        possibleDrops: ['health_potion', 'small_gem'],
         dropRates: { common: 0.65, uncommon: 0.1, rare: 0.01 }
     },
 
@@ -1423,7 +1709,7 @@ Object.assign(ENEMIES, {
         baseGold: 11,
         level: 1,
         description: 'A walking tangle of briars and bad attitude',
-        possibleDrops: ['health_potion', 'thorn_shard', 'rough_crystal'],
+        possibleDrops: ['health_potion', 'thorn_shard', 'small_gem'],
         dropRates: { common: 0.55, uncommon: 0.18, rare: 0.03 }
     },
 
@@ -1439,7 +1725,7 @@ Object.assign(ENEMIES, {
         baseGold: 13,
         level: 2,
         description: 'A cave bat with hollow teeth that drip with paralytic venom',
-        possibleDrops: ['health_potion', 'bat_wing', 'rough_crystal'],
+        possibleDrops: ['health_potion', 'bat_wing', 'small_gem'],
         dropRates: { common: 0.5, uncommon: 0.2, rare: 0.04 }
     },
 
@@ -1454,7 +1740,7 @@ Object.assign(ENEMIES, {
         baseGold: 14,
         level: 2,
         description: 'An ambush predator disguised as a mossy log',
-        possibleDrops: ['health_potion', 'slime_gel', 'rough_crystal'],
+        possibleDrops: ['health_potion', 'slime_gel', 'small_gem'],
         dropRates: { common: 0.5, uncommon: 0.18, rare: 0.03 }
     },
 
@@ -1470,7 +1756,7 @@ Object.assign(ENEMIES, {
         baseGold: 28,
         level: 3,
         description: 'A goblin daubed in warpaint, hurling curse-hexes',
-        possibleDrops: ['mana_potion', 'shaman_totem', 'rough_crystal'],
+        possibleDrops: ['mana_potion', 'shaman_totem', 'small_gem'],
         dropRates: { common: 0.4, uncommon: 0.25, rare: 0.08, epic: 0.02 }
     },
 
@@ -1485,7 +1771,7 @@ Object.assign(ENEMIES, {
         baseGold: 20,
         level: 3,
         description: 'A tufted predator that pounces without warning',
-        possibleDrops: ['health_potion', 'lynx_pelt', 'rough_crystal'],
+        possibleDrops: ['health_potion', 'lynx_pelt', 'small_gem'],
         dropRates: { common: 0.5, uncommon: 0.2, rare: 0.05 }
     },
 
@@ -1500,7 +1786,7 @@ Object.assign(ENEMIES, {
         baseGold: 16,
         level: 3,
         description: 'Carries enough disease to drop a small horse',
-        possibleDrops: ['health_potion', 'rat_tail', 'rough_crystal'],
+        possibleDrops: ['health_potion', 'rat_tail', 'small_gem'],
         dropRates: { common: 0.55, uncommon: 0.18, rare: 0.03 }
     },
 
@@ -1516,7 +1802,7 @@ Object.assign(ENEMIES, {
         baseGold: 25,
         level: 4,
         description: 'An oversized amphibian with an unsettling number of teeth',
-        possibleDrops: ['health_potion', 'frog_legs', 'rough_crystal'],
+        possibleDrops: ['health_potion', 'frog_legs', 'small_gem'],
         dropRates: { common: 0.5, uncommon: 0.2, rare: 0.05 }
     },
 
@@ -1531,7 +1817,7 @@ Object.assign(ENEMIES, {
         baseGold: 55,
         level: 4,
         description: 'A brigand who robs travelers crossing the ford',
-        possibleDrops: ['health_potion', 'gold_coins', 'dagger', 'rough_crystal'],
+        possibleDrops: ['health_potion', 'gold_coins', 'dagger', 'small_gem'],
         dropRates: { common: 0.4, uncommon: 0.28, rare: 0.1, epic: 0.02 }
     },
 
@@ -1546,7 +1832,7 @@ Object.assign(ENEMIES, {
         baseGold: 22,
         level: 4,
         description: 'Ancient and armored — its bite can sever a branch clean',
-        possibleDrops: ['health_potion', 'shell_shard', 'rough_crystal'],
+        possibleDrops: ['health_potion', 'shell_shard', 'small_gem'],
         dropRates: { common: 0.5, uncommon: 0.2, rare: 0.05 }
     },
 
@@ -1561,7 +1847,7 @@ Object.assign(ENEMIES, {
         baseGold: 20,
         level: 4,
         description: 'Living vines that drag prey beneath the surface',
-        possibleDrops: ['health_potion', 'swamp_essence', 'rough_crystal'],
+        possibleDrops: ['health_potion', 'swamp_essence', 'small_gem'],
         dropRates: { common: 0.5, uncommon: 0.2, rare: 0.05 }
     },
 
@@ -1576,7 +1862,7 @@ Object.assign(ENEMIES, {
         baseGold: 38,
         level: 4,
         description: 'Mutters curses and throws jars of unidentified fluid',
-        possibleDrops: ['mana_potion', 'witch_brew', 'rough_crystal'],
+        possibleDrops: ['mana_potion', 'witch_brew', 'small_gem'],
         dropRates: { common: 0.4, uncommon: 0.28, rare: 0.1, epic: 0.02 }
     },
 
@@ -1592,7 +1878,7 @@ Object.assign(ENEMIES, {
         baseGold: 35,
         level: 5,
         description: 'A shrieking winged creature with talons like daggers',
-        possibleDrops: ['health_potion', 'harpy_feather', 'polished_crystal'],
+        possibleDrops: ['health_potion', 'harpy_feather', 'medium_gem'],
         dropRates: { common: 0.4, uncommon: 0.25, rare: 0.1, epic: 0.02 }
     },
 
@@ -1607,7 +1893,7 @@ Object.assign(ENEMIES, {
         baseGold: 42,
         level: 5,
         description: 'A hyena-headed marauder with a taste for chaos',
-        possibleDrops: ['health_potion', 'gnoll_hide', 'polished_crystal'],
+        possibleDrops: ['health_potion', 'gnoll_hide', 'medium_gem'],
         dropRates: { common: 0.4, uncommon: 0.25, rare: 0.1, epic: 0.02 }
     },
 
@@ -1622,7 +1908,7 @@ Object.assign(ENEMIES, {
         baseGold: 40,
         level: 5,
         description: 'A tribal reptilian fighter, fast and aggressive',
-        possibleDrops: ['health_potion', 'scale_shard', 'polished_crystal'],
+        possibleDrops: ['health_potion', 'scale_shard', 'medium_gem'],
         dropRates: { common: 0.45, uncommon: 0.22, rare: 0.08, epic: 0.02 }
     },
 
@@ -1637,7 +1923,7 @@ Object.assign(ENEMIES, {
         baseGold: 30,
         level: 5,
         description: 'Airborne, angry, and capable of stinging through plate',
-        possibleDrops: ['mana_potion', 'wasp_stinger', 'polished_crystal'],
+        possibleDrops: ['mana_potion', 'wasp_stinger', 'medium_gem'],
         dropRates: { common: 0.45, uncommon: 0.22, rare: 0.08, epic: 0.02 }
     },
 
@@ -1652,7 +1938,7 @@ Object.assign(ENEMIES, {
         baseGold: 48,
         level: 5,
         description: 'The eyes of a larger gang — quicker than a full bandit',
-        possibleDrops: ['health_potion', 'gold_coins', 'dagger', 'rough_crystal'],
+        possibleDrops: ['health_potion', 'gold_coins', 'dagger', 'small_gem'],
         dropRates: { common: 0.4, uncommon: 0.28, rare: 0.1, epic: 0.02 }
     },
 
@@ -1668,7 +1954,7 @@ Object.assign(ENEMIES, {
         baseGold: 38,
         level: 6,
         description: 'Someone strapped iron plates to a boar. Big mistake',
-        possibleDrops: ['health_potion', 'boar_hide', 'iron_tusk', 'polished_crystal'],
+        possibleDrops: ['health_potion', 'boar_hide', 'iron_tusk', 'medium_gem'],
         dropRates: { common: 0.4, uncommon: 0.25, rare: 0.1, epic: 0.03 }
     },
 
@@ -1683,7 +1969,7 @@ Object.assign(ENEMIES, {
         baseGold: 50,
         level: 6,
         description: 'A larger, meaner, well-organized cousin of the goblin',
-        possibleDrops: ['health_potion', 'iron_sword', 'polished_crystal'],
+        possibleDrops: ['health_potion', 'iron_sword', 'medium_gem'],
         dropRates: { common: 0.38, uncommon: 0.28, rare: 0.12, epic: 0.04 }
     },
 
@@ -1698,7 +1984,7 @@ Object.assign(ENEMIES, {
         baseGold: 32,
         level: 6,
         description: 'A predatory bird that dives at 80mph from nowhere',
-        possibleDrops: ['health_potion', 'hawk_talon', 'polished_crystal'],
+        possibleDrops: ['health_potion', 'hawk_talon', 'medium_gem'],
         dropRates: { common: 0.45, uncommon: 0.22, rare: 0.08, epic: 0.02 }
     },
 
@@ -1713,7 +1999,7 @@ Object.assign(ENEMIES, {
         baseGold: 40,
         level: 6,
         description: 'A construct of bramble and hate, built by no one living',
-        possibleDrops: ['health_potion', 'thorn_shard', 'polished_crystal'],
+        possibleDrops: ['health_potion', 'thorn_shard', 'medium_gem'],
         dropRates: { common: 0.4, uncommon: 0.25, rare: 0.1, epic: 0.03 }
     },
 
@@ -1728,7 +2014,7 @@ Object.assign(ENEMIES, {
         baseGold: 45,
         level: 6,
         description: 'A ghostly smear that rises from the sun-baked plains',
-        possibleDrops: ['mana_potion', 'spirit_essence', 'polished_crystal'],
+        possibleDrops: ['mana_potion', 'spirit_essence', 'medium_gem'],
         dropRates: { common: 0.38, uncommon: 0.28, rare: 0.14, epic: 0.05 }
     },
 
@@ -1744,7 +2030,7 @@ Object.assign(ENEMIES, {
         baseGold: 38,
         level: 7,
         description: 'A skeleton marksman that pins you from the shadows',
-        possibleDrops: ['health_potion', 'bone_dust', 'cursed_bow', 'polished_crystal'],
+        possibleDrops: ['health_potion', 'bone_dust', 'cursed_bow', 'medium_gem'],
         dropRates: { common: 0.4, uncommon: 0.25, rare: 0.1, epic: 0.03 }
     },
 
@@ -1759,7 +2045,7 @@ Object.assign(ENEMIES, {
         baseGold: 42,
         level: 7,
         description: 'A dog-shaped hole in the darkness that hunts by smell',
-        possibleDrops: ['health_potion', 'shadow_essence', 'polished_crystal'],
+        possibleDrops: ['health_potion', 'shadow_essence', 'medium_gem'],
         dropRates: { common: 0.4, uncommon: 0.25, rare: 0.12, epic: 0.04 }
     },
 
@@ -1774,7 +2060,7 @@ Object.assign(ENEMIES, {
         baseGold: 28,
         level: 7,
         description: 'Enormous bat that nests in fresh grave mounds',
-        possibleDrops: ['health_potion', 'bat_wing', 'polished_crystal'],
+        possibleDrops: ['health_potion', 'bat_wing', 'medium_gem'],
         dropRates: { common: 0.48, uncommon: 0.2, rare: 0.07, epic: 0.02 }
     },
 
@@ -1789,7 +2075,7 @@ Object.assign(ENEMIES, {
         baseGold: 50,
         level: 7,
         description: 'Her scream alone can crack headstones',
-        possibleDrops: ['mana_potion', 'ectoplasm', 'polished_crystal'],
+        possibleDrops: ['mana_potion', 'ectoplasm', 'medium_gem'],
         dropRates: { common: 0.38, uncommon: 0.28, rare: 0.14, epic: 0.05 }
     },
 
@@ -1804,7 +2090,7 @@ Object.assign(ENEMIES, {
         baseGold: 55,
         level: 7,
         description: 'A corrupted paladin still dutifully guarding his eternal post',
-        possibleDrops: ['health_potion', 'cursed_sword', 'polished_crystal'],
+        possibleDrops: ['health_potion', 'cursed_sword', 'medium_gem'],
         dropRates: { common: 0.35, uncommon: 0.28, rare: 0.15, epic: 0.06 }
     },
 
@@ -1820,7 +2106,7 @@ Object.assign(ENEMIES, {
         baseGold: 48,
         level: 8,
         description: 'Fights naked and screaming — somehow more dangerous for it',
-        possibleDrops: ['health_potion', 'warhammer', 'polished_crystal'],
+        possibleDrops: ['health_potion', 'warhammer', 'medium_gem'],
         dropRates: { common: 0.35, uncommon: 0.28, rare: 0.15, epic: 0.06 }
     },
 
@@ -1835,7 +2121,7 @@ Object.assign(ENEMIES, {
         baseGold: 40,
         level: 8,
         description: 'Sprays boiling acid. The shell is the least of your problems',
-        possibleDrops: ['health_potion', 'chitin_armor', 'polished_crystal'],
+        possibleDrops: ['health_potion', 'chitin_armor', 'medium_gem'],
         dropRates: { common: 0.4, uncommon: 0.25, rare: 0.12, epic: 0.04 }
     },
 
@@ -1850,7 +2136,7 @@ Object.assign(ENEMIES, {
         baseGold: 35,
         level: 8,
         description: 'A walking haze of pestilence and despair',
-        possibleDrops: ['health_potion', 'plague_sample', 'polished_crystal'],
+        possibleDrops: ['health_potion', 'plague_sample', 'medium_gem'],
         dropRates: { common: 0.42, uncommon: 0.24, rare: 0.1, epic: 0.03 }
     },
 
@@ -1865,7 +2151,7 @@ Object.assign(ENEMIES, {
         baseGold: 55,
         level: 8,
         description: 'Outrider of a minotaur warband — never comes alone for long',
-        possibleDrops: ['health_potion', 'iron_sword', 'polished_crystal'],
+        possibleDrops: ['health_potion', 'iron_sword', 'medium_gem'],
         dropRates: { common: 0.35, uncommon: 0.28, rare: 0.15, epic: 0.06 }
     },
 
@@ -1880,7 +2166,7 @@ Object.assign(ENEMIES, {
         baseGold: 60,
         level: 8,
         description: 'A dancing light that lures travelers into bogs and eats them',
-        possibleDrops: ['mana_potion', 'wisp_essence', 'polished_crystal'],
+        possibleDrops: ['mana_potion', 'wisp_essence', 'medium_gem'],
         dropRates: { common: 0.35, uncommon: 0.3, rare: 0.18, epic: 0.08 }
     },
 
@@ -1896,7 +2182,7 @@ Object.assign(ENEMIES, {
         baseGold: 85,
         level: 9,
         description: 'A true believer who makes dying look like a hobby',
-        possibleDrops: ['mana_potion', 'cursed_bone', 'gold_coins', 'polished_crystal'],
+        possibleDrops: ['mana_potion', 'cursed_bone', 'gold_coins', 'medium_gem'],
         dropRates: { common: 0.33, uncommon: 0.3, rare: 0.18, epic: 0.09, legendary: 0.02 }
     },
 
@@ -1911,7 +2197,7 @@ Object.assign(ENEMIES, {
         baseGold: 55,
         level: 9,
         description: 'A stitched-together horror, unhappy about its existence',
-        possibleDrops: ['health_potion', 'golem_core', 'prismatic_crystal'],
+        possibleDrops: ['health_potion', 'golem_core', 'large_gem'],
         dropRates: { common: 0.33, uncommon: 0.28, rare: 0.2, epic: 0.1, legendary: 0.03 }
     },
 
@@ -1926,7 +2212,7 @@ Object.assign(ENEMIES, {
         baseGold: 65,
         level: 9,
         description: 'A ghost so ancient it barely remembers what it was angry about',
-        possibleDrops: ['mana_potion', 'soul_essence', 'prismatic_crystal'],
+        possibleDrops: ['mana_potion', 'soul_essence', 'large_gem'],
         dropRates: { common: 0.35, uncommon: 0.28, rare: 0.18, epic: 0.08, legendary: 0.02 }
     },
 
@@ -1941,7 +2227,7 @@ Object.assign(ENEMIES, {
         baseGold: 90,
         level: 9,
         description: 'The biggest, meanest hyena-man in the pack',
-        possibleDrops: ['health_potion', 'warhammer', 'polished_crystal'],
+        possibleDrops: ['health_potion', 'warhammer', 'medium_gem'],
         dropRates: { common: 0.32, uncommon: 0.3, rare: 0.2, epic: 0.1, legendary: 0.03 }
     },
 
@@ -1956,7 +2242,7 @@ Object.assign(ENEMIES, {
         baseGold: 70,
         level: 9,
         description: 'A human servant of a vampire, dangerously devoted',
-        possibleDrops: ['health_potion', 'blood_vial', 'polished_crystal'],
+        possibleDrops: ['health_potion', 'blood_vial', 'medium_gem'],
         dropRates: { common: 0.38, uncommon: 0.28, rare: 0.16, epic: 0.07, legendary: 0.01 }
     },
 
@@ -1972,7 +2258,7 @@ Object.assign(ENEMIES, {
         baseGold: 90,
         level: 10,
         description: 'Three heads means three chances to hate you at once',
-        possibleDrops: ['greater_health_potion', 'hydra_scale', 'prismatic_crystal'],
+        possibleDrops: ['greater_health_potion', 'hydra_scale', 'large_gem'],
         dropRates: { common: 0.28, uncommon: 0.28, rare: 0.22, epic: 0.14, legendary: 0.05 }
     },
 
@@ -1987,7 +2273,7 @@ Object.assign(ENEMIES, {
         baseGold: 72,
         level: 10,
         description: 'Half mud, half moss, entirely hostile',
-        possibleDrops: ['health_potion', 'swamp_heart', 'prismatic_crystal'],
+        possibleDrops: ['health_potion', 'swamp_heart', 'large_gem'],
         dropRates: { common: 0.35, uncommon: 0.26, rare: 0.2, epic: 0.1, legendary: 0.03 }
     },
 
@@ -2002,7 +2288,7 @@ Object.assign(ENEMIES, {
         baseGold: 80,
         level: 10,
         description: 'Fully armored and mostly decomposed',
-        possibleDrops: ['health_potion', 'ancient_sword', 'prismatic_crystal'],
+        possibleDrops: ['health_potion', 'ancient_sword', 'large_gem'],
         dropRates: { common: 0.3, uncommon: 0.27, rare: 0.22, epic: 0.12, legendary: 0.04 }
     },
 
@@ -2017,7 +2303,7 @@ Object.assign(ENEMIES, {
         baseGold: 85,
         level: 10,
         description: 'A winged reptile that spits venom instead of fire',
-        possibleDrops: ['greater_health_potion', 'drake_scale', 'snake_venom', 'prismatic_crystal'],
+        possibleDrops: ['greater_health_potion', 'drake_scale', 'snake_venom', 'large_gem'],
         dropRates: { common: 0.28, uncommon: 0.27, rare: 0.23, epic: 0.14, legendary: 0.05 }
     },
 
@@ -2032,7 +2318,7 @@ Object.assign(ENEMIES, {
         baseGold: 100,
         level: 10,
         description: 'Cackles while hurling hexes. Not in the fun way',
-        possibleDrops: ['greater_mana_potion', 'witch_brew', 'cursed_amulet', 'prismatic_crystal'],
+        possibleDrops: ['greater_mana_potion', 'witch_brew', 'cursed_amulet', 'large_gem'],
         dropRates: { common: 0.25, uncommon: 0.3, rare: 0.24, epic: 0.14, legendary: 0.06 }
     },
 
@@ -2048,7 +2334,7 @@ Object.assign(ENEMIES, {
         baseGold: 92,
         level: 11,
         description: 'Avoid eye contact. Seriously. Eyes closed. Trust me',
-        possibleDrops: ['greater_health_potion', 'basilisk_eye', 'stone_armor', 'prismatic_crystal'],
+        possibleDrops: ['greater_health_potion', 'basilisk_eye', 'stone_armor', 'large_gem'],
         dropRates: { common: 0.28, uncommon: 0.27, rare: 0.22, epic: 0.14, legendary: 0.05 }
     },
 
@@ -2063,7 +2349,7 @@ Object.assign(ENEMIES, {
         baseGold: 85,
         level: 11,
         description: 'Slow, relentless, not interested in your excuses',
-        possibleDrops: ['greater_health_potion', 'golem_core', 'iron_ingot', 'prismatic_crystal'],
+        possibleDrops: ['greater_health_potion', 'golem_core', 'iron_ingot', 'large_gem'],
         dropRates: { common: 0.3, uncommon: 0.25, rare: 0.22, epic: 0.14, legendary: 0.05 }
     },
 
@@ -2078,7 +2364,7 @@ Object.assign(ENEMIES, {
         baseGold: 78,
         level: 11,
         description: 'A loyal undead servant that shares its master\'s ruthlessness',
-        possibleDrops: ['health_potion', 'bone_dust', 'cursed_bone', 'prismatic_crystal'],
+        possibleDrops: ['health_potion', 'bone_dust', 'cursed_bone', 'large_gem'],
         dropRates: { common: 0.32, uncommon: 0.27, rare: 0.2, epic: 0.12, legendary: 0.04 }
     },
 
@@ -2093,7 +2379,7 @@ Object.assign(ENEMIES, {
         baseGold: 110,
         level: 11,
         description: 'An upgrade. The scream cracks stone walls',
-        possibleDrops: ['greater_mana_potion', 'ectoplasm', 'soul_essence', 'prismatic_crystal'],
+        possibleDrops: ['greater_mana_potion', 'ectoplasm', 'soul_essence', 'large_gem'],
         dropRates: { common: 0.25, uncommon: 0.3, rare: 0.24, epic: 0.14, legendary: 0.06 }
     },
 
@@ -2108,7 +2394,7 @@ Object.assign(ENEMIES, {
         baseGold: 115,
         level: 11,
         description: 'Once a normal person. Definitely not anymore',
-        possibleDrops: ['greater_health_potion', 'wolf_pelt', 'silver_fang', 'prismatic_crystal'],
+        possibleDrops: ['greater_health_potion', 'wolf_pelt', 'silver_fang', 'large_gem'],
         dropRates: { common: 0.28, uncommon: 0.28, rare: 0.22, epic: 0.14, legendary: 0.06 }
     },
 
@@ -2124,7 +2410,7 @@ Object.assign(ENEMIES, {
         baseGold: 135,
         level: 12,
         description: 'Snake-haired and furious about it',
-        possibleDrops: ['greater_mana_potion', 'basilisk_eye', 'snake_skin', 'prismatic_crystal'],
+        possibleDrops: ['greater_mana_potion', 'basilisk_eye', 'snake_skin', 'large_gem'],
         dropRates: { common: 0.25, uncommon: 0.3, rare: 0.24, epic: 0.14, legendary: 0.06 }
     },
 
@@ -2139,7 +2425,7 @@ Object.assign(ENEMIES, {
         baseGold: 125,
         level: 12,
         description: 'Random spells, random target. You may not be the target. May',
-        possibleDrops: ['mana_potion', 'imp_dust', 'chaos_essence', 'prismatic_crystal'],
+        possibleDrops: ['mana_potion', 'imp_dust', 'chaos_essence', 'large_gem'],
         dropRates: { common: 0.28, uncommon: 0.28, rare: 0.22, epic: 0.14, legendary: 0.06 }
     },
 
@@ -2154,7 +2440,7 @@ Object.assign(ENEMIES, {
         baseGold: 108,
         level: 12,
         description: 'Forty feet of teeth, no eyes, extremely fast',
-        possibleDrops: ['greater_health_potion', 'worm_hide', 'prismatic_crystal'],
+        possibleDrops: ['greater_health_potion', 'worm_hide', 'large_gem'],
         dropRates: { common: 0.3, uncommon: 0.26, rare: 0.22, epic: 0.13, legendary: 0.05 }
     },
 
@@ -2169,7 +2455,7 @@ Object.assign(ENEMIES, {
         baseGold: 130,
         level: 12,
         description: 'A veteran scout who switched sides for better pay',
-        possibleDrops: ['greater_health_potion', 'longbow', 'dark_essence', 'prismatic_crystal'],
+        possibleDrops: ['greater_health_potion', 'longbow', 'dark_essence', 'large_gem'],
         dropRates: { common: 0.27, uncommon: 0.3, rare: 0.23, epic: 0.13, legendary: 0.05 }
     },
 
@@ -2184,7 +2470,7 @@ Object.assign(ENEMIES, {
         baseGold: 100,
         level: 12,
         description: 'Empty inside. Very full of sword swings',
-        possibleDrops: ['greater_health_potion', 'ancient_armor', 'prismatic_crystal'],
+        possibleDrops: ['greater_health_potion', 'ancient_armor', 'large_gem'],
         dropRates: { common: 0.3, uncommon: 0.27, rare: 0.22, epic: 0.12, legendary: 0.04 }
     },
 
@@ -2200,7 +2486,7 @@ Object.assign(ENEMIES, {
         baseGold: 128,
         level: 13,
         description: 'Fire-breath, shadow-step, zero patience',
-        possibleDrops: ['greater_health_potion', 'hellfire_fang', 'prismatic_crystal'],
+        possibleDrops: ['greater_health_potion', 'hellfire_fang', 'large_gem'],
         dropRates: { common: 0.27, uncommon: 0.28, rare: 0.23, epic: 0.14, legendary: 0.06 }
     },
 
@@ -2215,7 +2501,7 @@ Object.assign(ENEMIES, {
         baseGold: 145,
         level: 13,
         description: 'A mercenary who pledged himself to entropy and thriving',
-        possibleDrops: ['greater_health_potion', 'cursed_blade', 'chaos_armor', 'prismatic_crystal'],
+        possibleDrops: ['greater_health_potion', 'cursed_blade', 'chaos_armor', 'large_gem'],
         dropRates: { common: 0.25, uncommon: 0.28, rare: 0.25, epic: 0.15, legendary: 0.07 }
     },
 
@@ -2230,7 +2516,7 @@ Object.assign(ENEMIES, {
         baseGold: 130,
         level: 13,
         description: 'Built from the runes of an ancient fallen city',
-        possibleDrops: ['greater_health_potion', 'guardian_core', 'rune_shard', 'prismatic_crystal'],
+        possibleDrops: ['greater_health_potion', 'guardian_core', 'rune_shard', 'large_gem'],
         dropRates: { common: 0.27, uncommon: 0.27, rare: 0.24, epic: 0.14, legendary: 0.06 }
     },
 
@@ -2245,7 +2531,7 @@ Object.assign(ENEMIES, {
         baseGold: 150,
         level: 13,
         description: 'Spellcaster who learned invisibility before etiquette',
-        possibleDrops: ['greater_mana_potion', 'arcane_dust', 'enchanted_robes', 'prismatic_crystal'],
+        possibleDrops: ['greater_mana_potion', 'arcane_dust', 'enchanted_robes', 'large_gem'],
         dropRates: { common: 0.23, uncommon: 0.3, rare: 0.25, epic: 0.15, legendary: 0.07 }
     },
 
@@ -2260,7 +2546,7 @@ Object.assign(ENEMIES, {
         baseGold: 118,
         level: 13,
         description: 'Was once a decoration. Developed ambitions',
-        possibleDrops: ['greater_health_potion', 'stone_armor', 'prismatic_crystal'],
+        possibleDrops: ['greater_health_potion', 'stone_armor', 'large_gem'],
         dropRates: { common: 0.3, uncommon: 0.26, rare: 0.22, epic: 0.13, legendary: 0.05 }
     },
 
@@ -2276,7 +2562,7 @@ Object.assign(ENEMIES, {
         baseGold: 170,
         level: 14,
         description: 'Has strong opinions about the definition of "alive"',
-        possibleDrops: ['greater_mana_potion', 'necromantic_staff', 'cursed_bone', 'prismatic_crystal'],
+        possibleDrops: ['greater_mana_potion', 'necromantic_staff', 'cursed_bone', 'large_gem'],
         dropRates: { common: 0.22, uncommon: 0.3, rare: 0.26, epic: 0.16, legendary: 0.08 }
     },
 
@@ -2291,7 +2577,7 @@ Object.assign(ENEMIES, {
         baseGold: 152,
         level: 14,
         description: 'Bred in a dimension that does not want you in it',
-        possibleDrops: ['greater_health_potion', 'shadow_essence', 'prismatic_crystal'],
+        possibleDrops: ['greater_health_potion', 'shadow_essence', 'large_gem'],
         dropRates: { common: 0.25, uncommon: 0.28, rare: 0.25, epic: 0.15, legendary: 0.07 }
     },
 
@@ -2306,7 +2592,7 @@ Object.assign(ENEMIES, {
         baseGold: 165,
         level: 14,
         description: 'Elite guard of a dead king, still taking the job seriously',
-        possibleDrops: ['greater_health_potion', 'ancient_sword', 'ancient_armor', 'prismatic_crystal'],
+        possibleDrops: ['greater_health_potion', 'ancient_sword', 'ancient_armor', 'large_gem'],
         dropRates: { common: 0.23, uncommon: 0.28, rare: 0.26, epic: 0.16, legendary: 0.08 }
     },
 
@@ -2321,7 +2607,7 @@ Object.assign(ENEMIES, {
         baseGold: 180,
         level: 14,
         description: 'A tiny pocket of absolute nothingness that bites',
-        possibleDrops: ['greater_mana_potion', 'void_crystal', 'null_essence', 'prismatic_crystal'],
+        possibleDrops: ['greater_mana_potion', 'void_crystal', 'null_essence', 'large_gem'],
         dropRates: { common: 0.22, uncommon: 0.3, rare: 0.26, epic: 0.16, legendary: 0.08 }
     },
 
@@ -2336,7 +2622,7 @@ Object.assign(ENEMIES, {
         baseGold: 145,
         level: 14,
         description: 'Lava given a terrible purpose',
-        possibleDrops: ['greater_health_potion', 'fire_core', 'magma_core', 'prismatic_crystal'],
+        possibleDrops: ['greater_health_potion', 'fire_core', 'magma_core', 'large_gem'],
         dropRates: { common: 0.25, uncommon: 0.27, rare: 0.25, epic: 0.15, legendary: 0.07 }
     },
 
