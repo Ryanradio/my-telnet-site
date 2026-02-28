@@ -18,7 +18,7 @@ Object.assign(ENEMIES, {
     
     // Your child's monster! 💩
     poop_slime: { 
-        name: 'Poop Slime', 
+        name: 'Gigantic Poop Slime', 
         baseHp: 200, 
         baseDamage: 10,
         minDamage: 7,
