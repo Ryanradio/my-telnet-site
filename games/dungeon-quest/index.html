@@ -5974,7 +5974,7 @@ function renderBestiaryList() {
         25:{ cls: 'bestiary-tier-hunter',   label: 'Hunter' },
     };
 
-    const totalDiscovered = getBestiaryDiscoveredCount();
+    const totalDiscovered = getBestiaryTotalDiscovered();  // use total, not unread count
     const azrathRelated = Object.keys(BESTIARY_DATA).filter(k => {
         const cat = BESTIARY_DATA[k] && BESTIARY_DATA[k].category;
         return (cat === 'Draconic' || cat === 'Void Entity' || cat === 'Demonic') &&
@@ -6036,7 +6036,7 @@ function renderBestiaryList() {
         });
     });
 
-    if (!html || totalDiscovered === 0) {
+    if (!html || getBestiaryTotalDiscovered() === 0) {
         html = `<div style="padding:40px 24px;text-align:center;color:#5a4020;font-style:italic;font-size:15px;">
             <div style="font-size:32px;margin-bottom:12px;opacity:0.4;">&#x1F4CB;</div>
             The Bestiary is empty.<br>
@@ -10532,7 +10532,7 @@ window.addEventListener('beforeunload', () => {
                     <div class="menu-option" onclick="showBlacksmith()">► ⚒️ BLACKSMITH</div>
                     ${dungeonOption}
                     <div class="menu-option" onclick="restAtInn()">► REST AT INN (${calcInnCost(p.cha)} Gold)</div>
-                    <div class="menu-option" id="townInvBtn" onclick="showInventory()" 
+                    <div class="menu-option" id="townInvBtn"
                         onmousedown="_invMenuDown(event)" onmouseup="_invMenuUp()" onmouseleave="_invMenuCancel()"
                         ontouchstart="_invMenuDown(event)" ontouchend="_invMenuUp()" ontouchcancel="_invMenuCancel()">► INVENTORY</div>
                     <div class="menu-option" onclick="showExplore()">► EXPLORE WORLD</div>
@@ -13920,7 +13920,7 @@ function dungeonNav(input) {
                     const isWarrior   = (p.baseClass || p.class) === 'warrior';
                     const isRunesmith = (p.baseClass || p.class) === 'runesmith';
                     const trapBtn   = isHunter  ? `<button onclick="(castTrap())" ${p.mp < 10 ? 'disabled' : ''} class="action-icon-btn" title="Set Trap [T] - 10 MP" style="border-color:#8B4513;">🪤<span class="kb-hint">T</span></button>` : '';
-                    const shieldBtn = isWarrior ? `<button onclick="playerDefend()" ${!canAct?'disabled':''} class="action-icon-btn" title="Shield [4] — 70% to halve damage" style="border-color:#00CCFF;">🛡️<span class="kb-hint">4</span></button>` : '';
+                    const shieldBtn = isWarrior ? `<button onclick="playerDefend()" ${!canAct?'disabled':''} class="action-icon-btn" title="Shield [4] — Raise defense by 50% this turn" style="border-color:#00CCFF;">🛡️<span class="kb-hint">4</span></button>` : '';
 
                     // Runesmith overload UI
                     const rsPips = isRunesmith ? (p.runeOverloadPips || 0) : 0;
@@ -16246,7 +16246,12 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
             cs.shieldActive = true;
             cs.hitsLeft     = 0;   // end player's turn
             renderActionBar();
-            termAppend('🛡️ You raise your shield — bracing for the blow…');
+            // Calculate the actual defense bonus for the terminal message
+            const _arm    = ARMOR[p.armor] || { baseDefense: 0, quality: 'poor' };
+            const _qb     = getQualityBonus(_arm.quality, _arm.baseDefense);
+            const _baseDef = _arm.baseDefense + _qb + (p.con || 0);
+            const _bonusDef = Math.floor(_baseDef * 0.5);
+            termAppend(`🛡️ You raise your shield — defense increased by ${_bonusDef} (${_baseDef} → ${_baseDef + _bonusDef}) until next turn.`);
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -16895,11 +16900,13 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
 
         // ── Warrior Shield: 70% chance to halve ALL incoming damage each attack ──
     // cs.shieldActive is set by playerDefend() and persists until combat ends.
-    const _shieldRoll = Math.random();
-    const shieldTriggered = cs.shieldActive && (_shieldRoll < 0.70);
+    // Shield now always adds +50% defense bonus (applied to totalDef below)
+    const shieldTriggered = cs.shieldActive;
     if (cs.shieldActive && (gameState.sysop && gameState.sysop.authenticated)) {
-        termAppend(`<span style="color:#006688;">🛡️ [SHIELD] active — roll: ${(_shieldRoll*100).toFixed(2)}% / need ≤70% → ${shieldTriggered ? '✅ will block (−50%)' : '❌ no block this hit'}</span>`, 'term-dim');
+        const _shieldBonus = Math.floor(totalDef * 0.5);
+        termAppend(`<span style="color:#006688;">🛡️ [SHIELD] active — DEF: ${totalDef} + ${_shieldBonus} (50%) = ${totalDef + _shieldBonus}</span>`, 'term-dim');
     }
+    if (shieldTriggered) totalDef = Math.floor(totalDef * 1.5);
 
     // Pull intent (or fallback)
     const intent = cs.enemyIntent || {
@@ -16993,26 +17000,20 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
             return;
         }
 
-        let finalDmg = result.damage;
-        let shieldBlocked = false;
-        if (shieldTriggered) {
-            finalDmg     = Math.max(1, Math.floor(finalDmg * 0.5));
-            shieldBlocked = true;
-        }
+        const finalDmg = result.damage;
 
         if (_debugCombat) {
-            const _critStr    = result.crit ? ' | 💀 CRIT!' : '';
-            const _shieldStr  = shieldBlocked ? ` | 🛡️ shield −50% → ${finalDmg}` : '';
-            termAppend(`<span style="color:#553300;">  → final: <b>${finalDmg} dmg</b>${_critStr}${_shieldStr} | player HP: ${p.hp} → ${p.hp - finalDmg}</span>`, 'term-dim');
+            const _critStr = result.crit ? ' | 💀 CRIT!' : '';
+            termAppend(`<span style="color:#553300;">  → final: <b>${finalDmg} dmg</b>${_critStr} | player HP: ${p.hp} → ${p.hp - finalDmg}</span>`, 'term-dim');
         }
 
         p.hp -= finalDmg;
 
         hits.push({
             eName,
-            dmg:          finalDmg,
-            crit:         result.crit,
-            shieldBlocked
+            dmg:   finalDmg,
+            crit:  result.crit,
+            shieldBlocked: shieldTriggered
         });
     });
 
@@ -17057,7 +17058,7 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 ? ' <span style="color:#FF4444;">💀 ENEMY CRITICAL!</span>'
                 : '';
             const shieldTag  = hit.shieldBlocked
-                ? ' <span style="color:#00CCFF;">🛡️ SHIELD! (−50%)</span>'
+                ? ' <span style="color:#00CCFF;">🛡️ SHIELD! (+50% DEF)</span>'
                 : '';
 
             termAppend(
