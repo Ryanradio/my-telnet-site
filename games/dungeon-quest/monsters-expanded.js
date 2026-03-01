@@ -216,16 +216,15 @@ Object.assign(ENEMIES, {
                 id: 'dirty_strike',
                 name: 'Dirty Strike',
                 chance: 0.20,
-                mpCost: 8,                    // 20% chance each attack turn
+                mpCost: 8,
                 telegraph: 'reaches for a handful of dirt...',
                 type: 'debuff',
-                debuff: 'blinded',               // applied to player
-                debuffDuration: 2000,            // 2 seconds
-                debuffMessage: (name) => `💀 ${name} throws dirt in your eyes! Your next attack has a 30% miss chance.`,
-                // Engine reads this as: apply cs.playerBlinded = true for 1 hit
+                debuff: 'blinded',
+                debuffDuration: 4000,
                 hitMissChance: 0.30,
-                damageMult: 0.8,                 // Does slightly less damage on dirty strike turn
-                armorPiercing: 0
+                damageMult: 0,                   // Pure debuff — no physical damage
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `💀 The ${enemyName} flings a fistful of dirt into the ${playerClass}'s eyes!<br><span style="color:#ffaa44;">⚠️ Blinded — your next attack has a 30% chance to miss.</span>`
             }
         ]
     },

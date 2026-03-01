@@ -3665,6 +3665,38 @@ function applyGemBonuses(player, weapon) {
     }
 }
 
+// ── Recalculate player's gem-sourced HP and MP bonuses ──────────────────
+// Called on equip/unequip. Stores the delta in player._gemHpBonus so that
+// p.maxHp always reflects the current socketed gem configuration.
+function recalcGemStats(player) {
+    const weapon   = player.weapon ? WEAPONS[player.weapon]  : null;
+    const armorObj = player.armor  ? ARMOR[player.armor]     : null;
+    const allGems  = [...(weapon?.gems || []), ...(armorObj?.gems || [])];
+
+    let hpBonus  = 0, mpBonus  = 0, defBonus = 0;
+    for (const gem of allGems) {
+        if (!gem?.stats) continue;
+        hpBonus  += gem.stats.hpBonus      || 0;
+        mpBonus  += gem.stats.mpBonus      || 0;
+        defBonus += gem.stats.defenseBonus || 0;
+    }
+
+    // Remove old gem bonus from maxHp/maxMp before applying new total
+    const oldHp  = player._gemHpBonus  || 0;
+    const oldMp  = player._gemMpBonus  || 0;
+
+    player.maxHp = Math.max(1, player.maxHp - oldHp + hpBonus);
+    player.maxMp = Math.max(0, player.maxMp - oldMp + mpBonus);
+    // Clamp current HP/MP so they don't exceed the new max
+    player.hp    = Math.min(player.hp,  player.maxHp);
+    player.mp    = Math.min(player.mp,  player.maxMp);
+
+    // Store new totals for next recalc
+    player._gemHpBonus  = hpBonus;
+    player._gemMpBonus  = mpBonus;
+    player._gemDefBonus = defBonus;   // used in HUD display
+}
+
 function updateTerminalSafeArea() {
     // No-op: layout handled by fixed-position flex column.
     // Terminal fills remaining space; actionBar sits below it naturally.
@@ -10116,6 +10148,9 @@ window.addEventListener('beforeunload', () => {
                     maybeShowLegacyWelcome();
                 }
                 
+                // Apply gem HP/MP/defense bonuses from equipped items
+                recalcGemStats(gameState.player);
+                
                 console.log(`✅ Character loaded: ${data.characterName}`);
                 console.log(`   Weapon: ${gameState.player.weapon} | Armor: ${gameState.player.armor}`);
             } catch (e) {
@@ -11082,13 +11117,21 @@ window.addEventListener('beforeunload', () => {
                             </div>
                         `;
                     } else {
+                        const _held = item.maxStack ? p.inventory.filter(k => k === key).length : 0;
+                        const _capped = item.maxStack && _held >= item.maxStack;
+                        const _stackLabel = item.maxStack
+                            ? `<span style="color:${_capped ? '#ff6666' : '#888'};font-size:12px;"> ${_held}/${item.maxStack}</span>`
+                            : '';
                         shopHtml += `
                             <div class="item-card">
-                                <div style="color: var(--highlight-color);">${item.name}</div>
+                                <div style="color: var(--highlight-color);">${item.name}${_stackLabel}</div>
                                 <div>${item.description}</div>
                                 <div>Power: ${item.power || 'Full'}</div>
-                                <button onclick="buyItem('item', '${key}', ${item.cost})">Buy ${item.cost}G</button>
-                                ${p.cha ? '<div style="color:#8aaa8a;font-size:15px;">CHA disc: ' + calcChaDiscount(p.cha) + '%</div>' : ''}
+                                ${_capped
+                                    ? `<div style="color:#ff6666;font-size:13px;margin-top:4px;">BAG FULL (${item.maxStack}/${item.maxStack})</div>`
+                                    : `<button onclick="buyItem('item', '${key}', ${item.cost})">Buy ${item.cost}G</button>`
+                                }
+                                ${p.cha && !_capped ? '<div style="color:#8aaa8a;font-size:15px;">CHA disc: ' + calcChaDiscount(p.cha) + '%</div>' : ''}
                             </div>
                         `;
                     }
@@ -11256,7 +11299,8 @@ window.addEventListener('beforeunload', () => {
 
             // Collect items to sell (don't remove during iteration)
             p.inventory.forEach(itemKey => {
-                if (ITEMS[itemKey] && ITEMS[itemKey].sellValue > 0) {
+                if (ITEMS[itemKey] && ITEMS[itemKey].sellValue > 0 && !ITEMS[itemKey].maxStack) {
+                    // maxStack items are potions — excluded from Sell All
                     toRemove.push({ key: itemKey, value: ITEMS[itemKey].sellValue });
                 } else if (WEAPONS[itemKey] && itemKey !== p.weapon && !WEAPONS[itemKey].unarmed) {
                     const qIdx = QUALITY_ORDER.indexOf(WEAPONS[itemKey]?.quality || 'poor');
@@ -11382,6 +11426,16 @@ window.addEventListener('beforeunload', () => {
             if (key === 'recall_potion' && p.inventory.includes('recall_potion')) {
                 alert('You already carry a Recall Potion.\nYou can only hold one at a time.');
                 return;
+            }
+
+            // Enforce maxStack limit (potions: 10 each)
+            const _itemDef = ITEMS[key];
+            if (_itemDef && _itemDef.maxStack) {
+                const _held = p.inventory.filter(k => k === key).length;
+                if (_held >= _itemDef.maxStack) {
+                    alert(`You are already carrying the maximum (${_itemDef.maxStack}) of ${_itemDef.name}.`);
+                    return;
+                }
             }
 
             // Validate class restrictions
@@ -11856,9 +11910,10 @@ function equipItem(type, key) {
                 p.armor = key;
             }
             
-            // 💾 AUTO-SAVE after equipping
+            // 💾 Recalc gem stat bonuses (hp/mp/defense) then auto-save
+            recalcGemStats(p);
             saveGame();
-            
+            updateHud();
             showInventory();
         }
 
@@ -11870,7 +11925,9 @@ function equipItem(type, key) {
             } else {
                 p.armor = 'no_armor';
             }
+            recalcGemStats(p);
             saveGame();
+            updateHud();
             showInventory();
         }
 
@@ -15932,6 +15989,7 @@ function consumePips(cs, amount, cooldown) {
     let gemMeleeDmg = 0, gemMagicDmg = 0, gemCritBonus = 0, gemPierceBonus = 0;
     let gemPoisonChance = 0, gemLightningDmg = 0, gemLifesteal = 0;
     let gemFireDmg = 0, gemFrostDmg = 0, gemSpellLeech = 0;
+    let gemHpBonus = 0, gemDefBonus = 0;
     for (const gem of allGems) {
         if (!gem || !gem.stats) continue;
         gemMeleeDmg     += gem.stats.weaponDmg    || 0;
@@ -15944,6 +16002,8 @@ function consumePips(cs, amount, cooldown) {
         gemFireDmg      += gem.stats.fireDmg      || 0;
         gemFrostDmg     += gem.stats.frostDmg     || 0;
         gemSpellLeech   += gem.stats.spellLeech   || 0;
+        gemHpBonus      += gem.stats.hpBonus      || 0;   // ← was never read
+        gemDefBonus     += gem.stats.defenseBonus || 0;   // ← was never read
     }
 
     const physicalBase =
@@ -17405,6 +17465,15 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
     
     const qBonus = getQualityBonus(armor.quality, armor.baseDefense);
     let totalDef = armor.baseDefense + qBonus + (p.con || 0);
+    // ── GEM defense bonus ────────────────────────────────────────────
+    {
+        const _w = p.weapon ? WEAPONS[p.weapon] : null;
+        const _a = p.armor  ? ARMOR[p.armor]   : null;
+        const _allG = [...(_w?.gems || []), ...(_a?.gems || [])];
+        for (const _g of _allG) {
+            if (_g?.stats?.defenseBonus) totalDef += _g.stats.defenseBonus;
+        }
+    }
     // ── REND: temporarily reduced defense ───────────────────────────
     if (cs.playerRendReduction && cs.playerRendReduction > 0) {
         const rendLoss = Math.floor(totalDef * cs.playerRendReduction);
@@ -17972,6 +18041,20 @@ function endCombat(victory) {
     if (allLoot.length > 0) {
         termAppend('⚡ LOOT:', 'term-loot');
         allLoot.forEach(ik => {
+            // Enforce maxStack for potions (cap = 10)
+            const _def = ITEMS[ik];
+            const _cap = _def?.maxStack;
+            if (_cap) {
+                const _held = gameState.player.inventory.filter(k => k === ik).length;
+                if (_held >= _cap) {
+                    termAppend(
+                        `  + <span style="color:#888;">${getItemName(ik)} (bag full — sold for ${_def.sellValue}g)</span>`,
+                        'term-loot'
+                    );
+                    gameState.player.gold += _def.sellValue;
+                    return; // skip adding to inventory
+                }
+            }
             gameState.player.inventory.push(ik);
             termAppend(
                 `  + <span style="color:${getItemColor(ik)};">${getItemName(ik)}</span>`,

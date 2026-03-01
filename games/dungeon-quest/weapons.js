@@ -2096,6 +2096,319 @@ const WEAPONS = {
         "classRestriction": "rogue",
         "description": "A shard of pure crystallized shadow.",
         "isShopItem": true
-    }
+    },
+
+    // ── Monster drop weapons (equippable by appropriate classes) ──
+    rusty_sword: {
+        "name": "Rusty Sword",
+        "baseDamage": 4,
+        "maxDamage": 7,
+        "baseMagicDamage": 0,
+        "cost": 0,
+        "level": 1,
+        "quality": "poor",
+        "slot": "weapon"
+    },
+    dagger: {
+        "name": "Dagger",
+        "baseDamage": 4,
+        "maxDamage": 7,
+        "baseMagicDamage": 0,
+        "cost": 80,
+        "level": 1,
+        "quality": "normal",
+        "slot": "weapon"
+    },
+    bone_club: {
+        "name": "Bone Club",
+        "baseDamage": 5,
+        "maxDamage": 9,
+        "baseMagicDamage": 0,
+        "cost": 0,
+        "level": 2,
+        "quality": "poor",
+        "slot": "weapon"
+    },
+    poison_dagger: {
+        "name": "Poison Dagger",
+        "baseDamage": 5,
+        "maxDamage": 8,
+        "baseMagicDamage": 0,
+        "cost": 150,
+        "level": 2,
+        "quality": "normal",
+        "slot": "weapon"
+    },
+    warhammer: {
+        "name": "Warhammer",
+        "baseDamage": 8,
+        "maxDamage": 14,
+        "baseMagicDamage": 0,
+        "cost": 400,
+        "level": 3,
+        "quality": "normal",
+        "slot": "weapon"
+    },
+    giant_axe: {
+        "name": "Giant Axe",
+        "baseDamage": 10,
+        "maxDamage": 17,
+        "baseMagicDamage": 0,
+        "cost": 500,
+        "level": 4,
+        "quality": "normal",
+        "slot": "weapon"
+    },
+    cursed_bow: {
+        "name": "Cursed Bow",
+        "baseDamage": 9,
+        "maxDamage": 15,
+        "baseMagicDamage": 0,
+        "cost": 600,
+        "level": 5,
+        "quality": "rare",
+        "slot": "weapon"
+    },
+    ancient_sword: {
+        "name": "Ancient Sword",
+        "baseDamage": 14,
+        "maxDamage": 22,
+        "baseMagicDamage": 0,
+        "cost": 1200,
+        "level": 6,
+        "quality": "rare",
+        "slot": "weapon"
+    },
+    fire_blade: {
+        "name": "Fire Blade",
+        "baseDamage": 13,
+        "maxDamage": 21,
+        "baseMagicDamage": 4,
+        "cost": 1500,
+        "level": 6,
+        "quality": "rare",
+        "slot": "weapon"
+    },
+    frozen_blade: {
+        "name": "Frozen Blade",
+        "baseDamage": 13,
+        "maxDamage": 21,
+        "baseMagicDamage": 4,
+        "cost": 1500,
+        "level": 6,
+        "quality": "rare",
+        "slot": "weapon"
+    },
+    cursed_sword: {
+        "name": "Cursed Sword",
+        "baseDamage": 15,
+        "maxDamage": 24,
+        "baseMagicDamage": 0,
+        "cost": 1800,
+        "level": 7,
+        "quality": "rare",
+        "slot": "weapon"
+    },
+    cursed_blade: {
+        "name": "Cursed Blade",
+        "baseDamage": 16,
+        "maxDamage": 26,
+        "baseMagicDamage": 3,
+        "cost": 2000,
+        "level": 7,
+        "quality": "rare",
+        "slot": "weapon"
+    },
+    cursed_staff: {
+        "name": "Cursed Staff",
+        "baseDamage": 2,
+        "maxDamage": 4,
+        "baseMagicDamage": 14,
+        "cost": 1800,
+        "level": 7,
+        "quality": "rare",
+        "slot": "weapon"
+    },
+    necromantic_staff: {
+        "name": "Necromantic Staff",
+        "baseDamage": 2,
+        "maxDamage": 4,
+        "baseMagicDamage": 16,
+        "cost": 2000,
+        "level": 8,
+        "quality": "epic",
+        "slot": "weapon"
+    },
+    prophecy_staff: {
+        "name": "Prophecy Staff",
+        "baseDamage": 2,
+        "maxDamage": 4,
+        "baseMagicDamage": 18,
+        "cost": 2500,
+        "level": 9,
+        "quality": "epic",
+        "slot": "weapon"
+    },
+    holy_blade: {
+        "name": "Holy Blade",
+        "baseDamage": 17,
+        "maxDamage": 27,
+        "baseMagicDamage": 5,
+        "cost": 2500,
+        "level": 9,
+        "quality": "epic",
+        "slot": "weapon"
+    },
+    spectral_blade: {
+        "name": "Spectral Blade",
+        "baseDamage": 16,
+        "maxDamage": 26,
+        "baseMagicDamage": 6,
+        "cost": 2800,
+        "level": 9,
+        "quality": "epic",
+        "slot": "weapon"
+    },
+    infernal_blade: {
+        "name": "Infernal Blade",
+        "baseDamage": 18,
+        "maxDamage": 28,
+        "baseMagicDamage": 5,
+        "cost": 3000,
+        "level": 10,
+        "quality": "epic",
+        "slot": "weapon"
+    },
+    vampire_blade: {
+        "name": "Vampire Blade",
+        "baseDamage": 17,
+        "maxDamage": 27,
+        "baseMagicDamage": 4,
+        "cost": 3000,
+        "level": 10,
+        "quality": "epic",
+        "slot": "weapon"
+    },
+    silver_fang: {
+        "name": "Silver Fang",
+        "baseDamage": 14,
+        "maxDamage": 22,
+        "baseMagicDamage": 0,
+        "cost": 2000,
+        "level": 8,
+        "quality": "rare",
+        "slot": "weapon"
+    },
+    hellfire_fang: {
+        "name": "Hellfire Fang",
+        "baseDamage": 16,
+        "maxDamage": 25,
+        "baseMagicDamage": 6,
+        "cost": 3500,
+        "level": 11,
+        "quality": "epic",
+        "slot": "weapon"
+    },
+    ice_fang: {
+        "name": "Ice Fang",
+        "baseDamage": 15,
+        "maxDamage": 24,
+        "baseMagicDamage": 4,
+        "cost": 3000,
+        "level": 10,
+        "quality": "epic",
+        "slot": "weapon"
+    },
+    champion_sword: {
+        "name": "Champion Sword",
+        "baseDamage": 20,
+        "maxDamage": 32,
+        "baseMagicDamage": 0,
+        "cost": 4000,
+        "level": 12,
+        "quality": "epic",
+        "slot": "weapon"
+    },
+    void_blade: {
+        "name": "Void Blade",
+        "baseDamage": 22,
+        "maxDamage": 35,
+        "baseMagicDamage": 8,
+        "cost": 5000,
+        "level": 13,
+        "quality": "legendary",
+        "slot": "weapon"
+    },
+    titan_blade: {
+        "name": "Titan Blade",
+        "baseDamage": 24,
+        "maxDamage": 38,
+        "baseMagicDamage": 0,
+        "cost": 5000,
+        "level": 13,
+        "quality": "legendary",
+        "slot": "weapon"
+    },
+    celestial_blade: {
+        "name": "Celestial Blade",
+        "baseDamage": 26,
+        "maxDamage": 40,
+        "baseMagicDamage": 10,
+        "cost": 8000,
+        "level": 15,
+        "quality": "legendary",
+        "slot": "weapon"
+    },
+    heavenly_blade: {
+        "name": "Heavenly Blade",
+        "baseDamage": 25,
+        "maxDamage": 39,
+        "baseMagicDamage": 8,
+        "cost": 7500,
+        "level": 15,
+        "quality": "legendary",
+        "slot": "weapon"
+    },
+    hellforged_blade: {
+        "name": "Hellforged Blade",
+        "baseDamage": 27,
+        "maxDamage": 42,
+        "baseMagicDamage": 6,
+        "cost": 8000,
+        "level": 16,
+        "quality": "legendary",
+        "slot": "weapon"
+    },
+    abyssal_blade: {
+        "name": "Abyssal Blade",
+        "baseDamage": 30,
+        "maxDamage": 46,
+        "baseMagicDamage": 12,
+        "cost": 10000,
+        "level": 17,
+        "quality": "legendary",
+        "slot": "weapon"
+    },
+    oblivion_blade: {
+        "name": "Oblivion Blade",
+        "baseDamage": 32,
+        "maxDamage": 50,
+        "baseMagicDamage": 15,
+        "cost": 15000,
+        "level": 18,
+        "quality": "legendary",
+        "slot": "weapon"
+    },
+    god_blade: {
+        "name": "God Blade",
+        "baseDamage": 40,
+        "maxDamage": 60,
+        "baseMagicDamage": 20,
+        "cost": 50000,
+        "level": 20,
+        "quality": "godly",
+        "slot": "weapon"
+    },
+
 };
 console.log('✅ Weapons loaded with damage ranges:', Object.keys(WEAPONS).length, 'weapons');

@@ -12,6 +12,8 @@ const ITEMS = {
         subtype: 'heal_hp',
         power: 50,
         cost: 50,
+        maxStack: 10,
+        sellValue: 25,
         description: '+50 HP'
     },
     
@@ -20,6 +22,10 @@ const ITEMS = {
         subtype: 'heal_hp',
         power: 100,
         cost: 100,
+        maxStack: 10,
+        sellValue: 50,
+        maxStack: 10,
+        sellValue: 25,
         description: '+100 HP'
     },
     
@@ -28,6 +34,10 @@ const ITEMS = {
         subtype: 'heal_hp',
         power: 200,
         cost: 200,
+        maxStack: 10,
+        sellValue: 100,
+        maxStack: 10,
+        sellValue: 25,
         description: '+200 HP'
     },
     
@@ -36,6 +46,8 @@ const ITEMS = {
         subtype: 'heal_mp',
         power: 40,
         cost: 60,
+        maxStack: 10,
+        sellValue: 30,
         description: '+40 MP'
     },
     
@@ -44,6 +56,10 @@ const ITEMS = {
         subtype: 'heal_mp',
         power: 80,
         cost: 120,
+        maxStack: 10,
+        sellValue: 60,
+        maxStack: 10,
+        sellValue: 30,
         description: '+80 MP'
     },
     
@@ -52,6 +68,10 @@ const ITEMS = {
         subtype: 'heal_mp',
         power: 150,
         cost: 250,
+        maxStack: 10,
+        sellValue: 125,
+        maxStack: 10,
+        sellValue: 30,
         description: '+150 MP'
     },
     
@@ -60,6 +80,8 @@ const ITEMS = {
         subtype: 'full_restore',
         power: 0,
         cost: 300,
+        maxStack: 10,
+        sellValue: 150,
         description: 'Full HP/MP'
     },
     
@@ -72,6 +94,8 @@ const ITEMS = {
         power: 25, // +25% XP
         duration: 900000, // 15 minutes
         cost: 500,
+        maxStack: 10,
+        sellValue: 250,
         description: '+25% XP (15min)'
     },
     
@@ -81,6 +105,10 @@ const ITEMS = {
         power: 50, // +50% XP
         duration: 900000, // 15 minutes
         cost: 1000,
+        maxStack: 10,
+        sellValue: 500,
+        maxStack: 10,
+        sellValue: 250,
         description: '+50% XP (15min)'
     },
     
@@ -90,6 +118,8 @@ const ITEMS = {
         power: 30, // +30% Gold
         duration: 900000, // 15 minutes
         cost: 500,
+        maxStack: 10,
+        sellValue: 250,
         description: '+30% Gold (15min)'
     },
     
@@ -102,6 +132,8 @@ const ITEMS = {
         power: 10, // +10 Strength
         duration: 300000, // 5 minutes
         cost: 200,
+        maxStack: 10,
+        sellValue: 100,
         description: '+10 STR (5min)'
     },
     
@@ -111,6 +143,10 @@ const ITEMS = {
         power: 20, // +20 Strength
         duration: 300000,
         cost: 400,
+        maxStack: 10,
+        sellValue: 200,
+        maxStack: 10,
+        sellValue: 100,
         description: '+20 STR (5min)'
     },
     
@@ -120,6 +156,8 @@ const ITEMS = {
         power: 10, // +10 Defense
         duration: 300000, // 5 minutes
         cost: 200,
+        maxStack: 10,
+        sellValue: 100,
         description: '+10 DEF (5min)'
     },
     
@@ -129,6 +167,10 @@ const ITEMS = {
         power: 20, // +20 Defense
         duration: 300000,
         cost: 400,
+        maxStack: 10,
+        sellValue: 200,
+        maxStack: 10,
+        sellValue: 100,
         description: '+20 DEF (5min)'
     },
     
@@ -138,6 +180,8 @@ const ITEMS = {
         power: 20, // +20% attack speed (faster pip regen)
         duration: 300000, // 5 minutes
         cost: 250,
+        maxStack: 10,
+        sellValue: 125,
         description: '+20% Speed (5min)'
     },
     
@@ -147,6 +191,8 @@ const ITEMS = {
         power: 15, // +15% crit chance
         duration: 300000, // 5 minutes
         cost: 300,
+        maxStack: 10,
+        sellValue: 150,
         description: '+15% Crit (5min)'
     },
     
@@ -156,6 +202,8 @@ const ITEMS = {
         power: 15, // +15 Magic
         duration: 300000,
         cost: 250,
+        maxStack: 10,
+        sellValue: 125,
         description: '+15 MAG (5min)'
     },
     
@@ -168,6 +216,8 @@ const ITEMS = {
         power: 50, // +50% damage
         duration: 180000, // 3 minutes
         cost: 800,
+        maxStack: 10,
+        sellValue: 400,
         description: '+50% DMG (3min)'
     },
     
@@ -177,6 +227,8 @@ const ITEMS = {
         power: 50, // +50% damage reduction
         duration: 120000, // 2 minutes
         cost: 1000,
+        maxStack: 10,
+        sellValue: 500,
         description: '+50% Resist (2min)'
     },
     
@@ -186,6 +238,8 @@ const ITEMS = {
         power: 20, // +20 Luck
         duration: 600000, // 10 minutes
         cost: 400,
+        maxStack: 10,
+        sellValue: 200,
         description: '+20 LCK (10min)'
     },
     
@@ -195,6 +249,8 @@ const ITEMS = {
         power: 10, // +10 HP/sec
         duration: 300000, // 5 minutes
         cost: 500,
+        maxStack: 10,
+        sellValue: 250,
         description: '+10 HP/sec (5min)'
     },
     
@@ -1015,15 +1071,6 @@ const ITEMS = {
         sellValue: 50,
         description: 'A shard of magical ice that never melts.',
     },
-    ice_fang: {
-        name: 'Ice Fang',
-        subtype: 'material',
-        icon: '🧊',
-        power: 0,
-        cost: 80,
-        sellValue: 40,
-        description: 'A serrated tooth from a frost beast.',
-    },
     arcane_dust: {
         name: 'Arcane Dust',
         subtype: 'material',
@@ -1372,105 +1419,6 @@ const ITEMS = {
         sellValue: 100,
         description: 'Heavy armor carved from enchanted stone.',
     },
-    bone_club: {
-        name: 'Bone Club',
-        subtype: 'material',
-        icon: '🦴',
-        power: 0,
-        cost: 40,
-        sellValue: 20,
-        description: 'A crude but heavy club fashioned from bone.',
-    },
-    rusty_sword: {
-        name: 'Rusty Sword',
-        subtype: 'material',
-        icon: '⚔️',
-        power: 0,
-        cost: 25,
-        sellValue: 12,
-        description: 'An old blade, pitted with rust. Still sharp-ish.',
-    },
-    iron_sword: {
-        name: 'Iron Sword',
-        subtype: 'material',
-        icon: '⚔️',
-        power: 0,
-        cost: 60,
-        sellValue: 30,
-        description: 'A serviceable iron blade.',
-    },
-    steel_sword: {
-        name: 'Steel Sword',
-        subtype: 'material',
-        icon: '⚔️',
-        power: 0,
-        cost: 200,
-        sellValue: 100,
-        description: 'Finely forged steel with good balance.',
-    },
-    ancient_sword: {
-        name: 'Ancient Sword',
-        subtype: 'material',
-        icon: '⚔️',
-        power: 0,
-        cost: 0,
-        sellValue: 400,
-        description: 'A perfect blade from a fallen age.',
-    },
-    dagger: {
-        name: 'Dagger',
-        subtype: 'material',
-        icon: '🗡️',
-        power: 0,
-        cost: 30,
-        sellValue: 15,
-        description: 'A short blade good for close work.',
-    },
-    poison_dagger: {
-        name: 'Poison Dagger',
-        subtype: 'material',
-        icon: '🗡️',
-        power: 0,
-        cost: 90,
-        sellValue: 45,
-        description: 'A blade with a venom-coated edge.',
-    },
-    longbow: {
-        name: 'Longbow',
-        subtype: 'material',
-        icon: '🏹',
-        power: 0,
-        cost: 80,
-        sellValue: 40,
-        description: 'A tall bow of yew wood, well-strung.',
-    },
-    cursed_bow: {
-        name: 'Cursed Bow',
-        subtype: 'material',
-        icon: '🏹',
-        power: 0,
-        cost: 350,
-        sellValue: 175,
-        description: 'A bow that never misses — at a terrible price.',
-    },
-    warhammer: {
-        name: 'Warhammer',
-        subtype: 'material',
-        icon: '🔨',
-        power: 0,
-        cost: 100,
-        sellValue: 50,
-        description: 'A brutal two-handed hammer.',
-    },
-    giant_axe: {
-        name: 'Giant Axe',
-        subtype: 'material',
-        icon: '🪓',
-        power: 0,
-        cost: 200,
-        sellValue: 100,
-        description: 'Enormous double-headed axe. Takes two hands.',
-    },
     cloth_armor: {
         name: 'Cloth Armor',
         subtype: 'material',
@@ -1707,231 +1655,6 @@ const ITEMS = {
     },
 
     // ── Legendary Weapons (Boss Drops) ───────────────────────────────────────────────────
-    fire_blade: {
-        name: 'Fire Blade',
-        subtype: 'material',
-        icon: '🔥',
-        power: 0,
-        cost: 0,
-        sellValue: 300,
-        description: 'A sword wreathed in eternal flame.',
-    },
-    frozen_blade: {
-        name: 'Frozen Blade',
-        subtype: 'material',
-        icon: '❄️',
-        power: 0,
-        cost: 0,
-        sellValue: 300,
-        description: 'A blade of solid magical ice, impossibly sharp.',
-    },
-    cursed_sword: {
-        name: 'Cursed Sword',
-        subtype: 'material',
-        icon: '☠️',
-        power: 0,
-        cost: 0,
-        sellValue: 350,
-        description: 'A blade that hungers for blood.',
-    },
-    cursed_blade: {
-        name: 'Cursed Blade',
-        subtype: 'material',
-        icon: '⚔️',
-        power: 0,
-        cost: 0,
-        sellValue: 400,
-        description: 'A weapon bound to a dark pact.',
-    },
-    cursed_staff: {
-        name: 'Cursed Staff',
-        subtype: 'material',
-        icon: '🪄',
-        power: 0,
-        cost: 0,
-        sellValue: 400,
-        description: 'A staff crackling with forbidden magic.',
-    },
-    flame_staff: {
-        name: 'Flame Staff',
-        subtype: 'material',
-        icon: '🔥',
-        power: 0,
-        cost: 0,
-        sellValue: 350,
-        description: 'A staff that channels pure fire.',
-    },
-    necromantic_staff: {
-        name: 'Necromantic Staff',
-        subtype: 'material',
-        icon: '💀',
-        power: 0,
-        cost: 0,
-        sellValue: 500,
-        description: 'A staff that raises the dead.',
-    },
-    void_staff: {
-        name: 'Void Staff',
-        subtype: 'material',
-        icon: '⬛',
-        power: 0,
-        cost: 0,
-        sellValue: 600,
-        description: 'A staff that channels the void.',
-    },
-    prophecy_staff: {
-        name: 'Prophecy Staff',
-        subtype: 'material',
-        icon: '🔮',
-        power: 0,
-        cost: 0,
-        sellValue: 700,
-        description: 'A staff said to show the future.',
-    },
-    archmage_staff: {
-        name: 'Archmage Staff',
-        subtype: 'material',
-        icon: '🌟',
-        power: 0,
-        cost: 0,
-        sellValue: 900,
-        description: 'The legendary staff of an archmage.',
-    },
-    shadowblade: {
-        name: 'Shadowblade',
-        subtype: 'material',
-        icon: '🌑',
-        power: 0,
-        cost: 0,
-        sellValue: 500,
-        description: 'A blade forged from solidified shadow.',
-    },
-    demonic_blade: {
-        name: 'Demonic Blade',
-        subtype: 'material',
-        icon: '😈',
-        power: 0,
-        cost: 0,
-        sellValue: 600,
-        description: 'Forged in the nine hells.',
-    },
-    spectral_blade: {
-        name: 'Spectral Blade',
-        subtype: 'material',
-        icon: '👻',
-        power: 0,
-        cost: 0,
-        sellValue: 550,
-        description: 'A weapon that passes through armor.',
-    },
-    infernal_blade: {
-        name: 'Infernal Blade',
-        subtype: 'material',
-        icon: '🔥',
-        power: 0,
-        cost: 0,
-        sellValue: 650,
-        description: 'Burns with infernal, unquenchable fire.',
-    },
-    vampire_blade: {
-        name: 'Vampire Blade',
-        subtype: 'material',
-        icon: '🩸',
-        power: 0,
-        cost: 0,
-        sellValue: 600,
-        description: 'A blade that feeds on the blood it draws.',
-    },
-    void_blade: {
-        name: 'Void Blade',
-        subtype: 'material',
-        icon: '⬛',
-        power: 0,
-        cost: 0,
-        sellValue: 800,
-        description: 'Cuts through reality itself.',
-    },
-    champion_sword: {
-        name: 'Champion Sword',
-        subtype: 'material',
-        icon: '⚔️',
-        power: 0,
-        cost: 0,
-        sellValue: 700,
-        description: 'The sword of a fallen champion.',
-    },
-    holy_blade: {
-        name: 'Holy Blade',
-        subtype: 'material',
-        icon: '✝️',
-        power: 0,
-        cost: 0,
-        sellValue: 700,
-        description: 'Sears undead and demons on contact.',
-    },
-    silver_fang: {
-        name: 'Silver Fang',
-        subtype: 'material',
-        icon: '🐺',
-        power: 0,
-        cost: 0,
-        sellValue: 300,
-        description: 'A silver dagger shaped like a wolf fang.',
-    },
-    titan_blade: {
-        name: 'Titan Blade',
-        subtype: 'material',
-        icon: '⚔️',
-        power: 0,
-        cost: 0,
-        sellValue: 1000,
-        description: 'Enormous blade used by titan-kind.',
-    },
-    heavenly_blade: {
-        name: 'Heavenly Blade',
-        subtype: 'material',
-        icon: '✨',
-        power: 0,
-        cost: 0,
-        sellValue: 1200,
-        description: 'A sword of pure divine light.',
-    },
-    celestial_blade: {
-        name: 'Celestial Blade',
-        subtype: 'material',
-        icon: '🌟',
-        power: 0,
-        cost: 0,
-        sellValue: 1500,
-        description: 'Forged from a falling star.',
-    },
-    abyssal_blade: {
-        name: 'Abyssal Blade',
-        subtype: 'material',
-        icon: '⬛',
-        power: 0,
-        cost: 0,
-        sellValue: 2000,
-        description: 'A blade from the deepest abyss.',
-    },
-    hellfire_fang: {
-        name: 'Hellfire Fang',
-        subtype: 'material',
-        icon: '🔥',
-        power: 0,
-        cost: 0,
-        sellValue: 500,
-        description: 'A hellhound fang wreathed in fire.',
-    },
-    hellforged_blade: {
-        name: 'Hellforged Blade',
-        subtype: 'material',
-        icon: '😈',
-        power: 0,
-        cost: 0,
-        sellValue: 900,
-        description: "Beaten on a devil's anvil.",
-    },
     dragonslayer: {
         name: 'Dragonslayer',
         subtype: 'material',
@@ -1949,24 +1672,6 @@ const ITEMS = {
         cost: 0,
         sellValue: 5000,
         description: 'The legendary sword. Unparalleled.',
-    },
-    god_blade: {
-        name: 'God Blade',
-        subtype: 'material',
-        icon: '⚡',
-        power: 0,
-        cost: 0,
-        sellValue: 10000,
-        description: 'A weapon that has slain a god.',
-    },
-    oblivion_blade: {
-        name: 'Oblivion Blade',
-        subtype: 'material',
-        icon: '💀',
-        power: 0,
-        cost: 0,
-        sellValue: 8000,
-        description: 'The end of all things given an edge.',
     },
     divine_artifact: {
         name: 'Divine Artifact',
@@ -2008,15 +1713,6 @@ const ITEMS = {
         sellValue: 500,
         description: 'Somehow worth a lot of gold. You decide not to think too hard about it.',
     },
-    magical_butterknife: {
-        name: 'Magical Butterknife',
-        subtype: 'material',
-        icon: '🍴',
-        power: 0,
-        cost: 0,
-        sellValue: 9999,
-        description: 'The most magical item in existence. Merchants weep when they see it.',
-    }
 };
 
 console.log('✅ Items loaded:', Object.keys(ITEMS).length, 'items');
