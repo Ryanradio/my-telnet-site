@@ -11521,7 +11521,7 @@ window.addEventListener('beforeunload', () => {
         function buyItem(type, key, baseCost) {
             const p = gameState.player;
             const playerClass = p.baseClass || p.class;
-            
+
             // Recall potion: only one allowed at a time
             if (key === 'recall_potion' && p.inventory.includes('recall_potion')) {
                 alert('You already carry a Recall Potion.\nYou can only hold one at a time.');
@@ -11560,24 +11560,110 @@ window.addEventListener('beforeunload', () => {
                     return;
                 }
             }
-            
-            const disc   = calcChaDiscount(p.cha);
-            const cost   = Math.max(1, Math.floor(baseCost * (1 - disc/100)));
+
+            const disc = calcChaDiscount(p.cha);
+            const cost = Math.max(1, Math.floor(baseCost * (1 - disc/100)));
             if (p.gold < cost) {
                 alert('Not enough gold!');
                 return;
             }
+
+            // Resolve item name and any bonus info for the confirm dialog
+            let itemName, itemDetail = '';
+            if (type === 'weapon') {
+                const w = WEAPONS[key];
+                itemName = w.name;
+                itemDetail = `Level ${w.level || 1} ${w.type || 'weapon'}`;
+                if (w.baseDamage) itemDetail += ` · DMG ${w.baseDamage}–${w.maxDamage || w.baseDamage}`;
+            } else if (type === 'armor') {
+                const a = ARMOR[key];
+                itemName = a.name;
+                itemDetail = `Level ${a.level || 1} ${a.type || 'armor'}`;
+                if (a.defense) itemDetail += ` · DEF ${a.defense}`;
+            } else if (type === 'item') {
+                const it = ITEMS[key];
+                itemName = it.name;
+                itemDetail = it.description || '';
+            }
+
+            const discLine = disc > 0
+                ? `<div style="color:#88cc88;font-size:11px;margin-top:3px;">${disc}% CHA discount applied</div>`
+                : '';
+            const afterGold = p.gold - cost;
+
+            // Remove any stale confirm overlay
+            const _old = document.getElementById('shop-confirm-overlay');
+            if (_old) _old.remove();
+
+            const overlay = document.createElement('div');
+            overlay.id = 'shop-confirm-overlay';
+            overlay.style.cssText =
+                'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;' +
+                'justify-content:center;background:rgba(0,0,0,0.88);backdrop-filter:blur(6px);' +
+                '-webkit-tap-highlight-color:transparent;';
+
+            overlay.innerHTML = `
+                <div style="background:#060606;border:2px solid #5a3d00;border-radius:10px;
+                            padding:24px 22px;max-width:340px;width:92%;
+                            box-shadow:0 0 50px rgba(255,215,0,0.15);
+                            font-family:'Courier New',monospace;text-align:center;">
+
+                    <div style="font-size:9px;letter-spacing:4px;color:#5a3d00;margin-bottom:10px;">
+                        CONFIRM PURCHASE
+                    </div>
+
+                    <div style="font-size:17px;font-weight:bold;color:#FFD700;
+                                letter-spacing:1px;margin-bottom:4px;">
+                        ${itemName}
+                    </div>
+                    <div style="font-size:11px;color:#777;margin-bottom:14px;">
+                        ${itemDetail}
+                    </div>
+
+                    <div style="background:rgba(255,215,0,0.06);border:1px solid #3a2800;
+                                border-radius:6px;padding:10px 14px;margin-bottom:14px;">
+                        <div style="font-size:20px;color:#FFD700;font-weight:bold;">
+                            ${cost.toLocaleString()}g
+                        </div>
+                        ${discLine}
+                        <div style="font-size:11px;color:#555;margin-top:6px;">
+                            ${p.gold.toLocaleString()}g → <span style="color:${afterGold < 0 ? '#ff4444' : '#aaa'};">${afterGold.toLocaleString()}g</span> remaining
+                        </div>
+                    </div>
+
+                    <div style="display:flex;gap:10px;">
+                        <button onclick="document.getElementById('shop-confirm-overlay').remove()"
+                            style="flex:1;padding:12px;font-size:14px;letter-spacing:2px;
+                                   background:transparent;border:2px solid #333;color:#666;
+                                   font-family:'Courier New',monospace;cursor:pointer;border-radius:5px;
+                                   -webkit-tap-highlight-color:transparent;">
+                            ✕ CANCEL
+                        </button>
+                        <button onclick="_confirmBuyItem('${type}','${key}',${cost},'${itemName}')"
+                            style="flex:1;padding:12px;font-size:14px;letter-spacing:2px;
+                                   background:rgba(255,215,0,0.12);border:2px solid #7a5800;color:#FFD700;
+                                   font-family:'Courier New',monospace;cursor:pointer;border-radius:5px;
+                                   font-weight:bold;-webkit-tap-highlight-color:transparent;">
+                            ✓ BUY
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            overlay.addEventListener('click', e => {
+                if (e.target === overlay) overlay.remove();
+            });
+            document.body.appendChild(overlay);
+        }
+
+        // Executes the actual purchase after confirmation
+        function _confirmBuyItem(type, key, cost, itemName) {
+            document.getElementById('shop-confirm-overlay')?.remove();
+            const p = gameState.player;
+            if (p.gold < cost) { alert('Not enough gold!'); return; }
             p.gold -= cost;
             p.inventory.push(key);
-            let itemName;
-            if (type === 'weapon') itemName = WEAPONS[key].name;
-            else if (type === 'armor') itemName = ARMOR[key].name;
-            else if (type === 'item') itemName = ITEMS[key].name;
-            alert(`Purchased ${itemName} for ${cost}g!` + (disc > 0 ? ` (${disc}% CHA discount)` : ''));
-            
-            // 💾 AUTO-SAVE after buying
             saveGame();
-            
             showShopBuy();
         }
 

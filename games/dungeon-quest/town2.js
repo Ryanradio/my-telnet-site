@@ -269,7 +269,7 @@ window.TOWNS.town2 = {
                 ? '<span style="color:#FFD700;font-size:10px;letter-spacing:2px;">\u{1F4B0} READY TO COLLECT</span>'
                 : _isActive
                 ? '<span style="color:#cc66ff;font-size:10px;letter-spacing:2px;">\u26A0 CURRENTLY HUNTING</span>'
-                : '<span style="color:#5a2e00;font-size:10px;letter-spacing:2px;">AVAILABLE</span>';
+                : '<span style="color:#cc7700;font-size:10px;letter-spacing:2px;">AVAILABLE</span>';
             wantedBoardTeaser = `
             <div style="margin:0 0 10px;padding:10px 13px;
                         background:rgba(50,0,70,0.35);
@@ -282,8 +282,8 @@ window.TOWNS.town2 = {
                  onmouseenter="this.style.background='rgba(80,0,110,0.4)'"
                  onmouseleave="this.style.background='rgba(50,0,70,0.35)'">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
-                    <div style="font-size:8px;letter-spacing:4px;color:#3a1a5c;">\u26A0 &nbsp; WANTED &nbsp; NOTICE &nbsp; \u26A0</div>
-                    <div style="font-size:9px;color:#5a2e50;letter-spacing:2px;">TAP TO VIEW BOARD \u2192</div>
+                    <div style="font-size:8px;letter-spacing:4px;color:#9966cc;">\u26A0 &nbsp; WANTED &nbsp; NOTICE &nbsp; \u26A0</div>
+                    <div style="font-size:9px;color:#bb88cc;letter-spacing:2px;">TAP TO VIEW BOARD \u2192</div>
                 </div>
                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
                     <span style="font-size:20px;">${_featured.emoji}</span>
@@ -293,9 +293,9 @@ window.TOWNS.town2 = {
                     </span>
                     <span style="color:#FFD700;font-size:12px;">${_featured.bountyGold.toLocaleString()}g</span>
                 </div>
-                <div style="font-size:10px;color:#5a2e50;margin-bottom:4px;">${_featured.crime}</div>
+                <div style="font-size:10px;color:#bb88cc;margin-bottom:4px;">${_featured.crime}</div>
                 <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <span style="color:#3a1a4a;font-size:9px;">Lv ${_featured.level} \u00B7 ${_featured.zoneName}</span>
+                    <span style="color:#9966cc;font-size:9px;">Lv ${_featured.level} \u00B7 ${_featured.zoneName}</span>
                     ${_statusLine}
                 </div>
             </div>`;
@@ -304,7 +304,7 @@ window.TOWNS.town2 = {
             <div style="margin:0 0 10px;padding:10px 13px;
                         background:rgba(60,20,0,0.4);border:1px solid #3a1800;
                         border-left:3px solid #FF6600;border-radius:0 6px 6px 0;">
-                <div style="font-size:8px;letter-spacing:4px;color:#5a2e00;margin-bottom:6px;">\u26A0 WANTED NOTICE \u26A0</div>
+                <div style="font-size:8px;letter-spacing:4px;color:#cc7700;margin-bottom:6px;">\u26A0 WANTED NOTICE \u26A0</div>
                 <div style="font-size:11px;color:#7a4a20;">Loading bounty data...</div>
             </div>`;
         }
@@ -337,7 +337,7 @@ window.TOWNS.town2 = {
             <span style="color:${condition.color};letter-spacing:2px;font-size:9px;">
                 ${condition.label}
             </span>
-            <span style="color:#2e2018;font-size:9px;flex:1;">
+            <span style="color:#997755;font-size:9px;flex:1;">
                 — ${condition.desc}
             </span>
         </div>`;
@@ -349,7 +349,7 @@ window.TOWNS.town2 = {
                     border:1px solid #3a1800;
                     border-left:3px solid #FF6600;
                     border-radius:0 6px 6px 0;position:relative;overflow:hidden;">
-            <div style="font-size:8px;letter-spacing:4px;color:#5a2e00;margin-bottom:6px;">
+            <div style="font-size:8px;letter-spacing:4px;color:#cc7700;margin-bottom:6px;">
                 ⚠ &nbsp; WANTED &nbsp; NOTICE &nbsp; ⚠
             </div>
             <div class="t2-wanted-card">
@@ -365,7 +365,7 @@ window.TOWNS.town2 = {
                 <div style="font-size:10px;color:#7a4a20;margin-bottom:2px;">
                     ${wanted.crime}
                 </div>
-                <div style="font-size:9px;color:#3a1800;letter-spacing:2px;">
+                <div style="font-size:9px;color:#aa5500;letter-spacing:2px;">
                     STATUS: <span style="color:#cc4400;">${wanted.status}</span>
                 </div>
             </div>
@@ -375,14 +375,14 @@ window.TOWNS.town2 = {
         let portals = `
             <div class="t2-portal-row" onclick="usePortal('town1')">
                 🌀 &nbsp;PORTAL → <strong>${t1name}</strong>
-                <span style="font-size:10px;color:#2e1a2e;margin-left:8px;">the green hills you left behind</span>
+                <span style="font-size:10px;color:#9966aa;margin-left:8px;">the green hills you left behind</span>
             </div>`;
         if (hasVisitedTown3) {
             portals += `
             <div class="t2-portal-row" onclick="usePortal('town3')"
                  style="border-color:#5a4000;background:rgba(255,215,0,0.04);">
                 🌀 &nbsp;PORTAL → <strong>${t3name}</strong>
-                <span style="font-size:10px;color:#3a2e00;margin-left:8px;">beyond the edge of the world</span>
+                <span style="font-size:10px;color:#aa8800;margin-left:8px;">beyond the edge of the world</span>
             </div>`;
         }
 
@@ -402,7 +402,7 @@ window.TOWNS.town2 = {
             <!-- ░░ HEADER ░░ -->
             <div style="text-align:center;padding:18px 12px 8px;position:relative;overflow:hidden;">
                 ${embers}
-                <div style="font-size:9px;letter-spacing:5px;color:#2e1a0a;margin-bottom:8px;
+                <div style="font-size:9px;letter-spacing:5px;color:#996633;margin-bottom:8px;
                             animation:t2-flicker 11s ease-in-out infinite;">
                     ✦ &nbsp; Y O U &nbsp; S U R V I V E D &nbsp; ✦
                 </div>
@@ -414,7 +414,7 @@ window.TOWNS.town2 = {
                     ASHEN<br>HARBOR
                 </div>
 
-                <div style="font-size:9px;letter-spacing:3px;color:#3a1a00;margin-bottom:6px;">
+                <div style="font-size:9px;letter-spacing:3px;color:#aa5500;margin-bottom:6px;">
                     PORT &nbsp; OF &nbsp; THE &nbsp; DAMNED &nbsp; &amp; &nbsp; THE &nbsp; DETERMINED
                 </div>
 
@@ -445,7 +445,7 @@ window.TOWNS.town2 = {
                     In Ashen Harbor, those are
                     <em style="color:#cc4400;">the same thing</em>.
                 </div>
-                <div style="font-size:9px;color:#2a1a0a;margin-top:5px;font-style:italic;">
+                <div style="font-size:9px;color:#996633;margin-top:5px;font-style:italic;">
                     MODEM: ${modem}
                 </div>
             </div>
@@ -458,45 +458,45 @@ window.TOWNS.town2 = {
             <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:12px;">
 
                 <div class="t2-row" onclick="showBountyBoard()"
-                     style="border-color:#3a1a5c;background:rgba(204,102,255,0.05);">
+                     style="border-color:#9966cc;background:rgba(204,102,255,0.05);">
                     ► ⚓ &nbsp;WANTED BOARD
-                    <span style="font-size:10px;color:#3a1a5c;margin-left:8px;">
+                    <span style="font-size:10px;color:#9966cc;margin-left:8px;">
                         bounties, criminals &amp; prizes
                     </span>
                 </div>
 
                 <div class="t2-row" onclick="showShop()"
-                     style="border-color:#3a1800;background:rgba(255,102,0,0.03);">
+                     style="border-color:#aa5500;background:rgba(255,102,0,0.03);">
                     ► 🛒 &nbsp;ASH MARKET SHOP
-                    <span style="font-size:10px;color:#2e1a0a;margin-left:8px;">
+                    <span style="font-size:10px;color:#996633;margin-left:8px;">
                         weapons, armor &amp; darker things
                     </span>
                 </div>
 
                 <div class="t2-row" onclick="showBank()">
                     ► 🏦 &nbsp;VAULT &amp; HARBOR BANK
-                    <span style="font-size:10px;color:#2e1a0a;margin-left:8px;">
+                    <span style="font-size:10px;color:#996633;margin-left:8px;">
                         ${bankGold}g buried deep
                     </span>
                 </div>
 
                 <div class="t2-row" onclick="showTemple()">
                     ► ⛪ &nbsp;THE ASH CHAPEL
-                    <span style="font-size:10px;color:#2e1a0a;margin-left:8px;">
+                    <span style="font-size:10px;color:#996633;margin-left:8px;">
                         gods of fire and salt
                     </span>
                 </div>
 
                 <div class="t2-row" onclick="restAtInn()">
                     ► 🌙 &nbsp;THE EMBER INN
-                    <span style="font-size:10px;color:#2e1a0a;margin-left:8px;">
+                    <span style="font-size:10px;color:#996633;margin-left:8px;">
                         ${innCost}g — sleep light, dream darker
                     </span>
                 </div>
 
                 <div class="t2-row" onclick="showBlacksmith()">
                     ► ⚒️ &nbsp;SLAG &amp; STEEL FORGE
-                    <span style="font-size:10px;color:#2e1a0a;margin-left:8px;">
+                    <span style="font-size:10px;color:#996633;margin-left:8px;">
                         volcanic-tempered craftsmanship
                     </span>
                 </div>
@@ -515,7 +515,7 @@ window.TOWNS.town2 = {
             <!-- ░░ FOOTER ░░ -->
             <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:18px;">
                 <div class="t2-row" onclick="showModemSettings()">► MODEM SETTINGS</div>
-                <div class="t2-row" onclick="saveGame()" style="border-color:#3a1800;">
+                <div class="t2-row" onclick="saveGame()" style="border-color:#aa5500;">
                     ► 💾 &nbsp;QUICK SAVE
                 </div>
                 <div class="t2-row" onclick="downloadSaveFile()">
@@ -584,7 +584,7 @@ window.t2ShowDistrict = function(key) {
                         text-shadow:0 0 14px ${d.color},0 0 28px ${d.colorGlow};">
                 ${d.label}
             </div>
-            <div style="font-size:9px;color:#2e1a0a;letter-spacing:4px;margin-bottom:14px;">
+            <div style="font-size:9px;color:#996633;letter-spacing:4px;margin-bottom:14px;">
                 ASHEN &nbsp; HARBOR
             </div>
 
@@ -595,14 +595,14 @@ window.t2ShowDistrict = function(key) {
             </div>
 
             <!-- Lore quote -->
-            <div style="font-size:10px;color:#2a1a0a;font-style:italic;line-height:1.65;
+            <div style="font-size:10px;color:#996633;font-style:italic;line-height:1.65;
                         border-top:1px solid #1a0800;padding-top:12px;margin-bottom:16px;
                         text-align:left;">
                 ${d.lore}
             </div>
 
             <!-- Sealed notice -->
-            <div style="font-size:11px;color:#5a2e00;margin-bottom:18px;line-height:1.6;">
+            <div style="font-size:11px;color:#cc7700;margin-bottom:18px;line-height:1.6;">
                 ⏳ &nbsp;This district is not yet open.<br>
                 <span style="color:#2e1400;font-size:10px;">
                     Come back when you're stronger. Or more desperate.

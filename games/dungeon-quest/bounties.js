@@ -775,7 +775,7 @@ window.showBountyDetail = function(bountyId) {
             <!-- Header -->
             <div style="text-align:center;margin-bottom:16px;">
                 <div style="font-size:40px;margin-bottom:8px;">${b.emoji}</div>
-                <div style="font-size:8px;letter-spacing:4px;color:#3a1a5c;margin-bottom:4px;">WANTED — DEAD OR ALIVE</div>
+                <div style="font-size:8px;letter-spacing:4px;color:#9966cc;margin-bottom:4px;">WANTED — DEAD OR ALIVE</div>
                 <div style="color:${BOUNTY_COLOR};font-size:18px;font-weight:bold;letter-spacing:2px;
                             text-shadow:0 0 12px ${BOUNTY_COLOR};">
                     ${b.name}
@@ -789,12 +789,12 @@ window.showBountyDetail = function(bountyId) {
             <div style="background:rgba(204,102,255,0.05);border:1px solid #2a1040;
                         border-left:3px solid ${BOUNTY_COLOR};border-radius:0 5px 5px 0;
                         padding:10px 12px;margin-bottom:12px;">
-                <div style="font-size:8px;letter-spacing:3px;color:#3a1a5c;margin-bottom:5px;">CRIME</div>
+                <div style="font-size:8px;letter-spacing:3px;color:#9966cc;margin-bottom:5px;">CRIME</div>
                 <div style="font-size:11px;color:#8855aa;line-height:1.6;">${b.crime}</div>
             </div>
 
             <!-- Description -->
-            <div style="font-size:11px;color:#5a3a6a;line-height:1.75;margin-bottom:14px;">
+            <div style="font-size:11px;color:#bb88dd;line-height:1.75;margin-bottom:14px;">
                 ${b.description}
             </div>
 
@@ -802,17 +802,17 @@ window.showBountyDetail = function(bountyId) {
             <div style="display:flex;gap:8px;margin-bottom:14px;">
                 <div style="flex:1;background:rgba(0,0,0,0.4);border:1px solid #2a1040;
                             border-radius:5px;padding:8px;text-align:center;">
-                    <div style="font-size:8px;color:#3a1a5c;letter-spacing:2px;">LEVEL</div>
+                    <div style="font-size:8px;color:#9966cc;letter-spacing:2px;">LEVEL</div>
                     <div style="color:${BOUNTY_COLOR};font-size:16px;">${b.level}</div>
                 </div>
                 <div style="flex:1;background:rgba(0,0,0,0.4);border:1px solid #2a1040;
                             border-radius:5px;padding:8px;text-align:center;">
-                    <div style="font-size:8px;color:#3a1a5c;letter-spacing:2px;">ZONE</div>
+                    <div style="font-size:8px;color:#9966cc;letter-spacing:2px;">ZONE</div>
                     <div style="color:#8855aa;font-size:13px;">${b.zoneName}</div>
                 </div>
                 <div style="flex:1;background:rgba(0,0,0,0.4);border:1px solid #5a3d00;
                             border-radius:5px;padding:8px;text-align:center;">
-                    <div style="font-size:8px;color:#3a2000;letter-spacing:2px;">PURSE</div>
+                    <div style="font-size:8px;color:#aa6600;letter-spacing:2px;">PURSE</div>
                     <div style="color:#FFD700;font-size:16px;">${b.bountyGold.toLocaleString()}g</div>
                 </div>
             </div>
@@ -823,7 +823,7 @@ window.showBountyDetail = function(bountyId) {
             <!-- Close -->
             <button onclick="document.getElementById('bounty-detail-overlay').remove()"
                 style="width:100%;margin-top:10px;padding:8px;font-size:13px;letter-spacing:2px;
-                       background:transparent;border:1px solid #2a1040;color:#3a1a5c;
+                       background:transparent;border:1px solid #2a1040;color:#9966cc;
                        font-family:'Courier New',monospace;cursor:pointer;border-radius:5px;">
                 ✕ CLOSE
             </button>
@@ -901,9 +901,9 @@ window.showBountyBoard = function() {
             cardClass += ' collected-bounty';
             statusTag = `<span style="color:#333;font-size:10px;letter-spacing:2px;">✓ COLLECTED — Rest to reset</span>`;
         } else if (tooLow) {
-            statusTag = `<span style="color:#3a1a00;font-size:10px;letter-spacing:2px;">🔒 REQUIRES LV ${b.level - 1}</span>`;
+            statusTag = `<span style="color:#aa5500;font-size:10px;letter-spacing:2px;">🔒 REQUIRES LV ${b.level - 1}</span>`;
         } else {
-            statusTag = `<span style="color:#5a3a6a;font-size:10px;letter-spacing:2px;">AVAILABLE</span>`;
+            statusTag = `<span style="color:#bb88dd;font-size:10px;letter-spacing:2px;">AVAILABLE</span>`;
         }
 
         const rewardLine = b.xpMult > 1
@@ -922,9 +922,9 @@ window.showBountyBoard = function() {
                             <span style="color:${BOUNTY_COLOR};font-size:14px;font-weight:bold;letter-spacing:1px;">
                                 ${b.name}
                             </span>
-                            <span style="color:#3a1a5c;font-size:10px;">${b.title}</span>
+                            <span style="color:#9966cc;font-size:10px;">${b.title}</span>
                         </div>
-                        <div style="font-size:10px;color:#4a2a6a;margin-top:2px;line-height:1.4;">
+                        <div style="font-size:10px;color:#aa77dd;margin-top:2px;line-height:1.4;">
                             ${b.crime}
                         </div>
                     </div>
@@ -932,7 +932,7 @@ window.showBountyBoard = function() {
                 <!-- Bottom row -->
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
                     <div>
-                        <span style="color:#2a1040;font-size:9px;letter-spacing:2px;">LV ${b.level} · ${b.zoneName} · </span>
+                        <span style="color:#8855bb;font-size:9px;letter-spacing:2px;">LV ${b.level} · ${b.zoneName} · </span>
                         ${rewardLine}
                     </div>
                     <div>${statusTag}</div>
@@ -960,17 +960,17 @@ window.showBountyBoard = function() {
                     background:rgba(204,102,255,0.04);
                     border-left:3px solid ${summaryColor};
                     border-radius:0 5px 5px 0;">
-            <div style="font-size:9px;letter-spacing:4px;color:#3a1a5c;margin-bottom:3px;">
+            <div style="font-size:9px;letter-spacing:4px;color:#9966cc;margin-bottom:3px;">
                 HARBOURMASTER'S NOTICE
             </div>
             <div style="font-size:12px;color:${summaryColor};">${summaryText}</div>
-            <div style="font-size:10px;color:#2a1040;margin-top:4px;">
+            <div style="font-size:10px;color:#8855bb;margin-top:4px;">
                 5% encounter chance per explore · Reset after resting at the Ember Inn
             </div>
         </div>
 
         <!-- Bounty cards -->
-        <div style="font-size:8px;letter-spacing:4px;color:#2a1040;text-align:center;margin:8px 0 6px;">
+        <div style="font-size:8px;letter-spacing:4px;color:#8855bb;text-align:center;margin:8px 0 6px;">
             ◈ &nbsp; ACTIVE &nbsp; CONTRACTS &nbsp; ◈
         </div>
         <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:18px;">
