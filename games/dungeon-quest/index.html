@@ -2409,6 +2409,8 @@ body.terminal-mode #menuContainer {
     <script src="Dungeon1.js"></script>
     <script src="town1.js"></script>
     <script src="town2.js"></script>
+    <script src="town3.js"></script>
+    <script src="bounties.js"></script>
     <script src="monsters-expanded.js"></script>
 
     <script src="weapons.js"></script>
@@ -3922,10 +3924,16 @@ const OPPOSITE_DIR = {
                 const gem = socketed[i];
                 if (gem && gem.cut) {
                     // Filled slot — colored gem circle + stat text
+                    // Reconstruct name/color/emoji if somehow lost (old save migration)
+                    const gemTypeDef = gem.type ? GEM_TYPES[gem.type] : null;
+                    const gemDisplayName = gem.name || (gemTypeDef ? `T${gem.tier||1} ${gemTypeDef.name}` : 'Gem');
+                    const gemColor = gem.color || (gemTypeDef ? gemTypeDef.color : '#aaa');
+                    const gemEmoji = gem.emoji || (gemTypeDef ? gemTypeDef.emoji : '💎');
+                    const gemDesc = gem.description || (gem.stats ? describeGemStats(gem.stats) : '');
                     html += `<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
-                        <span style="color:${gem.color};font-size:15px;line-height:1;">⬤</span>
-                        <span style="color:${gem.color};font-weight:bold;">${gem.emoji} ${gem.name}</span>
-                        <span style="color:#888;font-size:10px;">${gem.description}</span>
+                        <span style="color:${gemColor};font-size:15px;line-height:1;">⬤</span>
+                        <span style="color:${gemColor};font-weight:bold;">${gemEmoji} ${gemDisplayName}</span>
+                        <span style="color:#888;font-size:10px;">${gemDesc}</span>
                     </div>`;
                 } else {
                     // Empty slot — dark circle
@@ -4343,89 +4351,17 @@ function loadAllClassSpells() {
 
 
 
+        // LOCATIONS is seeded with just the town entry and two base zones.
+        // All exploration zones are injected by exploration-zones.js below.
+        // DO NOT add zones here — add them to exploration-zones.js instead.
         const LOCATIONS = {
-    town: {
-        name: 'Silverdale Town',
-        description: 'A peaceful town with shops and an inn. Your adventure begins here.',
-        canRest: true,
-        hasShop: true
-    },
-    
-  
-
-    forest: {
-        name: 'Whispering Forest',
-        description: 'A dark forest filled with minor creatures.',
-        enemyLevelRange: [1, 5],
-        encounters: ['goblin', 'wolf', 'giant_spider'],
-        requiredLevel: 1,
-        locked: false
-    },
-
-  riverside: {
-        name: 'Misty Riverside',
-        description: 'A foggy riverbank where strange creatures lurk in the shallows.',
-        enemyLevelRange: [4, 6],
-        encounters: ['river_troll', 'swamp_lurker', 'giant_frog', 'water_snake', 'bandit',
-                     'mudskipper', 'river_pirate', 'snapping_turtle', 'kelp_strangler', 'bog_witch',
-                     'harpy', 'gnoll', 'lizardfolk', 'giant_wasp', 'bandit_scout'],
-        requiredLevel: 4,
-        locked: true,
-        town: 'town1',
-        unlockMessage: 'Defeat your class master in the forest to unlock this area!',
-        
-    },
-
-    plains: {
-        name: 'Endless Plains',
-        description: 'Open grasslands with roaming beasts.',
-        enemyLevelRange: [6, 10],
-        encounters: ['orc', 'dire_wolf', 'bandit'],
-        requiredLevel: 6,
-        locked: true,
-        unlockMessage: 'Defeat your class master in the forest to unlock this area!'
-    },
-
-    cave: {
-        name: 'Shadow Cavern',
-        description: 'A dungeon filled with dangerous monsters.',
-        enemyLevelRange: [11, 15],
-        encounters: ['troll', 'skeleton_warrior', 'dark_mage'],
-        requiredLevel: 11,
-        locked: true,
-        unlockMessage: 'Defeat your class master in the plains to unlock this area!'
-    },
-
-    crypt: {
-        name: 'Ancient Crypt',
-        description: 'An ancient tomb haunted by the undead.',
-        enemyLevelRange: [16, 20],
-        encounters: ['lich', 'death_knight', 'wraith'],
-        requiredLevel: 16,
-        locked: true,
-        unlockMessage: 'Defeat your class master in the cave to unlock this area!'
-    },
-
-    volcano: {
-        name: 'Volcanic Wastes',
-        description: 'A scorched wasteland of fire and ash.',
-        enemyLevelRange: [21, 25],
-        encounters: ['fire_elemental', 'lava_golem', 'phoenix'],
-        requiredLevel: 21,
-        locked: true,
-        unlockMessage: 'Defeat your class master in the crypt to unlock this area!'
-    },
-
-    fireMountain: {
-        name: 'Fire Mountain',
-        description: 'A volcanic peak home to fierce creatures.',
-        enemyLevelRange: [8, 12],
-        encounters: ['fire_elemental', 'red_dragon', 'demon'],
-        requiredLevel: 12,
-        locked: true,
-        unlockMessage: 'Defeat your class master in the crypt to unlock this area!'
-    }
-};
+            town: {
+                name: 'Silverdale Town',
+                description: 'A peaceful town with shops and an inn. Your adventure begins here.',
+                canRest: true,
+                hasShop: true
+            }
+        };
 
 // ═══════════════════════════════════════════════════════════════
 // MERGE EXPANDED ZONES (if exploration-zones.js is loaded)
@@ -4443,6 +4379,43 @@ if (typeof ZONE_MONSTERS !== 'undefined') {
     Object.assign(ENEMIES, ZONE_MONSTERS);
     console.log('✅ Loaded zone-specific monsters');
 }
+
+// ═══════════════════════════════════════════════════════════════
+// TOWNS — defines which exploration zones belong to each town.
+// This controls what shows on the Explore screen per town.
+// Must stay in sync with EXPLORATION_ZONES town fields.
+// NOTE: Written to window.TOWNS so external scripts (e.g. town2.js, town3.js) can
+//       merge their definitions into the same shared object.
+// ═══════════════════════════════════════════════════════════════
+window.TOWNS = window.TOWNS || {};
+window.TOWNS.town1 = {
+    name: 'Silverdale',
+    description: 'A peaceful starting town. Your adventure begins here.',
+    zones: ['forest', 'riverside'],
+    theme: '#00ff41',
+    dungeonKey: 'silverdale_dungeon',
+    dungeonRequiredLevel: 3,
+    dungeonName: '🏰 SILVERDALE DUNGEON',
+    dungeonUnlockMessage: 'You must be at least level 3 to enter the dungeon!'
+};
+// town2 is fully defined in town2.js — it merges into window.TOWNS at load time
+// town3 is fully defined in town3.js — it merges into window.TOWNS at load time
+const TOWNS = window.TOWNS; // alias so all existing code referencing TOWNS still works
+
+// Remove stale inline zones now superseded by exploration-zones.js.
+// These were placeholder entries that had wrong level ranges / no town field.
+['fireMountain'].forEach(k => { if (LOCATIONS[k]) delete LOCATIONS[k]; });
+
+// Also ensure all EXPLORATION_ZONES zones have the correct town tag applied
+// (in case the merge brought them in without it)
+if (typeof EXPLORATION_ZONES !== 'undefined') {
+    Object.keys(EXPLORATION_ZONES).forEach(key => {
+        if (LOCATIONS[key] && EXPLORATION_ZONES[key].town) {
+            LOCATIONS[key].town = EXPLORATION_ZONES[key].town;
+        }
+    });
+}
+
 
 // ═══════════════════════════════════════════════════════════════
 // MERGE ADVENTURE ENEMIES (if adventures.js is loaded)
@@ -5276,6 +5249,40 @@ function buildSaveSnapshot() {
                 generated[p.armor] = ARMOR[p.armor];
             }
             return generated;
+        })(),
+
+        // ═══════════════════════════════════════════════════════════════
+        // STATIC ITEM GEMS - Save gems socketed into non-dropped weapons/armor.
+        // Static items live in WEAPONS/ARMOR (from weapons.js / armor.js) and
+        // are rebuilt fresh on every page load, so any socketed gems would be
+        // wiped out. We save them here keyed by item ID and restore below.
+        // ═══════════════════════════════════════════════════════════════
+        staticWeaponGems: (() => {
+            const map = {};
+            // Check equipped weapon
+            if (p.weapon && WEAPONS[p.weapon] && !WEAPONS[p.weapon].isDropped && WEAPONS[p.weapon].gems?.length) {
+                map[p.weapon] = WEAPONS[p.weapon].gems;
+            }
+            // Check inventory
+            (p.inventory || []).forEach(itemKey => {
+                if (typeof itemKey !== 'string') return;
+                const w = WEAPONS[itemKey];
+                if (w && !w.isDropped && w.gems?.length) map[itemKey] = w.gems;
+            });
+            return map;
+        })(),
+
+        staticArmorGems: (() => {
+            const map = {};
+            if (p.armor && ARMOR[p.armor] && !ARMOR[p.armor].isDropped && ARMOR[p.armor].gems?.length) {
+                map[p.armor] = ARMOR[p.armor].gems;
+            }
+            (p.inventory || []).forEach(itemKey => {
+                if (typeof itemKey !== 'string') return;
+                const a = ARMOR[itemKey];
+                if (a && !a.isDropped && a.gems?.length) map[itemKey] = a.gems;
+            });
+            return map;
         })(),
 
         // Current location/state
@@ -8663,7 +8670,7 @@ window.addEventListener('beforeunload', () => {
             // the zone it guards so the player isn't permanently soft-locked.
             // ═══════════════════════════════════════════════════════════════
             if (typeof CLASS_MASTERS !== 'undefined') {
-                const areaOrder = ['forest', 'riverside', 'plains', 'cave', 'crypt', 'volcano'];
+                const areaOrder = ['forest','riverside','haunted_graveyard','dark_swamp','cursed_ruins','cave','crypt','plains','demon_portal','volcano','celestial_spire'];
                 Object.keys(CLASS_MASTERS).forEach(masterKey => {
                     const master = CLASS_MASTERS[masterKey];
                     // Only process masters for this player's class
@@ -9792,6 +9799,10 @@ window.addEventListener('beforeunload', () => {
                     runestones: data.player.runestones || [],
                     // Portal unlock — false for old saves that predate this flag
                     portalUnlocked: data.player.portalUnlocked || false,
+                    // Bounty system — safe defaults for old saves
+                    activeBounties:    data.player.activeBounties    || [],
+                    pendingBounties:   data.player.pendingBounties   || [],
+                    collectedBounties: data.player.collectedBounties || {},
                     // ═══════════════════════════════════════════════════════════════
                     // PERSISTENT DUNGEON MAPS - Restore and convert arrays back to Sets
                     // ═══════════════════════════════════════════════════════════════
@@ -9880,6 +9891,29 @@ window.addEventListener('beforeunload', () => {
                 }
                 
                 // ═══════════════════════════════════════════════════════════════
+                // RESTORE STATIC ITEM GEMS - Re-apply gems socketed into
+                // non-dropped (static) weapons and armor. These items are rebuilt
+                // from weapons.js / armor.js on every load, so gems must be
+                // re-attached here from the saved map.
+                // ═══════════════════════════════════════════════════════════════
+                if (data.staticWeaponGems) {
+                    Object.entries(data.staticWeaponGems).forEach(([itemId, gems]) => {
+                        if (WEAPONS[itemId]) {
+                            WEAPONS[itemId].gems = gems;
+                        }
+                    });
+                    console.log(`✅ Restored static weapon gems for: ${Object.keys(data.staticWeaponGems).join(', ') || 'none'}`);
+                }
+                if (data.staticArmorGems) {
+                    Object.entries(data.staticArmorGems).forEach(([itemId, gems]) => {
+                        if (ARMOR[itemId]) {
+                            ARMOR[itemId].gems = gems;
+                        }
+                    });
+                    console.log(`✅ Restored static armor gems for: ${Object.keys(data.staticArmorGems).join(', ') || 'none'}`);
+                }
+                
+                // ═══════════════════════════════════════════════════════════════
                 // EQUIPMENT MIGRATION (fix old save data with missing weapons/armor)
                 // ═══════════════════════════════════════════════════════════════
                 const p = gameState.player;
@@ -9958,7 +9992,45 @@ window.addEventListener('beforeunload', () => {
                 // every entry they would have earned so far. No prompt, no friction.
                 // ═══════════════════════════════════════════════════════════════
                 retroactivelyUnlockChronicle(p);
-                
+
+                // ═══════════════════════════════════════════════════════════════
+                // ZONE MIGRATION — clean up unlockedAreas from old saves.
+                // Old code had no town filtering so players accumulated zones from
+                // all towns in their save. Strip any zone that doesn't belong to
+                // any known town's zone list, and remove deleted zones (fireMountain).
+                // The correct zones will be re-unlocked by the retroactive master
+                // migration in showExplore().
+                // ═══════════════════════════════════════════════════════════════
+                (function migrateUnlockedAreas(p) {
+                    if (!p.unlockedAreas) { p.unlockedAreas = []; return; }
+
+                    // Build master list of all valid zone keys across all towns
+                    const allValidZones = new Set();
+                    if (typeof TOWNS !== 'undefined') {
+                        Object.values(TOWNS).forEach(t => (t.zones || []).forEach(z => allValidZones.add(z)));
+                    }
+                    // Always keep forest and riverside regardless
+                    allValidZones.add('forest');
+                    allValidZones.add('riverside');
+
+                    // Explicitly deleted zones
+                    const deletedZones = new Set(['fireMountain', 'fire_mountain']);
+
+                    const before = p.unlockedAreas.length;
+                    p.unlockedAreas = p.unlockedAreas.filter(z => {
+                        if (deletedZones.has(z)) return false;
+                        // If we know all valid zones, filter to only those
+                        if (allValidZones.size > 0 && !allValidZones.has(z)) return false;
+                        return true;
+                    });
+                    if (p.unlockedAreas.length !== before) {
+                        console.log(`✅ Zone migration: removed ${before - p.unlockedAreas.length} stale zones from unlockedAreas`);
+                    }
+
+                    // Ensure forest is always unlocked (starter zone)
+                    if (!p.unlockedAreas.includes('forest')) p.unlockedAreas.push('forest');
+                })(p);
+
                 // Restore dungeon state if applicable
                 if (data.meta?.inDungeon && data.dungeon) {
                     // Check if DUNGEONS is loaded
@@ -10498,16 +10570,28 @@ window.addEventListener('beforeunload', () => {
             const portalUnlocked  = !!p.portalUnlocked;
             let portalOption = '';
 
+            const hasVisitedTown3 = !!p.hasSeenTownArrival_town3;
+
             if (tid === 'town2') {
-                // Town2 always has the return portal visible
+                // Town2 always has the return portal to town1
                 portalOption = `
                     <div class="menu-option" onclick="usePortal('town1')"
                          style="border-color:#AA88FF;background:rgba(170,136,255,0.07);">
                         ► 🌀 PORTAL → Silverdale
                         ${!portalUnlocked ? '<span style="color:#AA88FF;font-size:12px;"> [First use unlocks permanent travel]</span>' : ''}
                     </div>`;
+                // Also show town3 portal if player has been there
+                if (hasVisitedTown3) {
+                    const t3Def = (typeof TOWNS !== 'undefined' && TOWNS['town3']) ? TOWNS['town3'] : null;
+                    const t3Name = t3Def ? t3Def.name : 'Crossroads of the World';
+                    portalOption += `
+                    <div class="menu-option" onclick="usePortal('town3')"
+                         style="border-color:#FFD700;background:rgba(255,215,0,0.07);">
+                        ► 🌀 PORTAL → ${t3Name}
+                    </div>`;
+                }
             } else if (tid === 'town1' && (hasRunestone || portalUnlocked)) {
-                // Town1: portal visible once player has runestone OR used town2 portal
+                // Town1: portal to town2 visible once player has runestone OR used town2 portal
                 const destDef  = (typeof TOWNS !== 'undefined' && TOWNS['town2']) ? TOWNS['town2'] : null;
                 const destName = destDef ? destDef.name : 'Ashen Harbor';
                 portalOption = `
@@ -10516,6 +10600,16 @@ window.addEventListener('beforeunload', () => {
                         ► 🌀 PORTAL → ${destName}
                         ${hasRunestone ? '<span style="color:#AA88FF;font-size:12px;"> [White Runestone ✦]</span>' : ''}
                     </div>`;
+                // Also show town3 portal if player has been there
+                if (hasVisitedTown3) {
+                    const t3Def = (typeof TOWNS !== 'undefined' && TOWNS['town3']) ? TOWNS['town3'] : null;
+                    const t3Name = t3Def ? t3Def.name : 'Crossroads of the World';
+                    portalOption += `
+                    <div class="menu-option" onclick="usePortal('town3')"
+                         style="border-color:#FFD700;background:rgba(255,215,0,0.07);">
+                        ► 🌀 PORTAL → ${t3Name}
+                    </div>`;
+                }
             }
 
             // ── Dungeon option (level-gated) ──────────────────────────────
@@ -10609,6 +10703,12 @@ window.addEventListener('beforeunload', () => {
                 // Town1 → Town2: requires runestone OR already unlocked
                 if (!p.portalUnlocked && !(p.runestones && p.runestones.includes('white_runestone'))) {
                     alert('You need to have visited Ashen Harbor first to use this portal!');
+                    return;
+                }
+            } else if (destTownId === 'town3') {
+                // Any town → Town3: requires having visited town3 before
+                if (!p.hasSeenTownArrival_town3) {
+                    alert('You have not yet discovered the Crossroads of the World!');
                     return;
                 }
             }
@@ -11490,6 +11590,8 @@ window.addEventListener('beforeunload', () => {
             gameState.player.gold -= cost;
             gameState.player.hp = gameState.player.maxHp;
             gameState.player.mp = gameState.player.maxMp;
+            // Reset bounty cooldowns — targets resurface after a night's rest
+            if (typeof resetBountiesAfterInn === 'function') resetBountiesAfterInn();
             alert('You rest at the inn and recover fully!');
             showTown();
         }
@@ -12052,7 +12154,11 @@ function equipItem(type, key) {
                 const loc = LOCATIONS[key];
                 if (key === 'town') return;
                 // Only auto-unlock zones that belong to this town
-                if (townZoneKeys && !townZoneKeys.includes(key)) return;
+                if (townZoneKeys) {
+                    if (!townZoneKeys.includes(key)) return;
+                } else if (loc.town) {
+                    if (loc.town !== tid) return;
+                }
                 
                 // ALWAYS unlock forest (starter zone) regardless of level
                 if (key === 'forest' && !p.unlockedAreas.includes(key)) {
@@ -12071,6 +12177,94 @@ function equipItem(type, key) {
                 }
             });
 
+            // ─────────────────────────────────────────────────────────────
+            // RETROACTIVE MASTER MIGRATION
+            // Repairs broken chains from old save data where zones were unlocked
+            // by buggy code that skipped intermediate zones/masters.
+            //
+            // Strategy: walk the chain in order. For each zone that's unlocked,
+            // mark its master as defeated and unlock the next zone if the player
+            // meets the level requirement. Repeat until stable (no new unlocks).
+            // This handles cascades like: graveyard unlocked → grant swamp →
+            // grant ruins → etc., all in one pass.
+            // ─────────────────────────────────────────────────────────────
+            if (typeof CLASS_MASTERS !== 'undefined') {
+                const playerClass = p.baseClass || p.class;
+
+                // Ordered main chain — each zone requires the master of the previous
+                const zoneChain = [
+                    'forest', 'riverside', 'haunted_graveyard', 'dark_swamp',
+                    'cursed_ruins', 'cave', 'crypt', 'demon_portal',
+                    'corrupted_temple', 'celestial_spire'
+                ];
+
+                // ── STEP 1: Find the highest zone index this player has ever unlocked.
+                // Old buggy saves may have unlocked cave/crypt/demon_portal while skipping
+                // dark_swamp/cursed_ruins. The player clearly progressed through all of them,
+                // so we fill in every zone up to their highest unlocked index.
+                let highestIdx = -1;
+                zoneChain.forEach((zone, idx) => {
+                    if (p.unlockedAreas.includes(zone)) highestIdx = idx;
+                });
+
+                if (highestIdx > 0) {
+                    // Grant all zones up to highestIdx — player cleared these
+                    for (let i = 0; i <= highestIdx; i++) {
+                        const zone = zoneChain[i];
+                        const loc  = LOCATIONS[zone];
+                        if (loc && p.level >= (loc.requiredLevel || 1)) {
+                            if (!p.unlockedAreas.includes(zone)) {
+                                p.unlockedAreas.push(zone);
+                                console.log('[Migration] Gap-fill unlocked:', zone);
+                            }
+                        }
+                        // Mark the master guarding entry to this zone as defeated
+                        // (master of previous zone = what the player beat to get here)
+                        if (i > 0) {
+                            const masterKey = `${playerClass}_master_${zoneChain[i - 1]}`;
+                            if (CLASS_MASTERS[masterKey] && !p.defeatedMasters.includes(masterKey)) {
+                                p.defeatedMasters.push(masterKey);
+                                console.log('[Migration] Gap-fill defeated master:', masterKey);
+                            }
+                        }
+                    }
+                }
+
+                // ── STEP 2: Also grant the master of the highest zone itself,
+                // IF the player has progressed to any LATER zone (meaning they beat it).
+                // This ensures demon_portal master is marked if corrupted_temple is unlocked, etc.
+                Object.keys(CLASS_MASTERS).forEach(masterKey => {
+                    if (!masterKey.startsWith(playerClass + '_master_')) return;
+                    const master = CLASS_MASTERS[masterKey];
+                    if (!master) return;
+                    if (master.unlocks && p.unlockedAreas.includes(master.unlocks) &&
+                        !p.defeatedMasters.includes(masterKey)) {
+                        p.defeatedMasters.push(masterKey);
+                        console.log('[Migration] Unlock-implies-defeat:', masterKey);
+                    }
+                });
+
+                // ── STEP 3: Now propagate forward from the highest unlocked zone.
+                // If the player defeated the master of their highest zone, unlock the next.
+                // (This handles the normal "new player" case where nothing is skipped.)
+                for (let i = 0; i < zoneChain.length - 1; i++) {
+                    const currentZone = zoneChain[i];
+                    const nextZone    = zoneChain[i + 1];
+                    const masterKey   = `${playerClass}_master_${currentZone}`;
+                    if (p.unlockedAreas.includes(currentZone) &&
+                        p.defeatedMasters.includes(masterKey) &&
+                        !p.unlockedAreas.includes(nextZone)) {
+                        const nextLoc = LOCATIONS[nextZone];
+                        if (nextLoc && p.level >= (nextLoc.requiredLevel || 1)) {
+                            p.unlockedAreas.push(nextZone);
+                            console.log('[Migration] Chained forward:', nextZone);
+                        }
+                    }
+                }
+
+                console.log('[Migration] Done. unlockedAreas:', p.unlockedAreas.join(', '));
+            }
+
             const townName = townDef ? townDef.name : 'World';
             let exploreHtml = `
                 <div class="location-header">${townName} — EXPLORE</div>
@@ -12081,12 +12275,19 @@ function equipItem(type, key) {
                 <div style="margin: 20px 0;">
             `;
 
+            // Track which master keys have already been rendered to prevent duplicates
+            const renderedMasterKeys = new Set();
+
             // Only show zones that belong to this town (or all zones if no town system)
             Object.keys(LOCATIONS).forEach(key => {
                 const loc = LOCATIONS[key];
                 if (key === 'town') return;
-                // Filter by town
-                if (townZoneKeys && !townZoneKeys.includes(key)) return;
+                // Filter by town — use townZoneKeys list, or fall back to loc.town field
+                if (townZoneKeys) {
+                    if (!townZoneKeys.includes(key)) return;
+                } else if (loc.town) {
+                    if (loc.town !== tid) return;
+                }
 
                 const levelInfo = loc.enemyLevelRange ?
                     ` (Lv ${loc.enemyLevelRange[0]}-${loc.enemyLevelRange[1]})` : '';
@@ -12103,10 +12304,12 @@ function equipItem(type, key) {
                             ► ${loc.name}${levelInfo} <span style="color: var(--border-color);">✓</span>
                         </div>
                     `;
-                    // Show master challenge if available
+                    // Show master challenge if available and not yet rendered
                     const masterKey = `${p.baseClass || p.class}_master_${key}`;
-                    if (typeof CLASS_MASTERS !== 'undefined' && CLASS_MASTERS[masterKey] && !p.defeatedMasters.includes(masterKey)) {
+                    if (typeof CLASS_MASTERS !== 'undefined' && CLASS_MASTERS[masterKey] &&
+                        !p.defeatedMasters.includes(masterKey) && !renderedMasterKeys.has(masterKey)) {
                         const master = CLASS_MASTERS[masterKey];
+                        renderedMasterKeys.add(masterKey);
                         if (p.level >= master.requiredLevel) {
                             exploreHtml += `
                                 <div class="menu-option" onclick="challengeMaster('${masterKey}')"
@@ -12114,31 +12317,61 @@ function equipItem(type, key) {
                                     ⚔️ CHALLENGE MASTER: ${master.name} (Lv ${master.level})
                                 </div>
                             `;
+                        } else {
+                            exploreHtml += `
+                                <div style="color:#666;font-size:12px;padding:4px 8px;">
+                                    ⚔️ Master available at level ${master.requiredLevel}: ${master.name}
+                                </div>
+                            `;
                         }
                     }
                 } else {
-                    // Locked but level met — show with unlock requirement
+                    // Locked zone — find which master unlocks it
                     const masterKey = typeof getMasterKeyForArea !== 'undefined' ? getMasterKeyForArea(key) : null;
                     const master = masterKey && typeof CLASS_MASTERS !== 'undefined' ? CLASS_MASTERS[masterKey] : null;
-                    if (master) {
+
+                    if (master && p.defeatedMasters.includes(masterKey)) {
+                        // Master defeated but zone still locked? Unlock it now.
+                        if (!p.unlockedAreas.includes(key)) p.unlockedAreas.push(key);
                         exploreHtml += `
-                            <div class="menu-option" style="opacity:0.6;cursor:default;"
-                                 onclick="alert('${loc.unlockMessage || 'Locked'}')">
-                                🔒 ${loc.name}${levelInfo} - LOCKED
-                            </div>
-                            <div class="menu-option" onclick="challengeMaster('${masterKey}')"
-                                 style="border-color:var(--error-color);background:rgba(255,0,0,0.1);">
-                                ⚔️ CHALLENGE MASTER: ${master.name} (Lv ${master.level}) TO UNLOCK
+                            <div class="menu-option" onclick="exploreLocation('${key}')">
+                                ► ${loc.name}${levelInfo} <span style="color: var(--border-color);">✓</span>
                             </div>
                         `;
-                    } else {
+                    } else if (master && !p.defeatedMasters.includes(masterKey) && !renderedMasterKeys.has(masterKey)) {
+                        // Master not yet defeated — show locked zone + challenge button
+                        renderedMasterKeys.add(masterKey);
+                        const canChallenge = p.level >= master.requiredLevel;
                         exploreHtml += `
                             <div class="menu-option" style="opacity:0.6;cursor:default;"
-                                 onclick="alert('${loc.unlockMessage || 'Complete previous areas to unlock!'}')">
+                                 onclick="alert('${(loc.unlockMessage || 'Locked').replace(/'/g, "\'")}')">
+                                🔒 ${loc.name}${levelInfo} - LOCKED
+                            </div>
+                        `;
+                        if (canChallenge) {
+                            exploreHtml += `
+                                <div class="menu-option" onclick="challengeMaster('${masterKey}')"
+                                     style="border-color:var(--error-color);background:rgba(255,0,0,0.1);">
+                                    ⚔️ CHALLENGE MASTER: ${master.name} (Lv ${master.level}) TO UNLOCK
+                                </div>
+                            `;
+                        } else {
+                            exploreHtml += `
+                                <div style="color:#666;font-size:12px;padding:4px 8px;">
+                                    🔒 Reach level ${master.requiredLevel} to challenge ${master.name}
+                                </div>
+                            `;
+                        }
+                    } else if (!master) {
+                        // No master defined for this zone — show plain lock
+                        exploreHtml += `
+                            <div class="menu-option" style="opacity:0.6;cursor:default;"
+                                 onclick="alert('${(loc.unlockMessage || 'Complete previous areas to unlock!').replace(/'/g, "\'")}')">
                                 🔒 ${loc.name}${levelInfo} - LOCKED
                             </div>
                         `;
                     }
+                    // If master already rendered above (duplicate) — skip silently
                 }
             });
 
@@ -12152,17 +12385,25 @@ function equipItem(type, key) {
 
         function getMasterKeyForArea(areaKey) {
             // Find which master unlocks this area.
-            // 'riverside' is unlocked by the forest master (index 0 → forest master unlocks riverside).
-            // All other areas are unlocked by the master of the previous area in order.
+            // Each locked zone is unlocked by the master of the PREVIOUS zone.
+            // The master key format is: {playerClass}_master_{sourceZone}
             const playerClass = gameState.player.baseClass || gameState.player.class;
 
-            // Map: area → the zone whose master unlocks it
+            // Map: locked zone → zone whose master unlocks it
+            // This must mirror the `unlocks` fields in CLASS_MASTERS exactly.
             const unlockedBy = {
-                riverside: 'forest',
-                plains:    'forest',
-                cave:      'plains',
-                crypt:     'cave',
-                volcano:   'crypt'
+                // Main chain: town1 → town2 → endgame
+                riverside:          'forest',
+                haunted_graveyard:  'riverside',
+                dark_swamp:         'haunted_graveyard',
+                cursed_ruins:       'dark_swamp',
+                cave:               'cursed_ruins',
+                crypt:              'cave',
+                demon_portal:       'crypt',
+                corrupted_temple:   'demon_portal',
+                celestial_spire:    'corrupted_temple',
+                // Town 3 parallel track
+                volcano:            'plains'
             };
 
             const sourceArea = unlockedBy[areaKey];
@@ -12574,6 +12815,13 @@ function stabilizeTerminalLayout() {
             } else {
                 // Already in this area – just add a separator
                 termAppend('', 'term-separator');
+            }
+
+            // ═══════════════════════════════════════════════════════════════
+            // CHECK FOR BOUNTY ENCOUNTER (5% chance if target hunted here)
+            // ═══════════════════════════════════════════════════════════════
+            if (typeof checkBountyEncounter === 'function' && checkBountyEncounter(locKey)) {
+                return; // bounty combat started — skip normal rolls
             }
 
             // ═══════════════════════════════════════════════════════════════
@@ -18012,6 +18260,26 @@ function endCombat(victory) {
 
     // ── terminal output ──
     termAppend('', 'term-separator');
+
+    // ── Bounty capture check ──
+    if (typeof processBountyVictory === 'function') {
+        const capturedBountyId = processBountyVictory(cs);
+        if (capturedBountyId) {
+            const _b = (typeof BOUNTIES !== 'undefined') ? BOUNTIES[capturedBountyId] : null;
+            if (_b) {
+                termAppend(
+                    `<span style="color:#cc66ff;font-size:19px;">⚓ BOUNTY CAPTURED: ${_b.name}</span>`,
+                    'term-victory'
+                );
+                termAppend(
+                    `<span style="color:#cc66ff;">Return to Ashen Harbor to collect </span>` +
+                    `<span style="color:#FFD700;">${_b.bountyGold.toLocaleString()}g</span>`,
+                    'term-loot'
+                );
+                termAppend('', 'term-separator');
+            }
+        }
+    }
 
     if (isMaster) {
         termAppend(`🏆 ${masterData.name} HAS BEEN DEFEATED! 🏆`, 'term-victory');

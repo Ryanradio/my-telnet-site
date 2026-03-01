@@ -1,13 +1,18 @@
 // exploration-zones.js - World Map Zones
-// Level ranges are clean non-overlapping bands: 1-3, 4-6, 7-9, 10-12, etc.
+// Level ranges are clean non-overlapping bands: 1-3, 4-6, 7-9, 10-12, 13-15, 16-18, 19-21, 22-24, 25
+//
+// MAIN ZONE CHAIN (one zone per level band):
+//   forest (1-3) → riverside (4-6) → haunted_graveyard (7-9) → dark_swamp (10-12)
+//   → cursed_ruins (13-15) → cave (16-18) → crypt (19-21)
+//   → demon_portal (22-24) → corrupted_temple (25) → celestial_spire (25 endgame)
+//
+// TOWN 3 PARALLEL TRACK:
+//   plains (10-12) → volcano (22-24)
 
 const EXPLORATION_ZONES = {
 
     // ═══════════════════════════════════════════════════════════════
-    // TOWN 1 ZONES  (Silverdale) — Levels 1-6 ONLY
-    // Zones here are hard-capped to town1. A level 7+ player still
-    // only sees forest and riverside here — they must go to Town 2
-    // to access the 7-9 tier. No exceptions.
+    // TOWN 1 ZONES  (Silverdale) — Levels 1-6
     // ═══════════════════════════════════════════════════════════════
     forest: {
         name: 'Whispering Forest',
@@ -36,6 +41,12 @@ const EXPLORATION_ZONES = {
         adventureChance: 0.04
     },
 
+    // ═══════════════════════════════════════════════════════════════
+    // TOWN 2 ZONES  (Ashen Harbor) — Levels 7-24
+    // haunted_graveyard is unlocked on arrival at town2 (no master).
+    // Each subsequent zone unlocks by defeating the class master of
+    // the previous zone.
+    // ═══════════════════════════════════════════════════════════════
     haunted_graveyard: {
         name: 'Haunted Graveyard',
         description: 'An ancient cemetery where the dead don\'t rest peacefully.',
@@ -49,25 +60,6 @@ const EXPLORATION_ZONES = {
         adventureChance: 0.07
     },
 
-    // ═══════════════════════════════════════════════════════════════
-    // TOWN 2 ZONES  (Ashen Harbor) — Levels 7-18
-    // haunted_graveyard is the first zone (unlocked by default).
-    // plains unlocks after defeating the graveyard class master.
-    // ═══════════════════════════════════════════════════════════════
-    plains: {
-        name: 'Endless Plains',
-        description: 'Open grasslands with roaming beasts and bandit camps.',
-        enemyLevelRange: [7, 9],
-        encounters: ['dire_wolf', 'plains_lion', 'centaur', 'plains_raider', 'giant_scorpion',
-                     'orc_berserker', 'giant_beetle', 'minotaur_scout', 'will_o_wisp', 'gnoll_chief',
-                     'grave_knight', 'shadow_hound', 'flesh_golem', 'specter', 'vampire_thrall'],
-        requiredLevel: 7,
-        locked: true,
-        town: 'town2',
-        unlockMessage: 'Defeat your class master in the graveyard to unlock this area!',
-        adventureChance: 0.06
-    },
-
     dark_swamp: {
         name: 'Blackwater Swamp',
         description: 'A treacherous swamp filled with poison and decay.',
@@ -78,7 +70,7 @@ const EXPLORATION_ZONES = {
         requiredLevel: 10,
         locked: true,
         town: 'town2',
-        unlockMessage: 'Defeat your class master in the plains to unlock this area!',
+        unlockMessage: 'Defeat your class master in the haunted graveyard to unlock this area!',
         adventureChance: 0.08
     },
 
@@ -106,63 +98,50 @@ const EXPLORATION_ZONES = {
         requiredLevel: 16,
         locked: true,
         town: 'town2',
-        unlockMessage: 'Defeat your class master in the ruins to unlock this area!',
+        unlockMessage: 'Defeat your class master in the cursed ruins to unlock this area!',
         adventureChance: 0.08
     },
 
-    // ═══════════════════════════════════════════════════════════════
-    // LATE GAME ZONES — Levels 16-25  (future towns can own these)
-    // ═══════════════════════════════════════════════════════════════
     crypt: {
         name: 'Ancient Crypt',
         description: 'An ancient tomb haunted by powerful undead.',
-        enemyLevelRange: [16, 18],
+        enemyLevelRange: [19, 21],
         encounters: ['lich', 'death_knight', 'wraith', 'bone_dragon', 'vampire_lord', 'crypt_guard',
                      'ancient_lich', 'nightmare_steed', 'shadow_archon', 'chaos_bringer', 'soul_reaper',
                      'blood_elemental', 'wyvern', 'undead_general', 'doom_knight'],
-        requiredLevel: 16,
+        requiredLevel: 19,
         locked: true,
-        unlockMessage: 'Defeat your class master in the cave to unlock this area!',
+        town: 'town2',
+        unlockMessage: 'Defeat your class master in the shadow cavern to unlock this area!',
         adventureChance: 0.10
     },
 
     demon_portal: {
         name: 'Demon Portal',
-        description: 'A tear in reality where demons pour forth.',
-        enemyLevelRange: [19, 21],
+        description: 'A tear in reality where demons pour forth endlessly.',
+        enemyLevelRange: [22, 24],
         encounters: ['lesser_demon', 'hellhound', 'imp_swarm', 'pit_fiend', 'demon_lord',
                      'infernal_titan', 'void_assassin', 'plague_dragon', 'demon_sorceress', 'herald_of_doom',
                      'void_titan', 'fallen_titan', 'abyssal_knight', 'elder_vampire', 'reality_shredder'],
-        requiredLevel: 19,
+        requiredLevel: 22,
         locked: true,
-        unlockMessage: 'Defeat your class master in the crypt to unlock this area!',
+        town: 'town2',
+        unlockMessage: 'Defeat your class master in the ancient crypt to unlock this area!',
         adventureChance: 0.10
     },
 
     corrupted_temple: {
         name: 'Corrupted Temple',
         description: 'A once-holy temple now twisted by dark forces.',
-        enemyLevelRange: [22, 24],
+        enemyLevelRange: [25, 25],
         encounters: ['fallen_angel', 'corrupted_paladin', 'dark_oracle', 'abomination', 'void_priest',
                      'eclipse_dragon', 'soul_devourer', 'hellfire_knight', 'inferno_elemental', 'chaos_elemental',
                      'oblivion_herald', 'eternal_warden', 'chaos_dragon', 'void_overlord', 'fallen_warlord'],
-        requiredLevel: 22,
+        requiredLevel: 25,
         locked: true,
-        unlockMessage: 'Defeat your class master in the demon portal to unlock!',
+        town: 'town2',
+        unlockMessage: 'Defeat your class master in the demon portal to unlock this area!',
         adventureChance: 0.11
-    },
-
-    volcano: {
-        name: 'Volcanic Wastes',
-        description: 'A scorched wasteland of fire, ash, and ancient power.',
-        enemyLevelRange: [22, 24],
-        encounters: ['fire_elemental', 'lava_golem', 'phoenix', 'magma_dragon', 'flame_titan',
-                     'elder_demon', 'lava_titan', 'void_colossus', 'corrupted_titan', 'nightmare_dragon',
-                     'storm_dragon', 'blizzard_titan', 'void_dragon', 'glacial_wyrm', 'ancient_lich_lord'],
-        requiredLevel: 22,
-        locked: true,
-        unlockMessage: 'Defeat your class master in the crypt to unlock this area!',
-        adventureChance: 0.12
     },
 
     celestial_spire: {
@@ -173,31 +152,70 @@ const EXPLORATION_ZONES = {
                      'cosmic_horror', 'divine_executioner', 'star_titan', 'eternal_dragon', 'oblivion_incarnate'],
         requiredLevel: 25,
         locked: true,
-        unlockMessage: 'Only the mightiest heroes may enter.',
+        town: 'town2',
+        unlockMessage: 'Defeat your class master in the corrupted temple to enter this endgame area!',
         adventureChance: 0.15
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    // TOWN 3 ZONES  (The Crossroads) — Parallel Track
+    // plains is the first zone here, unlocked on arrival at town3.
+    // volcano unlocks after defeating the plains class master.
+    // ═══════════════════════════════════════════════════════════════
+    plains: {
+        name: 'Windswept Plains',
+        description: 'Open grasslands prowled by warlords, giant beasts, and roving monster clans.',
+        enemyLevelRange: [10, 12],
+        encounters: ['dire_wolf', 'plains_lion', 'centaur', 'plains_raider', 'giant_scorpion',
+                     'orc_berserker', 'giant_beetle', 'minotaur_scout', 'will_o_wisp', 'gnoll_chief',
+                     'cave_basilisk', 'iron_golem', 'werewolf', 'medusa', 'cave_worm'],
+        requiredLevel: 10,
+        locked: false,
+        town: 'town3',
+        adventureChance: 0.07
+    },
+
+    volcano: {
+        name: 'Volcanic Wastes',
+        description: 'A scorched wasteland of fire, ash, and ancient elemental fury.',
+        enemyLevelRange: [22, 24],
+        encounters: ['fire_elemental', 'lava_golem', 'phoenix', 'magma_dragon', 'flame_titan',
+                     'elder_demon', 'lava_titan', 'void_colossus', 'corrupted_titan', 'nightmare_dragon',
+                     'storm_dragon', 'blizzard_titan', 'void_dragon', 'glacial_wyrm', 'ancient_lich_lord'],
+        requiredLevel: 22,
+        locked: true,
+        town: 'town3',
+        unlockMessage: 'Defeat your class master in the Windswept Plains to unlock this area!',
+        adventureChance: 0.12
     }
 };
 
 // Additional monsters for exploration zones
 const ZONE_MONSTERS = {
-    // Riverside / early plains (4-6)
+    // Riverside (4-6)
     river_troll:   { name: 'River Troll',   baseHp: 100,  baseDamage: 9,  baseDefense: 6,  baseXp: 40,  baseGold: 22, level: 4 },
-    swamp_lurker:  { name: 'Swamp Lurker',  baseHp: 80,  baseDamage: 10, baseDefense: 4,  baseXp: 35,  baseGold: 18, level: 4 },
-    giant_frog:    { name: 'Giant Frog',    baseHp: 70,  baseDamage: 8,  baseDefense: 5,  baseXp: 30,  baseGold: 14, level: 4 },
-    water_snake:   { name: 'Water Snake',   baseHp: 60,  baseDamage: 11, baseDefense: 3,  baseXp: 32,  baseGold: 12, level: 4 },
-
-    // Plains (6-9)
-    plains_lion:   { name: 'Plains Lion',   baseHp: 150,  baseDamage: 16, baseDefense: 8,  baseXp: 95,  baseGold: 45, level: 7 },
-    centaur:       { name: 'Centaur',       baseHp: 180,  baseDamage: 18, baseDefense: 10, baseXp: 115, baseGold: 58, level: 8 },
+    swamp_lurker:  { name: 'Swamp Lurker',  baseHp: 80,   baseDamage: 10, baseDefense: 4,  baseXp: 35,  baseGold: 18, level: 4 },
+    giant_frog:    { name: 'Giant Frog',    baseHp: 70,   baseDamage: 8,  baseDefense: 5,  baseXp: 30,  baseGold: 14, level: 4 },
+    water_snake:   { name: 'Water Snake',   baseHp: 60,   baseDamage: 11, baseDefense: 3,  baseXp: 32,  baseGold: 12, level: 4 },
 
     // Haunted Graveyard (7-9)
-    zombie:        { name: 'Zombie',        baseHp: 130,  baseDamage: 12, baseDefense: 7,  baseXp: 78,  baseGold: 28, level: 7 },
-    ghoul:         { name: 'Ghoul',         baseHp: 120,  baseDamage: 15, baseDefense: 6,  baseXp: 85,  baseGold: 32, level: 8 },
-    skeleton:      { name: 'Skeleton',      baseHp: 110,  baseDamage: 12, baseDefense: 9,  baseXp: 72,  baseGold: 30, level: 7 },
-    grave_robber:  { name: 'Grave Robber',  baseHp: 140,  baseDamage: 17, baseDefense: 7,  baseXp: 90,  baseGold: 85, level: 9 },
+    zombie:         { name: 'Zombie',        baseHp: 130,  baseDamage: 12, baseDefense: 7,  baseXp: 78,  baseGold: 28,  level: 7 },
+    ghoul:          { name: 'Ghoul',         baseHp: 120,  baseDamage: 15, baseDefense: 6,  baseXp: 85,  baseGold: 32,  level: 8 },
+    skeleton:       { name: 'Skeleton',      baseHp: 110,  baseDamage: 12, baseDefense: 9,  baseXp: 72,  baseGold: 30,  level: 7 },
+    grave_robber:   { name: 'Grave Robber',  baseHp: 140,  baseDamage: 17, baseDefense: 7,  baseXp: 90,  baseGold: 85,  level: 9 },
+
+    // Windswept Plains (10-12) — same level band as Dark Swamp
+    plains_lion:    { name: 'Plains Lion',     baseHp: 210,  baseDamage: 21, baseDefense: 10, baseXp: 160, baseGold: 75,  level: 10 },
+    centaur:        { name: 'Centaur',         baseHp: 240,  baseDamage: 23, baseDefense: 12, baseXp: 185, baseGold: 92,  level: 11 },
+    dire_wolf:      { name: 'Dire Wolf',       baseHp: 195,  baseDamage: 20, baseDefense: 9,  baseXp: 155, baseGold: 70,  level: 10 },
+    plains_raider:  { name: 'Plains Raider',   baseHp: 220,  baseDamage: 22, baseDefense: 11, baseXp: 170, baseGold: 130, level: 11 },
+    giant_scorpion: { name: 'Giant Scorpion',  baseHp: 230,  baseDamage: 24, baseDefense: 13, baseXp: 180, baseGold: 88,  level: 11 },
+    orc_berserker:  { name: 'Orc Berserker',   baseHp: 260,  baseDamage: 26, baseDefense: 11, baseXp: 200, baseGold: 100, level: 12 },
+    minotaur_scout: { name: 'Minotaur Scout',  baseHp: 275,  baseDamage: 27, baseDefense: 14, baseXp: 210, baseGold: 105, level: 12 },
+    gnoll_chief:    { name: 'Gnoll Chief',     baseHp: 280,  baseDamage: 28, baseDefense: 14, baseXp: 215, baseGold: 108, level: 12 },
 
     // Dark Swamp (10-12)
-    swamp_hag:      { name: 'Swamp Hag',       baseHp: 230, baseDamage: 23, baseDefense: 12, baseXp: 185, baseGold: 92,  level: 11 },
+    swamp_hag:      { name: 'Swamp Hag',        baseHp: 230, baseDamage: 23, baseDefense: 12, baseXp: 185, baseGold: 92,  level: 11 },
     plague_zombie:  { name: 'Plague Zombie',    baseHp: 210, baseDamage: 21, baseDefense: 10, baseXp: 165, baseGold: 75,  level: 10 },
     giant_leech:    { name: 'Giant Leech',      baseHp: 200, baseDamage: 20, baseDefense: 11, baseXp: 160, baseGold: 68,  level: 10 },
     bog_beast:      { name: 'Bog Beast',        baseHp: 270, baseDamage: 26, baseDefense: 15, baseXp: 215, baseGold: 108, level: 12 },
@@ -210,14 +228,14 @@ const ZONE_MONSTERS = {
     spectral_warrior:{ name: 'Spectral Warrior',baseHp: 280, baseDamage: 30, baseDefense: 16, baseXp: 215, baseGold: 108, level: 14 },
     dark_priest:     { name: 'Dark Priest',     baseHp: 260, baseDamage: 34, baseDefense: 15, baseXp: 255, baseGold: 128, level: 15 },
 
-    // Demon Portal (19-21)
+    // Crypt (19-21)
     lesser_demon:  { name: 'Lesser Demon',  baseHp: 330, baseDamage: 36, baseDefense: 18, baseXp: 305, baseGold: 152, level: 19 },
     hellhound:     { name: 'Hellhound',     baseHp: 300, baseDamage: 39, baseDefense: 16, baseXp: 285, baseGold: 142, level: 19 },
     imp_swarm:     { name: 'Imp Swarm',     baseHp: 270, baseDamage: 33, baseDefense: 14, baseXp: 265, baseGold: 132, level: 19 },
     pit_fiend:     { name: 'Pit Fiend',     baseHp: 410, baseDamage: 43, baseDefense: 22, baseXp: 405, baseGold: 202, level: 20 },
     demon_lord:    { name: 'Demon Lord',    baseHp: 510, baseDamage: 49, baseDefense: 28, baseXp: 555, baseGold: 278, level: 21 },
 
-    // Corrupted Temple (22-24)
+    // Demon Portal (22-24)
     fallen_angel:        { name: 'Fallen Angel',        baseHp: 450, baseDamage: 46, baseDefense: 25, baseXp: 485, baseGold: 242, level: 22 },
     corrupted_paladin:   { name: 'Corrupted Paladin',   baseHp: 490, baseDamage: 49, baseDefense: 30, baseXp: 525, baseGold: 262, level: 23 },
     dark_oracle:         { name: 'Dark Oracle',         baseHp: 390, baseDamage: 51, baseDefense: 22, baseXp: 465, baseGold: 232, level: 22 },
@@ -225,9 +243,9 @@ const ZONE_MONSTERS = {
     void_priest:         { name: 'Void Priest',         baseHp: 430, baseDamage: 56, baseDefense: 26, baseXp: 545, baseGold: 272, level: 23 },
 
     // Celestial Spire (25)
-    celestial_guardian:  { name: 'Celestial Guardian',  baseHp: 890, baseDamage: 72, baseDefense: 42, baseXp: 1005, baseGold: 502, level: 25 },
-    arch_angel:          { name: 'Arch Angel',          baseHp: 970, baseDamage: 76, baseDefense: 44, baseXp: 1105, baseGold: 552, level: 25 },
-    divine_champion:     { name: 'Divine Champion',     baseHp: 930, baseDamage: 79, baseDefense: 46, baseXp: 1055, baseGold: 527, level: 25 },
+    celestial_guardian:  { name: 'Celestial Guardian',  baseHp: 890,  baseDamage: 72, baseDefense: 42, baseXp: 1005, baseGold: 502, level: 25 },
+    arch_angel:          { name: 'Arch Angel',          baseHp: 970,  baseDamage: 76, baseDefense: 44, baseXp: 1105, baseGold: 552, level: 25 },
+    divine_champion:     { name: 'Divine Champion',     baseHp: 930,  baseDamage: 79, baseDefense: 46, baseXp: 1055, baseGold: 527, level: 25 },
     seraphim:            { name: 'Seraphim',            baseHp: 1050, baseDamage: 83, baseDefense: 48, baseXp: 1155, baseGold: 577, level: 25 },
     god_avatar:          { name: 'Avatar of a God',     baseHp: 1210, baseDamage: 91, baseDefense: 50, baseXp: 1505, baseGold: 752, level: 25, isBoss: true }
 };
