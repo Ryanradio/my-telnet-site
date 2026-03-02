@@ -530,6 +530,21 @@ Object.assign(ENEMIES, {
         level: 7,
         description: 'An enormous wolf, twice the size of normal',
         possibleDrops: ['health_potion', 'dire_pelt', 'medium_gem'],
+                abilities: [
+            {
+                id: 'pack_howl',
+                name: 'Pack Howl',
+                chance: 0.25,
+                mpCost: 12,
+                telegraph: 'tilts its head back and howls into the darkness...',
+                type: 'intimidate',
+                damagePenalty: 0.25,
+                intimidateDuration: 6000,
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🐺 The ${enemyName} unleashes a bone-chilling howl! The ${playerClass} feels their courage waver — <span style="color:#ffaa44;">⚠️ -25% damage for 6 seconds.</span>`
+            }
+        ],
         dropRates: { common: 0.4, uncommon: 0.2, rare: 0.08, epic: 0.03 }
     },
     
@@ -545,6 +560,20 @@ Object.assign(ENEMIES, {
         level: 7,
         description: 'A majestic predator that rules the grasslands',
         possibleDrops: ['health_potion', 'lion_mane', 'medium_gem'],
+                abilities: [
+            {
+                id: 'pounce',
+                name: 'Pounce',
+                chance: 0.30,
+                mpCost: 14,
+                hpThreshold: 0.60,
+                telegraph: 'drops into a crouch and fixes you with its golden eyes...',
+                type: 'heavy_hit',
+                damageMult: 1.8,
+                armorPiercing: 0.20,
+                applyMessage: (enemyName, playerClass) => `🦁 The ${enemyName} POUNCES! Claws rake through the ${playerClass}'s guard!`
+            }
+        ],
         dropRates: { common: 0.4, uncommon: 0.25, rare: 0.1, epic: 0.04 }
     },
     
@@ -560,6 +589,32 @@ Object.assign(ENEMIES, {
         level: 8,
         description: 'A half-human, half-horse warrior with a spear',
         possibleDrops: ['health_potion', 'longbow', 'leather_armor', 'medium_gem'],
+                abilities: [
+            {
+                id: 'trample',
+                name: 'Trample',
+                chance: 0.30,
+                mpCost: 16,
+                hpThreshold: 0.55,
+                telegraph: 'rears up on powerful haunches and lowers its spear...',
+                type: 'heavy_hit',
+                damageMult: 1.9,
+                armorPiercing: 0.30,
+                applyMessage: (enemyName, playerClass) => `🐎 The ${enemyName} TRAMPLES the ${playerClass}! Hooves and spear tear through armor!`
+            },
+            {
+                id: 'enraged_charge',
+                name: 'Enraged Charge',
+                chance: 0.40,
+                mpCost: 18,
+                lowHpThreshold: 0.35,
+                telegraph: 'snorts blood and wheels around in fury...',
+                type: 'heavy_hit',
+                damageMult: 2.2,
+                armorPiercing: 0.35,
+                applyMessage: (enemyName, playerClass) => `🐎 The ${enemyName} is ENRAGED! A desperate, thundering charge!`
+            }
+        ],
         dropRates: { common: 0.35, uncommon: 0.25, rare: 0.12, epic: 0.05, legendary: 0.02 }
     },
     
@@ -575,6 +630,22 @@ Object.assign(ENEMIES, {
         level: 7,
         description: 'A nomadic warrior on horseback',
         possibleDrops: ['health_potion', 'steel_sword', 'gold_coins', 'medium_gem'],
+                abilities: [
+            {
+                id: 'skirmish',
+                name: 'Skirmish',
+                chance: 0.25,
+                mpCost: 10,
+                telegraph: 'wheels their mount and circles you at speed...',
+                type: 'debuff',
+                debuff: 'blinded',
+                debuffDuration: 5000,
+                hitMissChance: 0.30,
+                damageMult: 0.8,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🏇 The ${enemyName} circles in a dust cloud! The ${playerClass} is blinded — <span style="color:#ffaa44;">⚠️ 30% chance to miss next attacks.</span>`
+            }
+        ],
         dropRates: { common: 0.35, uncommon: 0.3, rare: 0.15, epic: 0.05 }
     },
     
@@ -590,6 +661,26 @@ Object.assign(ENEMIES, {
         level: 8,
         description: 'A massive arachnid with a poisonous stinger',
         possibleDrops: ['health_potion', 'scorpion_venom', 'chitin_armor', 'medium_gem'],
+                abilities: [
+            {
+                id: 'sting',
+                name: 'Venomous Sting',
+                chance: 0.35,
+                mpCost: 15,
+                telegraph: 'curves its segmented tail over its back...',
+                type: 'dot_attack',
+                dot: {
+                    name: 'Poisoned',
+                    icon: '💚',
+                    damage: 7,
+                    tickInterval: 3000,
+                    ticks: 4,
+                },
+                damageMult: 0.8,
+                armorPiercing: 0.10,
+                applyMessage: (enemyName, playerClass) => `🦂 The ${enemyName}'s stinger plunges in! Potent venom floods the ${playerClass}'s veins — <b>Poisoned!</b>`
+            }
+        ],
         dropRates: { common: 0.35, uncommon: 0.25, rare: 0.15, epic: 0.06, legendary: 0.01 }
     },
     
@@ -606,6 +697,26 @@ Object.assign(ENEMIES, {
         level: 7,
         description: 'A shambling corpse hungry for flesh',
         possibleDrops: ['health_potion', 'bone_dust', 'medium_gem'],
+                abilities: [
+            {
+                id: 'plague_bite',
+                name: 'Plague Bite',
+                chance: 0.30,
+                mpCost: 10,
+                telegraph: 'lunges forward with rotting, gnashing jaws...',
+                type: 'dot_attack',
+                dot: {
+                    name: 'Plague',
+                    icon: '☣️',
+                    damage: 5,
+                    tickInterval: 2500,
+                    ticks: 4,
+                },
+                damageMult: 0.9,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `☣️ The ${enemyName}'s rotting bite infects the ${playerClass}! <b>Plagued!</b>`
+            }
+        ],
         dropRates: { common: 0.45, uncommon: 0.2, rare: 0.08, epic: 0.02 }
     },
     
@@ -621,6 +732,26 @@ Object.assign(ENEMIES, {
         level: 8,
         description: 'A flesh-eating undead with razor claws',
         possibleDrops: ['health_potion', 'ghoul_claw', 'cursed_bone', 'medium_gem'],
+                abilities: [
+            {
+                id: 'rend_flesh',
+                name: 'Rend Flesh',
+                chance: 0.30,
+                mpCost: 12,
+                telegraph: 'flexes its razor-tipped claws with terrible eagerness...',
+                type: 'dot_attack',
+                dot: {
+                    name: 'Bleeding',
+                    icon: '🩸',
+                    damage: 5,
+                    tickInterval: 3000,
+                    ticks: 3,
+                },
+                damageMult: 1.1,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🩸 The ${enemyName}'s claws tear deep! The ${playerClass} is <b>Bleeding!</b>`
+            }
+        ],
         dropRates: { common: 0.4, uncommon: 0.25, rare: 0.1, epic: 0.03 }
     },
     
@@ -636,6 +767,21 @@ Object.assign(ENEMIES, {
         level: 7,
         description: 'An animated pile of bones with rusty weapons',
         possibleDrops: ['health_potion', 'bone_dust', 'rusty_sword', 'medium_gem'],
+                abilities: [
+            {
+                id: 'bone_rattle',
+                name: 'Bone Rattle',
+                chance: 0.20,
+                mpCost: 8,
+                telegraph: 'shakes violently, bones clacking in a terrible rhythm...',
+                type: 'stun',
+                stunPips: 1,
+                stunDuration: 4,
+                damageMult: 0.5,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `💀 The ${enemyName}'s rattling cacophony is disorienting! The ${playerClass} loses an attack charge!`
+            }
+        ],
         dropRates: { common: 0.45, uncommon: 0.2, rare: 0.08, epic: 0.02 }
     },
     
@@ -651,6 +797,21 @@ Object.assign(ENEMIES, {
         level: 10,
         description: 'A spectral horror that feeds on life force',
         possibleDrops: ['greater_health_potion', 'shadowblade', 'soul_essence', 'large_gem'],
+                abilities: [
+            {
+                id: 'life_drain',
+                name: 'Life Drain',
+                chance: 0.35,
+                mpCost: 18,
+                telegraph: 'reaches out with spectral hands that seem to pull at your very essence...',
+                type: 'drain_hp',
+                drainAmount: 18,
+                healPercent: 1.0,
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `👻 The ${enemyName} tears at the ${playerClass}'s life force! <b>18 HP drained</b> — the wraith grows more solid.`
+            }
+        ],
         dropRates: { common: 0.3, uncommon: 0.25, rare: 0.2, epic: 0.12, legendary: 0.05 }
     },
     
@@ -666,6 +827,22 @@ Object.assign(ENEMIES, {
         level: 9,
         description: 'A living criminal who steals from the dead',
         possibleDrops: ['health_potion', 'gold_coins', 'lockpicks', 'medium_gem'],
+                abilities: [
+            {
+                id: 'smoke_bomb',
+                name: 'Smoke Bomb',
+                chance: 0.25,
+                mpCost: 10,
+                telegraph: 'reaches into a coat pocket with a knowing smirk...',
+                type: 'debuff',
+                debuff: 'blinded',
+                debuffDuration: 5000,
+                hitMissChance: 0.35,
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `💨 The ${enemyName} hurls a smoke bomb! Acrid black smoke engulfs the ${playerClass} — <span style="color:#ffaa44;">⚠️ 35% chance to miss.</span>`
+            }
+        ],
         dropRates: { common: 0.35, uncommon: 0.3, rare: 0.15, epic: 0.08, legendary: 0.02 }
     },
     
@@ -681,6 +858,21 @@ Object.assign(ENEMIES, {
         level: 7,
         description: 'A ghostly apparition bound to the graveyard',
         possibleDrops: ['mana_potion', 'ectoplasm', 'spirit_essence', 'medium_gem'],
+                abilities: [
+            {
+                id: 'mournful_wail',
+                name: 'Mournful Wail',
+                chance: 0.25,
+                mpCost: 12,
+                telegraph: 'opens its mouth and emits a haunting, wordless cry...',
+                type: 'intimidate',
+                damagePenalty: 0.20,
+                intimidateDuration: 5000,
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `👻 The ${enemyName}'s wail chills the ${playerClass} to the bone! <span style="color:#ffaa44;">⚠️ -20% damage for 5 seconds.</span>`
+            }
+        ],
         dropRates: { common: 0.4, uncommon: 0.25, rare: 0.12, epic: 0.04 }
     },
 
@@ -804,6 +996,22 @@ Object.assign(ENEMIES, {
         level: 7,
         description: 'A shadow-cloaked humanoid that hunts by heat and heartbeat',
         possibleDrops: ['health_potion', 'shadow_cloth', 'dark_essence', 'medium_gem'],
+                abilities: [
+            {
+                id: 'shadowmeld',
+                name: 'Shadowmeld',
+                chance: 0.30,
+                mpCost: 12,
+                telegraph: 'dissolves into the surrounding darkness...',
+                type: 'debuff',
+                debuff: 'blinded',
+                debuffDuration: 5000,
+                hitMissChance: 0.35,
+                damageMult: 1.3,
+                armorPiercing: 0.15,
+                applyMessage: (enemyName, playerClass) => `🌑 The ${enemyName} strikes from the shadows! The ${playerClass} can barely see — <span style="color:#ffaa44;">⚠️ 35% chance to miss.</span>`
+            }
+        ],
         dropRates: { common: 0.38, uncommon: 0.25, rare: 0.12, epic: 0.04 }
     },
 
@@ -819,6 +1027,26 @@ Object.assign(ENEMIES, {
         level: 7,
         description: 'A shambling mass of animated fungus that releases toxic spores',
         possibleDrops: ['health_potion', 'spore_sac', 'fungal_extract', 'medium_gem'],
+                abilities: [
+            {
+                id: 'spore_cloud',
+                name: 'Spore Cloud',
+                chance: 0.30,
+                mpCost: 14,
+                telegraph: 'swells grotesquely, ready to burst...',
+                type: 'burn',
+                dot: {
+                    name: 'Poisoned',
+                    icon: '💚',
+                    damage: 6,
+                    tickInterval: 2500,
+                    ticks: 4,
+                },
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🍄 The ${enemyName} erupts in a cloud of toxic spores! The ${playerClass} inhales the poison — <b>Poisoned!</b>`
+            }
+        ],
         dropRates: { common: 0.4, uncommon: 0.25, rare: 0.1, epic: 0.03 }
     },
 
@@ -838,6 +1066,33 @@ Object.assign(ENEMIES, {
         level: 11,
         description: 'A massive regenerating beast with incredible strength',
         possibleDrops: ['greater_health_potion', 'steel_sword', 'steel_plate', 'large_gem', 'warhammer'],
+                abilities: [
+            {
+                id: 'smash',
+                name: 'Smash',
+                chance: 0.30,
+                mpCost: 16,
+                hpThreshold: 0.50,
+                telegraph: 'raises both fists and bellows with mindless rage...',
+                type: 'heavy_hit',
+                damageMult: 2.0,
+                armorPiercing: 0.15,
+                applyMessage: (enemyName, playerClass) => `🪨 The ${enemyName} SMASHES! The ground shakes from the impact!`
+            },
+            {
+                id: 'troll_regen',
+                name: 'Troll Regeneration',
+                chance: 0.40,
+                mpCost: 14,
+                lowHpThreshold: 0.45,
+                telegraph: 'growls as the wounds on its body begin to close...',
+                type: 'leech',
+                damageMult: 0.7,
+                healRatio: 0.8,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🟢 The ${enemyName}'s flesh knits back together as it strikes! Troll regeneration is terrifying to behold.`
+            }
+        ],
         dropRates: { common: 0.3, uncommon: 0.25, rare: 0.2, epic: 0.1, legendary: 0.03 }
     },
     
@@ -853,6 +1108,21 @@ Object.assign(ENEMIES, {
         level: 11,
         description: 'An animated skeleton in ancient armor',
         possibleDrops: ['health_potion', 'bone_dust', 'cursed_sword', 'large_gem'],
+                abilities: [
+            {
+                id: 'shield_bash',
+                name: 'Shield Bash',
+                chance: 0.25,
+                mpCost: 14,
+                telegraph: 'steps forward and braces behind its ancient shield...',
+                type: 'stun',
+                stunPips: 1,
+                stunDuration: 5,
+                damageMult: 1.3,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🛡️ The ${enemyName} BASHES with its shield! The ${playerClass} is staggered — attack charge lost!`
+            }
+        ],
         dropRates: { common: 0.35, uncommon: 0.25, rare: 0.15, epic: 0.08, legendary: 0.02 }
     },
     
@@ -868,6 +1138,39 @@ Object.assign(ENEMIES, {
         level: 12,
         description: 'A corrupted spellcaster wielding shadow magic',
         possibleDrops: ['mana_potion', 'greater_mana_potion', 'flame_staff', 'enchanted_robes', 'large_gem'],
+                abilities: [
+            {
+                id: 'mana_siphon',
+                name: 'Mana Siphon',
+                chance: 0.30,
+                mpCost: 0,
+                hpThreshold: 0.70,
+                telegraph: 'traces arcane sigils in the air and reaches toward you...',
+                type: 'drain_mp',
+                drainAmount: 25,
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🔮 The ${enemyName} tears mana from the ${playerClass}! <b>25 MP drained!</b>`
+            },
+            {
+                id: 'shadow_bolt',
+                name: 'Shadow Bolt',
+                chance: 0.25,
+                mpCost: 20,
+                telegraph: 'conjures a crackling orb of shadow energy...',
+                type: 'burn',
+                dot: {
+                    name: 'Cursed',
+                    icon: '💜',
+                    damage: 8,
+                    tickInterval: 3500,
+                    ticks: 3,
+                },
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `💜 The ${enemyName}'s shadow bolt strikes! Dark energy courses through the ${playerClass} — <b>Cursed!</b>`
+            }
+        ],
         dropRates: { common: 0.25, uncommon: 0.3, rare: 0.2, epic: 0.12, legendary: 0.05 }
     },
     
@@ -883,6 +1186,26 @@ Object.assign(ENEMIES, {
         level: 13,
         description: 'A lesser dragon that dwells in caves',
         possibleDrops: ['greater_health_potion', 'drake_scale', 'dragon_tooth', 'large_gem'],
+                abilities: [
+            {
+                id: 'fire_breath',
+                name: 'Fire Breath',
+                chance: 0.30,
+                mpCost: 18,
+                telegraph: 'inhales deeply, smoke trickling from its nostrils...',
+                type: 'burn',
+                dot: {
+                    name: 'Burning',
+                    icon: '🔥',
+                    damage: 10,
+                    tickInterval: 2000,
+                    ticks: 4,
+                },
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🔥 The ${enemyName} EXHALES a cone of fire! The ${playerClass} is engulfed — <b>Burning!</b>`
+            }
+        ],
         dropRates: { common: 0.25, uncommon: 0.25, rare: 0.22, epic: 0.15, legendary: 0.08 }
     },
     
@@ -898,6 +1221,21 @@ Object.assign(ENEMIES, {
         level: 13,
         description: 'An animated construct of living stone',
         possibleDrops: ['greater_health_potion', 'golem_core', 'stone_armor', 'large_gem'],
+                abilities: [
+            {
+                id: 'pulverize',
+                name: 'Pulverize',
+                chance: 0.25,
+                mpCost: 18,
+                telegraph: 'raises one massive stone fist, cracks forming in the floor...',
+                type: 'rend',
+                defReduction: 0.35,
+                rendDuration: 10000,
+                damageMult: 1.6,
+                armorPiercing: 0.20,
+                applyMessage: (enemyName, playerClass) => `🪨 The ${enemyName} PULVERIZES! The devastating blow shatters the ${playerClass}'s armor! <span style="color:#ffaa44;">⚠️ Defense reduced for 10 seconds!</span>`
+            }
+        ],
         dropRates: { common: 0.3, uncommon: 0.25, rare: 0.2, epic: 0.12, legendary: 0.05 }
     },
     
@@ -913,6 +1251,34 @@ Object.assign(ENEMIES, {
         level: 12,
         description: 'A dim-witted giant with a massive club',
         possibleDrops: ['greater_health_potion', 'warhammer', 'steel_plate', 'large_gem'],
+                abilities: [
+            {
+                id: 'club_slam',
+                name: 'Club Slam',
+                chance: 0.30,
+                mpCost: 16,
+                hpThreshold: 0.60,
+                telegraph: 'lifts its massive club with both hands and grunts...',
+                type: 'heavy_hit',
+                damageMult: 2.0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🪵 The ${enemyName} SLAMS its club! Pure brute force sends the ${playerClass} reeling!`
+            },
+            {
+                id: 'armor_break',
+                name: 'Armor Break',
+                chance: 0.25,
+                mpCost: 12,
+                lowHpThreshold: 0.45,
+                telegraph: 'swings in a wild arc, aiming at your equipment...',
+                type: 'rend',
+                defReduction: 0.30,
+                rendDuration: 9000,
+                damageMult: 1.2,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `💥 The ${enemyName}'s wild blow SMASHES the ${playerClass}'s armor! <span style="color:#ffaa44;">⚠️ Defense reduced for 9 seconds!</span>`
+            }
+        ],
         dropRates: { common: 0.3, uncommon: 0.25, rare: 0.18, epic: 0.1, legendary: 0.03 }
     },
     
@@ -929,6 +1295,40 @@ Object.assign(ENEMIES, {
         level: 13,
         description: 'A wicked witch who lives in the bog',
         possibleDrops: ['greater_mana_potion', 'witch_brew', 'cursed_amulet', 'large_gem'],
+                abilities: [
+            {
+                id: 'hex',
+                name: 'Hex',
+                chance: 0.25,
+                mpCost: 16,
+                telegraph: 'mutters a string of guttural syllables and points a gnarled finger at you...',
+                type: 'debuff',
+                debuff: 'blinded',
+                debuffDuration: 5000,
+                hitMissChance: 0.35,
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🧿 The ${enemyName} casts a HEX! Darkness clouds the ${playerClass}'s vision — <span style="color:#ffaa44;">⚠️ 35% chance to miss.</span>`
+            },
+            {
+                id: 'wither',
+                name: 'Wither',
+                chance: 0.25,
+                mpCost: 18,
+                telegraph: 'draws a rune in the fetid water and cackles...',
+                type: 'burn',
+                dot: {
+                    name: 'Withering',
+                    icon: '🌑',
+                    damage: 7,
+                    tickInterval: 3500,
+                    ticks: 4,
+                },
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🌑 The ${enemyName}'s curse takes hold! The ${playerClass} withers — <b>Withering!</b>`
+            }
+        ],
         dropRates: { common: 0.25, uncommon: 0.3, rare: 0.2, epic: 0.12, legendary: 0.06 }
     },
     
@@ -944,6 +1344,26 @@ Object.assign(ENEMIES, {
         level: 12,
         description: 'A diseased undead that spreads infection',
         possibleDrops: ['greater_health_potion', 'plague_sample', 'bone_dust', 'large_gem'],
+                abilities: [
+            {
+                id: 'plague_touch',
+                name: 'Plague Touch',
+                chance: 0.35,
+                mpCost: 12,
+                telegraph: 'reaches toward you with blackened, suppurating fingers...',
+                type: 'dot_attack',
+                dot: {
+                    name: 'Plague',
+                    icon: '☣️',
+                    damage: 6,
+                    tickInterval: 2500,
+                    ticks: 5,
+                },
+                damageMult: 0.8,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `☣️ The ${enemyName}'s diseased touch infects the ${playerClass}! <b>Plague spreads through your veins!</b>`
+            }
+        ],
         dropRates: { common: 0.35, uncommon: 0.25, rare: 0.15, epic: 0.08, legendary: 0.02 }
     },
     
@@ -959,6 +1379,20 @@ Object.assign(ENEMIES, {
         level: 12,
         description: 'A blood-sucking parasite the size of a person',
         possibleDrops: ['health_potion', 'leech_extract', 'blood_vial', 'medium_gem'],
+                abilities: [
+            {
+                id: 'latch',
+                name: 'Latch',
+                chance: 0.35,
+                mpCost: 14,
+                telegraph: 'lunges with its sucker-mouth gaping wide...',
+                type: 'leech',
+                damageMult: 0.8,
+                healRatio: 0.6,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🩸 The ${enemyName} LATCHES onto the ${playerClass}, drinking greedily! The wound heals the leech!`
+            }
+        ],
         dropRates: { common: 0.4, uncommon: 0.25, rare: 0.15, epic: 0.05 }
     },
     
@@ -974,6 +1408,40 @@ Object.assign(ENEMIES, {
         level: 14,
         description: 'A monstrous creature made of mud and vines',
         possibleDrops: ['greater_health_potion', 'swamp_heart', 'bog_armor', 'large_gem'],
+                abilities: [
+            {
+                id: 'drag_under',
+                name: 'Drag Under',
+                chance: 0.30,
+                mpCost: 16,
+                telegraph: 'surges forward with vine-wrapped arms outstretched...',
+                type: 'debuff',
+                debuff: 'constricted',
+                dodgePenalty: 1.0,
+                debuffDuration: 5000,
+                damageMult: 1.3,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🌿 The ${enemyName} seizes the ${playerClass} and drags them into the mire! <b>Constricted — cannot dodge!</b>`
+            },
+            {
+                id: 'bog_rot',
+                name: 'Bog Rot',
+                chance: 0.25,
+                mpCost: 14,
+                telegraph: 'exhales a noxious, bubbling breath...',
+                type: 'burn',
+                dot: {
+                    name: 'Corroding',
+                    icon: '🟤',
+                    damage: 5,
+                    tickInterval: 3000,
+                    ticks: 5,
+                },
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🟤 The ${enemyName} breathes bog-rot! The ${playerClass}'s equipment begins to corrode — <b>Corroding!</b>`
+            }
+        ],
         dropRates: { common: 0.25, uncommon: 0.25, rare: 0.22, epic: 0.15, legendary: 0.08 }
     },
     
@@ -989,6 +1457,40 @@ Object.assign(ENEMIES, {
         level: 15,
         description: 'An ancient tree twisted by dark magic',
         possibleDrops: ['greater_health_potion', 'ironwood', 'nature_essence', 'huge_gem'],
+                abilities: [
+            {
+                id: 'entangle',
+                name: 'Entangle',
+                chance: 0.30,
+                mpCost: 16,
+                telegraph: 'slams twisted roots into the earth around your feet...',
+                type: 'debuff',
+                debuff: 'constricted',
+                dodgePenalty: 1.0,
+                debuffDuration: 6000,
+                damageMult: 1.1,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🌿 The ${enemyName} ENTANGLES the ${playerClass} in dark roots! <b>Constricted — cannot dodge!</b>`
+            },
+            {
+                id: 'dark_sap',
+                name: 'Dark Sap',
+                chance: 0.25,
+                mpCost: 16,
+                telegraph: 'leaks a viscous black ichor from its bark...',
+                type: 'burn',
+                dot: {
+                    name: 'Withering',
+                    icon: '🌑',
+                    damage: 7,
+                    tickInterval: 3500,
+                    ticks: 4,
+                },
+                damageMult: 0.8,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🌑 The ${enemyName}'s dark sap seeps into wounds! The ${playerClass} begins to <b>Wither!</b>`
+            }
+        ],
         dropRates: { common: 0.25, uncommon: 0.25, rare: 0.22, epic: 0.15, legendary: 0.1 }
     },
     
@@ -1005,6 +1507,26 @@ Object.assign(ENEMIES, {
         level: 14,
         description: 'A fallen warrior bound to guard these ruins',
         possibleDrops: ['greater_health_potion', 'cursed_blade', 'ancient_armor', 'large_gem'],
+                abilities: [
+            {
+                id: 'death_mark',
+                name: 'Death Mark',
+                chance: 0.25,
+                mpCost: 18,
+                telegraph: 'traces a glowing rune onto its blade with one gauntleted finger...',
+                type: 'dot_attack',
+                dot: {
+                    name: 'Cursed',
+                    icon: '💜',
+                    damage: 8,
+                    tickInterval: 3500,
+                    ticks: 4,
+                },
+                damageMult: 1.2,
+                armorPiercing: 0.25,
+                applyMessage: (enemyName, playerClass) => `💜 The ${enemyName} strikes with a cursed blade! A death mark burns into the ${playerClass}'s flesh — <b>Cursed!</b>`
+            }
+        ],
         dropRates: { common: 0.25, uncommon: 0.25, rare: 0.22, epic: 0.15, legendary: 0.08 }
     },
     
@@ -1020,6 +1542,22 @@ Object.assign(ENEMIES, {
         level: 14,
         description: 'A creature born from darkness itself',
         possibleDrops: ['greater_health_potion', 'shadowblade', 'dark_essence', 'large_gem'],
+                abilities: [
+            {
+                id: 'eclipse_strike',
+                name: 'Eclipse Strike',
+                chance: 0.30,
+                mpCost: 18,
+                telegraph: 'flickers and becomes almost invisible, only a faint outline visible...',
+                type: 'debuff',
+                debuff: 'blinded',
+                debuffDuration: 6000,
+                hitMissChance: 0.40,
+                damageMult: 1.6,
+                armorPiercing: 0.30,
+                applyMessage: (enemyName, playerClass) => `🌑 The ${enemyName} strikes from a pocket of pure darkness! The ${playerClass} is blinded — <span style="color:#ffaa44;">⚠️ 40% miss chance, 6 seconds.</span>`
+            }
+        ],
         dropRates: { common: 0.3, uncommon: 0.25, rare: 0.2, epic: 0.12, legendary: 0.06 }
     },
     
@@ -1035,6 +1573,33 @@ Object.assign(ENEMIES, {
         level: 16,
         description: 'An ancient magical construct still on duty',
         possibleDrops: ['greater_health_potion', 'guardian_core', 'enchanted_plate', 'huge_gem'],
+                abilities: [
+            {
+                id: 'arcane_pulse',
+                name: 'Arcane Pulse',
+                chance: 0.25,
+                mpCost: 22,
+                telegraph: 'runes etched across its stone body flare with blinding white light...',
+                type: 'stun',
+                stunPips: 2,
+                stunDuration: 5,
+                damageMult: 1.0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `⚡ The ${enemyName} discharges a blast of ward-energy! The ${playerClass} is staggered — <b>2 attack charges lost!</b>`
+            },
+            {
+                id: 'stone_slam',
+                name: 'Stone Slam',
+                chance: 0.25,
+                mpCost: 18,
+                hpThreshold: 0.50,
+                telegraph: 'raises one enormous stone fist high above its head...',
+                type: 'heavy_hit',
+                damageMult: 1.9,
+                armorPiercing: 0.20,
+                applyMessage: (enemyName, playerClass) => `🪨 The ${enemyName} brings its full weight DOWN! The impact craters the stone floor!`
+            }
+        ],
         dropRates: { common: 0.2, uncommon: 0.25, rare: 0.25, epic: 0.18, legendary: 0.1 }
     },
     
@@ -1050,6 +1615,35 @@ Object.assign(ENEMIES, {
         level: 15,
         description: 'The ghost of a legendary warrior',
         possibleDrops: ['greater_health_potion', 'spectral_blade', 'ghost_essence', 'large_gem'],
+                abilities: [
+            {
+                id: 'phase_shift',
+                name: 'Phase Shift',
+                chance: 0.30,
+                mpCost: 20,
+                telegraph: 'becomes translucent, body flickering between planes...',
+                type: 'debuff',
+                debuff: 'blinded',
+                debuffDuration: 5000,
+                hitMissChance: 0.40,
+                damageMult: 1.4,
+                armorPiercing: 0.50,
+                applyMessage: (enemyName, playerClass) => `👻 The ${enemyName} phases through the ${playerClass}'s guard, striking from another plane! Armor is useless — <span style="color:#ffaa44;">⚠️ 40% miss chance.</span>`
+            },
+            {
+                id: 'soul_sap',
+                name: 'Soul Sap',
+                chance: 0.25,
+                mpCost: 18,
+                telegraph: 'extends a gauntlet that shimmers like heat-haze...',
+                type: 'drain_hp',
+                drainAmount: 20,
+                healPercent: 0.8,
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `💙 The ${enemyName} saps the ${playerClass}'s soul! <b>20 HP drained</b> — a warrior even in death.`
+            }
+        ],
         dropRates: { common: 0.25, uncommon: 0.25, rare: 0.22, epic: 0.15, legendary: 0.08 }
     },
     
@@ -1065,7 +1659,39 @@ Object.assign(ENEMIES, {
         level: 16,
         description: 'A corrupted cleric who worships dark gods',
         possibleDrops: ['greater_mana_potion', 'cursed_staff', 'dark_robes', 'huge_gem'],
-        dropRates: { common: 0.2, uncommon: 0.25, rare: 0.25, epic: 0.18, legendary: 0.1 }
+        dropRates: { common: 0.2, uncommon: 0.25, rare: 0.25, epic: 0.18, legendary: 0.1 },
+        abilities: [
+            {
+                id: 'dark_blessing',
+                name: 'Dark Blessing',
+                chance: 0.30,
+                mpCost: 20,
+                telegraph: 'kneels briefly and whispers to something that should not exist...',
+                type: 'burn',
+                dot: {
+                    name: 'Cursed',
+                    icon: '💜',
+                    damage: 9,
+                    tickInterval: 3500,
+                    ticks: 4,
+                },
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `💜 The ${enemyName} calls upon dark gods! A terrible curse descends on the ${playerClass} — <b>Cursed!</b>`
+            },
+            {
+                id: 'unholy_drain',
+                name: 'Unholy Drain',
+                chance: 0.25,
+                mpCost: 0,
+                telegraph: 'raises its staff and speaks words that hurt to hear...',
+                type: 'drain_mp',
+                drainAmount: 30,
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🔮 The ${enemyName} siphons the ${playerClass}'s magical reserves! <b>30 MP drained!</b>`
+            }
+        ]
     },
 
     // ═══════════════════════════════════════════════════════════════
@@ -1659,7 +2285,49 @@ Object.assign(ENEMIES, {
         description: 'A centuries-old blood-drinking undead',
         possibleDrops: ['greater_health_potion', 'vampire_blade', 'noble_robes', 'huge_gem', 'blood_ruby'],
         dropRates: { common: 0.15, uncommon: 0.25, rare: 0.25, epic: 0.2, legendary: 0.12, mythic: 0.05 },
-        isBoss: true
+        isBoss: true,
+        abilities: [
+            {
+                id: 'vampire_bite',
+                name: 'Vampire Bite',
+                chance: 0.35,
+                mpCost: 18,
+                telegraph: 'inhales slowly, fangs extending with predatory patience...',
+                type: 'leech',
+                damageMult: 0.9,
+                healRatio: 0.8,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🩸 The ${enemyName} BITES and drinks deeply! Centuries of hunger feed — HP stolen!`
+            },
+            {
+                id: 'beguile',
+                name: 'Beguile',
+                chance: 0.25,
+                mpCost: 14,
+                telegraph: 'fixes you with ancient, hypnotic eyes...',
+                type: 'debuff',
+                debuff: 'blinded',
+                debuffDuration: 6000,
+                hitMissChance: 0.40,
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🌀 The ${enemyName} beguiles the ${playerClass}! Hypnotic compulsion clouds the mind — <span style="color:#ffaa44;">⚠️ 40% miss chance, 6 seconds.</span>`
+            },
+            {
+                id: 'mist_form',
+                name: 'Mist Form',
+                chance: 0.25,
+                mpCost: 16,
+                lowHpThreshold: 0.45,
+                telegraph: 'dissolves into cold mist and reforms with renewed hunger...',
+                type: 'drain_hp',
+                drainAmount: 28,
+                healPercent: 1.0,
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `💨 The ${enemyName} flows through the ${playerClass} as mist! Vitality stolen in passing — <b>28 HP drained!</b>`
+            }
+        ]
     },
 
     // ═══════════════════════════════════════════════════════════════
@@ -2030,7 +2698,23 @@ Object.assign(ENEMIES, {
         level: 7,
         description: 'A skeleton marksman that pins you from the shadows',
         possibleDrops: ['health_potion', 'bone_dust', 'cursed_bow', 'medium_gem'],
-        dropRates: { common: 0.4, uncommon: 0.25, rare: 0.1, epic: 0.03 }
+        dropRates: { common: 0.4, uncommon: 0.25, rare: 0.1, epic: 0.03 },
+        abilities: [
+            {
+                id: 'volley',
+                name: 'Volley',
+                chance: 0.25,
+                mpCost: 10,
+                telegraph: 'notches two arrows and draws back with dead, hollow eyes...',
+                type: 'debuff',
+                debuff: 'blinded',
+                debuffDuration: 4000,
+                hitMissChance: 0.30,
+                damageMult: 0.9,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🏹 The {enemyName} fires a volley of bone arrows! Splinters blind the {playerClass} — <span style='color:#ffaa44;'>⚠️ 30% miss chance.</span>`
+            },
+        ]
     },
 
     shadow_hound: {
@@ -2045,7 +2729,20 @@ Object.assign(ENEMIES, {
         level: 7,
         description: 'A dog-shaped hole in the darkness that hunts by smell',
         possibleDrops: ['health_potion', 'shadow_essence', 'medium_gem'],
-        dropRates: { common: 0.4, uncommon: 0.25, rare: 0.12, epic: 0.04 }
+        dropRates: { common: 0.4, uncommon: 0.25, rare: 0.12, epic: 0.04 },
+        abilities: [
+            {
+                id: 'shadow_pounce',
+                name: 'Shadow Pounce',
+                chance: 0.3,
+                mpCost: 14,
+                telegraph: 'hunches low, bleeding into the shadows...',
+                type: 'heavy_hit',
+                damageMult: 1.9,
+                armorPiercing: 0.2,
+                applyMessage: (enemyName, playerClass) => `🌑 The {enemyName} erupts from shadow! The {playerClass} never saw it coming!`
+            },
+        ]
     },
 
     crypt_bat: {
@@ -2060,7 +2757,22 @@ Object.assign(ENEMIES, {
         level: 7,
         description: 'Enormous bat that nests in fresh grave mounds',
         possibleDrops: ['health_potion', 'bat_wing', 'medium_gem'],
-        dropRates: { common: 0.48, uncommon: 0.2, rare: 0.07, epic: 0.02 }
+        dropRates: { common: 0.48, uncommon: 0.2, rare: 0.07, epic: 0.02 },
+        abilities: [
+            {
+                id: 'crypt_screech',
+                name: 'Screech',
+                chance: 0.25,
+                mpCost: 8,
+                telegraph: 'opens its jaws and lets out a piercing, guttural cry...',
+                type: 'stun',
+                stunPips: 1,
+                stunDuration: 4,
+                damageMult: 0.4,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🦇 The {enemyName} SCREECHES! The sonic assault staggers the {playerClass} — attack charge lost!`
+            },
+        ]
     },
 
     wailing_banshee: {
@@ -2075,7 +2787,35 @@ Object.assign(ENEMIES, {
         level: 7,
         description: 'Her scream alone can crack headstones',
         possibleDrops: ['mana_potion', 'ectoplasm', 'medium_gem'],
-        dropRates: { common: 0.38, uncommon: 0.28, rare: 0.14, epic: 0.05 }
+        dropRates: { common: 0.38, uncommon: 0.28, rare: 0.14, epic: 0.05 },
+        abilities: [
+            {
+                id: 'death_wail',
+                name: 'Death Wail',
+                chance: 0.3,
+                mpCost: 15,
+                telegraph: 'throws back her head and inhales...',
+                type: 'stun',
+                stunPips: 1,
+                stunDuration: 5,
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `💀 The {enemyName}'s soul-rending wail hits like a physical blow! The {playerClass} is stunned — attack charge lost!`
+            },
+            {
+                id: 'keen_lament',
+                name: 'Keen',
+                chance: 0.25,
+                mpCost: 12,
+                telegraph: 'fixes her hollow eyes on you and begins a low, keening moan...',
+                type: 'intimidate',
+                damagePenalty: 0.25,
+                intimidateDuration: 6000,
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `👻 The {enemyName}'s lament fills the {playerClass} with dread — <span style='color:#ffaa44;'>⚠️ -25% damage for 6 seconds.</span>`
+            },
+        ]
     },
 
     grave_knight: {
@@ -2090,7 +2830,27 @@ Object.assign(ENEMIES, {
         level: 7,
         description: 'A corrupted paladin still dutifully guarding his eternal post',
         possibleDrops: ['health_potion', 'cursed_sword', 'medium_gem'],
-        dropRates: { common: 0.35, uncommon: 0.28, rare: 0.15, epic: 0.06 }
+        dropRates: { common: 0.35, uncommon: 0.28, rare: 0.15, epic: 0.06 },
+        abilities: [
+            {
+                id: 'cursed_strike',
+                name: 'Cursed Strike',
+                chance: 0.25,
+                mpCost: 14,
+                telegraph: 'raises its corrupted blade and murmurs a dark oath...',
+                type: 'dot_attack',
+                dot: {
+                    name: 'Cursed',
+                    icon: '💜',
+                    damage: 6,
+                    tickInterval: 3500,
+                    ticks: 3,
+                },
+                damageMult: 1.1,
+                armorPiercing: 0.15,
+                applyMessage: (enemyName, playerClass) => `💜 The {enemyName}'s cursed sword strikes! Dark energy lingers in the wound — <b>Cursed!</b>`
+            },
+        ]
     },
 
     // ── LEVEL 8 ── (Plains/Graveyard additions)
@@ -2106,7 +2866,21 @@ Object.assign(ENEMIES, {
         level: 8,
         description: 'Fights naked and screaming — somehow more dangerous for it',
         possibleDrops: ['health_potion', 'warhammer', 'medium_gem'],
-        dropRates: { common: 0.35, uncommon: 0.28, rare: 0.15, epic: 0.06 }
+        dropRates: { common: 0.35, uncommon: 0.28, rare: 0.15, epic: 0.06 },
+        abilities: [
+            {
+                id: 'blood_frenzy',
+                name: 'Blood Frenzy',
+                chance: 0.35,
+                mpCost: 16,
+                lowHpThreshold: 0.5,
+                telegraph: 'roars incoherently and begins to froth at the mouth...',
+                type: 'heavy_hit',
+                damageMult: 2.1,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🪓 The {enemyName} enters BLOOD FRENZY — a wild, ferocious assault!`
+            },
+        ]
     },
 
     giant_beetle: {
@@ -2121,7 +2895,27 @@ Object.assign(ENEMIES, {
         level: 8,
         description: 'Sprays boiling acid. The shell is the least of your problems',
         possibleDrops: ['health_potion', 'chitin_armor', 'medium_gem'],
-        dropRates: { common: 0.4, uncommon: 0.25, rare: 0.12, epic: 0.04 }
+        dropRates: { common: 0.4, uncommon: 0.25, rare: 0.12, epic: 0.04 },
+        abilities: [
+            {
+                id: 'acid_spray',
+                name: 'Acid Spray',
+                chance: 0.3,
+                mpCost: 14,
+                telegraph: 'rotates its abdomen toward you with an ominous gurgle...',
+                type: 'burn',
+                dot: {
+                    name: 'Corroding',
+                    icon: '🟤',
+                    damage: 7,
+                    tickInterval: 3000,
+                    ticks: 4,
+                },
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🟤 The {enemyName} SPRAYS boiling acid! The {playerClass}'s armor and flesh corrode — <b>Corroding!</b>`
+            },
+        ]
     },
 
     plague_bearer: {
@@ -2136,7 +2930,27 @@ Object.assign(ENEMIES, {
         level: 8,
         description: 'A walking haze of pestilence and despair',
         possibleDrops: ['health_potion', 'plague_sample', 'medium_gem'],
-        dropRates: { common: 0.42, uncommon: 0.24, rare: 0.1, epic: 0.03 }
+        dropRates: { common: 0.42, uncommon: 0.24, rare: 0.1, epic: 0.03 },
+        abilities: [
+            {
+                id: 'festering_touch',
+                name: 'Festering Touch',
+                chance: 0.3,
+                mpCost: 12,
+                telegraph: 'lurches forward, oozing black ichor from every pore...',
+                type: 'dot_attack',
+                dot: {
+                    name: 'Plague',
+                    icon: '☣️',
+                    damage: 6,
+                    tickInterval: 2500,
+                    ticks: 4,
+                },
+                damageMult: 0.9,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `☣️ The {enemyName}'s touch festers! The {playerClass} is infected — <b>Plagued!</b>`
+            },
+        ]
     },
 
     minotaur_scout: {
@@ -2151,7 +2965,27 @@ Object.assign(ENEMIES, {
         level: 8,
         description: 'Outrider of a minotaur warband — never comes alone for long',
         possibleDrops: ['health_potion', 'iron_sword', 'medium_gem'],
-        dropRates: { common: 0.35, uncommon: 0.28, rare: 0.15, epic: 0.06 }
+        dropRates: { common: 0.35, uncommon: 0.28, rare: 0.15, epic: 0.06 },
+        abilities: [
+            {
+                id: 'gore',
+                name: 'Gore',
+                chance: 0.3,
+                mpCost: 16,
+                telegraph: 'lowers its horns and scrapes a hoof across the ground...',
+                type: 'dot_attack',
+                dot: {
+                    name: 'Bleeding',
+                    icon: '🩸',
+                    damage: 6,
+                    tickInterval: 3000,
+                    ticks: 3,
+                },
+                damageMult: 1.6,
+                armorPiercing: 0.2,
+                applyMessage: (enemyName, playerClass) => `🐂 The {enemyName} GORES the {playerClass}! Horns tear through the side — <b>Bleeding!</b>`
+            },
+        ]
     },
 
     will_o_wisp: {
@@ -2166,7 +3000,34 @@ Object.assign(ENEMIES, {
         level: 8,
         description: 'A dancing light that lures travelers into bogs and eats them',
         possibleDrops: ['mana_potion', 'wisp_essence', 'medium_gem'],
-        dropRates: { common: 0.35, uncommon: 0.3, rare: 0.18, epic: 0.08 }
+        dropRates: { common: 0.35, uncommon: 0.3, rare: 0.18, epic: 0.08 },
+        abilities: [
+            {
+                id: 'lure',
+                name: 'Lure',
+                chance: 0.3,
+                mpCost: 10,
+                telegraph: 'pulses with an irresistible, shifting light...',
+                type: 'drain_mp',
+                drainAmount: 20,
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🌟 The {enemyName}'s hypnotic light pulls at the {playerClass}'s concentration — <b>20 MP drained!</b>`
+            },
+            {
+                id: 'ethereal_touch',
+                name: 'Ethereal Touch',
+                chance: 0.25,
+                mpCost: 14,
+                telegraph: 'drifts close, light flickering malevolently...',
+                type: 'drain_hp',
+                drainAmount: 14,
+                healPercent: 1.0,
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `💙 The {enemyName} drains vitality through its phantom touch — <b>14 HP stolen!</b>`
+            },
+        ]
     },
 
     // ── LEVEL 9 ── (Graveyard/Plains additions)
@@ -2182,7 +3043,27 @@ Object.assign(ENEMIES, {
         level: 9,
         description: 'A true believer who makes dying look like a hobby',
         possibleDrops: ['mana_potion', 'cursed_bone', 'gold_coins', 'medium_gem'],
-        dropRates: { common: 0.33, uncommon: 0.3, rare: 0.18, epic: 0.09, legendary: 0.02 }
+        dropRates: { common: 0.33, uncommon: 0.3, rare: 0.18, epic: 0.09, legendary: 0.02 },
+        abilities: [
+            {
+                id: 'martyrs_curse',
+                name: "Martyr's Curse",
+                chance: 0.25,
+                mpCost: 14,
+                telegraph: 'raises both arms and chants a droning liturgy of death...',
+                type: 'burn',
+                dot: {
+                    name: 'Cursed',
+                    icon: '💜',
+                    damage: 7,
+                    tickInterval: 3500,
+                    ticks: 4,
+                },
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `💜 The {enemyName} calls death down upon the {playerClass}! A dark curse takes hold — <b>Cursed!</b>`
+            },
+        ]
     },
 
     flesh_golem: {
@@ -2197,7 +3078,35 @@ Object.assign(ENEMIES, {
         level: 9,
         description: 'A stitched-together horror, unhappy about its existence',
         possibleDrops: ['health_potion', 'golem_core', 'large_gem'],
-        dropRates: { common: 0.33, uncommon: 0.28, rare: 0.2, epic: 0.1, legendary: 0.03 }
+        dropRates: { common: 0.33, uncommon: 0.28, rare: 0.2, epic: 0.1, legendary: 0.03 },
+        abilities: [
+            {
+                id: 'golem_slam',
+                name: 'Slam',
+                chance: 0.3,
+                mpCost: 16,
+                hpThreshold: 0.55,
+                telegraph: 'lifts both arms overhead and groans with mechanical dread...',
+                type: 'heavy_hit',
+                damageMult: 1.9,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `💢 The {enemyName} SLAMS down with both fists! The force is immense!`
+            },
+            {
+                id: 'seam_burst',
+                name: 'Seam Burst',
+                chance: 0.2,
+                mpCost: 12,
+                lowHpThreshold: 0.45,
+                telegraph: 'the stitching across its torso tears and oozes...',
+                type: 'rend',
+                defReduction: 0.25,
+                rendDuration: 8000,
+                damageMult: 0.8,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🩸 The {enemyName}'s burst seams spray the {playerClass}! <span style='color:#ffaa44;'>⚠️ Defense reduced for 8 seconds!</span>`
+            },
+        ]
     },
 
     specter: {
@@ -2212,7 +3121,35 @@ Object.assign(ENEMIES, {
         level: 9,
         description: 'A ghost so ancient it barely remembers what it was angry about',
         possibleDrops: ['mana_potion', 'soul_essence', 'large_gem'],
-        dropRates: { common: 0.35, uncommon: 0.28, rare: 0.18, epic: 0.08, legendary: 0.02 }
+        dropRates: { common: 0.35, uncommon: 0.28, rare: 0.18, epic: 0.08, legendary: 0.02 },
+        abilities: [
+            {
+                id: 'soul_chill',
+                name: 'Soul Chill',
+                chance: 0.3,
+                mpCost: 16,
+                telegraph: 'reaches forward with translucent hands that pulse with cold light...',
+                type: 'drain_hp',
+                drainAmount: 16,
+                healPercent: 0.8,
+                damageMult: 0,
+                armorPiercing: 0.4,
+                applyMessage: (enemyName, playerClass) => `👻 The {enemyName} reaches through the {playerClass}! Soul-cold drains the will to fight — <b>16 HP stolen!</b>`
+            },
+            {
+                id: 'terrifying_presence',
+                name: 'Terrifying Presence',
+                chance: 0.2,
+                mpCost: 10,
+                telegraph: 'floats closer, all features fading into featureless dread...',
+                type: 'intimidate',
+                damagePenalty: 0.25,
+                intimidateDuration: 5000,
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `😱 The {enemyName}'s presence freezes the {playerClass}'s blood — <span style='color:#ffaa44;'>⚠️ -25% damage for 5 seconds.</span>`
+            },
+        ]
     },
 
     gnoll_chief: {
@@ -2227,7 +3164,22 @@ Object.assign(ENEMIES, {
         level: 9,
         description: 'The biggest, meanest hyena-man in the pack',
         possibleDrops: ['health_potion', 'warhammer', 'medium_gem'],
-        dropRates: { common: 0.32, uncommon: 0.3, rare: 0.2, epic: 0.1, legendary: 0.03 }
+        dropRates: { common: 0.32, uncommon: 0.3, rare: 0.2, epic: 0.1, legendary: 0.03 },
+        abilities: [
+            {
+                id: 'warchant',
+                name: 'Warchant',
+                chance: 0.25,
+                mpCost: 12,
+                telegraph: 'beats its chest and unleashes a barking war-cry...',
+                type: 'intimidate',
+                damagePenalty: 0.25,
+                intimidateDuration: 6000,
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🐾 The {enemyName} rallies the pack with a savage Warchant! The {playerClass} is unnerved — <span style='color:#ffaa44;'>⚠️ -25% damage for 6 seconds.</span>`
+            },
+        ]
     },
 
     vampire_thrall: {
@@ -2242,7 +3194,22 @@ Object.assign(ENEMIES, {
         level: 9,
         description: 'A human servant of a vampire, dangerously devoted',
         possibleDrops: ['health_potion', 'blood_vial', 'medium_gem'],
-        dropRates: { common: 0.38, uncommon: 0.28, rare: 0.16, epic: 0.07, legendary: 0.01 }
+        dropRates: { common: 0.38, uncommon: 0.28, rare: 0.16, epic: 0.07, legendary: 0.01 },
+        abilities: [
+            {
+                id: 'blood_drain',
+                name: 'Blood Drain',
+                chance: 0.3,
+                mpCost: 14,
+                telegraph: 'lunges and bites, eyes rolling back in devotional ecstasy...',
+                type: 'leech',
+                drainAmount: 14,
+                healRatio: 0.7,
+                damageMult: 0.8,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🩸 The {enemyName} bites and drinks! Blood feeds the thrall — <b>HP stolen!</b>`
+            },
+        ]
     },
 
     // ── LEVEL 10 ── (Swamp additions)
@@ -2258,7 +3225,40 @@ Object.assign(ENEMIES, {
         level: 10,
         description: 'Three heads means three chances to hate you at once',
         possibleDrops: ['greater_health_potion', 'hydra_scale', 'large_gem'],
-        dropRates: { common: 0.28, uncommon: 0.28, rare: 0.22, epic: 0.14, legendary: 0.05 }
+        dropRates: { common: 0.28, uncommon: 0.28, rare: 0.22, epic: 0.14, legendary: 0.05 },
+        abilities: [
+            {
+                id: 'triple_bite',
+                name: 'Triple Bite',
+                chance: 0.3,
+                mpCost: 18,
+                telegraph: 'all three heads dart forward simultaneously...',
+                type: 'dot_attack',
+                dot: {
+                    name: 'Bleeding',
+                    icon: '🩸',
+                    damage: 7,
+                    tickInterval: 3000,
+                    ticks: 3,
+                },
+                damageMult: 1.5,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🐉 All three heads of the {enemyName} strike at once! The {playerClass} is <b>Bleeding!</b>`
+            },
+            {
+                id: 'hydra_regen',
+                name: 'Hydra Regeneration',
+                chance: 0.35,
+                mpCost: 14,
+                lowHpThreshold: 0.5,
+                telegraph: 'the stumps of its necks begin to bubble and pulse...',
+                type: 'leech',
+                healRatio: 0.7,
+                damageMult: 0.6,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🟢 The {enemyName} regenerates as it feeds! Its wounds close before your eyes.`
+            },
+        ]
     },
 
     bog_shambler: {
@@ -2273,7 +3273,34 @@ Object.assign(ENEMIES, {
         level: 10,
         description: 'Half mud, half moss, entirely hostile',
         possibleDrops: ['health_potion', 'swamp_heart', 'large_gem'],
-        dropRates: { common: 0.35, uncommon: 0.26, rare: 0.2, epic: 0.1, legendary: 0.03 }
+        dropRates: { common: 0.35, uncommon: 0.26, rare: 0.2, epic: 0.1, legendary: 0.03 },
+        abilities: [
+            {
+                id: 'bog_slam',
+                name: 'Bog Slam',
+                chance: 0.25,
+                mpCost: 14,
+                telegraph: 'raises a limb dripping with stagnant bog-water...',
+                type: 'heavy_hit',
+                damageMult: 1.8,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `💥 The {enemyName} SLAMS! Mud and force knock the {playerClass} off their feet!`
+            },
+            {
+                id: 'mire',
+                name: 'Mire',
+                chance: 0.25,
+                mpCost: 12,
+                telegraph: 'splashes murky water across the ground at your feet...',
+                type: 'debuff',
+                debuff: 'constricted',
+                dodgePenalty: 1.0,
+                debuffDuration: 4000,
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🟫 The {enemyName} mires the {playerClass} in thick bog-mud! <b>Cannot dodge!</b>`
+            },
+        ]
     },
 
     rotting_knight: {
@@ -2288,7 +3315,27 @@ Object.assign(ENEMIES, {
         level: 10,
         description: 'Fully armored and mostly decomposed',
         possibleDrops: ['health_potion', 'ancient_sword', 'large_gem'],
-        dropRates: { common: 0.3, uncommon: 0.27, rare: 0.22, epic: 0.12, legendary: 0.04 }
+        dropRates: { common: 0.3, uncommon: 0.27, rare: 0.22, epic: 0.12, legendary: 0.04 },
+        abilities: [
+            {
+                id: 'unholy_swing',
+                name: 'Unholy Swing',
+                chance: 0.25,
+                mpCost: 16,
+                telegraph: 'its decayed arm swings in a wide, crushing arc...',
+                type: 'dot_attack',
+                dot: {
+                    name: 'Cursed',
+                    icon: '💜',
+                    damage: 7,
+                    tickInterval: 3500,
+                    ticks: 3,
+                },
+                damageMult: 1.2,
+                armorPiercing: 0.2,
+                applyMessage: (enemyName, playerClass) => `💜 The {enemyName}'s cursed blade strikes! Dark residue clings to the {playerClass}'s wounds — <b>Cursed!</b>`
+            },
+        ]
     },
 
     poison_drake: {
@@ -2303,7 +3350,27 @@ Object.assign(ENEMIES, {
         level: 10,
         description: 'A winged reptile that spits venom instead of fire',
         possibleDrops: ['greater_health_potion', 'drake_scale', 'snake_venom', 'large_gem'],
-        dropRates: { common: 0.28, uncommon: 0.27, rare: 0.23, epic: 0.14, legendary: 0.05 }
+        dropRates: { common: 0.28, uncommon: 0.27, rare: 0.23, epic: 0.14, legendary: 0.05 },
+        abilities: [
+            {
+                id: 'venom_spit',
+                name: 'Venom Spit',
+                chance: 0.35,
+                mpCost: 14,
+                telegraph: 'rears back and hacks up a mouthful of black bile...',
+                type: 'burn',
+                dot: {
+                    name: 'Poisoned',
+                    icon: '💚',
+                    damage: 9,
+                    tickInterval: 3000,
+                    ticks: 4,
+                },
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `💚 The {enemyName} spits a stream of venom! The {playerClass} is drenched — <b>Poisoned!</b>`
+            },
+        ]
     },
 
     swamp_witch: {
@@ -2318,7 +3385,41 @@ Object.assign(ENEMIES, {
         level: 10,
         description: 'Cackles while hurling hexes. Not in the fun way',
         possibleDrops: ['greater_mana_potion', 'witch_brew', 'cursed_amulet', 'large_gem'],
-        dropRates: { common: 0.25, uncommon: 0.3, rare: 0.24, epic: 0.14, legendary: 0.06 }
+        dropRates: { common: 0.25, uncommon: 0.3, rare: 0.24, epic: 0.14, legendary: 0.06 },
+        abilities: [
+            {
+                id: 'swamp_hex',
+                name: 'Swamp Hex',
+                chance: 0.25,
+                mpCost: 16,
+                telegraph: 'traces a drowned-man rune in the air with one finger...',
+                type: 'debuff',
+                debuff: 'blinded',
+                debuffDuration: 5000,
+                hitMissChance: 0.35,
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🧿 The {enemyName} hexes the {playerClass}! A miasma blinds their sight — <span style='color:#ffaa44;'>⚠️ 35% miss chance.</span>`
+            },
+            {
+                id: 'swamp_wither',
+                name: 'Withering Curse',
+                chance: 0.25,
+                mpCost: 18,
+                telegraph: 'stirs a black cauldron and speaks to the water...',
+                type: 'burn',
+                dot: {
+                    name: 'Withering',
+                    icon: '🌑',
+                    damage: 6,
+                    tickInterval: 3500,
+                    ticks: 4,
+                },
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🌑 The {enemyName}'s curse saps the {playerClass}'s vitality — <b>Withering!</b>`
+            },
+        ]
     },
 
     // ── LEVEL 11 ── (Cave/Swamp additions)
@@ -2334,7 +3435,36 @@ Object.assign(ENEMIES, {
         level: 11,
         description: 'Avoid eye contact. Seriously. Eyes closed. Trust me',
         possibleDrops: ['greater_health_potion', 'basilisk_eye', 'stone_armor', 'large_gem'],
-        dropRates: { common: 0.28, uncommon: 0.27, rare: 0.22, epic: 0.14, legendary: 0.05 }
+        dropRates: { common: 0.28, uncommon: 0.27, rare: 0.22, epic: 0.14, legendary: 0.05 },
+        abilities: [
+            {
+                id: 'petrifying_gaze',
+                name: 'Petrifying Gaze',
+                chance: 0.3,
+                mpCost: 18,
+                telegraph: 'fixes you with a terrible, unblinking stare...',
+                type: 'stun',
+                stunPips: 2,
+                stunDuration: 5,
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🐍 The {enemyName}'s gaze locks the {playerClass} in place! Stone begins to creep across the skin — <b>2 attack charges lost!</b>`
+            },
+            {
+                id: 'tail_lash',
+                name: 'Tail Lash',
+                chance: 0.25,
+                mpCost: 12,
+                telegraph: 'coils its tail and whips it with tremendous force...',
+                type: 'debuff',
+                debuff: 'constricted',
+                dodgePenalty: 1.0,
+                debuffDuration: 5000,
+                damageMult: 1.4,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🐉 The {enemyName}'s tail lash knocks the {playerClass} prone! <b>Cannot dodge!</b>`
+            },
+        ]
     },
 
     iron_golem: {
@@ -2349,7 +3479,34 @@ Object.assign(ENEMIES, {
         level: 11,
         description: 'Slow, relentless, not interested in your excuses',
         possibleDrops: ['greater_health_potion', 'golem_core', 'iron_ingot', 'large_gem'],
-        dropRates: { common: 0.3, uncommon: 0.25, rare: 0.22, epic: 0.14, legendary: 0.05 }
+        dropRates: { common: 0.3, uncommon: 0.25, rare: 0.22, epic: 0.14, legendary: 0.05 },
+        abilities: [
+            {
+                id: 'iron_fist',
+                name: 'Iron Fist',
+                chance: 0.25,
+                mpCost: 16,
+                hpThreshold: 0.6,
+                telegraph: 'draws back one massive iron arm in a slow, grinding motion...',
+                type: 'heavy_hit',
+                damageMult: 2.0,
+                armorPiercing: 0.2,
+                applyMessage: (enemyName, playerClass) => `⚙️ The {enemyName}'s iron fist CONNECTS — the impact would crack stone!`
+            },
+            {
+                id: 'ward_pulse',
+                name: 'Ward Pulse',
+                chance: 0.2,
+                mpCost: 14,
+                telegraph: 'runes engraved on its chest flare with stored energy...',
+                type: 'stun',
+                stunPips: 1,
+                stunDuration: 4,
+                damageMult: 0.5,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `⚡ The {enemyName} discharges ward energy! The {playerClass} is staggered — attack charge lost!`
+            },
+        ]
     },
 
     lich_thrall: {
@@ -2364,7 +3521,27 @@ Object.assign(ENEMIES, {
         level: 11,
         description: 'A loyal undead servant that shares its master\'s ruthlessness',
         possibleDrops: ['health_potion', 'bone_dust', 'cursed_bone', 'large_gem'],
-        dropRates: { common: 0.32, uncommon: 0.27, rare: 0.2, epic: 0.12, legendary: 0.04 }
+        dropRates: { common: 0.32, uncommon: 0.27, rare: 0.2, epic: 0.12, legendary: 0.04 },
+        abilities: [
+            {
+                id: 'necrotic_touch',
+                name: 'Necrotic Touch',
+                chance: 0.3,
+                mpCost: 14,
+                telegraph: 'reaches out with hands that reek of the grave...',
+                type: 'dot_attack',
+                dot: {
+                    name: 'Cursed',
+                    icon: '💜',
+                    damage: 7,
+                    tickInterval: 3500,
+                    ticks: 3,
+                },
+                damageMult: 1.0,
+                armorPiercing: 0.15,
+                applyMessage: (enemyName, playerClass) => `💜 The {enemyName}'s necrotic touch rots the {playerClass}'s flesh — <b>Cursed!</b>`
+            },
+        ]
     },
 
     banshee_queen: {
@@ -2379,7 +3556,35 @@ Object.assign(ENEMIES, {
         level: 11,
         description: 'An upgrade. The scream cracks stone walls',
         possibleDrops: ['greater_mana_potion', 'ectoplasm', 'soul_essence', 'large_gem'],
-        dropRates: { common: 0.25, uncommon: 0.3, rare: 0.24, epic: 0.14, legendary: 0.06 }
+        dropRates: { common: 0.25, uncommon: 0.3, rare: 0.24, epic: 0.14, legendary: 0.06 },
+        abilities: [
+            {
+                id: 'shriek',
+                name: 'Shriek',
+                chance: 0.3,
+                mpCost: 20,
+                telegraph: 'draws in a vast breath, her face splitting into a scream...',
+                type: 'stun',
+                stunPips: 2,
+                stunDuration: 5,
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `💀 The {enemyName} SHRIEKS! The soul-rending sound stuns the {playerClass} solid — <b>2 attack charges lost!</b>`
+            },
+            {
+                id: 'queen_drain',
+                name: 'Soul Drain',
+                chance: 0.25,
+                mpCost: 16,
+                telegraph: 'reaches through the air with spectral fingers...',
+                type: 'drain_hp',
+                drainAmount: 20,
+                healPercent: 1.0,
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `👻 The {enemyName} drinks the {playerClass}'s soul! <b>20 HP drained!</b>`
+            },
+        ]
     },
 
     werewolf: {
@@ -2394,7 +3599,40 @@ Object.assign(ENEMIES, {
         level: 11,
         description: 'Once a normal person. Definitely not anymore',
         possibleDrops: ['greater_health_potion', 'wolf_pelt', 'silver_fang', 'large_gem'],
-        dropRates: { common: 0.28, uncommon: 0.28, rare: 0.22, epic: 0.14, legendary: 0.06 }
+        dropRates: { common: 0.28, uncommon: 0.28, rare: 0.22, epic: 0.14, legendary: 0.06 },
+        abilities: [
+            {
+                id: 'savage_rend',
+                name: 'Savage Rend',
+                chance: 0.3,
+                mpCost: 16,
+                telegraph: 'bares yellowed fangs and lunges with terrifying speed...',
+                type: 'dot_attack',
+                dot: {
+                    name: 'Bleeding',
+                    icon: '🩸',
+                    damage: 8,
+                    tickInterval: 3000,
+                    ticks: 3,
+                },
+                damageMult: 1.3,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🩸 The {enemyName} RENDS the {playerClass} with fang and claw! <b>Bleeding!</b>`
+            },
+            {
+                id: 'wolf_howl',
+                name: 'Howl',
+                chance: 0.25,
+                mpCost: 10,
+                telegraph: 'tilts its muzzle upward and howls at nothing...',
+                type: 'intimidate',
+                damagePenalty: 0.25,
+                intimidateDuration: 6000,
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🐺 The {enemyName} howls! Something primal in the {playerClass} recoils — <span style='color:#ffaa44;'>⚠️ -25% damage for 6 seconds.</span>`
+            },
+        ]
     },
 
     // ── LEVEL 12 ── (Swamp/Cave additions)
@@ -2410,7 +3648,40 @@ Object.assign(ENEMIES, {
         level: 12,
         description: 'Snake-haired and furious about it',
         possibleDrops: ['greater_mana_potion', 'basilisk_eye', 'snake_skin', 'large_gem'],
-        dropRates: { common: 0.25, uncommon: 0.3, rare: 0.24, epic: 0.14, legendary: 0.06 }
+        dropRates: { common: 0.25, uncommon: 0.3, rare: 0.24, epic: 0.14, legendary: 0.06 },
+        abilities: [
+            {
+                id: 'stone_gaze',
+                name: 'Stone Gaze',
+                chance: 0.25,
+                mpCost: 18,
+                telegraph: 'her serpent hair stills, and she fixes you with her eyes...',
+                type: 'stun',
+                stunPips: 2,
+                stunDuration: 5,
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🐍 The {enemyName}'s gaze petrifies! Marble spreads across the {playerClass}'s skin — <b>2 attack charges lost!</b>`
+            },
+            {
+                id: 'serpent_bite',
+                name: 'Serpent Bite',
+                chance: 0.3,
+                mpCost: 14,
+                telegraph: 'one of the snakes in her hair darts forward...',
+                type: 'dot_attack',
+                dot: {
+                    name: 'Poisoned',
+                    icon: '💚',
+                    damage: 8,
+                    tickInterval: 3000,
+                    ticks: 4,
+                },
+                damageMult: 0.7,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `💚 A snake from the {enemyName}'s hair bites deep! <b>Poisoned!</b>`
+            },
+        ]
     },
 
     chaos_imp: {
@@ -2425,7 +3696,39 @@ Object.assign(ENEMIES, {
         level: 12,
         description: 'Random spells, random target. You may not be the target. May',
         possibleDrops: ['mana_potion', 'imp_dust', 'chaos_essence', 'large_gem'],
-        dropRates: { common: 0.28, uncommon: 0.28, rare: 0.22, epic: 0.14, legendary: 0.06 }
+        dropRates: { common: 0.28, uncommon: 0.28, rare: 0.22, epic: 0.14, legendary: 0.06 },
+        abilities: [
+            {
+                id: 'chaos_bolt',
+                name: 'Chaos Bolt',
+                chance: 0.3,
+                mpCost: 14,
+                telegraph: 'cackles and flings a crackling orb with no apparent target...',
+                type: 'burn',
+                dot: {
+                    name: 'Cursed',
+                    icon: '💜',
+                    damage: 8,
+                    tickInterval: 3000,
+                    ticks: 3,
+                },
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `💜 The {enemyName}'s chaotic bolt detonates on the {playerClass}! Raw dark energy burns — <b>Cursed!</b>`
+            },
+            {
+                id: 'chaos_drain',
+                name: 'Chaos Drain',
+                chance: 0.25,
+                mpCost: 0,
+                telegraph: 'reaches toward you and giggles unpleasantly...',
+                type: 'drain_mp',
+                drainAmount: 22,
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🔮 The {enemyName} randomly siphons the {playerClass}'s power — <b>22 MP drained!</b>`
+            },
+        ]
     },
 
     cave_worm: {
@@ -2440,7 +3743,41 @@ Object.assign(ENEMIES, {
         level: 12,
         description: 'Forty feet of teeth, no eyes, extremely fast',
         possibleDrops: ['greater_health_potion', 'worm_hide', 'large_gem'],
-        dropRates: { common: 0.3, uncommon: 0.26, rare: 0.22, epic: 0.13, legendary: 0.05 }
+        dropRates: { common: 0.3, uncommon: 0.26, rare: 0.22, epic: 0.13, legendary: 0.05 },
+        abilities: [
+            {
+                id: 'swallow',
+                name: 'Swallow',
+                chance: 0.25,
+                mpCost: 18,
+                telegraph: 'gapes open its enormous segmented maw...',
+                type: 'debuff',
+                debuff: 'constricted',
+                dodgePenalty: 1.0,
+                debuffDuration: 6000,
+                damageMult: 1.5,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `😱 The {enemyName} attempts to SWALLOW the {playerClass}! Caught in the crushing gullet — <b>Cannot dodge!</b>`
+            },
+            {
+                id: 'acid_digest',
+                name: 'Acid Digest',
+                chance: 0.2,
+                mpCost: 14,
+                telegraph: 'a terrible gurgling emanates from deep within its body...',
+                type: 'burn',
+                dot: {
+                    name: 'Corroding',
+                    icon: '🟤',
+                    damage: 7,
+                    tickInterval: 2500,
+                    ticks: 4,
+                },
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🟤 The {enemyName}'s digestive acid sprays out! The {playerClass} is <b>Corroding!</b>`
+            },
+        ]
     },
 
     dark_ranger: {
@@ -2455,7 +3792,41 @@ Object.assign(ENEMIES, {
         level: 12,
         description: 'A veteran scout who switched sides for better pay',
         possibleDrops: ['greater_health_potion', 'longbow', 'dark_essence', 'large_gem'],
-        dropRates: { common: 0.27, uncommon: 0.3, rare: 0.23, epic: 0.13, legendary: 0.05 }
+        dropRates: { common: 0.27, uncommon: 0.3, rare: 0.23, epic: 0.13, legendary: 0.05 },
+        abilities: [
+            {
+                id: 'crippling_shot',
+                name: 'Crippling Arrow',
+                chance: 0.25,
+                mpCost: 12,
+                telegraph: 'draws and aims in a single practiced motion...',
+                type: 'debuff',
+                debuff: 'blinded',
+                debuffDuration: 5000,
+                hitMissChance: 0.35,
+                damageMult: 0.8,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🏹 The {enemyName} shoots for the eyes! The {playerClass} is blinded — <span style='color:#ffaa44;'>⚠️ 35% miss chance.</span>`
+            },
+            {
+                id: 'poison_arrow',
+                name: 'Poisoned Arrow',
+                chance: 0.25,
+                mpCost: 14,
+                telegraph: 'reaches into a dark quiver with a grin...',
+                type: 'dot_attack',
+                dot: {
+                    name: 'Poisoned',
+                    icon: '💚',
+                    damage: 8,
+                    tickInterval: 3000,
+                    ticks: 4,
+                },
+                damageMult: 0.9,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `💚 The {enemyName}'s black-tipped arrow finds the mark — <b>Poisoned!</b>`
+            },
+        ]
     },
 
     animated_armor: {
@@ -2470,7 +3841,35 @@ Object.assign(ENEMIES, {
         level: 12,
         description: 'Empty inside. Very full of sword swings',
         possibleDrops: ['greater_health_potion', 'ancient_armor', 'large_gem'],
-        dropRates: { common: 0.3, uncommon: 0.27, rare: 0.22, epic: 0.12, legendary: 0.04 }
+        dropRates: { common: 0.3, uncommon: 0.27, rare: 0.22, epic: 0.12, legendary: 0.04 },
+        abilities: [
+            {
+                id: 'clanging_strike',
+                name: 'Clanging Strike',
+                chance: 0.25,
+                mpCost: 12,
+                telegraph: 'crashes gauntlet against breastplate in a deafening clang...',
+                type: 'stun',
+                stunPips: 1,
+                stunDuration: 4,
+                damageMult: 1.2,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `⚙️ The {enemyName} clashes with ear-splitting force! The {playerClass} is stunned — attack charge lost!`
+            },
+            {
+                id: 'armor_crush',
+                name: 'Armor Crush',
+                chance: 0.25,
+                mpCost: 14,
+                telegraph: 'swings in a wide arc, aiming directly at your protection...',
+                type: 'rend',
+                defReduction: 0.25,
+                rendDuration: 9000,
+                damageMult: 1.3,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `💥 The {enemyName} crushes the {playerClass}'s armor! <span style='color:#ffaa44;'>⚠️ Defense reduced for 9 seconds.</span>`
+            },
+        ]
     },
 
     // ── LEVEL 13 ── (Ruins additions)
@@ -2486,7 +3885,41 @@ Object.assign(ENEMIES, {
         level: 13,
         description: 'Fire-breath, shadow-step, zero patience',
         possibleDrops: ['greater_health_potion', 'hellfire_fang', 'large_gem'],
-        dropRates: { common: 0.27, uncommon: 0.28, rare: 0.23, epic: 0.14, legendary: 0.06 }
+        dropRates: { common: 0.27, uncommon: 0.28, rare: 0.23, epic: 0.14, legendary: 0.06 },
+        abilities: [
+            {
+                id: 'hellfire_breath',
+                name: 'Hellfire Breath',
+                chance: 0.3,
+                mpCost: 16,
+                telegraph: 'opens its jaws and an orange glow builds in its throat...',
+                type: 'burn',
+                dot: {
+                    name: 'Burning',
+                    icon: '🔥',
+                    damage: 9,
+                    tickInterval: 2000,
+                    ticks: 4,
+                },
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🔥 The {enemyName} breathes hellfire! The {playerClass} is set ablaze — <b>Burning!</b>`
+            },
+            {
+                id: 'shadow_step',
+                name: 'Shadow Step',
+                chance: 0.25,
+                mpCost: 12,
+                telegraph: 'vanishes into a shadow and reappears behind you...',
+                type: 'debuff',
+                debuff: 'blinded',
+                debuffDuration: 4000,
+                hitMissChance: 0.35,
+                damageMult: 1.4,
+                armorPiercing: 0.2,
+                applyMessage: (enemyName, playerClass) => `🌑 The {enemyName} teleports through shadow! The {playerClass} loses track — <span style='color:#ffaa44;'>⚠️ 35% miss chance.</span>`
+            },
+        ]
     },
 
     chaos_knight: {
@@ -2501,7 +3934,39 @@ Object.assign(ENEMIES, {
         level: 13,
         description: 'A mercenary who pledged himself to entropy and thriving',
         possibleDrops: ['greater_health_potion', 'cursed_blade', 'chaos_armor', 'large_gem'],
-        dropRates: { common: 0.25, uncommon: 0.28, rare: 0.25, epic: 0.15, legendary: 0.07 }
+        dropRates: { common: 0.25, uncommon: 0.28, rare: 0.25, epic: 0.15, legendary: 0.07 },
+        abilities: [
+            {
+                id: 'chaos_rend',
+                name: 'Chaos Rend',
+                chance: 0.3,
+                mpCost: 18,
+                telegraph: 'the blade glows with unstable, shifting energy...',
+                type: 'dot_attack',
+                dot: {
+                    name: 'Cursed',
+                    icon: '💜',
+                    damage: 8,
+                    tickInterval: 3500,
+                    ticks: 4,
+                },
+                damageMult: 1.3,
+                armorPiercing: 0.2,
+                applyMessage: (enemyName, playerClass) => `💜 The {enemyName}'s chaotic blade tears through the {playerClass}! Chaos energy corrupts the wound — <b>Cursed!</b>`
+            },
+            {
+                id: 'chaos_charge',
+                name: 'Chaos Charge',
+                chance: 0.25,
+                mpCost: 16,
+                hpThreshold: 0.6,
+                telegraph: 'lowers its lance and screams a battle-prayer to entropy...',
+                type: 'heavy_hit',
+                damageMult: 2.0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `⚡ The {enemyName} CHARGES! Raw chaos energy amplifies the blow!`
+            },
+        ]
     },
 
     runic_guardian: {
@@ -2516,7 +3981,36 @@ Object.assign(ENEMIES, {
         level: 13,
         description: 'Built from the runes of an ancient fallen city',
         possibleDrops: ['greater_health_potion', 'guardian_core', 'rune_shard', 'large_gem'],
-        dropRates: { common: 0.27, uncommon: 0.27, rare: 0.24, epic: 0.14, legendary: 0.06 }
+        dropRates: { common: 0.27, uncommon: 0.27, rare: 0.24, epic: 0.14, legendary: 0.06 },
+        abilities: [
+            {
+                id: 'rune_blast',
+                name: 'Rune Blast',
+                chance: 0.25,
+                mpCost: 18,
+                telegraph: 'the runes on its frame pulse once, bright white...',
+                type: 'stun',
+                stunPips: 1,
+                stunDuration: 5,
+                damageMult: 1.0,
+                armorPiercing: 0.15,
+                applyMessage: (enemyName, playerClass) => `⚡ The {enemyName} discharges carved rune-energy! The {playerClass} is blasted back — attack charge lost!`
+            },
+            {
+                id: 'stone_grip',
+                name: 'Stone Grip',
+                chance: 0.25,
+                mpCost: 14,
+                telegraph: 'extends a hand and the ground around you begins to shift...',
+                type: 'debuff',
+                debuff: 'constricted',
+                dodgePenalty: 1.0,
+                debuffDuration: 5000,
+                damageMult: 1.2,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🪨 The {enemyName} seizes the {playerClass} in a stone grip! <b>Cannot dodge!</b>`
+            },
+        ]
     },
 
     phantom_mage: {
@@ -2531,7 +4025,39 @@ Object.assign(ENEMIES, {
         level: 13,
         description: 'Spellcaster who learned invisibility before etiquette',
         possibleDrops: ['greater_mana_potion', 'arcane_dust', 'enchanted_robes', 'large_gem'],
-        dropRates: { common: 0.23, uncommon: 0.3, rare: 0.25, epic: 0.15, legendary: 0.07 }
+        dropRates: { common: 0.23, uncommon: 0.3, rare: 0.25, epic: 0.15, legendary: 0.07 },
+        abilities: [
+            {
+                id: 'phantom_bolt',
+                name: 'Phantom Bolt',
+                chance: 0.3,
+                mpCost: 18,
+                telegraph: 'a crackling bolt of ghostly energy forms at its fingertips...',
+                type: 'burn',
+                dot: {
+                    name: 'Cursed',
+                    icon: '💜',
+                    damage: 9,
+                    tickInterval: 3500,
+                    ticks: 4,
+                },
+                damageMult: 0,
+                armorPiercing: 0.3,
+                applyMessage: (enemyName, playerClass) => `💜 The {enemyName}'s phantom bolt sears through the {playerClass}'s defenses — <b>Cursed!</b>`
+            },
+            {
+                id: 'arcane_drain',
+                name: 'Arcane Drain',
+                chance: 0.25,
+                mpCost: 0,
+                telegraph: 'makes a gesture that seems to pull something invisible from you...',
+                type: 'drain_mp',
+                drainAmount: 28,
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🔮 The {enemyName} strips raw mana from the {playerClass}! <b>28 MP drained!</b>`
+            },
+        ]
     },
 
     gargoyle: {
@@ -2546,7 +4072,34 @@ Object.assign(ENEMIES, {
         level: 13,
         description: 'Was once a decoration. Developed ambitions',
         possibleDrops: ['greater_health_potion', 'stone_armor', 'large_gem'],
-        dropRates: { common: 0.3, uncommon: 0.26, rare: 0.22, epic: 0.13, legendary: 0.05 }
+        dropRates: { common: 0.3, uncommon: 0.26, rare: 0.22, epic: 0.13, legendary: 0.05 },
+        abilities: [
+            {
+                id: 'stone_dive',
+                name: 'Stone Dive',
+                chance: 0.3,
+                mpCost: 16,
+                hpThreshold: 0.55,
+                telegraph: 'ascends to the ceiling and folds its wings...',
+                type: 'heavy_hit',
+                damageMult: 1.9,
+                armorPiercing: 0.2,
+                applyMessage: (enemyName, playerClass) => `🪨 The {enemyName} DIVES from above! Stone-hard wings and claws crush the {playerClass}!`
+            },
+            {
+                id: 'gargoyle_screech',
+                name: 'Screech',
+                chance: 0.2,
+                mpCost: 10,
+                telegraph: 'opens a maw of carved stone and emits an awful grinding cry...',
+                type: 'stun',
+                stunPips: 1,
+                stunDuration: 4,
+                damageMult: 0.3,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `😱 The {enemyName}'s stone-scraping screech shocks the {playerClass}! Attack charge lost!`
+            },
+        ]
     },
 
     // ── LEVEL 14 ── (Ruins additions)
@@ -2562,7 +4115,36 @@ Object.assign(ENEMIES, {
         level: 14,
         description: 'Has strong opinions about the definition of "alive"',
         possibleDrops: ['greater_mana_potion', 'necromantic_staff', 'cursed_bone', 'large_gem'],
-        dropRates: { common: 0.22, uncommon: 0.3, rare: 0.26, epic: 0.16, legendary: 0.08 }
+        dropRates: { common: 0.22, uncommon: 0.3, rare: 0.26, epic: 0.16, legendary: 0.08 },
+        abilities: [
+            {
+                id: 'raise_dead',
+                name: 'Raise Dead',
+                chance: 0.25,
+                mpCost: 20,
+                telegraph: 'thrusts a staff into the earth and chants with hollow authority...',
+                type: 'summon',
+                summonKey: 'skeleton',
+                summonCount: 1,
+                maxSummons: 2,
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `💀 The {enemyName} raises the dead! A skeleton claws free of the earth!`
+            },
+            {
+                id: 'life_siphon',
+                name: 'Life Siphon',
+                chance: 0.25,
+                mpCost: 16,
+                telegraph: 'traces a complex rune in the air between you...',
+                type: 'drain_hp',
+                drainAmount: 22,
+                healPercent: 1.0,
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `💙 The {enemyName}'s siphon tears vitality from the {playerClass} — <b>22 HP drained!</b>`
+            },
+        ]
     },
 
     abyssal_hound: {
@@ -2577,7 +4159,40 @@ Object.assign(ENEMIES, {
         level: 14,
         description: 'Bred in a dimension that does not want you in it',
         possibleDrops: ['greater_health_potion', 'shadow_essence', 'large_gem'],
-        dropRates: { common: 0.25, uncommon: 0.28, rare: 0.25, epic: 0.15, legendary: 0.07 }
+        dropRates: { common: 0.25, uncommon: 0.28, rare: 0.25, epic: 0.15, legendary: 0.07 },
+        abilities: [
+            {
+                id: 'void_bite',
+                name: 'Void Bite',
+                chance: 0.3,
+                mpCost: 16,
+                telegraph: 'snaps with jaws that seem to pull surrounding light into them...',
+                type: 'dot_attack',
+                dot: {
+                    name: 'Withering',
+                    icon: '🌑',
+                    damage: 8,
+                    tickInterval: 3500,
+                    ticks: 4,
+                },
+                damageMult: 1.2,
+                armorPiercing: 0.25,
+                applyMessage: (enemyName, playerClass) => `🌑 The {enemyName}'s void-laced fangs bite! The {playerClass} begins to <b>Wither!</b>`
+            },
+            {
+                id: 'void_howl',
+                name: 'Void Howl',
+                chance: 0.2,
+                mpCost: 12,
+                telegraph: 'throws back its head and unleashes a silent howl...',
+                type: 'intimidate',
+                damagePenalty: 0.30,
+                intimidateDuration: 6000,
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🌑 The {enemyName}'s void-howl silences all courage! <span style='color:#ffaa44;'>⚠️ -30% damage for 6 seconds.</span>`
+            },
+        ]
     },
 
     dark_champion: {
@@ -2592,7 +4207,34 @@ Object.assign(ENEMIES, {
         level: 14,
         description: 'Elite guard of a dead king, still taking the job seriously',
         possibleDrops: ['greater_health_potion', 'ancient_sword', 'ancient_armor', 'large_gem'],
-        dropRates: { common: 0.23, uncommon: 0.28, rare: 0.26, epic: 0.16, legendary: 0.08 }
+        dropRates: { common: 0.23, uncommon: 0.28, rare: 0.26, epic: 0.16, legendary: 0.08 },
+        abilities: [
+            {
+                id: 'heroic_smash',
+                name: 'Heroic Smash',
+                chance: 0.3,
+                mpCost: 18,
+                telegraph: 'grips its weapon in both hands and takes a winding stance...',
+                type: 'rend',
+                defReduction: 0.30,
+                rendDuration: 9000,
+                damageMult: 1.8,
+                armorPiercing: 0.2,
+                applyMessage: (enemyName, playerClass) => `⚔️ The {enemyName}'s devastating smash cracks the {playerClass}'s guard! <span style='color:#ffaa44;'>⚠️ Defense reduced 9 seconds.</span>`
+            },
+            {
+                id: 'champion_charge',
+                name: 'Champion Charge',
+                chance: 0.25,
+                mpCost: 16,
+                hpThreshold: 0.6,
+                telegraph: 'raises its ancient banner and lowers its lance...',
+                type: 'heavy_hit',
+                damageMult: 2.1,
+                armorPiercing: 0.15,
+                applyMessage: (enemyName, playerClass) => `⚔️ The {enemyName} CHARGES with the force of centuries of battle!`
+            },
+        ]
     },
 
     void_sprite: {
@@ -2607,7 +4249,39 @@ Object.assign(ENEMIES, {
         level: 14,
         description: 'A tiny pocket of absolute nothingness that bites',
         possibleDrops: ['greater_mana_potion', 'void_crystal', 'null_essence', 'large_gem'],
-        dropRates: { common: 0.22, uncommon: 0.3, rare: 0.26, epic: 0.16, legendary: 0.08 }
+        dropRates: { common: 0.22, uncommon: 0.3, rare: 0.26, epic: 0.16, legendary: 0.08 },
+        abilities: [
+            {
+                id: 'void_sting',
+                name: 'Void Sting',
+                chance: 0.3,
+                mpCost: 16,
+                telegraph: 'darts forward, trailing threads of absolute nothingness...',
+                type: 'drain_mp',
+                drainAmount: 25,
+                damageMult: 0.7,
+                armorPiercing: 0.4,
+                applyMessage: (enemyName, playerClass) => `🌑 The {enemyName} stings! The {playerClass}'s mana bleeds into the void — <b>25 MP drained!</b>`
+            },
+            {
+                id: 'unravel',
+                name: 'Unravel',
+                chance: 0.25,
+                mpCost: 14,
+                telegraph: 'spins in a tight circle, reality warping around it...',
+                type: 'burn',
+                dot: {
+                    name: 'Withering',
+                    icon: '🌑',
+                    damage: 9,
+                    tickInterval: 3500,
+                    ticks: 3,
+                },
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🌑 The {enemyName} unravels the {playerClass}'s cohesion! They begin to <b>Wither!</b>`
+            },
+        ]
     },
 
     magma_elemental: {
@@ -2622,7 +4296,40 @@ Object.assign(ENEMIES, {
         level: 14,
         description: 'Lava given a terrible purpose',
         possibleDrops: ['greater_health_potion', 'fire_core', 'magma_core', 'large_gem'],
-        dropRates: { common: 0.25, uncommon: 0.27, rare: 0.25, epic: 0.15, legendary: 0.07 }
+        dropRates: { common: 0.25, uncommon: 0.27, rare: 0.25, epic: 0.15, legendary: 0.07 },
+        abilities: [
+            {
+                id: 'lava_splash',
+                name: 'Lava Splash',
+                chance: 0.3,
+                mpCost: 16,
+                telegraph: 'swells and erupts in a spray of molten rock...',
+                type: 'burn',
+                dot: {
+                    name: 'Burning',
+                    icon: '🔥',
+                    damage: 11,
+                    tickInterval: 2000,
+                    ticks: 4,
+                },
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🔥 The {enemyName} erupts with lava! The {playerClass} is splashed — <b>Burning!</b>`
+            },
+            {
+                id: 'slag_rend',
+                name: 'Slag Rend',
+                chance: 0.25,
+                mpCost: 14,
+                telegraph: 'drives a superheated fist across your armor...',
+                type: 'rend',
+                defReduction: 0.30,
+                rendDuration: 9000,
+                damageMult: 1.2,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🔥 The {enemyName}'s molten strike melts through armor! <span style='color:#ffaa44;'>⚠️ Defense reduced 9 seconds.</span>`
+            },
+        ]
     },
 
     // ── LEVEL 15 ── (Ruins additions)
@@ -2638,7 +4345,35 @@ Object.assign(ENEMIES, {
         level: 15,
         description: 'Older than the ruins it haunts, angrier than ever',
         possibleDrops: ['greater_health_potion', 'soul_essence', 'shadowblade', 'huge_gem'],
-        dropRates: { common: 0.2, uncommon: 0.28, rare: 0.28, epic: 0.17, legendary: 0.09 }
+        dropRates: { common: 0.2, uncommon: 0.28, rare: 0.28, epic: 0.17, legendary: 0.09 },
+        abilities: [
+            {
+                id: 'soul_consume',
+                name: 'Soul Consume',
+                chance: 0.3,
+                mpCost: 20,
+                telegraph: 'extends both arms and reality bends toward its hunger...',
+                type: 'drain_hp',
+                drainAmount: 25,
+                healPercent: 1.0,
+                damageMult: 0,
+                armorPiercing: 0.5,
+                applyMessage: (enemyName, playerClass) => `👻 The {enemyName} CONSUMES! The {playerClass}'s soul-force is ripped free — <b>25 HP drained!</b>`
+            },
+            {
+                id: 'elder_wail',
+                name: 'Elder Wail',
+                chance: 0.25,
+                mpCost: 18,
+                telegraph: 'opens a mouth that was never meant to make sound...',
+                type: 'intimidate',
+                damagePenalty: 0.30,
+                intimidateDuration: 7000,
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `💀 The {enemyName}'s wail has broken lesser warriors. The {playerClass} struggles — <span style='color:#ffaa44;'>⚠️ -30% damage for 7 seconds.</span>`
+            },
+        ]
     },
 
     black_knight: {
@@ -2653,7 +4388,34 @@ Object.assign(ENEMIES, {
         level: 15,
         description: "Refuses to acknowledge defeat. Refuses to acknowledge anything",
         possibleDrops: ['greater_health_potion', 'cursed_blade', 'ancient_armor', 'huge_gem'],
-        dropRates: { common: 0.2, uncommon: 0.28, rare: 0.28, epic: 0.17, legendary: 0.09 }
+        dropRates: { common: 0.2, uncommon: 0.28, rare: 0.28, epic: 0.17, legendary: 0.09 },
+        abilities: [
+            {
+                id: 'unyielding',
+                name: 'Unyielding Strike',
+                chance: 0.3,
+                mpCost: 18,
+                telegraph: 'speaks no words — simply advances with absolute intent...',
+                type: 'heavy_hit',
+                damageMult: 2.0,
+                armorPiercing: 0.25,
+                applyMessage: (enemyName, playerClass) => `⚔️ The {enemyName} strikes without hesitation! The blow is heavy and relentless!`
+            },
+            {
+                id: 'iron_will',
+                name: 'Iron Will',
+                chance: 0.2,
+                mpCost: 12,
+                lowHpThreshold: 0.4,
+                telegraph: 'absorbs a blow without reacting, then strikes back twice as hard...',
+                type: 'rend',
+                defReduction: 0.20,
+                rendDuration: 8000,
+                damageMult: 1.5,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🛡️ The {enemyName} fights through pain and rends the {playerClass}'s armor! <span style='color:#ffaa44;'>⚠️ Defense reduced 8 seconds.</span>`
+            },
+        ]
     },
 
     doom_cultist: {
@@ -2668,7 +4430,39 @@ Object.assign(ENEMIES, {
         level: 15,
         description: 'Enthusiastically working toward everyone\'s extinction',
         possibleDrops: ['greater_mana_potion', 'cursed_amulet', 'chaos_essence', 'huge_gem'],
-        dropRates: { common: 0.2, uncommon: 0.28, rare: 0.27, epic: 0.17, legendary: 0.1 }
+        dropRates: { common: 0.2, uncommon: 0.28, rare: 0.27, epic: 0.17, legendary: 0.1 },
+        abilities: [
+            {
+                id: 'doom_mark',
+                name: 'Doom Mark',
+                chance: 0.3,
+                mpCost: 18,
+                telegraph: 'draws a spiraling mark in the air that burns with purple fire...',
+                type: 'burn',
+                dot: {
+                    name: 'Cursed',
+                    icon: '💜',
+                    damage: 10,
+                    tickInterval: 3500,
+                    ticks: 4,
+                },
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `💜 The {enemyName} marks the {playerClass} for doom! Dark fire consumes — <b>Cursed!</b>`
+            },
+            {
+                id: 'doom_drain',
+                name: 'Doom Drain',
+                chance: 0.25,
+                mpCost: 0,
+                telegraph: 'chants the final syllable of an extinction prayer...',
+                type: 'drain_mp',
+                drainAmount: 30,
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🔮 The {enemyName} unmakes the {playerClass}'s power — <b>30 MP drained!</b>`
+            },
+        ]
     },
 
     ancient_golem: {
@@ -2683,7 +4477,35 @@ Object.assign(ENEMIES, {
         level: 15,
         description: 'The original model. No warranty remaining',
         possibleDrops: ['greater_health_potion', 'golem_core', 'stone_armor', 'huge_gem'],
-        dropRates: { common: 0.22, uncommon: 0.28, rare: 0.27, epic: 0.16, legendary: 0.09 }
+        dropRates: { common: 0.22, uncommon: 0.28, rare: 0.27, epic: 0.16, legendary: 0.09 },
+        abilities: [
+            {
+                id: 'ancient_smash',
+                name: 'Ancient Smash',
+                chance: 0.25,
+                mpCost: 18,
+                hpThreshold: 0.55,
+                telegraph: 'the original. It raises both arms as if conducting a funeral...',
+                type: 'heavy_hit',
+                damageMult: 2.2,
+                armorPiercing: 0.2,
+                applyMessage: (enemyName, playerClass) => `🪨 The {enemyName} smashes with the weight of forgotten ages! The ground cracks!`
+            },
+            {
+                id: 'crumble',
+                name: 'Crumble',
+                chance: 0.25,
+                mpCost: 14,
+                lowHpThreshold: 0.4,
+                telegraph: 'chunks fall from its body as it strikes with desperate ferocity...',
+                type: 'rend',
+                defReduction: 0.35,
+                rendDuration: 10000,
+                damageMult: 1.4,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `💥 The {enemyName} CRUMBLES into the {playerClass}, spalling stone through armor! <span style='color:#ffaa44;'>⚠️ Defense reduced 10 seconds.</span>`
+            },
+        ]
     },
 
     revenant: {
@@ -2698,7 +4520,39 @@ Object.assign(ENEMIES, {
         level: 15,
         description: 'Back from the dead with a very specific grudge',
         possibleDrops: ['greater_health_potion', 'cursed_sword', 'ghost_essence', 'huge_gem'],
-        dropRates: { common: 0.21, uncommon: 0.28, rare: 0.28, epic: 0.17, legendary: 0.09 }
+        dropRates: { common: 0.21, uncommon: 0.28, rare: 0.28, epic: 0.17, legendary: 0.09 },
+        abilities: [
+            {
+                id: 'vendetta',
+                name: 'Vendetta',
+                chance: 0.35,
+                mpCost: 20,
+                lowHpThreshold: 0.45,
+                telegraph: 'its wounds seem to fuel it rather than weaken it...',
+                type: 'heavy_hit',
+                damageMult: 2.3,
+                armorPiercing: 0.25,
+                applyMessage: (enemyName, playerClass) => `💀 The {enemyName}'s VENDETTA burns! The wound makes it stronger — a vicious, unstoppable strike!`
+            },
+            {
+                id: 'haunt',
+                name: 'Haunt',
+                chance: 0.25,
+                mpCost: 14,
+                telegraph: 'stares through the {playerClass} with eyes that remember everything...',
+                type: 'burn',
+                dot: {
+                    name: 'Cursed',
+                    icon: '💜',
+                    damage: 9,
+                    tickInterval: 3500,
+                    ticks: 4,
+                },
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `💜 The {enemyName} haunts the {playerClass}'s mind! A revenge-curse takes hold — <b>Cursed!</b>`
+            },
+        ]
     },
 
     // ── LEVEL 16 ── (Cave/Crypt additions)
@@ -2714,7 +4568,40 @@ Object.assign(ENEMIES, {
         level: 16,
         description: 'Breathes darkness instead of fire. Worse, somehow',
         possibleDrops: ['superior_health_potion', 'dragon_scale', 'shadow_essence', 'huge_gem'],
-        dropRates: { common: 0.18, uncommon: 0.25, rare: 0.27, epic: 0.18, legendary: 0.1, mythic: 0.02 }
+        dropRates: { common: 0.18, uncommon: 0.25, rare: 0.27, epic: 0.18, legendary: 0.1, mythic: 0.02 },
+        abilities: [
+            {
+                id: 'shadow_breath',
+                name: 'Shadow Breath',
+                chance: 0.3,
+                mpCost: 20,
+                telegraph: 'inhales deeply, darkness visibly pooling in its throat...',
+                type: 'burn',
+                dot: {
+                    name: 'Withering',
+                    icon: '🌑',
+                    damage: 11,
+                    tickInterval: 3000,
+                    ticks: 5,
+                },
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🌑 The {enemyName} breathes darkness! The {playerClass} is consumed by shadow — <b>Withering!</b>`
+            },
+            {
+                id: 'dark_rend',
+                name: 'Dark Rend',
+                chance: 0.25,
+                mpCost: 18,
+                telegraph: 'rakes with talons that seem made of solid shadow...',
+                type: 'rend',
+                defReduction: 0.35,
+                rendDuration: 10000,
+                damageMult: 1.6,
+                armorPiercing: 0.3,
+                applyMessage: (enemyName, playerClass) => `🌑 The {enemyName}'s shadow-talons shred through armor! <span style='color:#ffaa44;'>⚠️ Defense reduced 10 seconds.</span>`
+            },
+        ]
     },
 
     bone_colossus: {
@@ -2729,7 +4616,35 @@ Object.assign(ENEMIES, {
         level: 16,
         description: 'The skeleton of something that should not have existed',
         possibleDrops: ['superior_health_potion', 'dragon_bone', 'bone_dust', 'huge_gem'],
-        dropRates: { common: 0.18, uncommon: 0.25, rare: 0.27, epic: 0.18, legendary: 0.1, mythic: 0.02 }
+        dropRates: { common: 0.18, uncommon: 0.25, rare: 0.27, epic: 0.18, legendary: 0.1, mythic: 0.02 },
+        abilities: [
+            {
+                id: 'bone_crush',
+                name: 'Bone Crush',
+                chance: 0.25,
+                mpCost: 18,
+                hpThreshold: 0.6,
+                telegraph: 'raises one enormous skeletal arm above its head...',
+                type: 'heavy_hit',
+                damageMult: 2.2,
+                armorPiercing: 0.2,
+                applyMessage: (enemyName, playerClass) => `💀 The {enemyName} CRUSHES! A blow that could flatten a building!`
+            },
+            {
+                id: 'bone_spray',
+                name: 'Bone Spray',
+                chance: 0.25,
+                mpCost: 14,
+                lowHpThreshold: 0.5,
+                telegraph: 'shatters part of itself and hurls the shards outward...',
+                type: 'stun',
+                stunPips: 2,
+                stunDuration: 5,
+                damageMult: 0.6,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `💀 The {enemyName} detonates a spray of bone fragments! The {playerClass} is stunned — <b>2 attack charges lost!</b>`
+            },
+        ]
     },
 
     plague_lord: {
@@ -2744,7 +4659,40 @@ Object.assign(ENEMIES, {
         level: 16,
         description: 'Pestilence incarnate, here for reasons unknown',
         possibleDrops: ['superior_health_potion', 'plague_sample', 'bone_dust', 'huge_gem'],
-        dropRates: { common: 0.18, uncommon: 0.25, rare: 0.27, epic: 0.18, legendary: 0.1, mythic: 0.02 }
+        dropRates: { common: 0.18, uncommon: 0.25, rare: 0.27, epic: 0.18, legendary: 0.1, mythic: 0.02 },
+        abilities: [
+            {
+                id: 'pestilence',
+                name: 'Pestilence',
+                chance: 0.3,
+                mpCost: 18,
+                telegraph: 'opens its robe to reveal a chest cavity of writhing contagion...',
+                type: 'burn',
+                dot: {
+                    name: 'Plague',
+                    icon: '☣️',
+                    damage: 10,
+                    tickInterval: 2500,
+                    ticks: 5,
+                },
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `☣️ The {enemyName} unleashes pestilence! The {playerClass} is infected beyond hope — <b>Plague!</b>`
+            },
+            {
+                id: 'rotting_touch',
+                name: 'Rotting Touch',
+                chance: 0.25,
+                mpCost: 16,
+                telegraph: 'presses a diseased hand to your armor...',
+                type: 'rend',
+                defReduction: 0.30,
+                rendDuration: 10000,
+                damageMult: 1.2,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `☣️ The {enemyName}'s touch rots through the {playerClass}'s armor! <span style='color:#ffaa44;'>⚠️ Defense reduced 10 seconds.</span>`
+            },
+        ]
     },
 
     demon_warrior: {
@@ -2759,7 +4707,40 @@ Object.assign(ENEMIES, {
         level: 16,
         description: 'Forged in hellfire, deployed with enthusiasm',
         possibleDrops: ['superior_health_potion', 'demon_horn', 'hellforged_blade', 'huge_gem'],
-        dropRates: { common: 0.17, uncommon: 0.25, rare: 0.27, epic: 0.19, legendary: 0.1, mythic: 0.02 }
+        dropRates: { common: 0.17, uncommon: 0.25, rare: 0.27, epic: 0.19, legendary: 0.1, mythic: 0.02 },
+        abilities: [
+            {
+                id: 'hellblade',
+                name: 'Hellblade Strike',
+                chance: 0.3,
+                mpCost: 18,
+                telegraph: 'the blade erupts with hellfire as it pulls back for a strike...',
+                type: 'dot_attack',
+                dot: {
+                    name: 'Burning',
+                    icon: '🔥',
+                    damage: 10,
+                    tickInterval: 2000,
+                    ticks: 4,
+                },
+                damageMult: 1.4,
+                armorPiercing: 0.2,
+                applyMessage: (enemyName, playerClass) => `🔥 The {enemyName}'s hellblade carves burning runes into the {playerClass}! <b>Burning!</b>`
+            },
+            {
+                id: 'demon_roar',
+                name: 'Demon Roar',
+                chance: 0.25,
+                mpCost: 12,
+                telegraph: 'opens its maw and bellows with the full force of the infernal planes...',
+                type: 'intimidate',
+                damagePenalty: 0.30,
+                intimidateDuration: 7000,
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `😱 The {enemyName} ROARS! The {playerClass} feels their courage crumble — <span style='color:#ffaa44;'>⚠️ -30% damage for 7 seconds.</span>`
+            },
+        ]
     },
 
     cursed_archon: {
@@ -2774,7 +4755,50 @@ Object.assign(ENEMIES, {
         level: 16,
         description: 'Once divine. Currently the opposite',
         possibleDrops: ['superior_mana_potion', 'corrupted_halo', 'angel_wing', 'huge_gem'],
-        dropRates: { common: 0.17, uncommon: 0.25, rare: 0.27, epic: 0.19, legendary: 0.1, mythic: 0.02 }
+        dropRates: { common: 0.17, uncommon: 0.25, rare: 0.27, epic: 0.19, legendary: 0.1, mythic: 0.02 },
+        abilities: [
+            {
+                id: 'divine_curse',
+                name: 'Divine Curse',
+                chance: 0.3,
+                mpCost: 20,
+                telegraph: 'raises arms that once channeled heavenly light — now utter darkness...',
+                type: 'burn',
+                dot: {
+                    name: 'Cursed',
+                    icon: '💜',
+                    damage: 11,
+                    tickInterval: 3500,
+                    ticks: 4,
+                },
+                damageMult: 0,
+                armorPiercing: 0.3,
+                applyMessage: (enemyName, playerClass) => `💜 The {enemyName} inverts a divine blessing! The {playerClass} is cursed with fallen-angel fury — <b>Cursed!</b>`
+            },
+            {
+                id: 'archon_smite',
+                name: 'Archon Smite',
+                chance: 0.25,
+                mpCost: 18,
+                telegraph: 'a halo of inverted light crackles above its head...',
+                type: 'heavy_hit',
+                damageMult: 2.1,
+                armorPiercing: 0.3,
+                applyMessage: (enemyName, playerClass) => `⚡ The {enemyName} SMITES! Once holy energy now burns with corruption!`
+            },
+            {
+                id: 'heavenly_drain',
+                name: 'Heavenly Drain',
+                chance: 0.2,
+                mpCost: 0,
+                telegraph: 'traces a sigil that glows with sickly inverted gold...',
+                type: 'drain_mp',
+                drainAmount: 32,
+                damageMult: 0,
+                armorPiercing: 0,
+                applyMessage: (enemyName, playerClass) => `🔮 The {enemyName} turns divine siphoning on the {playerClass}! <b>32 MP drained!</b>`
+            },
+        ]
     },
 
     // ── LEVEL 17 ── (Crypt/Demon Portal additions)

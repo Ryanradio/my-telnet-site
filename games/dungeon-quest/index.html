@@ -14,6 +14,40 @@
    
    
    <style>
+        /* ── FONT SIZE SETTINGS ─────────────────────────────────────── */
+        :root {
+            --font-size-terminal: 15px;   /* terminal combat text */
+            --font-size-town:     16px;   /* town menus / UI text */
+        }
+
+        /* Apply terminal font-size to combat terminal lines */
+        #terminalOutput .term-line,
+        #terminalOutput .term-line * {
+            font-size: var(--font-size-terminal) !important;
+        }
+        /* Override specific larger lines so they scale proportionally */
+        #terminalOutput .term-line.term-victory {
+            font-size: calc(var(--font-size-terminal) * 1.45) !important;
+        }
+        #terminalOutput .term-line.term-enemy {
+            font-size: calc(var(--font-size-terminal) * 1.12) !important;
+        }
+        #terminalOutput .term-line.term-loot {
+            font-size: calc(var(--font-size-terminal) * 1.12) !important;
+        }
+
+        /* Apply town font-size to main screen menus */
+        #mainScreen .menu-option,
+        #mainScreen .message p,
+        #mainScreen .location-header,
+        #mainScreen button {
+            font-size: var(--font-size-town) !important;
+        }
+        #mainScreen .location-header {
+            font-size: calc(var(--font-size-town) * 1.35) !important;
+        }
+        /* ── END FONT SIZE SETTINGS ─────────────────────────────────── */
+
 
 
 
@@ -2410,7 +2444,6 @@ body.terminal-mode #menuContainer {
     <script src="town1.js"></script>
     <script src="town2.js"></script>
     <script src="town3.js"></script>
-    <script src="bounties.js"></script>
     <script src="monsters-expanded.js"></script>
 
     <script src="weapons.js"></script>
@@ -4384,11 +4417,15 @@ if (typeof ZONE_MONSTERS !== 'undefined') {
 // TOWNS — defines which exploration zones belong to each town.
 // This controls what shows on the Explore screen per town.
 // Must stay in sync with EXPLORATION_ZONES town fields.
-// NOTE: Written to window.TOWNS so external scripts (e.g. town2.js, town3.js) can
-//       merge their definitions into the same shared object.
 // ═══════════════════════════════════════════════════════════════
+// ── TOWNS: merge inline fallbacks with whatever town2.js / town3.js already
+// registered on window.TOWNS.  External files load first (see <script> tags
+// above) and attach full render() functions.  We must NOT overwrite them with
+// a bare const redeclaration — use Object.assign so render() survives.
 window.TOWNS = window.TOWNS || {};
-window.TOWNS.town1 = {
+
+// town1 — defined entirely here (no external file)
+window.TOWNS.town1 = Object.assign({
     name: 'Silverdale',
     description: 'A peaceful starting town. Your adventure begins here.',
     zones: ['forest', 'riverside'],
@@ -4397,10 +4434,36 @@ window.TOWNS.town1 = {
     dungeonRequiredLevel: 3,
     dungeonName: '🏰 SILVERDALE DUNGEON',
     dungeonUnlockMessage: 'You must be at least level 3 to enter the dungeon!'
+}, window.TOWNS.town1 || {});
+
+// town2 / town3 — external files own the render(); only patch missing fields
+const _town2Fallback = {
+    name: 'Ashen Harbor',
+    description: 'A grim port city shrouded in mist and danger.',
+    zones: ['haunted_graveyard', 'dark_swamp', 'cursed_ruins', 'cave', 'crypt',
+            'demon_portal', 'corrupted_temple', 'celestial_spire'],
+    theme: '#ff6600',
+    dungeonKey: 'ashen_dungeon',
+    dungeonRequiredLevel: 10,
+    dungeonName: '🏰 HARBOR DEPTHS DUNGEON',
+    dungeonUnlockMessage: 'You must be at least level 10 to enter the Harbor Depths!'
 };
-// town2 is fully defined in town2.js — it merges into window.TOWNS at load time
-// town3 is fully defined in town3.js — it merges into window.TOWNS at load time
-const TOWNS = window.TOWNS; // alias so all existing code referencing TOWNS still works
+window.TOWNS.town2 = Object.assign(_town2Fallback, window.TOWNS.town2 || {});
+
+const _town3Fallback = {
+    name: 'The Crossroads',
+    description: 'A windswept waystation at the edge of the known world.',
+    zones: ['plains', 'volcano'],
+    theme: '#cc88ff',
+    dungeonKey: 'crossroads_dungeon',
+    dungeonRequiredLevel: 15,
+    dungeonName: '🏰 CROSSROADS DUNGEON',
+    dungeonUnlockMessage: 'You must be at least level 15 to enter the Crossroads Dungeon!'
+};
+window.TOWNS.town3 = Object.assign(_town3Fallback, window.TOWNS.town3 || {});
+
+// Keep a local alias so the rest of index.html can still reference TOWNS directly
+const TOWNS = window.TOWNS;
 
 // Remove stale inline zones now superseded by exploration-zones.js.
 // These were placeholder entries that had wrong level ranges / no town field.
@@ -4441,6 +4504,43 @@ if (typeof ADVENTURE_ENEMIES !== 'undefined') {
         };
         
         let currentModemSpeed = '14.4k'; // Default to 14.4k modem (authentic BBS experience)
+
+        // ═════════════════════════════════════════════════════════════════════
+        //  HAPTIC FEEDBACK ENGINE
+        // ═════════════════════════════════════════════════════════════════════
+        const HAPTIC_PATTERNS = {
+            tap:          [18],
+            hit:          [40],
+            crit:         [55, 60, 55],
+            heavy:        [80],
+            special:      [55, 40, 55, 40, 70],
+            enemyHit:     [50],
+            enemyCrit:    [80, 50, 80],
+            dodge:        [15],
+            flee:         [30, 60, 30],
+            fleeFailure:  [70],
+            dot:          [20],
+            victory:      [60, 50, 60, 50, 90],
+            death:        [100, 60, 150],
+            lowHp:        [40, 40, 40, 40, 40],
+            loot:         [25],
+            buy:          [20, 40, 20],
+            ability:      [60],
+        };
+
+        function haptic(type) {
+            if (localStorage.getItem('dq_haptic') === 'off') return;
+            if (!navigator.vibrate) return;
+            if (type === 'levelUp') {
+                // Escalating rumble: soft → medium → strong → sustained
+                navigator.vibrate([30, 80, 50, 60, 80, 40, 120, 30, 150]);
+                return;
+            }
+            const pattern = HAPTIC_PATTERNS[type];
+            if (pattern) navigator.vibrate(pattern);
+        }
+
+
         let isStreaming = false;
         let streamCancelled = false;
         
@@ -5734,6 +5834,15 @@ function closeChronicle() {
 
 // Close on backdrop click
 document.addEventListener('DOMContentLoaded', () => {
+    // ── HAPTIC: delegated tap for buttons and menu options ──────────────────
+    document.addEventListener('click', (e) => {
+        const t = e.target;
+        if (t.classList && t.classList.contains('menu-option')) { haptic('tap'); return; }
+        if (t.tagName === 'BUTTON') { haptic('tap'); return; }
+        if (t.closest && (t.closest('.action-icon-btn') || t.closest('#actionBar button'))) { haptic('tap'); }
+    }, { passive: true });
+    // ────────────────────────────────────────────────────────────────────────
+
     const overlay = document.getElementById('chronicle-overlay');
     if (overlay) {
         overlay.addEventListener('click', e => {
@@ -9799,10 +9908,6 @@ window.addEventListener('beforeunload', () => {
                     runestones: data.player.runestones || [],
                     // Portal unlock — false for old saves that predate this flag
                     portalUnlocked: data.player.portalUnlocked || false,
-                    // Bounty system — safe defaults for old saves
-                    activeBounties:    data.player.activeBounties    || [],
-                    pendingBounties:   data.player.pendingBounties   || [],
-                    collectedBounties: data.player.collectedBounties || {},
                     // ═══════════════════════════════════════════════════════════════
                     // PERSISTENT DUNGEON MAPS - Restore and convert arrays back to Sets
                     // ═══════════════════════════════════════════════════════════════
@@ -10570,28 +10675,16 @@ window.addEventListener('beforeunload', () => {
             const portalUnlocked  = !!p.portalUnlocked;
             let portalOption = '';
 
-            const hasVisitedTown3 = !!p.hasSeenTownArrival_town3;
-
             if (tid === 'town2') {
-                // Town2 always has the return portal to town1
+                // Town2 always has the return portal visible
                 portalOption = `
                     <div class="menu-option" onclick="usePortal('town1')"
                          style="border-color:#AA88FF;background:rgba(170,136,255,0.07);">
                         ► 🌀 PORTAL → Silverdale
                         ${!portalUnlocked ? '<span style="color:#AA88FF;font-size:12px;"> [First use unlocks permanent travel]</span>' : ''}
                     </div>`;
-                // Also show town3 portal if player has been there
-                if (hasVisitedTown3) {
-                    const t3Def = (typeof TOWNS !== 'undefined' && TOWNS['town3']) ? TOWNS['town3'] : null;
-                    const t3Name = t3Def ? t3Def.name : 'Crossroads of the World';
-                    portalOption += `
-                    <div class="menu-option" onclick="usePortal('town3')"
-                         style="border-color:#FFD700;background:rgba(255,215,0,0.07);">
-                        ► 🌀 PORTAL → ${t3Name}
-                    </div>`;
-                }
             } else if (tid === 'town1' && (hasRunestone || portalUnlocked)) {
-                // Town1: portal to town2 visible once player has runestone OR used town2 portal
+                // Town1: portal visible once player has runestone OR used town2 portal
                 const destDef  = (typeof TOWNS !== 'undefined' && TOWNS['town2']) ? TOWNS['town2'] : null;
                 const destName = destDef ? destDef.name : 'Ashen Harbor';
                 portalOption = `
@@ -10600,16 +10693,6 @@ window.addEventListener('beforeunload', () => {
                         ► 🌀 PORTAL → ${destName}
                         ${hasRunestone ? '<span style="color:#AA88FF;font-size:12px;"> [White Runestone ✦]</span>' : ''}
                     </div>`;
-                // Also show town3 portal if player has been there
-                if (hasVisitedTown3) {
-                    const t3Def = (typeof TOWNS !== 'undefined' && TOWNS['town3']) ? TOWNS['town3'] : null;
-                    const t3Name = t3Def ? t3Def.name : 'Crossroads of the World';
-                    portalOption += `
-                    <div class="menu-option" onclick="usePortal('town3')"
-                         style="border-color:#FFD700;background:rgba(255,215,0,0.07);">
-                        ► 🌀 PORTAL → ${t3Name}
-                    </div>`;
-                }
             }
 
             // ── Dungeon option (level-gated) ──────────────────────────────
@@ -10657,7 +10740,7 @@ window.addEventListener('beforeunload', () => {
                 ${renderPlayerStats()}
                 <div class="message">
                     <p>${townDesc}</p>
-                    <p style="color: var(--border-color); font-size: 14px;">Modem Speed: ${currentModemSpeed}</p>
+
                 </div>
                 <div style="margin: 20px 0;">
                     <div class="menu-option" onclick="showShop()">► VISIT SHOP</div>
@@ -10672,7 +10755,7 @@ window.addEventListener('beforeunload', () => {
                         ontouchstart="_invMenuDown(event)" ontouchend="_invMenuUp()" ontouchcancel="_invMenuCancel()">► INVENTORY</div>
                     <div class="menu-option" onclick="showExplore()">► EXPLORE WORLD</div>
                     ${portalOption}
-                    <div class="menu-option" onclick="showModemSettings()">► MODEM SETTINGS</div>
+                    <div class="menu-option" onclick="showSettings()">► ⚙️ SETTINGS</div>
                     <div class="menu-option" onclick="saveGame()" style="border-color:var(--text-color);">► 💾 QUICK SAVE</div>
                     <div class="menu-option" onclick="downloadSaveFile()" style="border-color:var(--highlight-color);background:rgba(255,255,0,0.05);">► 📥 DOWNLOAD SAVE FILE</div>
                     <div class="menu-option" onclick="confirmQuitToMenu()">► ⏏ QUIT TO MENU</div>
@@ -10703,12 +10786,6 @@ window.addEventListener('beforeunload', () => {
                 // Town1 → Town2: requires runestone OR already unlocked
                 if (!p.portalUnlocked && !(p.runestones && p.runestones.includes('white_runestone'))) {
                     alert('You need to have visited Ashen Harbor first to use this portal!');
-                    return;
-                }
-            } else if (destTownId === 'town3') {
-                // Any town → Town3: requires having visited town3 before
-                if (!p.hasSeenTownArrival_town3) {
-                    alert('You have not yet discovered the Crossroads of the World!');
                     return;
                 }
             }
@@ -10978,6 +11055,161 @@ window.addEventListener('beforeunload', () => {
             
             saveGame();
             showBank();
+        }
+
+
+        // ═════════════════════════════════════════════════════════════════
+        //  SETTINGS PANEL — font sizes + modem speed
+        // ═════════════════════════════════════════════════════════════════
+
+        // Load saved sizes from localStorage and apply to CSS vars
+        function loadFontSizes() {
+            const termSz  = parseFloat(localStorage.getItem('dq_font_terminal') || '15');
+            const townSz  = parseFloat(localStorage.getItem('dq_font_town')     || '16');
+            document.documentElement.style.setProperty('--font-size-terminal', termSz  + 'px');
+            document.documentElement.style.setProperty('--font-size-town',     townSz  + 'px');
+        }
+
+        function applyFontSizes(termSz, townSz) {
+            document.documentElement.style.setProperty('--font-size-terminal', termSz + 'px');
+            document.documentElement.style.setProperty('--font-size-town',     townSz + 'px');
+            localStorage.setItem('dq_font_terminal', termSz);
+            localStorage.setItem('dq_font_town',     townSz);
+        }
+
+        // Call on page load so sizes persist across sessions
+        loadFontSizes();
+
+        function showSettings() {
+            const screen = document.getElementById('mainScreen');
+            const termSz = parseFloat(localStorage.getItem('dq_font_terminal') || '15');
+            const townSz = parseFloat(localStorage.getItem('dq_font_town')     || '16');
+
+            screen.innerHTML = `
+                <div class="location-header">⚙️ SETTINGS</div>
+
+                <!-- ── FONT SIZE: TERMINAL ─────────────────────────────── -->
+                <div class="message" style="margin-bottom:14px;">
+                    <p style="color:var(--highlight-color);letter-spacing:2px;margin-bottom:8px;">
+                        ⚔️ COMBAT TERMINAL TEXT SIZE
+                    </p>
+                    <p style="font-size:13px;color:var(--border-color);margin-bottom:12px;">
+                        Controls the font size inside the combat terminal window.
+                    </p>
+                    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+                        <span style="font-size:12px;color:#666;min-width:28px;">10px</span>
+                        <input type="range" id="sliderTerminal" min="10" max="24" step="1"
+                               value="${termSz}"
+                               oninput="
+                                   document.getElementById('termSzLabel').textContent = this.value + 'px';
+                                   applyFontSizes(parseFloat(this.value), parseFloat(document.getElementById('sliderTown').value));
+                               "
+                               style="flex:1;min-width:160px;accent-color:var(--highlight-color);cursor:pointer;">
+                        <span style="font-size:12px;color:#666;min-width:28px;">24px</span>
+                        <span id="termSzLabel" style="min-width:38px;text-align:right;color:var(--highlight-color);font-size:15px;font-weight:bold;">${termSz}px</span>
+                    </div>
+                    <div style="margin-top:12px;padding:8px 12px;background:rgba(0,0,0,0.3);border:1px solid #333;border-radius:4px;">
+                        <span style="font-size:var(--font-size-terminal);color:#aaa;" id="termPreview">
+                            ⚔️ You strike the Goblin for 14 damage!
+                        </span>
+                    </div>
+                </div>
+
+                <!-- ── FONT SIZE: TOWN MENUS ──────────────────────────── -->
+                <div class="message" style="margin-bottom:14px;">
+                    <p style="color:var(--highlight-color);letter-spacing:2px;margin-bottom:8px;">
+                        🏘️ TOWN MENU TEXT SIZE
+                    </p>
+                    <p style="font-size:13px;color:var(--border-color);margin-bottom:12px;">
+                        Controls the font size in town menus, shops, and game screens.
+                    </p>
+                    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+                        <span style="font-size:12px;color:#666;min-width:28px;">10px</span>
+                        <input type="range" id="sliderTown" min="10" max="26" step="1"
+                               value="${townSz}"
+                               oninput="
+                                   document.getElementById('townSzLabel').textContent = this.value + 'px';
+                                   applyFontSizes(parseFloat(document.getElementById('sliderTerminal').value), parseFloat(this.value));
+                               "
+                               style="flex:1;min-width:160px;accent-color:var(--highlight-color);cursor:pointer;">
+                        <span style="font-size:12px;color:#666;min-width:28px;">26px</span>
+                        <span id="townSzLabel" style="min-width:38px;text-align:right;color:var(--highlight-color);font-size:15px;font-weight:bold;">${townSz}px</span>
+                    </div>
+                    <div style="margin-top:12px;padding:8px 12px;background:rgba(0,0,0,0.3);border:1px solid #333;border-radius:4px;">
+                        <span style="font-size:var(--font-size-town);color:#aaa;">
+                            ► VISIT SHOP
+                        </span>
+                    </div>
+                </div>
+
+                <!-- ── RESET FONTS ────────────────────────────────────── -->
+                <div style="text-align:center;margin-bottom:18px;">
+                    <button onclick="
+                        localStorage.removeItem('dq_font_terminal');
+                        localStorage.removeItem('dq_font_town');
+                        applyFontSizes(15, 16);
+                        showSettings();
+                    " style="font-size:13px;padding:6px 18px;opacity:0.7;">
+                        ↺ RESET TO DEFAULTS
+                    </button>
+                </div>
+
+                <!-- ── MODEM SPEED ────────────────────────────────────── -->
+                <div class="message" style="margin-bottom:14px;">
+                    <p style="color:var(--highlight-color);letter-spacing:2px;margin-bottom:8px;">
+                        📞 MODEM SPEED
+                    </p>
+                    <p style="font-size:13px;color:var(--border-color);margin-bottom:12px;">
+                        How fast text scrolls in. Lower = classic 90s BBS feel.
+                    </p>
+                    <select onchange="setModemSpeed(this.value);"
+                            style="width:100%;padding:10px 12px;
+                                   background:#000;color:var(--highlight-color);
+                                   border:2px solid var(--border-color);
+                                   font-family:'VT323',monospace;font-size:17px;
+                                   cursor:pointer;appearance:auto;">
+                        <option value="4800"   ${currentModemSpeed==='4800'   ? 'selected':''}>4800 BAUD — Ultra Slow (Maximum Nostalgia)</option>
+                        <option value="9600"   ${currentModemSpeed==='9600'   ? 'selected':''}>9600 BAUD — Very Slow (Early 90s)</option>
+                        <option value="14.4k"  ${currentModemSpeed==='14.4k'  ? 'selected':''}>14.4k MODEM — Slow (Classic BBS Feel)</option>
+                        <option value="28.8k"  ${currentModemSpeed==='28.8k'  ? 'selected':''}>28.8k MODEM — Medium (Mid-90s Standard)</option>
+                        <option value="56k"    ${currentModemSpeed==='56k'    ? 'selected':''}>56k MODEM — Fast (Late 90s)</option>
+                        <option value="instant"${currentModemSpeed==='instant'? 'selected':''}>INSTANT — No Delay (Modern Broadband)</option>
+                    </select>
+                </div>
+
+                <!-- ── HAPTIC FEEDBACK ────────────────────────────────── -->
+                <div class="message" style="margin-bottom:14px;">
+                    <p style="color:var(--highlight-color);letter-spacing:2px;margin-bottom:8px;">
+                        📳 HAPTIC FEEDBACK
+                    </p>
+                    <p style="font-size:13px;color:var(--border-color);margin-bottom:12px;">
+                        Vibration on hits, crits, level-ups, buttons, and more.
+                        ${!navigator.vibrate ? '<br><span style="color:#ff6666;font-size:12px;">⚠️ Not supported on this device.</span>' : ''}
+                    </p>
+                    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px;">
+                        <div class="menu-option ${localStorage.getItem('dq_haptic') !== 'off' ? 'equipped' : ''}"
+                             onclick="localStorage.removeItem('dq_haptic'); showSettings();"
+                             style="flex:1;text-align:center;padding:10px 8px;">
+                            📳 ON
+                        </div>
+                        <div class="menu-option ${localStorage.getItem('dq_haptic') === 'off' ? 'equipped' : ''}"
+                             onclick="localStorage.setItem('dq_haptic','off'); showSettings();"
+                             style="flex:1;text-align:center;padding:10px 8px;">
+                            🔇 OFF
+                        </div>
+                    </div>
+                    <button onclick="haptic('levelUp')" style="font-size:12px;padding:5px 14px;opacity:0.75;display:block;margin:0 auto;">
+                        📳 Test vibration (level-up pattern)
+                    </button>
+                </div>
+
+                <button onclick="showTown()" style="width:100%;max-width:400px;display:block;margin:0 auto 20px;">← BACK TO TOWN</button>
+            `;
+            // Scroll to the top of the screen container every time settings opens
+            screen.scrollTop = 0;
+            const _scroller = screen.closest('.terminal-container') || screen.parentElement;
+            if (_scroller) _scroller.scrollTop = 0;
+            window.scrollTo(0, 0);
         }
 
         function showModemSettings() {
@@ -11521,7 +11753,7 @@ window.addEventListener('beforeunload', () => {
         function buyItem(type, key, baseCost) {
             const p = gameState.player;
             const playerClass = p.baseClass || p.class;
-
+            
             // Recall potion: only one allowed at a time
             if (key === 'recall_potion' && p.inventory.includes('recall_potion')) {
                 alert('You already carry a Recall Potion.\nYou can only hold one at a time.');
@@ -11560,110 +11792,25 @@ window.addEventListener('beforeunload', () => {
                     return;
                 }
             }
-
-            const disc = calcChaDiscount(p.cha);
-            const cost = Math.max(1, Math.floor(baseCost * (1 - disc/100)));
+            
+            const disc   = calcChaDiscount(p.cha);
+            const cost   = Math.max(1, Math.floor(baseCost * (1 - disc/100)));
             if (p.gold < cost) {
                 alert('Not enough gold!');
                 return;
             }
-
-            // Resolve item name and any bonus info for the confirm dialog
-            let itemName, itemDetail = '';
-            if (type === 'weapon') {
-                const w = WEAPONS[key];
-                itemName = w.name;
-                itemDetail = `Level ${w.level || 1} ${w.type || 'weapon'}`;
-                if (w.baseDamage) itemDetail += ` · DMG ${w.baseDamage}–${w.maxDamage || w.baseDamage}`;
-            } else if (type === 'armor') {
-                const a = ARMOR[key];
-                itemName = a.name;
-                itemDetail = `Level ${a.level || 1} ${a.type || 'armor'}`;
-                if (a.defense) itemDetail += ` · DEF ${a.defense}`;
-            } else if (type === 'item') {
-                const it = ITEMS[key];
-                itemName = it.name;
-                itemDetail = it.description || '';
-            }
-
-            const discLine = disc > 0
-                ? `<div style="color:#88cc88;font-size:11px;margin-top:3px;">${disc}% CHA discount applied</div>`
-                : '';
-            const afterGold = p.gold - cost;
-
-            // Remove any stale confirm overlay
-            const _old = document.getElementById('shop-confirm-overlay');
-            if (_old) _old.remove();
-
-            const overlay = document.createElement('div');
-            overlay.id = 'shop-confirm-overlay';
-            overlay.style.cssText =
-                'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;' +
-                'justify-content:center;background:rgba(0,0,0,0.88);backdrop-filter:blur(6px);' +
-                '-webkit-tap-highlight-color:transparent;';
-
-            overlay.innerHTML = `
-                <div style="background:#060606;border:2px solid #5a3d00;border-radius:10px;
-                            padding:24px 22px;max-width:340px;width:92%;
-                            box-shadow:0 0 50px rgba(255,215,0,0.15);
-                            font-family:'Courier New',monospace;text-align:center;">
-
-                    <div style="font-size:9px;letter-spacing:4px;color:#5a3d00;margin-bottom:10px;">
-                        CONFIRM PURCHASE
-                    </div>
-
-                    <div style="font-size:17px;font-weight:bold;color:#FFD700;
-                                letter-spacing:1px;margin-bottom:4px;">
-                        ${itemName}
-                    </div>
-                    <div style="font-size:11px;color:#777;margin-bottom:14px;">
-                        ${itemDetail}
-                    </div>
-
-                    <div style="background:rgba(255,215,0,0.06);border:1px solid #3a2800;
-                                border-radius:6px;padding:10px 14px;margin-bottom:14px;">
-                        <div style="font-size:20px;color:#FFD700;font-weight:bold;">
-                            ${cost.toLocaleString()}g
-                        </div>
-                        ${discLine}
-                        <div style="font-size:11px;color:#555;margin-top:6px;">
-                            ${p.gold.toLocaleString()}g → <span style="color:${afterGold < 0 ? '#ff4444' : '#aaa'};">${afterGold.toLocaleString()}g</span> remaining
-                        </div>
-                    </div>
-
-                    <div style="display:flex;gap:10px;">
-                        <button onclick="document.getElementById('shop-confirm-overlay').remove()"
-                            style="flex:1;padding:12px;font-size:14px;letter-spacing:2px;
-                                   background:transparent;border:2px solid #333;color:#666;
-                                   font-family:'Courier New',monospace;cursor:pointer;border-radius:5px;
-                                   -webkit-tap-highlight-color:transparent;">
-                            ✕ CANCEL
-                        </button>
-                        <button onclick="_confirmBuyItem('${type}','${key}',${cost},'${itemName}')"
-                            style="flex:1;padding:12px;font-size:14px;letter-spacing:2px;
-                                   background:rgba(255,215,0,0.12);border:2px solid #7a5800;color:#FFD700;
-                                   font-family:'Courier New',monospace;cursor:pointer;border-radius:5px;
-                                   font-weight:bold;-webkit-tap-highlight-color:transparent;">
-                            ✓ BUY
-                        </button>
-                    </div>
-                </div>
-            `;
-
-            overlay.addEventListener('click', e => {
-                if (e.target === overlay) overlay.remove();
-            });
-            document.body.appendChild(overlay);
-        }
-
-        // Executes the actual purchase after confirmation
-        function _confirmBuyItem(type, key, cost, itemName) {
-            document.getElementById('shop-confirm-overlay')?.remove();
-            const p = gameState.player;
-            if (p.gold < cost) { alert('Not enough gold!'); return; }
             p.gold -= cost;
+            haptic('buy');
             p.inventory.push(key);
+            let itemName;
+            if (type === 'weapon') itemName = WEAPONS[key].name;
+            else if (type === 'armor') itemName = ARMOR[key].name;
+            else if (type === 'item') itemName = ITEMS[key].name;
+            alert(`Purchased ${itemName} for ${cost}g!` + (disc > 0 ? ` (${disc}% CHA discount)` : ''));
+            
+            // 💾 AUTO-SAVE after buying
             saveGame();
+            
             showShopBuy();
         }
 
@@ -11674,10 +11821,9 @@ window.addEventListener('beforeunload', () => {
                 return;
             }
             gameState.player.gold -= cost;
+            haptic('buy');
             gameState.player.hp = gameState.player.maxHp;
             gameState.player.mp = gameState.player.maxMp;
-            // Reset bounty cooldowns — targets resurface after a night's rest
-            if (typeof resetBountiesAfterInn === 'function') resetBountiesAfterInn();
             alert('You rest at the inn and recover fully!');
             showTown();
         }
@@ -12678,7 +12824,10 @@ function equipItem(type, key) {
 
     // ── Low-HP heartbeat border on terminal ──
     const tw = document.getElementById('terminalWindow');
-    if (tw) tw.classList.toggle('danger-heartbeat', hpPct < 15);
+    const _nowDanger = hpPct < 15;
+    if (_nowDanger && !gameState._wasLowHp) haptic('lowHp');
+    gameState._wasLowHp = _nowDanger;
+    if (tw) tw.classList.toggle('danger-heartbeat', _nowDanger);
 }
 
 
@@ -12904,13 +13053,6 @@ function stabilizeTerminalLayout() {
             }
 
             // ═══════════════════════════════════════════════════════════════
-            // CHECK FOR BOUNTY ENCOUNTER (5% chance if target hunted here)
-            // ═══════════════════════════════════════════════════════════════
-            if (typeof checkBountyEncounter === 'function' && checkBountyEncounter(locKey)) {
-                return; // bounty combat started — skip normal rolls
-            }
-
-            // ═══════════════════════════════════════════════════════════════
             // ROLL FOR RANDOM ADVENTURE (if adventure system is loaded)
             // ═══════════════════════════════════════════════════════════════
             if (typeof rollForAdventure !== 'undefined') {
@@ -13100,6 +13242,7 @@ function stabilizeTerminalLayout() {
                 
                 const damage = statusDef.damagePerTick;
                 target.hp -= damage;
+                if (isPlayer) haptic('dot');
                 
                 const targetName = isPlayer ? 'You' : target.name;
                 // Tick message always has damage value — no undefined
@@ -16511,7 +16654,16 @@ function consumePips(cs, amount, cooldown) {
                 `</span>`, 'term-dim');
         }
         enemy.hp -= finalDamage;
-        
+        // ── HAPTIC: player hit ────────────────────────────────────────────
+        if (result.crit) {
+            haptic(attackType === 'special' ? 'special' : 'crit');
+        } else if (attackType === 'heavy') {
+            haptic('heavy');
+        } else {
+            haptic('hit');
+        }
+        // ─────────────────────────────────────────────────────────────────
+
         // ── HUNTER PET ATTACK ──────────────────────────────────────────
         // Hunter's pet attacks immediately after hunter deals damage
         if (baseClass === 'hunter' && p.activePet && enemy.hp > 0) {
@@ -17288,6 +17440,7 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
             const fleePct  = Math.min(70, 30 + (p.dex||0)*3);
             if (Math.random()*100 < fleePct) {
                 gameState.combatState = null;
+                haptic('flee');
                 termAppend('You successfully fled!', 'term-highlight', () => {
                     renderActionBar();
                 });
@@ -17295,6 +17448,7 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 cs.pipAvailable[pipIndex] = false;
                 cs.pipTimers[pipIndex] = gameState.player ? getPipCooldown(gameState.player) : BASE_PIP_COOLDOWN;
                 renderActionBar();
+                haptic('fleeFailure');
                 termAppend('Failed to escape!', 'term-error');
                 startCombatTimer();
             }
@@ -17874,6 +18028,7 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
             }
             // Execute the debuff side-effect directly (no damage)
             executeAbilitySideEffect(intent.abilityDef, p, cs, enemy);
+            haptic('ability');
             hits.push({ eName, dmg: 0, isPureDebuff: true, abilityName: intent.abilityDef.name });
             return; // skip damage roll for this enemy
         }
@@ -17948,7 +18103,8 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
         }
 
         p.hp -= finalDmg;
-        cs.lastEnemyDamageDealt = finalDmg;   // used by leech ability
+        cs.lastEnemyDamageDealt = finalDmg;
+        haptic(result.crit ? 'enemyCrit' : 'enemyHit');   // used by leech ability
 
         // ── Execute ability side-effects ─────────────────────────────
         // Only runs if this attack was powered by an ability with a type
@@ -17967,6 +18123,7 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
             }
         }
 
+        if (_abilityDef && !result.crit) haptic('ability');
         hits.push({
             eName,
             dmg:        finalDmg,
@@ -18007,6 +18164,7 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 isLast ? afterAttack : null
             );
         } else if (hit.dodged) {
+            haptic('dodge');
             termAppend(
                 `${hit.eName} attacks… <span style="color:#88ff88;">DODGED!</span>`,
                 null,
@@ -18123,6 +18281,8 @@ function checkCombatEnd() {
 // END COMBAT
 // ═══════════════════════════════════════════════════════════════
 function endCombat(victory) {
+    if (victory) haptic('victory');
+    else         haptic('death');
 
     // ── defeat ──
     if (!victory) {
@@ -18347,26 +18507,6 @@ function endCombat(victory) {
     // ── terminal output ──
     termAppend('', 'term-separator');
 
-    // ── Bounty capture check ──
-    if (typeof processBountyVictory === 'function') {
-        const capturedBountyId = processBountyVictory(cs);
-        if (capturedBountyId) {
-            const _b = (typeof BOUNTIES !== 'undefined') ? BOUNTIES[capturedBountyId] : null;
-            if (_b) {
-                termAppend(
-                    `<span style="color:#cc66ff;font-size:19px;">⚓ BOUNTY CAPTURED: ${_b.name}</span>`,
-                    'term-victory'
-                );
-                termAppend(
-                    `<span style="color:#cc66ff;">Return to Ashen Harbor to collect </span>` +
-                    `<span style="color:#FFD700;">${_b.bountyGold.toLocaleString()}g</span>`,
-                    'term-loot'
-                );
-                termAppend('', 'term-separator');
-            }
-        }
-    }
-
     if (isMaster) {
         termAppend(`🏆 ${masterData.name} HAS BEEN DEFEATED! 🏆`, 'term-victory');
         termAppend(`✨ ${LOCATIONS[unlockedArea].name} IS NOW UNLOCKED! ✨`, 'term-loot');
@@ -18393,6 +18533,7 @@ function endCombat(victory) {
     }
 
     if (allLoot.length > 0) {
+        haptic('loot');
         termAppend('⚡ LOOT:', 'term-loot');
         allLoot.forEach(ik => {
             // Enforce maxStack for potions (cap = 10)
@@ -18932,6 +19073,7 @@ function playerIsExhausted() {
         }
 
         function levelUp() {
+            haptic('levelUp');
             const p = gameState.player;
             
             // Cap at level 25
