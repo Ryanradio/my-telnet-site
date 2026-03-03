@@ -12207,6 +12207,7 @@ window.addEventListener('beforeunload', () => {
             haptic('buy');
             p.inventory.push(key);
             saveGame();
+            if (typeof updateHud === 'function') updateHud();
             showShopBuy();
         }
 
