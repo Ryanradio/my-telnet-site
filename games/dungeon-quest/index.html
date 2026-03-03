@@ -3641,7 +3641,8 @@ async function savePlayerToSheet(playerData) {
     level: playerData.level,
     createdDate: playerData.createdDate,
     country: playerData.country,
-    state: playerData.state
+    state: playerData.state,
+    event: playerData.event || 'character_created'
   });
   
   const scriptURL = 'https://script.google.com/macros/s/AKfycbxWLFhlEgtItbtKHJlTinYBXm8r7ZEbY17eWaEvNBlxsjoHYkgx4Ip3lJvCdukobqx6iw/exec?' + params.toString();
