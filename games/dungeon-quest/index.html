@@ -1895,18 +1895,12 @@ body.terminal-mode #menuContainer {
         padding: 0;
         background: none;
         border: none;
-        outline: none;
-        -webkit-appearance: none;
-        appearance: none;
         color: #3a2810;
         font-size: 12px;
         font-family: monospace;
         letter-spacing: 1px;
         cursor: pointer;
         transition: color 0.15s;
-        -webkit-tap-highlight-color: transparent;
-        touch-action: manipulation;
-        border-radius: 0;
     }
     .chron-skip-btn:hover { color: #7a5a30; }
     /* Player name highlight */
@@ -6201,13 +6195,8 @@ function openChronicleEntry(id, idx) {
     bodyWrap.className = 'chronicle-page-body';
     page.appendChild(bodyWrap);
 
-    // Skip button (hidden until animation starts)
-    const skipBtn = document.createElement('button');
-    skipBtn.className = 'chron-skip-btn';
-    skipBtn.textContent = '[ skip animation ]';
-    skipBtn.style.display = 'none';
-    skipBtn.onclick = () => skipChronicleAnimation();
-    page.appendChild(skipBtn);
+    // Skip bar is outside the scroll in #chron-skip-bar
+    const skipBar = document.getElementById('chron-skip-bar');
 
     // Footer ornament (added after last segment animates in)
     const footer = document.createElement('div');
@@ -6232,8 +6221,8 @@ function openChronicleEntry(id, idx) {
     const chronicleBody = document.getElementById('chronicle-body');
     if (chronicleBody) chronicleBody.scrollTop = 0;
 
-    // Show skip button
-    skipBtn.style.display = 'block';
+    // Show skip bar (outside scroll, always visible)
+    if (skipBar) skipBar.style.display = 'block';
 
     // ── Animate segments in ───────────────────────────────────────────
     window._chronAnimTimer = [];
@@ -6250,7 +6239,7 @@ function openChronicleEntry(id, idx) {
             if (i === segEls.length - 1) {
                 setTimeout(() => {
                     footer.style.opacity = '1';
-                    skipBtn.style.display = 'none';
+                    if (skipBar) skipBar.style.display = 'none';
                 }, 800);
             }
         }, delay);
@@ -6274,7 +6263,9 @@ function openChronicleEntry(id, idx) {
 }
 
 function skipChronicleAnimation() {
-    window._chronAnimSkipped = true;
+        window._chronAnimSkipped = true;
+        const _sb = document.getElementById('chron-skip-bar');
+        if (_sb) _sb.style.display = 'none';
     if (window._chronAnimTimer) {
         window._chronAnimTimer.forEach(t => clearTimeout(t));
         window._chronAnimTimer = [];
@@ -12214,8 +12205,7 @@ window.addEventListener('beforeunload', () => {
             p.inventory.push(key);
             saveGame();
             if (typeof updateHud === 'function') updateHud();
-            // Re-render full shop so gold in stat block updates immediately
-            showShop();
+            showShopBuy();
         }
 
         function restAtInn() {
@@ -20807,6 +20797,7 @@ function showCharacterStats() {
             ← Back to all entries
           </div>
           <div class="chronicle-page" id="chronicle-page-content"></div>
+          <div id="chron-skip-bar" style="display:none;text-align:center;padding:5px 0 3px;background:rgba(12,8,3,0.97);border-top:1px solid rgba(90,58,24,0.3);"><button class="chron-skip-btn" onclick="skipChronicleAnimation()">[ skip animation ]</button></div>
           <div class="chronicle-page-nav">
             <button class="chronicle-nav-btn" id="chron-prev" onclick="navigateChronicle(-1)">← Previous</button>
             <span id="chron-page-num" style="color:#5a4020;font-size:13px;align-self:center;"></span>
