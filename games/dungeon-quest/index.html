@@ -3644,7 +3644,7 @@ async function savePlayerToSheet(playerData) {
     state: playerData.state
   });
   
-  const scriptURL = 'https://script.google.com/macros/s/AKfycbzfGZ8qGvxzNtZzQaIeRsOGJHASVjsmGJU-uxiq7DJr_EmW6mInmyviUosVa7jpWJL0KQ/exec?' + params.toString();
+  const scriptURL = 'https://script.google.com/macros/s/AKfycbxWLFhlEgtItbtKHJlTinYBXm8r7ZEbY17eWaEvNBlxsjoHYkgx4Ip3lJvCdukobqx6iw/exec?' + params.toString();
   
   console.log('📤 Sending to Google Sheets:', playerData);
   
@@ -10590,6 +10590,26 @@ window.addEventListener('beforeunload', () => {
                 
                 console.log(`✅ Character loaded: ${data.characterName}`);
                 console.log(`   Weapon: ${gameState.player.weapon} | Armor: ${gameState.player.armor}`);
+
+                // ═══════════════════════════════════════════════════════════════
+// TRACK LOGIN TO GOOGLE SHEETS
+// ═══════════════════════════════════════════════════════════════
+(async function() {
+    const location = await getPlayerLocation();
+    
+    const loginData = {
+        name: gameState.player.name,
+        class: gameState.player.className || CLASSES[gameState.player.class]?.name || gameState.player.class,
+        level: gameState.player.level,
+        createdDate: new Date().toISOString(),
+        country: location.country,
+        state: location.state,
+        event: 'character_login'
+    };
+    
+    await savePlayerToSheet(loginData);
+})();
+
             } catch (e) {
                 console.error('Error loading character:', e);
                 alert('⚠️ Failed to load save file. The data may be corrupted. Returning to main menu.');
