@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚔️ Calamity Dungeon - Live Stats</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=MedievalSharp&family=Cinzel:wght@400;700&family=VT323&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a0a00 0%, #2d1810 50%, #1a0a00 100%);
+            color: #f4e4c1;
+            font-family: 'Cinzel', serif;
+            min-height: 100vh;
+            padding: 20px;
+            background-attachment: fixed;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px 20px;
+            background: linear-gradient(135deg, rgba(139, 69, 19, 0.3) 0%, rgba(101, 67, 33, 0.3) 100%);
+            border: 3px solid #8b4513;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '⚔️';
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 48px;
+            opacity: 0.3;
+        }
+        
+        .header::after {
+            content: '⚔️';
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%) scaleX(-1);
+            font-size: 48px;
+            opacity: 0.3;
+        }
+        
+        h1 {
+            font-family: 'MedievalSharp', cursive;
+            font-size: 48px;
+            color: #ffd700;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+        
+        .subtitle {
+            font-size: 18px;
+            color: #d4af37;
+            font-style: italic;
+        }
+        
+        .last-update {
+            font-family: 'VT323', monospace;
+            font-size: 16px;
+            color: #9acd32;
+            margin-top: 10px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, rgba(101, 67, 33, 0.5) 0%, rgba(139, 69, 19, 0.5) 100%);
+            border: 2px solid #8b4513;
+            border-radius: 8px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 25px rgba(255, 215, 0, 0.4);
+        }
+        
+        .stat-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: #d4af37;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        
+        .stat-value {
+            font-family: 'MedievalSharp', cursive;
+            font-size: 42px;
+            color: #ffd700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
+        
+        .section-title {
+            font-family: 'MedievalSharp', cursive;
+            font-size: 32px;
+            color: #ffd700;
+            text-align: center;
+            margin: 40px 0 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
+        
+        .table-container {
+            background: rgba(101, 67, 33, 0.3);
+            border: 2px solid #8b4513;
+            border-radius: 8px;
+            padding: 20px;
+            overflow-x: auto;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+        }
+        
+        thead {
+            background: rgba(139, 69, 19, 0.5);
+        }
+        
+        th {
+            padding: 15px;
+            text-align: left;
+            color: #ffd700;
+            font-weight: bold;
+            border-bottom: 2px solid #8b4513;
+            text-transform: uppercase;
+        }
+        
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(139, 69, 19, 0.3);
+        }
+        
+        tbody tr:hover {
+            background: rgba(139, 69, 19, 0.2);
+        }
+        
+        .event-created {
+            color: #9acd32;
+        }
+        
+        .event-login {
+            color: #87ceeb;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 24px;
+            color: #d4af37;
+        }
+        
+        .class-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: bold;
+            background: rgba(139, 69, 19, 0.5);
+            border: 1px solid #8b4513;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        
+        .live-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: #9acd32;
+            border-radius: 50%;
+            margin-right: 5px;
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚔️ CALAMITY DUNGEON ⚔️</h1>
+            <div class="subtitle">Live Player Statistics Dashboard</div>
+            <div class="last-update">
+                <span class="live-indicator"></span>
+                <span id="lastUpdate">Loading...</span>
+            </div>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">🏰</div>
+                <div class="stat-label">Total Characters</div>
+                <div class="stat-value" id="totalCharacters">-</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">🗡️</div>
+                <div class="stat-label">Total Logins</div>
+                <div class="stat-value" id="totalLogins">-</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-label">Recent Activity</div>
+                <div class="stat-value" id="recentActivity">-</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">🌍</div>
+                <div class="stat-label">Countries</div>
+                <div class="stat-value" id="countriesCount">-</div>
+            </div>
+        </div>
+        
+        <div class="section-title">📜 Recent Player Activity</div>
+        
+        <div class="table-container">
+            <table id="playersTable">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Character Name</th>
+                        <th>Class</th>
+                        <th>Level</th>
+                        <th>Location</th>
+                        <th>Event</th>
+                    </tr>
+                </thead>
+                <tbody id="playersBody">
+                    <tr><td colspan="6" class="loading">⚔️ Loading player data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        const STATS_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTTTgvet29pTVsTfTr1PO9Ar7abQDIPqhzS12VdwkHG0L__lsxVgtIpSAuRiaq7MmOr1GnGhJQOT73j/pub?gid=1100582614&single=true&output=csv';
+        const PLAYERS_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTTTgvet29pTVsTfTr1PO9Ar7abQDIPqhzS12VdwkHG0L__lsxVgtIpSAuRiaq7MmOr1GnGhJQOT73j/pub?gid=1014962331&single=true&output=csv';
+        
+        function parseCSV(csv) {
+            const lines = csv.trim().split('\n');
+            const headers = lines[0].split(',').map(h => h.trim());
+            const data = [];
+            
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',').map(v => v.trim());
+                const row = {};
+                headers.forEach((header, index) => {
+                    row[header] = values[index] || '';
+                });
+                data.push(row);
+            }
+            
+            return data;
+        }
+        
+        async function fetchStats() {
+            try {
+                const response = await fetch(STATS_CSV + '&t=' + Date.now());
+                const csv = await response.text();
+                const data = parseCSV(csv);
+                
+                data.forEach(row => {
+                    if (row.Metric === 'Total Characters Created') {
+                        document.getElementById('totalCharacters').textContent = row.Count || '0';
+                    } else if (row.Metric === 'Total Logins') {
+                        document.getElementById('totalLogins').textContent = row.Count || '0';
+                    }
+                });
+            } catch (error) {
+                console.error('Error fetching stats:', error);
+            }
+        }
+        
+        async function fetchPlayers() {
+            try {
+                const response = await fetch(PLAYERS_CSV + '&t=' + Date.now());
+                const csv = await response.text();
+                const data = parseCSV(csv);
+                
+                // Sort by timestamp (newest first)
+                data.reverse();
+                
+                // Get recent activity (last hour)
+                const oneHourAgo = Date.now() - 60 * 60 * 1000;
+                const recent = data.filter(row => {
+                    const timestamp = new Date(row.Timestamp);
+                    return timestamp.getTime() > oneHourAgo;
+                });
+                document.getElementById('recentActivity').textContent = recent.length;
+                
+                // Count unique countries
+                const countries = new Set(data.map(row => row.Country).filter(c => c && c !== 'Unknown'));
+                document.getElementById('countriesCount').textContent = countries.size;
+                
+                // Display table (limit to 50 most recent)
+                const tbody = document.getElementById('playersBody');
+                tbody.innerHTML = '';
+                
+                data.slice(0, 50).forEach(row => {
+                    const tr = document.createElement('tr');
+                    const timestamp = new Date(row.Timestamp);
+                    const eventClass = row['Event Type'] === 'character_login' ? 'event-login' : 'event-created';
+                    const eventIcon = row['Event Type'] === 'character_login' ? '🔄' : '✨';
+                    
+                    tr.innerHTML = `
+                        <td>${timestamp.toLocaleString()}</td>
+                        <td><strong>${row['Character Name']}</strong></td>
+                        <td><span class="class-badge">${row.Class}</span></td>
+                        <td>Lv ${row.Level}</td>
+                        <td>${row.Country}${row.State && row.State !== 'Unknown' ? ', ' + row.State : ''}</td>
+                        <td class="${eventClass}">${eventIcon} ${row['Event Type']?.replace('character_', '') || 'created'}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                
+                // Update last update time
+                document.getElementById('lastUpdate').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+                
+            } catch (error) {
+                console.error('Error fetching players:', error);
+                document.getElementById('playersBody').innerHTML = '<tr><td colspan="6" class="loading">⚠️ Error loading data</td></tr>';
+            }
+        }
+        
+        async function refreshData() {
+            await Promise.all([fetchStats(), fetchPlayers()]);
+        }
+        
+        // Initial load
+        refreshData();
+        
+        // Refresh every 10 seconds
+        setInterval(refreshData, 10000);
+    </script>
+</body>
+</html>
