@@ -437,7 +437,7 @@ window.TOWNS.town3 = {
 
             <!-- ░░ FOOTER ░░ -->
             <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:18px;">
-                <div class="t3-row" onclick="showModemSettings()">► MODEM SETTINGS</div>
+                <div class="t3-row" onclick="showSettings()">► ⚙️ SETTINGS</div>
                 <div class="t3-row" onclick="saveGame()" style="border-color:#5a3d00;">
                     ► 💾 &nbsp;QUICK SAVE
                 </div>

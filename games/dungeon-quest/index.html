@@ -4528,16 +4528,65 @@ if (typeof ADVENTURE_ENEMIES !== 'undefined') {
             ability:      [60],
         };
 
+        // ── iOS AudioContext haptic workaround ──────────────────────────────
+        // iOS Safari does not support navigator.vibrate. The only reliable
+        // way to trigger the Taptic Engine on iPhone is via the Web Audio API:
+        // a very short, near-silent audio buffer creates a small vibration.
+        // This works when the phone is NOT on silent mode.
+        let _hapticAudioCtx = null;
+        function _iosHapticPulse(durationMs) {
+            try {
+                if (!_hapticAudioCtx) {
+                    _hapticAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                const ctx = _hapticAudioCtx;
+                if (ctx.state === 'suspended') ctx.resume();
+                const buf = ctx.createBuffer(1, Math.max(1, Math.floor(ctx.sampleRate * durationMs / 1000)), ctx.sampleRate);
+                const data = buf.getChannelData(0);
+                // Tiny amplitude square wave — just enough to trigger taptic, not audible
+                for (let i = 0; i < data.length; i++) data[i] = (i % 4 < 2) ? 0.008 : -0.008;
+                const src = ctx.createBufferSource();
+                src.buffer = buf;
+                src.connect(ctx.destination);
+                src.start();
+            } catch(e) { /* silently fail on desktop */ }
+        }
+
+        const _isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const _hasVibrate = !!navigator.vibrate;
+
         function haptic(type) {
             if (localStorage.getItem('dq_haptic') === 'off') return;
-            if (!navigator.vibrate) return;
+
             if (type === 'levelUp') {
-                // Escalating rumble: soft → medium → strong → sustained
-                navigator.vibrate([30, 80, 50, 60, 80, 40, 120, 30, 150]);
+                if (_hasVibrate) {
+                    navigator.vibrate([30, 80, 50, 60, 80, 40, 120, 30, 150]);
+                } else if (_isIOS) {
+                    // Simulate escalation with sequential pulses
+                    _iosHapticPulse(30);
+                    setTimeout(() => _iosHapticPulse(50), 110);
+                    setTimeout(() => _iosHapticPulse(80), 230);
+                    setTimeout(() => _iosHapticPulse(120), 380);
+                    setTimeout(() => _iosHapticPulse(150), 560);
+                }
                 return;
             }
+
             const pattern = HAPTIC_PATTERNS[type];
-            if (pattern) navigator.vibrate(pattern);
+            if (!pattern) return;
+
+            if (_hasVibrate) {
+                navigator.vibrate(pattern);
+            } else if (_isIOS) {
+                // Play each vibrate value as a pulse, skipping pauses (even indices = vibrate, odd = pause)
+                let t = 0;
+                for (let i = 0; i < pattern.length; i++) {
+                    if (i % 2 === 0) { // vibrate slot
+                        setTimeout(() => _iosHapticPulse(pattern[i]), t);
+                    }
+                    t += pattern[i];
+                }
+            }
         }
 
 
@@ -11079,6 +11128,11 @@ window.addEventListener('beforeunload', () => {
 
         // Call on page load so sizes persist across sessions
         loadFontSizes();
+        // Restore saved modem speed
+        (function() {
+            const saved = localStorage.getItem('dq_modem_speed');
+            if (saved) currentModemSpeed = saved;
+        })();
 
         function showSettings() {
             const screen = document.getElementById('mainScreen');
@@ -11184,7 +11238,7 @@ window.addEventListener('beforeunload', () => {
                     </p>
                     <p style="font-size:13px;color:var(--border-color);margin-bottom:12px;">
                         Vibration on hits, crits, level-ups, buttons, and more.
-                        ${!navigator.vibrate ? '<br><span style="color:#ff6666;font-size:12px;">⚠️ Not supported on this device.</span>' : ''}
+                        ${_isIOS ? '<br><span style="color:#aaffaa;font-size:12px;">📱 iPhone: works best without Silent Mode on.</span>' : (!_hasVibrate ? '<br><span style="color:#ff6666;font-size:12px;">⚠️ Not supported on this device/browser.</span>' : '')}
                     </p>
                     <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px;">
                         <div class="menu-option ${localStorage.getItem('dq_haptic') !== 'off' ? 'equipped' : ''}"
@@ -11253,7 +11307,13 @@ window.addEventListener('beforeunload', () => {
 
         function setModemSpeed(speed) {
             currentModemSpeed = speed;
-            showModemSettings();
+            localStorage.setItem('dq_modem_speed', speed);
+            // Only re-render settings if we're currently showing it
+            const screen = document.getElementById('mainScreen');
+            const header = screen && screen.querySelector('.location-header');
+            if (header && header.textContent.trim().includes('SETTINGS')) {
+                showSettings();
+            }
         }
 
         function renderPlayerStats() {
