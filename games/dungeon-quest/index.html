@@ -3634,16 +3634,24 @@ Object.assign(CHRONICLE_CONTENT, {
 
 // Function to save player data to Google Sheets
 async function savePlayerToSheet(playerData) {
+  // Build URL with parameters instead of POST body (avoids CORS preflight)
+  const params = new URLSearchParams({
+    name: playerData.name,
+    class: playerData.class,
+    level: playerData.level,
+    createdDate: playerData.createdDate,
+    country: playerData.country,
+    state: playerData.state
+  });
+  
   const scriptURL = 'https://script.google.com/macros/s/AKfycbzfGZ8qGvxzNtZzQaIeRsOGJHASVjsmGJU-uxiq7DJr_EmW6mInmyviUosVa7jpWJL0KQ/exec?' + params.toString();
+  
   console.log('📤 Sending to Google Sheets:', playerData);
   
   try {
     const response = await fetch(scriptURL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(playerData)
+      method: 'GET',
+      redirect: 'follow'
     });
     
     const result = await response.json();
