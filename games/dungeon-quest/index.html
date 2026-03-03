@@ -1895,12 +1895,18 @@ body.terminal-mode #menuContainer {
         padding: 0;
         background: none;
         border: none;
+        outline: none;
+        -webkit-appearance: none;
+        appearance: none;
         color: #3a2810;
         font-size: 12px;
         font-family: monospace;
         letter-spacing: 1px;
         cursor: pointer;
         transition: color 0.15s;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+        border-radius: 0;
     }
     .chron-skip-btn:hover { color: #7a5a30; }
     /* Player name highlight */
@@ -12208,7 +12214,8 @@ window.addEventListener('beforeunload', () => {
             p.inventory.push(key);
             saveGame();
             if (typeof updateHud === 'function') updateHud();
-            showShopBuy();
+            // Re-render full shop so gold in stat block updates immediately
+            showShop();
         }
 
         function restAtInn() {
