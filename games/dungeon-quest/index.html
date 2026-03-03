@@ -2484,18 +2484,6 @@ body.terminal-mode #menuContainer {
     <!-- TERMINAL — fills all remaining space -->
     <div id="terminalWindow"></div>
 
-    <!-- Shop purchase confirmation modal -->
-    <div id="shopConfirmModal">
-        <div class="scm-box">
-            <div class="scm-title">⚔️ CONFIRM PURCHASE</div>
-            <div class="scm-item" id="scmItemName"></div>
-            <div class="scm-cost" id="scmItemCost"></div>
-            <div class="scm-buttons">
-                <button class="scm-btn-confirm" onclick="_confirmPurchase()">✔ BUY IT</button>
-                <button class="scm-btn-cancel" onclick="closeShopConfirm()">✕ CANCEL</button>
-            </div>
-        </div>
-    </div>
 
     <!-- MOBILE HUD text strip — desktop name/gold only, hidden on mobile in terminal mode -->
     <div id="mobileHud">
@@ -20877,5 +20865,17 @@ function showCharacterStats() {
   </div>
 </div>
 
+    <!-- Shop confirm modal — must be direct child of body for iOS position:fixed -->
+    <div id="shopConfirmModal">
+        <div class="scm-box">
+            <div class="scm-title">⚔️ CONFIRM PURCHASE</div>
+            <div class="scm-item" id="scmItemName"></div>
+            <div class="scm-cost" id="scmItemCost"></div>
+            <div class="scm-buttons">
+                <button class="scm-btn-confirm" onclick="_confirmPurchase()">✔ BUY IT</button>
+                <button class="scm-btn-cancel" onclick="closeShopConfirm()">✕ CANCEL</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
