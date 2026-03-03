@@ -6,11 +6,11 @@
    <!-- PWA: standalone mode removes browser chrome on iOS/Android -->
    <meta name="apple-mobile-web-app-capable" content="yes">
    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-   <meta name="apple-mobile-web-app-title" content="Dungeon Quest">
+   <meta name="apple-mobile-web-app-title" content="Calamity Dungeon">
    <meta name="mobile-web-app-capable" content="yes">
    <meta name="theme-color" content="#000000">
 
-    <title>⚔️ DUNGEON QUEST  ⚔️</title>
+    <title>⚔️ CALAMITY DUNGEON ⚔️</title>
    
    
    <style>
@@ -2333,7 +2333,7 @@ body.terminal-mode #menuContainer {
             box-shadow:0 0 40px rgba(0,255,65,0.2);
             position:relative;box-sizing:border-box;">
             <div style="font-size:22px;color:var(--highlight-color);margin-bottom:14px;border-bottom:1px solid #1a3a1a;padding-bottom:8px;">
-                📱 INSTALL DUNGEON QUEST
+                📱 INSTALL CALAMITY DUNGEON
             </div>
             <div id="installModalBody"></div>
             <button onclick="closeInstallModal()" style="margin-top:14px;width:100%;font-size:18px;border-color:#555;">✕ CLOSE</button>
@@ -2343,7 +2343,7 @@ body.terminal-mode #menuContainer {
     <!-- MENU WRAPPER (town/shop/etc) -->
     <div class="container" id="menuContainer">
         <div class="header">
-            <h1>⚔️ DUNGEON QUEST ⚔️</h1>
+            <h1>⚔️ CALAMITY DUNGEON ⚔️</h1>
             <div style="color: var(--border-color);">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
             <div style="color: var(--menu-color); font-size: 16px;">A Classic Text Adventure</div>
         </div>
@@ -4555,14 +4555,29 @@ if (typeof ADVENTURE_ENEMIES !== 'undefined') {
         const _isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
         const _hasVibrate = !!navigator.vibrate;
 
+        // Map haptic type to iOS border flash class
+        // Flash map: enemy-sourced events only (not player actions)
+        const _iosFlashMap = {
+            enemyHit:    'ios-flash-enemyhit',
+            enemyCrit:   'ios-flash-enemyhit',
+            dot:         'ios-flash-enemyhit',
+            ability:     'ios-flash-enemyhit',
+            death:       'ios-flash-enemyhit',
+            lowHp:       'ios-flash-enemyhit',
+            fleeFailure: 'ios-flash-enemyhit',
+            levelUp:     'ios-flash-levelup',
+        };
+
         function haptic(type) {
             if (localStorage.getItem('dq_haptic') === 'off') return;
+
+            // Border flash — all platforms, toggle: dq_ios_flash
+            if (_iosFlashMap[type]) iosFlash(_iosFlashMap[type]);
 
             if (type === 'levelUp') {
                 if (_hasVibrate) {
                     navigator.vibrate([30, 80, 50, 60, 80, 40, 120, 30, 150]);
                 } else if (_isIOS) {
-                    // Simulate escalation with sequential pulses
                     _iosHapticPulse(30);
                     setTimeout(() => _iosHapticPulse(50), 110);
                     setTimeout(() => _iosHapticPulse(80), 230);
@@ -4578,12 +4593,9 @@ if (typeof ADVENTURE_ENEMIES !== 'undefined') {
             if (_hasVibrate) {
                 navigator.vibrate(pattern);
             } else if (_isIOS) {
-                // Play each vibrate value as a pulse, skipping pauses (even indices = vibrate, odd = pause)
                 let t = 0;
                 for (let i = 0; i < pattern.length; i++) {
-                    if (i % 2 === 0) { // vibrate slot
-                        setTimeout(() => _iosHapticPulse(pattern[i]), t);
-                    }
+                    if (i % 2 === 0) setTimeout(() => _iosHapticPulse(pattern[i]), t);
                     t += pattern[i];
                 }
             }
@@ -5002,7 +5014,7 @@ gameState.hasRestoredGame = false;
             standalone: {
                 title: '✅ Already Installed!',
                 steps: [
-                    { icon: '🎮', text: 'You\'re already running Dungeon Quest as an installed app.' },
+                    { icon: '🎮', text: 'You\'re already running Calamity Dungeon as an installed app.' },
                     { icon: '✨', text: 'Full-screen mode is active — enjoy your adventure!' }
                 ]
             },
@@ -5012,7 +5024,7 @@ gameState.hasRestoredGame = false;
                     { icon: '1️⃣', text: 'Tap the <span class="install-highlight">⎙ Share</span> button at the bottom of Safari' },
                     { icon: '2️⃣', text: 'Scroll down and tap <span class="install-highlight">Add to Home Screen</span>' },
                     { icon: '3️⃣', text: 'Tap <span class="install-highlight">Add</span> in the top-right corner' },
-                    { icon: '4️⃣', text: 'Open <span class="install-highlight">Dungeon Quest</span> from your home screen — full-screen, no browser chrome!' }
+                    { icon: '4️⃣', text: 'Open <span class="install-highlight">Calamity Dungeon</span> from your home screen — full-screen, no browser chrome!' }
                 ]
             },
             android: {
@@ -5021,20 +5033,20 @@ gameState.hasRestoredGame = false;
                     { icon: '1️⃣', text: 'Tap the <span class="install-highlight">⋮ menu</span> in the top-right of Chrome' },
                     { icon: '2️⃣', text: 'Tap <span class="install-highlight">Add to Home screen</span> (or look for an install banner at the bottom)' },
                     { icon: '3️⃣', text: 'Tap <span class="install-highlight">Install</span> when prompted' },
-                    { icon: '4️⃣', text: 'Open <span class="install-highlight">Dungeon Quest</span> from your home screen for full-screen play!' }
+                    { icon: '4️⃣', text: 'Open <span class="install-highlight">Calamity Dungeon</span> from your home screen for full-screen play!' }
                 ]
             },
             desktop: {
                 title: '🖥️ Install on Desktop',
                 steps: [
                     { icon: '🌐', text: 'In <span class="install-highlight">Chrome or Edge</span>, look for the install icon (⊕) in the address bar' },
-                    { icon: '2️⃣', text: 'Click <span class="install-highlight">Install</span> when prompted, or go to <span class="install-highlight">⋮ menu → Install Dungeon Quest</span>' },
+                    { icon: '2️⃣', text: 'Click <span class="install-highlight">Install</span> when prompted, or go to <span class="install-highlight">⋮ menu → Install Calamity Dungeon</span>' },
                     { icon: '3️⃣', text: 'Once installed it opens in its own window without browser chrome' },
                     { icon: 'ℹ️', text: 'Firefox and Safari desktop do <span class="install-highlight">not</span> support PWA install' }
                 ]
             },
             unknown: {
-                title: '📱 Install Dungeon Quest',
+                title: '📱 Install Calamity Dungeon',
                 steps: [
                     { icon: '📖', text: 'Are you on <span class="install-highlight">iPhone/iPad</span>? Tap ⎙ Share → Add to Home Screen' },
                     { icon: '📖', text: 'Are you on <span class="install-highlight">Android</span>? Tap ⋮ menu → Add to Home Screen' },
@@ -9827,7 +9839,7 @@ window.addEventListener('beforeunload', () => {
                 <div class="location-header">MAIN MENU</div>
                 <div style="text-align:center; margin: 30px 0;">
                     <div style="display:inline-block; border:2px solid var(--highlight-color); padding:10px 28px; color:var(--highlight-color); font-family:'VT323',monospace; font-size:22px; letter-spacing:2px; box-shadow:0 0 12px rgba(255,200,0,0.3);">
-                        DUNGEON QUEST AWAITS!
+                        CALAMITY DUNGEON AWAITS!
                     </div>
                     <div style="color:var(--highlight-color); font-size:18px; margin-top:8px; letter-spacing:3px;">⚔️ ——————————————— ⚔️</div>
                 </div>
@@ -9839,6 +9851,7 @@ window.addEventListener('beforeunload', () => {
                     <div class="menu-option" onclick="loadFromFile()">📁 LOAD FROM FILE (.dqsave)</div>
                     <div class="menu-option" onclick="showInstructions()">► INSTRUCTIONS</div>
                     <div class="menu-option" onclick="showRevisionHistory()" style="border-color:#4a7a4a;color:#8aaa8a;">► 📋 REVISION HISTORY</div>
+                    <div class="menu-option" onclick="showAbout()" style="border-color:#3a2a5a;color:#9a8aaa;">&#9658; &#x1F4DC; ABOUT &amp; CONTACT</div>
                     ${installOption}
                 </div>
                 <div style="position:fixed;bottom:6px;right:10px;font-family:'VT323',monospace;font-size:13px;color:#1a3a1a;pointer-events:none;user-select:none;">
@@ -10398,6 +10411,131 @@ window.addEventListener('beforeunload', () => {
                 // Always return to main menu on error
                 showMainMenu();
             }
+        }
+
+        function showAbout() {
+            const screen = document.getElementById('mainScreen');
+            screen.innerHTML = `
+                <div style="
+                    background: #1a120a;
+                    border: 2px solid #7a5a2a;
+                    border-radius: 3px;
+                    box-shadow: 0 0 0 1px #3a2810, 0 0 30px rgba(200,140,40,0.15), inset 0 0 60px rgba(0,0,0,0.5);
+                    font-family: Georgia,'Times New Roman',serif;
+                    max-width: 640px;
+                    margin: 0 auto;
+                    overflow: hidden;
+                    position: relative;
+                ">
+                    <div style="position:absolute;inset:0;pointer-events:none;z-index:0;
+                        background:repeating-linear-gradient(0deg,transparent,transparent 27px,rgba(120,80,20,0.05) 27px,rgba(120,80,20,0.05) 28px);"></div>
+
+                    <div style="position:relative;z-index:1;
+                        background:linear-gradient(180deg,#2a1a08 0%,#1a120a 100%);
+                        border-bottom:1px solid #3a2810;
+                        padding:14px 20px 12px;
+                        display:flex;align-items:center;justify-content:space-between;">
+                        <span style="font-size:11px;letter-spacing:3px;color:#5a4020;text-transform:uppercase;">The Codex</span>
+                        <span style="font-size:18px;color:#7a5a2a;letter-spacing:6px;">✦ ✦ ✦</span>
+                        <button onclick="showMainMenu()" style="background:none;border:1px solid #3a2810;color:#5a4020;
+                            font-family:Georgia,serif;font-size:12px;padding:4px 12px;cursor:pointer;letter-spacing:1px;border-radius:2px;">
+                            ✕ CLOSE
+                        </button>
+                    </div>
+
+                    <div style="padding:28px 32px 36px;position:relative;z-index:1;">
+
+                        <div style="text-align:center;color:#5a3a18;font-size:16px;letter-spacing:10px;margin-bottom:16px;opacity:0.7;">◈ ◈ ◈</div>
+
+                        <div style="text-align:center;font-size:24px;color:#d4a840;font-weight:bold;letter-spacing:2px;margin-bottom:4px;
+                            text-shadow:0 0 20px rgba(212,168,64,0.3);">Calamity Dungeon</div>
+                        <div style="text-align:center;font-size:11px;color:#5a4020;letter-spacing:4px;text-transform:uppercase;margin-bottom:28px;">
+                            A Chronicle of the Age of Calamity</div>
+
+                        <div style="font-size:15px;color:#c8a878;line-height:1.8;font-style:italic;">
+
+                            <p style="margin:0 0 16px;text-indent:0;">
+                                <span style="font-size:2.8em;float:left;line-height:0.75;margin:4px 8px 0 0;color:#d4a840;
+                                    font-style:normal;font-weight:bold;text-shadow:0 0 10px rgba(212,168,64,0.4);">T</span>his
+                                game was built by one person — a solo project born from a love of old BBS door games,
+                                classic RPGs, and the particular feeling of staring at a green-on-black terminal at
+                                two in the morning, convinced that the next dungeon level holds something worth finding.
+                            </p>
+
+                            <p style="margin:0 0 16px;text-indent:1.5em;">
+                                Calamity Dungeon started as a small experiment and became something much larger than
+                                intended. That is usually how the good ones go.
+                            </p>
+
+                            <div style="background:rgba(80,50,10,0.22);border-left:3px solid #7a5a2a;
+                                padding:14px 18px;margin:20px 0;font-style:normal;font-size:14px;color:#9a7a50;letter-spacing:0.4px;">
+                                The world of Calamity Dungeon is still being written. New zones, monsters,
+                                dungeons, and story chapters are added continuously. If something feels
+                                unfinished, it probably is — and it probably has a release date
+                                scrawled somewhere in a notebook.
+                            </div>
+
+                            <p style="margin:0 0 16px;text-indent:1.5em;">
+                                If you find a bug, have an idea, want to see a class or monster or dungeon
+                                that does not exist yet — or simply want to say that something landed right —
+                                there is one place all of that goes.
+                            </p>
+
+                            <div style="text-align:center;color:#5a3a18;font-size:13px;letter-spacing:4px;margin:22px 0;opacity:0.6;">── ✦ ──</div>
+
+                            <div style="text-align:center;font-style:normal;margin-bottom:22px;">
+                                <div style="font-size:12px;letter-spacing:3px;color:#5a4020;text-transform:uppercase;margin-bottom:10px;">
+                                    Dispatch a message to the Keeper
+                                </div>
+                                <a href="mailto:rradio@gmail.com?subject=Calamity Dungeon" style="
+                                    display:inline-block;font-size:19px;color:#d4a840;font-style:normal;font-weight:bold;
+                                    letter-spacing:1px;text-decoration:none;border:1px solid #5a3a18;padding:10px 24px;
+                                    background:rgba(80,50,10,0.2);box-shadow:0 0 12px rgba(212,168,64,0.1);">
+                                    ✉  rradio@gmail.com
+                                </a>
+                                <div style="font-size:12px;color:#5a4020;margin-top:10px;letter-spacing:1px;">
+                                    Bug reports &nbsp;·&nbsp; Ideas &nbsp;·&nbsp; Feedback &nbsp;·&nbsp; Complaints about the difficulty
+                                </div>
+                            </div>
+
+                            <div style="background:rgba(80,50,10,0.22);border-left:3px solid #7a5a2a;
+                                padding:14px 18px;margin:20px 0;font-style:normal;font-size:14px;color:#9a7a50;letter-spacing:0.4px;">
+                                Good bug reports include: what you were doing when it happened, what
+                                class and level you were playing, and whether it happened once or every time.
+                                Screenshots are worth ten paragraphs.
+                            </div>
+
+                            <div style="text-align:center;color:#5a3a18;font-size:13px;letter-spacing:4px;margin:22px 0;opacity:0.6;">── ✦ ──</div>
+
+                            <p style="margin:0 0 16px;text-indent:1.5em;">
+                                Every suggestion is read. Not all of them make it into the game — some are too large,
+                                some conflict with the design, and some are being saved for a later chapter. But
+                                every message that comes in shapes what this becomes, even when it does not look
+                                like it.
+                            </p>
+
+                            <p style="margin:0 0 16px;text-indent:1.5em;">
+                                The dungeon goes deeper. The seal continues to weaken. Azrath is patient.
+                            </p>
+
+                            <p style="margin:16px 0 0;text-indent:0;font-style:normal;font-size:13px;
+                                color:#5a4020;text-align:right;letter-spacing:1px;">
+                                — The Keeper of the Codex
+                            </p>
+
+                        </div>
+
+                        <div style="text-align:center;color:#5a3a18;font-size:16px;letter-spacing:10px;margin-top:28px;opacity:0.5;">◈ ◈ ◈</div>
+                    </div>
+                </div>
+                <div style="text-align:center;margin:14px 0 20px;">
+                    <button onclick="showMainMenu()" style="font-size:15px;padding:8px 28px;letter-spacing:1px;">
+                        ← BACK TO MENU
+                    </button>
+                </div>
+            `;
+            screen.scrollTop = 0;
+            window.scrollTo(0, 0);
         }
 
         function showInstructions() {
@@ -11231,29 +11369,50 @@ window.addEventListener('beforeunload', () => {
                     </select>
                 </div>
 
-                <!-- ── HAPTIC FEEDBACK ────────────────────────────────── -->
+                <!-- ── HAPTIC / BORDER FLASH ─────────────────────────── -->
                 <div class="message" style="margin-bottom:14px;">
                     <p style="color:var(--highlight-color);letter-spacing:2px;margin-bottom:8px;">
                         📳 HAPTIC FEEDBACK
                     </p>
-                    <p style="font-size:13px;color:var(--border-color);margin-bottom:12px;">
-                        Vibration on hits, crits, level-ups, buttons, and more.
-                        ${_isIOS ? '<br><span style="color:#aaffaa;font-size:12px;">📱 iPhone: works best without Silent Mode on.</span>' : (!_hasVibrate ? '<br><span style="color:#ff6666;font-size:12px;">⚠️ Not supported on this device/browser.</span>' : '')}
+                    ${_isIOS ? `<p style="font-size:13px;color:#ff9966;margin-bottom:10px;">
+                        ⚠️ iOS does not support vibration in web apps — this is an Apple restriction.
+                    </p>` : `<p style="font-size:13px;color:var(--border-color);margin-bottom:10px;">
+                        Vibration on button taps, hits, level-ups, and more.
+                        ${!_hasVibrate ? '<br><span style="color:#ff6666;font-size:12px;">⚠️ Not supported on this browser.</span>' : ''}
                     </p>
-                    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px;">
+                    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
                         <div class="menu-option ${localStorage.getItem('dq_haptic') !== 'off' ? 'equipped' : ''}"
                              onclick="localStorage.removeItem('dq_haptic'); showSettings();"
                              style="flex:1;text-align:center;padding:10px 8px;">
-                            📳 ON
+                            📳 VIBRATE ON
                         </div>
                         <div class="menu-option ${localStorage.getItem('dq_haptic') === 'off' ? 'equipped' : ''}"
                              onclick="localStorage.setItem('dq_haptic','off'); showSettings();"
                              style="flex:1;text-align:center;padding:10px 8px;">
-                            🔇 OFF
+                            🔇 VIBRATE OFF
+                        </div>
+                    </div>`}
+                    <p style="font-size:13px;color:var(--border-color);margin-bottom:10px;">
+                        <b style="color:var(--highlight-color);">Border Flash</b> — terminal border flashes
+                        <span style="color:#FF4444;">red</span> when enemies hit you,
+                        <span style="color:#00FFFF;">cyan</span> on level-up.
+                        Works on all devices.
+                    </p>
+                    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px;">
+                        <div class="menu-option ${localStorage.getItem('dq_ios_flash') === 'on' ? 'equipped' : ''}"
+                             onclick="localStorage.setItem('dq_ios_flash','on'); showSettings();"
+                             style="flex:1;text-align:center;padding:10px 8px;">
+                            ✨ FLASH ON
+                        </div>
+                        <div class="menu-option ${localStorage.getItem('dq_ios_flash') !== 'on' ? 'equipped' : ''}"
+                             onclick="localStorage.removeItem('dq_ios_flash'); showSettings();"
+                             style="flex:1;text-align:center;padding:10px 8px;">
+                            🔇 FLASH OFF
                         </div>
                     </div>
-                    <button onclick="haptic('levelUp')" style="font-size:12px;padding:5px 14px;opacity:0.75;display:block;margin:0 auto;">
-                        📳 Test vibration (level-up pattern)
+                    <button onclick="iosFlash('ios-flash-levelup'); setTimeout(()=>iosFlash('ios-flash-enemyhit'),900);"
+                            style="font-size:12px;padding:5px 14px;opacity:0.75;display:block;margin:0 auto;">
+                        ✨ Preview border flash
                     </button>
                 </div>
 
