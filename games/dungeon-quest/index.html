@@ -6195,8 +6195,13 @@ function openChronicleEntry(id, idx) {
     bodyWrap.className = 'chronicle-page-body';
     page.appendChild(bodyWrap);
 
-    // Skip bar is outside the scroll in #chron-skip-bar
-    const skipBar = document.getElementById('chron-skip-bar');
+    // Skip button lives inside bodyWrap, repositions after each segment
+    const skipBtn = document.createElement('button');
+    skipBtn.className = 'chron-skip-btn';
+    skipBtn.textContent = '[ skip animation ]';
+    skipBtn.style.display = 'none';
+    skipBtn.onclick = () => skipChronicleAnimation();
+    bodyWrap.appendChild(skipBtn);
 
     // Footer ornament (added after last segment animates in)
     const footer = document.createElement('div');
@@ -6221,8 +6226,8 @@ function openChronicleEntry(id, idx) {
     const chronicleBody = document.getElementById('chronicle-body');
     if (chronicleBody) chronicleBody.scrollTop = 0;
 
-    // Show skip bar (outside scroll, always visible)
-    if (skipBar) skipBar.style.display = 'block';
+    // Show skip button
+    skipBtn.style.display = 'block';
 
     // ── Animate segments in ───────────────────────────────────────────
     window._chronAnimTimer = [];
@@ -6233,13 +6238,14 @@ function openChronicleEntry(id, idx) {
         const t = setTimeout(() => {
             if (window._chronAnimSkipped) return;
             el.classList.add('visible');
-            // Gentle scroll — bring new segment into view
-            el.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            // Move skip button to just after this segment so it travels with the text
+            if (el.nextSibling !== skipBtn) el.parentNode.insertBefore(skipBtn, el.nextSibling);
+            skipBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             // After last segment: show footer, hide skip
             if (i === segEls.length - 1) {
                 setTimeout(() => {
                     footer.style.opacity = '1';
-                    if (skipBar) skipBar.style.display = 'none';
+                    skipBtn.style.display = 'none';
                 }, 800);
             }
         }, delay);
@@ -6263,9 +6269,9 @@ function openChronicleEntry(id, idx) {
 }
 
 function skipChronicleAnimation() {
-        window._chronAnimSkipped = true;
-        const _sb = document.getElementById('chron-skip-bar');
-        if (_sb) _sb.style.display = 'none';
+    window._chronAnimSkipped = true;
+    const _sb = document.querySelector('.chron-skip-btn');
+    if (_sb) _sb.style.display = 'none';
     if (window._chronAnimTimer) {
         window._chronAnimTimer.forEach(t => clearTimeout(t));
         window._chronAnimTimer = [];
