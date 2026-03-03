@@ -4555,6 +4555,24 @@ if (typeof ADVENTURE_ENEMIES !== 'undefined') {
         const _isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
         const _hasVibrate = !!navigator.vibrate;
 
+        // ── Border flash function — fires CSS animation on terminalWindow ──
+        let _iosFlashTimer = null;
+        function iosFlash(cls) {
+            if (localStorage.getItem('dq_ios_flash') !== 'on') return;
+            const tw = document.getElementById('terminalWindow');
+            if (!tw) return;
+            // Remove all flash classes so rapid hits each restart the animation
+            tw.classList.remove('ios-flash-hit','ios-flash-crit','ios-flash-enemyhit','ios-flash-levelup');
+            if (_iosFlashTimer) clearTimeout(_iosFlashTimer);
+            void tw.offsetWidth; // force reflow to restart animation
+            tw.classList.add(cls);
+            const dur = cls === 'ios-flash-levelup' ? 700 : 380;
+            _iosFlashTimer = setTimeout(() => {
+                tw.classList.remove(cls);
+                _iosFlashTimer = null;
+            }, dur + 50);
+        }
+
         // Map haptic type to iOS border flash class
         // Flash map: enemy-sourced events only (not player actions)
         const _iosFlashMap = {
