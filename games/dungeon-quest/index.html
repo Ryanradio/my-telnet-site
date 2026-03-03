@@ -693,12 +693,14 @@ body.terminal-mode .hud-stats span {
         #shopConfirmModal {
             display: none;
             position: fixed;
-            inset: 0;
-            z-index: 5000;
-            background: rgba(0,0,0,0.85);
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 9999;
+            background: rgba(0,0,0,0.88);
             align-items: center;
             justify-content: center;
             font-family: 'VT323', monospace;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
         #shopConfirmModal.open {
             display: flex;
@@ -736,34 +738,32 @@ body.terminal-mode .hud-stats span {
             display: flex;
             gap: 12px;
         }
-        #shopConfirmModal .scm-btn-confirm {
+        #shopConfirmModal .scm-btn-confirm,
+        #shopConfirmModal .scm-btn-cancel {
             flex: 1;
-            padding: 12px 8px;
+            padding: 14px 8px;
             font-family: 'VT323', monospace;
-            font-size: 19px;
+            font-size: 20px;
             letter-spacing: 1px;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            -webkit-appearance: none;
+            border-radius: 0;
+            min-height: 52px;
+        }
+        #shopConfirmModal .scm-btn-confirm {
             background: rgba(0,80,0,0.4);
             border: 2px solid var(--border-color);
             color: #00ff41;
-            cursor: pointer;
         }
-        #shopConfirmModal .scm-btn-confirm:active {
-            background: rgba(0,120,0,0.5);
-        }
+        #shopConfirmModal .scm-btn-confirm:active { background: rgba(0,140,0,0.6); }
         #shopConfirmModal .scm-btn-cancel {
-            flex: 1;
-            padding: 12px 8px;
-            font-family: 'VT323', monospace;
-            font-size: 19px;
-            letter-spacing: 1px;
             background: rgba(60,0,0,0.4);
             border: 2px solid #441111;
             color: #ff4444;
-            cursor: pointer;
         }
-        #shopConfirmModal .scm-btn-cancel:active {
-            background: rgba(100,0,0,0.5);
-        }
+        #shopConfirmModal .scm-btn-cancel:active { background: rgba(120,0,0,0.6); }
 
         /* ─── action bar visual styles ─── */
 #actionBar {
@@ -2470,7 +2470,7 @@ body.terminal-mode #menuContainer {
             <div class="scm-item" id="scmItemName"></div>
             <div class="scm-cost" id="scmItemCost"></div>
             <div class="scm-buttons">
-                <button class="scm-btn-confirm" id="scmBtnConfirm">✔ BUY IT</button>
+                <button class="scm-btn-confirm" onclick="_confirmPurchase()">✔ BUY IT</button>
                 <button class="scm-btn-cancel" onclick="closeShopConfirm()">✕ CANCEL</button>
             </div>
         </div>
@@ -12099,6 +12099,13 @@ window.addEventListener('beforeunload', () => {
         function closeShopConfirm() {
             const m = document.getElementById('shopConfirmModal');
             if (m) m.classList.remove('open');
+            window._pendingPurchase = null;
+        }
+        function _confirmPurchase() {
+            const p = window._pendingPurchase;
+            if (!p) return;
+            closeShopConfirm();
+            _executeBuy(p.type, p.key, p.cost, p.itemName, p.disc);
         }
 
         function buyItem(type, key, baseCost) {
@@ -12158,28 +12165,18 @@ window.addEventListener('beforeunload', () => {
             else if (type === 'armor') itemName = ARMOR[key].name;
             else if (type === 'item') itemName = ITEMS[key] ? ITEMS[key].name : key;
 
-            // Show confirmation modal
-            const modal   = document.getElementById('shopConfirmModal');
-            const nameEl  = document.getElementById('scmItemName');
-            const costEl  = document.getElementById('scmItemCost');
-            const btnEl   = document.getElementById('scmBtnConfirm');
-            if (!modal) {
-                // Fallback: no modal in DOM, just buy directly
-                _executeBuy(type, key, cost, itemName, disc);
-                return;
-            }
-            nameEl.textContent = itemName;
-            costEl.innerHTML   = `Cost: <span>${cost.toLocaleString()}g</span>`
-                + (disc > 0 ? ` <span style="color:#88ff88;font-size:14px;">(${disc}% CHA discount)</span>` : '')
-                + `<br><span style="font-size:14px;color:#555;">You have: ${p.gold.toLocaleString()}g</span>`;
+            // Stash purchase data for _confirmPurchase() to retrieve
+            window._pendingPurchase = { type, key, cost, itemName, disc };
 
-            // Wire confirm button — replace listener each time to avoid stacking
-            const newBtn = btnEl.cloneNode(true);
-            btnEl.parentNode.replaceChild(newBtn, btnEl);
-            newBtn.addEventListener('click', () => {
-                closeShopConfirm();
-                _executeBuy(type, key, cost, itemName, disc);
-            });
+            const modal  = document.getElementById('shopConfirmModal');
+            const nameEl = document.getElementById('scmItemName');
+            const costEl = document.getElementById('scmItemCost');
+            if (!modal) { _executeBuy(type, key, cost, itemName, disc); return; }
+
+            nameEl.textContent = itemName;
+            costEl.innerHTML = 'Cost: <span>' + cost.toLocaleString() + 'g</span>'
+                + (disc > 0 ? ' <span style="color:#88ff88;font-size:13px;">(' + disc + '% discount)</span>' : '')
+                + '<br><span style="font-size:13px;color:#888;">You have: ' + p.gold.toLocaleString() + 'g</span>';
 
             modal.classList.add('open');
         }
