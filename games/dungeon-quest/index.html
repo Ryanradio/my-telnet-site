@@ -3634,8 +3634,7 @@ Object.assign(CHRONICLE_CONTENT, {
 
 // Function to save player data to Google Sheets
 async function savePlayerToSheet(playerData) {
-  const scriptURL = 'https://script.google.com/macros/s/AKfycbxYDYKIcMgAMK2xNo_1rTShAT29-1XDoPDXd1YC0Al8o4V8tkXEC8l8vsXQhFo0gW_j0Q/exec';
-  
+  const scriptURL = 'https://script.google.com/macros/s/AKfycbzfGZ8qGvxzNtZzQaIeRsOGJHASVjsmGJU-uxiq7DJr_EmW6mInmyviUosVa7jpWJL0KQ/exec?' + params.toString();
   console.log('📤 Sending to Google Sheets:', playerData);
   
   try {
