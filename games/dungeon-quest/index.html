@@ -5,6 +5,8 @@
    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
    <!-- PWA: standalone mode removes browser chrome on iOS/Android -->
    <meta name="apple-mobile-web-app-capable" content="yes">
+   <!-- Inline PWA manifest — portrait lock for Android Chrome -->
+   <link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;Calamity Dungeon&quot;,&quot;short_name&quot;:&quot;Calamity Dungeon&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;orientation&quot;:&quot;portrait&quot;,&quot;background_color&quot;:&quot;%23000000&quot;,&quot;theme_color&quot;:&quot;%23000000&quot;}">
    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
    <meta name="apple-mobile-web-app-title" content="Calamity Dungeon">
    <meta name="mobile-web-app-capable" content="yes">
@@ -82,6 +84,25 @@ body {
     overflow: hidden;
     max-width: 900px;
     margin: 0 auto;
+}
+
+/* ── Force portrait — show warning if user rotates to landscape ─── */
+@media screen and (orientation: landscape) and (max-height: 600px) {
+    body::before {
+        content: "Rotate your device to portrait mode";
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        background: #000;
+        color: #00ff41;
+        font-family: monospace;
+        font-size: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 20px;
+    }
 }
 
 /* ── Gameplay wrapper — full viewport, column flex ──────────────── */
@@ -11395,6 +11416,17 @@ window.addEventListener('beforeunload', () => {
 
         // Call on page load so sizes persist across sessions
         loadFontSizes();
+
+        // Lock portrait in standalone/PWA mode (works on Android Chrome)
+        (function() {
+            try {
+                const standalone = window.navigator.standalone === true
+                    || window.matchMedia('(display-mode: standalone)').matches;
+                if (standalone && screen.orientation && screen.orientation.lock) {
+                    screen.orientation.lock('portrait').catch(function(){});
+                }
+            } catch(e) {}
+        })();
         // Restore saved modem speed
         (function() {
             const saved = localStorage.getItem('dq_modem_speed');
