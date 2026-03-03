@@ -689,6 +689,82 @@ body.terminal-mode .hud-stats span {
         .term-line.term-system    { color: #888; font-style: italic; }
         .term-line.term-separator { margin-top: 6px; padding-top: 6px; border-top: 1px solid #2a4a2a; }
 
+        /* ─── Shop purchase confirmation modal ─── */
+        #shopConfirmModal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 5000;
+            background: rgba(0,0,0,0.85);
+            align-items: center;
+            justify-content: center;
+            font-family: 'VT323', monospace;
+        }
+        #shopConfirmModal.open {
+            display: flex;
+        }
+        #shopConfirmModal .scm-box {
+            background: #0a0a0a;
+            border: 2px solid var(--border-color);
+            box-shadow: 0 0 0 1px #1a3a1a, 0 0 30px rgba(0,255,65,0.15);
+            padding: 28px 28px 22px;
+            max-width: 340px;
+            width: 92vw;
+            text-align: center;
+        }
+        #shopConfirmModal .scm-title {
+            font-size: 20px;
+            color: var(--highlight-color);
+            letter-spacing: 2px;
+            margin-bottom: 6px;
+        }
+        #shopConfirmModal .scm-item {
+            font-size: 22px;
+            color: #FFD700;
+            margin-bottom: 4px;
+            text-shadow: 0 0 10px rgba(255,215,0,0.3);
+        }
+        #shopConfirmModal .scm-cost {
+            font-size: 17px;
+            color: var(--border-color);
+            margin-bottom: 18px;
+        }
+        #shopConfirmModal .scm-cost span {
+            color: #FFD700;
+        }
+        #shopConfirmModal .scm-buttons {
+            display: flex;
+            gap: 12px;
+        }
+        #shopConfirmModal .scm-btn-confirm {
+            flex: 1;
+            padding: 12px 8px;
+            font-family: 'VT323', monospace;
+            font-size: 19px;
+            letter-spacing: 1px;
+            background: rgba(0,80,0,0.4);
+            border: 2px solid var(--border-color);
+            color: #00ff41;
+            cursor: pointer;
+        }
+        #shopConfirmModal .scm-btn-confirm:active {
+            background: rgba(0,120,0,0.5);
+        }
+        #shopConfirmModal .scm-btn-cancel {
+            flex: 1;
+            padding: 12px 8px;
+            font-family: 'VT323', monospace;
+            font-size: 19px;
+            letter-spacing: 1px;
+            background: rgba(60,0,0,0.4);
+            border: 2px solid #441111;
+            color: #ff4444;
+            cursor: pointer;
+        }
+        #shopConfirmModal .scm-btn-cancel:active {
+            background: rgba(100,0,0,0.5);
+        }
+
         /* ─── action bar visual styles ─── */
 #actionBar {
     background: var(--secondary-bg);
@@ -2386,6 +2462,19 @@ body.terminal-mode #menuContainer {
 
     <!-- TERMINAL — fills all remaining space -->
     <div id="terminalWindow"></div>
+
+    <!-- Shop purchase confirmation modal -->
+    <div id="shopConfirmModal">
+        <div class="scm-box">
+            <div class="scm-title">⚔️ CONFIRM PURCHASE</div>
+            <div class="scm-item" id="scmItemName"></div>
+            <div class="scm-cost" id="scmItemCost"></div>
+            <div class="scm-buttons">
+                <button class="scm-btn-confirm" id="scmBtnConfirm">✔ BUY IT</button>
+                <button class="scm-btn-cancel" onclick="closeShopConfirm()">✕ CANCEL</button>
+            </div>
+        </div>
+    </div>
 
     <!-- MOBILE HUD text strip — desktop name/gold only, hidden on mobile in terminal mode -->
     <div id="mobileHud">
@@ -12006,10 +12095,16 @@ window.addEventListener('beforeunload', () => {
             }
         }
 
+        // ── Shop confirmation modal helpers ─────────────────────────────
+        function closeShopConfirm() {
+            const m = document.getElementById('shopConfirmModal');
+            if (m) m.classList.remove('open');
+        }
+
         function buyItem(type, key, baseCost) {
             const p = gameState.player;
             const playerClass = p.baseClass || p.class;
-            
+
             // Recall potion: only one allowed at a time
             if (key === 'recall_potion' && p.inventory.includes('recall_potion')) {
                 alert('You already carry a Recall Potion.\nYou can only hold one at a time.');
@@ -12048,25 +12143,53 @@ window.addEventListener('beforeunload', () => {
                     return;
                 }
             }
-            
-            const disc   = calcChaDiscount(p.cha);
-            const cost   = Math.max(1, Math.floor(baseCost * (1 - disc/100)));
+
+            const disc = calcChaDiscount(p.cha);
+            const cost = Math.max(1, Math.floor(baseCost * (1 - disc/100)));
+
             if (p.gold < cost) {
                 alert('Not enough gold!');
                 return;
             }
-            p.gold -= cost;
-            haptic('buy');
-            p.inventory.push(key);
+
+            // Resolve item name
             let itemName;
             if (type === 'weapon') itemName = WEAPONS[key].name;
             else if (type === 'armor') itemName = ARMOR[key].name;
-            else if (type === 'item') itemName = ITEMS[key].name;
-            alert(`Purchased ${itemName} for ${cost}g!` + (disc > 0 ? ` (${disc}% CHA discount)` : ''));
-            
-            // 💾 AUTO-SAVE after buying
+            else if (type === 'item') itemName = ITEMS[key] ? ITEMS[key].name : key;
+
+            // Show confirmation modal
+            const modal   = document.getElementById('shopConfirmModal');
+            const nameEl  = document.getElementById('scmItemName');
+            const costEl  = document.getElementById('scmItemCost');
+            const btnEl   = document.getElementById('scmBtnConfirm');
+            if (!modal) {
+                // Fallback: no modal in DOM, just buy directly
+                _executeBuy(type, key, cost, itemName, disc);
+                return;
+            }
+            nameEl.textContent = itemName;
+            costEl.innerHTML   = `Cost: <span>${cost.toLocaleString()}g</span>`
+                + (disc > 0 ? ` <span style="color:#88ff88;font-size:14px;">(${disc}% CHA discount)</span>` : '')
+                + `<br><span style="font-size:14px;color:#555;">You have: ${p.gold.toLocaleString()}g</span>`;
+
+            // Wire confirm button — replace listener each time to avoid stacking
+            const newBtn = btnEl.cloneNode(true);
+            btnEl.parentNode.replaceChild(newBtn, btnEl);
+            newBtn.addEventListener('click', () => {
+                closeShopConfirm();
+                _executeBuy(type, key, cost, itemName, disc);
+            });
+
+            modal.classList.add('open');
+        }
+
+        function _executeBuy(type, key, cost, itemName, disc) {
+            const p = gameState.player;
+            p.gold -= cost;
+            haptic('buy');
+            p.inventory.push(key);
             saveGame();
-            
             showShopBuy();
         }
 
