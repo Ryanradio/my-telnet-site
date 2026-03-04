@@ -7930,6 +7930,39 @@ window.addEventListener('beforeunload', () => {
             }
         }
 
+        // ═══════════════════════════════════════════════════════════════
+// SYSOP MODE - 7 taps on About & Contact (Android Easter Egg style)
+// ═══════════════════════════════════════════════════════════════
+let aboutTapCount = 0;
+let aboutTapTimeout = null;
+
+function handleAboutClick() {
+    aboutTapCount++;
+    
+    // Reset counter after 3 seconds of inactivity
+    clearTimeout(aboutTapTimeout);
+    aboutTapTimeout = setTimeout(() => {
+        aboutTapCount = 0;
+    }, 3000);
+    
+    // Check if reached 7 taps
+    if (aboutTapCount === 7) {
+        aboutTapCount = 0;
+        clearTimeout(aboutTapTimeout);
+        
+        // Show sysop mode activation
+        openSysopOverlay();
+    } else if (aboutTapCount >= 4) {
+        // Give feedback after 4 taps (like Android developer mode)
+        console.log(`🔨 ${7 - aboutTapCount} more tap${7 - aboutTapCount === 1 ? '' : 's'} to sysop mode...`);
+    }
+    
+    // On first 3 taps, still show the about page normally
+    if (aboutTapCount <= 3) {
+        showAbout();
+    }
+}
+
         // ── SYSOP overlay open / close ────────────────────────────────
         function openSysopOverlay() {
             document.getElementById('sysopOverlay').classList.add('open');
@@ -10050,7 +10083,7 @@ window.addEventListener('beforeunload', () => {
                     <div class="menu-option" onclick="loadFromFile()">📁 LOAD FROM FILE (.dqsave)</div>
                     <div class="menu-option" onclick="showInstructions()">► INSTRUCTIONS</div>
                     <div class="menu-option" onclick="showRevisionHistory()" style="border-color:#4a7a4a;color:#8aaa8a;">► 📋 REVISION HISTORY</div>
-                    <div class="menu-option" onclick="showAbout()" style="border-color:#3a2a5a;color:#9a8aaa;">&#9658; &#x1F4DC; ABOUT &amp; CONTACT</div>
+                    <div class="menu-option" onclick="handleAboutClick()" style="border-color:#3a2a5a;color:#9a8aaa;">&#9658; &#x1F4DC; ABOUT &amp; CONTACT</div>
                     ${installOption}
                 </div>
                 <div style="position:fixed;bottom:6px;right:10px;font-family:'VT323',monospace;font-size:13px;color:#1a3a1a;pointer-events:none;user-select:none;">
