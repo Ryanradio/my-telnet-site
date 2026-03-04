@@ -7849,18 +7849,14 @@ window.addEventListener('beforeunload', () => {
         }
 
         // ═══════════════════════════════════════════════════════════════
-        // 🎒 INVENTORY BUTTON LONG-PRESS → SYSOP (3 seconds)
-        // Works in both dungeon action bar and town menu
+        // 🎒 INVENTORY & POTION BUTTONS - Normal tap only (sysop removed)
+        // Sysop access moved to About & Contact (7 taps)
         // ═══════════════════════════════════════════════════════════════
         let _invMenuHoldTimer = null, _invMenuFired = false;
         function _invMenuDown(e) {
             if (e.cancelable) e.preventDefault();
             _invMenuFired = false;
-            _invMenuHoldTimer = setTimeout(() => {
-                _invMenuHoldTimer = null;
-                _invMenuFired = true;
-                openSysopOverlay();
-            }, POT_HOLD_MS);
+            // No sysop trigger anymore
         }
         function _invMenuUp() {
             if (_invMenuHoldTimer) { clearTimeout(_invMenuHoldTimer); _invMenuHoldTimer = null; }
@@ -7871,18 +7867,14 @@ window.addEventListener('beforeunload', () => {
             if (_invMenuHoldTimer) { clearTimeout(_invMenuHoldTimer); _invMenuHoldTimer = null; }
             _invMenuFired = false;
         }
+        
         let _potHoldTimer  = null;
         let _potFired      = false;
-        const POT_HOLD_MS  = 3000;
 
         function potBtnDown(e, normalFn) {
             e.preventDefault();
             _potFired = false;
-            _potHoldTimer = setTimeout(() => {
-                _potHoldTimer = null;
-                _potFired     = true;
-                openSysopOverlay();
-            }, POT_HOLD_MS);
+            // No sysop trigger anymore
         }
         function potBtnUp(e, normalFn) {
             if (_potHoldTimer) {
@@ -7899,7 +7891,7 @@ window.addEventListener('beforeunload', () => {
             if (_potHoldTimer) { clearTimeout(_potHoldTimer); _potHoldTimer = null; }
             _potFired = false;
         }
-
+        
         // ═══════════════════════════════════════════════════════════════
         // 📊 PRINT STATS TO TERMINAL
         // ═══════════════════════════════════════════════════════════════
@@ -11207,9 +11199,7 @@ showWelcomeScreen();
                     <div class="menu-option" onclick="showBlacksmith()">► ⚒️ BLACKSMITH</div>
                     ${dungeonOption}
                     <div class="menu-option" onclick="restAtInn()">► REST AT INN (${calcInnCost(p.cha)} Gold)</div>
-                    <div class="menu-option" id="townInvBtn"
-                        onmousedown="_invMenuDown(event)" onmouseup="_invMenuUp()" onmouseleave="_invMenuCancel()"
-                        ontouchstart="_invMenuDown(event)" ontouchend="_invMenuUp()" ontouchcancel="_invMenuCancel()">► INVENTORY</div>
+                    <div class="menu-option" onclick="showInventory()">► INVENTORY</div>
                     <div class="menu-option" onclick="showExplore()">► EXPLORE WORLD</div>
                     ${portalOption}
                     <div class="menu-option" onclick="showSettings()">► ⚙️ SETTINGS</div>
