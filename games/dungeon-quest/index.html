@@ -7948,15 +7948,16 @@ function handleAboutClick() {
     } else if (aboutTapCount >= 4) {
         // Give feedback after 4 taps (like Android developer mode)
         console.log(`🔨 ${7 - aboutTapCount} more tap${7 - aboutTapCount === 1 ? '' : 's'} to sysop mode...`);
-        // DON'T show about page while in tap-counting mode
+        // DON'T navigate away - keep counting
+        return;
+    } else if (aboutTapCount >= 2) {
+        // Taps 2-6: just count, don't navigate
+        console.log(`Tap ${aboutTapCount}/7...`);
         return;
     }
     
-    // Only show about page on the very first tap
-    if (aboutTapCount === 1) {
-        showAbout();
-    }
-    // Taps 2-3 do nothing but count toward the 7-tap total
+    // Only on first tap: show about page normally
+    showAbout();
 }
 
         // ── SYSOP overlay open / close ────────────────────────────────
