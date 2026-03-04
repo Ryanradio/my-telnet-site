@@ -7922,43 +7922,6 @@ window.addEventListener('beforeunload', () => {
             }
         }
 
-        // ═══════════════════════════════════════════════════════════════
-// SYSOP MODE - 7 taps on About & Contact (Android Easter Egg style)
-// ═══════════════════════════════════════════════════════════════
-let aboutTapCount = 0;
-let aboutTapTimeout = null;
-
-function handleAboutClick() {
-    aboutTapCount++;
-    
-    // Reset counter after 3 seconds of inactivity
-    clearTimeout(aboutTapTimeout);
-    aboutTapTimeout = setTimeout(() => {
-        aboutTapCount = 0;
-    }, 3000);
-    
-    // Check if reached 7 taps
-    if (aboutTapCount === 7) {
-        aboutTapCount = 0;
-        clearTimeout(aboutTapTimeout);
-        
-        // Show sysop mode activation
-        openSysopOverlay();
-        return; // Don't show about page
-    } else if (aboutTapCount >= 4) {
-        // Give feedback after 4 taps (like Android developer mode)
-        console.log(`🔨 ${7 - aboutTapCount} more tap${7 - aboutTapCount === 1 ? '' : 's'} to sysop mode...`);
-        // DON'T navigate away - keep counting
-        return;
-    } else if (aboutTapCount >= 2) {
-        // Taps 2-6: just count, don't navigate
-        console.log(`Tap ${aboutTapCount}/7...`);
-        return;
-    }
-    
-    // Only on first tap: show about page normally
-    showAbout();
-}
 
         // ── SYSOP overlay open / close ────────────────────────────────
         function openSysopOverlay() {
@@ -10048,7 +10011,43 @@ function handleAboutClick() {
             });
         }
 
-        function showMainMenu() {
+// ═══════════════════════════════════════════════════════════════
+// SYSOP MODE - Press and hold About & Contact for 3 seconds
+// ═══════════════════════════════════════════════════════════════
+let aboutHoldTimer = null;
+let aboutHoldFired = false;
+
+function handleAboutDown(e) {
+    if (e && e.cancelable) e.preventDefault();
+    aboutHoldFired = false;
+    aboutHoldTimer = setTimeout(() => {
+        aboutHoldTimer = null;
+        aboutHoldFired = true;
+        openSysopOverlay();
+    }, 3000);
+}
+
+function handleAboutUp() {
+    if (aboutHoldTimer) {
+        clearTimeout(aboutHoldTimer);
+        aboutHoldTimer = null;
+    }
+    if (!aboutHoldFired) {
+        showAbout();
+    }
+    aboutHoldFired = false;
+}
+
+function handleAboutCancel() {
+    if (aboutHoldTimer) {
+        clearTimeout(aboutHoldTimer);
+        aboutHoldTimer = null;
+    }
+    aboutHoldFired = false;
+}
+
+
+function showMainMenu() {
             checkGameVersion();
             const screen = document.getElementById('mainScreen');
             const characters = getAllCharacters();
@@ -10080,10 +10079,7 @@ function handleAboutClick() {
                     <div class="menu-option" onclick="loadFromFile()">📁 LOAD FROM FILE (.dqsave)</div>
                     <div class="menu-option" onclick="showInstructions()">► INSTRUCTIONS</div>
                     <div class="menu-option" onclick="showRevisionHistory()" style="border-color:#4a7a4a;color:#8aaa8a;">► 📋 REVISION HISTORY</div>
-                    <div class="menu-option" 
-     onmousedown="handleAboutDown(event)" onmouseup="handleAboutUp()" onmouseleave="handleAboutCancel()"
-     ontouchstart="handleAboutDown(event)" ontouchend="handleAboutUp()" ontouchcancel="handleAboutCancel()"
-     style="border-color:#3a2a5a;color:#9a8aaa;">&#9658; &#x1F4DC; ABOUT &amp; CONTACT</div>
+                    <div class="menu-option" onclick="showAbout()" style="border-color:#3a2a5a;color:#9a8aaa;">&#9658; &#x1F4DC; ABOUT &amp; CONTACT</div>
                     ${installOption}
                 </div>
                 <div style="position:fixed;bottom:6px;right:10px;font-family:'VT323',monospace;font-size:13px;color:#1a3a1a;pointer-events:none;user-select:none;">
@@ -10091,6 +10087,7 @@ function handleAboutClick() {
                 </div>
             `;
         }
+
 
         function showCharacterSelect() {
             checkGameVersion();
