@@ -10080,7 +10080,10 @@ function handleAboutClick() {
                     <div class="menu-option" onclick="loadFromFile()">📁 LOAD FROM FILE (.dqsave)</div>
                     <div class="menu-option" onclick="showInstructions()">► INSTRUCTIONS</div>
                     <div class="menu-option" onclick="showRevisionHistory()" style="border-color:#4a7a4a;color:#8aaa8a;">► 📋 REVISION HISTORY</div>
-                    <div class="menu-option" onclick="handleAboutClick()" style="border-color:#3a2a5a;color:#9a8aaa;">&#9658; &#x1F4DC; ABOUT &amp; CONTACT</div>
+                    <div class="menu-option" 
+     onmousedown="handleAboutDown(event)" onmouseup="handleAboutUp()" onmouseleave="handleAboutCancel()"
+     ontouchstart="handleAboutDown(event)" ontouchend="handleAboutUp()" ontouchcancel="handleAboutCancel()"
+     style="border-color:#3a2a5a;color:#9a8aaa;">&#9658; &#x1F4DC; ABOUT &amp; CONTACT</div>
                     ${installOption}
                 </div>
                 <div style="position:fixed;bottom:6px;right:10px;font-family:'VT323',monospace;font-size:13px;color:#1a3a1a;pointer-events:none;user-select:none;">
