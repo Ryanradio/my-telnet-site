@@ -7925,9 +7925,28 @@ window.addEventListener('beforeunload', () => {
 
         // ── SYSOP overlay open / close ────────────────────────────────
         function openSysopOverlay() {
-            document.getElementById('sysopOverlay').classList.add('open');
-            renderSysopOverlay();
-        }
+    // Ensure this function connects to the logic in Citation 2
+    const terminal = document.getElementById('terminalContainer');
+    const gameState = window.gameState; // Ensure gameState is accessible
+    
+    if (!gameState) {
+        console.error('gameState not found');
+        return;
+    }
+
+    // Activate the terminal state (from Citation 2)
+    gameState.sysop.terminalActive = true; 
+    
+    // Toggle the UI (from Citation 2)
+    terminal.classList.add('active');
+    terminal.querySelector('input')?.focus();
+
+    // Check for auth status (from Citation 2)
+    if (!gameState.sysop.authenticated) {
+        terminalPrint('Terminal activated. Type /login <username> <password> to authenticate.', 'warning');
+    }
+}
+
         function closeSysopOverlay() {
             document.getElementById('sysopOverlay').classList.remove('open');
         }
