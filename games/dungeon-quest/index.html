@@ -10019,20 +10019,26 @@ let aboutHoldFired = false;
 
 function handleAboutDown(e) {
     if (e && e.cancelable) e.preventDefault();
+    console.log('🔵 About button pressed - starting 3 second timer...');
     aboutHoldFired = false;
     aboutHoldTimer = setTimeout(() => {
+        console.log('🟢 3 seconds elapsed - opening sysop...');
         aboutHoldTimer = null;
         aboutHoldFired = true;
         openSysopOverlay();
+        console.log('🟢 openSysopOverlay() called');
     }, 3000);
 }
 
 function handleAboutUp() {
+    console.log('🔴 About button released');
     if (aboutHoldTimer) {
+        console.log('⚠️ Cleared timer - was not held long enough');
         clearTimeout(aboutHoldTimer);
         aboutHoldTimer = null;
     }
     if (!aboutHoldFired) {
+        console.log('📄 Showing About page (normal tap)');
         showAbout();
     }
     aboutHoldFired = false;
