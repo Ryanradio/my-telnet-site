@@ -19736,7 +19736,7 @@ function playerIsExhausted() {
                 if (debugMode) termAppend(`<span style="color:#336633;">  → 💎 Gem: raw_${gemTypeKey}_t${tier}</span>`, 'term-dim');
             }
 
-            const rarityBonus = RARITY_CONFIG[monster.rarity].dropBonus || 0;
+            const rarityBonus = (RARITY_CONFIG[monster.rarity] || RARITY_CONFIG['common']).dropBonus || 0;
             
             if (!monster.possibleDrops || monster.possibleDrops.length === 0) {
                 if (debugMode) termAppend(`<span style="color:#336633;">  → No possibleDrops defined for ${monster.name}</span>`, 'term-dim');

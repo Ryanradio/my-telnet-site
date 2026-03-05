@@ -210,7 +210,7 @@ Object.assign(ENEMIES, {
         level: 1,
         description: 'A small, sneaky creature with crude weapons',
         possibleDrops: ['health_potion', 'dagger', 'cloth_armor', 'small_gem'],
-        dropRates: { common: 0.4, uncommon: 0.2, rare: 0.05, epic: 0.01 },
+        dropRates: { common: 0.606, uncommon: 0.303, rare: 0.0758, epic: 0.0152 },
         abilities: [
             {
                 id: 'dirty_strike',
@@ -241,7 +241,7 @@ Object.assign(ENEMIES, {
         level: 1,
         description: 'A wild predator with sharp fangs',
         possibleDrops: ['health_potion', 'wolf_pelt', 'small_gem'],
-        dropRates: { common: 0.5, uncommon: 0.15, rare: 0.03 },
+        dropRates: { common: 0.7353, uncommon: 0.2206, rare: 0.0441 },
         abilities: [
             {
                 id: 'maul',
@@ -276,7 +276,7 @@ Object.assign(ENEMIES, {
         level: 2,
         description: 'A massive arachnid with venomous fangs',
         possibleDrops: ['health_potion', 'mana_potion', 'spider_silk', 'small_gem'],
-        dropRates: { common: 0.4, uncommon: 0.25, rare: 0.08, epic: 0.02 },
+        dropRates: { common: 0.5333, uncommon: 0.3333, rare: 0.1067, epic: 0.0267 },
         abilities: [
             {
                 id: 'venom_bite',
@@ -311,7 +311,7 @@ Object.assign(ENEMIES, {
         level: 1,
         description: 'An aggressive tusked beast',
         possibleDrops: ['health_potion', 'boar_hide', 'small_gem'],
-        dropRates: { common: 0.5, uncommon: 0.2, rare: 0.05 },
+        dropRates: { common: 0.6666, uncommon: 0.2667, rare: 0.0667 },
         abilities: [
             {
                 id: 'charge',
@@ -341,7 +341,7 @@ Object.assign(ENEMIES, {
         level: 1,
         description: 'A gelatinous blob that absorbs everything',
         possibleDrops: ['health_potion', 'slime_gel', 'small_gem'],
-        dropRates: { common: 0.6, uncommon: 0.15, rare: 0.02 }
+        dropRates: { common: 0.7792, uncommon: 0.1948, rare: 0.026 }
     },
     
     kobold: {
@@ -356,7 +356,7 @@ Object.assign(ENEMIES, {
         level: 1,
         description: 'A small reptilian humanoid with a spear',
         possibleDrops: ['health_potion', 'dagger', 'small_gem'],
-        dropRates: { common: 0.5, uncommon: 0.2, rare: 0.05 }
+        dropRates: { common: 0.6666, uncommon: 0.2667, rare: 0.0667 }
     },
     
     giant_rat: {
@@ -371,7 +371,7 @@ Object.assign(ENEMIES, {
         level: 1,
         description: 'A diseased rodent the size of a dog',
         possibleDrops: ['health_potion', 'rat_tail', 'small_gem'],
-        dropRates: { common: 0.6, uncommon: 0.1, rare: 0.02 }
+        dropRates: { common: 0.8333, uncommon: 0.1389, rare: 0.0278 }
     },
     
     forest_imp: {
@@ -386,7 +386,7 @@ Object.assign(ENEMIES, {
         level: 2,
         description: 'A mischievous fey creature with dark magic',
         possibleDrops: ['mana_potion', 'imp_horn', 'small_gem'],
-        dropRates: { common: 0.4, uncommon: 0.25, rare: 0.08, epic: 0.02 }
+        dropRates: { common: 0.5333, uncommon: 0.3333, rare: 0.1067, epic: 0.0267 }
     },
     
     bandit: { 
@@ -401,7 +401,7 @@ Object.assign(ENEMIES, {
         level: 3,
         description: 'A cunning thief who preys on travelers',
         possibleDrops: ['health_potion', 'mana_potion', 'poison_dagger', 'medium_gem', 'gold_coins'],
-        dropRates: { common: 0.3, uncommon: 0.3, rare: 0.15, epic: 0.06, legendary: 0.01 }
+        dropRates: { common: 0.3658, uncommon: 0.3659, rare: 0.1829, epic: 0.0732, legendary: 0.0122 }
     },
     
     // Riverside monsters
@@ -417,7 +417,7 @@ Object.assign(ENEMIES, {
         level: 3,
         description: 'A mossy troll that lurks by the water',
         possibleDrops: ['health_potion', 'troll_moss', 'medium_gem'],
-        dropRates: { common: 0.4, uncommon: 0.25, rare: 0.1, epic: 0.03 }
+        dropRates: { common: 0.5128, uncommon: 0.3205, rare: 0.1282, epic: 0.0385 }
     },
     
     swamp_lurker: {
@@ -432,7 +432,7 @@ Object.assign(ENEMIES, {
         level: 3,
         description: 'A creature that hides beneath the murky water',
         possibleDrops: ['health_potion', 'swamp_essence', 'medium_gem'],
-        dropRates: { common: 0.45, uncommon: 0.2, rare: 0.08, epic: 0.02 }
+        dropRates: { common: 0.5999, uncommon: 0.2667, rare: 0.1067, epic: 0.0267 }
     },
     
     giant_frog: {
@@ -447,7 +447,7 @@ Object.assign(ENEMIES, {
         level: 2,
         description: 'A huge amphibian with a sticky tongue',
         possibleDrops: ['health_potion', 'frog_legs', 'small_gem'],
-        dropRates: { common: 0.5, uncommon: 0.2, rare: 0.05 }
+        dropRates: { common: 0.6666, uncommon: 0.2667, rare: 0.0667 }
     },
     
     water_snake: {
@@ -462,7 +462,7 @@ Object.assign(ENEMIES, {
         level: 3,
         description: 'A venomous serpent that strikes from the water',
         possibleDrops: ['health_potion', 'snake_venom', 'snake_skin', 'small_gem'],
-        dropRates: { common: 0.4, uncommon: 0.25, rare: 0.1, epic: 0.03 },
+        dropRates: { common: 0.5128, uncommon: 0.3205, rare: 0.1282, epic: 0.0385 },
         abilities: [
             {
                 id: 'venom_strike',
@@ -515,7 +515,7 @@ Object.assign(ENEMIES, {
         level: 6,
         description: 'A brutish warrior with a battle axe',
         possibleDrops: ['health_potion', 'iron_sword', 'leather_armor', 'medium_gem', 'warhammer'],
-        dropRates: { common: 0.35, uncommon: 0.25, rare: 0.12, epic: 0.05, legendary: 0.01 }
+        dropRates: { common: 0.4488, uncommon: 0.3205, rare: 0.1538, epic: 0.0641, legendary: 0.0128 }
     },
     
     dire_wolf: { 
@@ -545,7 +545,7 @@ Object.assign(ENEMIES, {
                 applyMessage: (enemyName, playerClass) => `🐺 The ${enemyName} unleashes a bone-chilling howl! The ${playerClass} feels their courage waver — <span style="color:#ffaa44;">⚠️ -25% damage for 6 seconds.</span>`
             }
         ],
-        dropRates: { common: 0.4, uncommon: 0.2, rare: 0.08, epic: 0.03 }
+        dropRates: { common: 0.5633, uncommon: 0.2817, rare: 0.1127, epic: 0.0423 }
     },
     
     plains_lion: {
@@ -574,7 +574,7 @@ Object.assign(ENEMIES, {
                 applyMessage: (enemyName, playerClass) => `🦁 The ${enemyName} POUNCES! Claws rake through the ${playerClass}'s guard!`
             }
         ],
-        dropRates: { common: 0.4, uncommon: 0.25, rare: 0.1, epic: 0.04 }
+        dropRates: { common: 0.5063, uncommon: 0.3165, rare: 0.1266, epic: 0.0506 }
     },
     
     centaur: {
@@ -615,7 +615,7 @@ Object.assign(ENEMIES, {
                 applyMessage: (enemyName, playerClass) => `🐎 The ${enemyName} is ENRAGED! A desperate, thundering charge!`
             }
         ],
-        dropRates: { common: 0.35, uncommon: 0.25, rare: 0.12, epic: 0.05, legendary: 0.02 }
+        dropRates: { common: 0.443, uncommon: 0.3165, rare: 0.1519, epic: 0.0633, legendary: 0.0253 }
     },
     
     plains_raider: {
@@ -646,7 +646,7 @@ Object.assign(ENEMIES, {
                 applyMessage: (enemyName, playerClass) => `🏇 The ${enemyName} circles in a dust cloud! The ${playerClass} is blinded — <span style="color:#ffaa44;">⚠️ 30% chance to miss next attacks.</span>`
             }
         ],
-        dropRates: { common: 0.35, uncommon: 0.3, rare: 0.15, epic: 0.05 }
+        dropRates: { common: 0.4118, uncommon: 0.3529, rare: 0.1765, epic: 0.0588 }
     },
     
     giant_scorpion: {
@@ -681,7 +681,7 @@ Object.assign(ENEMIES, {
                 applyMessage: (enemyName, playerClass) => `🦂 The ${enemyName}'s stinger plunges in! Potent venom floods the ${playerClass}'s veins — <b>Poisoned!</b>`
             }
         ],
-        dropRates: { common: 0.35, uncommon: 0.25, rare: 0.15, epic: 0.06, legendary: 0.01 }
+        dropRates: { common: 0.4268, uncommon: 0.3049, rare: 0.1829, epic: 0.0732, legendary: 0.0122 }
     },
     
     // Graveyard monsters
@@ -717,7 +717,7 @@ Object.assign(ENEMIES, {
                 applyMessage: (enemyName, playerClass) => `☣️ The ${enemyName}'s rotting bite infects the ${playerClass}! <b>Plagued!</b>`
             }
         ],
-        dropRates: { common: 0.45, uncommon: 0.2, rare: 0.08, epic: 0.02 }
+        dropRates: { common: 0.5999, uncommon: 0.2667, rare: 0.1067, epic: 0.0267 }
     },
     
     ghoul: {
@@ -752,7 +752,7 @@ Object.assign(ENEMIES, {
                 applyMessage: (enemyName, playerClass) => `🩸 The ${enemyName}'s claws tear deep! The ${playerClass} is <b>Bleeding!</b>`
             }
         ],
-        dropRates: { common: 0.4, uncommon: 0.25, rare: 0.1, epic: 0.03 }
+        dropRates: { common: 0.5128, uncommon: 0.3205, rare: 0.1282, epic: 0.0385 }
     },
     
     skeleton: {
@@ -782,7 +782,7 @@ Object.assign(ENEMIES, {
                 applyMessage: (enemyName, playerClass) => `💀 The ${enemyName}'s rattling cacophony is disorienting! The ${playerClass} loses an attack charge!`
             }
         ],
-        dropRates: { common: 0.45, uncommon: 0.2, rare: 0.08, epic: 0.02 }
+        dropRates: { common: 0.5999, uncommon: 0.2667, rare: 0.1067, epic: 0.0267 }
     },
     
     wraith: {
@@ -812,7 +812,7 @@ Object.assign(ENEMIES, {
                 applyMessage: (enemyName, playerClass) => `👻 The ${enemyName} tears at the ${playerClass}'s life force! <b>18 HP drained</b> — the wraith grows more solid.`
             }
         ],
-        dropRates: { common: 0.3, uncommon: 0.25, rare: 0.2, epic: 0.12, legendary: 0.05 }
+        dropRates: { common: 0.3262, uncommon: 0.2717, rare: 0.2174, epic: 0.1304, legendary: 0.0543 }
     },
     
     grave_robber: {
@@ -843,7 +843,7 @@ Object.assign(ENEMIES, {
                 applyMessage: (enemyName, playerClass) => `💨 The ${enemyName} hurls a smoke bomb! Acrid black smoke engulfs the ${playerClass} — <span style="color:#ffaa44;">⚠️ 35% chance to miss.</span>`
             }
         ],
-        dropRates: { common: 0.35, uncommon: 0.3, rare: 0.15, epic: 0.08, legendary: 0.02 }
+        dropRates: { common: 0.3889, uncommon: 0.3333, rare: 0.1667, epic: 0.0889, legendary: 0.0222 }
     },
     
     spirit: {
@@ -873,7 +873,7 @@ Object.assign(ENEMIES, {
                 applyMessage: (enemyName, playerClass) => `👻 The ${enemyName}'s wail chills the ${playerClass} to the bone! <span style="color:#ffaa44;">⚠️ -20% damage for 5 seconds.</span>`
             }
         ],
-        dropRates: { common: 0.4, uncommon: 0.25, rare: 0.12, epic: 0.04 }
+        dropRates: { common: 0.4939, uncommon: 0.3086, rare: 0.1481, epic: 0.0494 }
     },
 
     // ═══════════════════════════════════════════════════════════════
@@ -892,7 +892,7 @@ Object.assign(ENEMIES, {
         level: 5,
         description: 'A pale orc who has never seen sunlight and is furious about it',
         possibleDrops: ['health_potion', 'iron_sword', 'leather_armor', 'medium_gem'],
-        dropRates: { common: 0.4, uncommon: 0.25, rare: 0.1, epic: 0.03 }
+        dropRates: { common: 0.5128, uncommon: 0.3205, rare: 0.1282, epic: 0.0385 }
     },
 
     cave_gnoll: {
@@ -907,7 +907,7 @@ Object.assign(ENEMIES, {
         level: 5,
         description: 'A hyena-headed scavenger that hunts in underground tunnels',
         possibleDrops: ['health_potion', 'gnoll_hide', 'bone_club', 'small_gem'],
-        dropRates: { common: 0.45, uncommon: 0.2, rare: 0.08, epic: 0.02 }
+        dropRates: { common: 0.5999, uncommon: 0.2667, rare: 0.1067, epic: 0.0267 }
     },
 
     dungeon_bat: {
@@ -922,7 +922,7 @@ Object.assign(ENEMIES, {
         level: 5,
         description: 'A massive bat with a wingspan that fills narrow corridors',
         possibleDrops: ['health_potion', 'bat_wing', 'small_gem'],
-        dropRates: { common: 0.5, uncommon: 0.18, rare: 0.05 },
+        dropRates: { common: 0.6849, uncommon: 0.2466, rare: 0.0685 },
         abilities: [
             {
                 id: 'screech',
@@ -951,7 +951,7 @@ Object.assign(ENEMIES, {
         level: 6,
         description: 'An armored beetle the size of a cart horse that feeds on cave minerals',
         possibleDrops: ['health_potion', 'chitin_shard', 'small_gem', 'medium_gem'],
-        dropRates: { common: 0.4, uncommon: 0.25, rare: 0.1, epic: 0.03 }
+        dropRates: { common: 0.5128, uncommon: 0.3205, rare: 0.1282, epic: 0.0385 }
     },
 
     tomb_rat: {
@@ -966,7 +966,7 @@ Object.assign(ENEMIES, {
         level: 5,
         description: 'A diseased rat that has grown bloated feasting on dungeon refuse',
         possibleDrops: ['health_potion', 'rat_tail', 'small_gem'],
-        dropRates: { common: 0.55, uncommon: 0.15, rare: 0.04 }
+        dropRates: { common: 0.7432, uncommon: 0.2027, rare: 0.0541 }
     },
 
     dungeon_spider: {
@@ -981,7 +981,7 @@ Object.assign(ENEMIES, {
         level: 6,
         description: 'A pale web-spinning predator that has claimed entire corridors as its own',
         possibleDrops: ['health_potion', 'spider_silk', 'venom_gland', 'small_gem'],
-        dropRates: { common: 0.42, uncommon: 0.22, rare: 0.09, epic: 0.02 }
+        dropRates: { common: 0.56, uncommon: 0.2933, rare: 0.12, epic: 0.0267 }
     },
 
     dark_stalker: {
@@ -1012,7 +1012,7 @@ Object.assign(ENEMIES, {
                 applyMessage: (enemyName, playerClass) => `🌑 The ${enemyName} strikes from the shadows! The ${playerClass} can barely see — <span style="color:#ffaa44;">⚠️ 35% chance to miss.</span>`
             }
         ],
-        dropRates: { common: 0.38, uncommon: 0.25, rare: 0.12, epic: 0.04 }
+        dropRates: { common: 0.481, uncommon: 0.3165, rare: 0.1519, epic: 0.0506 }
     },
 
     fungal_horror: {
@@ -1047,7 +1047,7 @@ Object.assign(ENEMIES, {
                 applyMessage: (enemyName, playerClass) => `🍄 The ${enemyName} erupts in a cloud of toxic spores! The ${playerClass} inhales the poison — <b>Poisoned!</b>`
             }
         ],
-        dropRates: { common: 0.4, uncommon: 0.25, rare: 0.1, epic: 0.03 }
+        dropRates: { common: 0.5128, uncommon: 0.3205, rare: 0.1282, epic: 0.0385 }
     },
 
     // ═══════════════════════════════════════════════════════════════
@@ -1093,7 +1093,7 @@ Object.assign(ENEMIES, {
                 applyMessage: (enemyName, playerClass) => `🟢 The ${enemyName}'s flesh knits back together as it strikes! Troll regeneration is terrifying to behold.`
             }
         ],
-        dropRates: { common: 0.3, uncommon: 0.25, rare: 0.2, epic: 0.1, legendary: 0.03 }
+        dropRates: { common: 0.3409, uncommon: 0.2841, rare: 0.2273, epic: 0.1136, legendary: 0.0341 }
     },
     
     skeleton_warrior: { 
@@ -1123,7 +1123,7 @@ Object.assign(ENEMIES, {
                 applyMessage: (enemyName, playerClass) => `🛡️ The ${enemyName} BASHES with its shield! The ${playerClass} is staggered — attack charge lost!`
             }
         ],
-        dropRates: { common: 0.35, uncommon: 0.25, rare: 0.15, epic: 0.08, legendary: 0.02 }
+        dropRates: { common: 0.4118, uncommon: 0.2941, rare: 0.1765, epic: 0.0941, legendary: 0.0235 }
     },
     
     dark_mage: { 
@@ -1171,7 +1171,7 @@ Object.assign(ENEMIES, {
                 applyMessage: (enemyName, playerClass) => `💜 The ${enemyName}'s shadow bolt strikes! Dark energy courses through the ${playerClass} — <b>Cursed!</b>`
             }
         ],
-        dropRates: { common: 0.25, uncommon: 0.3, rare: 0.2, epic: 0.12, legendary: 0.05 }
+        dropRates: { common: 0.2718, uncommon: 0.3261, rare: 0.2174, epic: 0.1304, legendary: 0.0543 }
     },
     
     cave_drake: {
@@ -1206,7 +1206,7 @@ Object.assign(ENEMIES, {
                 applyMessage: (enemyName, playerClass) => `🔥 The ${enemyName} EXHALES a cone of fire! The ${playerClass} is engulfed — <b>Burning!</b>`
             }
         ],
-        dropRates: { common: 0.25, uncommon: 0.25, rare: 0.22, epic: 0.15, legendary: 0.08 }
+        dropRates: { common: 0.2631, uncommon: 0.2632, rare: 0.2316, epic: 0.1579, legendary: 0.0842 }
     },
     
     stone_golem: {
@@ -1236,7 +1236,7 @@ Object.assign(ENEMIES, {
                 applyMessage: (enemyName, playerClass) => `🪨 The ${enemyName} PULVERIZES! The devastating blow shatters the ${playerClass}'s armor! <span style="color:#ffaa44;">⚠️ Defense reduced for 10 seconds!</span>`
             }
         ],
-        dropRates: { common: 0.3, uncommon: 0.25, rare: 0.2, epic: 0.12, legendary: 0.05 }
+        dropRates: { common: 0.3262, uncommon: 0.2717, rare: 0.2174, epic: 0.1304, legendary: 0.0543 }
     },
     
     ogre: {
@@ -1279,7 +1279,7 @@ Object.assign(ENEMIES, {
                 applyMessage: (enemyName, playerClass) => `💥 The ${enemyName}'s wild blow SMASHES the ${playerClass}'s armor! <span style="color:#ffaa44;">⚠️ Defense reduced for 9 seconds!</span>`
             }
         ],
-        dropRates: { common: 0.3, uncommon: 0.25, rare: 0.18, epic: 0.1, legendary: 0.03 }
+        dropRates: { common: 0.3488, uncommon: 0.2907, rare: 0.2093, epic: 0.1163, legendary: 0.0349 }
     },
     
     // Dark Swamp monsters
@@ -1329,7 +1329,7 @@ Object.assign(ENEMIES, {
                 applyMessage: (enemyName, playerClass) => `🌑 The ${enemyName}'s curse takes hold! The ${playerClass} withers — <b>Withering!</b>`
             }
         ],
-        dropRates: { common: 0.25, uncommon: 0.3, rare: 0.2, epic: 0.12, legendary: 0.06 }
+        dropRates: { common: 0.2688, uncommon: 0.3226, rare: 0.2151, epic: 0.129, legendary: 0.0645 }
     },
     
     plague_zombie: {
@@ -1364,7 +1364,7 @@ Object.assign(ENEMIES, {
                 applyMessage: (enemyName, playerClass) => `☣️ The ${enemyName}'s diseased touch infects the ${playerClass}! <b>Plague spreads through your veins!</b>`
             }
         ],
-        dropRates: { common: 0.35, uncommon: 0.25, rare: 0.15, epic: 0.08, legendary: 0.02 }
+        dropRates: { common: 0.4118, uncommon: 0.2941, rare: 0.1765, epic: 0.0941, legendary: 0.0235 }
     },
     
     giant_leech: {
@@ -1393,7 +1393,7 @@ Object.assign(ENEMIES, {
                 applyMessage: (enemyName, playerClass) => `🩸 The ${enemyName} LATCHES onto the ${playerClass}, drinking greedily! The wound heals the leech!`
             }
         ],
-        dropRates: { common: 0.4, uncommon: 0.25, rare: 0.15, epic: 0.05 }
+        dropRates: { common: 0.4706, uncommon: 0.2941, rare: 0.1765, epic: 0.0588 }
     },
     
     bog_beast: {
@@ -1442,7 +1442,7 @@ Object.assign(ENEMIES, {
                 applyMessage: (enemyName, playerClass) => `🟤 The ${enemyName} breathes bog-rot! The ${playerClass}'s equipment begins to corrode — <b>Corroding!</b>`
             }
         ],
-        dropRates: { common: 0.25, uncommon: 0.25, rare: 0.22, epic: 0.15, legendary: 0.08 }
+        dropRates: { common: 0.2631, uncommon: 0.2632, rare: 0.2316, epic: 0.1579, legendary: 0.0842 }
     },
     
     corrupted_treant: {
@@ -1491,7 +1491,7 @@ Object.assign(ENEMIES, {
                 applyMessage: (enemyName, playerClass) => `🌑 The ${enemyName}'s dark sap seeps into wounds! The ${playerClass} begins to <b>Wither!</b>`
             }
         ],
-        dropRates: { common: 0.25, uncommon: 0.25, rare: 0.22, epic: 0.15, legendary: 0.1 }
+        dropRates: { common: 0.2578, uncommon: 0.2577, rare: 0.2268, epic: 0.1546, legendary: 0.1031 }
     },
     
     // Cursed Ruins monsters
@@ -1527,7 +1527,7 @@ Object.assign(ENEMIES, {
                 applyMessage: (enemyName, playerClass) => `💜 The ${enemyName} strikes with a cursed blade! A death mark burns into the ${playerClass}'s flesh — <b>Cursed!</b>`
             }
         ],
-        dropRates: { common: 0.25, uncommon: 0.25, rare: 0.22, epic: 0.15, legendary: 0.08 }
+        dropRates: { common: 0.2631, uncommon: 0.2632, rare: 0.2316, epic: 0.1579, legendary: 0.0842 }
     },
     
     shadow_stalker: {
@@ -1558,7 +1558,7 @@ Object.assign(ENEMIES, {
                 applyMessage: (enemyName, playerClass) => `🌑 The ${enemyName} strikes from a pocket of pure darkness! The ${playerClass} is blinded — <span style="color:#ffaa44;">⚠️ 40% miss chance, 6 seconds.</span>`
             }
         ],
-        dropRates: { common: 0.3, uncommon: 0.25, rare: 0.2, epic: 0.12, legendary: 0.06 }
+        dropRates: { common: 0.3226, uncommon: 0.2688, rare: 0.2151, epic: 0.129, legendary: 0.0645 }
     },
     
     ruin_guardian: {
@@ -1600,7 +1600,7 @@ Object.assign(ENEMIES, {
                 applyMessage: (enemyName, playerClass) => `🪨 The ${enemyName} brings its full weight DOWN! The impact craters the stone floor!`
             }
         ],
-        dropRates: { common: 0.2, uncommon: 0.25, rare: 0.25, epic: 0.18, legendary: 0.1 }
+        dropRates: { common: 0.2041, uncommon: 0.2551, rare: 0.2551, epic: 0.1837, legendary: 0.102 }
     },
     
     spectral_warrior: {
@@ -1644,7 +1644,7 @@ Object.assign(ENEMIES, {
                 applyMessage: (enemyName, playerClass) => `💙 The ${enemyName} saps the ${playerClass}'s soul! <b>20 HP drained</b> — a warrior even in death.`
             }
         ],
-        dropRates: { common: 0.25, uncommon: 0.25, rare: 0.22, epic: 0.15, legendary: 0.08 }
+        dropRates: { common: 0.2631, uncommon: 0.2632, rare: 0.2316, epic: 0.1579, legendary: 0.0842 }
     },
     
     dark_priest: {
@@ -1659,7 +1659,7 @@ Object.assign(ENEMIES, {
         level: 16,
         description: 'A corrupted cleric who worships dark gods',
         possibleDrops: ['greater_mana_potion', 'cursed_staff', 'dark_robes', 'huge_gem'],
-        dropRates: { common: 0.2, uncommon: 0.25, rare: 0.25, epic: 0.18, legendary: 0.1 },
+        dropRates: { common: 0.2041, uncommon: 0.2551, rare: 0.2551, epic: 0.1837, legendary: 0.102 },
         abilities: [
             {
                 id: 'dark_blessing',
@@ -1710,7 +1710,7 @@ Object.assign(ENEMIES, {
         level: 17,
         description: 'An undead sorcerer of terrible power',
         possibleDrops: ['greater_health_potion', 'greater_mana_potion', 'archmage_staff', 'enchanted_robes', 'huge_gem', 'phylactery'],
-        dropRates: { common: 0.2, uncommon: 0.25, rare: 0.25, epic: 0.15, legendary: 0.1, mythic: 0.02 }
+        dropRates: { common: 0.2063, uncommon: 0.2577, rare: 0.2577, epic: 0.1546, legendary: 0.1031, mythic: 0.0206 }
     },
     
     death_knight: { 
@@ -1770,7 +1770,7 @@ Object.assign(ENEMIES, {
         level: 17,
         description: 'An undead sentinel bound to guard eternal',
         possibleDrops: ['greater_health_potion', 'ancient_sword', 'crypt_armor', 'huge_gem'],
-        dropRates: { common: 0.2, uncommon: 0.25, rare: 0.25, epic: 0.18, legendary: 0.1 }
+        dropRates: { common: 0.2041, uncommon: 0.2551, rare: 0.2551, epic: 0.1837, legendary: 0.102 }
     },
     
     // Demon Portal monsters
@@ -1801,7 +1801,7 @@ Object.assign(ENEMIES, {
         level: 17,
         description: 'A demonic beast wreathed in flames',
         possibleDrops: ['greater_health_potion', 'hellfire_fang', 'fire_essence', 'huge_gem'],
-        dropRates: { common: 0.2, uncommon: 0.25, rare: 0.25, epic: 0.18, legendary: 0.1 }
+        dropRates: { common: 0.2041, uncommon: 0.2551, rare: 0.2551, epic: 0.1837, legendary: 0.102 }
     },
     
     imp_swarm: {
@@ -1816,7 +1816,7 @@ Object.assign(ENEMIES, {
         level: 17,
         description: 'A chaotic group of small demons',
         possibleDrops: ['mana_potion', 'imp_dust', 'chaos_essence', 'huge_gem'],
-        dropRates: { common: 0.25, uncommon: 0.25, rare: 0.22, epic: 0.15, legendary: 0.08 }
+        dropRates: { common: 0.2631, uncommon: 0.2632, rare: 0.2316, epic: 0.1579, legendary: 0.0842 }
     },
     
     pit_fiend: {
@@ -1846,7 +1846,7 @@ Object.assign(ENEMIES, {
         level: 21,
         description: 'A ruler of the demonic hordes',
         possibleDrops: ['superior_health_potion', 'demon_crown', 'infernal_blade', 'pristine_gem'],
-        dropRates: { common: 0.1, uncommon: 0.2, rare: 0.25, epic: 0.25, legendary: 0.18, mythic: 0.05 }
+        dropRates: { common: 0.0971, uncommon: 0.1942, rare: 0.2427, epic: 0.2427, legendary: 0.1748, mythic: 0.0485 }
     },
     
     // Corrupted Temple monsters
@@ -1877,7 +1877,7 @@ Object.assign(ENEMIES, {
         level: 21,
         description: 'A holy warrior turned to evil',
         possibleDrops: ['superior_health_potion', 'corrupted_mjolnir', 'tainted_plate', 'pristine_gem'],
-        dropRates: { common: 0.12, uncommon: 0.2, rare: 0.25, epic: 0.25, legendary: 0.16, mythic: 0.04 }
+        dropRates: { common: 0.1176, uncommon: 0.1961, rare: 0.2451, epic: 0.2451, legendary: 0.1569, mythic: 0.0392 }
     },
     
     dark_oracle: {
@@ -1907,7 +1907,7 @@ Object.assign(ENEMIES, {
         level: 22,
         description: 'A horrific fusion of flesh and dark magic',
         possibleDrops: ['superior_health_potion', 'corrupted_essence', 'flesh_armor', 'pristine_gem'],
-        dropRates: { common: 0.1, uncommon: 0.15, rare: 0.25, epic: 0.28, legendary: 0.2, mythic: 0.05 }
+        dropRates: { common: 0.0972, uncommon: 0.1456, rare: 0.2427, epic: 0.2718, legendary: 0.1942, mythic: 0.0485 }
     },
     
     void_priest: {
@@ -1922,7 +1922,7 @@ Object.assign(ENEMIES, {
         level: 21,
         description: 'A cultist who channels the void',
         possibleDrops: ['superior_mana_potion', 'void_staff', 'nihil_robes', 'pristine_gem'],
-        dropRates: { common: 0.12, uncommon: 0.2, rare: 0.25, epic: 0.25, legendary: 0.16, mythic: 0.04 }
+        dropRates: { common: 0.1176, uncommon: 0.1961, rare: 0.2451, epic: 0.2451, legendary: 0.1569, mythic: 0.0392 }
     },
 
     // ═══════════════════════════════════════════════════════════════
@@ -1941,7 +1941,7 @@ Object.assign(ENEMIES, {
         level: 22,
         description: 'A being of pure flame and destruction',
         possibleDrops: ['superior_health_potion', 'flame_staff', 'fire_blade', 'pristine_gem', 'fire_core'],
-        dropRates: { common: 0.1, uncommon: 0.15, rare: 0.25, epic: 0.28, legendary: 0.2, mythic: 0.05 }
+        dropRates: { common: 0.0972, uncommon: 0.1456, rare: 0.2427, epic: 0.2718, legendary: 0.1942, mythic: 0.0485 }
     },
     
     lava_golem: {
@@ -1956,7 +1956,7 @@ Object.assign(ENEMIES, {
         level: 23,
         description: 'A massive construct of molten rock',
         possibleDrops: ['superior_health_potion', 'magma_core', 'lava_armor', 'pristine_gem'],
-        dropRates: { common: 0.08, uncommon: 0.12, rare: 0.25, epic: 0.3, legendary: 0.22, mythic: 0.06 }
+        dropRates: { common: 0.0776, uncommon: 0.1165, rare: 0.2427, epic: 0.2913, legendary: 0.2136, mythic: 0.0583 }
     },
     
     phoenix: {
@@ -1971,7 +1971,7 @@ Object.assign(ENEMIES, {
         level: 24,
         description: 'A legendary bird that rises from ashes',
         possibleDrops: ['superior_health_potion', 'phoenix_feather', 'rebirth_essence', 'pristine_gem'],
-        dropRates: { common: 0.05, uncommon: 0.1, rare: 0.2, epic: 0.3, legendary: 0.28, mythic: 0.1 }
+        dropRates: { common: 0.0485, uncommon: 0.0971, rare: 0.1942, epic: 0.2913, legendary: 0.2718, mythic: 0.0971 }
     },
     
     magma_dragon: {
@@ -1986,7 +1986,7 @@ Object.assign(ENEMIES, {
         level: 25,
         description: 'A dragon born in the heart of a volcano',
         possibleDrops: ['superior_health_potion', 'dragonslayer', 'magma_scale', 'flawless_gem', 'dragon_heart'],
-        dropRates: { common: 0.05, uncommon: 0.1, rare: 0.2, epic: 0.3, legendary: 0.3, mythic: 0.12 }
+        dropRates: { common: 0.0467, uncommon: 0.0935, rare: 0.1869, epic: 0.2804, legendary: 0.2804, mythic: 0.1121 }
     },
     
     flame_titan: {
@@ -2001,7 +2001,7 @@ Object.assign(ENEMIES, {
         level: 25,
         description: 'A primordial giant of endless fire',
         possibleDrops: ['superior_health_potion', 'titan_blade', 'flame_armor', 'flawless_gem'],
-        dropRates: { common: 0.03, uncommon: 0.08, rare: 0.18, epic: 0.32, legendary: 0.32, mythic: 0.15 },
+        dropRates: { common: 0.0277, uncommon: 0.0741, rare: 0.1667, epic: 0.2963, legendary: 0.2963, mythic: 0.1389 },
         isBoss: true
     },
     
@@ -2018,7 +2018,7 @@ Object.assign(ENEMIES, {
         level: 23,
         description: 'A colossal warrior from the frozen wastes',
         possibleDrops: ['superior_health_potion', 'giant_axe', 'frost_armor', 'pristine_gem'],
-        dropRates: { common: 0.08, uncommon: 0.12, rare: 0.25, epic: 0.3, legendary: 0.22, mythic: 0.06 }
+        dropRates: { common: 0.0776, uncommon: 0.1165, rare: 0.2427, epic: 0.2913, legendary: 0.2136, mythic: 0.0583 }
     },
     
     ice_drake: {
@@ -2033,7 +2033,7 @@ Object.assign(ENEMIES, {
         level: 22,
         description: 'A dragon of ice and winter',
         possibleDrops: ['superior_health_potion', 'ice_fang', 'frozen_scale', 'pristine_gem'],
-        dropRates: { common: 0.08, uncommon: 0.15, rare: 0.25, epic: 0.28, legendary: 0.2, mythic: 0.05 }
+        dropRates: { common: 0.0793, uncommon: 0.1485, rare: 0.2475, epic: 0.2772, legendary: 0.198, mythic: 0.0495 }
     },
     
     yeti: {
@@ -2048,7 +2048,7 @@ Object.assign(ENEMIES, {
         level: 22,
         description: 'A legendary snow beast',
         possibleDrops: ['superior_health_potion', 'yeti_fur', 'ice_crystal', 'pristine_gem'],
-        dropRates: { common: 0.1, uncommon: 0.15, rare: 0.25, epic: 0.28, legendary: 0.2, mythic: 0.05 }
+        dropRates: { common: 0.0972, uncommon: 0.1456, rare: 0.2427, epic: 0.2718, legendary: 0.1942, mythic: 0.0485 }
     },
     
     frozen_revenant: {
@@ -2063,7 +2063,7 @@ Object.assign(ENEMIES, {
         level: 23,
         description: 'An undead warrior encased in ice',
         possibleDrops: ['superior_health_potion', 'frozen_blade', 'ice_armor', 'pristine_gem'],
-        dropRates: { common: 0.08, uncommon: 0.12, rare: 0.25, epic: 0.3, legendary: 0.22, mythic: 0.06 }
+        dropRates: { common: 0.0776, uncommon: 0.1165, rare: 0.2427, epic: 0.2913, legendary: 0.2136, mythic: 0.0583 }
     },
     
     frost_wyrm: {
@@ -2078,7 +2078,7 @@ Object.assign(ENEMIES, {
         level: 25,
         description: 'An ancient dragon of eternal winter',
         possibleDrops: ['superior_health_potion', 'wyrm_scale', 'frost_heart', 'flawless_gem'],
-        dropRates: { common: 0.05, uncommon: 0.1, rare: 0.2, epic: 0.3, legendary: 0.3, mythic: 0.12 },
+        dropRates: { common: 0.0467, uncommon: 0.0935, rare: 0.1869, epic: 0.2804, legendary: 0.2804, mythic: 0.1121 },
         isBoss: true
     },
     
@@ -2095,7 +2095,7 @@ Object.assign(ENEMIES, {
         level: 24,
         description: 'A creature from between dimensions',
         possibleDrops: ['superior_health_potion', 'void_blade', 'null_essence', 'pristine_gem'],
-        dropRates: { common: 0.06, uncommon: 0.12, rare: 0.22, epic: 0.32, legendary: 0.25, mythic: 0.08 }
+        dropRates: { common: 0.0571, uncommon: 0.1143, rare: 0.2095, epic: 0.3048, legendary: 0.2381, mythic: 0.0762 }
     },
     
     reality_tear: {
@@ -2110,7 +2110,7 @@ Object.assign(ENEMIES, {
         level: 23,
         description: 'A wound in the fabric of existence',
         possibleDrops: ['superior_mana_potion', 'reality_shard', 'void_crystal', 'pristine_gem'],
-        dropRates: { common: 0.08, uncommon: 0.12, rare: 0.25, epic: 0.3, legendary: 0.22, mythic: 0.06 }
+        dropRates: { common: 0.0776, uncommon: 0.1165, rare: 0.2427, epic: 0.2913, legendary: 0.2136, mythic: 0.0583 }
     },
     
     entropy_beast: {
@@ -2125,7 +2125,7 @@ Object.assign(ENEMIES, {
         level: 24,
         description: 'A monster that embodies decay itself',
         possibleDrops: ['superior_health_potion', 'entropy_core', 'chaos_armor', 'pristine_gem'],
-        dropRates: { common: 0.06, uncommon: 0.12, rare: 0.22, epic: 0.32, legendary: 0.25, mythic: 0.08 }
+        dropRates: { common: 0.0571, uncommon: 0.1143, rare: 0.2095, epic: 0.3048, legendary: 0.2381, mythic: 0.0762 }
     },
     
     nihil_spawn: {
@@ -2140,7 +2140,7 @@ Object.assign(ENEMIES, {
         level: 25,
         description: 'A creature of pure nothingness',
         possibleDrops: ['superior_health_potion', 'nihil_essence', 'void_armor', 'flawless_gem'],
-        dropRates: { common: 0.05, uncommon: 0.1, rare: 0.2, epic: 0.3, legendary: 0.3, mythic: 0.12 }
+        dropRates: { common: 0.0467, uncommon: 0.0935, rare: 0.1869, epic: 0.2804, legendary: 0.2804, mythic: 0.1121 }
     },
     
     void_lord: {
@@ -2155,7 +2155,7 @@ Object.assign(ENEMIES, {
         level: 25,
         description: 'A ruler of the emptiness between worlds',
         possibleDrops: ['superior_health_potion', 'void_crown', 'oblivion_blade', 'flawless_gem'],
-        dropRates: { common: 0.03, uncommon: 0.08, rare: 0.18, epic: 0.32, legendary: 0.32, mythic: 0.15 },
+        dropRates: { common: 0.0277, uncommon: 0.0741, rare: 0.1667, epic: 0.2963, legendary: 0.2963, mythic: 0.1389 },
         isBoss: true
     },
     
@@ -2172,7 +2172,7 @@ Object.assign(ENEMIES, {
         level: 24,
         description: 'A divine protector of the heavens',
         possibleDrops: ['superior_health_potion', 'holy_blade', 'divine_armor', 'flawless_gem'],
-        dropRates: { common: 0.05, uncommon: 0.1, rare: 0.2, epic: 0.3, legendary: 0.3, mythic: 0.12 }
+        dropRates: { common: 0.0467, uncommon: 0.0935, rare: 0.1869, epic: 0.2804, legendary: 0.2804, mythic: 0.1121 }
     },
     
     arch_angel: {
@@ -2187,7 +2187,7 @@ Object.assign(ENEMIES, {
         level: 25,
         description: 'A powerful celestial warrior',
         possibleDrops: ['superior_health_potion', 'angel_wing', 'celestial_blade', 'flawless_gem'],
-        dropRates: { common: 0.04, uncommon: 0.08, rare: 0.18, epic: 0.32, legendary: 0.32, mythic: 0.14 }
+        dropRates: { common: 0.037, uncommon: 0.0741, rare: 0.1667, epic: 0.2963, legendary: 0.2963, mythic: 0.1296 }
     },
     
     divine_champion: {
@@ -2202,7 +2202,7 @@ Object.assign(ENEMIES, {
         level: 25,
         description: 'A mortal elevated to divine status',
         possibleDrops: ['superior_health_potion', 'champion_sword', 'blessed_plate', 'flawless_gem'],
-        dropRates: { common: 0.04, uncommon: 0.08, rare: 0.18, epic: 0.32, legendary: 0.32, mythic: 0.14 }
+        dropRates: { common: 0.037, uncommon: 0.0741, rare: 0.1667, epic: 0.2963, legendary: 0.2963, mythic: 0.1296 }
     },
     
     seraphim: {
@@ -2217,7 +2217,7 @@ Object.assign(ENEMIES, {
         level: 25,
         description: 'A six-winged angel of highest order',
         possibleDrops: ['superior_health_potion', 'seraphim_feather', 'heavenly_blade', 'flawless_gem'],
-        dropRates: { common: 0.03, uncommon: 0.07, rare: 0.15, epic: 0.3, legendary: 0.35, mythic: 0.18 }
+        dropRates: { common: 0.0277, uncommon: 0.0648, rare: 0.1389, epic: 0.2778, legendary: 0.3241, mythic: 0.1667 }
     },
     
     god_avatar: {
@@ -2232,7 +2232,7 @@ Object.assign(ENEMIES, {
         level: 25,
         description: 'A physical manifestation of divine power',
         possibleDrops: ['superior_health_potion', 'divine_artifact', 'god_blade', 'flawless_gem', 'magical_butterknife'],
-        dropRates: { common: 0.02, uncommon: 0.05, rare: 0.12, epic: 0.3, legendary: 0.4, mythic: 0.2, butterknife: 0.0001 },
+        dropRates: { common: 0.0183, uncommon: 0.0459, rare: 0.1101, epic: 0.2752, legendary: 0.3669, mythic: 0.1835, butterknife: 0.0001 },
         isBoss: true
     },
     
@@ -2252,7 +2252,7 @@ Object.assign(ENEMIES, {
         level: 20,
         description: 'An ancient wyrm with scales like rubies',
         possibleDrops: ['superior_health_potion', 'dragonslayer', 'dragon_scale', 'pristine_gem', 'dragon_heart', 'magical_butterknife'],
-        dropRates: { common: 0.1, uncommon: 0.15, rare: 0.25, epic: 0.25, legendary: 0.2, mythic: 0.08, butterknife: 0.0001 },
+        dropRates: { common: 0.097, uncommon: 0.1456, rare: 0.2427, epic: 0.2427, legendary: 0.1942, mythic: 0.0777, butterknife: 0.0001 },
         isBoss: true
     },
     
@@ -2268,7 +2268,7 @@ Object.assign(ENEMIES, {
         level: 18,
         description: 'A powerful fiend from the infernal planes',
         possibleDrops: ['superior_health_potion', 'superior_mana_potion', 'demonic_blade', 'demon_leather', 'pristine_gem', 'demon_core'],
-        dropRates: { common: 0.12, uncommon: 0.18, rare: 0.25, epic: 0.22, legendary: 0.18, mythic: 0.08 },
+        dropRates: { common: 0.1164, uncommon: 0.1748, rare: 0.2427, epic: 0.2136, legendary: 0.1748, mythic: 0.0777 },
         isBoss: true
     },
     
@@ -2284,7 +2284,7 @@ Object.assign(ENEMIES, {
         level: 16,
         description: 'A centuries-old blood-drinking undead',
         possibleDrops: ['greater_health_potion', 'vampire_blade', 'noble_robes', 'huge_gem', 'blood_ruby'],
-        dropRates: { common: 0.15, uncommon: 0.25, rare: 0.25, epic: 0.2, legendary: 0.12, mythic: 0.05 },
+        dropRates: { common: 0.1471, uncommon: 0.2451, rare: 0.2451, epic: 0.1961, legendary: 0.1176, mythic: 0.049 },
         isBoss: true,
         abilities: [
             {
@@ -2347,7 +2347,7 @@ Object.assign(ENEMIES, {
         level: 1,
         description: 'A bad-tempered crustacean that snaps at anything that moves',
         possibleDrops: ['health_potion', 'crab_claw', 'small_gem'],
-        dropRates: { common: 0.6, uncommon: 0.15, rare: 0.02 }
+        dropRates: { common: 0.7792, uncommon: 0.1948, rare: 0.026 }
     },
 
     angry_squirrel: {
@@ -2362,7 +2362,7 @@ Object.assign(ENEMIES, {
         level: 1,
         description: 'Do NOT let the cute face fool you. It is absolutely feral',
         possibleDrops: ['health_potion', 'small_gem'],
-        dropRates: { common: 0.65, uncommon: 0.1, rare: 0.01 }
+        dropRates: { common: 0.8552, uncommon: 0.1316, rare: 0.0132 }
     },
 
     thornling: {
@@ -2377,7 +2377,7 @@ Object.assign(ENEMIES, {
         level: 1,
         description: 'A walking tangle of briars and bad attitude',
         possibleDrops: ['health_potion', 'thorn_shard', 'small_gem'],
-        dropRates: { common: 0.55, uncommon: 0.18, rare: 0.03 }
+        dropRates: { common: 0.7237, uncommon: 0.2368, rare: 0.0395 }
     },
 
     // ── LEVEL 2 ── (Forest zone additions)
@@ -2393,7 +2393,7 @@ Object.assign(ENEMIES, {
         level: 2,
         description: 'A cave bat with hollow teeth that drip with paralytic venom',
         possibleDrops: ['health_potion', 'bat_wing', 'small_gem'],
-        dropRates: { common: 0.5, uncommon: 0.2, rare: 0.04 }
+        dropRates: { common: 0.6756, uncommon: 0.2703, rare: 0.0541 }
     },
 
     moss_creeper: {
@@ -2408,7 +2408,7 @@ Object.assign(ENEMIES, {
         level: 2,
         description: 'An ambush predator disguised as a mossy log',
         possibleDrops: ['health_potion', 'slime_gel', 'small_gem'],
-        dropRates: { common: 0.5, uncommon: 0.18, rare: 0.03 }
+        dropRates: { common: 0.7042, uncommon: 0.2535, rare: 0.0423 }
     },
 
     // ── LEVEL 3 ── (Forest/Riverside additions)
@@ -2424,7 +2424,7 @@ Object.assign(ENEMIES, {
         level: 3,
         description: 'A goblin daubed in warpaint, hurling curse-hexes',
         possibleDrops: ['mana_potion', 'shaman_totem', 'small_gem'],
-        dropRates: { common: 0.4, uncommon: 0.25, rare: 0.08, epic: 0.02 }
+        dropRates: { common: 0.5333, uncommon: 0.3333, rare: 0.1067, epic: 0.0267 }
     },
 
     wild_lynx: {
@@ -2439,7 +2439,7 @@ Object.assign(ENEMIES, {
         level: 3,
         description: 'A tufted predator that pounces without warning',
         possibleDrops: ['health_potion', 'lynx_pelt', 'small_gem'],
-        dropRates: { common: 0.5, uncommon: 0.2, rare: 0.05 }
+        dropRates: { common: 0.6666, uncommon: 0.2667, rare: 0.0667 }
     },
 
     plague_rat: {
@@ -2454,7 +2454,7 @@ Object.assign(ENEMIES, {
         level: 3,
         description: 'Carries enough disease to drop a small horse',
         possibleDrops: ['health_potion', 'rat_tail', 'small_gem'],
-        dropRates: { common: 0.55, uncommon: 0.18, rare: 0.03 }
+        dropRates: { common: 0.7237, uncommon: 0.2368, rare: 0.0395 }
     },
 
     // ── LEVEL 4 ── (Riverside additions)
@@ -2470,7 +2470,7 @@ Object.assign(ENEMIES, {
         level: 4,
         description: 'An oversized amphibian with an unsettling number of teeth',
         possibleDrops: ['health_potion', 'frog_legs', 'small_gem'],
-        dropRates: { common: 0.5, uncommon: 0.2, rare: 0.05 }
+        dropRates: { common: 0.6666, uncommon: 0.2667, rare: 0.0667 }
     },
 
     river_pirate: {
@@ -2485,7 +2485,7 @@ Object.assign(ENEMIES, {
         level: 4,
         description: 'A brigand who robs travelers crossing the ford',
         possibleDrops: ['health_potion', 'gold_coins', 'dagger', 'small_gem'],
-        dropRates: { common: 0.4, uncommon: 0.28, rare: 0.1, epic: 0.02 }
+        dropRates: { common: 0.5, uncommon: 0.35, rare: 0.125, epic: 0.025 }
     },
 
     snapping_turtle: {
@@ -2500,7 +2500,7 @@ Object.assign(ENEMIES, {
         level: 4,
         description: 'Ancient and armored — its bite can sever a branch clean',
         possibleDrops: ['health_potion', 'shell_shard', 'small_gem'],
-        dropRates: { common: 0.5, uncommon: 0.2, rare: 0.05 }
+        dropRates: { common: 0.6666, uncommon: 0.2667, rare: 0.0667 }
     },
 
     kelp_strangler: {
@@ -2515,7 +2515,7 @@ Object.assign(ENEMIES, {
         level: 4,
         description: 'Living vines that drag prey beneath the surface',
         possibleDrops: ['health_potion', 'swamp_essence', 'small_gem'],
-        dropRates: { common: 0.5, uncommon: 0.2, rare: 0.05 }
+        dropRates: { common: 0.6666, uncommon: 0.2667, rare: 0.0667 }
     },
 
     bog_witch: {
@@ -2530,7 +2530,7 @@ Object.assign(ENEMIES, {
         level: 4,
         description: 'Mutters curses and throws jars of unidentified fluid',
         possibleDrops: ['mana_potion', 'witch_brew', 'small_gem'],
-        dropRates: { common: 0.4, uncommon: 0.28, rare: 0.1, epic: 0.02 }
+        dropRates: { common: 0.5, uncommon: 0.35, rare: 0.125, epic: 0.025 }
     },
 
     // ── LEVEL 5 ── (Riverside/Plains overlap)
@@ -2546,7 +2546,7 @@ Object.assign(ENEMIES, {
         level: 5,
         description: 'A shrieking winged creature with talons like daggers',
         possibleDrops: ['health_potion', 'harpy_feather', 'medium_gem'],
-        dropRates: { common: 0.4, uncommon: 0.25, rare: 0.1, epic: 0.02 }
+        dropRates: { common: 0.5194, uncommon: 0.3247, rare: 0.1299, epic: 0.026 }
     },
 
     gnoll: {
@@ -2561,7 +2561,7 @@ Object.assign(ENEMIES, {
         level: 5,
         description: 'A hyena-headed marauder with a taste for chaos',
         possibleDrops: ['health_potion', 'gnoll_hide', 'medium_gem'],
-        dropRates: { common: 0.4, uncommon: 0.25, rare: 0.1, epic: 0.02 }
+        dropRates: { common: 0.5194, uncommon: 0.3247, rare: 0.1299, epic: 0.026 }
     },
 
     lizardfolk: {
@@ -2576,7 +2576,7 @@ Object.assign(ENEMIES, {
         level: 5,
         description: 'A tribal reptilian fighter, fast and aggressive',
         possibleDrops: ['health_potion', 'scale_shard', 'medium_gem'],
-        dropRates: { common: 0.45, uncommon: 0.22, rare: 0.08, epic: 0.02 }
+        dropRates: { common: 0.5844, uncommon: 0.2857, rare: 0.1039, epic: 0.026 }
     },
 
     giant_wasp: {
@@ -2591,7 +2591,7 @@ Object.assign(ENEMIES, {
         level: 5,
         description: 'Airborne, angry, and capable of stinging through plate',
         possibleDrops: ['mana_potion', 'wasp_stinger', 'medium_gem'],
-        dropRates: { common: 0.45, uncommon: 0.22, rare: 0.08, epic: 0.02 }
+        dropRates: { common: 0.5844, uncommon: 0.2857, rare: 0.1039, epic: 0.026 }
     },
 
     bandit_scout: {
@@ -2606,7 +2606,7 @@ Object.assign(ENEMIES, {
         level: 5,
         description: 'The eyes of a larger gang — quicker than a full bandit',
         possibleDrops: ['health_potion', 'gold_coins', 'dagger', 'small_gem'],
-        dropRates: { common: 0.4, uncommon: 0.28, rare: 0.1, epic: 0.02 }
+        dropRates: { common: 0.5, uncommon: 0.35, rare: 0.125, epic: 0.025 }
     },
 
     // ── LEVEL 6 ── (Plains additions)
@@ -2622,7 +2622,7 @@ Object.assign(ENEMIES, {
         level: 6,
         description: 'Someone strapped iron plates to a boar. Big mistake',
         possibleDrops: ['health_potion', 'boar_hide', 'iron_tusk', 'medium_gem'],
-        dropRates: { common: 0.4, uncommon: 0.25, rare: 0.1, epic: 0.03 }
+        dropRates: { common: 0.5128, uncommon: 0.3205, rare: 0.1282, epic: 0.0385 }
     },
 
     hobgoblin: {
@@ -2637,7 +2637,7 @@ Object.assign(ENEMIES, {
         level: 6,
         description: 'A larger, meaner, well-organized cousin of the goblin',
         possibleDrops: ['health_potion', 'iron_sword', 'medium_gem'],
-        dropRates: { common: 0.38, uncommon: 0.28, rare: 0.12, epic: 0.04 }
+        dropRates: { common: 0.4634, uncommon: 0.3415, rare: 0.1463, epic: 0.0488 }
     },
 
     plains_hawk: {
@@ -2652,7 +2652,7 @@ Object.assign(ENEMIES, {
         level: 6,
         description: 'A predatory bird that dives at 80mph from nowhere',
         possibleDrops: ['health_potion', 'hawk_talon', 'medium_gem'],
-        dropRates: { common: 0.45, uncommon: 0.22, rare: 0.08, epic: 0.02 }
+        dropRates: { common: 0.5844, uncommon: 0.2857, rare: 0.1039, epic: 0.026 }
     },
 
     thorn_golem: {
@@ -2667,7 +2667,7 @@ Object.assign(ENEMIES, {
         level: 6,
         description: 'A construct of bramble and hate, built by no one living',
         possibleDrops: ['health_potion', 'thorn_shard', 'medium_gem'],
-        dropRates: { common: 0.4, uncommon: 0.25, rare: 0.1, epic: 0.03 }
+        dropRates: { common: 0.5128, uncommon: 0.3205, rare: 0.1282, epic: 0.0385 }
     },
 
     dust_wraith: {
@@ -2682,7 +2682,7 @@ Object.assign(ENEMIES, {
         level: 6,
         description: 'A ghostly smear that rises from the sun-baked plains',
         possibleDrops: ['mana_potion', 'spirit_essence', 'medium_gem'],
-        dropRates: { common: 0.38, uncommon: 0.28, rare: 0.14, epic: 0.05 }
+        dropRates: { common: 0.4471, uncommon: 0.3294, rare: 0.1647, epic: 0.0588 }
     },
 
     // ── LEVEL 7 ── (Graveyard/Plains additions)
@@ -2698,7 +2698,7 @@ Object.assign(ENEMIES, {
         level: 7,
         description: 'A skeleton marksman that pins you from the shadows',
         possibleDrops: ['health_potion', 'bone_dust', 'cursed_bow', 'medium_gem'],
-        dropRates: { common: 0.4, uncommon: 0.25, rare: 0.1, epic: 0.03 },
+        dropRates: { common: 0.5128, uncommon: 0.3205, rare: 0.1282, epic: 0.0385 },
         abilities: [
             {
                 id: 'volley',
@@ -2729,7 +2729,7 @@ Object.assign(ENEMIES, {
         level: 7,
         description: 'A dog-shaped hole in the darkness that hunts by smell',
         possibleDrops: ['health_potion', 'shadow_essence', 'medium_gem'],
-        dropRates: { common: 0.4, uncommon: 0.25, rare: 0.12, epic: 0.04 },
+        dropRates: { common: 0.4939, uncommon: 0.3086, rare: 0.1481, epic: 0.0494 },
         abilities: [
             {
                 id: 'shadow_pounce',
@@ -2757,7 +2757,7 @@ Object.assign(ENEMIES, {
         level: 7,
         description: 'Enormous bat that nests in fresh grave mounds',
         possibleDrops: ['health_potion', 'bat_wing', 'medium_gem'],
-        dropRates: { common: 0.48, uncommon: 0.2, rare: 0.07, epic: 0.02 },
+        dropRates: { common: 0.6234, uncommon: 0.2597, rare: 0.0909, epic: 0.026 },
         abilities: [
             {
                 id: 'crypt_screech',
@@ -2787,7 +2787,7 @@ Object.assign(ENEMIES, {
         level: 7,
         description: 'Her scream alone can crack headstones',
         possibleDrops: ['mana_potion', 'ectoplasm', 'medium_gem'],
-        dropRates: { common: 0.38, uncommon: 0.28, rare: 0.14, epic: 0.05 },
+        dropRates: { common: 0.4471, uncommon: 0.3294, rare: 0.1647, epic: 0.0588 },
         abilities: [
             {
                 id: 'death_wail',
@@ -2830,7 +2830,7 @@ Object.assign(ENEMIES, {
         level: 7,
         description: 'A corrupted paladin still dutifully guarding his eternal post',
         possibleDrops: ['health_potion', 'cursed_sword', 'medium_gem'],
-        dropRates: { common: 0.35, uncommon: 0.28, rare: 0.15, epic: 0.06 },
+        dropRates: { common: 0.4167, uncommon: 0.3333, rare: 0.1786, epic: 0.0714 },
         abilities: [
             {
                 id: 'cursed_strike',
@@ -2866,7 +2866,7 @@ Object.assign(ENEMIES, {
         level: 8,
         description: 'Fights naked and screaming — somehow more dangerous for it',
         possibleDrops: ['health_potion', 'warhammer', 'medium_gem'],
-        dropRates: { common: 0.35, uncommon: 0.28, rare: 0.15, epic: 0.06 },
+        dropRates: { common: 0.4167, uncommon: 0.3333, rare: 0.1786, epic: 0.0714 },
         abilities: [
             {
                 id: 'blood_frenzy',
@@ -2895,7 +2895,7 @@ Object.assign(ENEMIES, {
         level: 8,
         description: 'Sprays boiling acid. The shell is the least of your problems',
         possibleDrops: ['health_potion', 'chitin_armor', 'medium_gem'],
-        dropRates: { common: 0.4, uncommon: 0.25, rare: 0.12, epic: 0.04 },
+        dropRates: { common: 0.4939, uncommon: 0.3086, rare: 0.1481, epic: 0.0494 },
         abilities: [
             {
                 id: 'acid_spray',
@@ -2930,7 +2930,7 @@ Object.assign(ENEMIES, {
         level: 8,
         description: 'A walking haze of pestilence and despair',
         possibleDrops: ['health_potion', 'plague_sample', 'medium_gem'],
-        dropRates: { common: 0.42, uncommon: 0.24, rare: 0.1, epic: 0.03 },
+        dropRates: { common: 0.5316, uncommon: 0.3038, rare: 0.1266, epic: 0.038 },
         abilities: [
             {
                 id: 'festering_touch',
@@ -2965,7 +2965,7 @@ Object.assign(ENEMIES, {
         level: 8,
         description: 'Outrider of a minotaur warband — never comes alone for long',
         possibleDrops: ['health_potion', 'iron_sword', 'medium_gem'],
-        dropRates: { common: 0.35, uncommon: 0.28, rare: 0.15, epic: 0.06 },
+        dropRates: { common: 0.4167, uncommon: 0.3333, rare: 0.1786, epic: 0.0714 },
         abilities: [
             {
                 id: 'gore',
@@ -3000,7 +3000,7 @@ Object.assign(ENEMIES, {
         level: 8,
         description: 'A dancing light that lures travelers into bogs and eats them',
         possibleDrops: ['mana_potion', 'wisp_essence', 'medium_gem'],
-        dropRates: { common: 0.35, uncommon: 0.3, rare: 0.18, epic: 0.08 },
+        dropRates: { common: 0.3846, uncommon: 0.3297, rare: 0.1978, epic: 0.0879 },
         abilities: [
             {
                 id: 'lure',
@@ -3043,7 +3043,7 @@ Object.assign(ENEMIES, {
         level: 9,
         description: 'A true believer who makes dying look like a hobby',
         possibleDrops: ['mana_potion', 'cursed_bone', 'gold_coins', 'medium_gem'],
-        dropRates: { common: 0.33, uncommon: 0.3, rare: 0.18, epic: 0.09, legendary: 0.02 },
+        dropRates: { common: 0.3587, uncommon: 0.3261, rare: 0.1957, epic: 0.0978, legendary: 0.0217 },
         abilities: [
             {
                 id: 'martyrs_curse',
@@ -3078,7 +3078,7 @@ Object.assign(ENEMIES, {
         level: 9,
         description: 'A stitched-together horror, unhappy about its existence',
         possibleDrops: ['health_potion', 'golem_core', 'large_gem'],
-        dropRates: { common: 0.33, uncommon: 0.28, rare: 0.2, epic: 0.1, legendary: 0.03 },
+        dropRates: { common: 0.351, uncommon: 0.2979, rare: 0.2128, epic: 0.1064, legendary: 0.0319 },
         abilities: [
             {
                 id: 'golem_slam',
@@ -3121,7 +3121,7 @@ Object.assign(ENEMIES, {
         level: 9,
         description: 'A ghost so ancient it barely remembers what it was angry about',
         possibleDrops: ['mana_potion', 'soul_essence', 'large_gem'],
-        dropRates: { common: 0.35, uncommon: 0.28, rare: 0.18, epic: 0.08, legendary: 0.02 },
+        dropRates: { common: 0.3846, uncommon: 0.3077, rare: 0.1978, epic: 0.0879, legendary: 0.022 },
         abilities: [
             {
                 id: 'soul_chill',
@@ -3164,7 +3164,7 @@ Object.assign(ENEMIES, {
         level: 9,
         description: 'The biggest, meanest hyena-man in the pack',
         possibleDrops: ['health_potion', 'warhammer', 'medium_gem'],
-        dropRates: { common: 0.32, uncommon: 0.3, rare: 0.2, epic: 0.1, legendary: 0.03 },
+        dropRates: { common: 0.3368, uncommon: 0.3158, rare: 0.2105, epic: 0.1053, legendary: 0.0316 },
         abilities: [
             {
                 id: 'warchant',
@@ -3194,7 +3194,7 @@ Object.assign(ENEMIES, {
         level: 9,
         description: 'A human servant of a vampire, dangerously devoted',
         possibleDrops: ['health_potion', 'blood_vial', 'medium_gem'],
-        dropRates: { common: 0.38, uncommon: 0.28, rare: 0.16, epic: 0.07, legendary: 0.01 },
+        dropRates: { common: 0.4222, uncommon: 0.3111, rare: 0.1778, epic: 0.0778, legendary: 0.0111 },
         abilities: [
             {
                 id: 'blood_drain',
@@ -3225,7 +3225,7 @@ Object.assign(ENEMIES, {
         level: 10,
         description: 'Three heads means three chances to hate you at once',
         possibleDrops: ['greater_health_potion', 'hydra_scale', 'large_gem'],
-        dropRates: { common: 0.28, uncommon: 0.28, rare: 0.22, epic: 0.14, legendary: 0.05 },
+        dropRates: { common: 0.2887, uncommon: 0.2887, rare: 0.2268, epic: 0.1443, legendary: 0.0515 },
         abilities: [
             {
                 id: 'triple_bite',
@@ -3273,7 +3273,7 @@ Object.assign(ENEMIES, {
         level: 10,
         description: 'Half mud, half moss, entirely hostile',
         possibleDrops: ['health_potion', 'swamp_heart', 'large_gem'],
-        dropRates: { common: 0.35, uncommon: 0.26, rare: 0.2, epic: 0.1, legendary: 0.03 },
+        dropRates: { common: 0.3723, uncommon: 0.2766, rare: 0.2128, epic: 0.1064, legendary: 0.0319 },
         abilities: [
             {
                 id: 'bog_slam',
@@ -3315,7 +3315,7 @@ Object.assign(ENEMIES, {
         level: 10,
         description: 'Fully armored and mostly decomposed',
         possibleDrops: ['health_potion', 'ancient_sword', 'large_gem'],
-        dropRates: { common: 0.3, uncommon: 0.27, rare: 0.22, epic: 0.12, legendary: 0.04 },
+        dropRates: { common: 0.3158, uncommon: 0.2842, rare: 0.2316, epic: 0.1263, legendary: 0.0421 },
         abilities: [
             {
                 id: 'unholy_swing',
@@ -3350,7 +3350,7 @@ Object.assign(ENEMIES, {
         level: 10,
         description: 'A winged reptile that spits venom instead of fire',
         possibleDrops: ['greater_health_potion', 'drake_scale', 'snake_venom', 'large_gem'],
-        dropRates: { common: 0.28, uncommon: 0.27, rare: 0.23, epic: 0.14, legendary: 0.05 },
+        dropRates: { common: 0.2887, uncommon: 0.2784, rare: 0.2371, epic: 0.1443, legendary: 0.0515 },
         abilities: [
             {
                 id: 'venom_spit',
@@ -3385,7 +3385,7 @@ Object.assign(ENEMIES, {
         level: 10,
         description: 'Cackles while hurling hexes. Not in the fun way',
         possibleDrops: ['greater_mana_potion', 'witch_brew', 'cursed_amulet', 'large_gem'],
-        dropRates: { common: 0.25, uncommon: 0.3, rare: 0.24, epic: 0.14, legendary: 0.06 },
+        dropRates: { common: 0.2526, uncommon: 0.303, rare: 0.2424, epic: 0.1414, legendary: 0.0606 },
         abilities: [
             {
                 id: 'swamp_hex',
@@ -3435,7 +3435,7 @@ Object.assign(ENEMIES, {
         level: 11,
         description: 'Avoid eye contact. Seriously. Eyes closed. Trust me',
         possibleDrops: ['greater_health_potion', 'basilisk_eye', 'stone_armor', 'large_gem'],
-        dropRates: { common: 0.28, uncommon: 0.27, rare: 0.22, epic: 0.14, legendary: 0.05 },
+        dropRates: { common: 0.2916, uncommon: 0.2813, rare: 0.2292, epic: 0.1458, legendary: 0.0521 },
         abilities: [
             {
                 id: 'petrifying_gaze',
@@ -3479,7 +3479,7 @@ Object.assign(ENEMIES, {
         level: 11,
         description: 'Slow, relentless, not interested in your excuses',
         possibleDrops: ['greater_health_potion', 'golem_core', 'iron_ingot', 'large_gem'],
-        dropRates: { common: 0.3, uncommon: 0.25, rare: 0.22, epic: 0.14, legendary: 0.05 },
+        dropRates: { common: 0.3125, uncommon: 0.2604, rare: 0.2292, epic: 0.1458, legendary: 0.0521 },
         abilities: [
             {
                 id: 'iron_fist',
@@ -3521,7 +3521,7 @@ Object.assign(ENEMIES, {
         level: 11,
         description: 'A loyal undead servant that shares its master\'s ruthlessness',
         possibleDrops: ['health_potion', 'bone_dust', 'cursed_bone', 'large_gem'],
-        dropRates: { common: 0.32, uncommon: 0.27, rare: 0.2, epic: 0.12, legendary: 0.04 },
+        dropRates: { common: 0.3369, uncommon: 0.2842, rare: 0.2105, epic: 0.1263, legendary: 0.0421 },
         abilities: [
             {
                 id: 'necrotic_touch',
@@ -3556,7 +3556,7 @@ Object.assign(ENEMIES, {
         level: 11,
         description: 'An upgrade. The scream cracks stone walls',
         possibleDrops: ['greater_mana_potion', 'ectoplasm', 'soul_essence', 'large_gem'],
-        dropRates: { common: 0.25, uncommon: 0.3, rare: 0.24, epic: 0.14, legendary: 0.06 },
+        dropRates: { common: 0.2526, uncommon: 0.303, rare: 0.2424, epic: 0.1414, legendary: 0.0606 },
         abilities: [
             {
                 id: 'shriek',
@@ -3599,7 +3599,7 @@ Object.assign(ENEMIES, {
         level: 11,
         description: 'Once a normal person. Definitely not anymore',
         possibleDrops: ['greater_health_potion', 'wolf_pelt', 'silver_fang', 'large_gem'],
-        dropRates: { common: 0.28, uncommon: 0.28, rare: 0.22, epic: 0.14, legendary: 0.06 },
+        dropRates: { common: 0.2857, uncommon: 0.2857, rare: 0.2245, epic: 0.1429, legendary: 0.0612 },
         abilities: [
             {
                 id: 'savage_rend',
@@ -3648,7 +3648,7 @@ Object.assign(ENEMIES, {
         level: 12,
         description: 'Snake-haired and furious about it',
         possibleDrops: ['greater_mana_potion', 'basilisk_eye', 'snake_skin', 'large_gem'],
-        dropRates: { common: 0.25, uncommon: 0.3, rare: 0.24, epic: 0.14, legendary: 0.06 },
+        dropRates: { common: 0.2526, uncommon: 0.303, rare: 0.2424, epic: 0.1414, legendary: 0.0606 },
         abilities: [
             {
                 id: 'stone_gaze',
@@ -3696,7 +3696,7 @@ Object.assign(ENEMIES, {
         level: 12,
         description: 'Random spells, random target. You may not be the target. May',
         possibleDrops: ['mana_potion', 'imp_dust', 'chaos_essence', 'large_gem'],
-        dropRates: { common: 0.28, uncommon: 0.28, rare: 0.22, epic: 0.14, legendary: 0.06 },
+        dropRates: { common: 0.2857, uncommon: 0.2857, rare: 0.2245, epic: 0.1429, legendary: 0.0612 },
         abilities: [
             {
                 id: 'chaos_bolt',
@@ -3743,7 +3743,7 @@ Object.assign(ENEMIES, {
         level: 12,
         description: 'Forty feet of teeth, no eyes, extremely fast',
         possibleDrops: ['greater_health_potion', 'worm_hide', 'large_gem'],
-        dropRates: { common: 0.3, uncommon: 0.26, rare: 0.22, epic: 0.13, legendary: 0.05 },
+        dropRates: { common: 0.3125, uncommon: 0.2708, rare: 0.2292, epic: 0.1354, legendary: 0.0521 },
         abilities: [
             {
                 id: 'swallow',
@@ -3792,7 +3792,7 @@ Object.assign(ENEMIES, {
         level: 12,
         description: 'A veteran scout who switched sides for better pay',
         possibleDrops: ['greater_health_potion', 'longbow', 'dark_essence', 'large_gem'],
-        dropRates: { common: 0.27, uncommon: 0.3, rare: 0.23, epic: 0.13, legendary: 0.05 },
+        dropRates: { common: 0.2755, uncommon: 0.3061, rare: 0.2347, epic: 0.1327, legendary: 0.051 },
         abilities: [
             {
                 id: 'crippling_shot',
@@ -3841,7 +3841,7 @@ Object.assign(ENEMIES, {
         level: 12,
         description: 'Empty inside. Very full of sword swings',
         possibleDrops: ['greater_health_potion', 'ancient_armor', 'large_gem'],
-        dropRates: { common: 0.3, uncommon: 0.27, rare: 0.22, epic: 0.12, legendary: 0.04 },
+        dropRates: { common: 0.3158, uncommon: 0.2842, rare: 0.2316, epic: 0.1263, legendary: 0.0421 },
         abilities: [
             {
                 id: 'clanging_strike',
@@ -3885,7 +3885,7 @@ Object.assign(ENEMIES, {
         level: 13,
         description: 'Fire-breath, shadow-step, zero patience',
         possibleDrops: ['greater_health_potion', 'hellfire_fang', 'large_gem'],
-        dropRates: { common: 0.27, uncommon: 0.28, rare: 0.23, epic: 0.14, legendary: 0.06 },
+        dropRates: { common: 0.2755, uncommon: 0.2857, rare: 0.2347, epic: 0.1429, legendary: 0.0612 },
         abilities: [
             {
                 id: 'hellfire_breath',
@@ -3981,7 +3981,7 @@ Object.assign(ENEMIES, {
         level: 13,
         description: 'Built from the runes of an ancient fallen city',
         possibleDrops: ['greater_health_potion', 'guardian_core', 'rune_shard', 'large_gem'],
-        dropRates: { common: 0.27, uncommon: 0.27, rare: 0.24, epic: 0.14, legendary: 0.06 },
+        dropRates: { common: 0.2755, uncommon: 0.2755, rare: 0.2449, epic: 0.1429, legendary: 0.0612 },
         abilities: [
             {
                 id: 'rune_blast',
@@ -4072,7 +4072,7 @@ Object.assign(ENEMIES, {
         level: 13,
         description: 'Was once a decoration. Developed ambitions',
         possibleDrops: ['greater_health_potion', 'stone_armor', 'large_gem'],
-        dropRates: { common: 0.3, uncommon: 0.26, rare: 0.22, epic: 0.13, legendary: 0.05 },
+        dropRates: { common: 0.3125, uncommon: 0.2708, rare: 0.2292, epic: 0.1354, legendary: 0.0521 },
         abilities: [
             {
                 id: 'stone_dive',
@@ -4115,7 +4115,7 @@ Object.assign(ENEMIES, {
         level: 14,
         description: 'Has strong opinions about the definition of "alive"',
         possibleDrops: ['greater_mana_potion', 'necromantic_staff', 'cursed_bone', 'large_gem'],
-        dropRates: { common: 0.22, uncommon: 0.3, rare: 0.26, epic: 0.16, legendary: 0.08 },
+        dropRates: { common: 0.2157, uncommon: 0.2941, rare: 0.2549, epic: 0.1569, legendary: 0.0784 },
         abilities: [
             {
                 id: 'raise_dead',
@@ -4207,7 +4207,7 @@ Object.assign(ENEMIES, {
         level: 14,
         description: 'Elite guard of a dead king, still taking the job seriously',
         possibleDrops: ['greater_health_potion', 'ancient_sword', 'ancient_armor', 'large_gem'],
-        dropRates: { common: 0.23, uncommon: 0.28, rare: 0.26, epic: 0.16, legendary: 0.08 },
+        dropRates: { common: 0.2278, uncommon: 0.2772, rare: 0.2574, epic: 0.1584, legendary: 0.0792 },
         abilities: [
             {
                 id: 'heroic_smash',
@@ -4249,7 +4249,7 @@ Object.assign(ENEMIES, {
         level: 14,
         description: 'A tiny pocket of absolute nothingness that bites',
         possibleDrops: ['greater_mana_potion', 'void_crystal', 'null_essence', 'large_gem'],
-        dropRates: { common: 0.22, uncommon: 0.3, rare: 0.26, epic: 0.16, legendary: 0.08 },
+        dropRates: { common: 0.2157, uncommon: 0.2941, rare: 0.2549, epic: 0.1569, legendary: 0.0784 },
         abilities: [
             {
                 id: 'void_sting',
@@ -4296,7 +4296,7 @@ Object.assign(ENEMIES, {
         level: 14,
         description: 'Lava given a terrible purpose',
         possibleDrops: ['greater_health_potion', 'fire_core', 'magma_core', 'large_gem'],
-        dropRates: { common: 0.25, uncommon: 0.27, rare: 0.25, epic: 0.15, legendary: 0.07 },
+        dropRates: { common: 0.2526, uncommon: 0.2727, rare: 0.2525, epic: 0.1515, legendary: 0.0707 },
         abilities: [
             {
                 id: 'lava_splash',
@@ -4345,7 +4345,7 @@ Object.assign(ENEMIES, {
         level: 15,
         description: 'Older than the ruins it haunts, angrier than ever',
         possibleDrops: ['greater_health_potion', 'soul_essence', 'shadowblade', 'huge_gem'],
-        dropRates: { common: 0.2, uncommon: 0.28, rare: 0.28, epic: 0.17, legendary: 0.09 },
+        dropRates: { common: 0.1961, uncommon: 0.2745, rare: 0.2745, epic: 0.1667, legendary: 0.0882 },
         abilities: [
             {
                 id: 'soul_consume',
@@ -4388,7 +4388,7 @@ Object.assign(ENEMIES, {
         level: 15,
         description: "Refuses to acknowledge defeat. Refuses to acknowledge anything",
         possibleDrops: ['greater_health_potion', 'cursed_blade', 'ancient_armor', 'huge_gem'],
-        dropRates: { common: 0.2, uncommon: 0.28, rare: 0.28, epic: 0.17, legendary: 0.09 },
+        dropRates: { common: 0.1961, uncommon: 0.2745, rare: 0.2745, epic: 0.1667, legendary: 0.0882 },
         abilities: [
             {
                 id: 'unyielding',
@@ -4430,7 +4430,7 @@ Object.assign(ENEMIES, {
         level: 15,
         description: 'Enthusiastically working toward everyone\'s extinction',
         possibleDrops: ['greater_mana_potion', 'cursed_amulet', 'chaos_essence', 'huge_gem'],
-        dropRates: { common: 0.2, uncommon: 0.28, rare: 0.27, epic: 0.17, legendary: 0.1 },
+        dropRates: { common: 0.1961, uncommon: 0.2745, rare: 0.2647, epic: 0.1667, legendary: 0.098 },
         abilities: [
             {
                 id: 'doom_mark',
@@ -4477,7 +4477,7 @@ Object.assign(ENEMIES, {
         level: 15,
         description: 'The original model. No warranty remaining',
         possibleDrops: ['greater_health_potion', 'golem_core', 'stone_armor', 'huge_gem'],
-        dropRates: { common: 0.22, uncommon: 0.28, rare: 0.27, epic: 0.16, legendary: 0.09 },
+        dropRates: { common: 0.2157, uncommon: 0.2745, rare: 0.2647, epic: 0.1569, legendary: 0.0882 },
         abilities: [
             {
                 id: 'ancient_smash',
@@ -4520,7 +4520,7 @@ Object.assign(ENEMIES, {
         level: 15,
         description: 'Back from the dead with a very specific grudge',
         possibleDrops: ['greater_health_potion', 'cursed_sword', 'ghost_essence', 'huge_gem'],
-        dropRates: { common: 0.21, uncommon: 0.28, rare: 0.28, epic: 0.17, legendary: 0.09 },
+        dropRates: { common: 0.204, uncommon: 0.2718, rare: 0.2718, epic: 0.165, legendary: 0.0874 },
         abilities: [
             {
                 id: 'vendetta',
@@ -5042,7 +5042,7 @@ Object.assign(ENEMIES, {
         level: 20,
         description: 'Ancient evil that predates the current age of evil',
         possibleDrops: ['superior_health_potion', 'demon_core', 'demon_crown', 'pristine_gem'],
-        dropRates: { common: 0.1, uncommon: 0.18, rare: 0.27, epic: 0.26, legendary: 0.16, mythic: 0.04 }
+        dropRates: { common: 0.0991, uncommon: 0.1782, rare: 0.2673, epic: 0.2574, legendary: 0.1584, mythic: 0.0396 }
     },
 
     lava_titan: {
@@ -5057,7 +5057,7 @@ Object.assign(ENEMIES, {
         level: 20,
         description: 'Born in the deepest volcanic fissure. Came up just for you',
         possibleDrops: ['superior_health_potion', 'magma_core', 'lava_armor', 'pristine_gem'],
-        dropRates: { common: 0.09, uncommon: 0.18, rare: 0.27, epic: 0.26, legendary: 0.17, mythic: 0.04 }
+        dropRates: { common: 0.0892, uncommon: 0.1782, rare: 0.2673, epic: 0.2574, legendary: 0.1683, mythic: 0.0396 }
     },
 
     void_colossus: {
@@ -5072,7 +5072,7 @@ Object.assign(ENEMIES, {
         level: 20,
         description: 'An entire ecosystem of nothing, walking toward you',
         possibleDrops: ['superior_health_potion', 'void_crystal', 'null_essence', 'pristine_gem'],
-        dropRates: { common: 0.09, uncommon: 0.18, rare: 0.27, epic: 0.26, legendary: 0.17, mythic: 0.04 }
+        dropRates: { common: 0.0892, uncommon: 0.1782, rare: 0.2673, epic: 0.2574, legendary: 0.1683, mythic: 0.0396 }
     },
 
     corrupted_titan: {
@@ -5087,7 +5087,7 @@ Object.assign(ENEMIES, {
         level: 20,
         description: 'A once-great giant warped beyond recognition',
         possibleDrops: ['superior_health_potion', 'corrupted_essence', 'tainted_plate', 'pristine_gem'],
-        dropRates: { common: 0.1, uncommon: 0.18, rare: 0.27, epic: 0.26, legendary: 0.16, mythic: 0.04 }
+        dropRates: { common: 0.0991, uncommon: 0.1782, rare: 0.2673, epic: 0.2574, legendary: 0.1584, mythic: 0.0396 }
     },
 
     nightmare_dragon: {
@@ -5102,7 +5102,7 @@ Object.assign(ENEMIES, {
         level: 20,
         description: 'Dreams made manifest. It chose these particular dreams',
         possibleDrops: ['superior_health_potion', 'dragonslayer', 'dragon_heart', 'pristine_gem'],
-        dropRates: { common: 0.08, uncommon: 0.17, rare: 0.27, epic: 0.27, legendary: 0.18, mythic: 0.05 }
+        dropRates: { common: 0.0784, uncommon: 0.1667, rare: 0.2647, epic: 0.2647, legendary: 0.1765, mythic: 0.049 }
     },
 
     // ── LEVEL 21 ── (Corrupted Temple additions)
@@ -5118,7 +5118,7 @@ Object.assign(ENEMIES, {
         level: 21,
         description: 'The void given size. You will need more health potions',
         possibleDrops: ['superior_health_potion', 'void_crown', 'void_armor', 'pristine_gem'],
-        dropRates: { common: 0.08, uncommon: 0.16, rare: 0.27, epic: 0.27, legendary: 0.18, mythic: 0.05 }
+        dropRates: { common: 0.0793, uncommon: 0.1584, rare: 0.2673, epic: 0.2673, legendary: 0.1782, mythic: 0.0495 }
     },
 
     fallen_titan: {
@@ -5133,7 +5133,7 @@ Object.assign(ENEMIES, {
         level: 21,
         description: 'A celestial giant that chose the wrong side',
         possibleDrops: ['superior_health_potion', 'fallen_wing', 'titan_blade', 'pristine_gem'],
-        dropRates: { common: 0.07, uncommon: 0.15, rare: 0.27, epic: 0.28, legendary: 0.2, mythic: 0.05 }
+        dropRates: { common: 0.0686, uncommon: 0.1471, rare: 0.2647, epic: 0.2745, legendary: 0.1961, mythic: 0.049 }
     },
 
     abyssal_knight: {
@@ -5148,7 +5148,7 @@ Object.assign(ENEMIES, {
         level: 21,
         description: 'Armored in compressed darkness. Polished void',
         possibleDrops: ['superior_health_potion', 'abyssal_blade', 'chaos_armor', 'pristine_gem'],
-        dropRates: { common: 0.08, uncommon: 0.16, rare: 0.27, epic: 0.27, legendary: 0.18, mythic: 0.05 }
+        dropRates: { common: 0.0793, uncommon: 0.1584, rare: 0.2673, epic: 0.2673, legendary: 0.1782, mythic: 0.0495 }
     },
 
     elder_vampire: {
@@ -5163,7 +5163,7 @@ Object.assign(ENEMIES, {
         level: 21,
         description: 'Older than nations. Hungrier than you can imagine',
         possibleDrops: ['superior_health_potion', 'blood_ruby', 'vampire_blade', 'pristine_gem'],
-        dropRates: { common: 0.08, uncommon: 0.16, rare: 0.27, epic: 0.27, legendary: 0.18, mythic: 0.05 }
+        dropRates: { common: 0.0793, uncommon: 0.1584, rare: 0.2673, epic: 0.2673, legendary: 0.1782, mythic: 0.0495 }
     },
 
     reality_shredder: {
@@ -5178,7 +5178,7 @@ Object.assign(ENEMIES, {
         level: 21,
         description: 'Physics is a strong word around this one',
         possibleDrops: ['superior_mana_potion', 'reality_shard', 'void_crystal', 'pristine_gem'],
-        dropRates: { common: 0.07, uncommon: 0.15, rare: 0.27, epic: 0.28, legendary: 0.2, mythic: 0.05 }
+        dropRates: { common: 0.0686, uncommon: 0.1471, rare: 0.2647, epic: 0.2745, legendary: 0.1961, mythic: 0.049 }
     },
 
     // ── LEVEL 22 ── (Corrupted Temple/Volcano additions)
@@ -5194,7 +5194,7 @@ Object.assign(ENEMIES, {
         level: 22,
         description: 'Blots out the sun when it spreads its wings. Rude',
         possibleDrops: ['superior_health_potion', 'dragonslayer', 'dragon_scale', 'pristine_gem'],
-        dropRates: { common: 0.07, uncommon: 0.14, rare: 0.26, epic: 0.28, legendary: 0.21, mythic: 0.06 }
+        dropRates: { common: 0.0686, uncommon: 0.1373, rare: 0.2549, epic: 0.2745, legendary: 0.2059, mythic: 0.0588 }
     },
 
     soul_devourer: {
@@ -5209,7 +5209,7 @@ Object.assign(ENEMIES, {
         level: 22,
         description: 'Eats souls for sustenance. Very efficient. Very alarming',
         possibleDrops: ['superior_mana_potion', 'soul_essence', 'null_essence', 'pristine_gem'],
-        dropRates: { common: 0.06, uncommon: 0.13, rare: 0.26, epic: 0.29, legendary: 0.22, mythic: 0.06 }
+        dropRates: { common: 0.0588, uncommon: 0.1275, rare: 0.2549, epic: 0.2843, legendary: 0.2157, mythic: 0.0588 }
     },
 
     hellfire_knight: {
@@ -5224,7 +5224,7 @@ Object.assign(ENEMIES, {
         level: 22,
         description: 'Armor made from solidified hellfire. Somehow still wearable',
         possibleDrops: ['superior_health_potion', 'hellforged_blade', 'fiend_armor', 'pristine_gem'],
-        dropRates: { common: 0.07, uncommon: 0.14, rare: 0.26, epic: 0.28, legendary: 0.21, mythic: 0.06 }
+        dropRates: { common: 0.0686, uncommon: 0.1373, rare: 0.2549, epic: 0.2745, legendary: 0.2059, mythic: 0.0588 }
     },
 
     inferno_elemental: {
@@ -5239,7 +5239,7 @@ Object.assign(ENEMIES, {
         level: 22,
         description: 'Fire too angry to stay confined to a fireplace',
         possibleDrops: ['superior_health_potion', 'fire_core', 'fire_blade', 'pristine_gem'],
-        dropRates: { common: 0.06, uncommon: 0.13, rare: 0.26, epic: 0.29, legendary: 0.22, mythic: 0.06 }
+        dropRates: { common: 0.0588, uncommon: 0.1275, rare: 0.2549, epic: 0.2843, legendary: 0.2157, mythic: 0.0588 }
     },
 
     chaos_elemental: {
@@ -5254,7 +5254,7 @@ Object.assign(ENEMIES, {
         level: 22,
         description: 'Fire? Ice? Lightning? Yes. All at once. Simultaneously',
         possibleDrops: ['superior_health_potion', 'chaos_essence', 'entropy_core', 'pristine_gem'],
-        dropRates: { common: 0.06, uncommon: 0.13, rare: 0.26, epic: 0.29, legendary: 0.22, mythic: 0.06 }
+        dropRates: { common: 0.0588, uncommon: 0.1275, rare: 0.2549, epic: 0.2843, legendary: 0.2157, mythic: 0.0588 }
     },
 
     // ── LEVEL 23 ── (Volcano/Frozen Tundra additions)
@@ -5270,7 +5270,7 @@ Object.assign(ENEMIES, {
         level: 23,
         description: 'Permanent lightning storm wherever it lands',
         possibleDrops: ['superior_health_potion', 'dragonslayer', 'dragon_heart', 'flawless_gem'],
-        dropRates: { common: 0.05, uncommon: 0.1, rare: 0.24, epic: 0.3, legendary: 0.28, mythic: 0.08 }
+        dropRates: { common: 0.0476, uncommon: 0.0952, rare: 0.2286, epic: 0.2857, legendary: 0.2667, mythic: 0.0762 }
     },
 
     blizzard_titan: {
@@ -5285,7 +5285,7 @@ Object.assign(ENEMIES, {
         level: 23,
         description: 'A walking snowstorm with opinions about warmth',
         possibleDrops: ['superior_health_potion', 'frost_armor', 'ice_crystal', 'flawless_gem'],
-        dropRates: { common: 0.05, uncommon: 0.11, rare: 0.24, epic: 0.3, legendary: 0.28, mythic: 0.08 }
+        dropRates: { common: 0.0471, uncommon: 0.1038, rare: 0.2264, epic: 0.283, legendary: 0.2642, mythic: 0.0755 }
     },
 
     ancient_lich_lord: {
@@ -5300,7 +5300,7 @@ Object.assign(ENEMIES, {
         level: 23,
         description: 'A lich who survived long enough to become something worse',
         possibleDrops: ['superior_health_potion', 'superior_mana_potion', 'phylactery', 'flawless_gem'],
-        dropRates: { common: 0.04, uncommon: 0.1, rare: 0.23, epic: 0.3, legendary: 0.28, mythic: 0.09 }
+        dropRates: { common: 0.0384, uncommon: 0.0962, rare: 0.2212, epic: 0.2885, legendary: 0.2692, mythic: 0.0865 }
     },
 
     void_dragon: {
@@ -5315,7 +5315,7 @@ Object.assign(ENEMIES, {
         level: 23,
         description: 'From nowhere, going nowhere, destroying everything en route',
         possibleDrops: ['superior_health_potion', 'void_blade', 'null_essence', 'flawless_gem'],
-        dropRates: { common: 0.05, uncommon: 0.1, rare: 0.24, epic: 0.3, legendary: 0.27, mythic: 0.08 }
+        dropRates: { common: 0.048, uncommon: 0.0962, rare: 0.2308, epic: 0.2885, legendary: 0.2596, mythic: 0.0769 }
     },
 
     glacial_wyrm: {
@@ -5330,7 +5330,7 @@ Object.assign(ENEMIES, {
         level: 23,
         description: 'An ice dragon too old to be negotiated with',
         possibleDrops: ['superior_health_potion', 'wyrm_scale', 'frost_heart', 'flawless_gem'],
-        dropRates: { common: 0.05, uncommon: 0.11, rare: 0.24, epic: 0.3, legendary: 0.27, mythic: 0.08 }
+        dropRates: { common: 0.0476, uncommon: 0.1048, rare: 0.2286, epic: 0.2857, legendary: 0.2571, mythic: 0.0762 }
     },
 
     // ── LEVEL 24 ── (Void Realm/Celestial Spire approach)
@@ -5346,7 +5346,7 @@ Object.assign(ENEMIES, {
         level: 24,
         description: 'Announces the end. Extremely punctual',
         possibleDrops: ['superior_health_potion', 'oblivion_blade', 'void_armor', 'flawless_gem'],
-        dropRates: { common: 0.04, uncommon: 0.09, rare: 0.21, epic: 0.31, legendary: 0.3, mythic: 0.1 }
+        dropRates: { common: 0.0382, uncommon: 0.0857, rare: 0.2, epic: 0.2952, legendary: 0.2857, mythic: 0.0952 }
     },
 
     eternal_warden: {
@@ -5361,7 +5361,7 @@ Object.assign(ENEMIES, {
         level: 24,
         description: 'Has been guarding this realm since before time. Still annoyed',
         possibleDrops: ['superior_health_potion', 'guardian_core', 'divine_armor', 'flawless_gem'],
-        dropRates: { common: 0.04, uncommon: 0.09, rare: 0.22, epic: 0.31, legendary: 0.3, mythic: 0.1 }
+        dropRates: { common: 0.0378, uncommon: 0.0849, rare: 0.2075, epic: 0.2925, legendary: 0.283, mythic: 0.0943 }
     },
 
     chaos_dragon: {
@@ -5376,7 +5376,7 @@ Object.assign(ENEMIES, {
         level: 24,
         description: 'Five different breath weapons and no preference for any',
         possibleDrops: ['superior_health_potion', 'dragon_heart', 'chaos_armor', 'flawless_gem'],
-        dropRates: { common: 0.04, uncommon: 0.09, rare: 0.21, epic: 0.3, legendary: 0.3, mythic: 0.11 }
+        dropRates: { common: 0.0381, uncommon: 0.0857, rare: 0.2, epic: 0.2857, legendary: 0.2857, mythic: 0.1048 }
     },
 
     void_overlord: {
@@ -5391,7 +5391,7 @@ Object.assign(ENEMIES, {
         level: 24,
         description: 'Rules the nothing between worlds with an iron nonexistent fist',
         possibleDrops: ['superior_health_potion', 'void_crown', 'oblivion_blade', 'flawless_gem'],
-        dropRates: { common: 0.03, uncommon: 0.08, rare: 0.21, epic: 0.31, legendary: 0.31, mythic: 0.11 }
+        dropRates: { common: 0.0286, uncommon: 0.0762, rare: 0.2, epic: 0.2952, legendary: 0.2952, mythic: 0.1048 }
     },
 
     fallen_warlord: {
@@ -5406,7 +5406,7 @@ Object.assign(ENEMIES, {
         level: 24,
         description: 'Once commanded divine armies. Still commands respect',
         possibleDrops: ['superior_health_potion', 'titan_blade', 'blessed_plate', 'flawless_gem'],
-        dropRates: { common: 0.04, uncommon: 0.09, rare: 0.22, epic: 0.31, legendary: 0.3, mythic: 0.1 }
+        dropRates: { common: 0.0378, uncommon: 0.0849, rare: 0.2075, epic: 0.2925, legendary: 0.283, mythic: 0.0943 }
     },
 
     // ── LEVEL 25 ── (Celestial Spire additions)
@@ -5422,7 +5422,7 @@ Object.assign(ENEMIES, {
         level: 25,
         description: 'An entity from outside the universe, confused by directions',
         possibleDrops: ['superior_health_potion', 'entropy_core', 'null_essence', 'flawless_gem'],
-        dropRates: { common: 0.03, uncommon: 0.07, rare: 0.15, epic: 0.3, legendary: 0.35, mythic: 0.18 }
+        dropRates: { common: 0.0277, uncommon: 0.0648, rare: 0.1389, epic: 0.2778, legendary: 0.3241, mythic: 0.1667 }
     },
 
     divine_executioner: {
@@ -5437,7 +5437,7 @@ Object.assign(ENEMIES, {
         level: 25,
         description: 'Carries a heavenly blade the size of a building. Professional',
         possibleDrops: ['superior_health_potion', 'heavenly_blade', 'divine_armor', 'flawless_gem'],
-        dropRates: { common: 0.03, uncommon: 0.07, rare: 0.15, epic: 0.3, legendary: 0.35, mythic: 0.18 }
+        dropRates: { common: 0.0277, uncommon: 0.0648, rare: 0.1389, epic: 0.2778, legendary: 0.3241, mythic: 0.1667 }
     },
 
     star_titan: {
@@ -5452,7 +5452,7 @@ Object.assign(ENEMIES, {
         level: 25,
         description: 'Born from the collapse of a dying star. Warm to the touch',
         possibleDrops: ['superior_health_potion', 'titan_blade', 'celestial_blade', 'flawless_gem'],
-        dropRates: { common: 0.03, uncommon: 0.07, rare: 0.15, epic: 0.3, legendary: 0.35, mythic: 0.18 }
+        dropRates: { common: 0.0277, uncommon: 0.0648, rare: 0.1389, epic: 0.2778, legendary: 0.3241, mythic: 0.1667 }
     },
 
     eternal_dragon: {
@@ -5467,7 +5467,7 @@ Object.assign(ENEMIES, {
         level: 25,
         description: 'Has seen civilizations rise and fall. Still unimpressed',
         possibleDrops: ['superior_health_potion', 'dragon_heart', 'dragonslayer', 'flawless_gem'],
-        dropRates: { common: 0.02, uncommon: 0.06, rare: 0.14, epic: 0.3, legendary: 0.37, mythic: 0.2 },
+        dropRates: { common: 0.0185, uncommon: 0.055, rare: 0.1284, epic: 0.2752, legendary: 0.3394, mythic: 0.1835 },
         isBoss: true
     },
 
@@ -5483,7 +5483,7 @@ Object.assign(ENEMIES, {
         level: 25,
         description: 'The end of all things, and it is in a hurry',
         possibleDrops: ['superior_health_potion', 'oblivion_blade', 'void_crown', 'flawless_gem'],
-        dropRates: { common: 0.02, uncommon: 0.05, rare: 0.13, epic: 0.3, legendary: 0.38, mythic: 0.2 },
+        dropRates: { common: 0.0184, uncommon: 0.0463, rare: 0.1204, epic: 0.2778, legendary: 0.3519, mythic: 0.1852 },
         isBoss: true
     }
 });
