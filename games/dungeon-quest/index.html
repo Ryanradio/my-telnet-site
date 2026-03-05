@@ -7854,6 +7854,7 @@ window.addEventListener('beforeunload', () => {
 let _invMenuHoldTimer = null;
 let _invMenuFired = false;
 let _invMenuStartY = 0;
+let _invMenuStartX = 0;
 let _invMenuMoved = false;
 
 function _invMenuDown(e) {
@@ -7861,8 +7862,9 @@ function _invMenuDown(e) {
     _invMenuFired = false;
     _invMenuMoved = false;
     
-    // Record starting Y position
+    // Record starting X and Y position
     _invMenuStartY = e.touches ? e.touches[0].clientY : e.clientY;
+    _invMenuStartX = e.touches ? e.touches[0].clientX : e.clientX;
     
     _invMenuHoldTimer = setTimeout(() => {
         // Only open sysop if finger hasn't moved (not scrolling)
@@ -7875,11 +7877,17 @@ function _invMenuDown(e) {
 }
 
 function _invMenuMove(e) {
-    // Detect if finger moved more than 10px (scrolling)
+    // Detect if finger moved more than 10px in ANY direction
     const currentY = e.touches ? e.touches[0].clientY : e.clientY;
-    if (Math.abs(currentY - _invMenuStartY) > 10) {
+    const currentX = e.touches ? e.touches[0].clientX : e.clientX;
+    const startX = e.touches && e.touches[0] ? _invMenuStartX : (e.clientX || 0);
+    
+    const movedY = Math.abs(currentY - _invMenuStartY);
+    const movedX = Math.abs(currentX - (_invMenuStartX || currentX));
+    
+    if (movedY > 10 || movedX > 10) {
         _invMenuMoved = true;
-        // Cancel the hold timer if scrolling
+        // Cancel the hold timer if moving
         if (_invMenuHoldTimer) {
             clearTimeout(_invMenuHoldTimer);
             _invMenuHoldTimer = null;
