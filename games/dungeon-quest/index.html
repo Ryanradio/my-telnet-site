@@ -7851,13 +7851,14 @@ window.addEventListener('beforeunload', () => {
         // ═══════════════════════════════════════════════════════════════
         // 🎒 INVENTORY & POTION BUTTONS - Normal tap only 
         let _invMenuHoldTimer = null, _invMenuFired = false;
-        
-        function _invMenuDown(e) {
+
+       function _invMenuDown(e) {
     if (e.cancelable) e.preventDefault();
     _invMenuFired = false;
     _invMenuHoldTimer = setTimeout(() => {
         _invMenuHoldTimer = null;
         _invMenuFired = true;
+        alert('🔓 3 seconds! Opening sysop...'); // Test alert
         openSysopOverlay();
     }, 3000);
 }
@@ -7928,26 +7929,16 @@ window.addEventListener('beforeunload', () => {
 
         // ── SYSOP overlay open / close ────────────────────────────────
         function openSysopOverlay() {
-    // Ensure this function connects to the logic in Citation 2
-    const terminal = document.getElementById('terminalContainer');
-    const gameState = window.gameState; // Ensure gameState is accessible
+    const overlay = document.getElementById('sysopOverlay');
     
-    if (!gameState) {
-        console.error('gameState not found');
+    if (!overlay) {
+        console.error('sysopOverlay element not found in DOM');
         return;
     }
-
-    // Activate the terminal state (from Citation 2)
-    gameState.sysop.terminalActive = true; 
     
-    // Toggle the UI (from Citation 2)
-    terminal.classList.add('active');
-    terminal.querySelector('input')?.focus();
-
-    // Check for auth status (from Citation 2)
-    if (!gameState.sysop.authenticated) {
-        terminalPrint('Terminal activated. Type /login <username> <password> to authenticate.', 'warning');
-    }
+    // Open the mobile overlay (not the desktop terminal)
+    overlay.classList.add('open');
+    renderSysopOverlay();
 }
 
         function closeSysopOverlay() {
