@@ -7858,17 +7858,20 @@ let _invMenuStartX = 0;
 let _invMenuMoved = false;
 
 function _invMenuDown(e) {
-   // if (e.cancelable) e.preventDefault();
     _invMenuFired = false;
     _invMenuMoved = false;
     
-    // Record starting X and Y position
+    // Record starting position
     _invMenuStartY = e.touches ? e.touches[0].clientY : e.clientY;
     _invMenuStartX = e.touches ? e.touches[0].clientX : e.clientX;
     
+    // Also track if page scrolls
+    const startScrollY = window.scrollY || window.pageYOffset;
+    
     _invMenuHoldTimer = setTimeout(() => {
-        // Only open sysop if finger hasn't moved (not scrolling)
-        if (!_invMenuMoved) {
+        // Only open if: no movement AND page hasn't scrolled
+        const scrolled = Math.abs((window.scrollY || window.pageYOffset) - startScrollY) > 5;
+        if (!_invMenuMoved && !scrolled) {
             _invMenuHoldTimer = null;
             _invMenuFired = true;
             openSysopOverlay();
@@ -7877,17 +7880,17 @@ function _invMenuDown(e) {
 }
 
 function _invMenuMove(e) {
-    // Detect if finger moved more than 10px in ANY direction
+    // Cancel timer IMMEDIATELY on ANY movement (even 5px)
     const currentY = e.touches ? e.touches[0].clientY : e.clientY;
     const currentX = e.touches ? e.touches[0].clientX : e.clientX;
-    const startX = e.touches && e.touches[0] ? _invMenuStartX : (e.clientX || 0);
     
     const movedY = Math.abs(currentY - _invMenuStartY);
-    const movedX = Math.abs(currentX - (_invMenuStartX || currentX));
+    const movedX = Math.abs(currentX - _invMenuStartX);
     
-    if (movedY > 10 || movedX > 10) {
+    // Lower threshold - even tiny movement cancels
+    if (movedY > 5 || movedX > 5) {
         _invMenuMoved = true;
-        // Cancel the hold timer if moving
+        // IMMEDIATELY cancel timer
         if (_invMenuHoldTimer) {
             clearTimeout(_invMenuHoldTimer);
             _invMenuHoldTimer = null;
