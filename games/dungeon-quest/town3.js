@@ -83,7 +83,7 @@ window.TOWNS.town3 = {
     dungeonRequiredLevel: null,
     dungeonUnlockMessage: null,
 
-    zones: [],
+    zones: ['cursed_ruins', 'cave', 'crypt', 'volcano', 'demon_portal', 'corrupted_temple', 'celestial_spire'],
     services: { shop: true, bank: true, inn: true, temple: true },
 
     portalDestinations: ['town1', 'town2'],

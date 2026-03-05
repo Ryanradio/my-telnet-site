@@ -83,7 +83,7 @@ const EXPLORATION_ZONES = {
                      'necromancer', 'dark_champion', 'elder_wraith', 'black_knight', 'revenant'],
         requiredLevel: 13,
         locked: true,
-        town: 'town2',
+        town: 'town3',
         unlockMessage: 'Defeat your class master in the swamp to unlock this area!',
         adventureChance: 0.09
     },
@@ -97,7 +97,7 @@ const EXPLORATION_ZONES = {
                      'undead_general', 'doom_knight', 'infernal_mage', 'wyvern'],
         requiredLevel: 16,
         locked: true,
-        town: 'town2',
+        town: 'town3',
         unlockMessage: 'Defeat your class master in the cursed ruins to unlock this area!',
         adventureChance: 0.08
     },
@@ -111,7 +111,7 @@ const EXPLORATION_ZONES = {
                      'blood_elemental', 'wyvern', 'undead_general', 'doom_knight'],
         requiredLevel: 19,
         locked: true,
-        town: 'town2',
+        town: 'town3',
         unlockMessage: 'Defeat your class master in the shadow cavern to unlock this area!',
         adventureChance: 0.10
     },
@@ -125,7 +125,7 @@ const EXPLORATION_ZONES = {
                      'void_titan', 'fallen_titan', 'abyssal_knight', 'elder_vampire', 'reality_shredder'],
         requiredLevel: 22,
         locked: true,
-        town: 'town2',
+        town: 'town3',
         unlockMessage: 'Defeat your class master in the ancient crypt to unlock this area!',
         adventureChance: 0.10
     },
@@ -139,7 +139,7 @@ const EXPLORATION_ZONES = {
                      'oblivion_herald', 'eternal_warden', 'chaos_dragon', 'void_overlord', 'fallen_warlord'],
         requiredLevel: 25,
         locked: true,
-        town: 'town2',
+        town: 'town3',
         unlockMessage: 'Defeat your class master in the demon portal to unlock this area!',
         adventureChance: 0.11
     },
@@ -152,28 +152,28 @@ const EXPLORATION_ZONES = {
                      'cosmic_horror', 'divine_executioner', 'star_titan', 'eternal_dragon', 'oblivion_incarnate'],
         requiredLevel: 25,
         locked: true,
-        town: 'town2',
+        town: 'town3',
         unlockMessage: 'Defeat your class master in the corrupted temple to enter this endgame area!',
         adventureChance: 0.15
     },
 
     // ═══════════════════════════════════════════════════════════════
     // TOWN 3 ZONES  (The Crossroads) — Parallel Track
-    // plains is the first zone here, unlocked on arrival at town3.
-    // volcano unlocks after defeating the plains class master.
+    // plains is disabled for now — no current need for a 10-12 parallel zone.
+    // volcano unlocks after defeating the cursed_ruins class master.
     // ═══════════════════════════════════════════════════════════════
-    plains: {
-        name: 'Windswept Plains',
-        description: 'Open grasslands prowled by warlords, giant beasts, and roving monster clans.',
-        enemyLevelRange: [10, 12],
-        encounters: ['dire_wolf', 'plains_lion', 'centaur', 'plains_raider', 'giant_scorpion',
-                     'orc_berserker', 'giant_beetle', 'minotaur_scout', 'will_o_wisp', 'gnoll_chief',
-                     'cave_basilisk', 'iron_golem', 'werewolf', 'medusa', 'cave_worm'],
-        requiredLevel: 10,
-        locked: false,
-        town: 'town3',
-        adventureChance: 0.07
-    },
+    // plains: {
+    //     name: 'Windswept Plains',
+    //     description: 'Open grasslands prowled by warlords, giant beasts, and roving monster clans.',
+    //     enemyLevelRange: [10, 12],
+    //     encounters: ['dire_wolf', 'plains_lion', 'centaur', 'plains_raider', 'giant_scorpion',
+    //                  'orc_berserker', 'giant_beetle', 'minotaur_scout', 'will_o_wisp', 'gnoll_chief',
+    //                  'cave_basilisk', 'iron_golem', 'werewolf', 'medusa', 'cave_worm'],
+    //     requiredLevel: 10,
+    //     locked: false,
+    //     town: 'town3',
+    //     adventureChance: 0.07
+    // },
 
     volcano: {
         name: 'Volcanic Wastes',

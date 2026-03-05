@@ -102,7 +102,7 @@ window.TOWNS.town2 = {
     dungeonRequiredLevel: 10,
     dungeonUnlockMessage: 'You must be at least level 10 to enter the Ashen Vault!',
 
-    zones: ['haunted_graveyard', 'plains', 'cave', 'dark_swamp', 'cursed_ruins'],
+    zones: ['haunted_graveyard', 'dark_swamp'],
     services: { shop: true, bank: true, inn: true, temple: true },
 
     portalDestination:  'town1',
