@@ -11242,9 +11242,7 @@ showWelcomeScreen();
                     <div class="menu-option" onclick="showBlacksmith()">► ⚒️ BLACKSMITH</div>
                     ${dungeonOption}
                     <div class="menu-option" onclick="restAtInn()">► REST AT INN (${calcInnCost(p.cha)} Gold)</div>
-                    <div class="menu-option" id="townInvBtn"
-    onmousedown="_invMenuDown(event)" onmouseup="_invMenuUp()" onmouseleave="_invMenuCancel()"
-    ontouchstart="_invMenuDown(event)" ontouchend="_invMenuUp()" ontouchcancel="_invMenuCancel()">► INVENTORY</div>
+                    <div class="menu-option" onclick="showInventory()">► INVENTORY</div>
                     <div class="menu-option" onclick="showExplore()">► EXPLORE WORLD</div>
                     ${portalOption}
                     <div class="menu-option" onclick="showSettings()">► ⚙️ SETTINGS</div>
