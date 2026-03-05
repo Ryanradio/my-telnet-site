@@ -7851,87 +7851,42 @@ window.addEventListener('beforeunload', () => {
         // ═══════════════════════════════════════════════════════════════
 // 🎒 INVENTORY & POTION BUTTONS - With scroll detection
 // ═══════════════════════════════════════════════════════════════
-let _invMenuHoldTimer = null;
-let _invMenuFired = false;
-let _invMenuStartY = 0;
-let _invMenuStartX = 0;
-let _invMenuMoved = false;
-let _invMenuInitialTimer = null;
+// ═══════════════════════════════════════════════════════════════
+// 🎒 INVENTORY - 5 rapid taps for sysop (like About was supposed to)
+// ═══════════════════════════════════════════════════════════════
+let _invMenuTapCount = 0;
+let _invMenuTapTimeout = null;
 
 function _invMenuDown(e) {
-    _invMenuFired = false;
-    _invMenuMoved = false;
-    
-    // Record starting position
-    _invMenuStartY = e.touches ? e.touches[0].clientY : e.clientY;
-    _invMenuStartX = e.touches ? e.touches[0].clientX : e.clientX;
-    
-    // Wait 200ms before even starting the 3-second timer
-    // If finger moves in this time, it's a scroll - cancel everything
-    _invMenuInitialTimer = setTimeout(() => {
-        if (!_invMenuMoved) {
-            // Finger is still - NOW start the 3-second sysop timer
-            _invMenuHoldTimer = setTimeout(() => {
-                _invMenuHoldTimer = null;
-                _invMenuFired = true;
-                openSysopOverlay();
-            }, 2800); // 2.8s more (total 3s)
-        }
-    }, 200);
+    // Do nothing on down
 }
 
 function _invMenuMove(e) {
-    const currentY = e.touches ? e.touches[0].clientY : e.clientY;
-    const currentX = e.touches ? e.touches[0].clientX : e.clientX;
-    
-    const movedY = Math.abs(currentY - _invMenuStartY);
-    const movedX = Math.abs(currentX - _invMenuStartX);
-    
-    if (movedY > 3 || movedX > 3) {
-        _invMenuMoved = true;
-        
-        // Cancel BOTH timers
-        if (_invMenuInitialTimer) {
-            clearTimeout(_invMenuInitialTimer);
-            _invMenuInitialTimer = null;
-        }
-        if (_invMenuHoldTimer) {
-            clearTimeout(_invMenuHoldTimer);
-            _invMenuHoldTimer = null;
-        }
-    }
+    // Do nothing on move
 }
 
 function _invMenuUp() {
-    // Clear all timers
-    if (_invMenuInitialTimer) {
-        clearTimeout(_invMenuInitialTimer);
-        _invMenuInitialTimer = null;
-    }
-    if (_invMenuHoldTimer) { 
-        clearTimeout(_invMenuHoldTimer); 
-        _invMenuHoldTimer = null; 
-    }
+    _invMenuTapCount++;
     
-    // Only open inventory if: quick tap, no sysop fired, no movement
-    if (!_invMenuFired && !_invMenuMoved) {
+    // Reset counter after 2 seconds
+    clearTimeout(_invMenuTapTimeout);
+    _invMenuTapTimeout = setTimeout(() => {
+        _invMenuTapCount = 0;
+    }, 2000);
+    
+    // 5 taps = sysop
+    if (_invMenuTapCount === 5) {
+        _invMenuTapCount = 0;
+        clearTimeout(_invMenuTapTimeout);
+        openSysopOverlay();
+    } else {
+        // Normal tap = inventory
         showInventory();
     }
-    _invMenuFired = false;
-    _invMenuMoved = false;
 }
 
 function _invMenuCancel() {
-    if (_invMenuInitialTimer) {
-        clearTimeout(_invMenuInitialTimer);
-        _invMenuInitialTimer = null;
-    }
-    if (_invMenuHoldTimer) { 
-        clearTimeout(_invMenuHoldTimer); 
-        _invMenuHoldTimer = null; 
-    }
-    _invMenuFired = false;
-    _invMenuMoved = false;
+    // Do nothing
 }
         
         let _potHoldTimer  = null;
