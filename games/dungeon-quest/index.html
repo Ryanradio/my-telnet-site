@@ -7856,6 +7856,7 @@ let _invMenuFired = false;
 let _invMenuStartY = 0;
 let _invMenuStartX = 0;
 let _invMenuMoved = false;
+let _invMenuInitialTimer = null;
 
 function _invMenuDown(e) {
     _invMenuFired = false;
@@ -7865,32 +7866,35 @@ function _invMenuDown(e) {
     _invMenuStartY = e.touches ? e.touches[0].clientY : e.clientY;
     _invMenuStartX = e.touches ? e.touches[0].clientX : e.clientX;
     
-    // Also track if page scrolls
-    const startScrollY = window.scrollY || window.pageYOffset;
-    
-    _invMenuHoldTimer = setTimeout(() => {
-        // Only open if: no movement AND page hasn't scrolled
-        const scrolled = Math.abs((window.scrollY || window.pageYOffset) - startScrollY) > 5;
-        if (!_invMenuMoved && !scrolled) {
-            _invMenuHoldTimer = null;
-            _invMenuFired = true;
-            openSysopOverlay();
+    // Wait 200ms before even starting the 3-second timer
+    // If finger moves in this time, it's a scroll - cancel everything
+    _invMenuInitialTimer = setTimeout(() => {
+        if (!_invMenuMoved) {
+            // Finger is still - NOW start the 3-second sysop timer
+            _invMenuHoldTimer = setTimeout(() => {
+                _invMenuHoldTimer = null;
+                _invMenuFired = true;
+                openSysopOverlay();
+            }, 2800); // 2.8s more (total 3s)
         }
-    }, 3000);
+    }, 200);
 }
 
 function _invMenuMove(e) {
-    // Cancel timer IMMEDIATELY on ANY movement (even 5px)
     const currentY = e.touches ? e.touches[0].clientY : e.clientY;
     const currentX = e.touches ? e.touches[0].clientX : e.clientX;
     
     const movedY = Math.abs(currentY - _invMenuStartY);
     const movedX = Math.abs(currentX - _invMenuStartX);
     
-    // Lower threshold - even tiny movement cancels
-    if (movedY > 5 || movedX > 5) {
+    if (movedY > 3 || movedX > 3) {
         _invMenuMoved = true;
-        // IMMEDIATELY cancel timer
+        
+        // Cancel BOTH timers
+        if (_invMenuInitialTimer) {
+            clearTimeout(_invMenuInitialTimer);
+            _invMenuInitialTimer = null;
+        }
         if (_invMenuHoldTimer) {
             clearTimeout(_invMenuHoldTimer);
             _invMenuHoldTimer = null;
@@ -7899,11 +7903,17 @@ function _invMenuMove(e) {
 }
 
 function _invMenuUp() {
+    // Clear all timers
+    if (_invMenuInitialTimer) {
+        clearTimeout(_invMenuInitialTimer);
+        _invMenuInitialTimer = null;
+    }
     if (_invMenuHoldTimer) { 
         clearTimeout(_invMenuHoldTimer); 
         _invMenuHoldTimer = null; 
     }
-    // Only open inventory if not fired sysop AND not scrolling
+    
+    // Only open inventory if: quick tap, no sysop fired, no movement
     if (!_invMenuFired && !_invMenuMoved) {
         showInventory();
     }
@@ -7912,6 +7922,10 @@ function _invMenuUp() {
 }
 
 function _invMenuCancel() {
+    if (_invMenuInitialTimer) {
+        clearTimeout(_invMenuInitialTimer);
+        _invMenuInitialTimer = null;
+    }
     if (_invMenuHoldTimer) { 
         clearTimeout(_invMenuHoldTimer); 
         _invMenuHoldTimer = null; 
