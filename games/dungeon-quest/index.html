@@ -7852,42 +7852,7 @@ window.addEventListener('beforeunload', () => {
 // 🎒 INVENTORY & POTION BUTTONS - With scroll detection
 // ═══════════════════════════════════════════════════════════════
 // ═══════════════════════════════════════════════════════════════
-// 🎒 INVENTORY - 5 rapid taps for sysop (like About was supposed to)
-// ═══════════════════════════════════════════════════════════════
-let _invMenuTapCount = 0;
-let _invMenuTapTimeout = null;
 
-function _invMenuDown(e) {
-    // Do nothing on down
-}
-
-function _invMenuMove(e) {
-    // Do nothing on move
-}
-
-function _invMenuUp() {
-    _invMenuTapCount++;
-    
-    // Reset counter after 2 seconds
-    clearTimeout(_invMenuTapTimeout);
-    _invMenuTapTimeout = setTimeout(() => {
-        _invMenuTapCount = 0;
-    }, 2000);
-    
-    // 5 taps = sysop
-    if (_invMenuTapCount === 5) {
-        _invMenuTapCount = 0;
-        clearTimeout(_invMenuTapTimeout);
-        openSysopOverlay();
-    } else {
-        // Normal tap = inventory
-        showInventory();
-    }
-}
-
-function _invMenuCancel() {
-    // Do nothing
-}
         
         let _potHoldTimer  = null;
         let _potFired      = false;
@@ -7942,6 +7907,39 @@ function _invMenuCancel() {
                 showMainMenu();
             }
         }
+
+
+// ═══════════════════════════════════════════════════════════════
+// SYSOP MODE - Hold town banner for 3 seconds
+// ═══════════════════════════════════════════════════════════════
+let bannerHoldTimer = null;
+let bannerHoldFired = false;
+
+function bannerHoldDown(e) {
+    bannerHoldFired = false;
+    bannerHoldTimer = setTimeout(() => {
+        bannerHoldTimer = null;
+        bannerHoldFired = true;
+        openSysopOverlay();
+    }, 3000);
+}
+
+function bannerHoldUp() {
+    if (bannerHoldTimer) {
+        clearTimeout(bannerHoldTimer);
+        bannerHoldTimer = null;
+    }
+    bannerHoldFired = false;
+}
+
+function bannerHoldCancel() {
+    if (bannerHoldTimer) {
+        clearTimeout(bannerHoldTimer);
+        bannerHoldTimer = null;
+    }
+    bannerHoldFired = false;
+}
+
 
 
         // ── SYSOP overlay open / close ────────────────────────────────
@@ -11228,7 +11226,9 @@ showWelcomeScreen();
             }
 
             screen.innerHTML = `
-                <div class="location-header">${townName}</div>
+                <div class="location-header" id="townBanner"
+     onmousedown="bannerHoldDown(event)" onmouseup="bannerHoldUp()" onmouseleave="bannerHoldCancel()"
+     ontouchstart="bannerHoldDown(event)" ontouchend="bannerHoldUp()" ontouchcancel="bannerHoldCancel()">${townName}</div>
                 ${renderPlayerStats()}
                 <div class="message">
                     <p>${townDesc}</p>
