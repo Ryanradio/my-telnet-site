@@ -10038,32 +10038,63 @@ let aboutHoldFired = false;
 
 function handleAboutDown(e) {
     if (e && e.cancelable) e.preventDefault();
-    console.log('🔵 About button pressed - starting 3 second timer...');
     aboutHoldFired = false;
+    
+    // Visual feedback - show a countdown
+    const aboutBtn = e.target;
+    let countdown = 3;
+    aboutBtn.textContent = `🔓 Hold ${countdown}...`;
+    
+    const countInterval = setInterval(() => {
+        countdown--;
+        if (countdown > 0) {
+            aboutBtn.textContent = `🔓 Hold ${countdown}...`;
+        }
+    }, 1000);
+    
     aboutHoldTimer = setTimeout(() => {
-        console.log('🟢 3 seconds elapsed - opening sysop...');
+        clearInterval(countInterval);
         aboutHoldTimer = null;
         aboutHoldFired = true;
         openSysopOverlay();
-        console.log('🟢 openSysopOverlay() called');
     }, 3000);
+    
+    // Store interval so we can clear it on release
+    aboutBtn._countInterval = countInterval;
 }
 
-function handleAboutUp() {
-    console.log('🔴 About button released');
+function handleAboutUp(e) {
+    const aboutBtn = e?.target || document.querySelector('[onmousedown*="handleAboutDown"]');
+    
+    if (aboutBtn && aboutBtn._countInterval) {
+        clearInterval(aboutBtn._countInterval);
+        aboutBtn._countInterval = null;
+    }
+    
     if (aboutHoldTimer) {
-        console.log('⚠️ Cleared timer - was not held long enough');
         clearTimeout(aboutHoldTimer);
         aboutHoldTimer = null;
     }
+    
     if (!aboutHoldFired) {
-        console.log('📄 Showing About page (normal tap)');
         showAbout();
+    } else {
+        // Reset button text after sysop opens
+        if (aboutBtn) aboutBtn.textContent = '► 📜 ABOUT & CONTACT';
     }
+    
     aboutHoldFired = false;
 }
 
-function handleAboutCancel() {
+function handleAboutCancel(e) {
+    const aboutBtn = e?.target || document.querySelector('[onmousedown*="handleAboutDown"]');
+    
+    if (aboutBtn && aboutBtn._countInterval) {
+        clearInterval(aboutBtn._countInterval);
+        aboutBtn._countInterval = null;
+        aboutBtn.textContent = '► 📜 ABOUT & CONTACT';
+    }
+    
     if (aboutHoldTimer) {
         clearTimeout(aboutHoldTimer);
         aboutHoldTimer = null;
