@@ -7858,7 +7858,6 @@ window.addEventListener('beforeunload', () => {
     _invMenuHoldTimer = setTimeout(() => {
         _invMenuHoldTimer = null;
         _invMenuFired = true;
-        alert('🔓 3 seconds! Opening sysop...'); // Test alert
         openSysopOverlay();
     }, 3000);
 }
