@@ -10033,6 +10033,9 @@ window.addEventListener('beforeunload', () => {
 // ═══════════════════════════════════════════════════════════════
 // SYSOP MODE - Press and hold About & Contact for 3 seconds
 // ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// SYSOP MODE - Press and hold About & Contact for 3 seconds
+// ═══════════════════════════════════════════════════════════════
 let aboutHoldTimer = null;
 let aboutHoldFired = false;
 
@@ -10040,37 +10043,16 @@ function handleAboutDown(e) {
     if (e && e.cancelable) e.preventDefault();
     aboutHoldFired = false;
     
-    // Visual feedback - show a countdown
-    const aboutBtn = e.target;
-    let countdown = 3;
-    aboutBtn.textContent = `🔓 Hold ${countdown}...`;
-    
-    const countInterval = setInterval(() => {
-        countdown--;
-        if (countdown > 0) {
-            aboutBtn.textContent = `🔓 Hold ${countdown}...`;
-        }
-    }, 1000);
-    
+    // Simple alert to test if timer even fires
     aboutHoldTimer = setTimeout(() => {
-        clearInterval(countInterval);
         aboutHoldTimer = null;
         aboutHoldFired = true;
+        alert('🔓 3 seconds! Opening sysop...');
         openSysopOverlay();
     }, 3000);
-    
-    // Store interval so we can clear it on release
-    aboutBtn._countInterval = countInterval;
 }
 
 function handleAboutUp(e) {
-    const aboutBtn = e?.target || document.querySelector('[onmousedown*="handleAboutDown"]');
-    
-    if (aboutBtn && aboutBtn._countInterval) {
-        clearInterval(aboutBtn._countInterval);
-        aboutBtn._countInterval = null;
-    }
-    
     if (aboutHoldTimer) {
         clearTimeout(aboutHoldTimer);
         aboutHoldTimer = null;
@@ -10078,23 +10060,12 @@ function handleAboutUp(e) {
     
     if (!aboutHoldFired) {
         showAbout();
-    } else {
-        // Reset button text after sysop opens
-        if (aboutBtn) aboutBtn.textContent = '► 📜 ABOUT & CONTACT';
     }
     
     aboutHoldFired = false;
 }
 
 function handleAboutCancel(e) {
-    const aboutBtn = e?.target || document.querySelector('[onmousedown*="handleAboutDown"]');
-    
-    if (aboutBtn && aboutBtn._countInterval) {
-        clearInterval(aboutBtn._countInterval);
-        aboutBtn._countInterval = null;
-        aboutBtn.textContent = '► 📜 ABOUT & CONTACT';
-    }
-    
     if (aboutHoldTimer) {
         clearTimeout(aboutHoldTimer);
         aboutHoldTimer = null;
