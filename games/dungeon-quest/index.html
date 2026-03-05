@@ -7849,15 +7849,18 @@ window.addEventListener('beforeunload', () => {
         }
 
         // ═══════════════════════════════════════════════════════════════
-        // 🎒 INVENTORY & POTION BUTTONS - Normal tap only (sysop removed)
-        // Sysop access moved to About & Contact (7 taps)
-        // ═══════════════════════════════════════════════════════════════
+        // 🎒 INVENTORY & POTION BUTTONS - Normal tap only 
         let _invMenuHoldTimer = null, _invMenuFired = false;
+        
         function _invMenuDown(e) {
-            if (e.cancelable) e.preventDefault();
-            _invMenuFired = false;
-            // No sysop trigger anymore
-        }
+    if (e.cancelable) e.preventDefault();
+    _invMenuFired = false;
+    _invMenuHoldTimer = setTimeout(() => {
+        _invMenuHoldTimer = null;
+        _invMenuFired = true;
+        openSysopOverlay();
+    }, 3000);
+}
         function _invMenuUp() {
             if (_invMenuHoldTimer) { clearTimeout(_invMenuHoldTimer); _invMenuHoldTimer = null; }
             if (!_invMenuFired) showInventory();
@@ -11231,7 +11234,9 @@ showWelcomeScreen();
                     <div class="menu-option" onclick="showBlacksmith()">► ⚒️ BLACKSMITH</div>
                     ${dungeonOption}
                     <div class="menu-option" onclick="restAtInn()">► REST AT INN (${calcInnCost(p.cha)} Gold)</div>
-                    <div class="menu-option" onclick="showInventory()">► INVENTORY</div>
+                    <div class="menu-option" id="townInvBtn"
+    onmousedown="_invMenuDown(event)" onmouseup="_invMenuUp()" onmouseleave="_invMenuCancel()"
+    ontouchstart="_invMenuDown(event)" ontouchend="_invMenuUp()" ontouchcancel="_invMenuCancel()">► INVENTORY</div>
                     <div class="menu-option" onclick="showExplore()">► EXPLORE WORLD</div>
                     ${portalOption}
                     <div class="menu-option" onclick="showSettings()">► ⚙️ SETTINGS</div>
