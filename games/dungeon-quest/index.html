@@ -7849,27 +7849,65 @@ window.addEventListener('beforeunload', () => {
         }
 
         // ═══════════════════════════════════════════════════════════════
-        // 🎒 INVENTORY & POTION BUTTONS - Normal tap only 
-        let _invMenuHoldTimer = null, _invMenuFired = false;
+// 🎒 INVENTORY & POTION BUTTONS - With scroll detection
+// ═══════════════════════════════════════════════════════════════
+let _invMenuHoldTimer = null;
+let _invMenuFired = false;
+let _invMenuStartY = 0;
+let _invMenuMoved = false;
 
-       function _invMenuDown(e) {
+function _invMenuDown(e) {
     if (e.cancelable) e.preventDefault();
     _invMenuFired = false;
+    _invMenuMoved = false;
+    
+    // Record starting Y position
+    _invMenuStartY = e.touches ? e.touches[0].clientY : e.clientY;
+    
     _invMenuHoldTimer = setTimeout(() => {
-        _invMenuHoldTimer = null;
-        _invMenuFired = true;
-        openSysopOverlay();
+        // Only open sysop if finger hasn't moved (not scrolling)
+        if (!_invMenuMoved) {
+            _invMenuHoldTimer = null;
+            _invMenuFired = true;
+            openSysopOverlay();
+        }
     }, 3000);
 }
-        function _invMenuUp() {
-            if (_invMenuHoldTimer) { clearTimeout(_invMenuHoldTimer); _invMenuHoldTimer = null; }
-            if (!_invMenuFired) showInventory();
-            _invMenuFired = false;
+
+function _invMenuMove(e) {
+    // Detect if finger moved more than 10px (scrolling)
+    const currentY = e.touches ? e.touches[0].clientY : e.clientY;
+    if (Math.abs(currentY - _invMenuStartY) > 10) {
+        _invMenuMoved = true;
+        // Cancel the hold timer if scrolling
+        if (_invMenuHoldTimer) {
+            clearTimeout(_invMenuHoldTimer);
+            _invMenuHoldTimer = null;
         }
-        function _invMenuCancel() {
-            if (_invMenuHoldTimer) { clearTimeout(_invMenuHoldTimer); _invMenuHoldTimer = null; }
-            _invMenuFired = false;
-        }
+    }
+}
+
+function _invMenuUp() {
+    if (_invMenuHoldTimer) { 
+        clearTimeout(_invMenuHoldTimer); 
+        _invMenuHoldTimer = null; 
+    }
+    // Only open inventory if not fired sysop AND not scrolling
+    if (!_invMenuFired && !_invMenuMoved) {
+        showInventory();
+    }
+    _invMenuFired = false;
+    _invMenuMoved = false;
+}
+
+function _invMenuCancel() {
+    if (_invMenuHoldTimer) { 
+        clearTimeout(_invMenuHoldTimer); 
+        _invMenuHoldTimer = null; 
+    }
+    _invMenuFired = false;
+    _invMenuMoved = false;
+}
         
         let _potHoldTimer  = null;
         let _potFired      = false;
