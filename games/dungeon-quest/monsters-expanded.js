@@ -224,7 +224,7 @@ Object.assign(ENEMIES, {
                 hitMissChance: 0.30,
                 damageMult: 0,                   // Pure debuff — no physical damage
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `💀 The ${enemyName} flings a fistful of dirt into the ${playerClass}'s eyes!<br><span style="color:#ffaa44;">⚠️ Blinded — your next attack has a 30% chance to miss.</span>`
+                applyMessage: (enemyName, playerClass) => `💀 The ${enemyName} flings a fistful of dirt into the $$$$${playerClass}'s eyes!<br><span style="color:#ffaa44;">⚠️ Blinded — your next attack has a 30% chance to miss.</span>`
             }
         ]
     },
@@ -259,7 +259,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 1.0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🩸 The ${enemyName} tears into the ${playerClass}'s flesh — <b>Bleeding!</b>`
+                applyMessage: (enemyName, playerClass) => `🩸 The ${enemyName} tears into the $$$$${playerClass}'s flesh — <b>Bleeding!</b>`
             }
         ]
     },
@@ -294,7 +294,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 0.7,               // Weaker hit — spider prioritizes injecting venom
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `💚 The ${enemyName} sinks its fangs in! <b>Poisoned!</b>`
+                applyMessage: (enemyName, playerClass) => `💚 The $$$$${enemyName} sinks its fangs in! <b>Poisoned!</b>`
             }
         ]
     },
@@ -324,7 +324,7 @@ Object.assign(ENEMIES, {
                 damageMult: 2.0,               // Double damage — tusks hit hard
                 armorPiercing: 0.25,           // Tusks go under armor
                 armorPiercing: 0.25,
-                applyMessage: (enemyName, playerClass) => `🐗 The ${enemyName} CHARGES! Tusks pierce the ${playerClass}'s armor!`
+                applyMessage: (enemyName, playerClass) => `🐗 The ${enemyName} CHARGES! Tusks pierce the $$$$${playerClass}'s armor!`
             }
         ]
     },
@@ -480,7 +480,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 0.8,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `💚 The ${enemyName}'s fangs inject venom! <b>Poisoned!</b>`
+                applyMessage: (enemyName, playerClass) => `💚 The $$$$${enemyName}'s fangs inject venom! <b>Poisoned!</b>`
             },
             {
                 id: 'constrict',
@@ -494,7 +494,7 @@ Object.assign(ENEMIES, {
                 dodgePenalty: 1.0,              // 100% dodge reduction this turn
                 damageMult: 1.2,               // Extra crush damage
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🐍 The ${enemyName} CONSTRICTS the ${playerClass}! You cannot dodge!`
+                applyMessage: (enemyName, playerClass) => `🐍 The ${enemyName} CONSTRICTS the $$$$${playerClass}! You cannot dodge!`
             }
         ]
     },
@@ -542,7 +542,7 @@ Object.assign(ENEMIES, {
                 intimidateDuration: 6000,
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🐺 The ${enemyName} unleashes a bone-chilling howl! The ${playerClass} feels their courage waver — <span style="color:#ffaa44;">⚠️ -25% damage for 6 seconds.</span>`
+                applyMessage: (enemyName, playerClass) => `🐺 The ${enemyName} unleashes a bone-chilling howl! The $$$$${playerClass} feels their courage waver — <span style="color:#ffaa44;">⚠️ -25% damage for 6 seconds.</span>`
             }
         ],
         dropRates: { common: 0.5633, uncommon: 0.2817, rare: 0.1127, epic: 0.0423 }
@@ -571,7 +571,7 @@ Object.assign(ENEMIES, {
                 type: 'heavy_hit',
                 damageMult: 1.8,
                 armorPiercing: 0.20,
-                applyMessage: (enemyName, playerClass) => `🦁 The ${enemyName} POUNCES! Claws rake through the ${playerClass}'s guard!`
+                applyMessage: (enemyName, playerClass) => `🦁 The ${enemyName} POUNCES! Claws rake through the $$$$${playerClass}'s guard!`
             }
         ],
         dropRates: { common: 0.5063, uncommon: 0.3165, rare: 0.1266, epic: 0.0506 }
@@ -600,7 +600,7 @@ Object.assign(ENEMIES, {
                 type: 'heavy_hit',
                 damageMult: 1.9,
                 armorPiercing: 0.30,
-                applyMessage: (enemyName, playerClass) => `🐎 The ${enemyName} TRAMPLES the ${playerClass}! Hooves and spear tear through armor!`
+                applyMessage: (enemyName, playerClass) => `🐎 The ${enemyName} TRAMPLES the $$$$${playerClass}! Hooves and spear tear through armor!`
             },
             {
                 id: 'enraged_charge',
@@ -612,7 +612,7 @@ Object.assign(ENEMIES, {
                 type: 'heavy_hit',
                 damageMult: 2.2,
                 armorPiercing: 0.35,
-                applyMessage: (enemyName, playerClass) => `🐎 The ${enemyName} is ENRAGED! A desperate, thundering charge!`
+                applyMessage: (enemyName, playerClass) => `🐎 The $$$$${enemyName} is ENRAGED! A desperate, thundering charge!`
             }
         ],
         dropRates: { common: 0.443, uncommon: 0.3165, rare: 0.1519, epic: 0.0633, legendary: 0.0253 }
@@ -643,7 +643,7 @@ Object.assign(ENEMIES, {
                 hitMissChance: 0.30,
                 damageMult: 0.8,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🏇 The ${enemyName} circles in a dust cloud! The ${playerClass} is blinded — <span style="color:#ffaa44;">⚠️ 30% chance to miss next attacks.</span>`
+                applyMessage: (enemyName, playerClass) => `🏇 The ${enemyName} circles in a dust cloud! The $$$$${playerClass} is blinded — <span style="color:#ffaa44;">⚠️ 30% chance to miss next attacks.</span>`
             }
         ],
         dropRates: { common: 0.4118, uncommon: 0.3529, rare: 0.1765, epic: 0.0588 }
@@ -678,7 +678,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 0.8,
                 armorPiercing: 0.10,
-                applyMessage: (enemyName, playerClass) => `🦂 The ${enemyName}'s stinger plunges in! Potent venom floods the ${playerClass}'s veins — <b>Poisoned!</b>`
+                applyMessage: (enemyName, playerClass) => `🦂 The ${enemyName}'s stinger plunges in! Potent venom floods the $$$$${playerClass}'s veins — <b>Poisoned!</b>`
             }
         ],
         dropRates: { common: 0.4268, uncommon: 0.3049, rare: 0.1829, epic: 0.0732, legendary: 0.0122 }
@@ -714,7 +714,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 0.9,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `☣️ The ${enemyName}'s rotting bite infects the ${playerClass}! <b>Plagued!</b>`
+                applyMessage: (enemyName, playerClass) => `☣️ The ${enemyName}'s rotting bite infects the $$$$${playerClass}! <b>Plagued!</b>`
             }
         ],
         dropRates: { common: 0.5999, uncommon: 0.2667, rare: 0.1067, epic: 0.0267 }
@@ -749,7 +749,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 1.1,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🩸 The ${enemyName}'s claws tear deep! The ${playerClass} is <b>Bleeding!</b>`
+                applyMessage: (enemyName, playerClass) => `🩸 The ${enemyName}'s claws tear deep! The $$$$${playerClass} is <b>Bleeding!</b>`
             }
         ],
         dropRates: { common: 0.5128, uncommon: 0.3205, rare: 0.1282, epic: 0.0385 }
@@ -779,7 +779,7 @@ Object.assign(ENEMIES, {
                 stunDuration: 4,
                 damageMult: 0.5,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `💀 The ${enemyName}'s rattling cacophony is disorienting! The ${playerClass} loses an attack charge!`
+                applyMessage: (enemyName, playerClass) => `💀 The ${enemyName}'s rattling cacophony is disorienting! The $$$$${playerClass} loses an attack charge!`
             }
         ],
         dropRates: { common: 0.5999, uncommon: 0.2667, rare: 0.1067, epic: 0.0267 }
@@ -809,7 +809,7 @@ Object.assign(ENEMIES, {
                 healPercent: 1.0,
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `👻 The ${enemyName} tears at the ${playerClass}'s life force! <b>18 HP drained</b> — the wraith grows more solid.`
+                applyMessage: (enemyName, playerClass) => `👻 The ${enemyName} tears at the $$$$${playerClass}'s life force! <b>18 HP drained</b> — the wraith grows more solid.`
             }
         ],
         dropRates: { common: 0.3262, uncommon: 0.2717, rare: 0.2174, epic: 0.1304, legendary: 0.0543 }
@@ -840,7 +840,7 @@ Object.assign(ENEMIES, {
                 hitMissChance: 0.35,
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `💨 The ${enemyName} hurls a smoke bomb! Acrid black smoke engulfs the ${playerClass} — <span style="color:#ffaa44;">⚠️ 35% chance to miss.</span>`
+                applyMessage: (enemyName, playerClass) => `💨 The ${enemyName} hurls a smoke bomb! Acrid black smoke engulfs the $$$$${playerClass} — <span style="color:#ffaa44;">⚠️ 35% chance to miss.</span>`
             }
         ],
         dropRates: { common: 0.3889, uncommon: 0.3333, rare: 0.1667, epic: 0.0889, legendary: 0.0222 }
@@ -870,7 +870,7 @@ Object.assign(ENEMIES, {
                 intimidateDuration: 5000,
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `👻 The ${enemyName}'s wail chills the ${playerClass} to the bone! <span style="color:#ffaa44;">⚠️ -20% damage for 5 seconds.</span>`
+                applyMessage: (enemyName, playerClass) => `👻 The ${enemyName}'s wail chills the $$$$${playerClass} to the bone! <span style="color:#ffaa44;">⚠️ -20% damage for 5 seconds.</span>`
             }
         ],
         dropRates: { common: 0.4939, uncommon: 0.3086, rare: 0.1481, epic: 0.0494 }
@@ -934,7 +934,7 @@ Object.assign(ENEMIES, {
                 stunPips: 1,                    // Player loses 1 pip charge
                 damageMult: 0.5,               // Weak physical hit alongside screech
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🦇 The ${enemyName} SCREECHES! The sound is disorienting — you lose an attack charge!`
+                applyMessage: (enemyName, playerClass) => `🦇 The $$$$${enemyName} SCREECHES! The sound is disorienting — you lose an attack charge!`
             }
         ]
     },
@@ -1009,7 +1009,7 @@ Object.assign(ENEMIES, {
                 hitMissChance: 0.35,
                 damageMult: 1.3,
                 armorPiercing: 0.15,
-                applyMessage: (enemyName, playerClass) => `🌑 The ${enemyName} strikes from the shadows! The ${playerClass} can barely see — <span style="color:#ffaa44;">⚠️ 35% chance to miss.</span>`
+                applyMessage: (enemyName, playerClass) => `🌑 The ${enemyName} strikes from the shadows! The $$$$${playerClass} can barely see — <span style="color:#ffaa44;">⚠️ 35% chance to miss.</span>`
             }
         ],
         dropRates: { common: 0.481, uncommon: 0.3165, rare: 0.1519, epic: 0.0506 }
@@ -1044,7 +1044,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🍄 The ${enemyName} erupts in a cloud of toxic spores! The ${playerClass} inhales the poison — <b>Poisoned!</b>`
+                applyMessage: (enemyName, playerClass) => `🍄 The ${enemyName} erupts in a cloud of toxic spores! The $$$$${playerClass} inhales the poison — <b>Poisoned!</b>`
             }
         ],
         dropRates: { common: 0.5128, uncommon: 0.3205, rare: 0.1282, epic: 0.0385 }
@@ -1077,7 +1077,7 @@ Object.assign(ENEMIES, {
                 type: 'heavy_hit',
                 damageMult: 2.0,
                 armorPiercing: 0.15,
-                applyMessage: (enemyName, playerClass) => `🪨 The ${enemyName} SMASHES! The ground shakes from the impact!`
+                applyMessage: (enemyName, playerClass) => `🪨 The $$$$${enemyName} SMASHES! The ground shakes from the impact!`
             },
             {
                 id: 'troll_regen',
@@ -1090,7 +1090,7 @@ Object.assign(ENEMIES, {
                 damageMult: 0.7,
                 healRatio: 0.8,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🟢 The ${enemyName}'s flesh knits back together as it strikes! Troll regeneration is terrifying to behold.`
+                applyMessage: (enemyName, playerClass) => `🟢 The $$$$${enemyName}'s flesh knits back together as it strikes! Troll regeneration is terrifying to behold.`
             }
         ],
         dropRates: { common: 0.3409, uncommon: 0.2841, rare: 0.2273, epic: 0.1136, legendary: 0.0341 }
@@ -1120,7 +1120,7 @@ Object.assign(ENEMIES, {
                 stunDuration: 5,
                 damageMult: 1.3,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🛡️ The ${enemyName} BASHES with its shield! The ${playerClass} is staggered — attack charge lost!`
+                applyMessage: (enemyName, playerClass) => `🛡️ The ${enemyName} BASHES with its shield! The $$$$${playerClass} is staggered — attack charge lost!`
             }
         ],
         dropRates: { common: 0.4118, uncommon: 0.2941, rare: 0.1765, epic: 0.0941, legendary: 0.0235 }
@@ -1150,7 +1150,7 @@ Object.assign(ENEMIES, {
                 drainAmount: 25,
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🔮 The ${enemyName} tears mana from the ${playerClass}! <b>25 MP drained!</b>`
+                applyMessage: (enemyName, playerClass) => `🔮 The ${enemyName} tears mana from the $$$$${playerClass}! <b>25 MP drained!</b>`
             },
             {
                 id: 'shadow_bolt',
@@ -1168,7 +1168,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `💜 The ${enemyName}'s shadow bolt strikes! Dark energy courses through the ${playerClass} — <b>Cursed!</b>`
+                applyMessage: (enemyName, playerClass) => `💜 The ${enemyName}'s shadow bolt strikes! Dark energy courses through the $$$$${playerClass} — <b>Cursed!</b>`
             }
         ],
         dropRates: { common: 0.2718, uncommon: 0.3261, rare: 0.2174, epic: 0.1304, legendary: 0.0543 }
@@ -1203,7 +1203,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🔥 The ${enemyName} EXHALES a cone of fire! The ${playerClass} is engulfed — <b>Burning!</b>`
+                applyMessage: (enemyName, playerClass) => `🔥 The ${enemyName} EXHALES a cone of fire! The $$$$${playerClass} is engulfed — <b>Burning!</b>`
             }
         ],
         dropRates: { common: 0.2631, uncommon: 0.2632, rare: 0.2316, epic: 0.1579, legendary: 0.0842 }
@@ -1233,7 +1233,7 @@ Object.assign(ENEMIES, {
                 rendDuration: 10000,
                 damageMult: 1.6,
                 armorPiercing: 0.20,
-                applyMessage: (enemyName, playerClass) => `🪨 The ${enemyName} PULVERIZES! The devastating blow shatters the ${playerClass}'s armor! <span style="color:#ffaa44;">⚠️ Defense reduced for 10 seconds!</span>`
+                applyMessage: (enemyName, playerClass) => `🪨 The ${enemyName} PULVERIZES! The devastating blow shatters the $$$$${playerClass}'s armor! <span style="color:#ffaa44;">⚠️ Defense reduced for 10 seconds!</span>`
             }
         ],
         dropRates: { common: 0.3262, uncommon: 0.2717, rare: 0.2174, epic: 0.1304, legendary: 0.0543 }
@@ -1262,7 +1262,7 @@ Object.assign(ENEMIES, {
                 type: 'heavy_hit',
                 damageMult: 2.0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🪵 The ${enemyName} SLAMS its club! Pure brute force sends the ${playerClass} reeling!`
+                applyMessage: (enemyName, playerClass) => `🪵 The ${enemyName} SLAMS its club! Pure brute force sends the $$$$${playerClass} reeling!`
             },
             {
                 id: 'armor_break',
@@ -1276,7 +1276,7 @@ Object.assign(ENEMIES, {
                 rendDuration: 9000,
                 damageMult: 1.2,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `💥 The ${enemyName}'s wild blow SMASHES the ${playerClass}'s armor! <span style="color:#ffaa44;">⚠️ Defense reduced for 9 seconds!</span>`
+                applyMessage: (enemyName, playerClass) => `💥 The ${enemyName}'s wild blow SMASHES the $$$$${playerClass}'s armor! <span style="color:#ffaa44;">⚠️ Defense reduced for 9 seconds!</span>`
             }
         ],
         dropRates: { common: 0.3488, uncommon: 0.2907, rare: 0.2093, epic: 0.1163, legendary: 0.0349 }
@@ -1308,7 +1308,7 @@ Object.assign(ENEMIES, {
                 hitMissChance: 0.35,
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🧿 The ${enemyName} casts a HEX! Darkness clouds the ${playerClass}'s vision — <span style="color:#ffaa44;">⚠️ 35% chance to miss.</span>`
+                applyMessage: (enemyName, playerClass) => `🧿 The ${enemyName} casts a HEX! Darkness clouds the $$$$${playerClass}'s vision — <span style="color:#ffaa44;">⚠️ 35% chance to miss.</span>`
             },
             {
                 id: 'wither',
@@ -1326,7 +1326,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🌑 The ${enemyName}'s curse takes hold! The ${playerClass} withers — <b>Withering!</b>`
+                applyMessage: (enemyName, playerClass) => `🌑 The ${enemyName}'s curse takes hold! The $$$$${playerClass} withers — <b>Withering!</b>`
             }
         ],
         dropRates: { common: 0.2688, uncommon: 0.3226, rare: 0.2151, epic: 0.129, legendary: 0.0645 }
@@ -1361,7 +1361,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 0.8,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `☣️ The ${enemyName}'s diseased touch infects the ${playerClass}! <b>Plague spreads through your veins!</b>`
+                applyMessage: (enemyName, playerClass) => `☣️ The ${enemyName}'s diseased touch infects the $$$$${playerClass}! <b>Plague spreads through your veins!</b>`
             }
         ],
         dropRates: { common: 0.4118, uncommon: 0.2941, rare: 0.1765, epic: 0.0941, legendary: 0.0235 }
@@ -1390,7 +1390,7 @@ Object.assign(ENEMIES, {
                 damageMult: 0.8,
                 healRatio: 0.6,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🩸 The ${enemyName} LATCHES onto the ${playerClass}, drinking greedily! The wound heals the leech!`
+                applyMessage: (enemyName, playerClass) => `🩸 The ${enemyName} LATCHES onto the $$$$${playerClass}, drinking greedily! The wound heals the leech!`
             }
         ],
         dropRates: { common: 0.4706, uncommon: 0.2941, rare: 0.1765, epic: 0.0588 }
@@ -1421,7 +1421,7 @@ Object.assign(ENEMIES, {
                 debuffDuration: 5000,
                 damageMult: 1.3,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🌿 The ${enemyName} seizes the ${playerClass} and drags them into the mire! <b>Constricted — cannot dodge!</b>`
+                applyMessage: (enemyName, playerClass) => `🌿 The ${enemyName} seizes the $$$$${playerClass} and drags them into the mire! <b>Constricted — cannot dodge!</b>`
             },
             {
                 id: 'bog_rot',
@@ -1439,7 +1439,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🟤 The ${enemyName} breathes bog-rot! The ${playerClass}'s equipment begins to corrode — <b>Corroding!</b>`
+                applyMessage: (enemyName, playerClass) => `🟤 The ${enemyName} breathes bog-rot! The $$$$${playerClass}'s equipment begins to corrode — <b>Corroding!</b>`
             }
         ],
         dropRates: { common: 0.2631, uncommon: 0.2632, rare: 0.2316, epic: 0.1579, legendary: 0.0842 }
@@ -1470,7 +1470,7 @@ Object.assign(ENEMIES, {
                 debuffDuration: 6000,
                 damageMult: 1.1,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🌿 The ${enemyName} ENTANGLES the ${playerClass} in dark roots! <b>Constricted — cannot dodge!</b>`
+                applyMessage: (enemyName, playerClass) => `🌿 The ${enemyName} ENTANGLES the $$$$${playerClass} in dark roots! <b>Constricted — cannot dodge!</b>`
             },
             {
                 id: 'dark_sap',
@@ -1488,7 +1488,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 0.8,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🌑 The ${enemyName}'s dark sap seeps into wounds! The ${playerClass} begins to <b>Wither!</b>`
+                applyMessage: (enemyName, playerClass) => `🌑 The ${enemyName}'s dark sap seeps into wounds! The $$$$${playerClass} begins to <b>Wither!</b>`
             }
         ],
         dropRates: { common: 0.2578, uncommon: 0.2577, rare: 0.2268, epic: 0.1546, legendary: 0.1031 }
@@ -1524,7 +1524,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 1.2,
                 armorPiercing: 0.25,
-                applyMessage: (enemyName, playerClass) => `💜 The ${enemyName} strikes with a cursed blade! A death mark burns into the ${playerClass}'s flesh — <b>Cursed!</b>`
+                applyMessage: (enemyName, playerClass) => `💜 The ${enemyName} strikes with a cursed blade! A death mark burns into the $$$$${playerClass}'s flesh — <b>Cursed!</b>`
             }
         ],
         dropRates: { common: 0.2631, uncommon: 0.2632, rare: 0.2316, epic: 0.1579, legendary: 0.0842 }
@@ -1555,7 +1555,7 @@ Object.assign(ENEMIES, {
                 hitMissChance: 0.40,
                 damageMult: 1.6,
                 armorPiercing: 0.30,
-                applyMessage: (enemyName, playerClass) => `🌑 The ${enemyName} strikes from a pocket of pure darkness! The ${playerClass} is blinded — <span style="color:#ffaa44;">⚠️ 40% miss chance, 6 seconds.</span>`
+                applyMessage: (enemyName, playerClass) => `🌑 The ${enemyName} strikes from a pocket of pure darkness! The $$$$${playerClass} is blinded — <span style="color:#ffaa44;">⚠️ 40% miss chance, 6 seconds.</span>`
             }
         ],
         dropRates: { common: 0.3226, uncommon: 0.2688, rare: 0.2151, epic: 0.129, legendary: 0.0645 }
@@ -1585,7 +1585,7 @@ Object.assign(ENEMIES, {
                 stunDuration: 5,
                 damageMult: 1.0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `⚡ The ${enemyName} discharges a blast of ward-energy! The ${playerClass} is staggered — <b>2 attack charges lost!</b>`
+                applyMessage: (enemyName, playerClass) => `⚡ The ${enemyName} discharges a blast of ward-energy! The $$$$${playerClass} is staggered — <b>2 attack charges lost!</b>`
             },
             {
                 id: 'stone_slam',
@@ -1597,7 +1597,7 @@ Object.assign(ENEMIES, {
                 type: 'heavy_hit',
                 damageMult: 1.9,
                 armorPiercing: 0.20,
-                applyMessage: (enemyName, playerClass) => `🪨 The ${enemyName} brings its full weight DOWN! The impact craters the stone floor!`
+                applyMessage: (enemyName, playerClass) => `🪨 The $$$$${enemyName} brings its full weight DOWN! The impact craters the stone floor!`
             }
         ],
         dropRates: { common: 0.2041, uncommon: 0.2551, rare: 0.2551, epic: 0.1837, legendary: 0.102 }
@@ -1628,7 +1628,7 @@ Object.assign(ENEMIES, {
                 hitMissChance: 0.40,
                 damageMult: 1.4,
                 armorPiercing: 0.50,
-                applyMessage: (enemyName, playerClass) => `👻 The ${enemyName} phases through the ${playerClass}'s guard, striking from another plane! Armor is useless — <span style="color:#ffaa44;">⚠️ 40% miss chance.</span>`
+                applyMessage: (enemyName, playerClass) => `👻 The ${enemyName} phases through the $$$$${playerClass}'s guard, striking from another plane! Armor is useless — <span style="color:#ffaa44;">⚠️ 40% miss chance.</span>`
             },
             {
                 id: 'soul_sap',
@@ -1641,7 +1641,7 @@ Object.assign(ENEMIES, {
                 healPercent: 0.8,
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `💙 The ${enemyName} saps the ${playerClass}'s soul! <b>20 HP drained</b> — a warrior even in death.`
+                applyMessage: (enemyName, playerClass) => `💙 The ${enemyName} saps the $$$$${playerClass}'s soul! <b>20 HP drained</b> — a warrior even in death.`
             }
         ],
         dropRates: { common: 0.2631, uncommon: 0.2632, rare: 0.2316, epic: 0.1579, legendary: 0.0842 }
@@ -1677,7 +1677,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `💜 The ${enemyName} calls upon dark gods! A terrible curse descends on the ${playerClass} — <b>Cursed!</b>`
+                applyMessage: (enemyName, playerClass) => `💜 The ${enemyName} calls upon dark gods! A terrible curse descends on the $$$$${playerClass} — <b>Cursed!</b>`
             },
             {
                 id: 'unholy_drain',
@@ -1689,7 +1689,7 @@ Object.assign(ENEMIES, {
                 drainAmount: 30,
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🔮 The ${enemyName} siphons the ${playerClass}'s magical reserves! <b>30 MP drained!</b>`
+                applyMessage: (enemyName, playerClass) => `🔮 The ${enemyName} siphons the $$$$${playerClass}'s magical reserves! <b>30 MP drained!</b>`
             }
         ]
     },
@@ -2297,7 +2297,7 @@ Object.assign(ENEMIES, {
                 damageMult: 0.9,
                 healRatio: 0.8,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🩸 The ${enemyName} BITES and drinks deeply! Centuries of hunger feed — HP stolen!`
+                applyMessage: (enemyName, playerClass) => `🩸 The $$$$${enemyName} BITES and drinks deeply! Centuries of hunger feed — HP stolen!`
             },
             {
                 id: 'beguile',
@@ -2311,7 +2311,7 @@ Object.assign(ENEMIES, {
                 hitMissChance: 0.40,
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🌀 The ${enemyName} beguiles the ${playerClass}! Hypnotic compulsion clouds the mind — <span style="color:#ffaa44;">⚠️ 40% miss chance, 6 seconds.</span>`
+                applyMessage: (enemyName, playerClass) => `🌀 The ${enemyName} beguiles the $$$$${playerClass}! Hypnotic compulsion clouds the mind — <span style="color:#ffaa44;">⚠️ 40% miss chance, 6 seconds.</span>`
             },
             {
                 id: 'mist_form',
@@ -2325,7 +2325,7 @@ Object.assign(ENEMIES, {
                 healPercent: 1.0,
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `💨 The ${enemyName} flows through the ${playerClass} as mist! Vitality stolen in passing — <b>28 HP drained!</b>`
+                applyMessage: (enemyName, playerClass) => `💨 The ${enemyName} flows through the $$$$${playerClass} as mist! Vitality stolen in passing — <b>28 HP drained!</b>`
             }
         ]
     },
@@ -2712,7 +2712,7 @@ Object.assign(ENEMIES, {
                 hitMissChance: 0.30,
                 damageMult: 0.9,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🏹 The {enemyName} fires a volley of bone arrows! Splinters blind the {playerClass} — <span style='color:#ffaa44;'>⚠️ 30% miss chance.</span>`
+                applyMessage: (enemyName, playerClass) => `🏹 The ${enemyName} fires a volley of bone arrows! Splinters blind the $$$${playerClass} — <span style='color:#ffaa44;'>⚠️ 30% miss chance.</span>`
             },
         ]
     },
@@ -2740,7 +2740,7 @@ Object.assign(ENEMIES, {
                 type: 'heavy_hit',
                 damageMult: 1.9,
                 armorPiercing: 0.2,
-                applyMessage: (enemyName, playerClass) => `🌑 The {enemyName} erupts from shadow! The {playerClass} never saw it coming!`
+                applyMessage: (enemyName, playerClass) => `🌑 The ${enemyName} erupts from shadow! The $$$${playerClass} never saw it coming!`
             },
         ]
     },
@@ -2770,7 +2770,7 @@ Object.assign(ENEMIES, {
                 stunDuration: 4,
                 damageMult: 0.4,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🦇 The {enemyName} SCREECHES! The sonic assault staggers the {playerClass} — attack charge lost!`
+                applyMessage: (enemyName, playerClass) => `🦇 The ${enemyName} SCREECHES! The sonic assault staggers the $$$${playerClass} — attack charge lost!`
             },
         ]
     },
@@ -2800,7 +2800,7 @@ Object.assign(ENEMIES, {
                 stunDuration: 5,
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `💀 The {enemyName}'s soul-rending wail hits like a physical blow! The {playerClass} is stunned — attack charge lost!`
+                applyMessage: (enemyName, playerClass) => `💀 The ${enemyName}'s soul-rending wail hits like a physical blow! The $$$${playerClass} is stunned — attack charge lost!`
             },
             {
                 id: 'keen_lament',
@@ -2813,7 +2813,7 @@ Object.assign(ENEMIES, {
                 intimidateDuration: 6000,
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `👻 The {enemyName}'s lament fills the {playerClass} with dread — <span style='color:#ffaa44;'>⚠️ -25% damage for 6 seconds.</span>`
+                applyMessage: (enemyName, playerClass) => `👻 The ${enemyName}'s lament fills the $$$${playerClass} with dread — <span style='color:#ffaa44;'>⚠️ -25% damage for 6 seconds.</span>`
             },
         ]
     },
@@ -2848,7 +2848,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 1.1,
                 armorPiercing: 0.15,
-                applyMessage: (enemyName, playerClass) => `💜 The {enemyName}'s cursed sword strikes! Dark energy lingers in the wound — <b>Cursed!</b>`
+                applyMessage: (enemyName, playerClass) => `💜 The $$$${enemyName}'s cursed sword strikes! Dark energy lingers in the wound — <b>Cursed!</b>`
             },
         ]
     },
@@ -2878,7 +2878,7 @@ Object.assign(ENEMIES, {
                 type: 'heavy_hit',
                 damageMult: 2.1,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🪓 The {enemyName} enters BLOOD FRENZY — a wild, ferocious assault!`
+                applyMessage: (enemyName, playerClass) => `🪓 The $$$${enemyName} enters BLOOD FRENZY — a wild, ferocious assault!`
             },
         ]
     },
@@ -2913,7 +2913,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🟤 The {enemyName} SPRAYS boiling acid! The {playerClass}'s armor and flesh corrode — <b>Corroding!</b>`
+                applyMessage: (enemyName, playerClass) => `🟤 The ${enemyName} SPRAYS boiling acid! The $$$${playerClass}'s armor and flesh corrode — <b>Corroding!</b>`
             },
         ]
     },
@@ -2948,7 +2948,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 0.9,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `☣️ The {enemyName}'s touch festers! The {playerClass} is infected — <b>Plagued!</b>`
+                applyMessage: (enemyName, playerClass) => `☣️ The ${enemyName}'s touch festers! The $$$${playerClass} is infected — <b>Plagued!</b>`
             },
         ]
     },
@@ -2983,7 +2983,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 1.6,
                 armorPiercing: 0.2,
-                applyMessage: (enemyName, playerClass) => `🐂 The {enemyName} GORES the {playerClass}! Horns tear through the side — <b>Bleeding!</b>`
+                applyMessage: (enemyName, playerClass) => `🐂 The ${enemyName} GORES the $$$${playerClass}! Horns tear through the side — <b>Bleeding!</b>`
             },
         ]
     },
@@ -3012,7 +3012,7 @@ Object.assign(ENEMIES, {
                 drainAmount: 20,
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🌟 The {enemyName}'s hypnotic light pulls at the {playerClass}'s concentration — <b>20 MP drained!</b>`
+                applyMessage: (enemyName, playerClass) => `🌟 The ${enemyName}'s hypnotic light pulls at the $$$${playerClass}'s concentration — <b>20 MP drained!</b>`
             },
             {
                 id: 'ethereal_touch',
@@ -3025,7 +3025,7 @@ Object.assign(ENEMIES, {
                 healPercent: 1.0,
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `💙 The {enemyName} drains vitality through its phantom touch — <b>14 HP stolen!</b>`
+                applyMessage: (enemyName, playerClass) => `💙 The $$$${enemyName} drains vitality through its phantom touch — <b>14 HP stolen!</b>`
             },
         ]
     },
@@ -3061,7 +3061,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `💜 The {enemyName} calls death down upon the {playerClass}! A dark curse takes hold — <b>Cursed!</b>`
+                applyMessage: (enemyName, playerClass) => `💜 The ${enemyName} calls death down upon the $$$$${playerClass}! A dark curse takes hold — <b>Cursed!</b>`
             },
         ]
     },
@@ -3090,7 +3090,7 @@ Object.assign(ENEMIES, {
                 type: 'heavy_hit',
                 damageMult: 1.9,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `💢 The {enemyName} SLAMS down with both fists! The force is immense!`
+                applyMessage: (enemyName, playerClass) => `💢 The $$$${enemyName} SLAMS down with both fists! The force is immense!`
             },
             {
                 id: 'seam_burst',
@@ -3104,7 +3104,7 @@ Object.assign(ENEMIES, {
                 rendDuration: 8000,
                 damageMult: 0.8,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🩸 The {enemyName}'s burst seams spray the {playerClass}! <span style='color:#ffaa44;'>⚠️ Defense reduced for 8 seconds!</span>`
+                applyMessage: (enemyName, playerClass) => `🩸 The ${enemyName}'s burst seams spray the $$$${playerClass}! <span style='color:#ffaa44;'>⚠️ Defense reduced for 8 seconds!</span>`
             },
         ]
     },
@@ -3134,7 +3134,7 @@ Object.assign(ENEMIES, {
                 healPercent: 0.8,
                 damageMult: 0,
                 armorPiercing: 0.4,
-                applyMessage: (enemyName, playerClass) => `👻 The {enemyName} reaches through the {playerClass}! Soul-cold drains the will to fight — <b>16 HP stolen!</b>`
+                applyMessage: (enemyName, playerClass) => `👻 The ${enemyName} reaches through the $$$${playerClass}! Soul-cold drains the will to fight — <b>16 HP stolen!</b>`
             },
             {
                 id: 'terrifying_presence',
@@ -3147,7 +3147,7 @@ Object.assign(ENEMIES, {
                 intimidateDuration: 5000,
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `😱 The {enemyName}'s presence freezes the {playerClass}'s blood — <span style='color:#ffaa44;'>⚠️ -25% damage for 5 seconds.</span>`
+                applyMessage: (enemyName, playerClass) => `😱 The ${enemyName}'s presence freezes the $$$${playerClass}'s blood — <span style='color:#ffaa44;'>⚠️ -25% damage for 5 seconds.</span>`
             },
         ]
     },
@@ -3177,7 +3177,7 @@ Object.assign(ENEMIES, {
                 intimidateDuration: 6000,
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🐾 The {enemyName} rallies the pack with a savage Warchant! The {playerClass} is unnerved — <span style='color:#ffaa44;'>⚠️ -25% damage for 6 seconds.</span>`
+                applyMessage: (enemyName, playerClass) => `🐾 The ${enemyName} rallies the pack with a savage Warchant! The $$$${playerClass} is unnerved — <span style='color:#ffaa44;'>⚠️ -25% damage for 6 seconds.</span>`
             },
         ]
     },
@@ -3207,7 +3207,7 @@ Object.assign(ENEMIES, {
                 healRatio: 0.7,
                 damageMult: 0.8,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🩸 The {enemyName} bites and drinks! Blood feeds the thrall — <b>HP stolen!</b>`
+                applyMessage: (enemyName, playerClass) => `🩸 The $$$${enemyName} bites and drinks! Blood feeds the thrall — <b>HP stolen!</b>`
             },
         ]
     },
@@ -3243,7 +3243,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 1.5,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🐉 All three heads of the {enemyName} strike at once! The {playerClass} is <b>Bleeding!</b>`
+                applyMessage: (enemyName, playerClass) => `🐉 All three heads of the ${enemyName} strike at once! The $$$${playerClass} is <b>Bleeding!</b>`
             },
             {
                 id: 'hydra_regen',
@@ -3256,7 +3256,7 @@ Object.assign(ENEMIES, {
                 healRatio: 0.7,
                 damageMult: 0.6,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🟢 The {enemyName} regenerates as it feeds! Its wounds close before your eyes.`
+                applyMessage: (enemyName, playerClass) => `🟢 The $$$${enemyName} regenerates as it feeds! Its wounds close before your eyes.`
             },
         ]
     },
@@ -3284,7 +3284,7 @@ Object.assign(ENEMIES, {
                 type: 'heavy_hit',
                 damageMult: 1.8,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `💥 The {enemyName} SLAMS! Mud and force knock the {playerClass} off their feet!`
+                applyMessage: (enemyName, playerClass) => `💥 The ${enemyName} SLAMS! Mud and force knock the $$$${playerClass} off their feet!`
             },
             {
                 id: 'mire',
@@ -3298,7 +3298,7 @@ Object.assign(ENEMIES, {
                 debuffDuration: 4000,
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🟫 The {enemyName} mires the {playerClass} in thick bog-mud! <b>Cannot dodge!</b>`
+                applyMessage: (enemyName, playerClass) => `🟫 The ${enemyName} mires the $$$${playerClass} in thick bog-mud! <b>Cannot dodge!</b>`
             },
         ]
     },
@@ -3333,7 +3333,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 1.2,
                 armorPiercing: 0.2,
-                applyMessage: (enemyName, playerClass) => `💜 The {enemyName}'s cursed blade strikes! Dark residue clings to the {playerClass}'s wounds — <b>Cursed!</b>`
+                applyMessage: (enemyName, playerClass) => `💜 The ${enemyName}'s cursed blade strikes! Dark residue clings to the $$$${playerClass}'s wounds — <b>Cursed!</b>`
             },
         ]
     },
@@ -3368,7 +3368,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `💚 The {enemyName} spits a stream of venom! The {playerClass} is drenched — <b>Poisoned!</b>`
+                applyMessage: (enemyName, playerClass) => `💚 The ${enemyName} spits a stream of venom! The $$$${playerClass} is drenched — <b>Poisoned!</b>`
             },
         ]
     },
@@ -3399,7 +3399,7 @@ Object.assign(ENEMIES, {
                 hitMissChance: 0.35,
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🧿 The {enemyName} hexes the {playerClass}! A miasma blinds their sight — <span style='color:#ffaa44;'>⚠️ 35% miss chance.</span>`
+                applyMessage: (enemyName, playerClass) => `🧿 The ${enemyName} hexes the $$$${playerClass}! A miasma blinds their sight — <span style='color:#ffaa44;'>⚠️ 35% miss chance.</span>`
             },
             {
                 id: 'swamp_wither',
@@ -3417,7 +3417,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🌑 The {enemyName}'s curse saps the {playerClass}'s vitality — <b>Withering!</b>`
+                applyMessage: (enemyName, playerClass) => `🌑 The ${enemyName}'s curse saps the $$$${playerClass}'s vitality — <b>Withering!</b>`
             },
         ]
     },
@@ -3448,7 +3448,7 @@ Object.assign(ENEMIES, {
                 stunDuration: 5,
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🐍 The {enemyName}'s gaze locks the {playerClass} in place! Stone begins to creep across the skin — <b>2 attack charges lost!</b>`
+                applyMessage: (enemyName, playerClass) => `🐍 The ${enemyName}'s gaze locks the $$$${playerClass} in place! Stone begins to creep across the skin — <b>2 attack charges lost!</b>`
             },
             {
                 id: 'tail_lash',
@@ -3462,7 +3462,7 @@ Object.assign(ENEMIES, {
                 debuffDuration: 5000,
                 damageMult: 1.4,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🐉 The {enemyName}'s tail lash knocks the {playerClass} prone! <b>Cannot dodge!</b>`
+                applyMessage: (enemyName, playerClass) => `🐉 The ${enemyName}'s tail lash knocks the $$$${playerClass} prone! <b>Cannot dodge!</b>`
             },
         ]
     },
@@ -3491,7 +3491,7 @@ Object.assign(ENEMIES, {
                 type: 'heavy_hit',
                 damageMult: 2.0,
                 armorPiercing: 0.2,
-                applyMessage: (enemyName, playerClass) => `⚙️ The {enemyName}'s iron fist CONNECTS — the impact would crack stone!`
+                applyMessage: (enemyName, playerClass) => `⚙️ The $$$${enemyName}'s iron fist CONNECTS — the impact would crack stone!`
             },
             {
                 id: 'ward_pulse',
@@ -3504,7 +3504,7 @@ Object.assign(ENEMIES, {
                 stunDuration: 4,
                 damageMult: 0.5,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `⚡ The {enemyName} discharges ward energy! The {playerClass} is staggered — attack charge lost!`
+                applyMessage: (enemyName, playerClass) => `⚡ The ${enemyName} discharges ward energy! The $$$${playerClass} is staggered — attack charge lost!`
             },
         ]
     },
@@ -3539,7 +3539,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 1.0,
                 armorPiercing: 0.15,
-                applyMessage: (enemyName, playerClass) => `💜 The {enemyName}'s necrotic touch rots the {playerClass}'s flesh — <b>Cursed!</b>`
+                applyMessage: (enemyName, playerClass) => `💜 The ${enemyName}'s necrotic touch rots the $$$${playerClass}'s flesh — <b>Cursed!</b>`
             },
         ]
     },
@@ -3569,7 +3569,7 @@ Object.assign(ENEMIES, {
                 stunDuration: 5,
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `💀 The {enemyName} SHRIEKS! The soul-rending sound stuns the {playerClass} solid — <b>2 attack charges lost!</b>`
+                applyMessage: (enemyName, playerClass) => `💀 The ${enemyName} SHRIEKS! The soul-rending sound stuns the $$$${playerClass} solid — <b>2 attack charges lost!</b>`
             },
             {
                 id: 'queen_drain',
@@ -3582,7 +3582,7 @@ Object.assign(ENEMIES, {
                 healPercent: 1.0,
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `👻 The {enemyName} drinks the {playerClass}'s soul! <b>20 HP drained!</b>`
+                applyMessage: (enemyName, playerClass) => `👻 The ${enemyName} drinks the $$$${playerClass}'s soul! <b>20 HP drained!</b>`
             },
         ]
     },
@@ -3617,7 +3617,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 1.3,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🩸 The {enemyName} RENDS the {playerClass} with fang and claw! <b>Bleeding!</b>`
+                applyMessage: (enemyName, playerClass) => `🩸 The ${enemyName} RENDS the $$$${playerClass} with fang and claw! <b>Bleeding!</b>`
             },
             {
                 id: 'wolf_howl',
@@ -3630,7 +3630,7 @@ Object.assign(ENEMIES, {
                 intimidateDuration: 6000,
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🐺 The {enemyName} howls! Something primal in the {playerClass} recoils — <span style='color:#ffaa44;'>⚠️ -25% damage for 6 seconds.</span>`
+                applyMessage: (enemyName, playerClass) => `🐺 The ${enemyName} howls! Something primal in the $$$${playerClass} recoils — <span style='color:#ffaa44;'>⚠️ -25% damage for 6 seconds.</span>`
             },
         ]
     },
@@ -3661,7 +3661,7 @@ Object.assign(ENEMIES, {
                 stunDuration: 5,
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🐍 The {enemyName}'s gaze petrifies! Marble spreads across the {playerClass}'s skin — <b>2 attack charges lost!</b>`
+                applyMessage: (enemyName, playerClass) => `🐍 The ${enemyName}'s gaze petrifies! Marble spreads across the $$$${playerClass}'s skin — <b>2 attack charges lost!</b>`
             },
             {
                 id: 'serpent_bite',
@@ -3679,7 +3679,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 0.7,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `💚 A snake from the {enemyName}'s hair bites deep! <b>Poisoned!</b>`
+                applyMessage: (enemyName, playerClass) => `💚 A snake from the $$$${enemyName}'s hair bites deep! <b>Poisoned!</b>`
             },
         ]
     },
@@ -3714,7 +3714,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `💜 The {enemyName}'s chaotic bolt detonates on the {playerClass}! Raw dark energy burns — <b>Cursed!</b>`
+                applyMessage: (enemyName, playerClass) => `💜 The ${enemyName}'s chaotic bolt detonates on the $$$${playerClass}! Raw dark energy burns — <b>Cursed!</b>`
             },
             {
                 id: 'chaos_drain',
@@ -3726,7 +3726,7 @@ Object.assign(ENEMIES, {
                 drainAmount: 22,
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🔮 The {enemyName} randomly siphons the {playerClass}'s power — <b>22 MP drained!</b>`
+                applyMessage: (enemyName, playerClass) => `🔮 The ${enemyName} randomly siphons the $$$${playerClass}'s power — <b>22 MP drained!</b>`
             },
         ]
     },
@@ -3757,7 +3757,7 @@ Object.assign(ENEMIES, {
                 debuffDuration: 6000,
                 damageMult: 1.5,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `😱 The {enemyName} attempts to SWALLOW the {playerClass}! Caught in the crushing gullet — <b>Cannot dodge!</b>`
+                applyMessage: (enemyName, playerClass) => `😱 The ${enemyName} attempts to SWALLOW the $$$${playerClass}! Caught in the crushing gullet — <b>Cannot dodge!</b>`
             },
             {
                 id: 'acid_digest',
@@ -3775,7 +3775,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🟤 The {enemyName}'s digestive acid sprays out! The {playerClass} is <b>Corroding!</b>`
+                applyMessage: (enemyName, playerClass) => `🟤 The ${enemyName}'s digestive acid sprays out! The $$$${playerClass} is <b>Corroding!</b>`
             },
         ]
     },
@@ -3806,7 +3806,7 @@ Object.assign(ENEMIES, {
                 hitMissChance: 0.35,
                 damageMult: 0.8,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🏹 The {enemyName} shoots for the eyes! The {playerClass} is blinded — <span style='color:#ffaa44;'>⚠️ 35% miss chance.</span>`
+                applyMessage: (enemyName, playerClass) => `🏹 The ${enemyName} shoots for the eyes! The $$$${playerClass} is blinded — <span style='color:#ffaa44;'>⚠️ 35% miss chance.</span>`
             },
             {
                 id: 'poison_arrow',
@@ -3824,7 +3824,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 0.9,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `💚 The {enemyName}'s black-tipped arrow finds the mark — <b>Poisoned!</b>`
+                applyMessage: (enemyName, playerClass) => `💚 The $$$${enemyName}'s black-tipped arrow finds the mark — <b>Poisoned!</b>`
             },
         ]
     },
@@ -3854,7 +3854,7 @@ Object.assign(ENEMIES, {
                 stunDuration: 4,
                 damageMult: 1.2,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `⚙️ The {enemyName} clashes with ear-splitting force! The {playerClass} is stunned — attack charge lost!`
+                applyMessage: (enemyName, playerClass) => `⚙️ The ${enemyName} clashes with ear-splitting force! The $$$${playerClass} is stunned — attack charge lost!`
             },
             {
                 id: 'armor_crush',
@@ -3867,7 +3867,7 @@ Object.assign(ENEMIES, {
                 rendDuration: 9000,
                 damageMult: 1.3,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `💥 The {enemyName} crushes the {playerClass}'s armor! <span style='color:#ffaa44;'>⚠️ Defense reduced for 9 seconds.</span>`
+                applyMessage: (enemyName, playerClass) => `💥 The ${enemyName} crushes the $$$${playerClass}'s armor! <span style='color:#ffaa44;'>⚠️ Defense reduced for 9 seconds.</span>`
             },
         ]
     },
@@ -3903,7 +3903,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🔥 The {enemyName} breathes hellfire! The {playerClass} is set ablaze — <b>Burning!</b>`
+                applyMessage: (enemyName, playerClass) => `🔥 The ${enemyName} breathes hellfire! The $$$${playerClass} is set ablaze — <b>Burning!</b>`
             },
             {
                 id: 'shadow_step',
@@ -3917,7 +3917,7 @@ Object.assign(ENEMIES, {
                 hitMissChance: 0.35,
                 damageMult: 1.4,
                 armorPiercing: 0.2,
-                applyMessage: (enemyName, playerClass) => `🌑 The {enemyName} teleports through shadow! The {playerClass} loses track — <span style='color:#ffaa44;'>⚠️ 35% miss chance.</span>`
+                applyMessage: (enemyName, playerClass) => `🌑 The ${enemyName} teleports through shadow! The $$$${playerClass} loses track — <span style='color:#ffaa44;'>⚠️ 35% miss chance.</span>`
             },
         ]
     },
@@ -3952,7 +3952,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 1.3,
                 armorPiercing: 0.2,
-                applyMessage: (enemyName, playerClass) => `💜 The {enemyName}'s chaotic blade tears through the {playerClass}! Chaos energy corrupts the wound — <b>Cursed!</b>`
+                applyMessage: (enemyName, playerClass) => `💜 The ${enemyName}'s chaotic blade tears through the $$$${playerClass}! Chaos energy corrupts the wound — <b>Cursed!</b>`
             },
             {
                 id: 'chaos_charge',
@@ -3964,7 +3964,7 @@ Object.assign(ENEMIES, {
                 type: 'heavy_hit',
                 damageMult: 2.0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `⚡ The {enemyName} CHARGES! Raw chaos energy amplifies the blow!`
+                applyMessage: (enemyName, playerClass) => `⚡ The $$$${enemyName} CHARGES! Raw chaos energy amplifies the blow!`
             },
         ]
     },
@@ -3994,7 +3994,7 @@ Object.assign(ENEMIES, {
                 stunDuration: 5,
                 damageMult: 1.0,
                 armorPiercing: 0.15,
-                applyMessage: (enemyName, playerClass) => `⚡ The {enemyName} discharges carved rune-energy! The {playerClass} is blasted back — attack charge lost!`
+                applyMessage: (enemyName, playerClass) => `⚡ The ${enemyName} discharges carved rune-energy! The $$$${playerClass} is blasted back — attack charge lost!`
             },
             {
                 id: 'stone_grip',
@@ -4008,7 +4008,7 @@ Object.assign(ENEMIES, {
                 debuffDuration: 5000,
                 damageMult: 1.2,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🪨 The {enemyName} seizes the {playerClass} in a stone grip! <b>Cannot dodge!</b>`
+                applyMessage: (enemyName, playerClass) => `🪨 The ${enemyName} seizes the $$$${playerClass} in a stone grip! <b>Cannot dodge!</b>`
             },
         ]
     },
@@ -4043,7 +4043,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 0,
                 armorPiercing: 0.3,
-                applyMessage: (enemyName, playerClass) => `💜 The {enemyName}'s phantom bolt sears through the {playerClass}'s defenses — <b>Cursed!</b>`
+                applyMessage: (enemyName, playerClass) => `💜 The ${enemyName}'s phantom bolt sears through the $$$${playerClass}'s defenses — <b>Cursed!</b>`
             },
             {
                 id: 'arcane_drain',
@@ -4055,7 +4055,7 @@ Object.assign(ENEMIES, {
                 drainAmount: 28,
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🔮 The {enemyName} strips raw mana from the {playerClass}! <b>28 MP drained!</b>`
+                applyMessage: (enemyName, playerClass) => `🔮 The ${enemyName} strips raw mana from the $$$${playerClass}! <b>28 MP drained!</b>`
             },
         ]
     },
@@ -4084,7 +4084,7 @@ Object.assign(ENEMIES, {
                 type: 'heavy_hit',
                 damageMult: 1.9,
                 armorPiercing: 0.2,
-                applyMessage: (enemyName, playerClass) => `🪨 The {enemyName} DIVES from above! Stone-hard wings and claws crush the {playerClass}!`
+                applyMessage: (enemyName, playerClass) => `🪨 The ${enemyName} DIVES from above! Stone-hard wings and claws crush the $$$${playerClass}!`
             },
             {
                 id: 'gargoyle_screech',
@@ -4097,7 +4097,7 @@ Object.assign(ENEMIES, {
                 stunDuration: 4,
                 damageMult: 0.3,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `😱 The {enemyName}'s stone-scraping screech shocks the {playerClass}! Attack charge lost!`
+                applyMessage: (enemyName, playerClass) => `😱 The ${enemyName}'s stone-scraping screech shocks the $$$${playerClass}! Attack charge lost!`
             },
         ]
     },
@@ -4129,7 +4129,7 @@ Object.assign(ENEMIES, {
                 maxSummons: 2,
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `💀 The {enemyName} raises the dead! A skeleton claws free of the earth!`
+                applyMessage: (enemyName, playerClass) => `💀 The $$$${enemyName} raises the dead! A skeleton claws free of the earth!`
             },
             {
                 id: 'life_siphon',
@@ -4142,7 +4142,7 @@ Object.assign(ENEMIES, {
                 healPercent: 1.0,
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `💙 The {enemyName}'s siphon tears vitality from the {playerClass} — <b>22 HP drained!</b>`
+                applyMessage: (enemyName, playerClass) => `💙 The ${enemyName}'s siphon tears vitality from the $$$${playerClass} — <b>22 HP drained!</b>`
             },
         ]
     },
@@ -4177,7 +4177,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 1.2,
                 armorPiercing: 0.25,
-                applyMessage: (enemyName, playerClass) => `🌑 The {enemyName}'s void-laced fangs bite! The {playerClass} begins to <b>Wither!</b>`
+                applyMessage: (enemyName, playerClass) => `🌑 The ${enemyName}'s void-laced fangs bite! The $$$${playerClass} begins to <b>Wither!</b>`
             },
             {
                 id: 'void_howl',
@@ -4190,7 +4190,7 @@ Object.assign(ENEMIES, {
                 intimidateDuration: 6000,
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🌑 The {enemyName}'s void-howl silences all courage! <span style='color:#ffaa44;'>⚠️ -30% damage for 6 seconds.</span>`
+                applyMessage: (enemyName, playerClass) => `🌑 The $$$${enemyName}'s void-howl silences all courage! <span style='color:#ffaa44;'>⚠️ -30% damage for 6 seconds.</span>`
             },
         ]
     },
@@ -4220,7 +4220,7 @@ Object.assign(ENEMIES, {
                 rendDuration: 9000,
                 damageMult: 1.8,
                 armorPiercing: 0.2,
-                applyMessage: (enemyName, playerClass) => `⚔️ The {enemyName}'s devastating smash cracks the {playerClass}'s guard! <span style='color:#ffaa44;'>⚠️ Defense reduced 9 seconds.</span>`
+                applyMessage: (enemyName, playerClass) => `⚔️ The ${enemyName}'s devastating smash cracks the $$$${playerClass}'s guard! <span style='color:#ffaa44;'>⚠️ Defense reduced 9 seconds.</span>`
             },
             {
                 id: 'champion_charge',
@@ -4232,7 +4232,7 @@ Object.assign(ENEMIES, {
                 type: 'heavy_hit',
                 damageMult: 2.1,
                 armorPiercing: 0.15,
-                applyMessage: (enemyName, playerClass) => `⚔️ The {enemyName} CHARGES with the force of centuries of battle!`
+                applyMessage: (enemyName, playerClass) => `⚔️ The $$$${enemyName} CHARGES with the force of centuries of battle!`
             },
         ]
     },
@@ -4261,7 +4261,7 @@ Object.assign(ENEMIES, {
                 drainAmount: 25,
                 damageMult: 0.7,
                 armorPiercing: 0.4,
-                applyMessage: (enemyName, playerClass) => `🌑 The {enemyName} stings! The {playerClass}'s mana bleeds into the void — <b>25 MP drained!</b>`
+                applyMessage: (enemyName, playerClass) => `🌑 The ${enemyName} stings! The $$$${playerClass}'s mana bleeds into the void — <b>25 MP drained!</b>`
             },
             {
                 id: 'unravel',
@@ -4279,7 +4279,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🌑 The {enemyName} unravels the {playerClass}'s cohesion! They begin to <b>Wither!</b>`
+                applyMessage: (enemyName, playerClass) => `🌑 The ${enemyName} unravels the $$$${playerClass}'s cohesion! They begin to <b>Wither!</b>`
             },
         ]
     },
@@ -4314,7 +4314,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🔥 The {enemyName} erupts with lava! The {playerClass} is splashed — <b>Burning!</b>`
+                applyMessage: (enemyName, playerClass) => `🔥 The ${enemyName} erupts with lava! The $$$${playerClass} is splashed — <b>Burning!</b>`
             },
             {
                 id: 'slag_rend',
@@ -4327,7 +4327,7 @@ Object.assign(ENEMIES, {
                 rendDuration: 9000,
                 damageMult: 1.2,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🔥 The {enemyName}'s molten strike melts through armor! <span style='color:#ffaa44;'>⚠️ Defense reduced 9 seconds.</span>`
+                applyMessage: (enemyName, playerClass) => `🔥 The $$$${enemyName}'s molten strike melts through armor! <span style='color:#ffaa44;'>⚠️ Defense reduced 9 seconds.</span>`
             },
         ]
     },
@@ -4358,7 +4358,7 @@ Object.assign(ENEMIES, {
                 healPercent: 1.0,
                 damageMult: 0,
                 armorPiercing: 0.5,
-                applyMessage: (enemyName, playerClass) => `👻 The {enemyName} CONSUMES! The {playerClass}'s soul-force is ripped free — <b>25 HP drained!</b>`
+                applyMessage: (enemyName, playerClass) => `👻 The ${enemyName} CONSUMES! The $$$${playerClass}'s soul-force is ripped free — <b>25 HP drained!</b>`
             },
             {
                 id: 'elder_wail',
@@ -4371,7 +4371,7 @@ Object.assign(ENEMIES, {
                 intimidateDuration: 7000,
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `💀 The {enemyName}'s wail has broken lesser warriors. The {playerClass} struggles — <span style='color:#ffaa44;'>⚠️ -30% damage for 7 seconds.</span>`
+                applyMessage: (enemyName, playerClass) => `💀 The ${enemyName}'s wail has broken lesser warriors. The $$$${playerClass} struggles — <span style='color:#ffaa44;'>⚠️ -30% damage for 7 seconds.</span>`
             },
         ]
     },
@@ -4399,7 +4399,7 @@ Object.assign(ENEMIES, {
                 type: 'heavy_hit',
                 damageMult: 2.0,
                 armorPiercing: 0.25,
-                applyMessage: (enemyName, playerClass) => `⚔️ The {enemyName} strikes without hesitation! The blow is heavy and relentless!`
+                applyMessage: (enemyName, playerClass) => `⚔️ The $$$${enemyName} strikes without hesitation! The blow is heavy and relentless!`
             },
             {
                 id: 'iron_will',
@@ -4413,7 +4413,7 @@ Object.assign(ENEMIES, {
                 rendDuration: 8000,
                 damageMult: 1.5,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🛡️ The {enemyName} fights through pain and rends the {playerClass}'s armor! <span style='color:#ffaa44;'>⚠️ Defense reduced 8 seconds.</span>`
+                applyMessage: (enemyName, playerClass) => `🛡️ The ${enemyName} fights through pain and rends the $$$${playerClass}'s armor! <span style='color:#ffaa44;'>⚠️ Defense reduced 8 seconds.</span>`
             },
         ]
     },
@@ -4448,7 +4448,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `💜 The {enemyName} marks the {playerClass} for doom! Dark fire consumes — <b>Cursed!</b>`
+                applyMessage: (enemyName, playerClass) => `💜 The ${enemyName} marks the $$$${playerClass} for doom! Dark fire consumes — <b>Cursed!</b>`
             },
             {
                 id: 'doom_drain',
@@ -4460,7 +4460,7 @@ Object.assign(ENEMIES, {
                 drainAmount: 30,
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🔮 The {enemyName} unmakes the {playerClass}'s power — <b>30 MP drained!</b>`
+                applyMessage: (enemyName, playerClass) => `🔮 The ${enemyName} unmakes the $$$${playerClass}'s power — <b>30 MP drained!</b>`
             },
         ]
     },
@@ -4489,7 +4489,7 @@ Object.assign(ENEMIES, {
                 type: 'heavy_hit',
                 damageMult: 2.2,
                 armorPiercing: 0.2,
-                applyMessage: (enemyName, playerClass) => `🪨 The {enemyName} smashes with the weight of forgotten ages! The ground cracks!`
+                applyMessage: (enemyName, playerClass) => `🪨 The $$$${enemyName} smashes with the weight of forgotten ages! The ground cracks!`
             },
             {
                 id: 'crumble',
@@ -4503,7 +4503,7 @@ Object.assign(ENEMIES, {
                 rendDuration: 10000,
                 damageMult: 1.4,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `💥 The {enemyName} CRUMBLES into the {playerClass}, spalling stone through armor! <span style='color:#ffaa44;'>⚠️ Defense reduced 10 seconds.</span>`
+                applyMessage: (enemyName, playerClass) => `💥 The ${enemyName} CRUMBLES into the $$$${playerClass}, spalling stone through armor! <span style='color:#ffaa44;'>⚠️ Defense reduced 10 seconds.</span>`
             },
         ]
     },
@@ -4532,14 +4532,14 @@ Object.assign(ENEMIES, {
                 type: 'heavy_hit',
                 damageMult: 2.3,
                 armorPiercing: 0.25,
-                applyMessage: (enemyName, playerClass) => `💀 The {enemyName}'s VENDETTA burns! The wound makes it stronger — a vicious, unstoppable strike!`
+                applyMessage: (enemyName, playerClass) => `💀 The $$$${enemyName}'s VENDETTA burns! The wound makes it stronger — a vicious, unstoppable strike!`
             },
             {
                 id: 'haunt',
                 name: 'Haunt',
                 chance: 0.25,
                 mpCost: 14,
-                telegraph: 'stares through the {playerClass} with eyes that remember everything...',
+                telegraph: 'stares through you with eyes that remember everything...',
                 type: 'burn',
                 dot: {
                     name: 'Cursed',
@@ -4550,7 +4550,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `💜 The {enemyName} haunts the {playerClass}'s mind! A revenge-curse takes hold — <b>Cursed!</b>`
+                applyMessage: (enemyName, playerClass) => `💜 The ${enemyName} haunts the $$$${playerClass}'s mind! A revenge-curse takes hold — <b>Cursed!</b>`
             },
         ]
     },
@@ -4586,7 +4586,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🌑 The {enemyName} breathes darkness! The {playerClass} is consumed by shadow — <b>Withering!</b>`
+                applyMessage: (enemyName, playerClass) => `🌑 The ${enemyName} breathes darkness! The $$$${playerClass} is consumed by shadow — <b>Withering!</b>`
             },
             {
                 id: 'dark_rend',
@@ -4599,7 +4599,7 @@ Object.assign(ENEMIES, {
                 rendDuration: 10000,
                 damageMult: 1.6,
                 armorPiercing: 0.3,
-                applyMessage: (enemyName, playerClass) => `🌑 The {enemyName}'s shadow-talons shred through armor! <span style='color:#ffaa44;'>⚠️ Defense reduced 10 seconds.</span>`
+                applyMessage: (enemyName, playerClass) => `🌑 The $$$${enemyName}'s shadow-talons shred through armor! <span style='color:#ffaa44;'>⚠️ Defense reduced 10 seconds.</span>`
             },
         ]
     },
@@ -4628,7 +4628,7 @@ Object.assign(ENEMIES, {
                 type: 'heavy_hit',
                 damageMult: 2.2,
                 armorPiercing: 0.2,
-                applyMessage: (enemyName, playerClass) => `💀 The {enemyName} CRUSHES! A blow that could flatten a building!`
+                applyMessage: (enemyName, playerClass) => `💀 The $$$${enemyName} CRUSHES! A blow that could flatten a building!`
             },
             {
                 id: 'bone_spray',
@@ -4642,7 +4642,7 @@ Object.assign(ENEMIES, {
                 stunDuration: 5,
                 damageMult: 0.6,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `💀 The {enemyName} detonates a spray of bone fragments! The {playerClass} is stunned — <b>2 attack charges lost!</b>`
+                applyMessage: (enemyName, playerClass) => `💀 The ${enemyName} detonates a spray of bone fragments! The $$$${playerClass} is stunned — <b>2 attack charges lost!</b>`
             },
         ]
     },
@@ -4677,7 +4677,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `☣️ The {enemyName} unleashes pestilence! The {playerClass} is infected beyond hope — <b>Plague!</b>`
+                applyMessage: (enemyName, playerClass) => `☣️ The ${enemyName} unleashes pestilence! The $$$${playerClass} is infected beyond hope — <b>Plague!</b>`
             },
             {
                 id: 'rotting_touch',
@@ -4690,7 +4690,7 @@ Object.assign(ENEMIES, {
                 rendDuration: 10000,
                 damageMult: 1.2,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `☣️ The {enemyName}'s touch rots through the {playerClass}'s armor! <span style='color:#ffaa44;'>⚠️ Defense reduced 10 seconds.</span>`
+                applyMessage: (enemyName, playerClass) => `☣️ The ${enemyName}'s touch rots through the $$$${playerClass}'s armor! <span style='color:#ffaa44;'>⚠️ Defense reduced 10 seconds.</span>`
             },
         ]
     },
@@ -4725,7 +4725,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 1.4,
                 armorPiercing: 0.2,
-                applyMessage: (enemyName, playerClass) => `🔥 The {enemyName}'s hellblade carves burning runes into the {playerClass}! <b>Burning!</b>`
+                applyMessage: (enemyName, playerClass) => `🔥 The ${enemyName}'s hellblade carves burning runes into the $$$${playerClass}! <b>Burning!</b>`
             },
             {
                 id: 'demon_roar',
@@ -4738,7 +4738,7 @@ Object.assign(ENEMIES, {
                 intimidateDuration: 7000,
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `😱 The {enemyName} ROARS! The {playerClass} feels their courage crumble — <span style='color:#ffaa44;'>⚠️ -30% damage for 7 seconds.</span>`
+                applyMessage: (enemyName, playerClass) => `😱 The ${enemyName} ROARS! The $$$${playerClass} feels their courage crumble — <span style='color:#ffaa44;'>⚠️ -30% damage for 7 seconds.</span>`
             },
         ]
     },
@@ -4773,7 +4773,7 @@ Object.assign(ENEMIES, {
                 },
                 damageMult: 0,
                 armorPiercing: 0.3,
-                applyMessage: (enemyName, playerClass) => `💜 The {enemyName} inverts a divine blessing! The {playerClass} is cursed with fallen-angel fury — <b>Cursed!</b>`
+                applyMessage: (enemyName, playerClass) => `💜 The ${enemyName} inverts a divine blessing! The $$$${playerClass} is cursed with fallen-angel fury — <b>Cursed!</b>`
             },
             {
                 id: 'archon_smite',
@@ -4784,7 +4784,7 @@ Object.assign(ENEMIES, {
                 type: 'heavy_hit',
                 damageMult: 2.1,
                 armorPiercing: 0.3,
-                applyMessage: (enemyName, playerClass) => `⚡ The {enemyName} SMITES! Once holy energy now burns with corruption!`
+                applyMessage: (enemyName, playerClass) => `⚡ The $$$${enemyName} SMITES! Once holy energy now burns with corruption!`
             },
             {
                 id: 'heavenly_drain',
@@ -4796,7 +4796,7 @@ Object.assign(ENEMIES, {
                 drainAmount: 32,
                 damageMult: 0,
                 armorPiercing: 0,
-                applyMessage: (enemyName, playerClass) => `🔮 The {enemyName} turns divine siphoning on the {playerClass}! <b>32 MP drained!</b>`
+                applyMessage: (enemyName, playerClass) => `🔮 The ${enemyName} turns divine siphoning on the $$$${playerClass}! <b>32 MP drained!</b>`
             },
         ]
     },
