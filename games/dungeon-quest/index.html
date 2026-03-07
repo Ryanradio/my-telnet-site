@@ -14087,6 +14087,13 @@ function stabilizeTerminalLayout() {
                 abilities: template.abilities || [],
                 isBoss: template.isBoss || false,
                 magicAttack: template.magicAttack || false,
+                // Initialise MP from ability costs so monsters can actually afford their abilities
+                baseMp: template.baseMp || (template.abilities
+                    ? Math.max(0, ...template.abilities.map(a => a.mpCost || 0)) * 3
+                    : 0),
+                mp: template.baseMp || (template.abilities
+                    ? Math.max(0, ...template.abilities.map(a => a.mpCost || 0)) * 3
+                    : 0),
             };
 
             // ── Phase II: enemy MP ───────────────────────────────────
