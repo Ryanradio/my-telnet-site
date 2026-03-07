@@ -1833,7 +1833,7 @@ whispering_lights: {
                             {
                                 weight: 40,
                                 text: 'Visions flood your mind! You see the Calamity Dragon\'s prison weakening. Knowledge grants you power!',
-                                rewards: { xp: 500, /* buff: 'dragon_sight' */ }
+                                rewards: { xp: 500,}
                             },
                             {
                                 weight: 35,
@@ -1940,7 +1940,7 @@ whispering_lights: {
                             {
                                 weight: 20,
                                 text: 'The blade shatters the moment you touch it, releasing a trapped soul who blesses you!',
-                                rewards: { xp: 400, /* buff: 'blessed' */ }
+                                rewards: { xp: 400,}
                             }
                         ]
                     },
@@ -2027,7 +2027,7 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'The hermit\'s eyes clear. They share ancient knowledge of the dragon\'s weakness!',
-                        rewards: { xp: 400, /* item: 'dragon_lore_scroll' */ }
+                        rewards: { xp: 400,}
                     },
                     {
                         weight: 35,
@@ -2037,7 +2037,7 @@ whispering_lights: {
                     {
                         weight: 25,
                         text: 'The hermit cackles. "You want knowledge? Take it!" They force a vision into your mind!',
-                        rewards: { damage: 40, xp: 500, /* buff: 'prophetic_vision' */ }
+                        rewards: { damage: 40, xp: 500,}
                     }
                 ],
                 nestedChoices: [
@@ -2047,7 +2047,7 @@ whispering_lights: {
                             {
                                 weight: 50,
                                 text: 'You learn the dragon\'s true name and a powerful spell to harm it!',
-                                rewards: { /* spell: 'dragon_bane' */, xp: 300 }
+                                rewards: { xp: 300 }
                             },
                             {
                                 weight: 30,
@@ -2082,7 +2082,7 @@ whispering_lights: {
                             {
                                 weight: 40,
                                 text: 'You see the future! The dragon rises in flames... but you also see how to stop it!',
-                                rewards: { xp: 600, /* buff: 'destiny_blessed' */ }
+                                rewards: { xp: 600,}
                             },
                             {
                                 weight: 35,
@@ -2092,7 +2092,7 @@ whispering_lights: {
                             {
                                 weight: 25,
                                 text: 'You see yourself standing victorious over the dragon\'s corpse. Confidence surges through you!',
-                                rewards: { xp: 500, /* buff: 'dragon_slayer_confidence' */ }
+                                rewards: { xp: 500,}
                             }
                         ]
                     }
@@ -2104,7 +2104,7 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'The hermit weeps with gratitude and blesses you with protection magic!',
-                        rewards: { gold: -100, /* buff: 'hermit_blessing' */, xp: 200 }
+                        rewards: { gold: -100, xp: 200 }
                     },
                     {
                         weight: 30,
@@ -2134,7 +2134,7 @@ whispering_lights: {
                     {
                         weight: 20,
                         text: 'The hermit curses you for your arrogance! Bad luck follows!',
-                        rewards: { xp: -100, /* debuff: 'cursed_luck' */ }
+                        rewards: { xp: -100,}
                     }
                 ]
             }
@@ -2199,12 +2199,12 @@ whispering_lights: {
                             {
                                 weight: 50,
                                 text: 'You consecrate the ground with holy water. This site can never be used again!',
-                                rewards: { xp: 450, /* karma: +1 */ }
+                                rewards: { xp: 450,}
                             },
                             {
                                 weight: 30,
                                 text: 'As you destroy the shrine, residual magic empowers you!',
-                                rewards: { xp: 350, /* buff: 'anti_dragon_aura' */ }
+                                rewards: { xp: 350,}
                             },
                             {
                                 weight: 20,
@@ -2361,7 +2361,7 @@ whispering_lights: {
                             {
                                 weight: 30,
                                 text: 'You successfully rob them... but feel terrible. Karma will remember this.',
-                                rewards: { gold: 300, xp: -200, /* karma: -1 */ }
+                                rewards: { gold: 300, xp: -200,}
                             },
                             {
                                 weight: 20,
@@ -2433,7 +2433,7 @@ whispering_lights: {
                     {
                         weight: 25,
                         text: 'You find a priest, somehow still alive after 1000 years! They beg for help stopping the dragon!',
-                        rewards: { xp: 450, /* quest_unlock: 'ancient_priest_quest' */ }
+                        rewards: { xp: 450,}
                     }
                 ],
                 nestedChoices: [
@@ -2463,7 +2463,7 @@ whispering_lights: {
                             {
                                 weight: 50,
                                 text: 'The priest teaches you an ancient sealing ritual! This could help against the dragon!',
-                                rewards: { /* spell: 'seal_magic' */, xp: 500 }
+                                rewards: { xp: 500 }
                             },
                             {
                                 weight: 30,
@@ -2615,7 +2615,7 @@ whispering_lights: {
                             {
                                 weight: 40,
                                 text: 'It hatches! The wyrmling imprints on you! You now have a dragon companion! (This could be VERY useful...)',
-                                rewards: { /* pet: 'dragon_wyrmling' */, xp: 800 }
+                                rewards: { xp: 800 }
                             },
                             {
                                 weight: 35,
@@ -2727,7 +2727,7 @@ whispering_lights: {
                             {
                                 weight: 40,
                                 text: 'The curse brings bad luck, but the gold is worth it... right?',
-                                rewards: { gold: 1000, /* debuff: 'cursed_gold' */ }
+                                rewards: { gold: 1000,}
                             },
                             {
                                 weight: 35,
@@ -2747,12 +2747,12 @@ whispering_lights: {
                             {
                                 weight: 60,
                                 text: 'The temple purifies it and returns half to you as a reward!',
-                                rewards: { gold: 500, xp: 400, /* karma: +1 */ }
+                                rewards: { gold: 500, xp: 400,}
                             },
                             {
                                 weight: 40,
                                 text: 'The temple keeps it all but blesses you in return!',
-                                rewards: { xp: 500, /* buff: 'temple_blessing' */ }
+                                rewards: { xp: 500,}
                             }
                         ]
                     }
@@ -2814,7 +2814,7 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: '"You have potential." They teach you the ancient dragonslayer techniques!',
-                        rewards: { xp: 700, /* skill: 'dragonslayer_techniques' */ }
+                        rewards: { xp: 700,}
                     },
                     {
                         weight: 35,
@@ -2834,7 +2834,7 @@ whispering_lights: {
                             {
                                 weight: 50,
                                 text: 'You train for days. Your attacks will now deal massive damage to dragons!',
-                                rewards: { xp: 800, /* perm_buff: 'dragon_slayer' */ }
+                                rewards: { xp: 800,}
                             },
                             {
                                 weight: 30,
@@ -2864,7 +2864,7 @@ whispering_lights: {
                             {
                                 weight: 20,
                                 text: '"The sealing ritual... I remember it!" They teach you the spell!',
-                                rewards: { /* spell: 'ancient_seal' */, xp: 700 }
+                                rewards: { xp: 700 }
                             }
                         ]
                     },
@@ -2874,7 +2874,7 @@ whispering_lights: {
                             {
                                 weight: 40,
                                 text: '"One more battle. Why not?" They agree to join when the time comes!',
-                                rewards: { xp: 500, /* ally: 'ancient_dragonslayer' */ }
+                                rewards: { xp: 500,}
                             },
                             {
                                 weight: 35,
@@ -2951,7 +2951,7 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: '"I WILL STOP YOU!" Your courage resonates! Divine forces take notice!',
-                        rewards: { xp: 600, /* buff: 'divine_courage' */ }
+                        rewards: { xp: 600,}
                     },
                     {
                         weight: 35,
@@ -2961,7 +2961,7 @@ whispering_lights: {
                     {
                         weight: 25,
                         text: 'The dragon\'s presence focuses on YOU. "I WILL REMEMBER YOUR NAME, MORTAL."',
-                        rewards: { xp: 500, /* debuff: 'dragon_marked' */ }
+                        rewards: { xp: 500,}
                     }
                 ],
                 nestedChoices: [
@@ -2971,7 +2971,7 @@ whispering_lights: {
                             {
                                 weight: 50,
                                 text: 'Your courage inspires nearby villagers! They pledge to help fight the dragon!',
-                                rewards: { xp: 500, /* unlock: 'resistance_army' */ }
+                                rewards: { xp: 500,}
                             },
                             {
                                 weight: 30,
@@ -3021,7 +3021,7 @@ whispering_lights: {
                             {
                                 weight: 20,
                                 text: 'The prophecy speaks of YOU. "The unlikely hero will stand alone against the end."',
-                                rewards: { xp: 600, /* buff: 'chosen_one' */ }
+                                rewards: { xp: 600,}
                             }
                         ]
                     }
@@ -3053,7 +3053,7 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'A divine voice answers: "We grant you our blessing, champion. You will need it."',
-                        rewards: { xp: 500, /* buff: 'divine_blessing' */ }
+                        rewards: { xp: 500,}
                     },
                     {
                         weight: 35,
@@ -3148,7 +3148,7 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'Weeks later, their village burns. You ignored a real warning.',
-                        rewards: { xp: 50, /* karma: -1 */ }
+                        rewards: { xp: 50,}
                     }
                 ]
             }
@@ -3201,7 +3201,7 @@ whispering_lights: {
                     {
                         weight: 20,
                         text: 'The copies are cursed! Anyone who looks at them has nightmares.',
-                        rewards: { gold: 50, /* debuff: 'nightmare_curse' */ }
+                        rewards: { gold: 50,}
                     }
                 ]
             },
@@ -3332,7 +3332,7 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'The cart vanishes in smoke! A voice booms: "THIEF!" You\'re cursed!',
-                        rewards: { items: ['/* cursed_item */'], /* debuff: 'merchant_curse' */ }
+                        rewards: { items: ['/* cursed_item */'],}
                     },
                     {
                         weight: 35,
@@ -3380,12 +3380,12 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'She wants you to tell her family she loves them. You promise. She teaches you a protective spell!',
-                        rewards: { xp: 200, /* spell: 'spirit_ward' */ }
+                        rewards: { xp: 200,}
                     },
                     {
                         weight: 30,
                         text: 'Her family is long dead. She weeps but thanks you for trying. She blesses you.',
-                        rewards: { xp: 150, /* buff: 'spirit_blessing' */ }
+                        rewards: { xp: 150,}
                     },
                     {
                         weight: 20,
@@ -3420,7 +3420,7 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'She fades away sadly. "I only wanted to help..." You feel guilty.',
-                        rewards: { xp: 50, /* karma: -1 */ }
+                        rewards: { xp: 50,}
                     },
                     {
                         weight: 30,
@@ -3473,7 +3473,7 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'A ghostly warrior appears, salutes you, and leaves a blessing. "Thank you for remembering us."',
-                        rewards: { xp: 180, /* buff: 'warrior_blessing' */ }
+                        rewards: { xp: 180,}
                     },
                     {
                         weight: 30,
@@ -3521,7 +3521,7 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'You reunite him with his grateful mother! She gives you her family heirloom as thanks!',
-                        rewards: { xp: 150, items: ['/* family_heirloom */'], /* karma: +1 */ }
+                        rewards: { xp: 150, items: ['/* family_heirloom */'],}
                     },
                     {
                         weight: 30,
@@ -3566,7 +3566,7 @@ whispering_lights: {
                     {
                         weight: 20,
                         text: 'You later hear he was taken by bandits. You feel guilty.',
-                        rewards: { gold: -30, xp: 50, /* karma: -1 */ }
+                        rewards: { gold: -30, xp: 50,}
                     }
                 ]
             }
@@ -3589,7 +3589,7 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'You save dozens of lives! The village elder promises they owe you a debt!',
-                        rewards: { xp: 200, gold: 150, /* karma: +1 */ }
+                        rewards: { xp: 200, gold: 150,}
                     },
                     {
                         weight: 30,
@@ -3735,7 +3735,7 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: '"You\'re right. This IS stupid." They thank you and share cult secrets before running home!',
-                        rewards: { xp: 180, items: ['/* cult_secrets_scroll */'], /* karma: +1 */ }
+                        rewards: { xp: 180, items: ['/* cult_secrets_scroll */'],}
                     },
                     {
                         weight: 30,
@@ -3880,7 +3880,7 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'You find a dragon cult totem! Destroying it purifies the forest!',
-                        rewards: { xp: 600, /* karma: +1 */ }
+                        rewards: { xp: 600,}
                     },
                     {
                         weight: 35,
@@ -3900,7 +3900,7 @@ whispering_lights: {
                     {
                         weight: 45,
                         text: 'Your efforts work! Green returns to the forest! Nature is grateful!',
-                        rewards: { xp: 650, /* buff: 'nature_blessed' */ }
+                        rewards: { xp: 650,}
                     },
                     {
                         weight: 35,
@@ -3910,7 +3910,7 @@ whispering_lights: {
                     {
                         weight: 20,
                         text: 'The corruption fights back! Dark vines entangle and poison you!',
-                        rewards: { damage: 100, /* debuff: 'corruption_poisoned' */ }
+                        rewards: { damage: 100,}
                     }
                 ]
             },
@@ -4021,7 +4021,7 @@ whispering_lights: {
                     {
                         weight: 45,
                         text: 'You break the spell! The hero\'s spirit manifests! "Thank you! Take my blessing!"',
-                        rewards: { xp: 600, /* buff: 'hero_blessing' */, items: ['/* hero_token */'] }
+                        rewards: { xp: 600, items: ['/* hero_token */'] }
                     },
                     {
                         weight: 35,
@@ -4071,7 +4071,7 @@ whispering_lights: {
                     {
                         weight: 25,
                         text: 'The statue contained a trapped demon! You just freed it! It laughs and flees!',
-                        rewards: { xp: 300, /* karma: -1 */ }
+                        rewards: { xp: 300,}
                     }
                 ]
             }
@@ -4094,7 +4094,7 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'You wake up stronger! Your resolve is unshakeable!',
-                        rewards: { xp: 600, /* buff: 'iron_will' */ }
+                        rewards: { xp: 600,}
                     },
                     {
                         weight: 30,
@@ -4124,7 +4124,7 @@ whispering_lights: {
                     {
                         weight: 20,
                         text: 'You learn TOO much! The knowledge threatens to overwhelm your mind!',
-                        rewards: { xp: 650, damage: 80, /* debuff: 'information_overload' */ }
+                        rewards: { xp: 650, damage: 80,}
                     }
                 ]
             },
@@ -4134,7 +4134,7 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'You wound it! In dreams, willpower is everything! You wake victorious!',
-                        rewards: { xp: 650, /* buff: 'dream_warrior' */ }
+                        rewards: { xp: 650,}
                     },
                     {
                         weight: 35,
@@ -4170,7 +4170,7 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'You both benefit! "You\'re not bad! Let\'s team up instead!" Gained an ally!',
-                        rewards: { xp: 500, /* ally: 'rival_turned_friend' */ }
+                        rewards: { xp: 500,}
                     },
                     {
                         weight: 30,
@@ -4243,7 +4243,7 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'You succeed! The seal holds! You bought precious time!',
-                        rewards: { xp: 800, /* buff: 'seal_reinforcer' */ }
+                        rewards: { xp: 800,}
                     },
                     {
                         weight: 35,
@@ -4283,7 +4283,7 @@ whispering_lights: {
                     {
                         weight: 60,
                         text: 'You alert nearby towns! Thousands evacuate before the seal fails!',
-                        rewards: { xp: 700, /* karma: +1 */ }
+                        rewards: { xp: 700,}
                     },
                     {
                         weight: 40,
@@ -4351,7 +4351,7 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'You save hundreds of civilians! They owe you their lives!',
-                        rewards: { xp: 600, /* karma: +1 */ }
+                        rewards: { xp: 600,}
                     },
                     {
                         weight: 30,
@@ -4404,7 +4404,7 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'You burn it all! This evil research ends here!',
-                        rewards: { xp: 600, /* karma: +1 */ }
+                        rewards: { xp: 600,}
                     },
                     {
                         weight: 30,
@@ -4429,7 +4429,7 @@ whispering_lights: {
                     {
                         weight: 35,
                         text: 'The samples corrupt you! Dragon blood is dangerous!',
-                        rewards: { items: ['/* dragon_blood_vials */'], damage: 80, /* debuff: 'blood_corruption' */ }
+                        rewards: { items: ['/* dragon_blood_vials */'], damage: 80,}
                     },
                     {
                         weight: 20,
@@ -4457,7 +4457,7 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'You witness the EXACT ritual used! You could replicate it!',
-                        rewards: { xp: 800, /* spell: 'ancient_sealing_ritual' */ }
+                        rewards: { xp: 800,}
                     },
                     {
                         weight: 30,
@@ -4477,7 +4477,7 @@ whispering_lights: {
                     {
                         weight: 45,
                         text: 'You see yourself victorious! This future CAN be changed!',
-                        rewards: { xp: 750, /* buff: 'destiny_changer' */ }
+                        rewards: { xp: 750,}
                     },
                     {
                         weight: 35,
@@ -4487,7 +4487,7 @@ whispering_lights: {
                     {
                         weight: 20,
                         text: 'The future is uncertain! Multiple timelines! Too many possibilities!',
-                        rewards: { xp: 550, /* debuff: 'temporal_confusion' */ }
+                        rewards: { xp: 550,}
                     }
                 ]
             },
@@ -4544,7 +4544,7 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'Your magic works! The lieutenant is resealed! But for how long?',
-                        rewards: { xp: 1000, /* buff: 'lieutenant_sealer' */ }
+                        rewards: { xp: 1000,}
                     },
                     {
                         weight: 35,
@@ -4726,7 +4726,7 @@ whispering_lights: {
                     {
                         weight: 45,
                         text: '"The future is not set! I\'ll change it!" Your conviction shakes the prophet!',
-                        rewards: { xp: 1000, /* buff: 'fate_defier' */ }
+                        rewards: { xp: 1000,}
                     },
                     {
                         weight: 35,
@@ -4799,7 +4799,7 @@ whispering_lights: {
                     {
                         weight: 35,
                         text: 'Your words break through! "What... have I done?!" They rebel against the cult!',
-                        rewards: { xp: 1200, /* ally: 'redeemed_hero' */ }
+                        rewards: { xp: 1200,}
                     },
                     {
                         weight: 40,
@@ -4875,7 +4875,7 @@ whispering_lights: {
                     {
                         weight: 45,
                         text: 'You take out the high priests! The ritual collapses! You saved the world!',
-                        rewards: { xp: 1500, /* buff: 'world_savior' */ }
+                        rewards: { xp: 1500,}
                     },
                     {
                         weight: 35,
@@ -4948,7 +4948,7 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'You gain draconic power! But... at what cost to your humanity?',
-                        rewards: { xp: 1200, /* buff: 'dragon_power' */, /* debuff: 'corruption' */ }
+                        rewards: { xp: 1200,}
                     },
                     {
                         weight: 35,
@@ -5021,7 +5021,7 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'You find a path directly to the dragon! Time to end this!',
-                        rewards: { xp: 1400, /* unlock: 'final_battle_path' */ }
+                        rewards: { xp: 1400,}
                     },
                     {
                         weight: 35,
@@ -5041,7 +5041,7 @@ whispering_lights: {
                     {
                         weight: 60,
                         text: 'You save thousands! Reality may fall but humanity survives!',
-                        rewards: { xp: 1300, /* karma: +2 */ }
+                        rewards: { xp: 1300,}
                     },
                     {
                         weight: 40,
@@ -5069,12 +5069,12 @@ whispering_lights: {
                     {
                         weight: 45,
                         text: 'You are blessed by the gods! Divine fire courses through you!',
-                        rewards: { xp: 1400, /* buff: 'divine_champion' */ }
+                        rewards: { xp: 1400,}
                     },
                     {
                         weight: 35,
                         text: 'The power is overwhelming! You burn with holy fire!',
-                        rewards: { xp: 1200, damage: 200, /* buff: 'burning_divinity' */ }
+                        rewards: { xp: 1200, damage: 200,}
                     },
                     {
                         weight: 20,
@@ -5089,7 +5089,7 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'The celestial smiles. "Courage! Very well. We shall not interfere." Respect earned!',
-                        rewards: { xp: 1300, /* buff: 'mortal_pride' */ }
+                        rewards: { xp: 1300,}
                     },
                     {
                         weight: 30,
@@ -5172,7 +5172,7 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'Heroes, armies, mages - EVERYONE you\'ve helped arrives! "We stand with you!" EPIC BATTLE!',
-                        rewards: { xp: 1800, /* unlock: 'army_backup' */ }
+                        rewards: { xp: 1800,}
                     },
                     {
                         weight: 30,
@@ -5551,7 +5551,7 @@ whispering_lights: {
         name: 'The Wanderer\'s Map',
         rarity: 'common',
         description: 'A cartographer lies on the floor of a tavern. He draws frantically with charcoal.',
-        intro: '"You can't trust the maps," he says, gasping for air. "The ink changes... the geography moves."',
+        intro: '"You can\'t trust the maps," he says, gasping for air. "The ink changes... the geography moves."',
         
         choices: [
             {

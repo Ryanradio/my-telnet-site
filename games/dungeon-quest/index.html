@@ -18684,6 +18684,7 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
         // Pure debuffs (rend, intimidate, blind, stun, etc.) replace the
         // physical hit entirely — no damage is rolled or applied.
         if (intent.isPureDebuff && intent.abilityDef) {
+            const _debugCombat = gameState.sysop && gameState.sysop.authenticated;
             // Deduct MP
             if ((intent.abilityMpCost || 0) > 0) {
                 enemy.mp = Math.max(0, (enemy.mp || 0) - intent.abilityMpCost);
@@ -20561,6 +20562,7 @@ function showCharacterStats() {
             p.gold -= 100;
             p.inventory.splice(invIdx, 1);
             item.gems.push(gem);
+            recalcGemStats(p);
             saveGame();
             const flash = document.createElement('div');
             flash.style.cssText = `position:fixed;top:15px;left:50%;transform:translateX(-50%);background:#0a0a0a;border:2px solid ${gem.color};padding:14px 24px;color:${gem.color};font-size:15px;z-index:9999;text-align:center;max-width:340px;`;
