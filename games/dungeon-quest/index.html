@@ -786,6 +786,8 @@ body.terminal-mode .hud-stats span {
         }
         #shopConfirmModal .scm-btn-cancel:active { background: rgba(120,0,0,0.6); }
 
+
+
         /* ─── action bar visual styles ─── */
 #actionBar {
     background: var(--secondary-bg);
@@ -11236,7 +11238,7 @@ showWelcomeScreen();
 
                 </div>
                 <div style="margin: 20px 0;">
-                    <div class="menu-option" onclick="showShop()">► VISIT SHOP</div>
+                    <div class="menu-option" onclick="showShop()">► SILVERDALE SHOP</div>
                     <div class="menu-option" onclick="showBank()">► 🏦 BANK (${p.bankGold || 0}g stored)</div>
                     <div class="menu-option" onclick="showCharacterStats()">► 📊 CHARACTER STATS</div>
                     <div class="menu-option" onclick="showTemple()">► ⛪ TEMPLE</div>
@@ -12152,147 +12154,213 @@ showWelcomeScreen();
         function sellAllBelowThreshold() {
             const p = gameState.player;
             const QUALITY_ORDER = ['poor','normal','rare','epic','legendary','godly'];
-            const thresholdEl = document.getElementById('sellQualityThreshold');
-            const threshold   = thresholdEl ? thresholdEl.value : 'poor';
+            const thresholdEl  = document.getElementById('sellQualityThreshold');
+            const threshold    = thresholdEl ? thresholdEl.value : 'poor';
             const thresholdIdx = QUALITY_ORDER.indexOf(threshold);
-            const bonus = calcChaSellBonus(p.cha);
+            const bonus        = calcChaSellBonus(p.cha);
 
-            let totalGold = 0, totalItems = 0;
             const toRemove = [];
 
-            // Collect items to sell (don't remove during iteration)
             p.inventory.forEach(itemKey => {
                 if (ITEMS[itemKey] && ITEMS[itemKey].sellValue > 0 && !ITEMS[itemKey].maxStack) {
-                    // maxStack items are potions — excluded from Sell All
-                    toRemove.push({ key: itemKey, value: ITEMS[itemKey].sellValue });
+                    toRemove.push({ key: itemKey, value: ITEMS[itemKey].sellValue, type: 'item' });
                 } else if (WEAPONS[itemKey] && itemKey !== p.weapon && !WEAPONS[itemKey].unarmed) {
                     const qIdx = QUALITY_ORDER.indexOf(WEAPONS[itemKey]?.quality || 'poor');
-                    if (qIdx <= thresholdIdx) toRemove.push({ key: itemKey, value: getSellValue(itemKey, 'weapon') });
+                    if (qIdx <= thresholdIdx) toRemove.push({ key: itemKey, value: getSellValue(itemKey, 'weapon'), type: 'weapon', quality: WEAPONS[itemKey].quality });
                 } else if (ARMOR[itemKey] && itemKey !== p.armor && !ARMOR[itemKey].unarmored) {
                     const qIdx = QUALITY_ORDER.indexOf(ARMOR[itemKey]?.quality || 'poor');
-                    if (qIdx <= thresholdIdx) toRemove.push({ key: itemKey, value: getSellValue(itemKey, 'armor') });
+                    if (qIdx <= thresholdIdx) toRemove.push({ key: itemKey, value: getSellValue(itemKey, 'armor'), type: 'armor', quality: ARMOR[itemKey].quality });
                 }
             });
 
-            if (toRemove.length === 0) {
-                showShopSell(); return;
-            }
+            if (toRemove.length === 0) { showShopSell(); return; }
 
-            // Remove all and tally gold
-            toRemove.forEach(({ key, value }) => {
-                const idx = p.inventory.indexOf(key);
-                if (idx !== -1) {
-                    p.inventory.splice(idx, 1);
-                    const actualValue = Math.floor(value * (1 + bonus/100));
-                    totalGold  += actualValue;
-                    totalItems++;
+            // Aggregate into display rows grouped by key+quality
+            const grouped = {};
+            toRemove.forEach(({ key, value, quality }) => {
+                const gk = quality ? `${key}__${quality}` : key;
+                if (!grouped[gk]) {
+                    const qLabel = quality && QUALITY_CONFIG[quality] ? ` [${QUALITY_CONFIG[quality].name}]` : '';
+                    grouped[gk] = { name: getItemName(key) + qLabel, count: 0, each: Math.floor(value * (1 + bonus/100)), total: 0 };
                 }
+                grouped[gk].count++;
+                grouped[gk].total += Math.floor(value * (1 + bonus/100));
             });
 
-            p.gold += totalGold;
-            const bonusText = bonus > 0 ? ` (+${bonus}% CHA)` : '';
-            // No popup — just refresh sell panel with a brief status line
-            saveGame();
-            showShopSell();
-            // Insert a one-line feedback message above the panel
-            const content = document.getElementById('shopContent');
-            const msg = document.createElement('div');
-            msg.style.cssText = 'background:#111;border:1px solid #ff8c00;color:#ff8c00;padding:6px 12px;font-size:15px;margin-bottom:10px;';
-            msg.textContent = `Sold ${totalItems} item${totalItems!==1?'s':''} for ${totalGold}g${bonusText}.`;
-            content.prepend(msg);
-            setTimeout(() => msg.remove(), 3000);
+            const lines     = Object.values(grouped);
+            const totalGold = lines.reduce((s, l) => s + l.total, 0);
+
+            _showSellConfirm(lines, totalGold, () => {
+                let totalPaid = 0, totalItems = 0;
+                toRemove.forEach(({ key, value }) => {
+                    const idx = p.inventory.indexOf(key);
+                    if (idx !== -1) {
+                        p.inventory.splice(idx, 1);
+                        totalPaid += Math.floor(value * (1 + bonus/100));
+                        totalItems++;
+                    }
+                });
+                p.gold += totalPaid;
+                const bonusText = bonus > 0 ? ` (+${bonus}% CHA)` : '';
+                saveGame();
+                showShopSell();
+                const content = document.getElementById('shopContent');
+                if (content) {
+                    const msg = document.createElement('div');
+                    msg.style.cssText = 'background:#111;border:1px solid #ff8c00;color:#ff8c00;padding:6px 12px;font-size:15px;margin-bottom:10px;';
+                    msg.textContent = `Sold ${totalItems} item${totalItems!==1?'s':''} for ${totalPaid}g${bonusText}.`;
+                    content.prepend(msg);
+                    setTimeout(() => msg.remove(), 3000);
+                }
+            });
         }
 
         function sellItemGroup(groupKey, baseValue, quantity = 1) {
-            // groupKey might be "itemKey__quality" for weapons/armor, or just "itemKey" for items
-            // We need to sell the actual items from inventory that match this group
             const p = gameState.player;
             const parts = groupKey.split('__');
             const actualItemKey = parts[0];
-            const targetQuality = parts[1]; // undefined for items
-            
-            let removed = 0;
-            for (let i = p.inventory.length - 1; i >= 0 && removed < quantity; i--) {
-                const invKey = p.inventory[i];
-                if (typeof invKey !== 'string') continue; // skip gem objects
-                // For items: match key exactly
-                // For weapons/armor: match key AND quality
-                if (invKey === actualItemKey || invKey.startsWith(actualItemKey)) {
-                    // Check quality match for weapons/armor
-                    if (targetQuality) {
-                        const item = WEAPONS[invKey] || ARMOR[invKey];
-                        if (item && item.quality === targetQuality) {
-                            p.inventory.splice(i, 1);
-                            removed++;
+            const targetQuality = parts[1];
+            const bonus     = calcChaSellBonus(p.cha);
+            const unitValue = Math.floor(baseValue * (1 + bonus/100));
+            const total     = unitValue * quantity;
+            const qLabel    = targetQuality && QUALITY_CONFIG[targetQuality] ? ` [${QUALITY_CONFIG[targetQuality].name}]` : '';
+            const name      = getItemName(actualItemKey) + qLabel;
+
+            _showSellConfirm(
+                [{ name, count: quantity, each: unitValue, total }],
+                total,
+                () => {
+                    let removed = 0;
+                    for (let i = p.inventory.length - 1; i >= 0 && removed < quantity; i--) {
+                        const invKey = p.inventory[i];
+                        if (typeof invKey !== 'string') continue;
+                        if (invKey === actualItemKey || invKey.startsWith(actualItemKey)) {
+                            if (targetQuality) {
+                                const item = WEAPONS[invKey] || ARMOR[invKey];
+                                if (item && item.quality === targetQuality) { p.inventory.splice(i, 1); removed++; }
+                            } else {
+                                p.inventory.splice(i, 1); removed++;
+                            }
                         }
-                    } else {
-                        // No quality check needed (it's an item)
-                        p.inventory.splice(i, 1);
-                        removed++;
+                    }
+                    if (removed === 0) return;
+                    const totalValue = unitValue * removed;
+                    p.gold += totalValue;
+                    saveGame();
+                    showShopSell();
+                    const content = document.getElementById('shopContent');
+                    if (content) {
+                        const msg = document.createElement('div');
+                        msg.style.cssText = 'background:#111;border:1px solid #4a9a4a;color:#4a9a4a;padding:6px 12px;font-size:15px;margin-bottom:10px;';
+                        msg.textContent = `Sold ${removed > 1 ? removed+'x ' : ''}${name} for ${totalValue}g.`;
+                        content.prepend(msg);
+                        setTimeout(() => msg.remove(), 2500);
                     }
                 }
-            }
-            if (removed === 0) return;
-            const bonus      = calcChaSellBonus(p.cha);
-            const unitValue  = Math.floor(baseValue * (1 + bonus/100));
-            const totalValue = unitValue * removed;
-            p.gold += totalValue;
-            saveGame();
-            showShopSell();
-            // Brief inline feedback, no alert()
-            const content = document.getElementById('shopContent');
-            if (content) {
-                const msg = document.createElement('div');
-                const name = getItemName(actualItemKey);
-                msg.style.cssText = 'background:#111;border:1px solid #4a9a4a;color:#4a9a4a;padding:6px 12px;font-size:15px;margin-bottom:10px;';
-                msg.textContent = `Sold ${removed > 1 ? removed+'× ' : ''}${name} for ${totalValue}g.`;
-                content.prepend(msg);
-                setTimeout(() => msg.remove(), 2500);
-            }
+            );
         }
 
         function showSellQuantityPrompt(itemKey, unitPrice, totalCount) {
-            // Legacy path — no longer used but kept for safety
+            // Legacy path — routes through sell confirmation
             sellItem(itemKey, unitPrice, totalCount);
         }
 
         function sellItem(itemKey, baseValue, quantity = 1) {
             const p = gameState.player;
-            let removed = 0;
-            for (let i = p.inventory.length - 1; i >= 0 && removed < quantity; i--) {
-                if (p.inventory[i] === itemKey) { p.inventory.splice(i, 1); removed++; }
-            }
-            if (removed === 0) return;
-            const bonus      = calcChaSellBonus(p.cha);
-            const unitValue  = Math.floor(baseValue * (1 + bonus/100));
-            const totalValue = unitValue * removed;
-            p.gold += totalValue;
-            saveGame();
-            showShopSell();
-            // Brief inline feedback, no alert()
-            const content = document.getElementById('shopContent');
-            if (content) {
-                const msg = document.createElement('div');
-                const name = getItemName(itemKey);
-                msg.style.cssText = 'background:#111;border:1px solid #4a9a4a;color:#4a9a4a;padding:6px 12px;font-size:15px;margin-bottom:10px;';
-                msg.textContent = `Sold ${removed > 1 ? removed+'× ' : ''}${name} for ${totalValue}g.`;
-                content.prepend(msg);
-                setTimeout(() => msg.remove(), 2500);
-            }
+            const bonus     = calcChaSellBonus(p.cha);
+            const unitValue = Math.floor(baseValue * (1 + bonus/100));
+            const total     = unitValue * quantity;
+            const name      = getItemName(itemKey);
+
+            _showSellConfirm(
+                [{ name, count: quantity, each: unitValue, total }],
+                total,
+                () => {
+                    let removed = 0;
+                    for (let i = p.inventory.length - 1; i >= 0 && removed < quantity; i--) {
+                        if (p.inventory[i] === itemKey) { p.inventory.splice(i, 1); removed++; }
+                    }
+                    if (removed === 0) return;
+                    const totalValue = unitValue * removed;
+                    p.gold += totalValue;
+                    saveGame();
+                    showShopSell();
+                    const content = document.getElementById('shopContent');
+                    if (content) {
+                        const msg = document.createElement('div');
+                        msg.style.cssText = 'background:#111;border:1px solid #4a9a4a;color:#4a9a4a;padding:6px 12px;font-size:15px;margin-bottom:10px;';
+                        msg.textContent = `Sold ${removed > 1 ? removed+'x ' : ''}${name} for ${totalValue}g.`;
+                        content.prepend(msg);
+                        setTimeout(() => msg.remove(), 2500);
+                    }
+                }
+            );
         }
 
-        // ── Shop confirmation modal helpers ─────────────────────────────
-        function closeShopConfirm() {
-            const m = document.getElementById('shopConfirmModal');
-            if (m) m.classList.remove('open');
-            window._pendingPurchase = null;
+        // ── Sell confirmation modal ──────────────────────────────────────────
+        // Reuses #shopConfirmModal with its existing ids: scmItemName, scmItemCost
+        // lines: [{ name, count, each, total }, ...]
+        function _showSellConfirm(lines, totalGold, onConfirm) {
+            const modal = document.getElementById('shopConfirmModal');
+            if (!modal) { onConfirm(); return; }
+
+            const bonus = calcChaSellBonus(gameState.player.cha);
+            const bonusText = bonus > 0 ? ` <span style="color:#aaa;font-size:14px;">(+${bonus}% CHA)</span>` : '';
+
+            // Build itemized list HTML
+            const rowsHtml = lines.map(l =>
+                `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #1a1a1a;font-size:17px;">
+                    <span style="color:#ccc;">${l.count > 1 ? l.count+'x ' : ''}${l.name}</span>
+                    <span style="color:#ff8c00;">${l.total}g${l.count > 1 ? '<span style="color:#555;font-size:13px;"> ('+l.each+'ea)</span>' : ''}</span>
+                </div>`
+            ).join('');
+
+            // Populate the modal's existing elements
+            document.getElementById('scmItemName').innerHTML = rowsHtml;
+            document.getElementById('scmItemCost').innerHTML =
+                'Total: <span>' + totalGold + 'g</span>' + bonusText;
+
+            // Switch modal to sell mode
+            const titleEl = modal.querySelector('.scm-title');
+            if (titleEl) titleEl.innerHTML = '💰 CONFIRM SALE';
+            const confirmBtn = modal.querySelector('.scm-btn-confirm');
+            if (confirmBtn) confirmBtn.innerHTML = '✔ SELL IT';
+
+            // Store callback and open
+            window._pendingSell = onConfirm;
+            modal.classList.add('open');
         }
+
+        // ── Shop confirmation modal helpers ──────────────────────────────────
+        function closeShopConfirm() {
+            const modal = document.getElementById('shopConfirmModal');
+            if (modal) {
+                modal.classList.remove('open');
+                // Reset back to buy mode for next open
+                const titleEl = modal.querySelector('.scm-title');
+                if (titleEl) titleEl.innerHTML = '⚔️ CONFIRM PURCHASE';
+                const confirmBtn = modal.querySelector('.scm-btn-confirm');
+                if (confirmBtn) confirmBtn.innerHTML = '✔ BUY IT';
+            }
+            window._pendingPurchase = null;
+            window._pendingSell     = null;
+        }
+
         function _confirmPurchase() {
+            // Handles both buy and sell confirmations via _pendingSell / _pendingPurchase
+            if (window._pendingSell) {
+                const fn = window._pendingSell;
+                window._pendingSell = null;
+                closeShopConfirm();
+                fn();
+                return;
+            }
             const p = window._pendingPurchase;
             if (!p) return;
             closeShopConfirm();
             _executeBuy(p.type, p.key, p.cost, p.itemName, p.disc);
         }
+
 
         function buyItem(type, key, baseCost) {
             const p = gameState.player;
@@ -14873,10 +14941,24 @@ function showInventoryOverlay() {
     html += `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">`;
     const eqW = WEAPONS[p.weapon];
     if (eqW && !eqW.unarmed) {
-        const qc = QUALITY_CONFIG[eqW.quality];
+        const qc  = QUALITY_CONFIG[eqW.quality];
+        const qb  = getQualityBonus(eqW.quality, eqW.baseDamage);
+        let eqWModHtml = '';
+        if (eqW.modifiers && eqW.modifiers.length > 0) {
+            eqWModHtml = '<div style="margin-top:4px;">';
+            eqW.modifiers.forEach(modKey => {
+                const mod = typeof WEAPON_MODIFIERS !== 'undefined' ? WEAPON_MODIFIERS[modKey] : null;
+                if (mod) {
+                    eqWModHtml += `<div style="color:${mod.color};font-size:12px;">• ${mod.name}${mod.minDamage ? ` (${mod.minDamage}-${mod.maxDamage})` : ''}</div>`;
+                }
+            });
+            eqWModHtml += '</div>';
+        }
         html += `<div style="min-width:130px;padding:10px;border:2px solid ${qc?.color||'#0f0'};background:#050a05;font-size:14px;">
             <div style="color:${qc?.color||'#0f0'};">${eqW.name}</div>
-            <div style="color:#aaa;font-size:12px;">DMG ${eqW.baseDamage}–${eqW.maxDamage||eqW.baseDamage}</div>
+            <div style="color:#aaa;font-size:12px;">${buildWeaponDmgLine(eqW)}</div>
+            ${eqWModHtml}
+            ${buildGemSlotHtml(eqW)}
             <div style="color:var(--highlight-color);font-size:12px;">★ EQUIPPED</div>
         </div>`;
     }
@@ -14885,15 +14967,30 @@ function showInventoryOverlay() {
     }
     weapons.forEach(ik => {
         if (ik === p.weapon) return;
-        const w = WEAPONS[ik];
-        const qc = QUALITY_CONFIG[w.quality];
+        const w   = WEAPONS[ik];
+        const qc  = QUALITY_CONFIG[w.quality];
         const closeFn = inDungeon ? 'renderDungeonActionBar()' : 'renderActionBar()';
-        html += `<button onclick="equipItem('weapon','${ik}');document.getElementById('dungeonInvOverlay').remove();${closeFn};" style="
-            min-width:130px;padding:10px;border:2px solid ${qc?.color||'#0f0'};
-            background:#050a05;font-size:14px;text-align:left;cursor:pointer;">
-            <div style="color:${qc?.color||'#0f0'};">${w.name}</div>
-            <div style="color:#aaa;font-size:12px;">DMG ${w.baseDamage}–${w.maxDamage||w.baseDamage}</div>
-            <div style="color:#FFD700;font-size:12px;">▶ EQUIP</div>
+        let modHtml = '';
+        if (w.modifiers && w.modifiers.length > 0) {
+            modHtml = '<div style="margin-top:4px;">';
+            w.modifiers.forEach(modKey => {
+                const mod = typeof WEAPON_MODIFIERS !== 'undefined' ? WEAPON_MODIFIERS[modKey] : null;
+                if (mod) {
+                    modHtml += `<div style="color:${mod.color};font-size:12px;">• ${mod.name}${mod.minDamage ? ` (${mod.minDamage}-${mod.maxDamage})` : ''}</div>`;
+                }
+            });
+            modHtml += '</div>';
+        }
+        const canEquip = canUseWeapon(playerClass, w);
+        html += `<button onclick="${canEquip ? `equipItem('weapon','${ik}');document.getElementById('dungeonInvOverlay').remove();${closeFn};` : ''}"
+            style="min-width:130px;padding:10px;border:2px solid ${canEquip ? (qc?.color||'#0f0') : '#555'};
+            background:#050a05;font-size:14px;text-align:left;cursor:${canEquip ? 'pointer' : 'default'};
+            opacity:${canEquip ? 1 : 0.5};">
+            <div style="color:${canEquip ? (qc?.color||'#0f0') : '#888'};">${w.name}</div>
+            <div style="color:#aaa;font-size:12px;">${buildWeaponDmgLine(w)}</div>
+            ${modHtml}
+            ${buildGemSlotHtml(w)}
+            <div style="color:${canEquip ? '#FFD700' : '#555'};font-size:12px;">${canEquip ? '▶ EQUIP' : 'CANNOT EQUIP'}</div>
         </button>`;
     });
     html += `</div>`;
@@ -14903,7 +15000,10 @@ function showInventoryOverlay() {
     html += `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px;">`;
     const eqA = ARMOR[p.armor];
     if (eqA && !eqA.unarmored) {
-        const qc = QUALITY_CONFIG[eqA.quality];
+        const aqc  = QUALITY_CONFIG[eqA.quality];
+        const aqb  = getQualityBonus(eqA.quality, eqA.baseDefense);
+        const tDef = eqA.baseDefense + aqb;
+        const tMag = (eqA.baseMagicBonus || 0) + Math.floor((eqA.baseMagicBonus || 0) * (aqc?.bonusPct || 0));
         const eqASlots = getGemSlots(eqA.quality);
         const eqAGems  = eqA.gems || [];
         let eqAGemHtml = '';
@@ -14911,13 +15011,13 @@ function showInventoryOverlay() {
             for (let i = 0; i < eqASlots; i++) {
                 const g = eqAGems[i];
                 eqAGemHtml += g
-                    ? `<div style="font-size:11px;color:${g.color};">${g.emoji} ${g.name}</div>`
+                    ? `<div style="font-size:12px;color:${g.color};">${g.emoji} ${g.name}${g.statKey ? ` <span style="color:#aaa;">(+${g.bonus} ${g.statKey.toUpperCase()})</span>` : ''}</div>`
                     : `<div style="font-size:10px;color:#333;">⬤ empty slot</div>`;
             }
         }
-        html += `<div style="min-width:130px;padding:10px;border:2px solid ${qc?.color||'#0f0'};background:#050a05;font-size:14px;">
-            <div style="color:${qc?.color||'#0f0'};">${eqA.name}</div>
-            <div style="color:#aaa;font-size:12px;">DEF ${eqA.baseDefense}</div>
+        html += `<div style="min-width:130px;padding:10px;border:2px solid ${aqc?.color||'#0f0'};background:#050a05;font-size:14px;">
+            <div style="color:${aqc?.color||'#0f0'};">${eqA.name}</div>
+            <div style="color:#aaa;font-size:12px;">DEF: ${tDef}${tMag > 0 ? ` | MAG+: ${tMag}` : ''}</div>
             ${eqAGemHtml}
             <div style="color:var(--highlight-color);font-size:12px;">★ EQUIPPED</div>
         </div>`;
@@ -14927,8 +15027,11 @@ function showInventoryOverlay() {
     }
     armors.forEach(ik => {
         if (ik === p.armor) return;
-        const a = ARMOR[ik];
-        const qc = QUALITY_CONFIG[a.quality];
+        const a    = ARMOR[ik];
+        const aqc  = QUALITY_CONFIG[a.quality];
+        const aqb  = getQualityBonus(a.quality, a.baseDefense);
+        const tDef = a.baseDefense + aqb;
+        const tMag = (a.baseMagicBonus || 0) + Math.floor((a.baseMagicBonus || 0) * (QUALITY_CONFIG[a.quality]?.bonusPct || 0));
         const aSlots = getGemSlots(a.quality);
         const aGems  = a.gems || [];
         let aGemHtml = '';
@@ -14936,23 +15039,23 @@ function showInventoryOverlay() {
             for (let i = 0; i < aSlots; i++) {
                 const g = aGems[i];
                 aGemHtml += g
-                    ? `<div style="font-size:11px;color:${g.color};">${g.emoji} ${g.name}</div>`
+                    ? `<div style="font-size:12px;color:${g.color};">${g.emoji} ${g.name}${g.statKey ? ` <span style="color:#aaa;">(+${g.bonus} ${g.statKey.toUpperCase()})</span>` : ''}</div>`
                     : `<div style="font-size:10px;color:#333;">⬤ empty slot</div>`;
             }
         }
-        const closeFn = inDungeon ? 'renderDungeonActionBar()' : 'renderActionBar()';
-        html += `<button onclick="equipItem('armor','${ik}');document.getElementById('dungeonInvOverlay').remove();${closeFn};" style="
-            min-width:130px;padding:10px;border:2px solid ${qc?.color||'#0f0'};
-            background:#050a05;font-size:14px;text-align:left;cursor:pointer;">
-            <div style="color:${qc?.color||'#0f0'};">${a.name}</div>
-            <div style="color:#aaa;font-size:12px;">DEF ${a.baseDefense}</div>
+        const canEquip = canUseArmor(playerClass, a);
+        const closeFn  = inDungeon ? 'renderDungeonActionBar()' : 'renderActionBar()';
+        html += `<button onclick="${canEquip ? `equipItem('armor','${ik}');document.getElementById('dungeonInvOverlay').remove();${closeFn};` : ''}"
+            style="min-width:130px;padding:10px;border:2px solid ${canEquip ? (aqc?.color||'#0f0') : '#555'};
+            background:#050a05;font-size:14px;text-align:left;cursor:${canEquip ? 'pointer' : 'default'};
+            opacity:${canEquip ? 1 : 0.5};">
+            <div style="color:${canEquip ? (aqc?.color||'#0f0') : '#888'};">${a.name}</div>
+            <div style="color:#aaa;font-size:12px;">DEF: ${tDef}${tMag > 0 ? ` | MAG+: ${tMag}` : ''}</div>
             ${aGemHtml}
-            <div style="color:#FFD700;font-size:12px;">▶ EQUIP</div>
+            <div style="color:${canEquip ? '#FFD700' : '#555'};font-size:12px;">${canEquip ? '▶ EQUIP' : 'CANNOT EQUIP'}</div>
         </button>`;
     });
     html += `</div>`;
-
-    html += `</div>`; // end scrollable body
 
     // ── Close button fixed at bottom ──────────────────────────────────
     html += `
