@@ -17,13 +17,12 @@
    
    <style>
 
-     @import url('https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap');
 
 
         /* ── FONT SIZE SETTINGS ─────────────────────────────────────── */
         :root {
-            --font-size-terminal: 15px;   /* terminal combat text */
-            --font-size-town:     16px;   /* town menus / UI text */
+            --font-size-terminal: 18px;   /* terminal combat text */
+            --font-size-town:     18px;   /* town menus / UI text */
         }
 
         /* Apply terminal font-size to combat terminal lines */
@@ -394,7 +393,8 @@ body.terminal-mode #sbXpBar { display: block; }
     letter-spacing: 1px;
 }
 
-       
+            @import url('https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap');
+
 
         :root {
             --primary-bg: #000080;
@@ -703,7 +703,7 @@ body.terminal-mode .hud-stats span {
 
         .term-line {
             padding: 2px 0;
-            font-size: 16px;
+            font-size: var(--font-size-terminal);
             color: var(--text-color);
             line-height: 1.3;
         }
@@ -1460,7 +1460,8 @@ body.terminal-mode .hud-stats span {
 
         /* All phones/tablets ≤768px */
         @media (max-width: 768px) {
-            body { font-size: 15px; }
+            body { font-size: var(--font-size-town); }
+
 
             /* Menu screen */
             #menuContainer { padding: 4px; }
