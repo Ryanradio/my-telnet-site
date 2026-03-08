@@ -19,7 +19,7 @@
 
      @import url('https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap');
 
-     
+
         /* ── FONT SIZE SETTINGS ─────────────────────────────────────── */
         :root {
             --font-size-terminal: 15px;   /* terminal combat text */
@@ -17387,16 +17387,21 @@ function consumePips(cs, amount, cooldown) {
             const minDmg2 = weapon.baseDamage + qBonus;
             const maxDmg2 = (weapon.maxDamage || weapon.baseDamage) + qBonus;
             let weaponDamage2 = Math.floor(Math.random() * (maxDmg2 - minDmg2 + 1)) + minDmg2;
-            const physBase2 = weaponDamage2 + Math.floor((p.str || 0) * 1.5);
-            let totalBase2  = Math.floor(Math.max(physBase2, magicBase) * damageMultiplier);
+            // ── Include gem melee bonus (was missing) ──────────────
+            const physBase2 = weaponDamage2 + Math.floor((p.str || 0) * 1.5) + gemMeleeDmg;
+            const magicBase2 = (weapon.baseMagicDamage || 0) + Math.floor((p.wis || 0) * 1.5) + gemMagicDmg;
+            // ── Independent damage roll — no carry-over from first hit
+            let totalBase2 = Math.floor(Math.max(physBase2, magicBase2) * 1.0); // always 1x — second strike is not a heavy/special
             totalBase2 = Math.floor(totalBase2 * classMult);
             totalBase2 = Math.max(1, Math.floor(totalBase2 * lvlMult.playerDealt));
+            // Add elemental gem bonuses
+            totalBase2 += gemLightningDmg + gemFireDmg + gemFrostDmg;
 
             const result2 = calculateDamage({
                 attacker: p, defender: enemy,
                 base: totalBase2,
-                type: 'physical',
-                critChance: calcCritChance(p.lck || 0, p) / 100,
+                type: _attackDmgType,
+                critChance: Math.min(0.75, (calcCritChance(p.lck || 0, p) / 100) + (gemCritBonus / 100)),
                 dodgeChance: enemyDodgeChance,
                 armorPiercing
             });
@@ -17410,17 +17415,29 @@ function consumePips(cs, amount, cooldown) {
                 modifierResult.messages.push(
                     `↪ Second strike: <span class="dmg-enemy">${mod2.totalDamage} damage</span>${crit2Tag}`
                 );
-                // Poison on second hit too
+                // Gem lifesteal on second hit
+                if (gemLifesteal > 0) {
+                    const steal2 = Math.max(1, Math.floor(mod2.totalDamage * (gemLifesteal / 100)));
+                    p.hp = Math.min(p.maxHp, p.hp + steal2);
+                    modifierResult.messages.push(`<span style="color:#FF4488;">💎 Ruby: Lifesteal +${steal2} HP</span>`);
+                }
+                // Poison on second hit
                 if (weapon.poisonChance && Math.random() < weapon.poisonChance && enemy.hp > 0) {
                     applyStatusEffect(enemy, 'poisoned', false);
                     modifierResult.messages.push('<span style="color:#00FF00;">💀 Poisoned!</span>');
+                }
+                // Gem poison on second hit
+                if (gemPoisonChance > 0 && Math.random() < (gemPoisonChance / 100) && enemy.hp > 0) {
+                    applyStatusEffect(enemy, 'poisoned', false);
+                    modifierResult.messages.push('<span style="color:#00EE00;">💎 Emerald: Poisoned!</span>');
                 }
             } else {
                 modifierResult.messages.push('↪ Second strike: <span style="color:#88ff88;">DODGED!</span>');
             }
         }
-        // ── END ROGUE DOUBLE-STRIKE ───────────────────────────────────
+        // ── END ROGUE DOUBLE-
 
+        
         // Calculate condition text
         const hpPct = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
         let condition = 'healthy';
