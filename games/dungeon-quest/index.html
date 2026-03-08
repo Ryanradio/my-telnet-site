@@ -17437,7 +17437,7 @@ function consumePips(cs, amount, cooldown) {
         }
         // ── END ROGUE DOUBLE-
 
-        
+
         // Calculate condition text
         const hpPct = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
         let condition = 'healthy';
@@ -18008,31 +18008,34 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
         function showPlayerStats() {
             const p = gameState.player;
             if (!p) return;
-            
+
             termAppend('', 'term-separator');
             termAppend('═══════════════════════════════════════════════════', 'term-highlight');
             termAppend(`📊 CHARACTER STATS - ${p.name.toUpperCase()}`, 'term-highlight');
             termAppend('═══════════════════════════════════════════════════', 'term-highlight');
             termAppend('');
-            
+
             // Basic Info
             const className = p.hasEvolved ? getAdvancedClassName(p) : (p.className || p.class);
             termAppend(`<span style="color:var(--highlight-color);">Name:</span> ${p.name}`);
             termAppend(`<span style="color:var(--highlight-color);">Class:</span> ${className} ${p.hasEvolved ? '<span style="color:#FFD700;">⚡ (Evolved)</span>' : ''}`);
             termAppend(`<span style="color:var(--highlight-color);">Level:</span> ${p.level}`);
             termAppend('');
-            
+
             // Resources
-            termAppend(`<span style="color:#ff6666;">❤️  HP:</span> ${p.hp} / ${p.maxHp}`);
-            termAppend(`<span style="color:#4488ff;">✨ MP:</span> ${p.mp} / ${p.maxMp}`);
+            const gemHp  = p._gemHpBonus  || 0;
+            const gemMp  = p._gemMpBonus  || 0;
+            const gemDef = p._gemDefBonus || 0;
+            termAppend(`<span style="color:#ff6666;">❤️  HP:</span> ${p.hp} / ${p.maxHp}${gemHp > 0 ? ` <span style="color:#aaffaa;">(+${gemHp} from gems)</span>` : ''}`);
+            termAppend(`<span style="color:#4488ff;">✨ MP:</span> ${p.mp} / ${p.maxMp}${gemMp > 0 ? ` <span style="color:#aaffaa;">(+${gemMp} from gems)</span>` : ''}`);
             termAppend(`<span style="color:#FFD700;">💰 Gold:</span> ${p.gold}g`);
             termAppend(`<span style="color:var(--text-color);">⭐ XP:</span> ${p.xp} / ${p.xpToNext} (${Math.floor((p.xp / p.xpToNext) * 100)}%)`);
             termAppend('');
-            
+
             // Combat Stats
             termAppend('<span style="color:var(--highlight-color);">═══ COMBAT STATS ═══</span>');
-            
-            // Primary Stats (D&D style if they exist)
+
+            // Primary Stats
             if (p.str !== undefined) {
                 termAppend(`<span style="color:#FF8800;">STR:</span> ${p.str} (Strength)`);
                 termAppend(`<span style="color:#00FF88;">DEX:</span> ${p.dex} (Dexterity)`);
@@ -18042,7 +18045,7 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 termAppend(`<span style="color:#FFD700;">LCK:</span> ${p.lck} (Luck)`);
                 termAppend('');
             }
-            
+
             // Legacy stats
             if (p.strength !== undefined) {
                 termAppend(`<span style="color:#FF8800;">Strength:</span> ${p.strength}`);
@@ -18051,42 +18054,166 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 termAppend(`<span style="color:#00FF88;">Speed:</span> ${p.speed}`);
                 termAppend('');
             }
-            
-            // Derived Stats
+
+            // Derived Stats — quality-adjusted
             const weapon = WEAPONS[p.weapon];
-            const armor = ARMOR[p.armor];
-            const weaponDmg = weapon ? `${weapon.baseDamage}-${weapon.maxDamage || weapon.baseDamage}` : '0';
-            const weaponMag = weapon && weapon.baseMagicDamage ? `+${weapon.baseMagicDamage}` : '';
-            const armorDef = armor ? armor.baseDefense : 0;
-            
-            termAppend(`<span style="color:#FF4444;">⚔️  Weapon Damage:</span> ${weaponDmg} ${weaponMag}`);
-            termAppend(`<span style="color:#4444FF;">🛡️  Armor Defense:</span> ${armorDef}`);
-            termAppend(`<span style="color:#FFD700;">🎯 Crit Chance:</span> ${calcCritChance(p.lck || 0, p)}%`);
-            
-            // Rogue Shadow Strike status
+            const armor  = ARMOR[p.armor];
+
+            // Weapon damage with quality bonus
+            let weaponDmgStr = '0';
+            let weaponMagStr = '';
+            let gemMeleeDmg = 0, gemMagicDmg = 0, gemCritBonus = 0;
+            let gemLightning = 0, gemFire = 0, gemFrost = 0, gemLifesteal = 0, gemPoison = 0, gemPierce = 0, gemSpellLeech = 0;
+
+            if (weapon && !weapon.unarmed) {
+                const qc  = QUALITY_CONFIG[weapon.quality];
+                const qb  = getQualityBonus(weapon.quality, weapon.baseDamage);
+                const tMin = weapon.baseDamage + qb;
+                const tMax = (weapon.maxDamage || weapon.baseDamage) + getQualityBonus(weapon.quality, (weapon.maxDamage || weapon.baseDamage) - weapon.baseDamage);
+                weaponDmgStr = `<span style="color:${qc?.color||'#0f0'};">${tMin}-${tMax}</span>`;
+                if (weapon.baseMagicDamage) {
+                    const tMag = weapon.baseMagicDamage + Math.floor(weapon.baseMagicDamage * (qc?.bonusPct || 0));
+                    weaponMagStr = ` | <span style="color:#8888FF;">MAG: +${tMag}</span>`;
+                }
+
+                // Tally gem combat bonuses from weapon
+                for (const g of (weapon.gems || [])) {
+                    if (!g?.stats) continue;
+                    gemMeleeDmg  += g.stats.weaponDmg    || 0;
+                    gemMagicDmg  += g.stats.spellPower   || 0;
+                    gemCritBonus += g.stats.critBonus     || 0;
+                    gemLightning += g.stats.lightningDmg  || 0;
+                    gemFire      += g.stats.fireDmg       || 0;
+                    gemFrost     += g.stats.frostDmg      || 0;
+                    gemLifesteal += g.stats.lifesteal     || 0;
+                    gemPoison    += g.stats.poisonChance  || 0;
+                    gemPierce    += g.stats.armorPierce   || 0;
+                    gemSpellLeech+= g.stats.spellLeech    || 0;
+                }
+            }
+
+            // Armor defense with quality bonus + gem bonus
+            let armorDefStr = '0';
+            let armorMagStr = '';
+            if (armor && !armor.unarmored) {
+                const aqc  = QUALITY_CONFIG[armor.quality];
+                const aqb  = getQualityBonus(armor.quality, armor.baseDefense);
+                const tDef = armor.baseDefense + aqb + (p.con || 0) + gemDef;
+                const baseDef = armor.baseDefense + aqb + (p.con || 0);
+                armorDefStr = gemDef > 0
+                    ? `<span style="color:${aqc?.color||'#0f0'};">${baseDef}</span> <span style="color:#aaffaa;">(+${gemDef} gems = ${tDef} total)</span>`
+                    : `<span style="color:${aqc?.color||'#0f0'};">${baseDef}</span>`;
+                if (armor.baseMagicBonus) {
+                    const tMag = armor.baseMagicBonus + Math.floor(armor.baseMagicBonus * (aqc?.bonusPct || 0));
+                    armorMagStr = ` | <span style="color:#8888FF;">MAG+: ${tMag}</span>`;
+                }
+
+                // Tally gem combat bonuses from armor too
+                for (const g of (armor.gems || [])) {
+                    if (!g?.stats) continue;
+                    gemMeleeDmg  += g.stats.weaponDmg    || 0;
+                    gemCritBonus += g.stats.critBonus     || 0;
+                    gemLightning += g.stats.lightningDmg  || 0;
+                    gemFire      += g.stats.fireDmg       || 0;
+                    gemFrost     += g.stats.frostDmg      || 0;
+                    gemLifesteal += g.stats.lifesteal     || 0;
+                    gemPoison    += g.stats.poisonChance  || 0;
+                    gemPierce    += g.stats.armorPierce   || 0;
+                }
+            }
+
+            const totalCrit = calcCritChance(p.lck || 0, p) + gemCritBonus;
+            termAppend(`<span style="color:#FF4444;">⚔️  Weapon Damage:</span> ${weaponDmgStr}${weaponMagStr}`);
+            if (gemMeleeDmg > 0)  termAppend(`<span style="color:#aaffaa;">   💎 +${gemMeleeDmg} melee dmg from gems</span>`);
+            if (gemMagicDmg > 0)  termAppend(`<span style="color:#aaffaa;">   💎 +${gemMagicDmg} spell power from gems</span>`);
+            termAppend(`<span style="color:#4488FF;">🛡️  Armor Defense:</span> ${armorDefStr}${armorMagStr}`);
+            termAppend(`<span style="color:#FFD700;">🎯 Crit Chance:</span> ${totalCrit}%${gemCritBonus > 0 ? ` <span style="color:#aaffaa;">(+${gemCritBonus}% from gems)</span>` : ''}`);
+
+            // Gem combat bonuses summary
+            const elemTotal = gemLightning + gemFire + gemFrost;
+            if (elemTotal > 0 || gemLifesteal > 0 || gemPoison > 0 || gemPierce > 0 || gemSpellLeech > 0) {
+                termAppend('');
+                termAppend('<span style="color:var(--highlight-color);">═══ GEM COMBAT BONUSES ═══</span>');
+                if (gemLightning > 0) termAppend(`<span style="color:#88CCFF;">   ⚡ Lightning Damage: +${gemLightning}</span>`);
+                if (gemFire > 0)      termAppend(`<span style="color:#FF6600;">   🔥 Fire Damage: +${gemFire}</span>`);
+                if (gemFrost > 0)     termAppend(`<span style="color:#88EEFF;">   ❄️  Frost Damage: +${gemFrost}</span>`);
+                if (gemLifesteal > 0) termAppend(`<span style="color:#FF4488;">   🩸 Lifesteal: ${gemLifesteal}% of damage dealt</span>`);
+                if (gemPoison > 0)    termAppend(`<span style="color:#00EE00;">   💀 Poison Chance: ${gemPoison}%</span>`);
+                if (gemPierce > 0)    termAppend(`<span style="color:#FFAA00;">   🗡️  Armor Pierce: ${gemPierce}%</span>`);
+                if (gemSpellLeech > 0)termAppend(`<span style="color:#AA55FF;">   🔮 Spell Leech: ${gemSpellLeech}% → MP</span>`);
+            }
+
+            // Rogue Shadow Strike
             const baseClass = p.baseClass || p.class;
             if (baseClass === 'rogue') {
+                termAppend('');
                 if (p.shadowStrikeReady) {
                     termAppend(`<span style="color:#8888FF;">🌑 Shadow Strike:</span> READY! (Next attack guaranteed crit)`);
                 } else {
-                    termAppend(`<span style="color:#666666;">🌑 Shadow Strike:</span> On cooldown (activate after 5s out of combat)`);
+                    termAppend(`<span style="color:#666666;">🌑 Shadow Strike:</span> On cooldown`);
                 }
             }
-            
+
             // Class damage multiplier if evolved
             if (p.hasEvolved) {
+                termAppend('');
                 const dmgMult = getClassDamageMultiplier(p);
                 termAppend(`<span style="color:#FFD700;">⚡ Damage Multiplier:</span> ${dmgMult}x (Class Evolution)`);
             }
-            
+
             termAppend('');
-            
+
             // Equipment
             termAppend('<span style="color:var(--highlight-color);">═══ EQUIPMENT ═══</span>');
-            termAppend(`<span style="color:#FFD700;">Weapon:</span> ${weapon ? weapon.name : 'None'}`);
-            termAppend(`<span style="color:#4488FF;">Armor:</span> ${armor ? armor.name : 'None'}`);
+
+            // Weapon with gems
+            if (weapon && !weapon.unarmed) {
+                const qc = QUALITY_CONFIG[weapon.quality];
+                termAppend(`<span style="color:#FFD700;">Weapon:</span> <span style="color:${qc?.color||'#0f0'};">${weapon.name}</span>`);
+                if (weapon.modifiers && weapon.modifiers.length > 0 && typeof WEAPON_MODIFIERS !== 'undefined') {
+                    weapon.modifiers.forEach(mk => {
+                        const mod = WEAPON_MODIFIERS[mk];
+                        if (mod) termAppend(`<span style="color:${mod.color};">   • ${mod.name}${mod.minDamage ? ` (${mod.minDamage}-${mod.maxDamage})` : ''}</span>`);
+                    });
+                }
+                const wSlots = getGemSlots(weapon.quality);
+                if (wSlots > 0) {
+                    const wGems = weapon.gems || [];
+                    for (let i = 0; i < wSlots; i++) {
+                        const g = wGems[i];
+                        if (g) {
+                            termAppend(`<span style="color:${g.color};">   💎 ${g.name}: ${g.description}</span>`);
+                        } else {
+                            termAppend(`<span style="color:#333;">   ○ Empty gem slot</span>`);
+                        }
+                    }
+                }
+            } else {
+                termAppend(`<span style="color:#FFD700;">Weapon:</span> ${weapon ? weapon.name : 'None'}`);
+            }
+
+            // Armor with gems
+            if (armor && !armor.unarmored) {
+                const aqc = QUALITY_CONFIG[armor.quality];
+                termAppend(`<span style="color:#4488FF;">Armor:</span> <span style="color:${aqc?.color||'#0f0'};">${armor.name}</span>`);
+                const aSlots = getGemSlots(armor.quality);
+                if (aSlots > 0) {
+                    const aGems = armor.gems || [];
+                    for (let i = 0; i < aSlots; i++) {
+                        const g = aGems[i];
+                        if (g) {
+                            termAppend(`<span style="color:${g.color};">   💎 ${g.name}: ${g.description}</span>`);
+                        } else {
+                            termAppend(`<span style="color:#333;">   ○ Empty gem slot</span>`);
+                        }
+                    }
+                }
+            } else {
+                termAppend(`<span style="color:#4488FF;">Armor:</span> ${armor ? armor.name : 'None'}`);
+            }
+
             termAppend('');
-            
+
             // Active Buffs
             if (p.activeBuffs && Object.keys(p.activeBuffs).length > 0) {
                 termAppend('<span style="color:var(--highlight-color);">═══ ACTIVE BUFFS ═══</span>');
@@ -18096,25 +18223,23 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                         const minutes = Math.floor(timeLeft / 60);
                         const seconds = timeLeft % 60;
                         const timeStr = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
-                        
                         let buffName = buffType.replace('buff_', '').toUpperCase();
                         termAppend(`<span style="color:#00FF88;">✨ ${buffName}:</span> +${buff.power} (${timeStr})`);
                     }
                 }
                 termAppend('');
             }
-            
+
             // Progress
             termAppend('<span style="color:var(--highlight-color);">═══ PROGRESSION ═══</span>');
             termAppend(`<span style="color:#FFD700;">Defeated Masters:</span> ${p.defeatedMasters?.length || 0}`);
             termAppend(`<span style="color:#4488FF;">Unlocked Areas:</span> ${p.unlockedAreas?.length || 0}`);
             termAppend(`<span style="color:#FF8800;">Known Spells:</span> ${p.knownSpells?.length || 0}`);
             termAppend(`<span style="color:#00FF88;">Inventory Items:</span> ${p.inventory?.length || 0}`);
-            
+
             termAppend('');
             termAppend('═══════════════════════════════════════════════════', 'term-highlight');
         }
-
         function attemptFlee() {
             const cs = gameState.combatState;
             if (!cs) return;
