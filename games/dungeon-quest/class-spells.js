@@ -1182,3 +1182,298 @@ const CLASS_SPELL_TREES = {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { CLASS_SPELL_TREES };
 }
+
+// ═══════════════════════════════════════════════════════════════
+// ADVANCED CLASS EVOLUTION SPELLS (Level 20+)
+// Granted automatically on class evolution — not purchasable.
+// These are injected into the SPELLS object at load time.
+// ═══════════════════════════════════════════════════════════════
+const ADVANCED_CLASS_SPELLS = {
+
+    // ── WARLORD (Warrior) ────────────────────────────────────────
+    battle_fury: {
+        name: 'Battle Fury',
+        mpCost: 40,
+        minPower: 100,
+        maxPower: 180,
+        type: 'aoe_damage',
+        description: 'Enter a berserker rage, striking all enemies with wild abandon.',
+        evolvedClass: 'warlord'
+    },
+    titan_strike: {
+        name: 'Titan Strike',
+        mpCost: 50,
+        minPower: 140,
+        maxPower: 260,
+        type: 'damage',
+        description: 'A single earth-shattering blow that ignores armor. Lightning crackles on impact.',
+        evolvedClass: 'warlord'
+        // "lightning" in description triggers stun chance via name-check
+    },
+
+    // ── SHADOWMASTER (Rogue) ─────────────────────────────────────
+    shadow_strike: {
+        name: 'Shadow Strike',
+        mpCost: 35,
+        minPower: 120,
+        maxPower: 220,
+        type: 'damage',
+        description: 'Step through shadow itself and deliver a devastating blow from behind.',
+        evolvedClass: 'shadowmaster'
+        // "shadow" triggers blind on hit
+    },
+    void_step: {
+        name: 'Void Step',
+        mpCost: 45,
+        minPower: 150,
+        maxPower: 280,
+        type: 'lifesteal',
+        lifestealPercent: 35,
+        description: 'Phase through the void, draining life force from shadow as you emerge.',
+        evolvedClass: 'shadowmaster'
+    },
+
+    // ── HIGH PRIEST (Acolyte) ────────────────────────────────────
+    divine_judgment: {
+        name: 'Divine Judgment',
+        mpCost: 55,
+        minPower: 130,
+        maxPower: 240,
+        type: 'aoe_damage',
+        description: 'Call down holy fire upon all enemies. The wicked are judged and found wanting.',
+        evolvedClass: 'high_priest'
+        // "fire" in description triggers burning on hits
+    },
+    mass_resurrection: {
+        name: 'Mass Resurrection',
+        mpCost: 80,
+        minPower: 200,
+        maxPower: 350,
+        type: 'heal',
+        description: 'Channel the full might of the divine. Restores a massive amount of HP.',
+        evolvedClass: 'high_priest'
+    },
+    holy_nova: {
+        name: 'Holy Nova',
+        mpCost: 60,
+        minPower: 110,
+        maxPower: 200,
+        type: 'aoe_damage',
+        description: 'Release a shockwave of holy light that burns all enemies with sacred flame.',
+        evolvedClass: 'high_priest'
+        // "flame" triggers burning
+    },
+
+    // ── LICH (Necrolyte) ─────────────────────────────────────────
+    death_wave: {
+        name: 'Death Wave',
+        mpCost: 65,
+        minPower: 120,
+        maxPower: 230,
+        type: 'aoe_damage',
+        description: 'Send a wave of necrotic energy washing over all enemies, withering the living.',
+        evolvedClass: 'lich'
+    },
+    summon_undead_army: {
+        name: 'Undead Army',
+        mpCost: 90,
+        minPower: 160,
+        maxPower: 300,
+        type: 'aoe_damage',
+        description: 'Raise the fallen as your servants. They tear into every living enemy.',
+        evolvedClass: 'lich'
+    },
+    soul_drain: {
+        name: 'Soul Drain',
+        mpCost: 50,
+        minPower: 130,
+        maxPower: 240,
+        type: 'lifesteal',
+        lifestealPercent: 40,
+        description: 'Rip the soul from your enemy, consuming it to restore your own life force.',
+        evolvedClass: 'lich'
+    },
+
+    // ── DEADEYE (Archer) ─────────────────────────────────────────
+    piercing_shot: {
+        name: 'Piercing Shot',
+        mpCost: 35,
+        minPower: 130,
+        maxPower: 240,
+        type: 'damage',
+        description: 'Fire a lightning-charged arrow that pierces straight through armor.',
+        evolvedClass: 'deadeye'
+        // "lightning" triggers stun chance
+    },
+    rain_of_arrows: {
+        name: 'Rain of Arrows',
+        mpCost: 55,
+        minPower: 90,
+        maxPower: 170,
+        type: 'aoe_damage',
+        description: 'Loose a volley of arrows into the sky. They rain down on every enemy.',
+        evolvedClass: 'deadeye'
+    },
+
+    // ── ARCHDRUID (Druid) ────────────────────────────────────────
+    natures_wrath: {
+        name: "Nature's Wrath",
+        mpCost: 60,
+        minPower: 120,
+        maxPower: 220,
+        type: 'aoe_damage',
+        description: 'Summon lightning from the sky to smite all enemies with primal fury.',
+        evolvedClass: 'archdruid'
+        // "lightning" triggers stun
+    },
+    wild_shape: {
+        name: 'Wild Shape',
+        mpCost: 45,
+        minPower: 140,
+        maxPower: 260,
+        type: 'damage',
+        description: 'Transform into a primal beast and maul your target with savage ferocity.',
+        evolvedClass: 'archdruid'
+    },
+    earthquake: {
+        name: 'Earthquake',
+        mpCost: 70,
+        minPower: 130,
+        maxPower: 250,
+        type: 'aoe_damage',
+        description: 'Split the earth beneath your enemies, burying them in stone and fire.',
+        evolvedClass: 'archdruid'
+        // "fire" triggers burning
+    },
+
+    // ── ARCHMAGE (Sorceror) ──────────────────────────────────────
+    apocalypse: {
+        name: 'Apocalypse',
+        mpCost: 90,
+        minPower: 180,
+        maxPower: 340,
+        type: 'aoe_damage',
+        description: 'Unmake reality itself. Fire, frost, and lightning consume all enemies at once.',
+        evolvedClass: 'archmage'
+        // "fire" triggers burning
+    },
+    time_stop: {
+        name: 'Time Stop',
+        mpCost: 80,
+        minPower: 150,
+        maxPower: 280,
+        type: 'damage',
+        description: 'Freeze time around your target. They cannot react as you deliver the killing blow.',
+        evolvedClass: 'archmage'
+        // "freeze" triggers frozen
+    },
+    disintegrate: {
+        name: 'Disintegrate',
+        mpCost: 70,
+        minPower: 170,
+        maxPower: 320,
+        type: 'damage',
+        description: 'Fire a focused beam of pure arcane energy that reduces the target to ash.',
+        evolvedClass: 'archmage'
+    },
+
+    // ── BEASTLORD (Hunter) ───────────────────────────────────────
+    beast_stampede: {
+        name: 'Beast Stampede',
+        mpCost: 60,
+        minPower: 110,
+        maxPower: 200,
+        type: 'aoe_damage',
+        description: 'Your bonded beasts charge in a thundering stampede, trampling all enemies.',
+        evolvedClass: 'beastlord'
+    },
+    primal_bond: {
+        name: 'Primal Bond',
+        mpCost: 50,
+        minPower: 120,
+        maxPower: 220,
+        type: 'lifesteal',
+        lifestealPercent: 30,
+        description: 'Channel the life force of the wild itself, draining vitality from your enemy.',
+        evolvedClass: 'beastlord'
+    },
+
+    // ── CRUSADER (Paladin) ───────────────────────────────────────
+    holy_crusade: {
+        name: 'Holy Crusade',
+        mpCost: 60,
+        minPower: 120,
+        maxPower: 220,
+        type: 'aoe_damage',
+        description: 'Call down divine holy flame upon all enemies. The unrighteous are consumed.',
+        evolvedClass: 'crusader'
+        // "flame" triggers burning
+    },
+    divine_shield: {
+        name: 'Divine Shield',
+        mpCost: 45,
+        minPower: 180,
+        maxPower: 320,
+        type: 'heal',
+        description: 'Surround yourself in holy light. Channels divine energy to restore a great deal of HP.',
+        evolvedClass: 'crusader'
+    },
+    smite_evil: {
+        name: 'Smite Evil',
+        mpCost: 40,
+        minPower: 140,
+        maxPower: 260,
+        type: 'damage',
+        description: 'Channel the wrath of the heavens into a single devastating strike of lightning.',
+        evolvedClass: 'crusader'
+        // "lightning" triggers stun
+    },
+
+    // ── DEMONLORD (Warlock) ──────────────────────────────────────
+    summon_demon: {
+        name: 'Summon Demon',
+        mpCost: 70,
+        minPower: 140,
+        maxPower: 260,
+        type: 'aoe_damage',
+        description: 'Rip a demon from the infernal plane. It tears through all enemies in a shadow frenzy.',
+        evolvedClass: 'demonlord'
+        // "shadow" triggers blind
+    },
+    dark_pact: {
+        name: 'Dark Pact',
+        mpCost: 55,
+        minPower: 160,
+        maxPower: 300,
+        type: 'lifesteal',
+        lifestealPercent: 45,
+        description: 'Forge a pact with darkness itself, converting your enemy\'s life force into your own.',
+        evolvedClass: 'demonlord'
+    },
+    soul_harvest: {
+        name: 'Soul Harvest',
+        mpCost: 80,
+        minPower: 130,
+        maxPower: 250,
+        type: 'aoe_damage',
+        description: 'Reap the souls of all enemies at once. Shadow tendrils drag them into the void.',
+        evolvedClass: 'demonlord'
+        // "shadow" triggers blind
+    }
+};
+
+// ── Inject into SPELLS at load time ──────────────────────────────
+// Works whether SPELLS is already defined or not
+if (typeof window !== 'undefined') {
+    window.ADVANCED_CLASS_SPELLS = ADVANCED_CLASS_SPELLS;
+    // Merge into SPELLS when available — retry if SPELLS not yet loaded
+    function _injectAdvancedSpells() {
+        if (typeof SPELLS !== 'undefined') {
+            Object.assign(SPELLS, ADVANCED_CLASS_SPELLS);
+            console.log('✅ Advanced class spells injected:', Object.keys(ADVANCED_CLASS_SPELLS).length, 'spells');
+        } else {
+            setTimeout(_injectAdvancedSpells, 100);
+        }
+    }
+    _injectAdvancedSpells();
+}
