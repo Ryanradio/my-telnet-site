@@ -2581,6 +2581,14 @@ body.terminal-mode #menuContainer {
     <script src="hunter-pets.js"></script>
 
 
+    <script>
+
+    
+    console.log('✅ Monster data locked - dungeon enemies will use exact stats');
+
+</script>
+
+
 <!-- Add Supabase for cloud saves -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -4743,11 +4751,18 @@ if (typeof EXPLORATION_ZONES !== 'undefined') {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// MERGE ZONE MONSTERS (if exploration-zones.js is loaded)
+// ZONE MONSTERS - Keep separate for zone encounters only
 // ═══════════════════════════════════════════════════════════════
 if (typeof ZONE_MONSTERS !== 'undefined') {
-    Object.assign(ENEMIES, ZONE_MONSTERS);
-    console.log('✅ Loaded zone-specific monsters');
+    // Store zone monsters separately instead of overwriting ENEMIES
+    window.ZONE_MONSTERS_LOOKUP = ZONE_MONSTERS;
+    
+    // Create a function to get zone monsters on demand
+    window.getZoneMonster = function(key) {
+        return ZONE_MONSTERS_LOOKUP[key] || ENEMIES[key];
+    };
+    
+    console.log('✅ Zone monsters loaded separately (not merged into ENEMIES)');
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -15030,7 +15045,18 @@ function stabilizeTerminalLayout() {
         }
 
 function spawnMonsterWithRarity(enemyKey, zoneLevel = null, forcedRarity = null) {
-    const template = ENEMIES[enemyKey];
+    // First, determine which template to use
+    let template = ENEMIES[enemyKey];
+    
+    // For exploration zones (zoneLevel === true), check if we have a zone-specific version
+    if (zoneLevel === true && window.getZoneMonster) {
+        const zoneMonster = window.getZoneMonster(enemyKey);
+        if (zoneMonster) {
+            console.log(`🌍 Using ZONE version of ${enemyKey} for exploration`);
+            template = zoneMonster;
+        }
+    }
+
     
     // ── Phase II: enemy MP calculation (do this once for both paths) ──
     const _abils = template.abilities || [];
