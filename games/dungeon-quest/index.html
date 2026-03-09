@@ -15029,85 +15029,110 @@ function stabilizeTerminalLayout() {
             localSave();
         }
 
-        function spawnMonsterWithRarity(enemyKey, zoneLevel = null, forcedRarity = null) {
-            const template = ENEMIES[enemyKey];
-            // Dungeon enemies pass a forcedRarity (default 'common' = no random roll).
-            // Exploration enemies always roll randomly (forcedRarity = null).
-            const rarity   = (forcedRarity && RARITY_CONFIG[forcedRarity]) ? forcedRarity : rollRarity();
-            const mult     = RARITY_CONFIG[rarity].multiplier;
-            
-            // Determine monster level (use template level for dungeons, zone level for exploration)
-            let monsterLevel = template.level;
-            if (zoneLevel !== null && zoneLevel !== false) {
-                // Random level within zone range (exploration zones only)
-                const location = LOCATIONS[gameState.currentLocation];
-                if (location && location.enemyLevelRange) {
-                    const [minLvl, maxLvl] = location.enemyLevelRange;
-                    monsterLevel = minLvl + Math.floor(Math.random() * (maxLvl - minLvl + 1));
-                }
-            }
-            
-            // Scale stats based on monster level
-            const levelMult = 1 + (monsterLevel - 1) * 0.10; // 10% increase per level
-            
-            // ── Damage variance: use template min/max if available, otherwise calculate from baseDamage ──
-            let scaledMin, scaledMax, scaledAvg;
-            
-            if (template.minDamage !== undefined && template.maxDamage !== undefined) {
-                // Use template's predefined min/max damage
-                scaledMin = Math.max(1, Math.floor(template.minDamage * mult * levelMult));
-                scaledMax = Math.max(scaledMin + 1, Math.floor(template.maxDamage * mult * levelMult));
-                scaledAvg = Math.floor((scaledMin + scaledMax) / 2);
-            } else {
-                // Fallback: calculate from baseDamage (±33% variance)
-                scaledAvg = Math.floor(template.baseDamage * mult * levelMult);
-                scaledMin = Math.max(1, Math.round(scaledAvg * 0.67));
-                scaledMax = Math.max(scaledMin + 1, Math.round(scaledAvg * 1.33));
-            }
-
-            const monster = {
-                key: enemyKey, 
-                name: template.name, 
-                rarity, 
-                rarityColor: RARITY_CONFIG[rarity].color,
-                hp: Math.floor(template.baseHp * mult * levelMult), 
-                maxHp: Math.floor(template.baseHp * mult * levelMult),
-                // damage is the average (kept for backwards-compat); min/max used in combat
-                damage:    scaledAvg,
-                minDamage: scaledMin,
-                maxDamage: scaledMax,
-                defense: Math.floor(template.baseDefense * mult * levelMult),
-                xp: Math.floor(template.baseXp * mult * levelMult),
-                gold: Math.floor(template.baseGold * mult * levelMult),
-                level: monsterLevel, 
-                possibleDrops: template.possibleDrops, 
-                dropRates: template.dropRates,
-                // Copy abilities array from template (these are read-only behavior data,
-                // not scaled — they reference the original objects directly)
-                abilities: template.abilities || [],
-                isBoss: template.isBoss || false,
-                magicAttack: template.magicAttack || false,
-                // Initialise MP from ability costs so monsters can actually afford their abilities
-                baseMp: template.baseMp || (template.abilities
-                    ? Math.max(0, ...template.abilities.map(a => a.mpCost || 0)) * 3
-                    : 0),
-                mp: template.baseMp || (template.abilities
-                    ? Math.max(0, ...template.abilities.map(a => a.mpCost || 0)) * 3
-                    : 0),
-            };
-
-            // ── Phase II: enemy MP ───────────────────────────────────
-            // Each ability that costs MP gets exactly 2 casts worth of MP.
-            // If multiple abilities have mpCost, use the highest (one pool).
-            // Enemies with no mpCost abilities get 0 MP (irrelevant).
-            const _abils = monster.abilities || [];
-            const _maxMpCost = _abils.reduce((max, a) => Math.max(max, a.mpCost || 0), 0);
-            monster.baseMp = _maxMpCost * 2;   // enough for exactly 2 ability uses
-            monster.mp     = monster.baseMp;
-            monster.mpDepleted = false;         // flag: fires "exhausted" debug once
-            
-            return monster;
+function spawnMonsterWithRarity(enemyKey, zoneLevel = null, forcedRarity = null) {
+    const template = ENEMIES[enemyKey];
+    
+    // ── Phase II: enemy MP calculation (do this once for both paths) ──
+    const _abils = template.abilities || [];
+    const _maxMpCost = _abils.reduce((max, a) => Math.max(max, a.mpCost || 0), 0);
+    const baseMp = _maxMpCost * 2;   // enough for exactly 2 ability uses
+    
+    // SPECIAL CASE: Dungeon enemies (forcedRarity is provided) - use EXACT template stats, NO modifications!
+    if (forcedRarity !== null) {
+        // Use template level directly, no scaling
+        const monsterLevel = template.level;
+        
+        // Use base stats directly - NO multipliers, NO level scaling
+        let minDamage = template.minDamage;
+        let maxDamage = template.maxDamage;
+        let avgDamage = template.baseDamage;
+        
+        // If template doesn't have min/max, calculate from baseDamage
+        if (minDamage === undefined || maxDamage === undefined) {
+            minDamage = Math.max(1, Math.round(template.baseDamage * 0.67));
+            maxDamage = Math.max(minDamage + 1, Math.round(template.baseDamage * 1.33));
+            avgDamage = template.baseDamage;
         }
+        
+        return {
+            key: enemyKey, 
+            name: template.name, 
+            rarity: forcedRarity,
+            rarityColor: RARITY_CONFIG[forcedRarity]?.color || "#cccccc",
+            hp: template.baseHp, 
+            maxHp: template.baseHp,
+            damage: avgDamage,
+            minDamage: minDamage,
+            maxDamage: maxDamage,
+            defense: template.baseDefense,
+            xp: template.baseXp,
+            gold: template.baseGold,
+            level: monsterLevel, 
+            possibleDrops: template.possibleDrops, 
+            dropRates: template.dropRates,
+            abilities: template.abilities || [],
+            isBoss: template.isBoss || false,
+            magicAttack: template.magicAttack || false,
+            baseMp: baseMp,
+            mp: baseMp,
+            mpDepleted: false,
+        };
+    }
+    
+    // ORIGINAL CODE for exploration enemies (random rarity, zone scaling) continues below...
+    const rarity = rollRarity();
+    const mult = RARITY_CONFIG[rarity].multiplier;
+    
+    // Determine monster level (zone scaling for exploration)
+    let monsterLevel = template.level;
+    if (zoneLevel !== null && zoneLevel !== false) {
+        const location = LOCATIONS[gameState.currentLocation];
+        if (location && location.enemyLevelRange) {
+            const [minLvl, maxLvl] = location.enemyLevelRange;
+            monsterLevel = minLvl + Math.floor(Math.random() * (maxLvl - minLvl + 1));
+        }
+    }
+    
+    // Apply level scaling for exploration
+    const levelMult = 1 + (monsterLevel - 1) * 0.10;
+    
+    // Damage calculation with scaling...
+    let scaledMin, scaledMax, scaledAvg;
+    
+    if (template.minDamage !== undefined && template.maxDamage !== undefined) {
+        scaledMin = Math.max(1, Math.floor(template.minDamage * mult * levelMult));
+        scaledMax = Math.max(scaledMin + 1, Math.floor(template.maxDamage * mult * levelMult));
+        scaledAvg = Math.floor((scaledMin + scaledMax) / 2);
+    } else {
+        scaledAvg = Math.floor(template.baseDamage * mult * levelMult);
+        scaledMin = Math.max(1, Math.round(scaledAvg * 0.67));
+        scaledMax = Math.max(scaledMin + 1, Math.round(scaledAvg * 1.33));
+    }
+    
+    return {
+        key: enemyKey, 
+        name: template.name, 
+        rarity, 
+        rarityColor: RARITY_CONFIG[rarity].color,
+        hp: Math.floor(template.baseHp * mult * levelMult), 
+        maxHp: Math.floor(template.baseHp * mult * levelMult),
+        damage: scaledAvg,
+        minDamage: scaledMin,
+        maxDamage: scaledMax,
+        defense: Math.floor(template.baseDefense * mult * levelMult),
+        xp: Math.floor(template.baseXp * mult * levelMult),
+        gold: Math.floor(template.baseGold * mult * levelMult),
+        level: monsterLevel, 
+        possibleDrops: template.possibleDrops, 
+        dropRates: template.dropRates,
+        abilities: template.abilities || [],
+        isBoss: template.isBoss || false,
+        magicAttack: template.magicAttack || false,
+        baseMp: baseMp,
+        mp: baseMp,
+        mpDepleted: false,
+    };
+}
         
         function calculateXpReward(monster, playerLevel) {
             // Dynamic XP based on level difference and rarity
