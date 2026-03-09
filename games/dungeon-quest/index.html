@@ -14692,6 +14692,11 @@ function stabilizeTerminalLayout() {
                 for (let i = 0; i < numMonsters; i++) {
                     enemyKeys.push(location.encounters[Math.floor(Math.random() * location.encounters.length)]);
                 }
+// 🔴 ADD THIS DEBUG CODE 🔴
+    console.log('📍 Current location:', gameState.currentLocation);
+    console.log('🎲 Enemies spawned:', enemyKeys);
+    console.log('📋 Available enemies:', location.encounters);
+
                 startCombat(enemyKeys);
             } else {
                 termAppend(`You explore the area… but find nothing.`, 'term-dim');
@@ -18531,7 +18536,7 @@ const DAMAGE_COLORS = {
             // Calculate total from elemental parts
             elementalParts.forEach(part => {
                 const match = part.match(/\+(\d+)/);
-                if (match) elementalTotal += parseInt(match[1]);
+              // Duplicate  if (match) elementalTotal += parseInt(match[1]);
             });
             
             elementalString = ' + ' + elementalParts.join(' + ');
@@ -20154,6 +20159,8 @@ function checkCombatEnd() {
         const baseXp = dead.xp || (dead.level * 10);
         const baseGold = dead.gold || (dead.level * 5);
         
+
+        
         termAppend(
             `<span style="color:${dead.rarityColor};">${dead.name}</span> has been defeated!`,
             'term-victory'
@@ -20186,6 +20193,9 @@ function checkCombatEnd() {
         // Fire bestiary discovery event so UI can react immediately
         onMonsterKill(killKey, p2.kills[killKey], dead);
         cs.monsters.splice(ti, 1);
+
+// When a monster dies, log its key
+        console.log('💀 Monster killed - key:', killKey);
 
         // Adjust target after removal
         if (cs.currentTarget >= cs.monsters.length) {
