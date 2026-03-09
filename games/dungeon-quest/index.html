@@ -5699,6 +5699,18 @@ function buildSaveSnapshot() {
                 readEntries:     [...((p.chronicle && p.chronicle.readEntries)     || [])],
             },
 
+            // ═══════════════════════════════════════════════════════════════
+// GUILD QUESTS - Save active quests and completed quests
+// ═══════════════════════════════════════════════════════════════
+guildQuests: (() => {
+    const gq = gameState.guildQuests || {};
+    return {
+        active: gq.active || null,           // ← Changed from spreading array
+        completed: [...(gq.completed || [])], // completed is probably an array
+        progress: {...(gq.progress || {})}
+    };
+})(),
+
             // ── One-time welcome screen flags ──────────────────────────────
             hasSeenWelcome:              p.hasSeenWelcome              || false,
             hasSeenLegacyWelcome:        p.hasSeenLegacyWelcome        || false,
@@ -5890,7 +5902,6 @@ function buildSaveSnapshot() {
 
     return snapshot;
 }
-
 
 // ═══════════════════════════════════════════════════════════════════════
 // ██████████████████████████████████████████████████████████████████████
@@ -10285,9 +10296,8 @@ function showMainMenu() {
             <div style="color:var(--highlight-color); font-size:18px; margin-top:8px; letter-spacing:3px;">⚔️ ——————————————— ⚔️</div>
         </div>
         
-        <div class="menu-option" onclick="showCloudLoadScreen()" style="border-color: #AA88FF;">► ☁️ LOAD FROM CLOUD</div>
-        
         <div style="max-width: 400px; margin: 0 auto;">
+            <div class="menu-option" onclick="showCloudLoadScreen()" style="border-color: #AA88FF;">► ☁️ LOAD FROM CLOUD</div>
             <div class="menu-option" onclick="newGame()">► NEW GAME</div>
             <div class="menu-option ${!hasCharacters?'disabled':''}" onclick="${hasCharacters?'showCharacterSelect()':''}">
                 ► CONTINUE ${hasCharacters?`(${characters.length} local save${hasCharacters>1?'s':''})`:' (No saves)'}
@@ -10434,7 +10444,7 @@ function showMainMenu() {
                         return maps;
                     })(),
 
-                    // Restore enemy respawn timers (prune any that expired while offline)
+                                       // Restore enemy respawn timers (prune any that expired while offline)
                     dungeonTimers: (() => {
                         const timers = {};
                         const now = Date.now();
@@ -10448,11 +10458,15 @@ function showMainMenu() {
                     })(),
 
                     // ═══════════════════════════════════════════════════════════════
+                    // GUILD QUESTS - Restore from save data
+                    // ═══════════════════════════════════════════════════════════════
+                    guildQuests: data.player.guildQuests || { active: [], completed: [], progress: {} },
+
+                    // ═══════════════════════════════════════════════════════════════
                     // BESTIARY — restore kill counts (empty obj for old saves)
                     // ═══════════════════════════════════════════════════════════════
                     kills: Object.assign({}, data.player.kills || {}),
                     bestiaryRead: Object.assign({}, data.player.bestiaryRead || {}),
-
                     // ═══════════════════════════════════════════════════════════════
                     // CHRONICLE — restore lore state, initialise for old saves
                     // ═══════════════════════════════════════════════════════════════
@@ -10464,6 +10478,8 @@ function showMainMenu() {
                 
                 // Restore current town
                 gameState.currentTown = data.currentTown || 'town1';
+                // Sync guild quests from player object to gameState
+                gameState.guildQuests = gameState.player.guildQuests;
 
                 // ═══════════════════════════════════════════════════════════════
                 // MIGRATIONS — patch existing saves when base values change
@@ -11276,6 +11292,13 @@ function showMainMenu() {
                 activePet: classKey === 'hunter' ? null : undefined,  // hunters start with no pet, others don't use this
                 runeOverloadPips: classKey === 'runesmith' ? 0 : undefined  // runesmith overload charge tracker
                 
+            };
+
+            // Initialize guild quests for new character
+            gameState.guildQuests = {
+                active: [],      // No active quests at start
+                completed: [],   // No completed quests at start
+                progress: {}     // No progress at start
             };
             gameState.currentLocation = 'town';
             

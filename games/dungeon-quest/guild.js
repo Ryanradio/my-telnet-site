@@ -331,6 +331,8 @@ function acceptGuildQuest(questId, townId) {
     };
 
     saveGame();
+    localSave();
+    console.log('💾 Guild quest accepted - saved locally');
     showGuild();
 }
 
@@ -526,6 +528,7 @@ function checkGuildKillProgress(killKey) {
         if (typeof termAppend === 'function') {
             termAppend(`<span style="color:#4488FF;">📋 Guild: ${questDef.targetName} ${currentKills}/${killCount}</span>`, 'term-dim');
         }
+        localSave();
     }
 }
 
