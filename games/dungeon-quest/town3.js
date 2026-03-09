@@ -441,7 +441,7 @@ window.TOWNS.town3 = {
                 <div class="t3-row" onclick="saveGame()" style="border-color:#5a3d00;">
                     ► 💾 &nbsp;QUICK SAVE
                 </div>
-                <div class="menu-option" onclick="universalSave()" style="border-color: #AA88FF;">► ☁️ SAVE GAME (Local + Cloud)</div>
+                <div class="menu-option" onclick="cloudSave()" style="border-color: #AA88FF;">► ☁️ SAVE TO CLOUD</div>
                 <div class="t3-row" onclick="confirmQuitToMenu()" style="border-color:#3a1212;">
                     ► ⏏ &nbsp;QUIT TO MENU
                 </div>
