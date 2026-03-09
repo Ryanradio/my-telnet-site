@@ -10490,6 +10490,9 @@ function showMainMenu() {
                     knownSpells: data.player.knownSpells || [],
                     defeatedMasters: data.player.defeatedMasters || [],
                     unlockedAreas: data.player.unlockedAreas || [],
+                    activeBounties: data.player.activeBounties || [],
+                    pendingBounties: data.player.pendingBounties || [],
+                    collectedBounties: data.player.collectedBounties || {},
                     // Ensure bankGold exists (for old saves)
                     bankGold: data.player.bankGold || 0,
                     achievements: data.player.achievements || [],
