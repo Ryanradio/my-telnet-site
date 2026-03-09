@@ -476,9 +476,9 @@ window.checkBountyEncounter = function(locKey) {
 
     if (!matchingIds.length) return false;
 
-    // 5% chance per exploration tick
+    // 10% chance per exploration tick
     const roll = Math.random();
-    const hit  = roll < 0.05;
+    const hit  = roll < 0.10;
 
     if (_debug && typeof termAppend === 'function') {
         const names = matchingIds.map(id => BOUNTIES[id] ? BOUNTIES[id].name : id).join(', ');
