@@ -4013,38 +4013,76 @@ function applyGemBonuses(player, weapon) {
     }
 }
 
-// ── Recalculate player's gem-sourced HP and MP bonuses ──────────────────
-// Called on equip/unequip. Stores the delta in player._gemHpBonus so that
-// p.maxHp always reflects the current socketed gem configuration.
+// ── Recalculate player's gem-sourced bonuses ──────────────────
+// Called on equip/unequip. Stores the delta in player._gem* so that
+// player stats always reflect current socketed gem configuration.
 function recalcGemStats(player) {
     const weapon   = player.weapon ? WEAPONS[player.weapon]  : null;
     const armorObj = player.armor  ? ARMOR[player.armor]     : null;
     const allGems  = [...(weapon?.gems || []), ...(armorObj?.gems || [])];
 
-    let hpBonus  = 0, mpBonus  = 0, defBonus = 0;
+    let hpBonus    = 0, mpBonus    = 0, defBonus   = 0;
+    let strBonus   = 0, dexBonus   = 0, conBonus   = 0;
+    let wisBonus   = 0, chaBonus   = 0, lckBonus   = 0;
+    let critBonus  = 0, pierceBonus = 0, spellBonus = 0;
+    
     for (const gem of allGems) {
         if (!gem?.stats) continue;
-        hpBonus  += gem.stats.hpBonus      || 0;
-        mpBonus  += gem.stats.mpBonus      || 0;
-        defBonus += gem.stats.defenseBonus || 0;
+        
+        hpBonus    += gem.stats.hpBonus      || 0;
+        mpBonus    += gem.stats.mpBonus      || 0;
+        defBonus   += gem.stats.defenseBonus || 0;
+        strBonus   += gem.stats.strBonus     || 0;
+        dexBonus   += gem.stats.dexBonus     || 0;
+        conBonus   += gem.stats.conBonus     || 0;
+        wisBonus   += gem.stats.wisBonus     || 0;
+        chaBonus   += gem.stats.chaBonus     || 0;
+        lckBonus   += gem.stats.lckBonus     || 0;
+        critBonus  += gem.stats.critBonus    || 0;
+        pierceBonus+= gem.stats.armorPierce  || 0;
+        spellBonus += gem.stats.spellPower   || 0;
     }
 
-    // Remove old gem bonus from maxHp/maxMp before applying new total
+    // Remove old gem bonuses before applying new totals
     const oldHp  = player._gemHpBonus  || 0;
     const oldMp  = player._gemMpBonus  || 0;
+    const oldStr = player._gemStrBonus || 0;
+    const oldDex = player._gemDexBonus || 0;
+    const oldCon = player._gemConBonus || 0;
+    const oldWis = player._gemWisBonus || 0;
+    const oldCha = player._gemChaBonus || 0;
+    const oldLck = player._gemLckBonus || 0;
 
+    // Apply HP/MP changes
     player.maxHp = Math.max(1, player.maxHp - oldHp + hpBonus);
     player.maxMp = Math.max(0, player.maxMp - oldMp + mpBonus);
-    // Clamp current HP/MP so they don't exceed the new max
     player.hp    = Math.min(player.hp,  player.maxHp);
     player.mp    = Math.min(player.mp,  player.maxMp);
 
-    // Store new totals for next recalc
-    player._gemHpBonus  = hpBonus;
-    player._gemMpBonus  = mpBonus;
-    player._gemDefBonus = defBonus;   // used in HUD display
-}
+    // Apply stat changes - update base stats
+    player.str = (player.str || 0) - oldStr + strBonus;
+    player.dex = (player.dex || 0) - oldDex + dexBonus;
+    player.con = (player.con || 0) - oldCon + conBonus;
+    player.wis = (player.wis || 0) - oldWis + wisBonus;
+    player.cha = (player.cha || 0) - oldCha + chaBonus;
+    player.lck = (player.lck || 0) - oldLck + lckBonus;
 
+    // Store new totals for next recalc
+    player._gemHpBonus    = hpBonus;
+    player._gemMpBonus    = mpBonus;
+    player._gemDefBonus   = defBonus;
+    player._gemStrBonus   = strBonus;
+    player._gemDexBonus   = dexBonus;
+    player._gemConBonus   = conBonus;
+    player._gemWisBonus   = wisBonus;
+    player._gemChaBonus   = chaBonus;
+    player._gemLckBonus   = lckBonus;
+    player._gemCritBonus  = critBonus;
+    player._gemPierceBonus = pierceBonus;
+    player._gemSpellBonus = spellBonus;
+
+    console.log(`💎 Gem stats applied: STR +${strBonus}, DEX +${dexBonus}, CON +${conBonus}, etc.`);
+}
 
 
 
@@ -21798,28 +21836,43 @@ if (gemRoll < gemChance) {
         // ── Shared stat-allocation row builder (used by stats page + level-up modal) ──
         // pending = object tracking how many points queued for each stat this session
         function renderLiveStatRows(p, pending, pointsLeft) {
-            const affinities = CLASS_AFFINITIES[p.baseClass || p.class] || [];
-            let rows = '';
-            STAT_NAMES.forEach(s => {
-                const isAff  = affinities.includes(s);
-                const canUp  = pointsLeft > 0;
-                const base   = p[s] || 0;
-                const queued = pending[s] || 0;
-                const total  = base + queued;
-                rows += `
-                <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #1a4a1a;flex-wrap:wrap;">
-                    <span style="min-width:38px;color:${isAff?'var(--highlight-color)':'var(--text-color)'};font-weight:bold;">${STAT_LABELS[s]}</span>
-                    <span style="flex:1;min-width:110px;font-size:15px;color:#8aaa8a;">${STAT_DESCS[s]}${isAff?' ★':''}</span>
-                    <span style="min-width:28px;text-align:center;color:var(--highlight-color);font-size:22px;">${base}</span>
-                    ${queued > 0 ? `<span style="color:#00FF00;font-size:16px;">+${queued}</span>` : '<span style="min-width:20px;"></span>'}
-                    <button onclick="_statPend('${s}')" ${canUp?'':'disabled'}
-                        style="width:36px;height:36px;padding:0;font-size:22px;font-weight:bold;
-                               border-color:${canUp?'var(--text-color)':'#333'};
-                               color:${canUp?'var(--text-color)':'#333'};">+</button>
-                </div>`;
-            });
-            return rows;
+    const affinities = CLASS_AFFINITIES[p.baseClass || p.class] || [];
+    let rows = '';
+    
+    STAT_NAMES.forEach(s => {
+        const isAff  = affinities.includes(s);
+        const canUp  = pointsLeft > 0;
+        
+        // Calculate base stat (without gems)
+        const gemBonus = p[`_gem${s.charAt(0).toUpperCase() + s.slice(1)}Bonus`] || 0;
+        const baseStat = (p[s] || 0) - gemBonus;
+        const queued = pending[s] || 0;
+        const total = baseStat + gemBonus + queued;
+        
+        // Format the display string
+        let statDisplay;
+        if (gemBonus > 0) {
+            statDisplay = `<span style="color:var(--highlight-color);font-size:22px;">${baseStat}</span><span style="color:#FFD700;font-size:16px;">+${gemBonus}</span>`;
+        } else {
+            statDisplay = `<span style="color:var(--highlight-color);font-size:22px;">${baseStat}</span>`;
         }
+        
+        rows += `
+        <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #1a4a1a;flex-wrap:wrap;">
+            <span style="min-width:38px;color:${isAff?'var(--highlight-color)':'var(--text-color)'};font-weight:bold;">${STAT_LABELS[s]}</span>
+            <span style="flex:1;min-width:110px;font-size:15px;color:#8aaa8a;">${STAT_DESCS[s]}${isAff?' ★':''}</span>
+            <div style="min-width:70px;text-align:center;">
+                ${statDisplay}
+            </div>
+            ${queued > 0 ? `<span style="color:#00FF00;font-size:16px;">+${queued}</span>` : '<span style="min-width:20px;"></span>'}
+            <button onclick="_statPend('${s}')" ${canUp?'':'disabled'}
+                style="width:36px;height:36px;padding:0;font-size:22px;font-weight:bold;
+                       border-color:${canUp?'var(--text-color)':'#333'};
+                       color:${canUp?'var(--text-color)':'#333'};">+</button>
+        </div>`;
+    });
+    return rows;
+}
 
         // Pending points state (reset each time the stats page / modal opens)
         window._statPending = {};
