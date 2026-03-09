@@ -1713,6 +1713,436 @@ const ITEMS = {
         sellValue: 500,
         description: 'Somehow worth a lot of gold. You decide not to think too hard about it.',
     },
+
+        // ═══════════════════════════════════════════════════════════════
+    // RAW GEMS - Drop from enemies, need to be cut at blacksmith
+    // Format: raw_[type]_t[tier]
+    // ═══════════════════════════════════════════════════════════════
+    
+    // Tier 1 Raw Gems (Levels 1-6)
+    raw_ruby_t1: {
+        name: 'T1 Raw Ruby',
+        subtype: 'raw_gem',
+        gemType: 'ruby',
+        gemTier: 1,
+        power: 0,
+        cost: 0,
+        sellValue: 25,
+        maxStack: 20,
+        icon: '🔴',
+        description: 'A rough ruby crystal. Take it to the blacksmith to cut.'
+    },
+    raw_sapphire_t1: {
+        name: 'T1 Raw Sapphire',
+        subtype: 'raw_gem',
+        gemType: 'sapphire',
+        gemTier: 1,
+        power: 0,
+        cost: 0,
+        sellValue: 25,
+        maxStack: 20,
+        icon: '🔵',
+        description: 'A rough sapphire crystal. Take it to the blacksmith to cut.'
+    },
+    raw_topaz_t1: {
+        name: 'T1 Raw Topaz',
+        subtype: 'raw_gem',
+        gemType: 'topaz',
+        gemTier: 1,
+        power: 0,
+        cost: 0,
+        sellValue: 25,
+        maxStack: 20,
+        icon: '🟡',
+        description: 'A rough topaz crystal. Take it to the blacksmith to cut.'
+    },
+    raw_emerald_t1: {
+        name: 'T1 Raw Emerald',
+        subtype: 'raw_gem',
+        gemType: 'emerald',
+        gemTier: 1,
+        power: 0,
+        cost: 0,
+        sellValue: 25,
+        maxStack: 20,
+        icon: '🟢',
+        description: 'A rough emerald crystal. Take it to the blacksmith to cut.'
+    },
+    raw_amethyst_t1: {
+        name: 'T1 Raw Amethyst',
+        subtype: 'raw_gem',
+        gemType: 'amethyst',
+        gemTier: 1,
+        power: 0,
+        cost: 0,
+        sellValue: 25,
+        maxStack: 20,
+        icon: '🟣',
+        description: 'A rough amethyst crystal. Take it to the blacksmith to cut.'
+    },
+    raw_onyx_t1: {
+        name: 'T1 Raw Onyx',
+        subtype: 'raw_gem',
+        gemType: 'onyx',
+        gemTier: 1,
+        power: 0,
+        cost: 0,
+        sellValue: 25,
+        maxStack: 20,
+        icon: '⬛',
+        description: 'A rough onyx crystal. Take it to the blacksmith to cut.'
+    },
+    raw_opal_t1: {
+        name: 'T1 Raw Opal',
+        subtype: 'raw_gem',
+        gemType: 'opal',
+        gemTier: 1,
+        power: 0,
+        cost: 0,
+        sellValue: 25,
+        maxStack: 20,
+        icon: '🔷',
+        description: 'A rough opal crystal. Take it to the blacksmith to cut.'
+    },
+    raw_garnet_t1: {
+        name: 'T1 Raw Garnet',
+        subtype: 'raw_gem',
+        gemType: 'garnet',
+        gemTier: 1,
+        power: 0,
+        cost: 0,
+        sellValue: 25,
+        maxStack: 20,
+        icon: '🟤',
+        description: 'A rough garnet crystal. Take it to the blacksmith to cut.'
+    },
+    
+    // Tier 2 Raw Gems (Levels 7-12)
+    raw_ruby_t2: {
+        name: 'T2 Raw Ruby',
+        subtype: 'raw_gem',
+        gemType: 'ruby',
+        gemTier: 2,
+        power: 0,
+        cost: 0,
+        sellValue: 50,
+        maxStack: 20,
+        icon: '🔴',
+        description: 'A high-quality raw ruby. Will cut into a powerful gem.'
+    },
+    raw_sapphire_t2: {
+        name: 'T2 Raw Sapphire',
+        subtype: 'raw_gem',
+        gemType: 'sapphire',
+        gemTier: 2,
+        power: 0,
+        cost: 0,
+        sellValue: 50,
+        maxStack: 20,
+        icon: '🔵',
+        description: 'A high-quality raw sapphire. Will cut into a powerful gem.'
+    },
+    raw_topaz_t2: {
+        name: 'T2 Raw Topaz',
+        subtype: 'raw_gem',
+        gemType: 'topaz',
+        gemTier: 2,
+        power: 0,
+        cost: 0,
+        sellValue: 50,
+        maxStack: 20,
+        icon: '🟡',
+        description: 'A high-quality raw topaz. Will cut into a powerful gem.'
+    },
+    raw_emerald_t2: {
+        name: 'T2 Raw Emerald',
+        subtype: 'raw_gem',
+        gemType: 'emerald',
+        gemTier: 2,
+        power: 0,
+        cost: 0,
+        sellValue: 50,
+        maxStack: 20,
+        icon: '🟢',
+        description: 'A high-quality raw emerald. Will cut into a powerful gem.'
+    },
+    raw_amethyst_t2: {
+        name: 'T2 Raw Amethyst',
+        subtype: 'raw_gem',
+        gemType: 'amethyst',
+        gemTier: 2,
+        power: 0,
+        cost: 0,
+        sellValue: 50,
+        maxStack: 20,
+        icon: '🟣',
+        description: 'A high-quality raw amethyst. Will cut into a powerful gem.'
+    },
+    raw_onyx_t2: {
+        name: 'T2 Raw Onyx',
+        subtype: 'raw_gem',
+        gemType: 'onyx',
+        gemTier: 2,
+        power: 0,
+        cost: 0,
+        sellValue: 50,
+        maxStack: 20,
+        icon: '⬛',
+        description: 'A high-quality raw onyx. Will cut into a powerful gem.'
+    },
+    raw_opal_t2: {
+        name: 'T2 Raw Opal',
+        subtype: 'raw_gem',
+        gemType: 'opal',
+        gemTier: 2,
+        power: 0,
+        cost: 0,
+        sellValue: 50,
+        maxStack: 20,
+        icon: '🔷',
+        description: 'A high-quality raw opal. Will cut into a powerful gem.'
+    },
+    raw_garnet_t2: {
+        name: 'T2 Raw Garnet',
+        subtype: 'raw_gem',
+        gemType: 'garnet',
+        gemTier: 2,
+        power: 0,
+        cost: 0,
+        sellValue: 50,
+        maxStack: 20,
+        icon: '🟤',
+        description: 'A high-quality raw garnet. Will cut into a powerful gem.'
+    },
+    
+    // Tier 3 Raw Gems (Levels 13-18)
+    raw_ruby_t3: {
+        name: 'T3 Raw Ruby',
+        subtype: 'raw_gem',
+        gemType: 'ruby',
+        gemTier: 3,
+        power: 0,
+        cost: 0,
+        sellValue: 100,
+        maxStack: 20,
+        icon: '🔴',
+        description: 'An exceptional raw ruby. Will cut into a very powerful gem.'
+    },
+    raw_sapphire_t3: {
+        name: 'T3 Raw Sapphire',
+        subtype: 'raw_gem',
+        gemType: 'sapphire',
+        gemTier: 3,
+        power: 0,
+        cost: 0,
+        sellValue: 100,
+        maxStack: 20,
+        icon: '🔵',
+        description: 'An exceptional raw sapphire. Will cut into a very powerful gem.'
+    },
+    raw_topaz_t3: {
+        name: 'T3 Raw Topaz',
+        subtype: 'raw_gem',
+        gemType: 'topaz',
+        gemTier: 3,
+        power: 0,
+        cost: 0,
+        sellValue: 100,
+        maxStack: 20,
+        icon: '🟡',
+        description: 'An exceptional raw topaz. Will cut into a very powerful gem.'
+    },
+    raw_emerald_t3: {
+        name: 'T3 Raw Emerald',
+        subtype: 'raw_gem',
+        gemType: 'emerald',
+        gemTier: 3,
+        power: 0,
+        cost: 0,
+        sellValue: 100,
+        maxStack: 20,
+        icon: '🟢',
+        description: 'An exceptional raw emerald. Will cut into a very powerful gem.'
+    },
+    raw_amethyst_t3: {
+        name: 'T3 Raw Amethyst',
+        subtype: 'raw_gem',
+        gemType: 'amethyst',
+        gemTier: 3,
+        power: 0,
+        cost: 0,
+        sellValue: 100,
+        maxStack: 20,
+        icon: '🟣',
+        description: 'An exceptional raw amethyst. Will cut into a very powerful gem.'
+    },
+    raw_onyx_t3: {
+        name: 'T3 Raw Onyx',
+        subtype: 'raw_gem',
+        gemType: 'onyx',
+        gemTier: 3,
+        power: 0,
+        cost: 0,
+        sellValue: 100,
+        maxStack: 20,
+        icon: '⬛',
+        description: 'An exceptional raw onyx. Will cut into a very powerful gem.'
+    },
+    raw_opal_t3: {
+        name: 'T3 Raw Opal',
+        subtype: 'raw_gem',
+        gemType: 'opal',
+        gemTier: 3,
+        power: 0,
+        cost: 0,
+        sellValue: 100,
+        maxStack: 20,
+        icon: '🔷',
+        description: 'An exceptional raw opal. Will cut into a very powerful gem.'
+    },
+    raw_garnet_t3: {
+        name: 'T3 Raw Garnet',
+        subtype: 'raw_gem',
+        gemType: 'garnet',
+        gemTier: 3,
+        power: 0,
+        cost: 0,
+        sellValue: 100,
+        maxStack: 20,
+        icon: '🟤',
+        description: 'An exceptional raw garnet. Will cut into a very powerful gem.'
+    },
+    
+    // Tier 4 Raw Gems (Levels 19+)
+    raw_ruby_t4: {
+        name: 'T4 Raw Ruby',
+        subtype: 'raw_gem',
+        gemType: 'ruby',
+        gemTier: 4,
+        power: 0,
+        cost: 0,
+        sellValue: 200,
+        maxStack: 20,
+        icon: '🔴',
+        description: 'A flawless raw ruby. Will cut into an incredibly powerful gem.'
+    },
+    raw_sapphire_t4: {
+        name: 'T4 Raw Sapphire',
+        subtype: 'raw_gem',
+        gemType: 'sapphire',
+        gemTier: 4,
+        power: 0,
+        cost: 0,
+        sellValue: 200,
+        maxStack: 20,
+        icon: '🔵',
+        description: 'A flawless raw sapphire. Will cut into an incredibly powerful gem.'
+    },
+    raw_topaz_t4: {
+        name: 'T4 Raw Topaz',
+        subtype: 'raw_gem',
+        gemType: 'topaz',
+        gemTier: 4,
+        power: 0,
+        cost: 0,
+        sellValue: 200,
+        maxStack: 20,
+        icon: '🟡',
+        description: 'A flawless raw topaz. Will cut into an incredibly powerful gem.'
+    },
+    raw_emerald_t4: {
+        name: 'T4 Raw Emerald',
+        subtype: 'raw_gem',
+        gemType: 'emerald',
+        gemTier: 4,
+        power: 0,
+        cost: 0,
+        sellValue: 200,
+        maxStack: 20,
+        icon: '🟢',
+        description: 'A flawless raw emerald. Will cut into an incredibly powerful gem.'
+    },
+    raw_amethyst_t4: {
+        name: 'T4 Raw Amethyst',
+        subtype: 'raw_gem',
+        gemType: 'amethyst',
+        gemTier: 4,
+        power: 0,
+        cost: 0,
+        sellValue: 200,
+        maxStack: 20,
+        icon: '🟣',
+        description: 'A flawless raw amethyst. Will cut into an incredibly powerful gem.'
+    },
+    raw_onyx_t4: {
+        name: 'T4 Raw Onyx',
+        subtype: 'raw_gem',
+        gemType: 'onyx',
+        gemTier: 4,
+        power: 0,
+        cost: 0,
+        sellValue: 200,
+        maxStack: 20,
+        icon: '⬛',
+        description: 'A flawless raw onyx. Will cut into an incredibly powerful gem.'
+    },
+    raw_opal_t4: {
+        name: 'T4 Raw Opal',
+        subtype: 'raw_gem',
+        gemType: 'opal',
+        gemTier: 4,
+        power: 0,
+        cost: 0,
+        sellValue: 200,
+        maxStack: 20,
+        icon: '🔷',
+        description: 'A flawless raw opal. Will cut into an incredibly powerful gem.'
+    },
+    raw_garnet_t4: {
+        name: 'T4 Raw Garnet',
+        subtype: 'raw_gem',
+        gemType: 'garnet',
+        gemTier: 4,
+        power: 0,
+        cost: 0,
+        sellValue: 200,
+        maxStack: 20,
+        icon: '🟤',
+        description: 'A flawless raw garnet. Will cut into an incredibly powerful gem.'
+    },
+
+    // Expansion Gems - Tier variants
+    raw_bloodstone_t1: { name: 'T1 Raw Bloodstone', subtype: 'raw_gem', gemType: 'bloodstone', gemTier: 1, power: 0, cost: 0, sellValue: 30, maxStack: 20, icon: '🩸', description: 'A rough bloodstone crystal.' },
+    raw_bloodstone_t2: { name: 'T2 Raw Bloodstone', subtype: 'raw_gem', gemType: 'bloodstone', gemTier: 2, power: 0, cost: 0, sellValue: 60, maxStack: 20, icon: '🩸', description: 'A high-quality raw bloodstone.' },
+    raw_bloodstone_t3: { name: 'T3 Raw Bloodstone', subtype: 'raw_gem', gemType: 'bloodstone', gemTier: 3, power: 0, cost: 0, sellValue: 120, maxStack: 20, icon: '🩸', description: 'An exceptional raw bloodstone.' },
+    raw_bloodstone_t4: { name: 'T4 Raw Bloodstone', subtype: 'raw_gem', gemType: 'bloodstone', gemTier: 4, power: 0, cost: 0, sellValue: 240, maxStack: 20, icon: '🩸', description: 'A flawless raw bloodstone.' },
+
+    raw_moonstone_t1: { name: 'T1 Raw Moonstone', subtype: 'raw_gem', gemType: 'moonstone', gemTier: 1, power: 0, cost: 0, sellValue: 30, maxStack: 20, icon: '🌙', description: 'A rough moonstone crystal.' },
+    raw_moonstone_t2: { name: 'T2 Raw Moonstone', subtype: 'raw_gem', gemType: 'moonstone', gemTier: 2, power: 0, cost: 0, sellValue: 60, maxStack: 20, icon: '🌙', description: 'A high-quality raw moonstone.' },
+    raw_moonstone_t3: { name: 'T3 Raw Moonstone', subtype: 'raw_gem', gemType: 'moonstone', gemTier: 3, power: 0, cost: 0, sellValue: 120, maxStack: 20, icon: '🌙', description: 'An exceptional raw moonstone.' },
+    raw_moonstone_t4: { name: 'T4 Raw Moonstone', subtype: 'raw_gem', gemType: 'moonstone', gemTier: 4, power: 0, cost: 0, sellValue: 240, maxStack: 20, icon: '🌙', description: 'A flawless raw moonstone.' },
+
+    raw_sunstone_t1: { name: 'T1 Raw Sunstone', subtype: 'raw_gem', gemType: 'sunstone', gemTier: 1, power: 0, cost: 0, sellValue: 30, maxStack: 20, icon: '☀️', description: 'A rough sunstone crystal.' },
+    raw_sunstone_t2: { name: 'T2 Raw Sunstone', subtype: 'raw_gem', gemType: 'sunstone', gemTier: 2, power: 0, cost: 0, sellValue: 60, maxStack: 20, icon: '☀️', description: 'A high-quality raw sunstone.' },
+    raw_sunstone_t3: { name: 'T3 Raw Sunstone', subtype: 'raw_gem', gemType: 'sunstone', gemTier: 3, power: 0, cost: 0, sellValue: 120, maxStack: 20, icon: '☀️', description: 'An exceptional raw sunstone.' },
+    raw_sunstone_t4: { name: 'T4 Raw Sunstone', subtype: 'raw_gem', gemType: 'sunstone', gemTier: 4, power: 0, cost: 0, sellValue: 240, maxStack: 20, icon: '☀️', description: 'A flawless raw sunstone.' },
+
+    raw_voidstone_t1: { name: 'T1 Raw Voidstone', subtype: 'raw_gem', gemType: 'voidstone', gemTier: 1, power: 0, cost: 0, sellValue: 30, maxStack: 20, icon: '🔮', description: 'A rough voidstone crystal.' },
+    raw_voidstone_t2: { name: 'T2 Raw Voidstone', subtype: 'raw_gem', gemType: 'voidstone', gemTier: 2, power: 0, cost: 0, sellValue: 60, maxStack: 20, icon: '🔮', description: 'A high-quality raw voidstone.' },
+    raw_voidstone_t3: { name: 'T3 Raw Voidstone', subtype: 'raw_gem', gemType: 'voidstone', gemTier: 3, power: 0, cost: 0, sellValue: 120, maxStack: 20, icon: '🔮', description: 'An exceptional raw voidstone.' },
+    raw_voidstone_t4: { name: 'T4 Raw Voidstone', subtype: 'raw_gem', gemType: 'voidstone', gemTier: 4, power: 0, cost: 0, sellValue: 240, maxStack: 20, icon: '🔮', description: 'A flawless raw voidstone.' },
+
+    raw_ironheart_t1: { name: 'T1 Raw Ironheart', subtype: 'raw_gem', gemType: 'ironheart', gemTier: 1, power: 0, cost: 0, sellValue: 30, maxStack: 20, icon: '🩶', description: 'A rough ironheart crystal.' },
+    raw_ironheart_t2: { name: 'T2 Raw Ironheart', subtype: 'raw_gem', gemType: 'ironheart', gemTier: 2, power: 0, cost: 0, sellValue: 60, maxStack: 20, icon: '🩶', description: 'A high-quality raw ironheart.' },
+    raw_ironheart_t3: { name: 'T3 Raw Ironheart', subtype: 'raw_gem', gemType: 'ironheart', gemTier: 3, power: 0, cost: 0, sellValue: 120, maxStack: 20, icon: '🩶', description: 'An exceptional raw ironheart.' },
+    raw_ironheart_t4: { name: 'T4 Raw Ironheart', subtype: 'raw_gem', gemType: 'ironheart', gemTier: 4, power: 0, cost: 0, sellValue: 240, maxStack: 20, icon: '🩶', description: 'A flawless raw ironheart.' },
+
+    raw_stormglass_t1: { name: 'T1 Raw Stormglass', subtype: 'raw_gem', gemType: 'stormglass', gemTier: 1, power: 0, cost: 0, sellValue: 30, maxStack: 20, icon: '⛈️', description: 'A rough stormglass crystal.' },
+    raw_stormglass_t2: { name: 'T2 Raw Stormglass', subtype: 'raw_gem', gemType: 'stormglass', gemTier: 2, power: 0, cost: 0, sellValue: 60, maxStack: 20, icon: '⛈️', description: 'A high-quality raw stormglass.' },
+    raw_stormglass_t3: { name: 'T3 Raw Stormglass', subtype: 'raw_gem', gemType: 'stormglass', gemTier: 3, power: 0, cost: 0, sellValue: 120, maxStack: 20, icon: '⛈️', description: 'An exceptional raw stormglass.' },
+    raw_stormglass_t4: { name: 'T4 Raw Stormglass', subtype: 'raw_gem', gemType: 'stormglass', gemTier: 4, power: 0, cost: 0, sellValue: 240, maxStack: 20, icon: '⛈️', description: 'A flawless raw stormglass.' },
+
+
 };
 
 console.log('✅ Items loaded:', Object.keys(ITEMS).length, 'items');

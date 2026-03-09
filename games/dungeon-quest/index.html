@@ -2566,7 +2566,7 @@ body.terminal-mode #menuContainer {
     <script src="town2.js"></script>
     <script src="town3.js"></script>
     <script src="monsters-expanded.js"></script>
-
+    <script src="guild.js"></script>
     <script src="weapons.js"></script>
     <script src="armor.js"></script>
     <script src="items.js"></script>
@@ -2579,6 +2579,119 @@ body.terminal-mode #menuContainer {
     <script src="adventures.js"></script>
     <script src="bounties.js"></script>
     <script src="hunter-pets.js"></script>
+
+
+<!-- Add Supabase for cloud saves -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+// Initialize Supabase with your project
+const SUPABASE_URL = 'https://epalhhtnwlvpvlnhdwfd.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVwYWxoaHRud2x2cHZsbmhkd2ZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1NTI5NzMsImV4cCI6MjA4NTEyODk3M30.9uQ6Ss-4NLR17JcltKSGglBUOn3dycSe3ExB7gvqshs';
+
+// Use a different variable name to avoid conflicts
+const calamitySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+console.log('✅ Supabase initialized for cloud saves');
+
+
+// ☁️ CLOUD SAVE - Reads current game state and uploads to Supabase
+async function cloudSave() {
+    const p = gameState.player;
+    if (!p) {
+        alert('No active character to save!');
+        return;
+    }
+    
+    // Check if logged in to Supabase
+    const { data: { user } } = await calamitySupabase.auth.getUser();
+    if (!user) {
+        alert('You need to be logged in to save to the cloud!\n\nGo to Main Menu → Load from Cloud to sign in.');
+        return;
+    }
+    
+    // Confirm with user
+    if (!confirm(`Save "${p.name}" (Level ${p.level} ${p.className}) to the cloud?`)) {
+        return;
+    }
+    
+    try {
+        // Build current game state
+        const snapshot = buildSaveSnapshot();
+        if (!snapshot) {
+            alert('Failed to build save data!');
+            return;
+        }
+        
+        console.log('☁️ Uploading to cloud...');
+        
+        // Check if this character already exists for this user
+        const { data: existing } = await calamitySupabase
+            .from('calamity_saves')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('username', p.name);
+        
+        if (existing && existing.length > 0) {
+            // Update existing save
+            await calamitySupabase
+                .from('calamity_saves')
+                .update({
+                    character_data: snapshot,
+                    level: p.level,
+                    class: p.class,
+                    last_login: new Date().toISOString()
+                })
+                .eq('id', existing[0].id);
+            
+            alert(`✅ Updated "${p.name}" in cloud!`);
+        } else {
+            // Insert new save
+            await calamitySupabase
+                .from('calamity_saves')
+                .insert([{
+                    user_id: user.id,
+                    username: p.name,
+                    character_data: snapshot,
+                    level: p.level,
+                    class: p.class,
+                    last_login: new Date().toISOString()
+                }]);
+            
+            alert(`✅ Saved "${p.name}" to cloud!`);
+        }
+        
+        console.log('☁️ Cloud save complete');
+    } catch (e) {
+        console.error('Cloud save failed:', e);
+        alert('❌ Cloud save failed: ' + e.message);
+    }
+}
+
+
+// Test connection to calamity_saves table
+async function testCalamityConnection() {
+    try {
+        const { data, error } = await calamitySupabase
+            .from('calamity_saves')
+            .select('count', { count: 'exact', head: true });
+        
+        if (error) {
+            console.log('❌ Connection test failed:', error.message);
+        } else {
+            console.log('✅ Successfully connected to calamity_saves table!');
+        }
+    } catch (e) {
+        console.log('❌ Connection test error:', e.message);
+    }
+}
+
+// Run the test
+testCalamityConnection();
+
+</script>
+
+
+
 
     <!-- ── Lore: inlined for reliability. Edit lore-*.js files then re-inline. ── -->
     <script>
@@ -5703,6 +5816,15 @@ function buildSaveSnapshot() {
         activeCombat: (() => {
             const cs = gameState.combatState;
             if (!cs || gameState.dungeon) return null; // Only for world exploration combat
+
+            // DEBUG: Log what we're saving
+    console.log('💾 SAVING COMBAT STATE:', cs.monsters.map(m => ({
+        name: m.name,
+        hp: m.hp,
+        maxHp: m.maxHp,
+        key: m.key
+    })));
+
             return {
                 location: gameState.currentLocation,
                 monsters: cs.monsters.map(m => ({
@@ -6030,6 +6152,7 @@ function getBestiaryUnseenUpgrades() {
 
 // ── Called every time a monster is killed (from checkCombatEnd) ─────────
 function onMonsterKill(killKey, newTotal, monsterData) {
+    checkGuildKillProgress(killKey); //When monster dies check quest progress from Guild
     const prevTier = getBestiaryTier(killKey);  // tier BEFORE this kill
     // Recalculate with new total already applied
     const newTier  = (() => {
@@ -10011,85 +10134,87 @@ function bannerHoldCancel() {
 
 
         // Initialize Game
-        function initGame() {
+function initGame() {
+    try {
+        // Try to auto-restore character (especially important for dungeons!)
+        const characters = getAllCharacters();
+        
+        if (characters.length > 0) {
+            // Check if any character is currently in a dungeon OR in combat
+            let activeChar = null;
             try {
-                // Try to auto-restore character (especially important for dungeons!)
-                const characters = getAllCharacters();
-                
-                if (characters.length > 0) {
-                    // Check if any character is currently in a dungeon
-                    let dungeonChar = null;
+                activeChar = characters.find(char => {
                     try {
-                        dungeonChar = characters.find(char => {
-                            try {
-                                const saveData = localStorage.getItem(`dq_save_${char.id}`);
-                                if (saveData) {
-                                    const data = JSON.parse(saveData);
-                                    return data.meta?.inDungeon === true;
-                                }
-                            } catch (e) {
-                                console.error(`Corrupted save for ${char.id}:`, e);
-                                // Delete corrupted save
-                                localStorage.removeItem(`dq_save_${char.id}`);
-                            }
-                            return false;
-                        });
+                        const saveData = localStorage.getItem(`dq_save_${char.id}`);
+                        if (saveData) {
+                            const data = JSON.parse(saveData);
+                            // Check for dungeon OR active combat
+                            return data.meta?.inDungeon === true || 
+                                   (data.activeCombat && data.activeCombat.monsters?.length > 0);
+                        }
                     } catch (e) {
-                        console.error('Error checking for dungeon characters:', e);
+                        console.error(`Corrupted save for ${char.id}:`, e);
+                        // Delete corrupted save
+                        localStorage.removeItem(`dq_save_${char.id}`);
                     }
-                    
-                    if (dungeonChar) {
-                        // Auto-load character that was in a dungeon (prevent cheating!)
-                        console.log('🏰 Auto-restoring dungeon session:', dungeonChar.name);
-                        try {
-                            loadCharacter(dungeonChar.id);
-                            return;
-                        } catch (e) {
-                            console.error('Failed to load dungeon character:', e);
-                            alert('⚠️ Your dungeon save was corrupted. Returning to main menu.');
-                            // Delete corrupted save and continue to main menu
-                            deleteCharacter(dungeonChar.id);
-                        }
-                    }
-                    
-                    // If single character and not in dungeon, auto-load for convenience
-                    if (characters.length === 1) {
-                        console.log('Auto-loading single character:', characters[0].name);
-                        try {
-                            loadCharacter(characters[0].id);
-                            return;
-                        } catch (e) {
-                            console.error('Failed to load character:', e);
-                            alert('⚠️ Your save was corrupted. Returning to main menu.');
-                            // Delete corrupted save and continue to main menu
-                            deleteCharacter(characters[0].id);
-                        }
-                    }
-                }
+                    return false;
+                });
             } catch (e) {
-                console.error('Critical error in initGame:', e);
-                // Clear potentially corrupted data
+                console.error('Error checking for active characters:', e);
+            }
+            
+            if (activeChar) {
+                // Auto-load character that was in dungeon OR combat
+                console.log('🎮 Auto-restoring active session:', activeChar.name);
                 try {
-                    localStorage.removeItem('dq_character_list');
-                } catch (clearError) {
-                    console.error('Could not clear character list:', clearError);
+                    loadCharacter(activeChar.id);
+                    return;
+                } catch (e) {
+                    console.error('Failed to load character:', e);
+                    alert('⚠️ Your save was corrupted. Returning to main menu.');
+                    // Delete corrupted save and continue to main menu
+                    deleteCharacter(activeChar.id);
                 }
             }
             
-            // Always fall back to main menu if anything goes wrong
-            showMainMenu();
-            
-            // Warn before leaving page without saving
-            window.addEventListener('beforeunload', function(e) {
-                // Only warn if player exists and has made progress
-                if (gameState.player && gameState.player.level >= 1) {
-                    const message = 'You have unsaved progress! Are you sure you want to leave?';
-                    e.preventDefault();
-                    e.returnValue = message;  // Chrome requires returnValue
-                    return message;           // Some browsers use return value
+            // If single character and not active, auto-load for convenience
+            if (characters.length === 1) {
+                console.log('Auto-loading single character:', characters[0].name);
+                try {
+                    loadCharacter(characters[0].id);
+                    return;
+                } catch (e) {
+                    console.error('Failed to load character:', e);
+                    alert('⚠️ Your save was corrupted. Returning to main menu.');
+                    // Delete corrupted save and continue to main menu
+                    deleteCharacter(characters[0].id);
                 }
-            });
+            }
         }
+    } catch (e) {
+        console.error('Critical error in initGame:', e);
+        // Clear potentially corrupted data
+        try {
+            localStorage.removeItem('dq_character_list');
+        } catch (clearError) {
+            console.error('Could not clear character list:', clearError);
+        }
+    }
+    
+    // Always fall back to main menu if anything goes wrong
+    showMainMenu();
+    
+    // Warn before leaving page without saving
+    window.addEventListener('beforeunload', function(e) {
+        // Only warn if player exists and has made progress
+        if (gameState.player && gameState.player.level >= 1) {
+            const message = 'You have unsaved progress! Are you sure you want to leave?';
+            e.preventDefault();
+            e.returnValue = message;  // Chrome requires returnValue
+            return message;           // Some browsers use return value
+        }
+    });
+}
 
 // ═══════════════════════════════════════════════════════════════
 // SYSOP MODE - Press and hold About & Contact for 3 seconds
@@ -10136,46 +10261,51 @@ function handleAboutCancel(e) {
 
 
 function showMainMenu() {
-            checkGameVersion();
-            const screen = document.getElementById('mainScreen');
-            const characters = getAllCharacters();
-            const hasCharacters = characters.length > 0;
+    checkGameVersion();
+    const screen = document.getElementById('mainScreen');
+    const characters = getAllCharacters();
+    const hasCharacters = characters.length > 0;
 
-            // Only show install option if not already a standalone PWA
-            const isStandalone = window.navigator.standalone === true ||
-                                 window.matchMedia('(display-mode: standalone)').matches;
-            const installOption = isStandalone ? '' : `
-                    <div class="menu-option" onclick="openInstallModal()"
-                         style="border-color:#2a5a2a;color:#4a9a4a;margin-top:12px;">
-                        📱 INSTALL APP
-                        <span style="font-size:13px;color:#336633;"> — play fullscreen</span>
-                    </div>`;
+    // Only show install option if not already a standalone PWA
+    const isStandalone = window.navigator.standalone === true ||
+                         window.matchMedia('(display-mode: standalone)').matches;
+    const installOption = isStandalone ? '' : `
+            <div class="menu-option" onclick="openInstallModal()"
+                 style="border-color:#2a5a2a;color:#4a9a4a;margin-top:12px;">
+                📱 INSTALL APP
+                <span style="font-size:13px;color:#336633;"> — play fullscreen</span>
+            </div>`;
 
-            screen.innerHTML = `
-                <div class="location-header">MAIN MENU</div>
-                <div style="text-align:center; margin: 30px 0;">
-                    <div style="display:inline-block; border:2px solid var(--highlight-color); padding:10px 28px; color:var(--highlight-color); font-family:'VT323',monospace; font-size:22px; letter-spacing:2px; box-shadow:0 0 12px rgba(255,200,0,0.3);">
-                        CALAMITY DUNGEON AWAITS!
-                    </div>
-                    <div style="color:var(--highlight-color); font-size:18px; margin-top:8px; letter-spacing:3px;">⚔️ ——————————————— ⚔️</div>
-                </div>
-                <div style="max-width: 400px; margin: 0 auto;">
-                    <div class="menu-option" onclick="newGame()">► NEW GAME</div>
-                    <div class="menu-option ${!hasCharacters?'disabled':''}" onclick="${hasCharacters?'showCharacterSelect()':''}">
-                        ► CONTINUE ${hasCharacters?`(${characters.length} local save${characters.length>1?'s':''})`:' (No saves)'}
-                    </div>
-                    <div class="menu-option" onclick="loadFromFile()">📁 LOAD FROM FILE (.dqsave)</div>
-                    <div class="menu-option" onclick="showInstructions()">► INSTRUCTIONS</div>
-                    <div class="menu-option" onclick="showRevisionHistory()" style="border-color:#4a7a4a;color:#8aaa8a;">► 📋 REVISION HISTORY</div>
-                    <div class="menu-option" onclick="showAbout()" style="border-color:#3a2a5a;color:#9a8aaa;">&#9658; &#x1F4DC; ABOUT &amp; CONTACT</div>
-                    ${installOption}
-                </div>
-                <div style="position:fixed;bottom:6px;right:10px;font-family:'VT323',monospace;font-size:13px;color:#1a3a1a;pointer-events:none;user-select:none;">
-                    v${GAME_VERSION}
-                </div>
-            `;
-        }
-
+    screen.innerHTML = `
+        <div class="location-header">MAIN MENU</div>
+        <div style="text-align:center; margin: 30px 0;">
+            <div style="display:inline-block; border:2px solid var(--highlight-color); padding:10px 28px; color:var(--highlight-color); font-family:'VT323',monospace; font-size:22px; letter-spacing:2px; box-shadow:0 0 12px rgba(255,200,0,0.3);">
+                CALAMITY DUNGEON AWAITS!
+            </div>
+            <div style="color:var(--highlight-color); font-size:18px; margin-top:8px; letter-spacing:3px;">⚔️ ——————————————— ⚔️</div>
+        </div>
+        
+        <div class="menu-option" onclick="showCloudLoadScreen()" style="border-color: #AA88FF;">► ☁️ LOAD FROM CLOUD</div>
+        
+        <div style="max-width: 400px; margin: 0 auto;">
+            <div class="menu-option" onclick="newGame()">► NEW GAME</div>
+            <div class="menu-option ${!hasCharacters?'disabled':''}" onclick="${hasCharacters?'showCharacterSelect()':''}">
+                ► CONTINUE ${hasCharacters?`(${characters.length} local save${hasCharacters>1?'s':''})`:' (No saves)'}
+            </div>
+            <div class="menu-option" onclick="loadFromFile()">📁 LOAD FROM FILE (.dqsave)</div>
+            <div class="menu-option" onclick="showInstructions()">► INSTRUCTIONS</div>
+            <div class="menu-option" onclick="showRevisionHistory()" style="border-color:#4a7a4a;color:#8aaa8a;">► 📋 REVISION HISTORY</div>
+            <div class="menu-option" onclick="showAbout()" style="border-color:#3a2a5a;color:#9a8aaa;">&#9658; &#x1F4DC; ABOUT &amp; CONTACT</div>
+            ${installOption}
+        </div>
+        <div style="position:fixed;bottom:6px;right:10px;font-family:'VT323',monospace;font-size:13px;color:#1a3a1a;pointer-events:none;user-select:none;">
+            v${GAME_VERSION}
+        </div>
+    `;
+    
+    // Check cloud login status
+    checkMainMenuCloud();
+}
 
         function showCharacterSelect() {
             checkGameVersion();
@@ -10653,6 +10783,15 @@ function showMainMenu() {
                     // ═══════════════════════════════════════════════════════════════
                     const ac = data.activeCombat;
                     const p  = gameState.player;
+
+
+                    // DEBUG: Log what we're restoring
+    console.log('📂 RESTORING COMBAT STATE:', ac.monsters.map(m => ({
+        name: m.name,
+        hp: m.hp,
+        maxHp: m.maxHp,
+        key: m.key
+    })));
                     
                     // Restore pip array
                     const pipCount  = ac.pipCount || calcPlayerHits(p);
@@ -11176,6 +11315,637 @@ showWelcomeScreen();
             return [];
         }
 
+
+        // ============================================
+// CLOUD SAVE FUNCTIONS
+// ============================================
+
+// Show cloud save menu
+function showCloudMenu() {
+    const screen = document.getElementById('mainScreen');
+    
+    screen.innerHTML = `
+        <div class="location-header">☁️ CLOUD SAVES</div>
+        <button onclick="showTown()" style="margin-bottom:10px;">← BACK TO TOWN</button>
+        
+        <div class="message" style="border-color: #AA88FF;">
+            <p style="color: #AA88FF;">Sign in to save your characters to the cloud and play on any device!</p>
+        </div>
+        
+        <div style="max-width: 400px; margin: 20px auto;">
+            <div id="cloudStatus"></div>
+            <div id="cloudAuthForms"></div>
+            <div id="cloudCharacterList"></div>
+        </div>
+    `;
+    
+    checkCloudLogin();
+}
+
+// Check if user is logged in
+async function checkCloudLogin() {
+    const { data: { user } } = await calamitySupabase.auth.getUser();
+    
+    if (user) {
+        // User is logged in
+        document.getElementById('cloudAuthForms').innerHTML = `
+            <div class="message" style="border-color: #00FF00;">
+                <p>✅ Logged in as: <strong>${user.email}</strong></p>
+                <button onclick="logoutFromCloud()" style="border-color: #ff4444;">🔒 LOGOUT</button>
+            </div>
+        `;
+        loadCloudCharacters();
+    } else {
+        // Show login form
+        document.getElementById('cloudAuthForms').innerHTML = `
+            <div class="message">
+                <input type="email" id="loginEmail" placeholder="Email" style="width: 100%; margin-bottom: 10px;">
+                <input type="password" id="loginPassword" placeholder="Password" style="width: 100%; margin-bottom: 10px;">
+                
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="cloudLogin()" style="flex: 1;">🔑 SIGN IN</button>
+                    <button onclick="cloudSignup()" style="flex: 1;">✨ SIGN UP</button>
+                </div>
+                
+                <div id="authError" style="color: #ff4444; margin-top: 10px;"></div>
+            </div>
+        `;
+    }
+}
+
+// Sign up new account
+async function cloudSignup() {
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    
+    if (!email || !password) {
+        document.getElementById('authError').textContent = 'Enter email and password';
+        return;
+    }
+    
+    const { data, error } = await calamitySupabase.auth.signUp({
+        email: email,
+        password: password
+    });
+    
+    if (error) {
+        document.getElementById('authError').textContent = error.message;
+    } else {
+        document.getElementById('authError').textContent = '✅ Account created! Check your email for confirmation.';
+        setTimeout(checkCloudLogin, 2000);
+    }
+}
+
+// Log in
+async function cloudLogin() {
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    
+    const { data, error } = await calamitySupabase.auth.signInWithPassword({
+        email: email,
+        password: password
+    });
+    
+    if (error) {
+        document.getElementById('authError').textContent = error.message;
+    } else {
+        checkCloudLogin();
+    }
+}
+
+// Log out
+async function logoutFromCloud() {
+    await calamitySupabase.auth.signOut();
+    checkCloudLogin();
+}
+
+
+// Show cloud load screen (list all cloud characters)
+async function showCloudLoadScreen() {
+    const screen = document.getElementById('mainScreen');
+    
+    screen.innerHTML = `
+        <div class="location-header">☁️ LOAD FROM CLOUD</div>
+        <button onclick="showMainMenu()" style="margin-bottom:10px;">← BACK TO MAIN MENU</button>
+        
+        <div style="max-width: 500px; margin: 20px auto;">
+            <div id="cloudLoadStatus"></div>
+            <div id="cloudLoadContent"></div>
+        </div>
+    `;
+    
+    // Check login status
+    const { data: { user } } = await calamitySupabase.auth.getUser();
+    
+    if (user) {
+        // Show logged in status and character list
+        document.getElementById('cloudLoadStatus').innerHTML = `
+            <div class="message" style="border-color: #00FF00; text-align: center;">
+                ✅ Logged in as: ${user.email}
+                <button onclick="logoutFromCloudLoad()" style="margin-left: 10px; padding: 2px 8px; font-size: 12px;">LOGOUT</button>
+            </div>
+        `;
+        displayCloudCharacterList();
+    } else {
+        // Show login form
+        document.getElementById('cloudLoadContent').innerHTML = `
+            <div class="message" style="border-color: #AA88FF;">
+                <div style="text-align: center; margin-bottom: 15px;">Sign in to access your cloud characters</div>
+                <input type="email" id="cloudLoadEmail" placeholder="Email" style="width: 100%; margin-bottom: 10px; padding: 8px;">
+                <input type="password" id="cloudLoadPassword" placeholder="Password" style="width: 100%; margin-bottom: 10px; padding: 8px;">
+                
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="cloudLoadLogin()" style="flex: 1;">🔑 SIGN IN</button>
+                    <button onclick="cloudLoadSignup()" style="flex: 1;">✨ SIGN UP</button>
+                </div>
+                
+                <div id="cloudLoadError" style="color: #ff4444; margin-top: 10px; text-align: center;"></div>
+            </div>
+        `;
+    }
+}
+
+// Display list of cloud characters
+async function displayCloudCharacterList() {
+    const { data: { user } } = await calamitySupabase.auth.getUser();
+    if (!user) return;
+    
+    const { data, error } = await calamitySupabase
+        .from('calamity_saves')
+        .select('*')
+        .eq('user_id', user.id);
+    
+    if (error) {
+        document.getElementById('cloudLoadContent').innerHTML = `<div class="message" style="color: #ff4444;">Error: ${error.message}</div>`;
+        return;
+    }
+    
+    let html = '<div class="message" style="border-color: #AA88FF;"><h3 style="text-align: center;">Your Cloud Characters</h3>';
+    
+    if (data && data.length > 0) {
+        data.forEach(save => {
+            html += `
+                <div style="border: 1px solid #333; padding: 15px; margin: 10px 0; background: rgba(0,0,0,0.3); border-radius: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <span style="color: #FFD700; font-size: 20px;">${save.username}</span><br>
+                            <span style="color: #8aaa8a;">Level ${save.level} ${save.class || 'Adventurer'}</span>
+                        </div>
+                        <button onclick="loadCloudCharacterToLocal('${save.id}')" style="padding: 8px 20px; background: #1a1a1a; border: 2px solid #00FF00; color: #00FF00; cursor: pointer; font-size: 16px;">▶ LOAD</button>
+                    </div>
+                    <div style="font-size: 11px; color: #666; margin-top: 8px;">
+                        Last played: ${new Date(save.last_login).toLocaleString()}
+                    </div>
+                </div>
+            `;
+        });
+    } else {
+        html += '<p style="text-align: center; padding: 20px;">No cloud characters yet. Create one in game and save!</p>';
+    }
+    
+    html += '</div>';
+    document.getElementById('cloudLoadContent').innerHTML = html;
+}
+
+// Login from cloud load screen
+async function cloudLoadLogin() {
+    const email = document.getElementById('cloudLoadEmail').value;
+    const password = document.getElementById('cloudLoadPassword').value;
+    
+    const { data, error } = await calamitySupabase.auth.signInWithPassword({
+        email: email,
+        password: password
+    });
+    
+    if (error) {
+        document.getElementById('cloudLoadError').textContent = error.message;
+    } else {
+        displayCloudCharacterList();
+        document.getElementById('cloudLoadStatus').innerHTML = `
+            <div class="message" style="border-color: #00FF00; text-align: center;">
+                ✅ Logged in as: ${email}
+                <button onclick="logoutFromCloudLoad()" style="margin-left: 10px; padding: 2px 8px; font-size: 12px;">LOGOUT</button>
+            </div>
+        `;
+    }
+}
+
+// Sign up from cloud load screen
+async function cloudLoadSignup() {
+    const email = document.getElementById('cloudLoadEmail').value;
+    const password = document.getElementById('cloudLoadPassword').value;
+    
+    const { data, error } = await calamitySupabase.auth.signUp({
+        email: email,
+        password: password
+    });
+    
+    if (error) {
+        document.getElementById('cloudLoadError').textContent = error.message;
+    } else {
+        document.getElementById('cloudLoadError').textContent = '✅ Account created! You can now log in.';
+    }
+}
+
+// Logout from cloud load screen
+async function logoutFromCloudLoad() {
+    await calamitySupabase.auth.signOut();
+    showCloudLoadScreen(); // Refresh the screen
+}
+
+// Load cloud character AND save to localStorage
+async function loadCloudCharacterToLocal(saveId) {
+    const { data, error } = await calamitySupabase
+        .from('calamity_saves')
+        .select('character_data, username')
+        .eq('id', saveId)
+        .single();
+    
+    if (error) {
+        alert('Error loading character: ' + error.message);
+        return;
+    }
+    
+    // The character_data contains your FULL save snapshot
+    const saveData = data.character_data;
+    
+    // Save to localStorage using your existing system
+    const tempId = 'cloud_' + Date.now();
+    localStorage.setItem(`dq_save_${tempId}`, JSON.stringify(saveData));
+    
+    // Also add to character list
+    let charList = JSON.parse(localStorage.getItem('dq_character_list') || '[]');
+    charList.push({
+        id: tempId,
+        name: saveData.characterName,
+        level: saveData.player.level,
+        class: saveData.player.class,
+        timestamp: Date.now(),
+        lastSaved: new Date().toLocaleString()
+    });
+    localStorage.setItem('dq_character_list', JSON.stringify(charList));
+    
+    // Load the character using your existing function
+    loadCharacter(tempId);
+    
+    // Update last_login in cloud
+    const { data: { user } } = await calamitySupabase.auth.getUser();
+    if (user) {
+        await calamitySupabase
+            .from('calamity_saves')
+            .update({ last_login: new Date().toISOString() })
+            .eq('id', saveId);
+    }
+}
+
+
+// Check cloud login for main menu
+async function checkMainMenuCloud() {
+    const { data: { user } } = await calamitySupabase.auth.getUser();
+    const contentDiv = document.getElementById('mainMenuCloudContent');
+    
+    if (!contentDiv) return;
+    
+    if (user) {
+        // User is logged in - show their characters
+        contentDiv.innerHTML = `
+            <div style="color: #00FF00; text-align: center; margin-bottom: 10px; font-size: 14px;">
+                ✅ Logged in as: ${user.email}
+                <button onclick="logoutFromMainMenu()" style="margin-left: 10px; padding: 2px 8px; font-size: 12px;">LOGOUT</button>
+            </div>
+            <div id="mainMenuCharList"></div>
+        `;
+        loadMainMenuCharacters();
+    } else {
+        // Show login form
+        contentDiv.innerHTML = `
+            <div style="text-align: center;">
+                <input type="email" id="mainMenuEmail" placeholder="Email" style="width: 100%; margin-bottom: 5px; padding: 8px; font-size: 14px; background: #111; border: 1px solid #AA88FF; color: #fff;">
+                <input type="password" id="mainMenuPassword" placeholder="Password" style="width: 100%; margin-bottom: 5px; padding: 8px; font-size: 14px; background: #111; border: 1px solid #AA88FF; color: #fff;">
+                <div style="display: flex; gap: 5px;">
+                    <button onclick="mainMenuLogin()" style="flex: 1; padding: 8px; font-size: 14px; background: #1a1a1a; border: 1px solid #AA88FF; color: #AA88FF; cursor: pointer;">🔑 SIGN IN</button>
+                    <button onclick="mainMenuSignup()" style="flex: 1; padding: 8px; font-size: 14px; background: #1a1a1a; border: 1px solid #AA88FF; color: #AA88FF; cursor: pointer;">✨ SIGN UP</button>
+                </div>
+                <div id="mainMenuAuthError" style="color: #ff4444; font-size: 12px; margin-top: 5px;"></div>
+            </div>
+        `;
+    }
+}
+
+// Login from main menu
+async function mainMenuLogin() {
+    const email = document.getElementById('mainMenuEmail').value;
+    const password = document.getElementById('mainMenuPassword').value;
+    
+    const { data, error } = await calamitySupabase.auth.signInWithPassword({
+        email: email,
+        password: password
+    });
+    
+    if (error) {
+        document.getElementById('mainMenuAuthError').textContent = error.message;
+    } else {
+        checkMainMenuCloud();
+    }
+}
+
+// Sign up from main menu
+async function mainMenuSignup() {
+    const email = document.getElementById('mainMenuEmail').value;
+    const password = document.getElementById('mainMenuPassword').value;
+    
+    const { data, error } = await calamitySupabase.auth.signUp({
+        email: email,
+        password: password
+    });
+    
+    if (error) {
+        document.getElementById('mainMenuAuthError').textContent = error.message;
+    } else {
+        document.getElementById('mainMenuAuthError').textContent = '✅ Account created! You can now log in.';
+    }
+}
+
+// Logout from main menu
+async function logoutFromMainMenu() {
+    await calamitySupabase.auth.signOut();
+    checkMainMenuCloud();
+}
+
+
+// 💾 LOCAL SAVE ONLY - Call this whenever game state changes
+function localSave() {
+    const p = gameState.player;
+    if (!p) return;
+    
+    try {
+        const snapshot = buildSaveSnapshot();
+        if (!snapshot) return;
+        
+        const key = `dq_save_${snapshot.characterId}`;
+        localStorage.setItem(key, JSON.stringify(snapshot));
+        updateCharacterList(snapshot);
+        console.log(`✅ Game saved: ${snapshot.characterName} (${snapshot.lastSaved})`);
+    } catch (e) {
+        console.error('Error saving game:', e);
+    }
+}
+
+// Load characters for main menu
+async function loadMainMenuCharacters() {
+    const { data: { user } } = await calamitySupabase.auth.getUser();
+    if (!user) return;
+    
+    const { data, error } = await calamitySupabase
+        .from('calamity_saves')
+        .select('*')
+        .eq('user_id', user.id);
+    
+    if (error) {
+        console.error('Error loading characters:', error);
+        return;
+    }
+    
+    let html = '<div style="max-height: 200px; overflow-y: auto;">';
+    
+    if (data && data.length > 0) {
+        data.forEach(save => {
+            html += `
+                <div style="border: 1px solid #333; padding: 8px; margin: 5px 0; background: rgba(0,0,0,0.3); border-radius: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong style="color: #FFD700; font-size: 16px;">${save.username}</strong><br>
+                            <span style="color: #8aaa8a; font-size: 12px;">Lv ${save.level} ${save.class || 'Adventurer'}</span>
+                        </div>
+                        <button onclick="loadCloudCharacter('${save.id}')" style="padding: 4px 12px; background: #1a1a1a; border: 1px solid #00FF00; color: #00FF00; cursor: pointer;">▶ LOAD</button>
+                    </div>
+                    <div style="font-size: 10px; color: #666; margin-top: 4px;">
+                        Last played: ${new Date(save.last_login).toLocaleString()}
+                    </div>
+                </div>
+            `;
+        });
+    } else {
+        html += '<p style="color: #888; text-align: center; padding: 10px;">No cloud characters yet. Create one in game and save!</p>';
+    }
+    
+    html += '</div>';
+    document.getElementById('mainMenuCharList').innerHTML = html;
+}
+
+
+
+// Simple cloud save for town - just saves current character
+async function simpleCloudSave() {
+    const { data: { user } } = await calamitySupabase.auth.getUser();
+    if (!user) {
+        alert('Please log in from the main menu first!');
+        return;
+    }
+    
+    const p = gameState.player;
+    if (!p) {
+        alert('No character loaded!');
+        return;
+    }
+    
+    // Show saving message (you could add a small status div in town if you want)
+    console.log('☁️ Saving to cloud...');
+    
+    // Get the FULL save data
+    const saveData = buildSaveSnapshot();
+    
+    // Check if this character already has a cloud save
+    const { data: existing } = await calamitySupabase
+        .from('calamity_saves')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('username', p.name);
+    
+    let result;
+    if (existing && existing.length > 0) {
+        // Update existing save
+        result = await calamitySupabase
+            .from('calamity_saves')
+            .update({
+                character_data: saveData,
+                level: p.level,
+                class: p.class,
+                last_login: new Date().toISOString()
+            })
+            .eq('id', existing[0].id);
+        console.log('🔄 Updated existing save');
+    } else {
+        // Insert new save
+        result = await calamitySupabase
+            .from('calamity_saves')
+            .insert([{
+                user_id: user.id,
+                username: p.name,
+                character_data: saveData,
+                level: p.level,
+                class: p.class,
+                last_login: new Date().toISOString()
+            }]);
+        console.log('➕ Created new save');
+    }
+    
+    if (result.error) {
+        console.error('❌ Save error:', result.error);
+        alert('❌ Save failed: ' + result.error.message);
+    } else {
+        console.log('✅ Save successful!');
+        alert('✅ Character saved to cloud!');
+    }
+}
+
+
+// Load cloud characters list
+async function loadCloudCharacters() {
+    const { data: { user } } = await calamitySupabase.auth.getUser();
+    if (!user) return;
+    
+    const { data, error } = await calamitySupabase
+        .from('calamity_saves')
+        .select('*')
+        .eq('user_id', user.id);
+    
+    if (error) {
+        console.error('Error loading characters:', error);
+        return;
+    }
+    
+    let html = '<div class="message"><h3>Your Cloud Characters</h3>';
+    
+    if (data && data.length > 0) {
+        data.forEach(save => {
+            html += `
+                <div style="border: 1px solid #333; padding: 10px; margin: 10px 0;">
+                    <strong>${save.username}</strong> - Lv ${save.level} ${save.class || 'Adventurer'}<br>
+                    <small>Last played: ${new Date(save.last_login).toLocaleString()}</small><br>
+                    <button onclick="loadCloudCharacter('${save.id}')">▶ LOAD</button>
+                </div>
+            `;
+        });
+    } else {
+        html += '<p>No cloud saves yet.</p>';
+    }
+    
+    // Add button to save current character if one is loaded
+    if (gameState.player) {
+        html += `<button onclick="saveToCloud()" style="margin-top: 10px;">☁️ SAVE CURRENT CHARACTER</button>`;
+    }
+    
+    html += '</div>';
+    document.getElementById('cloudCharacterList').innerHTML = html;
+}
+
+
+
+
+// Save current character to cloud
+async function saveToCloud() {
+    const { data: { user } } = await calamitySupabase.auth.getUser();
+    if (!user) {
+        alert('Please sign in first!');
+        return;
+    }
+    
+    const p = gameState.player;
+    if (!p) {
+        alert('No character loaded!');
+        return;
+    }
+    
+    // Show saving message
+    const statusEl = document.getElementById('cloudStatus');
+    if (statusEl) statusEl.innerHTML = '<span style="color: #FFD700;">☁️ Saving to cloud...</span>';
+    
+    // Get the FULL save data
+    const saveData = buildSaveSnapshot();
+    
+    console.log('📦 Saving to cloud:', saveData.characterName);
+    
+    // Check if this character already has a cloud save
+    const { data: existing } = await calamitySupabase
+        .from('calamity_saves')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('username', p.name);
+    
+    let result;
+    if (existing && existing.length > 0) {
+        // Update existing save
+        result = await calamitySupabase
+            .from('calamity_saves')
+            .update({
+                character_data: saveData,
+                level: p.level,
+                class: p.class,
+                last_login: new Date().toISOString()
+            })
+            .eq('id', existing[0].id);
+        console.log('🔄 Updated existing save');
+    } else {
+        // Insert new save
+        result = await calamitySupabase
+            .from('calamity_saves')
+            .insert([{
+                user_id: user.id,
+                username: p.name,
+                character_data: saveData,
+                level: p.level,
+                class: p.class,
+                last_login: new Date().toISOString()
+            }]);
+        console.log('➕ Created new save');
+    }
+    
+    if (result.error) {
+        console.error('❌ Save error:', result.error);
+        if (statusEl) statusEl.innerHTML = `<span style="color: #ff4444;">❌ Save failed: ${result.error.message}</span>`;
+    } else {
+        console.log('✅ Save successful!');
+        if (statusEl) statusEl.innerHTML = '<span style="color: #00FF00;">✅ Character saved to cloud!</span>';
+        // Refresh the character list
+        loadCloudCharacters();
+    }
+}
+
+// Load a specific cloud character
+async function loadCloudCharacter(saveId) {
+    const { data, error } = await calamitySupabase
+        .from('calamity_saves')
+        .select('character_data, username')
+        .eq('id', saveId)
+        .single();
+    
+    if (error) {
+        alert('Error loading character: ' + error.message);
+        return;
+    }
+    
+    // The character_data contains your FULL save snapshot
+    const saveData = data.character_data;
+    
+    // Store in localStorage for your existing loadCharacter function
+    const tempId = 'cloud_' + Date.now();
+    localStorage.setItem(`dq_save_${tempId}`, JSON.stringify(saveData));
+    
+    // Use your existing loadCharacter function
+    loadCharacter(tempId);
+    
+    // Update last_login
+    const { data: { user } } = await calamitySupabase.auth.getUser();
+    if (user) {
+        await calamitySupabase
+            .from('calamity_saves')
+            .update({ last_login: new Date().toISOString() })
+            .eq('id', saveId);
+    }
+}
+
+
         function showTown(townId) {
             checkGameVersion();
             document.body.classList.remove("terminal-mode");
@@ -11292,6 +12062,7 @@ showWelcomeScreen();
                     <div class="menu-option" onclick="showCharacterStats()">► 📊 CHARACTER STATS</div>
                     <div class="menu-option" onclick="showTemple()">► ⛪ TEMPLE</div>
                     <div class="menu-option" onclick="showBlacksmith()">► ⚒️ BLACKSMITH</div>
+                    <div class="menu-option" onclick="showGuild()">► ⚔️ ADVENTURERS GUILD</div>
                     ${dungeonOption}
                     <div class="menu-option" onclick="restAtInn()">► REST AT INN (${calcInnCost(p.cha)} Gold)</div>
                     <div class="menu-option" onclick="showInventory()">► INVENTORY</div>
@@ -11300,6 +12071,7 @@ showWelcomeScreen();
                     <div class="menu-option" onclick="showSettings()">► ⚙️ SETTINGS</div>
                     <div class="menu-option" onclick="saveGame()" style="border-color:var(--text-color);">► 💾 QUICK SAVE</div>
                     <div class="menu-option" onclick="downloadSaveFile()" style="border-color:var(--highlight-color);background:rgba(255,255,0,0.05);">► 📥 DOWNLOAD SAVE FILE</div>
+                    <div class="menu-option" onclick="cloudSave()" style="border-color: #AA88FF;">► ☁️ SAVE TO CLOUD</div>
                     <div class="menu-option" onclick="confirmQuitToMenu()">► ⏏ QUIT TO MENU</div>
                 </div>
             `;
@@ -11883,6 +12655,146 @@ showWelcomeScreen();
                 </div>
             `;
         }
+
+        // Show cloud save menu
+function showCloudMenu() {
+    const screen = document.getElementById('mainScreen');
+    
+    screen.innerHTML = `
+        <div class="location-header">☁️ CLOUD SAVES</div>
+        <button onclick="showTown()" style="margin-bottom:10px;">← BACK TO TOWN</button>
+        
+        <div class="message" style="border-color: #AA88FF;">
+            <p style="color: #AA88FF;">Sign in to save your characters to the cloud and play on any device!</p>
+        </div>
+        
+        <div style="max-width: 400px; margin: 20px auto;">
+            <div id="cloudStatus"></div>
+            <div id="cloudAuthForms"></div>
+            <div id="cloudCharacterList"></div>
+        </div>
+    `;
+    
+    checkCloudLogin();
+}
+
+// Check if user is logged in
+async function checkCloudLogin() {
+    const { data: { user } } = await calamitySupabase.auth.getUser();
+    
+    if (user) {
+        // User is logged in
+        document.getElementById('cloudAuthForms').innerHTML = `
+            <div class="message" style="border-color: #00FF00;">
+                <p>✅ Logged in as: <strong>${user.email}</strong></p>
+                <button onclick="logoutFromCloud()" style="border-color: #ff4444;">🔒 LOGOUT</button>
+            </div>
+        `;
+        loadCloudCharacters();
+    } else {
+        // Show login form
+        document.getElementById('cloudAuthForms').innerHTML = `
+            <div class="message">
+                <input type="email" id="loginEmail" placeholder="Email" style="width: 100%; margin-bottom: 10px;">
+                <input type="password" id="loginPassword" placeholder="Password" style="width: 100%; margin-bottom: 10px;">
+                
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="cloudLogin()" style="flex: 1;">🔑 SIGN IN</button>
+                    <button onclick="cloudSignup()" style="flex: 1;">✨ SIGN UP</button>
+                </div>
+                
+                <div id="authError" style="color: #ff4444; margin-top: 10px;"></div>
+            </div>
+        `;
+    }
+}
+
+// Sign up new account
+async function cloudSignup() {
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    
+    if (!email || !password) {
+        document.getElementById('authError').textContent = 'Enter email and password';
+        return;
+    }
+    
+    const { data, error } = await calamitySupabase.auth.signUp({
+        email: email,
+        password: password
+    });
+    
+    if (error) {
+        document.getElementById('authError').textContent = error.message;
+    } else {
+        document.getElementById('authError').textContent = '✅ Account created! Check your email for confirmation.';
+        setTimeout(checkCloudLogin, 2000);
+    }
+}
+
+// Log in
+async function cloudLogin() {
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    
+    const { data, error } = await calamitySupabase.auth.signInWithPassword({
+        email: email,
+        password: password
+    });
+    
+    if (error) {
+        document.getElementById('authError').textContent = error.message;
+    } else {
+        checkCloudLogin();
+    }
+}
+
+// Log out
+async function logoutFromCloud() {
+    await calamitySupabase.auth.signOut();
+    checkCloudLogin();
+}
+
+// Load cloud characters list
+async function loadCloudCharacters() {
+    const { data: { user } } = await calamitySupabase.auth.getUser();
+    if (!user) return;
+    
+    const { data, error } = await calamitySupabase
+        .from('calamity_saves')
+        .select('*')
+        .eq('user_id', user.id);
+    
+    if (error) {
+        console.error('Error loading characters:', error);
+        return;
+    }
+    
+    let html = '<div class="message"><h3>Your Cloud Characters</h3>';
+    
+    if (data && data.length > 0) {
+        data.forEach(save => {
+            html += `
+                <div style="border: 1px solid #333; padding: 10px; margin: 10px 0;">
+                    <strong>${save.username}</strong> - Lv ${save.level} ${save.class || 'Adventurer'}<br>
+                    <small>Last played: ${new Date(save.last_login).toLocaleString()}</small><br>
+                    <button onclick="loadCloudCharacter('${save.id}')">▶ LOAD</button>
+                </div>
+            `;
+        });
+    } else {
+        html += '<p>No cloud saves yet.</p>';
+    }
+    
+    // Add button to save current character if one is loaded
+    if (gameState.player) {
+        html += `<button onclick="saveToCloud()" style="margin-top: 10px;">☁️ SAVE CURRENT CHARACTER</button>`;
+    }
+    
+    html += '</div>';
+    document.getElementById('cloudCharacterList').innerHTML = html;
+}
+
 
         function showShop() {
             checkGameVersion();
@@ -12481,6 +13393,7 @@ showWelcomeScreen();
                 + '<br><span style="font-size:13px;color:#888;">You have: ' + p.gold.toLocaleString() + 'g</span>';
 
             modal.classList.add('open');
+            localSave();
         }
 
         function _executeBuy(type, key, cost, itemName, disc) {
@@ -14069,12 +14982,23 @@ function stabilizeTerminalLayout() {
                 monsterStatusEffects: {}, // Active status effects per monster (by index)
                 dotTimers: {} // DOT tick interval IDs
             };
+
+             console.log('🔴 COMBAT STARTED - Current combat state:', 
+                gameState.combatState.monsters.map(m => ({
+                    name: m.name,
+                    hp: m.hp,
+                    maxHp: m.maxHp,
+                    key: m.key
+                }))
+            );
+
             // Stream the encounter line immediately; render combat UI without waiting
             termAppend(msg, 'term-enemy');
             renderEnemyCards();
             renderActionBar();
             setTimeout(updatePipButtons, 0);
             startCombatTimer();
+            localSave();
         }
 
         function spawnMonsterWithRarity(enemyKey, zoneLevel = null, forcedRarity = null) {
@@ -17078,7 +18002,7 @@ function consumePips(cs, amount, cooldown) {
 }
 
         
-     function executeAttack(attackType) {
+ function executeAttack(attackType) {
     const cs = gameState.combatState;
     if (!cs) return;
 
@@ -17490,13 +18414,129 @@ function consumePips(cs, amount, cooldown) {
         if (hpPct < 25) condition = 'severely wounded';
         if (hpPct < 10) condition = 'barely standing';
 
+        // ========== COMPREHENSIVE COLOR MAP FOR ALL ABILITIES ==========
+const DAMAGE_COLORS = {
+    // Elemental types
+    shock: '#FFD700',        // Shock - Bright gold/yellow (like lightning)
+    lightning: '#FFD700',    // Lightning - Bright gold/yellow
+    shadow: '#AA44FF',       // Shadow purple
+    void: '#6600BB',         // Void purple
+    fire: '#FF6600',         // Fire orange
+    frost: '#88EEFF',        // Frost cyan
+    ice: '#88EEFF',          // Ice cyan
+    poison: '#00EE00',       // Poison green
+    acid: '#a8e63d',         // Acid green
+    bleed: '#FF4488',        // Bleed pink
+    holy: '#FFFF88',         // Holy yellow
+    chaos: '#FF88FF',        // Chaos pink
+    arcane: '#AA88FF',       // Arcane purple
+    nature: '#88FF88',       // Nature green
+    dark: '#8844AA',         // Dark purple
+    light: '#FFFFAA',        // Light yellow
+    
+    // Weapon modifiers
+    power: '#FFAA00',         // Power - orange/gold
+    razor: '#CCCCCC',         // Razor - silver
+    sharp: '#CCCCCC',         // Sharp - silver
+    piercing: '#AAAAAA',      // Piercing - grey
+    crushing: '#BB8844',      // Crushing - bronze
+    slashing: '#DDDDDD',      // Slashing - white
+    bleeding: '#FF4488',      // Bleeding - pink
+    wounding: '#FF6666',      // Wounding - red
+    
+    // Magic modifiers
+    spell: '#AA88FF',         // Spell - purple
+    magic: '#8888FF',         // Magic - blue
+    mana: '#4488FF',          // Mana - blue
+    soul: '#AA44AA',          // Soul - purple
+    spirit: '#88AAFF',        // Spirit - light blue
+    
+    // Status effects
+    burning: '#FF8800',       // Burning - orange
+    frozen: '#88FFFF',        // Frozen - cyan
+    stunned: '#FFFF88',       // Stunned - yellow
+    slowed: '#888888',        // Slowed - grey
+    weakened: '#AA8888',      // Weakened - brownish grey
+    cursed: '#884488',        // Cursed - dark purple
+    hexed: '#AA44AA',         // Hexed - purple
+    diseased: '#88AA44',      // Diseased - olive
+    
+    // Healing/Lifesteal
+    heal: '#88FF88',          // Heal - green
+    lifesteal: '#FF8888',     // Lifesteal - red
+    leech: '#FF88AA',         // Leech - pink
+    
+    // Buffs
+    strength: '#FF8888',      // Strength - red
+    agility: '#88FF88',       // Agility - green
+    intellect: '#8888FF',     // Intellect - blue
+    vitality: '#88FFAA',      // Vitality - mint
+    
+    // Default
+    default: '#FFFFFF'        // White
+};
+
+        // Calculate total damage and build colored parts
+        let elementalTotal = 0;
+        let elementalParts = [];
+
+        modifierResult.messages.forEach(msg => {
+            // Check for damage patterns
+            const damageMatch = msg.match(/\+(\d+) ([\w\s]+) damage/);
+            if (damageMatch) {
+                const dmg = parseInt(damageMatch[1]);
+                const type = damageMatch[2].toLowerCase().trim();
+                elementalTotal += dmg;
+                
+                // Get color for this damage type (case insensitive)
+                const colorKey = type.split(' ')[0]; // Take first word for matching
+                const color = DAMAGE_COLORS[colorKey] || DAMAGE_COLORS[type] || DAMAGE_COLORS.default;
+                
+                // Build colored part
+                elementalParts.push(`<span style="color:${color};">+${dmg} ${type}</span>`);
+            }
+        });
+
+                // Build the main damage number with enemy damage color (red pulsing)
+        const mainDamageSpan = `<span class="dmg-enemy">${finalDamage}</span>`;
+
+        // Calculate elemental total and build colored parts
+        
+        let elementalString = '';
+        
+        if (elementalParts.length > 0) {
+            // Calculate total from elemental parts
+            elementalParts.forEach(part => {
+                const match = part.match(/\+(\d+)/);
+                if (match) elementalTotal += parseInt(match[1]);
+            });
+            
+            elementalString = ' + ' + elementalParts.join(' + ');
+        }
+
+        // Calculate total damage
+        const totalDamage = finalDamage + elementalTotal;
+
+        // Format the message based on whether there are bonuses
+        let damageMessage;
+        if (elementalParts.length > 0) {
+            // Has bonuses - show breakdown
+            damageMessage = `You ${attackName} ${tName} for ${mainDamageSpan}${elementalString} for <span class="dmg-enemy">${totalDamage}</span> total damage!${critTag}`;
+        } else {
+            // No bonuses - simple message
+            damageMessage = `You ${attackName} ${tName} for <span class="dmg-enemy">${finalDamage}</span> total damage!${critTag}`;
+        }
+
         termAppend(
-            `You ${attackName} ${tName} for <span class="dmg-enemy">${finalDamage} damage!</span>${critTag}`,
+            damageMessage,
             null,
             () => {
-                // Show modifier messages
+                // Show any non-elemental modifier messages (status effects, lifesteal, etc.)
                 modifierResult.messages.forEach(msg => {
-                    termAppend(`→ ${msg}`, 'term-loot');
+                    // Skip elemental damage messages (already shown)
+                    if (!msg.match(/\+(\d+) ([\w\s]+) damage/)) {
+                        termAppend(`→ ${msg}`, 'term-loot');
+                    }
                 });
 
                 if (enemy.hp > 0) {
@@ -17517,6 +18557,7 @@ function consumePips(cs, amount, cooldown) {
     // Immediate UI update (pip display — callbacks handle full re-render)
     updateEnemyCards();
     updateHud();
+    localSave();
     // Note: renderActionBar() is called by termAppend callbacks above
     // to ensure it fires AFTER streaming completes, not before.
 }
@@ -17957,6 +18998,7 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
             cs.actionMode = 'main';
             cs.pendingSpellKey = null;
             renderActionBar();
+            localSave();
         }
 
         // Legacy function for backward compatibility
@@ -19636,7 +20678,7 @@ gameState.postCombatRecovery = true;
             termAppend('', 'term-separator');
             termAppend('🌑 You melt into the shadows... <span style="color:#8888FF;">[Shadow Strike Ready]</span>', 'term-highlight');
         }, 5000);
-    }
+    }localSave;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -20019,16 +21061,24 @@ function playerIsExhausted() {
             const loot = [];
             const debugMode = gameState.sysop && gameState.sysop.authenticated;
 
-            // ── GEM DROP: 3% chance, EVERY enemy, runs before any early return ──
-            const gemRoll = Math.random();
-            const gemChance = 0.04;
-            if (debugMode) termAppend(`<span style="color:#336633;">🎲 [LOOT] ${monster.name} — gem roll: ${(gemRoll*100).toFixed(1)}% (need ≤${(gemChance*100).toFixed(0)}%) → ${gemRoll < gemChance ? '✅ HIT' : '❌ miss'}</span>`, 'term-dim');
-            if (gemRoll < gemChance) {
-                const tier = getGemTier(monster.level || 1);
-                const gemTypeKey = GEM_KEYS[Math.floor(Math.random() * GEM_KEYS.length)];
-                loot.push(`raw_${gemTypeKey}_t${tier}`);
-                if (debugMode) termAppend(`<span style="color:#336633;">  → 💎 Gem: raw_${gemTypeKey}_t${tier}</span>`, 'term-dim');
-            }
+            // ── GEM DROP: 4% chance, EVERY enemy, runs before any early return ──
+const gemRoll = Math.random();
+const gemChance = 0.04;
+if (debugMode) termAppend(`<span style="color:#336633;">🎲 [LOOT] ${monster.name} — gem roll: ${(gemRoll*100).toFixed(1)}% (need ≤${(gemChance*100).toFixed(0)}%) → ${gemRoll < gemChance ? '✅ HIT' : '❌ miss'}</span>`, 'term-dim');
+if (gemRoll < gemChance) {
+    const tier = getGemTier(monster.level || 1);
+    const gemTypeKey = GEM_KEYS[Math.floor(Math.random() * GEM_KEYS.length)];
+    const rawGemKey = `raw_${gemTypeKey}_t${tier}`;
+    
+    // Verify the gem exists in ITEMS before adding
+    if (ITEMS[rawGemKey]) {
+        loot.push(rawGemKey);
+        if (debugMode) termAppend(`<span style="color:#336633;">  → 💎 Gem: ${ITEMS[rawGemKey].name}</span>`, 'term-dim');
+    } else {
+        console.warn(`Gem definition not found: ${rawGemKey}`);
+        if (debugMode) termAppend(`<span style="color:#ff4444;">  → ❌ Gem definition missing: ${rawGemKey}</span>`, 'term-error');
+    }
+}
 
             const rarityBonus = (RARITY_CONFIG[monster.rarity] || RARITY_CONFIG['common']).dropBonus || 0;
             
@@ -21212,6 +22262,42 @@ function showCharacterStats() {
         
         checkGameVersion();
         initGame();
+
+
+
+
+// ============================================
+// AUTO CLOUD SAVE ON PAGE LEAVE - No warning, just saves
+// ============================================
+window.addEventListener('beforeunload', function() {
+    const p = gameState.player;
+    
+    // Only save if there's an active character
+    if (!p) return;
+    
+    // Check if logged in by looking for Supabase token
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.includes('sb-') && key.includes('auth-token')) {
+            // Found token, try to save in background
+            const snapshot = buildSaveSnapshot();
+            if (!snapshot) return;
+            
+            // Use sendBeacon for reliable background sending
+            const blob = new Blob([JSON.stringify({
+                username: p.name,
+                character_data: snapshot,
+                level: p.level,
+                class: p.class,
+                last_login: new Date().toISOString()
+            })], { type: 'application/json' });
+            
+            navigator.sendBeacon('https://epalhhtnwlvpvlnhdwfd.supabase.co/rest/v1/calamity_saves', blob);
+            break;
+        }
+    }
+});
+
 
 
 

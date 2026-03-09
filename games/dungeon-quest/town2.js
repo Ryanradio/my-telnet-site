@@ -521,6 +521,8 @@ window.TOWNS.town2 = {
                 <div class="t2-row" onclick="downloadSaveFile()">
                     ► 📥 &nbsp;DOWNLOAD SAVE FILE
                 </div>
+
+                <div class="menu-option" onclick="universalSave()" style="border-color: #AA88FF;">► ☁️ SAVE GAME (Local + Cloud)</div>
                 <div class="t2-row" onclick="confirmQuitToMenu()" style="border-color:#3a0a0a;">
                     ► ⏏ &nbsp;QUIT TO MENU
                 </div>
