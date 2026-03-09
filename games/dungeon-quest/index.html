@@ -5727,6 +5727,9 @@ function buildSaveSnapshot() {
             // Defeated Masters/unlocked areas
             defeatedMasters: [...(p.defeatedMasters || [])],  // Explicit copy
             unlockedAreas: [...(p.unlockedAreas || [])],
+            activeBounties: [...(p.activeBounties || [])],
+            pendingBounties: [...(p.pendingBounties || [])],
+            collectedBounties: {...(p.collectedBounties || {})},
             
             // Base class (for evolution tracking)
             baseClass: p.baseClass,
@@ -10489,6 +10492,7 @@ function showMainMenu() {
                     inventory: data.player.inventory || [],
                     knownSpells: data.player.knownSpells || [],
                     defeatedMasters: data.player.defeatedMasters || [],
+                    
                     unlockedAreas: data.player.unlockedAreas || [],
                     activeBounties: data.player.activeBounties || [],
                     pendingBounties: data.player.pendingBounties || [],
@@ -11646,7 +11650,10 @@ async function displayCloudCharacterList() {
     let html = '<div class="message" style="border-color: #AA88FF;"><h3 style="text-align: center;">Your Cloud Characters</h3>';
     
     if (data && data.length > 0) {
-        data.forEach(save => {
+    // Sort by last_login (newest first)
+    data.sort((a, b) => new Date(b.last_login) - new Date(a.last_login));
+    
+    data.forEach(save => {
             html += `
                 <div style="border: 1px solid #333; padding: 15px; margin: 10px 0; background: rgba(0,0,0,0.3); border-radius: 4px;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -11731,6 +11738,11 @@ async function loadCloudCharacterToLocal(saveId) {
     
     // The character_data contains your FULL save snapshot
     const saveData = data.character_data;
+    console.log('📦 Cloud save bounty data:', {
+    active: saveData.player?.activeBounties,
+    pending: saveData.player?.pendingBounties,
+    collected: saveData.player?.collectedBounties
+});
     
     // ═══════════════════════════════════════════════════════════════
     // FIX: Use the character's PERMANENT ID from the save data
@@ -12126,6 +12138,9 @@ async function saveToCloud() {
                 statPoints: p.statPoints || 0,
                 defeatedMasters: [...(p.defeatedMasters || [])],
                 unlockedAreas: [...(p.unlockedAreas || [])],
+                activeBounties: p.activeBounties || [],
+                pendingBounties: p.pendingBounties || [],
+                collectedBounties: p.collectedBounties || {},
                 baseClass: p.baseClass,
                 className: p.className,
                 hasEvolved: p.hasEvolved,
