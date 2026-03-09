@@ -3920,28 +3920,41 @@ const GEM_KEYS = Object.keys(GEM_TYPES);
 
 // Cut a raw gem into a finished gem with permanent random stats
 function cutGem(gemKey) {
-    const tier = gemKey.includes('_t') ? parseInt(gemKey.split('_t')[1]) : 1;
+    // Safely parse tier with validation
+    let tier = 1;
+    if (gemKey.includes('_t')) {
+        const parsed = parseInt(gemKey.split('_t')[1]);
+        tier = isNaN(parsed) ? 1 : parsed;
+    }
+    
     const typeKey = gemKey.replace(/_t\d+$/, '').replace('raw_','');
     const gemDef = GEM_TYPES[typeKey];
     if (!gemDef) return null;
+    
     const mult = GEM_TIER_MULT[tier] || 1.0;
+    
     // Roll 2 stats from the gem's stat pool
     const statPool = [...gemDef.stats];
-    const chosen = [];
     const statValues = {};
+    
     // Pick up to 2 unique stats
     const shuffled = statPool.sort(() => Math.random()-0.5);
     const picked = [...new Set(shuffled)].slice(0, 2);
+    
     for (const stat of picked) {
         const [lo, hi] = gemDef.rolls[stat];
         const val = Math.floor((lo + Math.random()*(hi-lo+1)) * mult);
         statValues[stat] = (statValues[stat] || 0) + val;
     }
+    
+    // Generate tier prefix safely
+    const tierPrefix = ['', 'T1 ', 'T2 ', 'T3 ', 'T4 '][tier] || `T${tier} `;
+    
     return {
         id: `gem_${typeKey}_t${tier}_${Date.now()}`,
         type: typeKey,
-        tier,
-        name: `${['','T1 ','T2 ','T3 ','T4 '][tier]}${gemDef.name}`,
+        tier: tier,
+        name: `${tierPrefix}${gemDef.name}`,
         color: gemDef.color,
         emoji: gemDef.emoji,
         cut: true,
@@ -3949,7 +3962,6 @@ function cutGem(gemKey) {
         description: describeGemStats(statValues)
     };
 }
-
 function describeGemStats(stats) {
     const labels = {
         weaponDmg:    'Weapon DMG',   lifesteal:    'Lifesteal %',
@@ -4032,6 +4044,10 @@ function recalcGemStats(player) {
     player._gemMpBonus  = mpBonus;
     player._gemDefBonus = defBonus;   // used in HUD display
 }
+
+
+
+
 
 function updateTerminalSafeArea() {
     // No-op: layout handled by fixed-position flex column.
@@ -10875,12 +10891,78 @@ function showMainMenu() {
                 }
                 
                 // Apply gem HP/MP/defense bonuses from equipped items
-                recalcGemStats(gameState.player);
-                
-                console.log(`✅ Character loaded: ${data.characterName}`);
-                console.log(`   Weapon: ${gameState.player.weapon} | Armor: ${gameState.player.armor}`);
+recalcGemStats(gameState.player);
 
-                // ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// GEM FIX - Run after character is fully loaded
+// ═══════════════════════════════════════════════════════════════
+function fixAllGems() {
+    if (!gameState?.player) return;
+    
+    console.log('💎 Checking gems...');
+    let fixed = 0;
+    
+    function fixGem(gem) {
+        if (!gem) return false;
+        
+        const isBroken = !gem.stats || Object.keys(gem.stats).length === 0 || 
+                         (gem.name && gem.name.includes('undefined'));
+        
+        if (!isBroken) return false;
+        
+        if (gem.type === 'topaz' || gem.name?.includes('Topaz')) {
+            gem.stats = { lightningDmg: 9, critBonus: 4 };
+            gem.tier = 1;
+            gem.name = 'T1 Topaz';
+            gem.description = '+9 Lightning DMG, +4 Crit %';
+            return true;
+        }
+        if (gem.type === 'emerald' || gem.name?.includes('Emerald')) {
+            gem.stats = { weaponDmg: 6, lifesteal: 2 };
+            gem.tier = 1;
+            gem.name = 'T1 Emerald';
+            gem.description = '+6 Weapon DMG, +2 Lifesteal %';
+            return true;
+        }
+        return false;
+    }
+    
+    // Check equipped weapon
+    if (gameState.player.weapon) {
+        const weapon = WEAPONS[gameState.player.weapon];
+        if (weapon?.gems) {
+            weapon.gems.forEach(gem => {
+                if (fixGem(gem)) fixed++;
+            });
+        }
+    }
+    
+    // Check inventory
+    if (gameState.player.inventory) {
+        gameState.player.inventory.forEach(item => {
+            if (item?.gems) {
+                item.gems.forEach(gem => {
+                    if (fixGem(gem)) fixed++;
+                });
+            }
+        });
+    }
+    
+    if (fixed > 0) {
+        console.log(`✅ Fixed ${fixed} gem(s)!`);
+        if (typeof localSave === 'function') localSave();
+    }
+}
+
+// Run the gem fix
+fixAllGems();
+
+console.log(`✅ Character loaded: ${data.characterName}`);
+console.log(`   Weapon: ${gameState.player.weapon} | Armor: ${gameState.player.armor}`);
+
+
+
+// ═══════════════════════════════════════════════════════════════
 // TRACK LOGIN TO GOOGLE SHEETS
 // ═══════════════════════════════════════════════════════════════
 (async function() {
@@ -10915,6 +10997,8 @@ function showMainMenu() {
                     console.error('Could not delete corrupted save:', deleteError);
                 }
                 
+                // PUT IT HERE???
+
                 // Always return to main menu on error
                 showMainMenu();
             }
@@ -11607,24 +11691,46 @@ async function loadCloudCharacterToLocal(saveId) {
     // The character_data contains your FULL save snapshot
     const saveData = data.character_data;
     
-    // Save to localStorage using your existing system
-    const tempId = 'cloud_' + Date.now();
-    localStorage.setItem(`dq_save_${tempId}`, JSON.stringify(saveData));
+    // ═══════════════════════════════════════════════════════════════
+    // FIX: Use the character's PERMANENT ID from the save data
+    // ═══════════════════════════════════════════════════════════════
+    const characterId = saveData.characterId;
     
-    // Also add to character list
+    // Save to localStorage using the PERMANENT character ID
+    localStorage.setItem(`dq_save_${characterId}`, JSON.stringify(saveData));
+    
+    // Update character list - remove any existing entries with this name first
     let charList = JSON.parse(localStorage.getItem('dq_character_list') || '[]');
+    
+    // Remove any existing entries with the same character name
+    charList = charList.filter(c => c.name !== saveData.characterName);
+    
+    // Add the updated character
     charList.push({
-        id: tempId,
+        id: characterId,
         name: saveData.characterName,
         level: saveData.player.level,
         class: saveData.player.class,
         timestamp: Date.now(),
         lastSaved: new Date().toLocaleString()
     });
+    
     localStorage.setItem('dq_character_list', JSON.stringify(charList));
     
-    // Load the character using your existing function
-    loadCharacter(tempId);
+    // Clean up any old cloud_ duplicates with the same character name
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith('dq_save_cloud_')) {
+            const data = JSON.parse(localStorage.getItem(key));
+            if (data.characterName === saveData.characterName) {
+                console.log(`🧹 Removing duplicate cloud save: ${key}`);
+                localStorage.removeItem(key);
+            }
+        }
+    }
+    
+    // Load the character using its PERMANENT ID
+    loadCharacter(characterId);
     
     // Update last_login in cloud
     const { data: { user } } = await calamitySupabase.auth.getUser();
@@ -11839,49 +11945,86 @@ async function simpleCloudSave() {
 
 
 // Load cloud characters list
-async function loadCloudCharacters() {
-    const { data: { user } } = await calamitySupabase.auth.getUser();
-    if (!user) return;
+// Replace your entire loadCloudCharacter function with this debug version
+async function loadCloudCharacter(saveId) {
+    console.log('🔍 LOAD CLOUD CHARACTER STARTED');
+    console.log('Save ID:', saveId);
     
     const { data, error } = await calamitySupabase
         .from('calamity_saves')
-        .select('*')
-        .eq('user_id', user.id);
+        .select('character_data, username')
+        .eq('id', saveId)
+        .single();
     
     if (error) {
-        console.error('Error loading characters:', error);
+        alert('Error loading character: ' + error.message);
         return;
     }
     
-    let html = '<div class="message"><h3>Your Cloud Characters</h3>';
+    console.log('Cloud data received:', data);
     
-    if (data && data.length > 0) {
-        data.forEach(save => {
-            html += `
-                <div style="border: 1px solid #333; padding: 10px; margin: 10px 0;">
-                    <strong>${save.username}</strong> - Lv ${save.level} ${save.class || 'Adventurer'}<br>
-                    <small>Last played: ${new Date(save.last_login).toLocaleString()}</small><br>
-                    <button onclick="loadCloudCharacter('${save.id}')">▶ LOAD</button>
-                </div>
-            `;
-        });
-    } else {
-        html += '<p>No cloud saves yet.</p>';
+    // The character_data contains your FULL save snapshot
+    const saveData = data.character_data;
+    console.log('Save data character ID:', saveData.characterId);
+    console.log('Save data name:', saveData.characterName);
+    console.log('Save data level:', saveData.player?.level);
+    
+    // List ALL current localStorage before save
+    console.log('📋 BEFORE SAVE - All Warrior saves:');
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith('dq_save_')) {
+            const data = JSON.parse(localStorage.getItem(key));
+            if (data.characterName === 'Warrior') {
+                console.log('  ', key, '→', {
+                    id: data.characterId,
+                    level: data.player?.level,
+                    timestamp: new Date(data.timestamp).toLocaleString()
+                });
+            }
+        }
     }
     
-    // Add button to save current character if one is loaded
-    if (gameState.player) {
-        html += `<button onclick="saveToCloud()" style="margin-top: 10px;">☁️ SAVE CURRENT CHARACTER</button>`;
+    // Save to localStorage
+    const localKey = `dq_save_${saveData.characterId}`;
+    console.log('💾 Saving to:', localKey);
+    localStorage.setItem(localKey, JSON.stringify(saveData));
+    
+    // List ALL current localStorage AFTER save
+    console.log('📋 AFTER SAVE - All Warrior saves:');
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith('dq_save_')) {
+            const data = JSON.parse(localStorage.getItem(key));
+            if (data.characterName === 'Warrior') {
+                console.log('  ', key, '→', {
+                    id: data.characterId,
+                    level: data.player?.level,
+                    timestamp: new Date(data.timestamp).toLocaleString()
+                });
+            }
+        }
     }
     
-    html += '</div>';
-    document.getElementById('cloudCharacterList').innerHTML = html;
+    // Load the character
+    console.log('📂 Loading character:', saveData.characterId);
+    loadCharacter(saveData.characterId);
+    
+    // Update last_login
+    const { data: { user } } = await calamitySupabase.auth.getUser();
+    if (user) {
+        await calamitySupabase
+            .from('calamity_saves')
+            .update({ last_login: new Date().toISOString() })
+            .eq('id', saveId);
+    }
+    
+    console.log('✅ LOAD CLOUD CHARACTER COMPLETE');
 }
 
 
 
 
-// Save current character to cloud
 async function saveToCloud() {
     const { data: { user } } = await calamitySupabase.auth.getUser();
     if (!user) {
@@ -11899,8 +12042,125 @@ async function saveToCloud() {
     const statusEl = document.getElementById('cloudStatus');
     if (statusEl) statusEl.innerHTML = '<span style="color: #FFD700;">☁️ Saving to cloud...</span>';
     
-    // Get the FULL save data
-    const saveData = buildSaveSnapshot();
+    // Build save data WITHOUT calling buildSaveSnapshot()
+    function buildCloudSaveData() {
+        const p = gameState.player;
+        const dungeon = gameState.dungeon;
+        const combatState = gameState.combatState;
+        
+        const snapshot = {
+            version: 1,
+            characterId: p.id || 'default',
+            characterName: p.name,
+            timestamp: Date.now(),
+            lastSaved: new Date().toLocaleString(),
+            player: {
+                id: p.id || 'default',
+                name: p.name,
+                class: p.class,
+                level: p.level,
+                xp: p.xp,
+                xpToNext: p.xpToNext,
+                hp: p.hp,
+                maxHp: p.maxHp,
+                mp: p.mp,
+                maxMp: p.maxMp,
+                gold: p.gold,
+                bankGold: p.bankGold || 0,
+                strength: p.strength,
+                defense: p.defense,
+                magic: p.magic,
+                speed: p.speed,
+                str: p.str,
+                dex: p.dex,
+                con: p.con,
+                wis: p.wis,
+                cha: p.cha,
+                lck: p.lck,
+                weapon: p.weapon,
+                armor: p.armor,
+                activePet: p.activePet || null,
+                inventory: [...(p.inventory || [])],
+                knownSpells: [...(p.knownSpells || [])],
+                statPoints: p.statPoints || 0,
+                defeatedMasters: [...(p.defeatedMasters || [])],
+                unlockedAreas: [...(p.unlockedAreas || [])],
+                baseClass: p.baseClass,
+                className: p.className,
+                hasEvolved: p.hasEvolved,
+                godMode: p.godMode || false,
+                portalUnlocked: p.portalUnlocked || false,
+                achievements: [...(p.achievements || [])],
+                runestones: [...(p.runestones || [])],
+                kills: Object.assign({}, p.kills || {}),
+                bestiaryRead: Object.assign({}, p.bestiaryRead || {}),
+                chronicle: {
+                    unlockedEntries: [...((p.chronicle && p.chronicle.unlockedEntries) || [])],
+                    readEntries: [...((p.chronicle && p.chronicle.readEntries) || [])],
+                },
+                guildQuests: (() => {
+                    const gq = gameState.guildQuests || {};
+                    return {
+                        active: gq.active || null,
+                        completed: [...(gq.completed || [])],
+                        progress: {...(gq.progress || {})}
+                    };
+                })(),
+                hasSeenWelcome: p.hasSeenWelcome || false,
+                hasSeenLegacyWelcome: p.hasSeenLegacyWelcome || false,
+                hasSeenTownArrival_town2: p.hasSeenTownArrival_town2 || false,
+                hasSeenTownArrival_town3: p.hasSeenTownArrival_town3 || false,
+                dungeonMaps: (() => {
+                    const maps = {};
+                    if (p.dungeonMaps) {
+                        for (const dungeonKey in p.dungeonMaps) {
+                            maps[dungeonKey] = {};
+                            for (const floorNum in p.dungeonMaps[dungeonKey]) {
+                                maps[dungeonKey][floorNum] = Array.from(p.dungeonMaps[dungeonKey][floorNum] || []);
+                            }
+                        }
+                    }
+                    return maps;
+                })(),
+                dungeonTimers: p.dungeonTimers || {},
+            },
+            currentTown: gameState.currentTown,
+            currentLocation: gameState.currentLocation
+        };
+        
+        // Include dungeon if active
+        if (dungeon) {
+            snapshot.meta = { inDungeon: true };
+            snapshot.dungeon = {
+                dungeonKey: dungeon.dungeonKey,
+                floor: dungeon.floor,
+                currentRoom: dungeon.currentRoom,
+                discoveredRooms: dungeon.discoveredRooms ? Array.from(dungeon.discoveredRooms) : [],
+                spawnedRooms: dungeon.spawnedRooms ? Array.from(dungeon.spawnedRooms) : [],
+                activeEnemies: dungeon.activeEnemies || [],
+                defeatedEnemies: dungeon.defeatedEnemies || []
+            };
+        }
+        
+        // Include combat if active
+        if (combatState && combatState.monsters && combatState.monsters.length > 0) {
+            snapshot.activeCombat = {
+                monsters: combatState.monsters,
+                currentTarget: combatState.currentTarget,
+                enemyDelay: combatState.enemyDelay,
+                enemyHits: combatState.enemyHits,
+                enemyHitsLeft: combatState.enemyHitsLeft,
+                pipsReady: combatState.pipAvailable,
+                pipCount: combatState.pipTimers?.length,
+                location: gameState.currentLocation
+            };
+        }
+        
+        return snapshot;
+    }
+    
+    // Get the save data WITHOUT triggering localSave
+    const saveData = buildCloudSaveData();
     
     console.log('📦 Saving to cloud:', saveData.characterName);
     
@@ -11967,9 +12227,54 @@ async function loadCloudCharacter(saveId) {
     const saveData = data.character_data;
     
     // Store in localStorage for your existing loadCharacter function
-    const tempId = 'cloud_' + Date.now();
-    localStorage.setItem(`dq_save_${tempId}`, JSON.stringify(saveData));
+   async function loadCloudCharacter(saveId) {
+    const { data, error } = await calamitySupabase
+        .from('calamity_saves')
+        .select('character_data, username')
+        .eq('id', saveId)
+        .single();
     
+    if (error) {
+        alert('Error loading character: ' + error.message);
+        return;
+    }
+    
+    // The character_data contains your FULL save snapshot
+    const saveData = data.character_data;
+    
+    // ═══════════════════════════════════════════════════════════════
+    // FIX: Overwrite the existing local character instead of creating a new one
+    // ═══════════════════════════════════════════════════════════════
+    // Get the current player's ID if they're logged in
+    const currentPlayer = gameState.player;
+    let localKey;
+    
+    if (currentPlayer && currentPlayer.id) {
+        // Update the existing local save
+        localKey = `dq_save_${currentPlayer.id}`;
+        console.log(`🔄 Updating existing character: ${localKey}`);
+    } else {
+        // Only create a new one if no character is loaded
+        const tempId = 'cloud_' + Date.now();
+        localKey = `dq_save_${tempId}`;
+        console.log(`➕ Creating new local character: ${localKey}`);
+    }
+    
+    localStorage.setItem(localKey, JSON.stringify(saveData));
+    
+    // Use your existing loadCharacter function
+    loadCharacter(localKey.replace('dq_save_', ''));
+    
+    // Update last_login
+    const { data: { user } } = await calamitySupabase.auth.getUser();
+    if (user) {
+        await calamitySupabase
+            .from('calamity_saves')
+            .update({ last_login: new Date().toISOString() })
+            .eq('id', saveId);
+    }
+}
+
     // Use your existing loadCharacter function
     loadCharacter(tempId);
     
@@ -12794,45 +13099,56 @@ async function logoutFromCloud() {
 }
 
 // Load cloud characters list
-async function loadCloudCharacters() {
-    const { data: { user } } = await calamitySupabase.auth.getUser();
-    if (!user) return;
-    
+async function loadCloudCharacter(saveId) {
     const { data, error } = await calamitySupabase
         .from('calamity_saves')
-        .select('*')
-        .eq('user_id', user.id);
+        .select('character_data, username')
+        .eq('id', saveId)
+        .single();
     
     if (error) {
-        console.error('Error loading characters:', error);
+        alert('Error loading character: ' + error.message);
         return;
     }
     
-    let html = '<div class="message"><h3>Your Cloud Characters</h3>';
+    // The character_data contains your FULL save snapshot
+    const saveData = data.character_data;
     
-    if (data && data.length > 0) {
-        data.forEach(save => {
-            html += `
-                <div style="border: 1px solid #333; padding: 10px; margin: 10px 0;">
-                    <strong>${save.username}</strong> - Lv ${save.level} ${save.class || 'Adventurer'}<br>
-                    <small>Last played: ${new Date(save.last_login).toLocaleString()}</small><br>
-                    <button onclick="loadCloudCharacter('${save.id}')">▶ LOAD</button>
-                </div>
-            `;
-        });
-    } else {
-        html += '<p>No cloud saves yet.</p>';
+    // ═══════════════════════════════════════════════════════════════
+    // FIX: Always use the character's permanent ID, not a temp cloud ID
+    // ═══════════════════════════════════════════════════════════════
+    const characterId = saveData.characterId;
+    const localKey = `dq_save_${characterId}`;
+    
+    console.log(`💾 Saving cloud character to: ${localKey}`);
+    
+    // Save to localStorage using the PERMANENT character ID
+    localStorage.setItem(localKey, JSON.stringify(saveData));
+    
+    // Clean up any old cloud_ duplicates with the same character ID
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith('dq_save_cloud_')) {
+            const data = JSON.parse(localStorage.getItem(key));
+            if (data.characterId === characterId) {
+                console.log(`🧹 Removing duplicate cloud save: ${key}`);
+                localStorage.removeItem(key);
+            }
+        }
     }
     
-    // Add button to save current character if one is loaded
-    if (gameState.player) {
-        html += `<button onclick="saveToCloud()" style="margin-top: 10px;">☁️ SAVE CURRENT CHARACTER</button>`;
-    }
+    // Use your existing loadCharacter function (pass the character ID, not tempId)
+    loadCharacter(characterId);
     
-    html += '</div>';
-    document.getElementById('cloudCharacterList').innerHTML = html;
+    // Update last_login
+    const { data: { user } } = await calamitySupabase.auth.getUser();
+    if (user) {
+        await calamitySupabase
+            .from('calamity_saves')
+            .update({ last_login: new Date().toISOString() })
+            .eq('id', saveId);
+    }
 }
-
 
         function showShop() {
             checkGameVersion();
@@ -18417,6 +18733,18 @@ function consumePips(cs, amount, cooldown) {
             p.hp = Math.min(p.maxHp, p.hp + steal);
             modifierResult.messages.push(`<span style="color:#FF4488;">💎 Ruby: Lifesteal +${steal} HP</span>`);
         }
+
+        // ── GEM ELEMENTAL DAMAGE DISPLAY ─────────────────────────────────
+if (gemLightningDmg > 0) {
+    modifierResult.messages.push(`<span style="color:#FFD700;">⚡ +${gemLightningDmg} Lightning damage</span>`);
+}
+if (gemFireDmg > 0) {
+    modifierResult.messages.push(`<span style="color:#FF6600;">🔥 +${gemFireDmg} Fire damage</span>`);
+}
+if (gemFrostDmg > 0) {
+    modifierResult.messages.push(`<span style="color:#88EEFF;">❄️ +${gemFrostDmg} Frost damage</span>`);
+}
+
         // Voidstone spell leech — converts portion of melee hit to MP (unique: restores mana, not HP)
         if (gemSpellLeech > 0 && finalDamage > 0) {
             const mpSteal = Math.max(1, Math.floor(finalDamage * (gemSpellLeech / 100)));
@@ -22509,5 +22837,161 @@ window.addEventListener('beforeunload', function() {
             </div>
         </div>
     </div>
+
+
+    <!-- All your existing code above this point -->
+
+<!-- ═══════════════════════════════════════════════════════════════
+     GEM VALIDATION & REPAIR SYSTEM - AT THE VERY END
+     ═══════════════════════════════════════════════════════════════ -->
+<script>
+// ═══════════════════════════════════════════════════════════════
+// GEM VALIDATION & REPAIR SYSTEM - Event Driven
+// ═══════════════════════════════════════════════════════════════
+
+// Define the repair function once
+function validateAndRepairGems() {
+    if (!window.gameState?.player?.weapon) return; // Silent fail if not ready
+    
+    console.log('🔍 Running gem validation...');
+    let repaired = 0;
+    
+    function repairGem(gem, index, location) {
+        if (!gem) return false;
+        
+        const isBroken = !gem.stats || Object.keys(gem.stats).length === 0 || 
+                         gem.tier === null || gem.tier === undefined || 
+                         isNaN(gem.tier) || 
+                         (gem.name && gem.name.includes('undefined'));
+        
+        if (!isBroken) return false;
+        
+        console.log(`🔧 Repairing broken gem at ${location}[${index}]:`, gem);
+        
+        let typeKey = gem.type || 'topaz';
+        let tier = 1;
+        
+        if (gem.tier && !isNaN(gem.tier)) tier = gem.tier;
+        else if (gem.id && gem.id.includes('_t')) {
+            const match = gem.id.match(/_t(\d+)/);
+            if (match) tier = parseInt(match[1]);
+        }
+        
+        const gemDef = window.GEM_TYPES?.[typeKey];
+        const stats = {};
+        
+        if (gemDef?.rolls) {
+            const statPool = [...gemDef.stats];
+            const shuffled = statPool.sort(() => Math.random()-0.5);
+            const picked = [...new Set(shuffled)].slice(0, 2);
+            const mult = window.GEM_TIER_MULT?.[tier] || 1.0;
+            
+            for (const stat of picked) {
+                const [lo, hi] = gemDef.rolls[stat];
+                stats[stat] = Math.floor((lo + Math.random()*(hi-lo+1)) * mult);
+            }
+        } else {
+            if (typeKey === 'topaz' || typeKey === 'Topaz') {
+                stats.lightningDmg = 9;
+                stats.critBonus = 4;
+            } else if (typeKey === 'emerald' || typeKey === 'Emerald') {
+                stats.weaponDmg = 6;
+                stats.lifesteal = 2;
+            } else {
+                stats.weaponDmg = 5;
+            }
+        }
+        
+        gem.stats = stats;
+        gem.tier = tier;
+        gem.cut = true;
+        gem.name = `${['','T1 ','T2 ','T3 ','T4 '][tier] || `T${tier} `}${gemDef?.name || typeKey.charAt(0).toUpperCase() + typeKey.slice(1)}`;
+        gem.description = window.describeGemStats ? 
+            window.describeGemStats(stats) : 
+            Object.entries(stats).map(([k,v]) => `+${v} ${k}`).join(', ');
+        
+        return true;
+    }
+    
+    const player = gameState.player;
+    
+    if (player.weapon) {
+        const weaponData = window.WEAPONS?.[player.weapon];
+        if (weaponData?.gems) {
+            weaponData.gems.forEach((gem, i) => {
+                if (repairGem(gem, i, 'equipped weapon')) repaired++;
+            });
+        }
+    }
+    
+    if (player.inventory) {
+        player.inventory.forEach((item, invIndex) => {
+            if (item?.gems) {
+                item.gems.forEach((gem, gemIndex) => {
+                    if (repairGem(gem, gemIndex, `inventory[${invIndex}]`)) repaired++;
+                });
+            }
+        });
+    }
+    
+    if (repaired > 0) {
+        console.log(`✅ Repaired ${repaired} broken gem(s)!`);
+        if (window.localSave) window.localSave();
+    }
+}
+
+// ===== EVENT TRIGGERS =====
+
+// 1. Run ONCE when page loads AND character is ready
+document.addEventListener('DOMContentLoaded', function() {
+    // Check every second until character loads, then run once
+    const checkInterval = setInterval(() => {
+        if (window.gameState?.player?.weapon) {
+            clearInterval(checkInterval);
+            validateAndRepairGems();
+        }
+    }, 1000);
+});
+
+// 2. Run whenever a gem is socketed (find your socket function)
+if (typeof window.socketGem === 'function') {
+    const originalSocketGem = window.socketGem;
+    window.socketGem = function(...args) {
+        const result = originalSocketGem.apply(this, args);
+        validateAndRepairGems(); // Check after socketing
+        return result;
+    };
+}
+
+// 3. Run whenever a new gem is cut
+if (typeof window.cutGem === 'function') {
+    const originalCutGem = window.cutGem;
+    window.cutGem = function(...args) {
+        const result = originalCutGem.apply(this, args);
+        // The new gem should be fine, but check anyway
+        setTimeout(validateAndRepairGems, 100);
+        return result;
+    };
+}
+
+// 4. Run after loading a saved game
+if (typeof window.loadGame === 'function') {
+    const originalLoadGame = window.loadGame;
+    window.loadGame = function(...args) {
+        const result = originalLoadGame.apply(this, args);
+        validateAndRepairGems();
+        return result;
+    };
+}
+
+// 5. Manual trigger for debugging (optional)
+window.fixMyGems = validateAndRepairGems;
+
+
+</script>
+
+
+
+
 </body>
 </html>
