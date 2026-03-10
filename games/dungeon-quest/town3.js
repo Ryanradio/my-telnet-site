@@ -425,14 +425,14 @@ window.TOWNS.town3 = {
             <!-- ░░ RETURN PORTALS ░░ -->
             <div class="t3-divider">◈ &nbsp; RETURN &nbsp; PORTALS &nbsp; ◈</div>
             <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:12px;">
-                <div class="t3-portal-row" onclick="usePortal('town1')">
-                    🌀 &nbsp;PORTAL → <strong>${t1name}</strong>
-                    <span style="font-size:10px;color:#444;margin-left:8px;">the green hills of home</span>
-                </div>
-                <div class="t3-portal-row" onclick="usePortal('town2')">
-                    🌀 &nbsp;PORTAL → <strong>${t2name}</strong>
-                    <span style="font-size:10px;color:#444;margin-left:8px;">ash and iron await</span>
-                </div>
+                <div class="t3-portal-row" onclick="portalTransition('town1')">
+    🌀 &nbsp;PORTAL → <strong>${t1name}</strong>
+    <span style="font-size:10px;color:#444;margin-left:8px;">the green hills of home</span>
+</div>
+<div class="t3-portal-row" onclick="portalTransition('town2')">
+    🌀 &nbsp;PORTAL → <strong>${t2name}</strong>
+    <span style="font-size:10px;color:#444;margin-left:8px;">ash and iron await</span>
+</div>
             </div>
 
             <!-- ░░ FOOTER ░░ -->

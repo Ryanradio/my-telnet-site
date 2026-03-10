@@ -373,18 +373,18 @@ window.TOWNS.town2 = {
 
         // ── Portals ─────────────────────────────────────────────────────
         let portals = `
-            <div class="t2-portal-row" onclick="usePortal('town1')">
-                🌀 &nbsp;PORTAL → <strong>${t1name}</strong>
-                <span style="font-size:10px;color:#9966aa;margin-left:8px;">the green hills you left behind</span>
-            </div>`;
-        if (hasVisitedTown3) {
-            portals += `
-            <div class="t2-portal-row" onclick="usePortal('town3')"
-                 style="border-color:#5a4000;background:rgba(255,215,0,0.04);">
-                🌀 &nbsp;PORTAL → <strong>${t3name}</strong>
-                <span style="font-size:10px;color:#aa8800;margin-left:8px;">beyond the edge of the world</span>
-            </div>`;
-        }
+            <div class="t2-portal-row" onclick="portalTransition('town1')">
+    🌀 &nbsp;PORTAL → <strong>${t1name}</strong>
+    <span style="font-size:10px;color:#9966aa;margin-left:8px;">the green hills you left behind</span>
+</div>`;
+if (hasVisitedTown3) {
+    portals += `
+    <div class="t2-portal-row" onclick="portalTransition('town3')"
+         style="border-color:#5a4000;background:rgba(255,215,0,0.04);">
+        🌀 &nbsp;PORTAL → <strong>${t3name}</strong>
+        <span style="font-size:10px;color:#aa8800;margin-left:8px;">beyond the edge of the world</span>
+    </div>`;
+}
 
         // ── Compose final screen ────────────────────────────────────────
         screen.style.position = 'relative';

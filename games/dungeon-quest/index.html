@@ -2436,6 +2436,197 @@ body.terminal-mode #menuContainer {
             font-size: 22px;
         }
 
+        /* Portal Transition Effects */
+.portal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.portal-swirl {
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(circle at center, 
+        rgba(0, 100, 255, 0.8) 0%,
+        rgba(0, 50, 150, 0.9) 30%,
+        rgba(0, 0, 0, 1) 70%);
+    animation: portalSwirl 1.5s ease-out forwards;
+}
+
+@keyframes portalSwirl {
+    0% {
+        transform: scale(0) rotate(0deg);
+        opacity: 0;
+    }
+    30% {
+        transform: scale(1.2) rotate(180deg);
+        opacity: 1;
+    }
+    70% {
+        transform: scale(2) rotate(360deg);
+        opacity: 0.8;
+        background: radial-gradient(circle at center,
+            rgba(0, 200, 255, 0.9) 0%,
+            rgba(0, 0, 150, 1) 50%,
+            rgba(0, 0, 0, 1) 90%);
+    }
+    100% {
+        transform: scale(3) rotate(540deg);
+        opacity: 0;
+    }
+}
+
+.portal-flash {
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+    background: white;
+    animation: flashFade 0.8s ease-out forwards;
+}
+
+@keyframes flashFade {
+    0% { opacity: 0; }
+    20% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+.portal-particles {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(
+        45deg,
+        rgba(0, 150, 255, 0.3) 0px,
+        rgba(0, 150, 255, 0.3) 2px,
+        transparent 2px,
+        transparent 10px
+    );
+    animation: particleDrift 2s linear infinite;
+}
+
+@keyframes particleDrift {
+    0% { transform: translateX(0) translateY(0); }
+    100% { transform: translateX(20px) translateY(20px); }
+}
+
+/* ======================================================
+   PORTAL TRANSITION EFFECTS - FADE TO BLACK + MESSAGES
+   ====================================================== */
+
+/* Fade to black overlay - first step */
+.fade-to-black {
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
+    background: black;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 2s ease;
+}
+
+/* Portal message container - where text appears */
+.portal-message-container {
+    position: fixed;
+    inset: 0;
+    z-index: 100001;
+    background: black;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+}
+
+.portal-message-container.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* The message text itself */
+.portal-message {
+    color: #00ff41;
+    font-family: 'VT323', monospace;
+    font-size: 24px;
+    text-align: center;
+    max-width: 600px;
+    line-height: 1.6;
+    text-shadow: 0 0 10px #00ff41;
+    margin-bottom: 40px;
+    white-space: pre-wrap;
+}
+
+/* Typing cursor effect */
+.portal-message-cursor {
+    display: inline-block;
+    width: 15px;
+    height: 30px;
+    background: #00ff41;
+    animation: blink 1s infinite;
+    margin-left: 5px;
+    vertical-align: middle;
+}
+
+/* Continue button */
+.portal-continue-btn {
+    background: transparent;
+    border: 2px solid #00ff41;
+    color: #00ff41;
+    font-family: 'VT323', monospace;
+    font-size: 28px;
+    padding: 15px 40px;
+    cursor: pointer;
+    opacity: 0;
+    transform: scale(0.9);
+    transition: opacity 0.3s ease, transform 0.2s ease;
+    animation: pulse 2s infinite;
+}
+
+.portal-continue-btn.visible {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.portal-continue-btn:hover {
+    background: #00ff41;
+    color: black;
+}
+
+/* Pulse animation for the button */
+@keyframes pulse {
+    0%, 100% { box-shadow: 0 0 10px #00ff41; }
+    50% { box-shadow: 0 0 30px #00ff41; }
+}
+
+/* White flash overlay - 1 second long */
+.white-flash {
+    position: fixed;
+    inset: 0;
+    z-index: 100002;
+    background: white;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.1s ease;
+}
+
+/* Fade from black overlay - 3 seconds long */
+.fade-from-black {
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
+    background: black;
+    opacity: 1;
+    pointer-events: none;
+    transition: opacity 3s ease;
+}
+
     </style>
 </head>
 <body>
@@ -2600,6 +2791,98 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 // Use a different variable name to avoid conflicts
 const calamitySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 console.log('✅ Supabase initialized for cloud saves');
+
+
+// ======================================================
+// PORTAL MESSAGES - Random messages during teleport
+// ======================================================
+const PORTAL_MESSAGES = [
+    "The world twists around you...",
+    "You feel dizzy... nauseous...",
+    "Your stomach lurches as reality bends...",
+    "Colors bleed together... sounds stretch...",
+    "You're nowhere and everywhere at once...",
+    "The portal tastes like copper and regret...",
+    "Your bones vibrate at a frequency that shouldn't exist...",
+    "Time hiccups... you hiccup too...",
+    "Beam me up Scotty!",
+    "You see the back of your own head...",
+    "A voice whispers: 'wrong way'... then laughs...",
+    "You remember a memory that hasn't happened yet...",
+    "The darkness has a texture... it's velvet... angry velvet...",
+    "Your left foot is in tomorrow. Your right foot is last Tuesday.",
+    "The universe sneezes. You're the tissue.",
+    "You briefly become a concept instead of a person.",
+    "The portal asks if you have insurance. You don't.",
+    "You pass a version of yourself going the opposite direction. They look better rested.",
+    "For a moment, you understand the language of rocks.",
+    "You feel an overwhelming urge to file taxes.",
+    "The void offers you a snack. You decline. It looks disappointed.",
+    "You're pretty sure you just orbited a star. Briefly.",
+    "A small god uses you as a skipping stone.",
+    "You taste purple. It's not bad, just... unexpected.",
+    "The universe reboots. Please wait...",
+    "Loading next area... ████████░░ 80%",
+    "You feel like a character in a loading screen.",
+    "Reality buffer underflow. Rebooting perceptions...",
+    "You briefly glimpse the code. It's messy. You wrote some of it.",
+    "The void whispers: 'your save file is fine. probably.'",
+    "You pass through a dimension where everyone is made of cheese. You're lactose intolerant now.",
+    "You feel watched. It's just the dev. He's eating popcorn.",
+    "The portal sneezes. You're the allergen.",
+    "You experience ego death. Your ego apologizes and asks for another chance.",
+    "You realize the portal is just two mirrors facing each other. You're stuck in infinity.",
+    "You feel a hand in your pocket. It's yours. From five minutes ago.",
+    "The void has a Yelp page. 2.5 stars. 'Too empty.'",
+    "You hear someone humming. It's you. From another dimension. They're off-key.",
+    "You briefly become a 3D rendering of yourself. The polygons are showing.",
+    "The universe does a hard reset. Settings restored to default.",
+    "You feel like you're in a loading screen. Because you are. Meta enough for you?",
+    "The portal says 'goodbye' in a language that doesn't exist yet.",
+    "You pass through a cloud of expired memes. They're stale.",
+    "You feel smarter. Then you realize it's just static electricity.",
+    "The void tries to sell you a timeshare. You consider it.",
+    "You experience a brief existential crisis. It passes. Mostly.",
+    "You see a sign: 'Welcome to the Between. Population: You.'",
+    "The darkness asks for your password. You guess 'password'. It works.",
+    "You sneeze and accidentally time travel 3 seconds. You do it again on purpose.",
+    "You feel like you're in a loading screen. That's because you are. We're still loading.",
+    "The void has a gift shop. It only sells regrets.",
+    "You hear elevator music. It's just the hum of reality breaking.",
+    "You pass through a dimension where cats rule. They seem indifferent to your arrival.",
+    "You feel your save file autosaving. It's like a gentle pat on the back.",
+    "The universe sneezes. Gesundheit.",
+    "You briefly become the main character. The pressure is intense.",
+    "The void asks for your opinion on its decor. You lie. It knows.",
+    "You feel like you're in a loading screen. We're aware. It's almost done.",
+    "You experience deja vu. Then again. And again. And again. And—",
+    "The portal apologizes for the wait. 'Short-staffed,' it explains.",
+    "You see a version of yourself that took the other portal. They look more successful.",
+    "The darkness has a faint smell of ozone and bad decisions.",
+    "You feel like you're in a loading screen. This is the last time we'll mention it. Promise.",
+    "The void offers you a beverage. It's just black. Very on-brand.",
+    "You hear cosmic static. It sounds like your grandparents' old TV.",
+    "You briefly understand the meaning of life. Then you forget it immediately.",
+    "The universe stretches. You're the warm-up.",
+    "You feel like you're in a loading screen. Okay, that was the last time. Really.",
+    "The portal tells you a joke. You don't get it. It sighs.",
+    "You pass through a dimension made entirely of loading screens. Very meta.",
+    "You feel your character sheet updating. It tingles.",
+    "The void has a waiting room. The magazines are from 1994.",
+    "You hear someone call your name. It's you. From the future. They say 'duck'.",
+    "You duck. Nothing happens. Future you has a weird sense of humor.",
+    "The universe buffers. Please be patient.",
+    "You feel like you've been here before. Because you have. Earlier in this list.",
+    "The portal is running on dial-up. You hear the connection sounds.",
+    "You experience a moment of clarity. It passes.",
+    "The void asks you to rate your experience. You give it 4 stars. 'Too dark.'",
+    "You feel your items being checked. No liquids past this point.",
+    "You pass through a dimension of pure math. It's oddly emotional.",
+    "The universe reboots. You're the update.",
+    "You feel like you're in a loading screen. Okay, actually this time it's almost done.",
+    "The portal says 'thank you for traveling with us.' You didn't have a choice.",
+    "You see light ahead. Or is it just hope? Probably just the next town.",
+];
 
 
 // ☁️ CLOUD SAVE - Reads current game state and uploads to Supabase
@@ -12389,7 +12672,7 @@ async function loadCloudCharacter(saveId) {
             if (tid === 'town2') {
                 // Town2 always has the return portal visible
                 portalOption = `
-                    <div class="menu-option" onclick="usePortal('town1')"
+                    <div class="menu-option" onclick="portalTransition('town1')"
                          style="border-color:#AA88FF;background:rgba(170,136,255,0.07);">
                         ► 🌀 PORTAL → Silverdale
                         ${!portalUnlocked ? '<span style="color:#AA88FF;font-size:12px;"> [First use unlocks permanent travel]</span>' : ''}
@@ -12399,7 +12682,7 @@ async function loadCloudCharacter(saveId) {
                 const destDef  = (typeof TOWNS !== 'undefined' && TOWNS['town2']) ? TOWNS['town2'] : null;
                 const destName = destDef ? destDef.name : 'Ashen Harbor';
                 portalOption = `
-                    <div class="menu-option" onclick="usePortal('town2')"
+                    <div class="menu-option" onclick="portalTransition('town2')"
                          style="border-color:#AA88FF;background:rgba(170,136,255,0.07);">
                         ► 🌀 PORTAL → ${destName}
                         ${hasRunestone ? '<span style="color:#AA88FF;font-size:12px;"> [White Runestone ✦]</span>' : ''}
@@ -23057,6 +23340,130 @@ if (typeof window.loadGame === 'function') {
 
 // 5. Manual trigger for debugging (optional)
 window.fixMyGems = validateAndRepairGems;
+
+
+// Portal transition effect
+// ======================================================
+// PORTAL TRANSITION - Fade to black, funny message, flash, fade in
+// ======================================================
+function portalTransition(targetTown) {
+    return new Promise((resolve) => {
+        
+        // ===== STEP 1: FADE TO BLACK (2 seconds) =====
+        const fadeToBlack = document.createElement('div');
+        fadeToBlack.className = 'fade-to-black';
+        document.body.appendChild(fadeToBlack);
+        
+        // Start fade to black
+        setTimeout(() => {
+            fadeToBlack.style.opacity = '1';
+        }, 10);
+        
+        // ===== STEP 2: SHOW MESSAGES (after black) =====
+        setTimeout(() => {
+            // Remove fade overlay
+            fadeToBlack.remove();
+            
+            // Create message container
+            const msgContainer = document.createElement('div');
+            msgContainer.className = 'portal-message-container';
+            msgContainer.id = 'portalMessageContainer';
+            document.body.appendChild(msgContainer);
+            
+            // Make it visible
+            setTimeout(() => {
+                msgContainer.classList.add('visible');
+            }, 10);
+            
+            // Pick a random message
+            const randomIndex = Math.floor(Math.random() * PORTAL_MESSAGES.length);
+            const fullMessage = PORTAL_MESSAGES[randomIndex];
+            
+            // Create message div
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'portal-message';
+            msgContainer.appendChild(messageDiv);
+            
+            // Add cursor
+            const cursor = document.createElement('span');
+            cursor.className = 'portal-message-cursor';
+            messageDiv.appendChild(cursor);
+            
+            // Typewriter effect variables
+            let charIndex = 0;
+            
+            // Typewriter effect
+            const typeInterval = setInterval(() => {
+                if (charIndex < fullMessage.length) {
+                    // Insert character before cursor
+                    cursor.insertAdjacentHTML('beforebegin', fullMessage[charIndex]);
+                    charIndex++;
+                } else {
+                    clearInterval(typeInterval);
+                    
+                    // Create continue button after typing finishes
+                    setTimeout(() => {
+                        const continueBtn = document.createElement('button');
+                        continueBtn.className = 'portal-continue-btn';
+                        continueBtn.textContent = '▶ CONTINUE';
+                        
+                        // Continue button click handler
+                        continueBtn.onclick = () => {
+                            
+                            // Remove message container
+                            msgContainer.remove();
+                            
+                            // ===== STEP 3: WHITE FLASH (1 second) =====
+                            const whiteFlash = document.createElement('div');
+                            whiteFlash.className = 'white-flash';
+                            document.body.appendChild(whiteFlash);
+                            
+                            // Fade in flash
+                            setTimeout(() => {
+                                whiteFlash.style.opacity = '1';
+                            }, 10);
+                            
+                            // CHANGE TOWN DURING THE FLASH (happens in background)
+                            showTown(targetTown);
+                            
+                            // Keep flash for 1 second
+                            setTimeout(() => {
+                                // Remove flash
+                                whiteFlash.remove();
+                                
+                                // ===== STEP 4: FADE FROM BLACK (3 seconds) =====
+                                const fadeFromBlack = document.createElement('div');
+                                fadeFromBlack.className = 'fade-from-black';
+                                document.body.appendChild(fadeFromBlack);
+                                
+                                // Start fade from black (town is already loaded underneath)
+                                setTimeout(() => {
+                                    fadeFromBlack.style.opacity = '0';
+                                }, 10);
+                                
+                                // Clean up after fade completes
+                                setTimeout(() => {
+                                    fadeFromBlack.remove();
+                                    resolve();
+                                }, 3000); // 3 second fade
+                                
+                            }, 1000); // 1 second white flash
+                        };
+                        
+                        msgContainer.appendChild(continueBtn);
+                        
+                        // Show button with animation
+                        setTimeout(() => {
+                            continueBtn.classList.add('visible');
+                        }, 50);
+                        
+                    }, 500); // Pause after typing
+                }
+            }, 50); // Typing speed (50ms per character = 20 chars per second)
+            
+        }, 2000); // 2 second fade to black
+    });
+}
 
 
 </script>
