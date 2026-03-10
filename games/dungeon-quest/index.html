@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
    <!-- PWA: standalone mode removes browser chrome on iOS/Android -->
    <meta name="apple-mobile-web-app-capable" content="yes">
    <!-- Inline PWA manifest — portrait lock for Android Chrome -->
@@ -2608,12 +2608,18 @@ body.terminal-mode #menuContainer {
 /* White flash overlay - 1 second long */
 .white-flash {
     position: fixed;
-    inset: 0;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
     z-index: 100002;
     background: white;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.1s ease;
+    /* iOS status bar fix */
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
 }
 
 /* Fade from black overlay - 3 seconds long */
