@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
    <!-- PWA: standalone mode removes browser chrome on iOS/Android -->
    <meta name="apple-mobile-web-app-capable" content="yes">
    <!-- Inline PWA manifest — portrait lock for Android Chrome -->
@@ -14502,45 +14502,137 @@ async function loadCloudCharacter(saveId) {
 function equipItem(type, key) {
     const p = gameState.player;
     const playerClass = p.baseClass || p.class;
+    
+    if (type === 'weapon') {
+        const weapon = WEAPONS[key];
+        if (!weapon) { 
+            alert('Invalid weapon!'); 
+            return; 
+        }
+        
+        // ===== CLASS WEAPON RESTRICTIONS =====
+        const CLASS_WEAPON_RESTRICTIONS = {
+            warrior: { swords: true, axes: true, maces: true, hammers: true, staves: false, wands: false, bows: false, daggers: false, unarmed: true },
+            paladin: { swords: true, axes: true, maces: true, hammers: true, staves: false, wands: false, bows: false, daggers: false, unarmed: true },
+            cleric:  { swords: false, axes: false, maces: true, hammers: false, staves: true, wands: true, bows: false, daggers: false, unarmed: true },
+            mage:    { swords: false, axes: false, maces: false, hammers: false, staves: true, wands: true, bows: false, daggers: false, unarmed: true },
+            warlock: { swords: false, axes: false, maces: false, hammers: false, staves: true, wands: true, bows: false, daggers: false, unarmed: true },
+            archer:  { swords: false, axes: false, maces: false, hammers: false, staves: false, wands: false, bows: true, daggers: false, unarmed: true },
+            hunter:  { swords: false, axes: false, maces: false, hammers: false, staves: false, wands: false, bows: true, daggers: false, unarmed: true },
+            rogue:   { swords: false, axes: false, maces: false, hammers: false, staves: false, wands: false, bows: false, daggers: true, unarmed: true }
+        };
+
+        // Get restrictions for this class
+        const restrictions = CLASS_WEAPON_RESTRICTIONS[playerClass];
+        if (!restrictions) {
+            console.warn(`No weapon restrictions defined for class: ${playerClass}`);
+            // Allow if no restrictions defined
+        } else {
+            // Determine weapon type
+            let weaponType = weapon.weaponSubtype || weapon.type || '';
+            weaponType = weaponType.toLowerCase();
             
-            if (type === 'weapon') {
-                const weapon = WEAPONS[key];
-                if (!weapon) { alert('Invalid weapon!'); return; }
-                // bare_fists always equippable (unequip path)
-                if (!weapon.unarmed) {
-                    if (!canUseWeapon(playerClass, weapon)) {
-                        alert(`Your class (${playerClass}) cannot use ${weapon.name}!`);
-                        return;
-                    }
-                    if (weapon.level > p.level) {
-                        alert(`You must be level ${weapon.level} to equip ${weapon.name}!`);
-                        return;
-                    }
-                }
-                p.weapon = key;
-            } else {
-                const armor = ARMOR[key];
-                if (!armor) { alert('Invalid armor!'); return; }
-                // no_armor always equippable (unequip path)
-                if (!armor.unarmored) {
-                    if (!canUseArmor(playerClass, armor)) {
-                        alert(`Your class (${playerClass}) cannot use ${armor.name}!`);
-                        return;
-                    }
-                    if (armor.level > p.level) {
-                        alert(`You must be level ${armor.level} to equip ${armor.name}!`);
-                        return;
-                    }
-                }
-                p.armor = key;
+            let canEquip = true;
+            let restrictionMessage = '';
+            
+            // Check weapon type against restrictions
+            if (weapon.unarmed) {
+                canEquip = restrictions.unarmed;
+                restrictionMessage = 'unarmed';
+            }
+            else if (weaponType.includes('sword')) {
+                canEquip = restrictions.swords;
+                restrictionMessage = 'swords';
+            }
+            else if (weaponType.includes('axe')) {
+                canEquip = restrictions.axes;
+                restrictionMessage = 'axes';
+            }
+            else if (weaponType.includes('mace')) {
+                canEquip = restrictions.maces;
+                restrictionMessage = 'maces';
+            }
+            else if (weaponType.includes('hammer') || weaponType.includes('maul')) {
+                canEquip = restrictions.hammers;
+                restrictionMessage = 'hammers';
+            }
+            else if (weaponType.includes('staff')) {
+                canEquip = restrictions.staves;
+                restrictionMessage = 'staves';
+            }
+            else if (weaponType.includes('wand')) {
+                canEquip = restrictions.wands;
+                restrictionMessage = 'wands';
+            }
+            else if (weaponType.includes('bow')) {
+                canEquip = restrictions.bows;
+                restrictionMessage = 'bows';
+            }
+            else if (weaponType.includes('dagger') || weaponType.includes('shiv') || weaponType.includes('knife')) {
+                canEquip = restrictions.daggers;
+                restrictionMessage = 'daggers';
             }
             
-            // 💾 Recalc gem stat bonuses (hp/mp/defense) then auto-save
-            recalcGemStats(p);
-            saveGame();
-            updateHud();
-            showInventory();
+            // If not allowed, show message and return
+            if (!canEquip) {
+                const className = playerClass.charAt(0).toUpperCase() + playerClass.slice(1);
+                alert(`${className}s cannot equip ${restrictionMessage}!`);
+                return;
+            }
         }
+        
+        // Check existing classRestriction or allowedClasses from weapons.js
+        if (weapon.classRestriction && weapon.classRestriction !== playerClass) {
+            alert(`This weapon can only be used by ${weapon.classRestriction}s!`);
+            return;
+        }
+        
+        if (weapon.allowedClasses && !weapon.allowedClasses.includes(playerClass)) {
+            alert(`This weapon cannot be used by your class!`);
+            return;
+        }
+        
+        // If we get here, equipping is allowed
+        p.weapon = key;
+        
+        // Remove from inventory? (depends on your inventory system)
+        const index = p.inventory.indexOf(key);
+        if (index !== -1) p.inventory.splice(index, 1);
+        
+        // Add old weapon back to inventory if it wasn't bare_fists
+        if (p.oldWeapon && p.oldWeapon !== 'bare_fists') {
+            p.inventory.push(p.oldWeapon);
+        }
+        p.oldWeapon = key;
+        
+        recalcGemStats(p);
+        saveGame();
+        updateHud();
+        
+        // Show success message
+        if (typeof termAppend === 'function') {
+            termAppend(`✅ Equipped ${weapon.name}`, 'term-success');
+        }
+        
+        // Refresh current view
+        if (typeof showInventory === 'function') showInventory();
+    }
+    // Handle armor equipping (if you have armor)
+    else if (type === 'armor') {
+        // Your existing armor equipping code here
+        const armor = ARMOR[key];
+        if (!armor) { alert('Invalid armor!'); return; }
+        
+        p.armor = key;
+        recalcGemStats(p);
+        saveGame();
+        updateHud();
+        if (typeof termAppend === 'function') {
+            termAppend(`✅ Equipped ${armor.name}`, 'term-success');
+        }
+        if (typeof showInventory === 'function') showInventory();
+    }
+}
 
         // Unequip: revert to bare fists or no armor
         function unequipItem(type) {
@@ -18730,6 +18822,10 @@ function consumePips(cs, amount, cooldown) {
   const effectiveDR  = Math.min(DR_CAP, rawDefense * DR_PER_POINT) * (1 - armorPiercing);
 
   damage = Math.max(1, Math.floor(damage * (1 - effectiveDR)));
+  // Apply magic resistance if this is a magic attack
+if (type === 'magic' && defender.magicResist) {
+    damage = Math.floor(damage * (1 - defender.magicResist / 100));
+}
 
   // Crit check
   let crit = false;
@@ -20733,19 +20829,23 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
                 `</span>`, 'term-dim');
         }
 
-        const result = _didDodge
-            ? { damage: 0, dodged: true, crit: false }
-            : calculateDamage({
-                attacker: enemy,
-                defender: {
-                    defense: totalDef,
-                    magicDefense: totalDef
-                },
-                base: _scaledBase,
-                type: enemy.magicAttack ? 'magic' : 'physical',
-                dodgeChance: 0,          // already rolled above
-                armorPiercing: intent.armorPiercing
-            });
+        // Calculate magic resistance
+const magicResist = enemy.magicAttack ? getMagicResist(p) : 0;
+
+const result = _didDodge
+    ? { damage: 0, dodged: true, crit: false }
+    : calculateDamage({
+        attacker: enemy,
+        defender: {
+            defense: totalDef,
+            magicDefense: totalDef,
+            magicResist: magicResist
+        },
+        base: _scaledBase,
+        type: enemy.magicAttack ? 'magic' : 'physical',
+        dodgeChance: 0,
+        armorPiercing: intent.armorPiercing
+    });
 
         if (result.dodged) {
             if (_debugCombat) termAppend(`<span style="color:#553300;">  → ✅ DODGED</span>`, 'term-dim');
@@ -20856,6 +20956,37 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
         }
     });
 }
+
+// Calculate magic resistance from armor and class
+function getMagicResist(player) {
+    let resist = 0;
+    
+    // Check equipped armor for magicResist
+    if (player.armor) {
+        const armor = ARMOR[player.armor];
+        if (armor && armor.magicResist) {
+            resist += armor.magicResist;
+        }
+    }
+    
+    // Class-based innate resistance
+    const classResist = {
+        'warrior': 0,
+        'paladin': 10,
+        'cleric': 20,
+        'rogue': 5,
+        'mage': 30,
+        'warlock': 25,
+        'archer': 5,
+        'hunter': 7,
+        'runesmith': 15
+    };
+    
+    resist += classResist[player.class] || 0;
+    
+    return Math.min(50, resist); // Cap at 50%
+}
+
 // ═══════════════════════════════════════════════════════════════
 // CHECK / END COMBAT
 // ═══════════════════════════════════════════════════════════════
