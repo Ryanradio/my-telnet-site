@@ -58,19 +58,26 @@ const CLASS_WEAPON_POOLS = {
  * @param {string} enemyRarity - Rarity of defeated enemy
  * @returns {object|null} Generated weapon or null if no drop
  */
-function generateWeaponDrop(player, enemyLevel, enemyRarity = 'common', skipRoll = false) {
-    // Calculate drop chance
-    const baseChance = WEAPON_DROP_CONFIG.baseDropChance;
-    const rarityMult = WEAPON_DROP_CONFIG.rarityMultipliers[enemyRarity] || 1.0;
-    const dropChance = baseChance * rarityMult;
-    
-    // Roll for drop (skipRoll = true when debug pre-roll already decided the outcome)
-    if (!skipRoll && Math.random() > dropChance) {
-        return null; // No drop
+function generateWeaponDrop(player, enemyLevel, enemyRarity = 'common', skipRoll = false, forcedQuality = null) {
+    // Calculate drop chance (skip if forced)
+    if (!skipRoll) {
+        const baseChance = WEAPON_DROP_CONFIG.baseDropChance;
+        const rarityMult = WEAPON_DROP_CONFIG.rarityMultipliers[enemyRarity] || 1.0;
+        const dropChance = baseChance * rarityMult;
+        
+        if (Math.random() > dropChance) {
+            return null; // No drop
+        }
     }
     
     // Determine weapon level (player level or +1)
-    const weaponLevel = player.level + (Math.random() < 0.3 ? 1 : 0);
+    // If skipRoll is true (sysop command), always use exact player level
+let weaponLevel;
+if (skipRoll) {
+    weaponLevel = player.level; // Sysop commands get exact level
+} else {
+    weaponLevel = player.level + (Math.random() < 0.3 ? 1 : 0); // Normal random drop
+}
     
     // Get class weapon pool
     const playerClass = player.baseClass || player.class;
@@ -79,16 +86,20 @@ function generateWeaponDrop(player, enemyLevel, enemyRarity = 'common', skipRoll
     // Pick random weapon type
     const weaponType = weaponTypes[Math.floor(Math.random() * weaponTypes.length)];
     
-    // Determine quality
-    const quality = rollQuality();
+    // 👇 THIS IS THE IMPORTANT CHANGE 👇
+    // Determine quality - use forced quality if provided, otherwise roll randomly
+    let quality;
+    if (forcedQuality) {
+        quality = forcedQuality;  // Use what we passed in (like 'legendary')
+    } else {
+        quality = rollQuality();   // Roll randomly (normal behavior)
+    }
     
-    // Generate base damage matching weapons.js scaling:
-    // Level 1 weapons: ~4-7 | Level 10: ~30-45 | Level 20: ~70-105
-    // Formula: baseDamage ≈ level * 3.5, variance ≈ 50% of base
+    // Generate base damage
     const baseDamage = Math.max(3, Math.floor(weaponLevel * 3.5));
     const damageVariance = Math.max(2, Math.floor(baseDamage * 0.5));
     
-    // Apply quality bonus as percentage of base (matching QUALITY_CONFIG.bonusPct)
+    // Apply quality bonus
     const bonusPct = (QUALITY_CONFIG[quality] && QUALITY_CONFIG[quality].bonusPct !== undefined)
         ? QUALITY_CONFIG[quality].bonusPct
         : 0;
@@ -119,7 +130,7 @@ function generateWeaponDrop(player, enemyLevel, enemyRarity = 'common', skipRoll
         modifiers: modifiers,
         cost: calculateWeaponValue(weaponLevel, quality, modifiers),
         description: generateWeaponDescription(weaponType, quality, modifiers),
-        isDropped: true // Flag to identify dropped weapons
+        isDropped: true
     };
     
     return weapon;

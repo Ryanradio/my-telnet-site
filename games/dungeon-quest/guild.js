@@ -129,6 +129,7 @@ function generateGuildWeaponReward(p, level) {
         gems:           [],   // one empty slot — getGemSlots('rare') returns 1
         modifiers:      [],
         isGuildReward:  true,
+        isDropped:      true,  // required so save system persists this weapon
         unarmed:        false,
     };
 
@@ -162,6 +163,7 @@ function generateGuildArmorReward(p, level) {
         classRestriction: baseClass,
         gems:           [],
         isGuildReward:  true,
+        isDropped:      true,  // required so save system persists this armor
         unarmored:      false,
     };
 
@@ -331,8 +333,6 @@ function acceptGuildQuest(questId, townId) {
     };
 
     saveGame();
-    localSave();
-    console.log('💾 Guild quest accepted - saved locally');
     showGuild();
 }
 
@@ -528,7 +528,6 @@ function checkGuildKillProgress(killKey) {
         if (typeof termAppend === 'function') {
             termAppend(`<span style="color:#4488FF;">📋 Guild: ${questDef.targetName} ${currentKills}/${killCount}</span>`, 'term-dim');
         }
-        localSave();
     }
 }
 

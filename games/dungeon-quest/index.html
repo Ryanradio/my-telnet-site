@@ -6111,40 +6111,38 @@ guildQuests: (() => {
         // ═══════════════════════════════════════════════════════════════
         // GENERATED WEAPONS - Save all dynamically created weapon drops
         // ═══════════════════════════════════════════════════════════════
-        generatedWeapons: (() => {
-            const generated = {};
-            // Find all weapons in inventory that have .isDropped flag
-            (p.inventory || []).forEach(itemKey => {
-                const weapon = WEAPONS[itemKey];
-                if (weapon && weapon.isDropped) {
-                    generated[itemKey] = weapon;
-                }
-            });
-            // Also save equipped weapon if it's generated
-            if (p.weapon && WEAPONS[p.weapon]?.isDropped) {
-                generated[p.weapon] = WEAPONS[p.weapon];
-            }
-            return generated;
-        })(),
+generatedWeapons: (() => {
+    const generated = {};
+    const isGenerated = (w) => w && (w.isDropped || w.isGuildReward);
+    (p.inventory || []).forEach(itemKey => {
+        const weapon = WEAPONS[itemKey];
+        if (isGenerated(weapon)) {
+            generated[itemKey] = weapon;
+        }
+    });
+    if (p.weapon && isGenerated(WEAPONS[p.weapon])) {
+        generated[p.weapon] = WEAPONS[p.weapon];
+    }
+    return generated;
+})(),
         
         // ═══════════════════════════════════════════════════════════════
         // GENERATED ARMOR - Save all dynamically created armor drops
         // ═══════════════════════════════════════════════════════════════
-        generatedArmor: (() => {
-            const generated = {};
-            // Find all armor in inventory that have .isDropped flag
-            (p.inventory || []).forEach(itemKey => {
-                const armor = ARMOR[itemKey];
-                if (armor && armor.isDropped) {
-                    generated[itemKey] = armor;
-                }
-            });
-            // Also save equipped armor if it's generated
-            if (p.armor && ARMOR[p.armor]?.isDropped) {
-                generated[p.armor] = ARMOR[p.armor];
-            }
-            return generated;
-        })(),
+  generatedArmor: (() => {
+    const generated = {};
+    const isGenerated = (a) => a && (a.isDropped || a.isGuildReward);
+    (p.inventory || []).forEach(itemKey => {
+        const armor = ARMOR[itemKey];
+        if (isGenerated(armor)) {
+            generated[itemKey] = armor;
+        }
+    });
+    if (p.armor && isGenerated(ARMOR[p.armor])) {
+        generated[p.armor] = ARMOR[p.armor];
+    }
+    return generated;
+})(),
 
         // ═══════════════════════════════════════════════════════════════
         // STATIC ITEM GEMS - Save gems socketed into non-dropped weapons/armor.
@@ -9334,57 +9332,69 @@ function bannerHoldCancel() {
 
             switch(type) {
                 case 'weapon':
-                    if (WEAPONS[id]) {
-                        // Check if quality was specified and is valid
-                        if (quality && QUALITY_CONFIG[quality]) {
-                            // Generate a weapon drop with specified quality
-                            const baseWeapon = WEAPONS[id];
-                            const weaponLevel = baseWeapon.level || gameState.player.level;
-                            
-                            // Create unique weapon ID with quality
-                            const weaponId = `${id}_${quality}_sysop_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-                            
-                            // Apply quality bonus (percentage-based)
-                            const bonusPct = QUALITY_CONFIG[quality].bonusPct || 0;
-                            const bonusDmg = Math.floor(baseWeapon.baseDamage * bonusPct);
-                            const bonusMax = Math.floor((baseWeapon.maxDamage || baseWeapon.baseDamage) * bonusPct);
-                            
-                            // Create the quality weapon
-                            const qualityWeapon = {
-                                id: weaponId,
-                                name: `${QUALITY_CONFIG[quality].name} ${baseWeapon.name}`,
-                                baseDamage: baseWeapon.baseDamage + bonusDmg,
-                                maxDamage: (baseWeapon.maxDamage || baseWeapon.baseDamage) + bonusMax,
-                                baseMagicDamage: baseWeapon.baseMagicDamage || 0,
-                                level: weaponLevel,
-                                quality: quality,
-                                modifiers: [],
-                                cost: baseWeapon.cost * (QUALITY_CONFIG[quality].bonusPct + 1),
-                                description: `A ${quality} quality ${baseWeapon.name}`,
-                                slot: 'weapon',
-                                isDropped: true, // Mark as generated
-                                classRestriction: baseWeapon.classRestriction
-                            };
-                            
-                            // Register in WEAPONS
-                            WEAPONS[weaponId] = qualityWeapon;
-                            
-                            // Add to inventory
-                            gameState.player.inventory.push(weaponId);
-                            
-                            terminalPrint(`SUCCESS: Gave ${quality} ${baseWeapon.name} (${qualityWeapon.baseDamage}-${qualityWeapon.maxDamage} dmg)`, 'success');
-                        } else {
-                            // Give base weapon without quality
-                            if (!gameState.player.inventory.includes(id)) {
-                                gameState.player.inventory.push(id);
-                            }
-                            terminalPrint(`SUCCESS: Gave weapon '${WEAPONS[id].name}' to player`, 'success');
-                        }
-                    } else {
-                        terminalPrint(`ERROR: Weapon '${id}' not found`, 'error');
-                        terminalPrint('Use /listweapons to see available weapons', 'error');
+    if (WEAPONS[id]) {
+        if (quality && QUALITY_CONFIG[quality]) {
+            // Generate a weapon drop with the specified quality
+            const dropped = generateWeaponDrop(
+                gameState.player,
+                gameState.player.level,
+                'common',
+                true,        // skipRoll = true
+                quality      // forcedQuality = 'legendary'
+            );
+            
+            // Get the base weapon we're trying to create
+            const baseWeapon = WEAPONS[id];
+            
+            // Preserve the weapon's identity
+            dropped.type = baseWeapon.type || dropped.type;
+            dropped.weaponSubtype = baseWeapon.weaponSubtype || dropped.weaponSubtype;
+            dropped.classRestriction = baseWeapon.classRestriction || null;
+            dropped.allowedClasses = baseWeapon.allowedClasses ? [...baseWeapon.allowedClasses] : null;
+            dropped.poisonChance = baseWeapon.poisonChance || null;
+            
+            // Set the name with quality prefix
+            dropped.name = `${QUALITY_CONFIG[quality].name} ${baseWeapon.name}`;
+            
+            // FORCE the quality to be what we asked for (extra safety)
+            dropped.quality = quality;
+            
+            // Add to WEAPONS and inventory
+            WEAPONS[dropped.id] = dropped;
+            gameState.player.inventory.push(dropped.id);
+            
+            const slots = getGemSlots(quality);
+            
+            // Show modifiers in the success message
+            let modifierText = '';
+            if (dropped.modifiers && dropped.modifiers.length > 0) {
+                modifierText = ` with ${dropped.modifiers.length} modifier${dropped.modifiers.length > 1 ? 's' : ''}`;
+            }
+            
+            terminalPrint(`SUCCESS: Gave ${quality} ${baseWeapon.name} (${dropped.baseDamage}-${dropped.maxDamage} dmg${modifierText}, ${slots} gem slot${slots!==1?'s':''})`, 'success');
+            
+            // Show the modifiers if any
+            if (dropped.modifiers && dropped.modifiers.length > 0) {
+                terminalPrint(`  Modifiers:`, 'info');
+                dropped.modifiers.forEach(modKey => {
+                    const mod = WEAPON_MODIFIERS[modKey];
+                    if (mod) {
+                        terminalPrint(`    → ${mod.name}`, 'info');
                     }
-                    break;
+                });
+            }
+        } else {
+            // No quality specified - just give the base weapon
+            if (!gameState.player.inventory.includes(id)) {
+                gameState.player.inventory.push(id);
+            }
+            terminalPrint(`SUCCESS: Gave weapon '${WEAPONS[id].name}' to player`, 'success');
+        }
+    } else {
+        terminalPrint(`ERROR: Weapon '${id}' not found`, 'error');
+        terminalPrint('Use /listweapons to see available weapons', 'error');
+    }
+    break;
                 case 'armor':
                     if (ARMOR[id]) {
                         // Check if quality was specified and is valid
@@ -14171,16 +14181,17 @@ async function loadCloudCharacter(saveId) {
                     eqModifierHtml += '</div>';
                 }
                 
-                invHtml += `
-                    <div class="item-card equipped">
-                        <div style="color:${qc?.color || '#0f0'};">⚔️ ${eqWeapon.name}</div>
-                        <div style="font-size:12px;">${buildWeaponDmgLine(eqWeapon, null, p)}</div>
-                        ${eqModifierHtml}
-                        ${buildGemSlotHtml(eqWeapon)}
-                        <div style="color:var(--border-color);">EQUIPPED</div>
-                        <button onclick="unequipItem('weapon')" style="border-color:#ff4444;color:#ff4444;margin-top:4px;">UNEQUIP</button>
-                    </div>
-                `;
+               invHtml += `
+    <div class="item-card equipped">
+        <div style="color:${qc?.color || '#0f0'};">⚔️ ${eqWeapon.name}</div>
+        <div style="font-size:12px;">${buildWeaponDmgLine(eqWeapon, null, p)}</div>
+        <div style="color:#888; font-size:11px; margin-top:2px;">Level ${eqWeapon.level || 1}</div>
+        ${eqModifierHtml}
+        ${buildGemSlotHtml(eqWeapon)}
+        <div style="color:var(--border-color);">EQUIPPED</div>
+        <button onclick="unequipItem('weapon')" style="border-color:#ff4444;color:#ff4444;margin-top:4px;">UNEQUIP</button>
+    </div>
+`;
             }
 
             // ── Other weapons in inventory ────────────────────────────────
@@ -14222,18 +14233,19 @@ async function loadCloudCharacter(saveId) {
                     modifierHtml += '</div>';
                 }
                 
-                invHtml += `
-                    <div class="item-card${canEquip ? '' : ' unusable'}" style="${canEquip ? '' : 'opacity:0.5;border-color:#555;'}">
-                        <div style="color: ${qualityColor};">${weapon.name}</div>
-                        <div style="font-size:12px;">${buildWeaponDmgLine(weapon, null, p)}</div>
-                        ${modifierHtml}
-                        ${buildGemSlotHtml(weapon)}
-                        ${canEquip 
-                            ? `<button onclick="equipItem('weapon', '${key}')">EQUIP</button>`
-                            : `<button disabled style="opacity:0.4;">CANNOT EQUIP</button>`
-                        }
-                    </div>
-                `;
+               invHtml += `
+    <div class="item-card${canEquip ? '' : ' unusable'}" style="${canEquip ? '' : 'opacity:0.5;border-color:#555;'}">
+        <div style="color: ${qualityColor};">${weapon.name}</div>
+        <div style="font-size:12px;">${buildWeaponDmgLine(weapon, null, p)}</div>
+        ${weapon ? `<div style="color:#888; font-size:11px; margin-top:2px;">Level ${weapon.level || 1}</div>` : ''}
+        ${modifierHtml}
+        ${buildGemSlotHtml(weapon)}
+        ${canEquip 
+            ? `<button onclick="equipItem('weapon', '${key}')">EQUIP</button>`
+            : `<button disabled style="opacity:0.4;">CANNOT EQUIP</button>`
+        }
+    </div>
+`;
             });
 
             invHtml += `
@@ -14593,6 +14605,12 @@ function equipItem(type, key) {
         }
         
         // If we get here, equipping is allowed
+        // ===== LEVEL REQUIREMENT CHECK =====
+if (weapon.level && weapon.level > p.level) {
+    alert(`You need to be level ${weapon.level} to equip this weapon! (You are level ${p.level})`);
+    return;
+}
+    // If we get here, equipping is allowed
         p.weapon = key;
         
         // Remove from inventory? (depends on your inventory system)
@@ -14623,6 +14641,12 @@ function equipItem(type, key) {
         const armor = ARMOR[key];
         if (!armor) { alert('Invalid armor!'); return; }
         
+// ===== LEVEL REQUIREMENT CHECK FOR ARMOR =====
+if (armor.level && armor.level > p.level) {
+    alert(`You need to be level ${armor.level} to equip this armor! (You are level ${p.level})`);
+    return;
+}
+
         p.armor = key;
         recalcGemStats(p);
         saveGame();
@@ -23168,9 +23192,151 @@ function showCharacterStats() {
 
 
 
+// ============================================
+// SILENT CLOUD SAVE - No prompts, just saves
+// ============================================
+async function silentCloudSave() {
+    const p = gameState.player;
+    if (!p) return;
+    
+    try {
+        const { data: { user } } = await calamitySupabase.auth.getUser();
+        if (!user) return;
+        
+        const snapshot = buildSaveSnapshot();
+        if (!snapshot) return;
+        
+        // Check if this character already exists for this user
+        const { data: existing } = await calamitySupabase
+            .from('calamity_saves')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('username', p.name);
+        
+        if (existing && existing.length > 0) {
+            // Update existing save
+            await calamitySupabase
+                .from('calamity_saves')
+                .update({
+                    character_data: snapshot,
+                    level: p.level,
+                    class: p.class,
+                    last_login: new Date().toISOString()
+                })
+                .eq('id', existing[0].id);
+        } else {
+            // Insert new save
+            await calamitySupabase
+                .from('calamity_saves')
+                .insert([{
+                    user_id: user.id,
+                    username: p.name,
+                    character_data: snapshot,
+                    level: p.level,
+                    class: p.class,
+                    last_login: new Date().toISOString()
+                }]);
+        }
+        
+        console.log("☁️ Silent cloud save complete");
+    } catch (e) {
+        console.error('Silent cloud save failed:', e);
+    }
+}
+
 
 // ============================================
-// AUTO CLOUD SAVE ON PAGE LEAVE - No warning, just saves
+// AUTO SAVE ON PAGE HIDE (backup for some mobile browsers)
+// ============================================
+window.addEventListener('pagehide', function() {
+    const p = gameState.player;
+    if (!p) return;
+    
+    console.log("📱 Page hiding - saving...");
+    saveGame();
+    
+    // Try cloud save (fire and forget)
+    calamitySupabase.auth.getUser().then(({ data: { user } }) => {
+        if (!user) return;
+        
+        const snapshot = buildSaveSnapshot();
+        if (!snapshot) return;
+        
+        calamitySupabase
+            .from('calamity_saves')
+            .upsert({
+                user_id: user.id,
+                username: p.name,
+                character_data: snapshot,
+                level: p.level,
+                class: p.class,
+                last_login: new Date().toISOString()
+            }, { onConflict: 'username' })
+            .then(() => console.log("☁️ Pagehide cloud save"));
+    });
+});
+
+// ============================================
+// AUTO SAVE WHEN APP GOES TO BACKGROUND (iOS swipe away)
+// ============================================
+document.addEventListener('visibilitychange', function() {
+    // If page is hidden (swiped away, tab switched, etc.)
+    if (document.visibilityState === 'hidden') {
+        const p = gameState.player;
+        
+        // Only save if there's an active character
+        if (!p) return;
+        
+        console.log("📱 App going to background - saving...");
+        
+        // STEP 1: Save locally
+        saveGame();
+        
+        // STEP 2: Try cloud save
+        calamitySupabase.auth.getUser().then(({ data: { user } }) => {
+            if (!user) return;
+            
+            const snapshot = buildSaveSnapshot();
+            if (!snapshot) return;
+            
+            calamitySupabase
+                .from('calamity_saves')
+                .select('id')
+                .eq('user_id', user.id)
+                .eq('username', p.name)
+                .then(({ data: existing }) => {
+                    if (existing && existing.length > 0) {
+                        calamitySupabase
+                            .from('calamity_saves')
+                            .update({
+                                character_data: snapshot,
+                                level: p.level,
+                                class: p.class,
+                                last_login: new Date().toISOString()
+                            })
+                            .eq('id', existing[0].id)
+                            .then(() => console.log("☁️ Background cloud update"));
+                    } else {
+                        calamitySupabase
+                            .from('calamity_saves')
+                            .insert([{
+                                user_id: user.id,
+                                username: p.name,
+                                character_data: snapshot,
+                                level: p.level,
+                                class: p.class,
+                                last_login: new Date().toISOString()
+                            }])
+                            .then(() => console.log("☁️ Background cloud insert"));
+                    }
+                });
+        });
+    }
+});
+
+
+// ============================================
+// AUTO SAVE ON PAGE LEAVE - Uses Supabase client (works on all devices)
 // ============================================
 window.addEventListener('beforeunload', function() {
     const p = gameState.player;
@@ -23178,29 +23344,58 @@ window.addEventListener('beforeunload', function() {
     // Only save if there's an active character
     if (!p) return;
     
-    // Check if logged in by looking for Supabase token
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.includes('sb-') && key.includes('auth-token')) {
-            // Found token, try to save in background
+    // STEP 1: ALWAYS save locally first
+    console.log("💾 Saving locally before leaving...");
+    saveGame();
+    
+    // STEP 2: Try to save to cloud using the same method that works
+    try {
+        // Check if logged in by checking Supabase client
+        calamitySupabase.auth.getUser().then(({ data: { user } }) => {
+            if (!user) return;
+            
             const snapshot = buildSaveSnapshot();
             if (!snapshot) return;
             
-            // Use sendBeacon for reliable background sending
-            const blob = new Blob([JSON.stringify({
-                username: p.name,
-                character_data: snapshot,
-                level: p.level,
-                class: p.class,
-                last_login: new Date().toISOString()
-            })], { type: 'application/json' });
-            
-            navigator.sendBeacon('https://epalhhtnwlvpvlnhdwfd.supabase.co/rest/v1/calamity_saves', blob);
-            break;
-        }
+            // Check if this character already exists
+            calamitySupabase
+                .from('calamity_saves')
+                .select('id')
+                .eq('user_id', user.id)
+                .eq('username', p.name)
+                .then(({ data: existing }) => {
+                    if (existing && existing.length > 0) {
+                        // Update existing save
+                        calamitySupabase
+                            .from('calamity_saves')
+                            .update({
+                                character_data: snapshot,
+                                level: p.level,
+                                class: p.class,
+                                last_login: new Date().toISOString()
+                            })
+                            .eq('id', existing[0].id)
+                            .then(() => console.log("☁️ Cloud update complete"));
+                    } else {
+                        // Insert new save
+                        calamitySupabase
+                            .from('calamity_saves')
+                            .insert([{
+                                user_id: user.id,
+                                username: p.name,
+                                character_data: snapshot,
+                                level: p.level,
+                                class: p.class,
+                                last_login: new Date().toISOString()
+                            }])
+                            .then(() => console.log("☁️ Cloud insert complete"));
+                    }
+                });
+        });
+    } catch (error) {
+        console.error("Cloud save failed:", error);
     }
 });
-
 
 
 
@@ -23442,6 +23637,31 @@ document.addEventListener('DOMContentLoaded', function() {
             validateAndRepairGems();
         }
     }, 1000);
+});
+
+// ── Auto-save on close / swipe away ──────────────────────────────
+document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState === 'hidden') {
+        if (!gameState || !gameState.player) return;
+        const { data: { user } } = await calamitySupabase.auth.getUser();
+        if (user) {
+            saveGame();
+            console.log('📱 Auto cloud-saved on app background');
+        } else {
+            saveGame(); // local save at minimum
+        }
+    }
+});
+
+window.addEventListener('beforeunload', (e) => {
+    if (!gameState || !gameState.player) return;
+    saveGame(); // local save always completes synchronously
+    calamitySupabase.auth.getUser().then(({ data: { user } }) => {
+        if (!user) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
 });
 
 // 2. Run whenever a gem is socketed (find your socket function)

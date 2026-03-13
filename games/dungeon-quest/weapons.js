@@ -20,6 +20,7 @@ const WEAPONS = {
         "level": 1,
         "quality": "normal",
         "slot": "weapon",
+        "allowedClasses": ["mage", "cleric", "acolyte", "warlock", "sorceror", "druid", "necrolyte", "runesmith"],
         "weaponSubtype": "wand"
     },
     bare_fists: {
@@ -97,6 +98,7 @@ const WEAPONS = {
         "level": 1,
         "quality": "normal",
         "slot": "weapon",
+        "allowedClasses": ["mage", "cleric", "acolyte", "warlock", "sorceror", "druid", "necrolyte", "runesmith"],
         "weaponSubtype": "staff"
     },
     apprentice_staff: {
@@ -108,6 +110,7 @@ const WEAPONS = {
         "level": 2,
         "quality": "normal",
         "slot": "weapon",
+        "allowedClasses": ["mage", "cleric", "acolyte", "warlock", "sorceror", "druid", "necrolyte", "runesmith"],
         "weaponSubtype": "staff"
     },
     bone_pick: {
@@ -131,6 +134,7 @@ const WEAPONS = {
         "level": 2,
         "quality": "normal",
         "slot": "weapon",
+        "allowedClasses": ["mage", "cleric", "acolyte", "warlock", "sorceror", "druid", "necrolyte", "runesmith"],
         "weaponSubtype": "wand"
     },
     short_sword: {
@@ -163,7 +167,8 @@ const WEAPONS = {
         "cost": 500,
         "level": 4,
         "quality": "normal",
-        "slot": "weapon"
+        "slot": "weapon",
+        "allowedClasses": ["warrior", "paladin", "cleric", "acolyte", "crusader"]
     },
     ember_wand: {
         "name": "Ember Wand",
@@ -174,6 +179,7 @@ const WEAPONS = {
         "level": 4,
         "quality": "normal",
         "slot": "weapon",
+        "allowedClasses": ["mage", "cleric", "acolyte", "warlock", "sorceror", "druid", "necrolyte", "runesmith"],
         "weaponSubtype": "wand"
     },
     flame_staff: {
@@ -185,6 +191,7 @@ const WEAPONS = {
         "level": 4,
         "quality": "normal",
         "slot": "weapon",
+        "allowedClasses": ["mage", "cleric", "acolyte", "warlock", "sorceror", "druid", "necrolyte", "runesmith"],
         "weaponSubtype": "staff"
     },
     longbow: {
@@ -260,6 +267,7 @@ const WEAPONS = {
         "level": 6,
         "quality": "normal",
         "slot": "weapon",
+        "allowedClasses": ["mage", "cleric", "acolyte", "warlock", "sorceror", "druid", "necrolyte", "runesmith"],
         "weaponSubtype": "wand"
     },
     ice_staff: {
@@ -271,6 +279,7 @@ const WEAPONS = {
         "level": 6,
         "quality": "normal",
         "slot": "weapon",
+        "allowedClasses": ["mage", "cleric", "acolyte", "warlock", "sorceror", "druid", "necrolyte", "runesmith"],
         "weaponSubtype": "staff"
     },
     shadow_fang: {
@@ -317,6 +326,7 @@ const WEAPONS = {
         "level": 8,
         "quality": "normal",
         "slot": "weapon",
+        "allowedClasses": ["mage", "cleric", "acolyte", "warlock", "sorceror", "druid", "necrolyte", "runesmith"],
         "weaponSubtype": "staff"
     },
     midnight_dirk: {
@@ -350,6 +360,7 @@ const WEAPONS = {
         "level": 8,
         "quality": "normal",
         "slot": "weapon",
+        "allowedClasses": ["mage", "cleric", "acolyte", "warlock", "sorceror", "druid", "necrolyte", "runesmith"],
         "weaponSubtype": "wand"
     },
     blacksteel_dagger: {
@@ -373,6 +384,7 @@ const WEAPONS = {
         "level": 10,
         "quality": "normal",
         "slot": "weapon",
+        "allowedClasses": ["mage", "cleric", "acolyte", "warlock", "sorceror", "druid", "necrolyte", "runesmith"],
         "weaponSubtype": "wand"
     },
     archmage_staff: {
@@ -384,6 +396,7 @@ const WEAPONS = {
         "level": 10,
         "quality": "normal",
         "slot": "weapon",
+        "allowedClasses": ["mage", "cleric", "acolyte", "warlock", "sorceror", "druid", "necrolyte", "runesmith"],
         "weaponSubtype": "staff"
     },
     dragonslayer_bow: {
@@ -462,6 +475,7 @@ const WEAPONS = {
         "level": 12,
         "quality": "normal",
         "slot": "weapon",
+        "allowedClasses": ["mage", "cleric", "acolyte", "warlock", "sorceror", "druid", "necrolyte", "runesmith"],
         "weaponSubtype": "staff"
     },
     void_wand: {
@@ -473,6 +487,7 @@ const WEAPONS = {
         "level": 12,
         "quality": "normal",
         "slot": "weapon",
+        "allowedClasses": ["mage", "cleric", "acolyte", "warlock", "sorceror", "druid", "necrolyte", "runesmith"],
         "weaponSubtype": "wand"
     },
     eclipse_blade: {
@@ -496,6 +511,7 @@ const WEAPONS = {
         "level": 14,
         "quality": "normal",
         "slot": "weapon",
+        "allowedClasses": ["mage", "cleric", "acolyte", "warlock", "sorceror", "druid", "necrolyte", "runesmith"],
         "weaponSubtype": "staff"
     },
     celestial_wand: {
@@ -507,6 +523,7 @@ const WEAPONS = {
         "level": 14,
         "quality": "normal",
         "slot": "weapon",
+        "allowedClasses": ["mage", "cleric", "acolyte", "warlock", "sorceror", "druid", "necrolyte", "runesmith"],
         "weaponSubtype": "wand"
     },
     phantom_bow: {
@@ -562,6 +579,7 @@ const WEAPONS = {
         "level": 16,
         "quality": "normal",
         "slot": "weapon",
+        "allowedClasses": ["mage", "cleric", "acolyte", "warlock", "sorceror", "druid", "necrolyte", "runesmith"],
         "weaponSubtype": "staff"
     },
     eternity_wand: {
@@ -573,6 +591,7 @@ const WEAPONS = {
         "level": 16,
         "quality": "normal",
         "slot": "weapon",
+        "allowedClasses": ["mage", "cleric", "acolyte", "warlock", "sorceror", "druid", "necrolyte", "runesmith"],
         "weaponSubtype": "wand"
     },
     godslayer: {
@@ -618,6 +637,7 @@ const WEAPONS = {
         "level": 18,
         "quality": "normal",
         "slot": "weapon",
+        "allowedClasses": ["mage", "cleric", "acolyte", "warlock", "sorceror", "druid", "necrolyte", "runesmith"],
         "weaponSubtype": "staff"
     },
     apocalypse_wand: {
@@ -629,6 +649,7 @@ const WEAPONS = {
         "level": 18,
         "quality": "normal",
         "slot": "weapon",
+        "allowedClasses": ["mage", "cleric", "acolyte", "warlock", "sorceror", "druid", "necrolyte", "runesmith"],
         "weaponSubtype": "wand"
     },
     demonic_blade: {
@@ -687,6 +708,7 @@ const WEAPONS = {
         "level": 20,
         "quality": "normal",
         "slot": "weapon",
+        "allowedClasses": ["mage", "cleric", "acolyte", "warlock", "sorceror", "druid", "necrolyte", "runesmith"],
         "weaponSubtype": "staff"
     },
     cosmic_wand: {
@@ -698,6 +720,7 @@ const WEAPONS = {
         "level": 20,
         "quality": "normal",
         "slot": "weapon",
+        "allowedClasses": ["mage", "cleric", "acolyte", "warlock", "sorceror", "druid", "necrolyte", "runesmith"],
         "weaponSubtype": "wand"
     },
     worldbreaker: {
@@ -823,7 +846,8 @@ const WEAPONS = {
         "slot": "weapon",
         "weaponSubtype": "hammer",
         "description": "A heavy iron maul. Slow but devastating.",
-        "isShopItem": true
+        "isShopItem": true,
+        "allowedClasses": ["warrior", "paladin", "cleric", "acolyte", "crusader"]
     },
     stone_hammer: {
         "name": "Stone Hammer",
@@ -914,7 +938,8 @@ const WEAPONS = {
         "slot": "weapon",
         "weaponSubtype": "hammer",
         "description": "Strikes with the force of a thunderclap.",
-        "isShopItem": true
+        "isShopItem": true,
+        "allowedClasses": ["warrior", "paladin", "cleric", "acolyte", "crusader"]
     },
     skullcracker: {
         "name": "Skullcracker",
@@ -1005,7 +1030,8 @@ const WEAPONS = {
         "slot": "weapon",
         "weaponSubtype": "hammer",
         "description": "Blessed by storm gods. Thunder follows each hit.",
-        "isShopItem": true
+        "isShopItem": true,
+        "allowedClasses": ["warrior", "paladin", "cleric", "acolyte", "crusader"]
     },
     colossus_hammer: {
         "name": "Colossus Hammer",
@@ -1057,7 +1083,8 @@ const WEAPONS = {
         "slot": "weapon",
         "weaponSubtype": "hammer",
         "description": "Darkness gathers around each devastating blow.",
-        "isShopItem": true
+        "isShopItem": true,
+        "allowedClasses": ["warrior", "paladin", "cleric", "acolyte", "crusader"]
     },
     world_ender: {
         "name": "World Ender",
@@ -1083,7 +1110,8 @@ const WEAPONS = {
         "slot": "weapon",
         "weaponSubtype": "hammer",
         "description": "Time bends around its arc.",
-        "isShopItem": true
+        "isShopItem": true,
+        "allowedClasses": ["warrior", "paladin", "cleric", "acolyte", "crusader"]
     },
     oblivion_hammer: {
         "name": "Oblivion Hammer",
@@ -1423,7 +1451,8 @@ const WEAPONS = {
         "slot": "weapon",
         "weaponSubtype": "mace",
         "description": "A dense wooden club. Primitive but effective.",
-        "isShopItem": true
+        "isShopItem": true,
+        "allowedClasses": ["warrior", "paladin", "cleric", "acolyte", "crusader"]
     },
     iron_mace: {
         "name": "Iron Mace",
@@ -1436,7 +1465,8 @@ const WEAPONS = {
         "slot": "weapon",
         "weaponSubtype": "mace",
         "description": "A simple iron mace with a spiked head.",
-        "isShopItem": true
+        "isShopItem": true,
+        "allowedClasses": ["warrior", "paladin", "cleric", "acolyte", "crusader"]
     },
     flanged_mace: {
         "name": "Flanged Mace",
@@ -1449,7 +1479,8 @@ const WEAPONS = {
         "slot": "weapon",
         "weaponSubtype": "mace",
         "description": "The flanges provide armor-piercing power.",
-        "isShopItem": true
+        "isShopItem": true,
+        "allowedClasses": ["warrior", "paladin", "cleric", "acolyte", "crusader"]
     },
     holy_mace: {
         "name": "Holy Mace",
@@ -1476,7 +1507,8 @@ const WEAPONS = {
         "slot": "weapon",
         "weaponSubtype": "mace",
         "description": "A heavier mace built for sustained combat.",
-        "isShopItem": true
+        "isShopItem": true,
+        "allowedClasses": ["warrior", "paladin", "cleric", "acolyte", "crusader"]
     },
     blessed_mace: {
         "name": "Blessed Mace",
@@ -1517,7 +1549,8 @@ const WEAPONS = {
         "slot": "weapon",
         "weaponSubtype": "mace",
         "description": "Its name is an accurate description.",
-        "isShopItem": true
+        "isShopItem": true,
+        "allowedClasses": ["warrior", "paladin", "cleric", "acolyte", "crusader"]
     },
     divine_mace: {
         "name": "Divine Mace",
@@ -1544,7 +1577,8 @@ const WEAPONS = {
         "slot": "weapon",
         "weaponSubtype": "mace",
         "description": "Captures the souls of those it slays.",
-        "isShopItem": true
+        "isShopItem": true,
+        "allowedClasses": ["warrior", "paladin", "cleric", "acolyte", "crusader"]
     },
     sanctified_mace: {
         "name": "Sanctified Mace",
@@ -1599,7 +1633,8 @@ const WEAPONS = {
         "slot": "weapon",
         "weaponSubtype": "mace",
         "description": "Calls down lightning upon each hit.",
-        "isShopItem": true
+        "isShopItem": true,
+        "allowedClasses": ["warrior", "paladin", "cleric", "acolyte", "crusader"]
     },
     wrath_of_the_gods: {
         "name": "Wrath of the Gods",
@@ -1640,7 +1675,8 @@ const WEAPONS = {
         "slot": "weapon",
         "weaponSubtype": "mace",
         "description": "The righteous wield it. The wicked fear it.",
-        "isShopItem": true
+        "isShopItem": true,
+        "allowedClasses": ["warrior", "paladin", "cleric", "acolyte", "crusader"]
     },
     apocalypse_mace: {
         "name": "Apocalypse Mace",
@@ -1667,7 +1703,8 @@ const WEAPONS = {
         "slot": "weapon",
         "weaponSubtype": "mace",
         "description": "The weapon of a god given to a mortal.",
-        "isShopItem": true
+        "isShopItem": true,
+        "allowedClasses": ["warrior", "paladin", "cleric", "acolyte", "crusader"]
     },
     eternity_crusher: {
         "name": "Eternity Crusher",
@@ -1680,7 +1717,8 @@ const WEAPONS = {
         "slot": "weapon",
         "weaponSubtype": "mace",
         "description": "Has outlasted three civilizations.",
-        "isShopItem": true
+        "isShopItem": true,
+        "allowedClasses": ["warrior", "paladin", "cleric", "acolyte", "crusader"]
     },
     oblivion_scepter: {
         "name": "Oblivion Scepter",
@@ -1707,7 +1745,8 @@ const WEAPONS = {
         "slot": "weapon",
         "weaponSubtype": "mace",
         "description": "The original weapon. Everything began here.",
-        "isShopItem": true
+        "isShopItem": true,
+        "allowedClasses": ["warrior", "paladin", "cleric", "acolyte", "crusader"]
     },
     // ═══ BOWS ════════════════════════
     short_bow: {
@@ -2409,6 +2448,335 @@ const WEAPONS = {
         "quality": "godly",
         "slot": "weapon"
     },
+
+    // ═══════════════════════════════════════════════════════════════
+    // MISSING WEAPON TYPES — added to complete class pools
+    // ═══════════════════════════════════════════════════════════════
+
+    // ── CROSSBOWS (archer, hunter, ranger) ───────────────────────
+    light_crossbow: {
+        "name": "Light Crossbow",
+        "baseDamage": 8, "maxDamage": 14,
+        "baseMagicDamage": 0,
+        "level": 1, "quality": "normal",
+        "weaponSubtype": "crossbow",
+        "allowedClasses": ["archer", "hunter", "ranger", "rogue"],
+        "cost": 80, "sellValue": 25,
+        "description": "A compact crossbow, easy to reload."
+    },
+    crossbow: {
+        "name": "Crossbow",
+        "baseDamage": 14, "maxDamage": 22,
+        "baseMagicDamage": 0,
+        "level": 3, "quality": "normal",
+        "weaponSubtype": "crossbow",
+        "allowedClasses": ["archer", "hunter", "ranger", "rogue"],
+        "cost": 180, "sellValue": 55,
+        "description": "A reliable crossbow with good range."
+    },
+    heavy_crossbow: {
+        "name": "Heavy Crossbow",
+        "baseDamage": 22, "maxDamage": 36,
+        "baseMagicDamage": 0,
+        "level": 6, "quality": "normal",
+        "weaponSubtype": "crossbow",
+        "allowedClasses": ["archer", "hunter", "ranger"],
+        "cost": 420, "sellValue": 130,
+        "description": "A powerful crossbow that hits like a cannon."
+    },
+    arbalest: {
+        "name": "Arbalest",
+        "baseDamage": 35, "maxDamage": 55,
+        "baseMagicDamage": 0,
+        "level": 10, "quality": "rare",
+        "weaponSubtype": "crossbow",
+        "allowedClasses": ["archer", "hunter", "ranger"],
+        "cost": 1200, "sellValue": 380,
+        "description": "A heavy war crossbow capable of piercing armor."
+    },
+    void_crossbow: {
+        "name": "Void Crossbow",
+        "baseDamage": 55, "maxDamage": 85,
+        "baseMagicDamage": 10,
+        "level": 15, "quality": "epic",
+        "weaponSubtype": "crossbow",
+        "allowedClasses": ["archer", "hunter", "ranger"],
+        "cost": 6500, "sellValue": 2000,
+        "description": "Bolts fired from this crossbow phase through defenses."
+    },
+    genesis_crossbow: {
+        "name": "Crossbow of Genesis",
+        "baseDamage": 80, "maxDamage": 120,
+        "baseMagicDamage": 20,
+        "level": 22, "quality": "legendary",
+        "weaponSubtype": "crossbow",
+        "allowedClasses": ["archer", "hunter", "ranger"],
+        "cost": 25000, "sellValue": 8000,
+        "description": "A crossbow forged at the dawn of creation."
+    },
+
+    // ── TOMES (mage, warlock, sorceror) ──────────────────────────
+    apprentice_tome: {
+        "name": "Apprentice Tome",
+        "baseDamage": 3, "maxDamage": 6,
+        "baseMagicDamage": 8,
+        "level": 1, "quality": "normal",
+        "weaponSubtype": "tome",
+        "allowedClasses": ["mage", "warlock", "sorceror", "necrolyte", "acolyte", "cleric"],
+        "cost": 60, "sellValue": 18,
+        "description": "A basic spellbook filled with beginner incantations."
+    },
+    arcane_tome: {
+        "name": "Arcane Tome",
+        "baseDamage": 5, "maxDamage": 10,
+        "baseMagicDamage": 18,
+        "level": 4, "quality": "normal",
+        "weaponSubtype": "tome",
+        "allowedClasses": ["mage", "warlock", "sorceror", "necrolyte"],
+        "cost": 300, "sellValue": 90,
+        "description": "Dense with forbidden arcane knowledge."
+    },
+    grimoire: {
+        "name": "Grimoire",
+        "baseDamage": 8, "maxDamage": 15,
+        "baseMagicDamage": 30,
+        "level": 8, "quality": "rare",
+        "weaponSubtype": "tome",
+        "allowedClasses": ["mage", "warlock", "sorceror", "necrolyte"],
+        "cost": 900, "sellValue": 280,
+        "description": "A grimoire bound in shadow-touched leather."
+    },
+    void_tome: {
+        "name": "Void Tome",
+        "baseDamage": 12, "maxDamage": 22,
+        "baseMagicDamage": 50,
+        "level": 13, "quality": "epic",
+        "weaponSubtype": "tome",
+        "allowedClasses": ["mage", "warlock", "sorceror", "necrolyte"],
+        "cost": 5000, "sellValue": 1600,
+        "description": "Written in a language that predates existence."
+    },
+    genesis_tome: {
+        "name": "Tome of Genesis",
+        "baseDamage": 18, "maxDamage": 32,
+        "baseMagicDamage": 80,
+        "level": 20, "quality": "legendary",
+        "weaponSubtype": "tome",
+        "allowedClasses": ["mage", "warlock", "sorceror", "necrolyte"],
+        "cost": 22000, "sellValue": 7000,
+        "description": "Contains the first spells ever cast."
+    },
+
+    // ── ORBS (mage, sorceror) ────────────────────────────────────
+    crystal_orb: {
+        "name": "Crystal Orb",
+        "baseDamage": 4, "maxDamage": 8,
+        "baseMagicDamage": 10,
+        "level": 2, "quality": "normal",
+        "weaponSubtype": "orb",
+        "allowedClasses": ["mage", "sorceror", "warlock"],
+        "cost": 100, "sellValue": 30,
+        "description": "A smooth crystal orb that amplifies magical energy."
+    },
+    flame_orb: {
+        "name": "Flame Orb",
+        "baseDamage": 6, "maxDamage": 12,
+        "baseMagicDamage": 20,
+        "level": 5, "quality": "normal",
+        "weaponSubtype": "orb",
+        "allowedClasses": ["mage", "sorceror", "warlock"],
+        "cost": 400, "sellValue": 120,
+        "description": "A smoldering orb of contained fire."
+    },
+    void_orb: {
+        "name": "Void Orb",
+        "baseDamage": 10, "maxDamage": 20,
+        "baseMagicDamage": 38,
+        "level": 10, "quality": "rare",
+        "weaponSubtype": "orb",
+        "allowedClasses": ["mage", "sorceror", "warlock"],
+        "cost": 1800, "sellValue": 560,
+        "description": "An orb of pure void energy. Looking into it is unsettling."
+    },
+    chaos_orb: {
+        "name": "Chaos Orb",
+        "baseDamage": 15, "maxDamage": 30,
+        "baseMagicDamage": 60,
+        "level": 16, "quality": "epic",
+        "weaponSubtype": "orb",
+        "allowedClasses": ["mage", "sorceror", "warlock"],
+        "cost": 9000, "sellValue": 2800,
+        "description": "An orb crackling with unstable chaotic magic."
+    },
+    genesis_orb: {
+        "name": "Orb of Genesis",
+        "baseDamage": 22, "maxDamage": 40,
+        "baseMagicDamage": 90,
+        "level": 22, "quality": "legendary",
+        "weaponSubtype": "orb",
+        "allowedClasses": ["mage", "sorceror", "warlock"],
+        "cost": 28000, "sellValue": 9000,
+        "description": "The first orb ever created. Reality warps around it."
+    },
+
+    // ── SHADOW ORBS (warlock) ────────────────────────────────────
+    shadow_orb: {
+        "name": "Shadow Orb",
+        "baseDamage": 8, "maxDamage": 16,
+        "baseMagicDamage": 22,
+        "level": 5, "quality": "rare",
+        "weaponSubtype": "orb",
+        "allowedClasses": ["warlock", "necrolyte"],
+        "cost": 600, "sellValue": 185,
+        "description": "A dark orb that drinks in light and radiates malice."
+    },
+    soul_orb: {
+        "name": "Soul Orb",
+        "baseDamage": 14, "maxDamage": 26,
+        "baseMagicDamage": 45,
+        "level": 12, "quality": "epic",
+        "weaponSubtype": "orb",
+        "allowedClasses": ["warlock", "necrolyte"],
+        "cost": 4200, "sellValue": 1300,
+        "description": "Harvested souls swirl visibly inside this orb."
+    },
+    void_shadow_orb: {
+        "name": "Void Shadow Orb",
+        "baseDamage": 20, "maxDamage": 38,
+        "baseMagicDamage": 70,
+        "level": 19, "quality": "legendary",
+        "weaponSubtype": "orb",
+        "allowedClasses": ["warlock", "necrolyte"],
+        "cost": 18000, "sellValue": 5500,
+        "description": "A convergence of shadow and void. The air chills around it."
+    },
+
+    // ── DARK STAVES (warlock, necrolyte) ────────────────────────
+    dark_staff: {
+        "name": "Dark Staff",
+        "baseDamage": 10, "maxDamage": 18,
+        "baseMagicDamage": 20,
+        "level": 4, "quality": "normal",
+        "weaponSubtype": "staff",
+        "allowedClasses": ["warlock", "necrolyte"],
+        "cost": 350, "sellValue": 105,
+        "description": "A staff carved from wood touched by dark magic."
+    },
+    shadow_staff: {
+        "name": "Shadow Staff",
+        "baseDamage": 16, "maxDamage": 28,
+        "baseMagicDamage": 35,
+        "level": 8, "quality": "rare",
+        "weaponSubtype": "staff",
+        "allowedClasses": ["warlock", "necrolyte"],
+        "cost": 1100, "sellValue": 340,
+        "description": "A staff that bends shadows to its wielder's will."
+    },
+    soul_staff: {
+        "name": "Soul Staff",
+        "baseDamage": 24, "maxDamage": 42,
+        "baseMagicDamage": 55,
+        "level": 13, "quality": "epic",
+        "weaponSubtype": "staff",
+        "allowedClasses": ["warlock", "necrolyte"],
+        "cost": 5500, "sellValue": 1700,
+        "description": "Trapped souls power this staff, crying out with each cast."
+    },
+    void_dark_staff: {
+        "name": "Staff of the Void",
+        "baseDamage": 35, "maxDamage": 60,
+        "baseMagicDamage": 80,
+        "level": 19, "quality": "legendary",
+        "weaponSubtype": "staff",
+        "allowedClasses": ["warlock", "necrolyte"],
+        "cost": 19000, "sellValue": 6000,
+        "description": "A staff born from the void itself. It hungers."
+    },
+
+    // ── HOLY STAVES (cleric, acolyte, paladin) ───────────────────
+    holy_staff: {
+        "name": "Holy Staff",
+        "baseDamage": 8, "maxDamage": 15,
+        "baseMagicDamage": 12,
+        "level": 3, "quality": "normal",
+        "weaponSubtype": "staff",
+        "allowedClasses": ["cleric", "acolyte", "paladin"],
+        "cost": 220, "sellValue": 65,
+        "description": "A staff blessed at a temple altar. Glows faintly."
+    },
+    sacred_staff: {
+        "name": "Sacred Staff",
+        "baseDamage": 14, "maxDamage": 24,
+        "baseMagicDamage": 22,
+        "level": 6, "quality": "normal",
+        "weaponSubtype": "staff",
+        "allowedClasses": ["cleric", "acolyte", "paladin"],
+        "cost": 550, "sellValue": 165,
+        "description": "Carved from the wood of a sacred tree."
+    },
+    divine_staff: {
+        "name": "Divine Staff",
+        "baseDamage": 20, "maxDamage": 36,
+        "baseMagicDamage": 38,
+        "level": 10, "quality": "rare",
+        "weaponSubtype": "staff",
+        "allowedClasses": ["cleric", "acolyte", "paladin"],
+        "cost": 2000, "sellValue": 620,
+        "description": "Blessed by a high priest. Burns undead on contact."
+    },
+    celestial_rod: {
+        "name": "Celestial Rod",
+        "baseDamage": 30, "maxDamage": 54,
+        "baseMagicDamage": 60,
+        "level": 15, "quality": "epic",
+        "weaponSubtype": "staff",
+        "allowedClasses": ["cleric", "acolyte", "paladin"],
+        "cost": 8000, "sellValue": 2500,
+        "description": "A rod of pure divine light. Angels whisper when it strikes."
+    },
+    gods_scepter: {
+        "name": "God's Scepter",
+        "baseDamage": 45, "maxDamage": 80,
+        "baseMagicDamage": 90,
+        "level": 20, "quality": "legendary",
+        "weaponSubtype": "staff",
+        "allowedClasses": ["cleric", "acolyte", "paladin", "crusader", "high_priest"],
+        "cost": 30000, "sellValue": 9500,
+        "description": "A scepter carried only by those chosen by the gods themselves."
+    },
+
+    // ── CRUSADER SWORD (paladin, crusader) ───────────────────────
+    crusader_sword: {
+        "name": "Crusader Sword",
+        "baseDamage": 18, "maxDamage": 30,
+        "baseMagicDamage": 8,
+        "level": 5, "quality": "normal",
+        "weaponSubtype": "sword",
+        "allowedClasses": ["paladin", "crusader", "warrior"],
+        "cost": 500, "sellValue": 150,
+        "description": "A blessed sword carried by holy crusaders."
+    },
+    holy_avenger: {
+        "name": "Holy Avenger",
+        "baseDamage": 30, "maxDamage": 50,
+        "baseMagicDamage": 20,
+        "level": 12, "quality": "epic",
+        "weaponSubtype": "sword",
+        "allowedClasses": ["paladin", "crusader"],
+        "cost": 6000, "sellValue": 1900,
+        "description": "A sword of divine retribution. Glows bright against evil."
+    },
+    blade_of_judgement: {
+        "name": "Blade of Judgement",
+        "baseDamage": 50, "maxDamage": 80,
+        "baseMagicDamage": 35,
+        "level": 20, "quality": "legendary",
+        "weaponSubtype": "sword",
+        "allowedClasses": ["paladin", "crusader"],
+        "cost": 28000, "sellValue": 9000,
+        "description": "The final judgement given physical form."
+    },
+
 
 };
 console.log('✅ Weapons loaded with damage ranges:', Object.keys(WEAPONS).length, 'weapons');
