@@ -2143,6 +2143,91 @@ const ITEMS = {
     raw_stormglass_t4: { name: 'T4 Raw Stormglass', subtype: 'raw_gem', gemType: 'stormglass', gemTier: 4, power: 0, cost: 0, sellValue: 240, maxStack: 20, icon: '⛈️', description: 'A flawless raw stormglass.' },
 
 
+    // ======================================================
+// ADVENTURE POTIONS & CONSUMABLES
+// Add these to your items.js file
+// ======================================================
+
+mystery_potion: {
+    name: 'Mystery Potion',
+    type: 'consumable',
+    subtype: 'random_effect',
+    description: 'A swirling liquid that changes color as you look at it. Who knows what it will do?',
+    possibleEffects: ['heal', 'mana', 'buff_damage', 'buff_defense', 'damage'],
+    minPower: 30,
+    maxPower: 80,
+    duration: 180000, // 3 minutes for buffs
+    sellValue: 75,
+    maxStack: 3
+},
+
+alchemical_elixir: {
+    name: 'Alchemical Elixir',
+    type: 'consumable',
+    subtype: 'buff_all',
+    description: 'A shimmering potion that enhances all your abilities temporarily.',
+    power: 10, // +10% to all stats
+    duration: 300000, // 5 minutes
+    sellValue: 150,
+    maxStack: 2
+},
+
+dragon_blood_vial: {
+    name: 'Vial of Dragon Blood',
+    type: 'consumable',
+    subtype: 'buff_hp',
+    description: 'Drinking this surges your body with draconic power, temporarily increasing max HP.',
+    power: 100, // +100 max HP
+    duration: 300000, // 5 minutes
+    sellValue: 400,
+    maxStack: 2
+},
+seal_fragment: {
+    name: 'Ancient Seal Fragment',
+    type: 'quest',
+    description: 'A piece of the dragon\'s prison seal. Collect all 4 for a reward.',
+    sellValue: 200,
+    maxStack: 4
+},
+
+treasure_map: {
+    name: 'Treasure Map',
+    type: 'quest',
+    description: 'An old map marked with an X. Leads to something valuable.',
+    sellValue: 150,
+    maxStack: 1
+},
+
+cult_intelligence: {
+    name: 'Cult Intelligence Report',
+    type: 'quest',
+    description: 'Valuable intel on dragon cult movements. The Adventurer\'s Guild will pay well.',
+    sellValue: 300,
+    maxStack: 1
+},
+
+ancient_tactics_scroll: {
+    name: 'Ancient Tactics Scroll',
+    type: 'consumable',
+    subtype: 'teach_ability',
+    description: 'Teaches the "Dragon Tactics" passive ability (+15% damage vs dragons).',
+    sellValue: 1000,
+    maxStack: 1
+},
+
+dragon_scale_charm: {
+    name: 'Dragon Scale Charm',
+    type: 'accessory',
+    description: 'A charm made from a real dragon scale. Protects against fire.',
+    effects: {
+        fireResist: 15,
+        dragonDamageBonus: 10
+    },
+    level: 8,
+    sellValue: 800,
+    maxStack: 1
+}
+
 };
 
 console.log('✅ Items loaded:', Object.keys(ITEMS).length, 'items');

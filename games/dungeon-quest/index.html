@@ -8290,32 +8290,184 @@ function showTownArrivalCinematic(lore, p) {
 // END TOWN ARRIVAL CINEMATICS
 // ═══════════════════════════════════════════════════════════════════════
 
-function saveGame() {
+// ======================================================
+// AUTO-SAVE (LOCAL ONLY - FAST)
+// Call this after EVERY action (combat, movement, etc.)
+// ======================================================
+function autoSave() {
+    const p = gameState?.player;
+    if (!p) return;
+    
     try {
         const snapshot = buildSaveSnapshot();
         if (!snapshot) return;
-
+        
+        // LOCAL SAVE ONLY - super fast
         const key = `dq_save_${snapshot.characterId}`;
-        localStorage.setItem(key, JSON.stringify(snapshot));
+        localStorage.setItem(key, JSON.stringify({
+            ...snapshot,
+            _localTimestamp: Date.now() // Track when we saved locally
+        }));
         
-        // Also update character list
+        // Update character list
         updateCharacterList(snapshot);
-
-        console.log(`✅ Game saved: ${snapshot.characterName} (${snapshot.lastSaved})`);
         
-        // Show brief save confirmation
-        const hud = document.getElementById('hud');
-        if (hud && hud.style.display !== 'none') {
-            const saveMsg = document.createElement('div');
-            saveMsg.style.cssText = 'position:fixed;top:10px;right:10px;background:#0a0a0a;border:2px solid var(--text-color);padding:8px 12px;color:var(--text-color);font-size:14px;z-index:9999;';
-            saveMsg.textContent = '💾 Game Saved';
-            document.body.appendChild(saveMsg);
-            setTimeout(() => saveMsg.remove(), 2000);
-        }
+        console.log(`✅ Local auto-save: ${new Date().toLocaleTimeString()}`);
     } catch (e) {
-        console.error('Error saving game:', e);
+        console.error('Auto-save failed:', e);
     }
 }
+
+// ======================================================
+// CLOUD SYNC (ONLY WHEN USER LEAVES OR MANUALLY)
+// ======================================================
+async function syncToCloud() {
+    const p = gameState?.player;
+    if (!p) return false;
+    
+    const { data: { user } } = await calamitySupabase.auth.getUser();
+    if (!user) return false;
+    
+    try {
+        const snapshot = buildSaveSnapshot();
+        if (!snapshot) return false;
+        
+        // Add sync timestamp
+        snapshot._cloudSyncTime = Date.now();
+        
+        // Check if this character exists in cloud
+        const { data: existing } = await calamitySupabase
+            .from('calamity_saves')
+            .select('id, character_data')
+            .eq('user_id', user.id)
+            .eq('username', p.name);
+        
+        if (existing && existing.length > 0) {
+            // Update existing
+            await calamitySupabase
+                .from('calamity_saves')
+                .update({
+                    character_data: snapshot,
+                    level: p.level,
+                    class: p.class,
+                    last_login: new Date().toISOString()
+                })
+                .eq('id', existing[0].id);
+        } else {
+            // Insert new
+            await calamitySupabase
+                .from('calamity_saves')
+                .insert([{
+                    user_id: user.id,
+                    username: p.name,
+                    character_data: snapshot,
+                    level: p.level,
+                    class: p.class,
+                    last_login: new Date().toISOString()
+                }]);
+        }
+        
+        lastCloudSync = Date.now();
+        console.log(`☁️ Cloud sync complete: ${new Date().toLocaleTimeString()}`);
+        return true;
+    } catch (e) {
+        console.error('Cloud sync failed:', e);
+        return false;
+    }
+}
+
+
+// ======================================================
+// BACKWARD COMPATIBILITY WRAPPER
+// Redirects old saveGame() calls to new autoSave()
+// ======================================================
+function saveGame() {
+    // First do local auto-save
+    autoSave();
+    
+    // Then try cloud sync in the background (don't wait for it)
+    syncToCloud().catch(err => {
+        // Silently fail - cloud sync is best effort
+        console.log('Background cloud sync failed (non-critical)');
+    });
+}
+
+// ======================================================
+// SMART SAVE RECONCILIATION SYSTEM
+// ======================================================
+
+// Store last cloud sync timestamp
+let lastCloudSync = null;
+
+// ======================================================
+// RECONCILE ON LOAD - COMPARE AND MERGE
+// ======================================================
+async function reconcileSaves(characterId, characterName) {
+    console.log('🔄 Starting save reconciliation...');
+    
+    // 1. Load local save
+    const localKey = `dq_save_${characterId}`;
+    const localData = localStorage.getItem(localKey);
+    if (!localData) {
+        console.log('No local save found');
+        return null;
+    }
+    
+    const localSave = JSON.parse(localData);
+    
+    // 2. Check if user is logged in
+    const { data: { user } } = await calamitySupabase.auth.getUser();
+    if (!user) {
+        console.log('Not logged in - using local save');
+        return localSave;
+    }
+    
+    // 3. Try to load cloud save
+    const { data: cloudSaves } = await calamitySupabase
+        .from('calamity_saves')
+        .select('character_data, last_login')
+        .eq('user_id', user.id)
+        .eq('username', characterName);
+    
+    // 4. Determine which save is fresher
+    if (!cloudSaves || cloudSaves.length === 0) {
+        console.log('No cloud save - uploading local');
+        await syncToCloud(); // Upload local to cloud
+        return localSave;
+    }
+    
+    const cloudSave = cloudSaves[0].character_data;
+    
+    // Compare timestamps
+    const localTime = localSave.timestamp || 0;
+    const cloudTime = cloudSave.timestamp || 0;
+    const timeDiff = Math.abs(localTime - cloudTime);
+    
+    console.log(`Local save: ${new Date(localTime).toLocaleString()}`);
+    console.log(`Cloud save: ${new Date(cloudTime).toLocaleString()}`);
+    console.log(`Time difference: ${timeDiff / 1000} seconds`);
+    
+    // If saves are very close (within 5 minutes), trust local
+    const CLOSE_THRESHOLD = 5 * 60 * 1000; // 5 minutes
+    
+    if (timeDiff < CLOSE_THRESHOLD) {
+        console.log('✅ Saves are close - using local (most recent actions)');
+        return localSave;
+    }
+    
+    // One is significantly fresher
+    if (localTime > cloudTime) {
+        console.log('📤 Local is fresher - uploading to cloud');
+        await syncToCloud();
+        return localSave;
+    } else {
+        console.log('📥 Cloud is fresher - downloading to local');
+        // Save cloud version locally
+        localStorage.setItem(localKey, JSON.stringify(cloudSave));
+        return cloudSave;
+    }
+}
+
 
 function updateCharacterList(snapshot) {
     try {
@@ -10768,17 +10920,23 @@ function showMainMenu() {
             }
         }
 
-        function loadCharacter(characterId) {
-            try {
-                const saveData = localStorage.getItem(`dq_save_${characterId}`);
-                if (!saveData) {
-                    console.error('Save file not found:', characterId);
-                    alert('⚠️ Save file not found!');
-                    showMainMenu();
-                    return;
-                }
+  async function loadCharacter(characterId) {
+    try {
+        // RECONCILE FIRST
+        // Get character name quickly for reconciliation
+        const tempData = localStorage.getItem(`dq_save_${characterId}`);
+        const tempName = tempData ? JSON.parse(tempData).characterName : null;
+        
+        const saveData = await reconcileSaves(characterId, tempName);
+        
+        if (!saveData) {
+            console.error('Save file not found:', characterId);
+            alert('⚠️ Save file not found!');
+            showMainMenu();
+            return;
+        }
 
-                const data = JSON.parse(saveData);
+        const data = saveData; // Use the reconciled data
                 
                 // Validate save data structure
                 if (!data.player) {
@@ -11347,7 +11505,107 @@ console.log(`   Weapon: ${gameState.player.weapon} | Armor: ${gameState.player.a
                 // Always return to main menu on error
                 showMainMenu();
             }
+
+                // Start auto-save timer
+                setupAutoSaveTriggers();
         }
+
+
+// ======================================================
+// AUTO-SAVE TRIGGERS
+// ======================================================
+function setupAutoSaveTriggers() {
+    // Auto-save every 30 seconds (local only)
+    //if (window._autoSaveTimer) clearInterval(window._autoSaveTimer);
+    //window._autoSaveTimer = setInterval(autoSave, 30000);
+    
+    // Sync to cloud when leaving the page
+    window.addEventListener('pagehide', () => {
+        syncToCloud(); // Best effort on iOS
+    });
+    
+    // Sync when switching tabs/apps
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+            syncToCloud(); // Best effort
+        }
+    });
+}
+
+// ======================================================
+// MANUAL CLOUD SYNC BUTTON (User-initiated)
+// ======================================================
+async function manualCloudSync() {
+    const p = gameState?.player;
+    if (!p) {
+        alert('No active character!');
+        return;
+    }
+    
+    const { data: { user } } = await calamitySupabase.auth.getUser();
+    if (!user) {
+        alert('Please log in first!');
+        return;
+    }
+    
+    // Show syncing indicator
+    const statusEl = document.createElement('div');
+    statusEl.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#000;border:2px solid #AA88FF;padding:12px 24px;color:#AA88FF;z-index:9999;font-size:16px;border-radius:4px;';
+    statusEl.innerHTML = '☁️ Syncing to cloud...';
+    document.body.appendChild(statusEl);
+    
+    const success = await syncToCloud();
+    
+    statusEl.innerHTML = success ? '✅ Cloud sync complete!' : '❌ Cloud sync failed';
+    statusEl.style.borderColor = success ? '#00FF00' : '#FF4444';
+    statusEl.style.color = success ? '#00FF00' : '#FF4444';
+    
+    setTimeout(() => statusEl.remove(), 2000);
+}
+
+// ======================================================
+// WRAP ALL PLAYER ACTIONS WITH AUTO-SAVE
+// ======================================================
+
+// Store original functions
+const _originalEndCombat = endCombat;
+const _originalMoveInDungeon = moveInDungeon;
+const _originalBuyItem = buyItem;
+const _originalEquipItem = equipItem;
+const _originalExploreLocation = exploreLocation;
+
+// Wrap them
+endCombat = function(victory) {
+    _originalEndCombat(victory);
+    autoSave();
+};
+
+moveInDungeon = function(direction) {
+    _originalMoveInDungeon(direction);
+    autoSave();
+};
+
+buyItem = function(type, key, baseCost) {
+    _originalBuyItem(type, key, baseCost);
+    autoSave();
+};
+
+equipItem = function(type, key) {
+    _originalEquipItem(type, key);
+    autoSave();
+};
+
+exploreLocation = function(locKey) {
+    _originalExploreLocation(locKey);
+// Check for bounty encounter AFTER normal exploration
+    if (typeof checkBountyEncounter === 'function') {
+        checkBountyEncounter(locKey);
+        checkGuildEncounter(locKey);
+    }
+
+    autoSave();
+};
+
 
         function showAbout() {
             const screen = document.getElementById('mainScreen');
@@ -12037,37 +12295,52 @@ async function loadCloudCharacterToLocal(saveId) {
     }
     
     // The character_data contains your FULL save snapshot
-    const saveData = data.character_data;
-    console.log('📦 Cloud save bounty data:', {
-    active: saveData.player?.activeBounties,
-    pending: saveData.player?.pendingBounties,
-    collected: saveData.player?.collectedBounties
-});
+    const cloudSave = data.character_data;
+    console.log('📦 Cloud save loaded:', cloudSave.characterName);
     
-    // ═══════════════════════════════════════════════════════════════
-    // FIX: Use the character's PERMANENT ID from the save data
-    // ═══════════════════════════════════════════════════════════════
-    const characterId = saveData.characterId;
+    // Get the character ID from the cloud save
+    const characterId = cloudSave.characterId;
     
-    // Save to localStorage using the PERMANENT character ID
-    localStorage.setItem(`dq_save_${characterId}`, JSON.stringify(saveData));
+    // Check if we have a local save for this character
+    const localKey = `dq_save_${characterId}`;
+    const localData = localStorage.getItem(localKey);
     
-    // Update character list - remove any existing entries with this name first
+    let saveToUse = cloudSave; // default to cloud
+    
+    if (localData) {
+        const localSave = JSON.parse(localData);
+        console.log('Local save found:', new Date(localSave.timestamp).toLocaleString());
+        console.log('Cloud save time:', new Date(cloudSave.timestamp).toLocaleString());
+        
+        // Use the newer save
+        if (localSave.timestamp > cloudSave.timestamp) {
+            console.log('✅ Local is newer - keeping local');
+            saveToUse = localSave;
+        } else if (cloudSave.timestamp > localSave.timestamp) {
+            console.log('✅ Cloud is newer - using cloud');
+            saveToUse = cloudSave;
+        } else {
+            console.log('📊 Saves are equal - using cloud');
+            saveToUse = cloudSave;
+        }
+    } else {
+        console.log('No local save found - using cloud');
+    }
+    
+    // Save the chosen save to localStorage
+    localStorage.setItem(localKey, JSON.stringify(saveToUse));
+    
+    // Update character list
     let charList = JSON.parse(localStorage.getItem('dq_character_list') || '[]');
-    
-    // Remove any existing entries with the same character name
-    charList = charList.filter(c => c.name !== saveData.characterName);
-    
-    // Add the updated character
+    charList = charList.filter(c => c.id !== characterId);
     charList.push({
         id: characterId,
-        name: saveData.characterName,
-        level: saveData.player.level,
-        class: saveData.player.class,
+        name: saveToUse.characterName,
+        level: saveToUse.player.level,
+        class: saveToUse.player.class,
         timestamp: Date.now(),
         lastSaved: new Date().toLocaleString()
     });
-    
     localStorage.setItem('dq_character_list', JSON.stringify(charList));
     
     // Clean up any old cloud_ duplicates with the same character name
@@ -12075,7 +12348,7 @@ async function loadCloudCharacterToLocal(saveId) {
         const key = localStorage.key(i);
         if (key.startsWith('dq_save_cloud_')) {
             const data = JSON.parse(localStorage.getItem(key));
-            if (data.characterName === saveData.characterName) {
+            if (data.characterName === saveToUse.characterName) {
                 console.log(`🧹 Removing duplicate cloud save: ${key}`);
                 localStorage.removeItem(key);
             }
@@ -12768,9 +13041,10 @@ async function loadCloudCharacter(saveId) {
                     <div class="menu-option" onclick="showExplore()">► EXPLORE WORLD</div>
                     ${portalOption}
                     <div class="menu-option" onclick="showSettings()">► ⚙️ SETTINGS</div>
-                    <div class="menu-option" onclick="saveGame()" style="border-color:var(--text-color);">► 💾 QUICK SAVE</div>
+                    <div class="menu-option" onclick="autoSave()" style="border-color:var(--text-color);">► 💾 QUICK SAVE</div>
                     <div class="menu-option" onclick="downloadSaveFile()" style="border-color:var(--highlight-color);background:rgba(255,255,0,0.05);">► 📥 DOWNLOAD SAVE FILE</div>
                     <div class="menu-option" onclick="cloudSave()" style="border-color: #AA88FF;">► ☁️ SAVE TO CLOUD</div>
+                    <div class="menu-option" onclick="manualCloudSync()" style="border-color: #AA88FF;">► ☁️ SYNC TO CLOUD</div>
                     <div class="menu-option" onclick="confirmQuitToMenu()">► ⏏ QUIT TO MENU</div>
                 </div>
             `;
@@ -15706,45 +15980,76 @@ function stabilizeTerminalLayout() {
         }
         
         function applyWeaponModifiers(attacker, target, baseDamage, weapon) {
-            if (!weapon.modifiers || weapon.modifiers.length === 0) {
-                return { totalDamage: baseDamage, messages: [] };
-            }
-            
-            let totalDamage = baseDamage;
-            const messages = [];
-            
-            weapon.modifiers.forEach(modKey => {
-                const mod = WEAPON_MODIFIERS[modKey];
-                if (!mod) return;
-                
-                // Add elemental/bonus damage
-                if (mod.minDamage !== undefined) {
-                    const bonusDmg = Math.floor(Math.random() * (mod.maxDamage - mod.minDamage + 1)) + mod.minDamage;
-                    totalDamage += bonusDmg;
-                    messages.push(`<span style="color:${mod.color};">+${bonusDmg} ${mod.name} damage</span>`);
-                }
-                
-                // Apply status effect chance
-                if (mod.statusEffect && Math.random() < mod.statusChance) {
-                    applyStatusEffect(target, mod.statusEffect, false);
-                }
-                
-                // Apply lifesteal
-                if (mod.lifestealPercent) {
-                    const heal = Math.floor(totalDamage * (mod.lifestealPercent / 100));
-                    attacker.hp = Math.min(attacker.maxHp, attacker.hp + heal);
-                    messages.push(`<span style="color:#00FF00;">+${heal} HP (Lifesteal)</span>`);
-                }
-                
-                // Apply crit bonus
-                if (mod.critBonus) {
-                    // This will be used in the attack calculation
-                    // Store for now (handled in executeAttack)
-                }
-            });
-            
-            return { totalDamage, messages };
+    if (!weapon.modifiers || weapon.modifiers.length === 0) {
+        return { totalDamage: baseDamage, messages: [] };
+    }
+    
+    let totalDamage = baseDamage;
+    const messages = [];
+    
+    // Track special multipliers
+    let dragonMultiplier = 1.0;
+    let giantMultiplier = 1.0;
+    
+    weapon.modifiers.forEach(modKey => {
+        const mod = WEAPON_MODIFIERS[modKey];
+        if (!mod) return;
+        
+        // Add elemental/bonus damage
+        if (mod.minDamage !== undefined) {
+            const bonusDmg = Math.floor(Math.random() * (mod.maxDamage - mod.minDamage + 1)) + mod.minDamage;
+            totalDamage += bonusDmg;
+            messages.push(`<span style="color:${mod.color};">+${bonusDmg} ${mod.name} damage</span>`);
         }
+        
+        // Apply status effect chance
+        if (mod.statusEffect && mod.statusChance && Math.random() < mod.statusChance) {
+            applyStatusEffect(target, mod.statusEffect, false);
+        }
+        
+        // Apply lifesteal
+        if (mod.lifestealPercent) {
+            const heal = Math.floor(totalDamage * (mod.lifestealPercent / 100));
+            attacker.hp = Math.min(attacker.maxHp, attacker.hp + heal);
+            messages.push(`<span style="color:#FF4488;">+${heal} HP (Lifesteal)</span>`);
+        }
+        
+        // Apply crit bonus (will be used in executeAttack)
+        if (mod.critBonus) {
+            // Handled in executeAttack
+        }
+        
+        // ═══════════════════════════════════════════════════════════════
+        // NEW: Dragon/Giant Slayer multipliers
+        // ═══════════════════════════════════════════════════════════════
+        if (mod.vsDragonBonus) {
+            dragonMultiplier = Math.max(dragonMultiplier, mod.vsDragonBonus);
+        }
+        
+        if (mod.vsGiantBonus) {
+            giantMultiplier = Math.max(giantMultiplier, mod.vsGiantBonus);
+        }
+    });
+    
+    // Apply dragon/giant multipliers if target is appropriate
+    const targetName = target.name?.toLowerCase() || '';
+    const isDragon = targetName.includes('dragon') || targetName.includes('wyrm') || 
+                     targetName.includes('drake') || target.key?.includes('dragon');
+    const isGiant = targetName.includes('giant') || targetName.includes('titan') || 
+                    targetName.includes('colossus');
+    
+    if (isDragon && dragonMultiplier > 1.0) {
+        totalDamage = Math.floor(totalDamage * dragonMultiplier);
+        messages.push(`<span style="color:#FF4444;font-weight:bold;">✦ DRAGON BANE! ${dragonMultiplier}x damage!</span>`);
+    }
+    
+    if (isGiant && giantMultiplier > 1.0) {
+        totalDamage = Math.floor(totalDamage * giantMultiplier);
+        messages.push(`<span style="color:#884422;font-weight:bold;">✦ GIANT SLAYER! ${giantMultiplier}x damage!</span>`);
+    }
+    
+    return { totalDamage, messages };
+}
         
         // ═══════════════════════════════════════════════════════════════
         // COMBAT FUNCTIONS
@@ -20857,6 +21162,18 @@ consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
         // Calculate magic resistance
 const magicResist = enemy.magicAttack ? getMagicResist(p) : 0;
 
+// Calculate enemy armor piercing from quality
+const qualityPierce = {
+    'uncommon': 0.10,  // 10% armor ignored
+    'rare': 0.20,      // 20% armor ignored
+    'epic': 0.35,      // 35% armor ignored
+    'legendary': 0.50, // 50% armor ignored
+    'godly': 0.75      // 75% armor ignored
+}[enemy.rarity] || 0;
+
+// Combine with ability piercing
+const totalEnemyPierce = Math.min(1.0, (intent.armorPiercing || 0) + qualityPierce);
+
 const result = _didDodge
     ? { damage: 0, dodged: true, crit: false }
     : calculateDamage({
@@ -20869,7 +21186,7 @@ const result = _didDodge
         base: _scaledBase,
         type: enemy.magicAttack ? 'magic' : 'physical',
         dodgeChance: 0,
-        armorPiercing: intent.armorPiercing
+        armorPiercing: totalEnemyPierce  // Now includes quality piercing!
     });
 
         if (result.dodged) {
@@ -23246,157 +23563,7 @@ async function silentCloudSave() {
 }
 
 
-// ============================================
-// AUTO SAVE ON PAGE HIDE (backup for some mobile browsers)
-// ============================================
-window.addEventListener('pagehide', function() {
-    const p = gameState.player;
-    if (!p) return;
-    
-    console.log("📱 Page hiding - saving...");
-    saveGame();
-    
-    // Try cloud save (fire and forget)
-    calamitySupabase.auth.getUser().then(({ data: { user } }) => {
-        if (!user) return;
-        
-        const snapshot = buildSaveSnapshot();
-        if (!snapshot) return;
-        
-        calamitySupabase
-            .from('calamity_saves')
-            .upsert({
-                user_id: user.id,
-                username: p.name,
-                character_data: snapshot,
-                level: p.level,
-                class: p.class,
-                last_login: new Date().toISOString()
-            }, { onConflict: 'username' })
-            .then(() => console.log("☁️ Pagehide cloud save"));
-    });
-});
 
-// ============================================
-// AUTO SAVE WHEN APP GOES TO BACKGROUND (iOS swipe away)
-// ============================================
-document.addEventListener('visibilitychange', function() {
-    // If page is hidden (swiped away, tab switched, etc.)
-    if (document.visibilityState === 'hidden') {
-        const p = gameState.player;
-        
-        // Only save if there's an active character
-        if (!p) return;
-        
-        console.log("📱 App going to background - saving...");
-        
-        // STEP 1: Save locally
-        saveGame();
-        
-        // STEP 2: Try cloud save
-        calamitySupabase.auth.getUser().then(({ data: { user } }) => {
-            if (!user) return;
-            
-            const snapshot = buildSaveSnapshot();
-            if (!snapshot) return;
-            
-            calamitySupabase
-                .from('calamity_saves')
-                .select('id')
-                .eq('user_id', user.id)
-                .eq('username', p.name)
-                .then(({ data: existing }) => {
-                    if (existing && existing.length > 0) {
-                        calamitySupabase
-                            .from('calamity_saves')
-                            .update({
-                                character_data: snapshot,
-                                level: p.level,
-                                class: p.class,
-                                last_login: new Date().toISOString()
-                            })
-                            .eq('id', existing[0].id)
-                            .then(() => console.log("☁️ Background cloud update"));
-                    } else {
-                        calamitySupabase
-                            .from('calamity_saves')
-                            .insert([{
-                                user_id: user.id,
-                                username: p.name,
-                                character_data: snapshot,
-                                level: p.level,
-                                class: p.class,
-                                last_login: new Date().toISOString()
-                            }])
-                            .then(() => console.log("☁️ Background cloud insert"));
-                    }
-                });
-        });
-    }
-});
-
-
-// ============================================
-// AUTO SAVE ON PAGE LEAVE - Uses Supabase client (works on all devices)
-// ============================================
-window.addEventListener('beforeunload', function() {
-    const p = gameState.player;
-    
-    // Only save if there's an active character
-    if (!p) return;
-    
-    // STEP 1: ALWAYS save locally first
-    console.log("💾 Saving locally before leaving...");
-    saveGame();
-    
-    // STEP 2: Try to save to cloud using the same method that works
-    try {
-        // Check if logged in by checking Supabase client
-        calamitySupabase.auth.getUser().then(({ data: { user } }) => {
-            if (!user) return;
-            
-            const snapshot = buildSaveSnapshot();
-            if (!snapshot) return;
-            
-            // Check if this character already exists
-            calamitySupabase
-                .from('calamity_saves')
-                .select('id')
-                .eq('user_id', user.id)
-                .eq('username', p.name)
-                .then(({ data: existing }) => {
-                    if (existing && existing.length > 0) {
-                        // Update existing save
-                        calamitySupabase
-                            .from('calamity_saves')
-                            .update({
-                                character_data: snapshot,
-                                level: p.level,
-                                class: p.class,
-                                last_login: new Date().toISOString()
-                            })
-                            .eq('id', existing[0].id)
-                            .then(() => console.log("☁️ Cloud update complete"));
-                    } else {
-                        // Insert new save
-                        calamitySupabase
-                            .from('calamity_saves')
-                            .insert([{
-                                user_id: user.id,
-                                username: p.name,
-                                character_data: snapshot,
-                                level: p.level,
-                                class: p.class,
-                                last_login: new Date().toISOString()
-                            }])
-                            .then(() => console.log("☁️ Cloud insert complete"));
-                    }
-                });
-        });
-    } catch (error) {
-        console.error("Cloud save failed:", error);
-    }
-});
 
 
 

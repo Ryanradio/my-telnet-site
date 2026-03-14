@@ -9,29 +9,29 @@ const ADVENTURES = {
     buried_treasure: {
         id: 'buried_treasure',
         name: 'Buried Treasure Chest',
-        rarity: 'legendary', 
-        minLevel: 1,// 0.01% chance
+        rarity: 'legendary',
+        minLevel: 1,
         description: 'You stumble upon something gleaming in the dirt...',
         intro: 'Your foot catches on something hard beneath the leaves. Brushing away the dirt, you uncover an ancient treasure chest covered in strange runes!',
-        
+
         choices: [
             {
                 text: 'Open it immediately',
                 outcomes: [
-                    { 
+                    {
                         weight: 40,
                         text: 'The chest springs open! Inside you find a fortune!',
                         rewards: { gold: 5000, xp: 2000 }
                     },
                     {
                         weight: 30,
-                        text: 'A trapped! Poison darts shoot out, but you dodge most of them.',
+                        text: 'A trap! Poison darts shoot out, but you dodge most of them.',
                         rewards: { gold: 3000, damage: 20 }
                     },
                     {
                         weight: 20,
                         text: 'Jackpot! The chest contains legendary equipment!',
-                        rewards: { gold: 2000, items: ['rare_weapon', 'rare_armor'] }
+                        rewards: { gold: 2000, items: ['dragon_kin_blade', 'dragon_scale_cloak'] }
                     },
                     {
                         weight: 10,
@@ -73,241 +73,233 @@ const ADVENTURES = {
         ]
     },
 
+    // ═══════════════════════════════════════════════════════════════
+    // Common Weathered Shack
+    // ═══════════════════════════════════════════════════════════════
+    weathered_shack: {
+        id: 'weathered_shack',
+        name: 'Old Weathered Shack',
+        rarity: 'common',
+        minLevel: 1,
+        description: 'A crooked, aging shack sits alone among the trees.',
+        intro: 'You come across an old weathered shack. The wood is splintered, the windows cracked, and the air around it feels strangely still.',
 
+        choices: [
+            {
+                text: 'Enter through the front door',
+                outcomes: [
+                    {
+                        weight: 100,
+                        text: 'The door creaks open loudly. Inside are three rooms. You may only search one.',
+                        nextChoices: [
+                            {
+                                text: 'Search the left room',
+                                outcomes: [
+                                    {
+                                        weight: 100,
+                                        text: 'Under a loose floorboard, you find a small stash of gold!',
+                                        rewards: { gold: 250, xp: 100 }
+                                    }
+                                ]
+                            },
+                            {
+                                text: 'Search the middle room',
+                                outcomes: [
+                                    {
+                                        weight: 100,
+                                        text: 'You find an old but usable weapon leaning against the wall.',
+                                        rewards: { items: ['rusty_dagger'], xp: 100 }
+                                    }
+                                ]
+                            },
+                            {
+                                text: 'Search the right room',
+                                outcomes: [
+                                    {
+                                        weight: 100,
+                                        text: 'The moment you step inside, a hidden warrior lunges at you!',
+                                        combat: ['orc']
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                text: 'Sneak around to the back of the shack',
+                outcomes: [
+                    {
+                        weight: 100,
+                        text: 'Behind the shack, you notice disturbed dirt near a broken fence post. After digging for several minutes, you uncover a buried chest filled with gold!',
+                        rewards: { gold: 1000, xp: 200 }
+                    }
+                ]
+            },
+            {
+                text: 'Leave the shack alone',
+                outcomes: [
+                    {
+                        weight: 100,
+                        text: 'You decide it\'s not worth the risk and continue on your journey.',
+                        rewards: { xp: 50 }
+                    }
+                ]
+            }
+        ]
+    },
 
     // ═══════════════════════════════════════════════════════════════
-// Common Weathered Shack
-// ═══════════════════════════════════════════════════════════════
+    // Common Adventure: Whispering Lights
+    // ═══════════════════════════════════════════════════════════════
+    whispering_lights: {
+        id: 'whispering_lights',
+        name: 'Whispering Lights',
+        rarity: 'common',
+        minLevel: 1,
+        description: 'Strange lights flicker between the trees as night falls.',
+        intro: 'As dusk settles, faint glowing lights drift between the trees ahead. They pulse softly, almost as if beckoning you closer.',
 
-weathered_shack: {
-    id: 'weathered_shack',
-    name: 'Old Weathered Shack',
-    rarity: 'common',
-    
-        minLevel: 1,description: 'A crooked, aging shack sits alone among the trees.',
-    intro: 'You come across an old weathered shack. The wood is splintered, the windows cracked, and the air around it feels strangely still.',
-
-    choices: [
-        {
-            text: 'Enter through the front door',
-            outcomes: [
-                {
-                    weight: 100,
-                    text: 'The door creaks open loudly. Inside are three rooms. You may only search one.',
-                    nextChoices: [
-                        {
-                            text: 'Search the left room',
-                            outcomes: [
-                                {
-                                    weight: 100,
-                                    text: 'Under a loose floorboard, you find a small stash of gold!',
-                                    rewards: { gold: 250, xp: 100 }
-                                }
-                            ]
-                        },
-                        {
-                            text: 'Search the middle room',
-                            outcomes: [
-                                {
-                                    weight: 100,
-                                    text: 'You find an old but usable weapon leaning against the wall.',
-                                    rewards: { items: ['rusty_dagger'], xp: 100 }
-                                }
-                            ]
-                        },
-                        {
-                            text: 'Search the right room',
-                            outcomes: [
-                                {
-                                    weight: 100,
-                                    text: 'The moment you step inside, a hidden warrior lunges at you!',
-                                    combat: ['orc']
-                                }
-                            ]
-                        }
-                    ]
-                }
-            ]
-        },
-        {
-            text: 'Sneak around to the back of the shack',
-            outcomes: [
-                {
-                    weight: 100,
-                    text: 'Behind the shack, you notice disturbed dirt near a broken fence post. After digging for several minutes, you uncover a buried chest filled with gold!',
-                    rewards: { gold: 1000, xp: 200 }
-                }
-            ]
-        },
-        {
-            text: 'Leave the shack alone',
-            outcomes: [
-                {
-                    weight: 100,
-                    text: 'You decide it’s not worth the risk and continue on your journey.',
-                    rewards: { xp: 50 }
-                }
-            ]
-        }
-    ]
-},
-
-
-// ═══════════════════════════════════════════════════════════════
-// Common Adventure: Whispering Lights
-// ═══════════════════════════════════════════════════════════════
-
-whispering_lights: {
-    id: 'whispering_lights',
-    name: 'Whispering Lights',
-    rarity: 'common',
-    
-        minLevel: 1,description: 'Strange lights flicker between the trees as night falls.',
-    intro: 'As dusk settles, faint glowing lights drift between the trees ahead. They pulse softly, almost as if beckoning you closer.',
-
-    choices: [
-        {
-            text: 'Follow the lights deeper into the woods',
-            outcomes: [
-                {
-                    weight: 100,
-                    text: 'You follow the lights into a small forest clearing. Four paths reveal themselves.',
-                    nextChoices: [
-                        {
-                            text: 'Approach a glowing stone altar',
-                            outcomes: [
-                                {
-                                    weight: 60,
-                                    text: 'The altar hums warmly. You feel empowered.',
-                                    rewards: { xp: 200 }
-                                },
-                                {
-                                    weight: 40,
-                                    text: 'The altar flares violently — a guardian spirit attacks!',
-                                    combat: ['forest_imp']
-                                }
-                            ]
-                        },
-                        {
-                            text: 'Investigate a flickering campfire',
-                            outcomes: [
-                                {
-                                    weight: 70,
-                                    text: 'You find coins scattered near the ashes.',
-                                    rewards: { gold: 300 }
-                                },
-                                {
-                                    weight: 30,
-                                    text: 'A lurking bandit leaps from the shadows!',
-                                    combat: ['water_snake']
-                                }
-                            ]
-                        },
-                        {
-                            text: 'Examine a glowing tree',
-                            outcomes: [
-                                {
-                                    weight: 50,
-                                    text: 'You harvest rare glowing sap and sell it later.',
-                                    rewards: { gold: 200, xp: 100 }
-                                },
-                                {
-                                    weight: 50,
-                                    text: 'The tree comes alive and attacks!',
-                                    combat: ['water_snake']
-                                }
-                            ]
-                        },
-                        {
-                            text: 'Touch the floating lights',
-                            outcomes: [
-                                {
-                                    weight: 80,
-                                    text: 'The lights swirl around you and fade, leaving a reward behind.',
-                                    rewards: { gold: 150, xp: 150 }
-                                },
-                                {
-                                    weight: 20,
-                                    text: 'The lights scream — illusions vanish as monsters appear!',
-                                    combat: ['forest_imp']
-                                }
-                            ]
-                        }
-                    ]
-                }
-            ]
-        },
-        {
-            text: 'Try to trap one of the lights',
-            outcomes: [
-                {
-                    weight: 100,
-                    text: 'You set a crude trap near where the lights drift. Soon, something takes the bait.',
-                    nextChoices: [
-                        {
-                            text: 'Check the trap immediately',
-                            outcomes: [
-                                {
-                                    weight: 60,
-                                    text: 'You catch a glowing critter and sell it to a collector.',
-                                    rewards: { gold: 400 }
-                                },
-                                {
-                                    weight: 40,
-                                    text: 'The trap snaps shut on a hostile creature!',
-                                    combat: ['forest_imp']
-                                }
-                            ]
-                        },
-                        {
-                            text: 'Wait and observe from hiding',
-                            outcomes: [
-                                {
-                                    weight: 70,
-                                    text: 'You learn more about the lights and gain insight.',
-                                    rewards: { xp: 250 }
-                                },
-                                {
-                                    weight: 30,
-                                    text: 'You wait too long — something notices you first!',
-                                    combat: ['forest_imp']
-                                }
-                            ]
-                        },
-                        {
-                            text: 'Reinforce the trap',
-                            outcomes: [
-                                {
-                                    weight: 50,
-                                    text: 'The reinforced trap catches something valuable.',
-                                    rewards: { gold: 350, xp: 100 }
-                                },
-                                {
-                                    weight: 50,
-                                    text: 'The trap breaks loudly, drawing enemies!',
-                                    combat: ['bandit']
-                                }
-                            ]
-                        },
-                        {
-                            text: 'Abandon the trap and leave',
-                            outcomes: [
-                                {
-                                    weight: 100,
-                                    text: 'You decide the lights aren’t worth the risk and move on.',
-                                    rewards: { xp: 75 }
-                                }
-                            ]
-                        }
-                    ]
-                }
-            ]
-        }
-    ]
-},
-
-
-
+        choices: [
+            {
+                text: 'Follow the lights deeper into the woods',
+                outcomes: [
+                    {
+                        weight: 100,
+                        text: 'You follow the lights into a small forest clearing. Four paths reveal themselves.',
+                        nextChoices: [
+                            {
+                                text: 'Approach a glowing stone altar',
+                                outcomes: [
+                                    {
+                                        weight: 60,
+                                        text: 'The altar hums warmly. You feel empowered.',
+                                        rewards: { xp: 200 }
+                                    },
+                                    {
+                                        weight: 40,
+                                        text: 'The altar flares violently — a guardian spirit attacks!',
+                                        combat: ['forest_imp']
+                                    }
+                                ]
+                            },
+                            {
+                                text: 'Investigate a flickering campfire',
+                                outcomes: [
+                                    {
+                                        weight: 70,
+                                        text: 'You find coins scattered near the ashes.',
+                                        rewards: { gold: 300 }
+                                    },
+                                    {
+                                        weight: 30,
+                                        text: 'A lurking bandit leaps from the shadows!',
+                                        combat: ['water_snake']
+                                    }
+                                ]
+                            },
+                            {
+                                text: 'Examine a glowing tree',
+                                outcomes: [
+                                    {
+                                        weight: 50,
+                                        text: 'You harvest rare glowing sap and sell it later.',
+                                        rewards: { gold: 200, xp: 100 }
+                                    },
+                                    {
+                                        weight: 50,
+                                        text: 'The tree comes alive and attacks!',
+                                        combat: ['water_snake']
+                                    }
+                                ]
+                            },
+                            {
+                                text: 'Touch the floating lights',
+                                outcomes: [
+                                    {
+                                        weight: 80,
+                                        text: 'The lights swirl around you and fade, leaving a reward behind.',
+                                        rewards: { gold: 150, xp: 150 }
+                                    },
+                                    {
+                                        weight: 20,
+                                        text: 'The lights scream — illusions vanish as monsters appear!',
+                                        combat: ['forest_imp']
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                text: 'Try to trap one of the lights',
+                outcomes: [
+                    {
+                        weight: 100,
+                        text: 'You set a crude trap near where the lights drift. Soon, something takes the bait.',
+                        nextChoices: [
+                            {
+                                text: 'Check the trap immediately',
+                                outcomes: [
+                                    {
+                                        weight: 60,
+                                        text: 'You catch a glowing critter and sell it to a collector.',
+                                        rewards: { gold: 400 }
+                                    },
+                                    {
+                                        weight: 40,
+                                        text: 'The trap snaps shut on a hostile creature!',
+                                        combat: ['forest_imp']
+                                    }
+                                ]
+                            },
+                            {
+                                text: 'Wait and observe from hiding',
+                                outcomes: [
+                                    {
+                                        weight: 70,
+                                        text: 'You learn more about the lights and gain insight.',
+                                        rewards: { xp: 250 }
+                                    },
+                                    {
+                                        weight: 30,
+                                        text: 'You wait too long — something notices you first!',
+                                        combat: ['forest_imp']
+                                    }
+                                ]
+                            },
+                            {
+                                text: 'Reinforce the trap',
+                                outcomes: [
+                                    {
+                                        weight: 50,
+                                        text: 'The reinforced trap catches something valuable.',
+                                        rewards: { gold: 350, xp: 100 }
+                                    },
+                                    {
+                                        weight: 50,
+                                        text: 'The trap breaks loudly, drawing enemies!',
+                                        combat: ['bandit']
+                                    }
+                                ]
+                            },
+                            {
+                                text: 'Abandon the trap and leave',
+                                outcomes: [
+                                    {
+                                        weight: 100,
+                                        text: 'You decide the lights aren\'t worth the risk and move on.',
+                                        rewards: { xp: 75 }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
 
     // ═══════════════════════════════════════════════════════════════
     // MYSTERIOUS STRANGER ADVENTURES
@@ -315,11 +307,11 @@ whispering_lights: {
     mysterious_merchant: {
         id: 'mysterious_merchant',
         name: 'Mysterious Merchant',
-        rarity: 'rare', 
-        minLevel: 5,// 0.5% chance
+        rarity: 'rare',
+        minLevel: 5,
         description: 'A hooded figure beckons from the shadows...',
         intro: 'A cloaked merchant appears before you, their cart filled with strange glowing items. "I deal in rare goods," they whisper.',
-        
+
         choices: [
             {
                 text: 'Buy a random item (1000g)',
@@ -327,17 +319,17 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'The merchant hands you a powerful weapon!',
-                        rewards: { gold: -1000, items: ['epic_weapon'] }
+                        rewards: { gold: -1000, items: ['dragon_kin_blade'] }
                     },
                     {
                         weight: 30,
                         text: 'You receive a bag of rare potions!',
-                        rewards: { gold: -1000, items: ['greater_potion', 'greater_potion', 'greater_potion'] }
+                        rewards: { gold: -1000, items: ['mystery_potion', 'mystery_potion', 'mystery_potion'] }
                     },
                     {
                         weight: 20,
                         text: 'The merchant gives you a cursed item! It drains your health but grants power.',
-                        rewards: { gold: -1000, items: ['cursed_ring'], damage: 50 }
+                        rewards: { gold: -1000, items: ['cursed_blade'], damage: 50 }
                     },
                     {
                         weight: 10,
@@ -352,12 +344,12 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'The merchant reveals the location of a hidden dungeon!',
-                        rewards: { xp: 5000, unlockArea: 'secret_dungeon' }
+                        rewards: { xp: 5000, items: ['ancient_treasure_map'] }
                     },
                     {
                         weight: 30,
                         text: 'They teach you a secret technique!',
-                        rewards: { xp: 3000, spell: 'shadow_step' }
+                        rewards: { xp: 3000, items: ['ancient_tactics_scroll'] }
                     },
                     {
                         weight: 20,
@@ -384,7 +376,7 @@ whispering_lights: {
                     {
                         weight: 10,
                         text: 'Surprisingly, the merchant was just a normal person. You steal their goods... but feel terrible.',
-                        rewards: { gold: 2000, items: ['rare_item'], xp: -500 }
+                        rewards: { gold: 2000, items: ['dragon_scale_cloak'], xp: -500 }
                     }
                 ]
             },
@@ -407,11 +399,11 @@ whispering_lights: {
     ancient_shrine: {
         id: 'ancient_shrine',
         name: 'Ancient Shrine',
-        rarity: 'uncommon', 
-        minLevel: 3,// 1% chance
+        rarity: 'uncommon',
+        minLevel: 3,
         description: 'You discover a weathered shrine to a forgotten god...',
         intro: 'An ancient stone shrine stands before you, covered in vines. A faint divine energy emanates from it. An offering bowl sits at its base.',
-        
+
         choices: [
             {
                 text: 'Offer 500 gold',
@@ -492,11 +484,11 @@ whispering_lights: {
     unstable_portal: {
         id: 'unstable_portal',
         name: 'Unstable Portal',
-        rarity: 'rare', 
-        minLevel: 10,// 0.5% chance
+        rarity: 'rare',
+        minLevel: 10,
         description: 'A swirling portal tears through reality before you...',
         intro: 'A crackling portal opens in the air before you. Through it, you see glimpses of other worlds, other times. It\'s unstable and might close at any moment!',
-        
+
         choices: [
             {
                 text: 'Jump through the portal!',
@@ -514,12 +506,12 @@ whispering_lights: {
                     {
                         weight: 20,
                         text: 'You find yourself in a magical library. You learn forbidden knowledge!',
-                        rewards: { xp: 8000, spell: 'time_stop' }
+                        rewards: { xp: 8000, items: ['ancient_tactics_scroll'] }
                     },
                     {
                         weight: 15,
                         text: 'You appear in a bizarre marketplace. A merchant sells you legendary items cheap!',
-                        rewards: { items: ['legendary_weapon', 'legendary_armor'], gold: -2000 }
+                        rewards: { items: ['ancient_dragon_slayer', 'ancient_dragonscale_armor'], gold: -2000 }
                     },
                     {
                         weight: 15,
@@ -554,7 +546,7 @@ whispering_lights: {
                     {
                         weight: 60,
                         text: 'You learn the secrets of portal magic!',
-                        rewards: { xp: 6000, spell: 'dimension_door' }
+                        rewards: { xp: 6000, items: ['temporal_shard'] }
                     },
                     {
                         weight: 40,
@@ -582,7 +574,7 @@ whispering_lights: {
     },
 
     // ═══════════════════════════════════════════════════════════════
-    // NEW ADVENTURES — LEVELS 1-6  (7 adventures)
+    // NEW ADVENTURES — LEVELS 1-6 (7 adventures)
     // ═══════════════════════════════════════════════════════════════
 
     // ── 1. THE WOUNDED TRAVELER ──────────────────────────────────────
@@ -590,8 +582,8 @@ whispering_lights: {
         id: 'wounded_traveler',
         name: 'Wounded Traveler',
         rarity: 'common',
-        
-        minLevel: 1,description: 'A bloodied stranger slumps against a tree ahead...',
+        minLevel: 1,
+        description: 'A bloodied stranger slumps against a tree ahead...',
         intro: 'You nearly trip over a man collapsed at the base of an oak tree. His leg is badly gashed and his pack is half-open. He looks up at you with frightened eyes. "Please," he rasps. "They took everything. Then the wolves..."',
 
         choices: [
@@ -608,7 +600,7 @@ whispering_lights: {
                                     {
                                         weight: 70,
                                         text: 'His eyes go wide with gratitude. "I\'m a map-maker. Here — my best work." He presses a detailed chart into your hands and limps away. You sell it in the next town for a handsome sum.',
-                                        rewards: { gold: -50, xp: 350, gold_bonus: 800 }
+                                        rewards: { gold: -50, xp: 350, gold_bonus: 800, items: ['treasure_map'] }
                                     },
                                     {
                                         weight: 30,
@@ -639,7 +631,7 @@ whispering_lights: {
                                     {
                                         weight: 100,
                                         text: 'He nods gratefully and hobbles off. A few minutes later you find his dropped journal — it contains notes on a nearby cache. You find it.',
-                                        rewards: { gold: 400, xp: 150 }
+                                        rewards: { gold: 400, xp: 150, items: ['survivor_journal'] }
                                     }
                                 ]
                             }
@@ -687,8 +679,8 @@ whispering_lights: {
         id: 'goblin_camp',
         name: 'Goblin Raiding Camp',
         rarity: 'common',
-        
-        minLevel: 1,description: 'The stench of smoke and burnt meat drifts through the trees...',
+        minLevel: 1,
+        description: 'The stench of smoke and burnt meat drifts through the trees...',
         intro: 'Through a tangle of brush you spot a small goblin camp — three crude tents, a crackling fire, and a pile of loot stolen from travelers. The goblins are arguing loudly over a sack of gold. You count at least four of them, but they haven\'t noticed you.',
 
         choices: [
@@ -797,8 +789,8 @@ whispering_lights: {
         id: 'talking_crow',
         name: 'The Talking Crow',
         rarity: 'uncommon',
-        
-        minLevel: 1,description: 'A coal-black bird fixes you with an unnervingly intelligent stare...',
+        minLevel: 1,
+        description: 'A coal-black bird fixes you with an unnervingly intelligent stare...',
         intro: 'A huge raven lands directly in front of you, cocking its head with uncanny precision. Then, in a voice like dry leaves: "I know where things are buried. I know what sleeps under the old stones. I know your name, traveler. The question is — what is it worth to you?"',
 
         choices: [
@@ -917,8 +909,8 @@ whispering_lights: {
         id: 'abandoned_well',
         name: 'The Abandoned Well',
         rarity: 'common',
-        
-        minLevel: 1,description: 'A moss-covered stone well sits alone in a forgotten clearing...',
+        minLevel: 1,
+        description: 'A moss-covered stone well sits alone in a forgotten clearing...',
         intro: 'You find a stone well deep in the trees, far from any settlement. A rope still hangs into the darkness below. When you lean over the edge, you hear something — a faint tinkling, like coins shifting. Or like teeth. Hard to tell, honestly.',
 
         choices: [
@@ -996,7 +988,7 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'Your voice echoes back oddly. Then a second voice echoes back. Not yours. It says: "Finally." After a moment of silence, a folded piece of parchment slowly rises up the rope by itself. It\'s a treasure map.',
-                        rewards: { gold: 700, xp: 350 }
+                        rewards: { gold: 700, xp: 350, items: ['treasure_map'] }
                     },
                     {
                         weight: 30,
@@ -1029,8 +1021,8 @@ whispering_lights: {
         id: 'dead_knight',
         name: 'The Dead Knight',
         rarity: 'uncommon',
-        
-        minLevel: 5,description: 'A knight in full armor sits propped against a tree, motionless for years...',
+        minLevel: 5,
+        description: 'A knight in full armor sits propped against a tree, motionless for years...',
         intro: 'The knight has been dead a long time — the armor is tarnished, the visor down, and vines grow around the gauntlets. A sword lies across the lap. A crest is still barely visible on the breastplate: a silver hawk. Whoever this was, they were nobility once.',
 
         choices: [
@@ -1118,7 +1110,7 @@ whispering_lights: {
                     {
                         weight: 20,
                         text: 'As you walk away, the sword lifts off the lap and floats to eye level in front of you. It turns slowly, then embeds itself in the ground at your feet, hilt-up, waiting.',
-                        rewards: { items: ['iron_sword'], xp: 300 }
+                        rewards: { items: ['dragon_kin_blade'], xp: 300 }
                     }
                 ]
             }
@@ -1130,8 +1122,8 @@ whispering_lights: {
         id: 'bogwort_remedy',
         name: "Mother Bogwort's Remedy",
         rarity: 'common',
-        
-        minLevel: 3,description: 'Smoke rises from a hovel too small to be a house and too large to be ignored...',
+        minLevel: 3,
+        description: 'Smoke rises from a hovel too small to be a house and too large to be ignored...',
         intro: 'A hunched old woman outside a mud-and-stick hovel waves at you before you can pass. "You there! You look like someone with aches. I have cures!" The smell coming from her cookpot could strip paint. She\'s stirring something that\'s three different shades of wrong.',
 
         choices: [
@@ -1251,8 +1243,8 @@ whispering_lights: {
         id: 'ghost_soldier',
         name: 'The Ghost Soldier',
         rarity: 'uncommon',
-        
-        minLevel: 5,description: 'A soldier in outdated armor stands at attention in the middle of the path...',
+        minLevel: 5,
+        description: 'A soldier in outdated armor stands at attention in the middle of the path...',
         intro: 'The figure doesn\'t move as you approach. It\'s only when you\'re five steps away that you notice the light passes through him. He\'s translucent — a ghost, still standing his post. His eyes track to yours. "Halt. State your purpose and allegiance." His voice sounds like it\'s coming from underwater.',
 
         choices: [
@@ -1332,7 +1324,7 @@ whispering_lights: {
     },
 
     // ═══════════════════════════════════════════════════════════════
-    // NEW ADVENTURES — LEVELS 7-10  (3 adventures)
+    // NEW ADVENTURES — LEVELS 7-10 (3 adventures)
     // ═══════════════════════════════════════════════════════════════
 
     // ── 8. THE ALCHEMY DISASTER ─────────────────────────────────────
@@ -1340,8 +1332,8 @@ whispering_lights: {
         id: 'alchemy_disaster',
         name: 'The Alchemy Disaster',
         rarity: 'uncommon',
-        
-        minLevel: 7,description: 'A smoking crater and the smell of sulphur mark something gone very wrong...',
+        minLevel: 7,
+        description: 'A smoking crater and the smell of sulphur mark something gone very wrong...',
         intro: 'You find a clearing that is clearly the scene of a catastrophe. Three trees are down, scorch marks radiate outward from a melted iron table, and bubbling fluid oozes into the grass. In the middle of it all, a robed figure is on their hands and knees, collecting pieces of a shattered crystal flask. "No no no no NO—" They haven\'t seen you yet.',
 
         choices: [
@@ -1452,8 +1444,8 @@ whispering_lights: {
         id: 'siren_pool',
         name: 'The Siren Pool',
         rarity: 'rare',
-        
-        minLevel: 8,description: 'A voice like silver bells drifts through the trees from somewhere ahead...',
+        minLevel: 8,
+        description: 'A voice like silver bells drifts through the trees from somewhere ahead...',
         intro: 'You push through a curtain of willows and stop dead. A crystalline pool in a forest hollow, lit from beneath by shifting blue light. Sitting on a mossy stone at the water\'s edge is a figure — beautiful and wrong in a way you can\'t quite name. She\'s watching you with calm, enormous eyes. She says nothing. She doesn\'t need to. You feel an almost magnetic pull toward the water.',
 
         choices: [
@@ -1567,8 +1559,8 @@ whispering_lights: {
         id: 'collapsed_mine',
         name: 'The Collapsed Mine',
         rarity: 'uncommon',
-        
-        minLevel: 7,description: 'A cave-in has blocked what was once a busy mining entrance...',
+        minLevel: 7,
+        description: 'A cave-in has blocked what was once a busy mining entrance...',
         intro: 'The timbers over the mine entrance have rotted and given way, but the collapse was partial — a gap about the width of a person still opens into the dark. A pickaxe is embedded in the rock beside the entrance. A faded sign reads: "IRONVEIN MINE — CLAIM 7." Claim 7 was one of the richest seams in the region before it was abandoned. Nobody says why it was abandoned.',
 
         choices: [
@@ -1685,11 +1677,11 @@ whispering_lights: {
     cursed_sword: {
         id: 'cursed_sword',
         name: 'Cursed Sword',
-        rarity: 'uncommon', 
-        minLevel: 10,// 1% chance
+        rarity: 'uncommon',
+        minLevel: 10,
         description: 'A magnificent sword is stuck in a stone, radiating dark energy...',
         intro: 'A beautiful black sword is embedded in an ancient stone. Dark energy pulses from it. You hear whispers in your mind... "Pull me free..."',
-        
+
         choices: [
             {
                 text: 'Pull the sword free',
@@ -1762,27 +1754,22 @@ whispering_lights: {
                 ]
             }
         ]
-    }
-,
+    },
 
     // ═══════════════════════════════════════════════════════════════
     // CALAMITY DUNGEON ADVENTURES — SET 1
     // Theme: The Calamity Dragon awakens, seal breaking, world tremors
-    // EARLY GAME (Levels 1-8): tremor_ruins, wandering_merchant, prophetic_hermit
-    // MID GAME (Levels 9-16): corrupted_knight, cursed_hoard, dragon_egg, sealed_temple
-    // LATE GAME (Levels 17-25): cult_ritual, last_dragonslayer, final_warning
     // ═══════════════════════════════════════════════════════════════
-    // ═══════════════════════════════════════════════════════════════
+
     // 1. TREMOR IN THE RUINS
-    // ═══════════════════════════════════════════════════════════════
     tremor_ruins: {
         id: 'tremor_ruins',
         name: 'Tremor in the Ruins',
         rarity: 'common',
-        
-        minLevel: 1,description: 'The ground shakes violently as ancient ruins crack open before you...',
+        minLevel: 1,
+        description: 'The ground shakes violently as ancient ruins crack open before you...',
         intro: 'A massive tremor splits the earth! Ancient ruins buried for centuries are revealed. You hear whispers in a dead language... and something massive stirring below.',
-        
+
         choices: [
             {
                 text: 'Descend into the newly opened passage',
@@ -1790,22 +1777,19 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'You find an ancient armory! Weapons from the Dragon Wars era!',
-                        // REWARD: Level-appropriate weapon drop (epic quality)
-                        rewards: { xp: 200, items: ['/* epic_ancient_weapon */'] }
+                        rewards: { xp: 200, items: ['dragon_kin_blade'] }
                     },
                     {
                         weight: 35,
                         text: 'The passage leads to a chamber with piles of old gold and a strange glowing seal fragment!',
-                        rewards: { gold: 300, xp: 150, items: ['/* seal_fragment */'] }
+                        rewards: { gold: 300, xp: 150, items: ['seal_fragment'] }
                     },
                     {
                         weight: 25,
                         text: 'You awaken something that was meant to stay buried!',
-                        // COMBAT: Ancient Guardian or Sealed Horror
-                        combat: ['/* ancient_stone_guardian */']
+                        combat: ['ancient_stone_guardian']
                     }
                 ],
-                // Nested second layer
                 nestedChoices: [
                     {
                         text: 'Search the armory thoroughly',
@@ -1813,17 +1797,17 @@ whispering_lights: {
                             {
                                 weight: 50,
                                 text: 'You find a hidden chest containing dragon-slaying ammunition!',
-                                rewards: { items: ['/* dragon_slayer_arrows */'], xp: 100 }
+                                rewards: { items: ['dragon_slayer_arrows'], xp: 100 }
                             },
                             {
                                 weight: 30,
                                 text: 'A trapped chest explodes! But among the debris is valuable armor.',
-                                rewards: { damage: 30, items: ['/* ancient_armor */'] }
+                                rewards: { damage: 30, items: ['ancient_armor'] }
                             },
                             {
                                 weight: 20,
                                 text: 'The armory collapses! You barely escape with a small artifact.',
-                                rewards: { damage: 50, items: ['/* cracked_relic */'] }
+                                rewards: { damage: 50, items: ['cracked_relic'] }
                             }
                         ]
                     },
@@ -1833,17 +1817,17 @@ whispering_lights: {
                             {
                                 weight: 40,
                                 text: 'Visions flood your mind! You see the Calamity Dragon\'s prison weakening. Knowledge grants you power!',
-                                rewards: { xp: 500,}
+                                rewards: { xp: 500 }
                             },
                             {
                                 weight: 35,
                                 text: 'The fragment burns your hand but bonds with you, granting protection against dragon fire!',
-                                rewards: { damage: 40, items: ['/* fire_resistance_charm */'] }
+                                rewards: { damage: 40, items: ['dragon_scale_charm'] }
                             },
                             {
                                 weight: 25,
                                 text: 'The fragment is a trap! It summons a spectral dragon cultist to eliminate intruders!',
-                                combat: ['/* spectral_cultist */']
+                                combat: ['spectral_cultist']
                             }
                         ]
                     },
@@ -1865,12 +1849,12 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'You spot ancient writing on the walls - a prophecy about the dragon\'s return!',
-                        rewards: { xp: 150 }
+                        rewards: { xp: 150, items: ['ancient_prophecy_scroll'] }
                     },
                     {
                         weight: 30,
                         text: 'A survivor from a nearby village stumbles out, clutching a valuable map!',
-                        rewards: { items: ['/* treasure_map */'], xp: 100 }
+                        rewards: { items: ['treasure_map'], xp: 100 }
                     },
                     {
                         weight: 20,
@@ -1892,17 +1876,15 @@ whispering_lights: {
         ]
     },
 
-    // ═══════════════════════════════════════════════════════════════
     // 2. THE CORRUPTED KNIGHT
-    // ═══════════════════════════════════════════════════════════════
     corrupted_knight: {
         id: 'corrupted_knight',
         name: 'The Corrupted Knight',
         rarity: 'uncommon',
-        
-        minLevel: 9,description: 'A knight in blackened armor kneels before a dragon shrine...',
+        minLevel: 9,
+        description: 'A knight in blackened armor kneels before a dragon shrine...',
         intro: 'You encounter a knight in once-noble armor, now blackened and smoking. They kneel before a crude shrine depicting a dragon. Red eyes turn toward you. "Join us... or perish."',
-        
+
         choices: [
             {
                 text: 'Try to reason with the knight',
@@ -1910,12 +1892,12 @@ whispering_lights: {
                     {
                         weight: 30,
                         text: 'Your words break through! The knight weeps and thanks you, offering their cursed blade as tribute.',
-                        rewards: { xp: 300, items: ['/* cursed_greatsword */'] }
+                        rewards: { xp: 300, items: ['drake_tongue_blade'] }
                     },
                     {
                         weight: 40,
                         text: 'The knight hesitates... then attacks anyway! "It\'s too late for me!"',
-                        combat: ['/* corrupted_knight */']
+                        combat: ['corrupted_knight_enemy']
                     },
                     {
                         weight: 30,
@@ -1930,17 +1912,17 @@ whispering_lights: {
                             {
                                 weight: 50,
                                 text: 'The blade is powerful but hungry. It will serve you... for now.',
-                                rewards: { items: ['/* soul_drinker_sword */'] }
+                                rewards: { items: ['soul_drinker_sword'] }
                             },
                             {
                                 weight: 30,
                                 text: 'The curse tries to possess you! You fight it off but are weakened.',
-                                rewards: { damage: 60, items: ['/* weakened_cursed_blade */'] }
+                                rewards: { damage: 60, items: ['weakened_cursed_blade'] }
                             },
                             {
                                 weight: 20,
                                 text: 'The blade shatters the moment you touch it, releasing a trapped soul who blesses you!',
-                                rewards: { xp: 400,}
+                                rewards: { xp: 400 }
                             }
                         ]
                     },
@@ -1950,7 +1932,7 @@ whispering_lights: {
                             {
                                 weight: 60,
                                 text: 'The shrine explodes in dark energy! A dragon cultist appears to defend it!',
-                                combat: ['/* enraged_cultist */']
+                                combat: ['enraged_cultist']
                             },
                             {
                                 weight: 40,
@@ -1970,7 +1952,7 @@ whispering_lights: {
                             {
                                 weight: 30,
                                 text: 'A hidden journal details dragon cult activities! This information is valuable!',
-                                rewards: { xp: 350, items: ['/* cult_intelligence */'] }
+                                rewards: { xp: 350, items: ['cult_intelligence'] }
                             },
                             {
                                 weight: 20,
@@ -1987,7 +1969,7 @@ whispering_lights: {
                     {
                         weight: 100,
                         text: 'The corrupted knight rises to meet your challenge!',
-                        combat: ['/* corrupted_knight */']
+                        combat: ['corrupted_knight_enemy']
                     }
                 ]
             },
@@ -2002,24 +1984,22 @@ whispering_lights: {
                     {
                         weight: 30,
                         text: 'The knight senses you! "COWARD!" They charge!',
-                        combat: ['/* corrupted_knight */']
+                        combat: ['corrupted_knight_enemy']
                     }
                 ]
             }
         ]
     },
 
-    // ═══════════════════════════════════════════════════════════════
     // 3. THE PROPHETIC HERMIT
-    // ═══════════════════════════════════════════════════════════════
     prophetic_hermit: {
         id: 'prophetic_hermit',
         name: 'The Prophetic Hermit',
         rarity: 'uncommon',
-        
-        minLevel: 1,description: 'A wild-eyed hermit blocks your path, speaking in riddles...',
+        minLevel: 1,
+        description: 'A wild-eyed hermit blocks your path, speaking in riddles...',
         intro: 'An old hermit with crazed eyes grabs your arm. "The scaled tyrant wakes! The seal cracks! Only the worthy may stop what comes! Prove yourself... or flee while you still can!"',
-        
+
         choices: [
             {
                 text: 'Ask about the dragon',
@@ -2027,7 +2007,7 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'The hermit\'s eyes clear. They share ancient knowledge of the dragon\'s weakness!',
-                        rewards: { xp: 400,}
+                        rewards: { xp: 400 }
                     },
                     {
                         weight: 35,
@@ -2037,7 +2017,7 @@ whispering_lights: {
                     {
                         weight: 25,
                         text: 'The hermit cackles. "You want knowledge? Take it!" They force a vision into your mind!',
-                        rewards: { damage: 40, xp: 500,}
+                        rewards: { damage: 40, xp: 500 }
                     }
                 ],
                 nestedChoices: [
@@ -2047,17 +2027,17 @@ whispering_lights: {
                             {
                                 weight: 50,
                                 text: 'You learn the dragon\'s true name and a powerful spell to harm it!',
-                                rewards: { xp: 300 }
+                                rewards: { xp: 300, items: ['dragon_weakness_note'] }
                             },
                             {
                                 weight: 30,
                                 text: 'The scroll contains warnings of the cult\'s rituals. Knowledge is power!',
-                                rewards: { xp: 200 }
+                                rewards: { xp: 200, items: ['cult_intelligence'] }
                             },
                             {
                                 weight: 20,
                                 text: 'The scroll is cursed! Reading it summons a trial guardian!',
-                                combat: ['/* trial_guardian */']
+                                combat: ['trial_guardian']
                             }
                         ]
                     },
@@ -2082,7 +2062,7 @@ whispering_lights: {
                             {
                                 weight: 40,
                                 text: 'You see the future! The dragon rises in flames... but you also see how to stop it!',
-                                rewards: { xp: 600,}
+                                rewards: { xp: 600 }
                             },
                             {
                                 weight: 35,
@@ -2092,7 +2072,7 @@ whispering_lights: {
                             {
                                 weight: 25,
                                 text: 'You see yourself standing victorious over the dragon\'s corpse. Confidence surges through you!',
-                                rewards: { xp: 500,}
+                                rewards: { xp: 500 }
                             }
                         ]
                     }
@@ -2109,7 +2089,7 @@ whispering_lights: {
                     {
                         weight: 30,
                         text: 'The hermit reveals they were testing you! They give you a powerful charm!',
-                        rewards: { gold: -50, items: ['/* protective_charm */'], xp: 250 }
+                        rewards: { gold: -50, items: ['dragon_scale_charm'], xp: 250 }
                     },
                     {
                         weight: 20,
@@ -2134,24 +2114,22 @@ whispering_lights: {
                     {
                         weight: 20,
                         text: 'The hermit curses you for your arrogance! Bad luck follows!',
-                        rewards: { xp: -100,}
+                        rewards: { xp: -100 }
                     }
                 ]
             }
         ]
     },
 
-    // ═══════════════════════════════════════════════════════════════
     // 4. DRAGON CULT RITUAL
-    // ═══════════════════════════════════════════════════════════════
     cult_ritual: {
         id: 'cult_ritual',
         name: 'Dragon Cult Ritual',
         rarity: 'rare',
-        
-        minLevel: 17,description: 'Hooded figures chant around a fire, their ritual almost complete...',
+        minLevel: 17,
+        description: 'Hooded figures chant around a fire, their ritual almost complete...',
         intro: 'You stumble upon a clearing where robed cultists circle a bonfire. They chant in draconic tongue: "Rise, O Scaled Tyrant! Break your chains! Bathe the world in cleansing flame!" A portal is forming above them...',
-        
+
         choices: [
             {
                 text: 'Disrupt the ritual immediately',
@@ -2164,12 +2142,12 @@ whispering_lights: {
                     {
                         weight: 35,
                         text: 'You stop the ritual, but the cultists turn on you as one!',
-                        combat: ['/* cult_fanatics */']
+                        combat: ['cult_fanatics']
                     },
                     {
                         weight: 25,
                         text: 'Too late! Something comes through the portal before it closes!',
-                        combat: ['/* lesser_dragon_spawn */']
+                        combat: ['lesser_dragon_spawn']
                     }
                 ],
                 nestedChoices: [
@@ -2179,17 +2157,17 @@ whispering_lights: {
                             {
                                 weight: 45,
                                 text: 'You find ritual daggers, gold, and maps to other cult locations!',
-                                rewards: { gold: 400, items: ['/* cult_map */', '/* ritual_dagger */'], xp: 300 }
+                                rewards: { gold: 400, items: ['cult_map', 'ritual_dagger'], xp: 300 }
                             },
                             {
                                 weight: 30,
                                 text: 'A journal details their plans! The cult is larger than you thought...',
-                                rewards: { xp: 400, items: ['/* cult_journal */'] }
+                                rewards: { xp: 400, items: ['cult_journal'] }
                             },
                             {
                                 weight: 25,
                                 text: 'You find a trapped seal fragment! It explodes!',
-                                rewards: { damage: 90, items: ['/* damaged_seal_fragment */'] }
+                                rewards: { damage: 90, items: ['damaged_seal_fragment'] }
                             }
                         ]
                     },
@@ -2199,12 +2177,12 @@ whispering_lights: {
                             {
                                 weight: 50,
                                 text: 'You consecrate the ground with holy water. This site can never be used again!',
-                                rewards: { xp: 450,}
+                                rewards: { xp: 450 }
                             },
                             {
                                 weight: 30,
                                 text: 'As you destroy the shrine, residual magic empowers you!',
-                                rewards: { xp: 350,}
+                                rewards: { xp: 350 }
                             },
                             {
                                 weight: 20,
@@ -2229,7 +2207,7 @@ whispering_lights: {
                             {
                                 weight: 25,
                                 text: 'A dragon cultist\'s hand reaches through! You barely sever it before pulling away!',
-                                rewards: { items: ['/* cultist_artifact */'], damage: 70 }
+                                rewards: { items: ['cultist_artifact'], damage: 70 }
                             }
                         ]
                     }
@@ -2241,17 +2219,17 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'They believe you! The cult leader shares secret locations and weaknesses!',
-                        rewards: { xp: 550, items: ['/* cult_secrets */'] }
+                        rewards: { xp: 550, items: ['cult_secrets'] }
                     },
                     {
                         weight: 35,
                         text: 'They see through your disguise! "IMPOSTOR!" All cultists attack!',
-                        combat: ['/* enraged_cultists */']
+                        combat: ['enraged_cultists']
                     },
                     {
                         weight: 25,
                         text: 'They welcome you but demand proof of loyalty... they want you to kill someone.',
-                        rewards: { xp: 100 } // This could branch to moral choice
+                        rewards: { xp: 100 }
                     }
                 ]
             },
@@ -2266,7 +2244,7 @@ whispering_lights: {
                     {
                         weight: 30,
                         text: 'You\'re discovered! "A spy! Kill them!"',
-                        combat: ['/* cult_guards */']
+                        combat: ['cult_guards']
                     },
                     {
                         weight: 20,
@@ -2278,144 +2256,123 @@ whispering_lights: {
         ]
     },
 
-    // ═══════════════════════════════════════════════════════════════
+    // 5. THE WANDERING MERCHANT (already updated above)
+    
+// ═══════════════════════════════════════════════════════════════
     // 5. THE WANDERING MERCHANT (Humor & Danger)
     // ═══════════════════════════════════════════════════════════════
-    wandering_merchant: {
-        id: 'wandering_merchant',
-        name: 'The Wandering Merchant',
-        rarity: 'common',
-        
-        minLevel: 1,description: 'A cheerful merchant waves from their cart, seemingly unconcerned about the world ending...',
-        intro: 'A portly merchant sits by a colorful cart, munching on an apple. "Well met, friend! Business is BOOMING with all this dragon nonsense! Everyone needs supplies! Care to browse?"',
-        
-        choices: [
-            {
-                text: 'Browse their wares',
-                outcomes: [
-                    {
-                        weight: 40,
-                        text: 'They have some surprisingly good gear! "Looted from... I mean, salvaged from abandoned towns!"',
-                        rewards: { gold: -150, items: ['/* quality_gear */'] }
-                    },
-                    {
-                        weight: 35,
-                        text: 'Mostly junk, but one item catches your eye...',
-                        rewards: { gold: -80, items: ['/* mystery_item */'] }
-                    },
-                    {
-                        weight: 25,
-                        text: '"This here\'s a genuine DRAGON SCALE!" (It\'s painted wood. You paid 200 gold.)',
-                        rewards: { gold: -200, items: ['/* fake_dragon_scale */'] }
-                    }
-                ],
-                nestedChoices: [
-                    {
-                        text: 'Haggle for a better price',
-                        outcomes: [
-                            {
-                                weight: 50,
-                                text: 'The merchant respects your negotiation! "You drive a hard bargain! Fine!"',
-                                rewards: { gold: 100 } // Refund
-                            },
-                            {
-                                weight: 30,
-                                text: 'They throw in a free potion to sweeten the deal!',
-                                rewards: { items: ['/* health_potion */'] }
-                            },
-                            {
-                                weight: 20,
-                                text: '"HOW DARE YOU! These are PREMIUM prices!" They refuse to budge.',
-                                rewards: { xp: 25 }
-                            }
-                        ]
-                    },
-                    {
-                        text: 'Ask about dragon-related items',
-                        outcomes: [
-                            {
-                                weight: 45,
-                                text: '"Ah! I have JUST the thing!" They sell you a legitimate fire-resist potion!',
-                                rewards: { gold: -120, items: ['/* fire_resistance_potion */'] }
-                            },
-                            {
-                                weight: 30,
-                                text: 'They lean in close. "Between you and me... the cult pays WELL for info. You seen anything?"',
-                                rewards: { xp: 100 } // Choice: report cult activity or not
-                            },
-                            {
-                                weight: 25,
-                                text: 'They laugh. "Dragons! What dragons? That\'s all conspiracy nonsense, friend."',
-                                rewards: { xp: 50 }
-                            }
-                        ]
-                    },
-                    {
-                        text: 'Rob the merchant',
-                        outcomes: [
-                            {
-                                weight: 50,
-                                text: 'The "merchant" reveals they\'re actually a retired adventurer! They beat you senseless!',
-                                rewards: { damage: 120, gold: -100 }
-                            },
-                            {
-                                weight: 30,
-                                text: 'You successfully rob them... but feel terrible. Karma will remember this.',
-                                rewards: { gold: 300, xp: -200,}
-                            },
-                            {
-                                weight: 20,
-                                text: 'Guards appear! "THIEF!" You barely escape!',
-                                rewards: { damage: 60 }
-                            }
-                        ]
-                    }
-                ]
-            },
-            {
-                text: 'Warn them about the danger',
-                outcomes: [
-                    {
-                        weight: 50,
-                        text: 'They laugh. "Danger? Friend, I survived the Goblin Wars! I\'ll be fine!" They give you a free health potion for caring.',
-                        rewards: { items: ['/* health_potion */'], xp: 100 }
-                    },
-                    {
-                        weight: 30,
-                        text: 'Their face goes pale. "The dragon? It\'s... real?" They pack up immediately, leaving goods behind!',
-                        rewards: { items: ['/* abandoned_supplies */'], xp: 150 }
-                    },
-                    {
-                        weight: 20,
-                        text: '"I KNEW IT! Here, take this!" They give you a map to a safe haven!',
-                        rewards: { items: ['/* safe_haven_map */'], xp: 200 }
-                    }
-                ]
-            },
-            {
-                text: 'Keep walking',
-                outcomes: [
-                    {
-                        weight: 100,
-                        text: 'The merchant shrugs. "Your loss! Come back anytime!"',
-                        rewards: { xp: 25 }
-                    }
-                ]
-            }
-        ]
-    },
+    // Replace the current wandering_merchant section with this:
 
-    // ═══════════════════════════════════════════════════════════════
+wandering_merchant: {
+    id: 'wandering_merchant',
+    name: 'The Wandering Merchant',
+    rarity: 'common',
+    minLevel: 1,
+    description: 'A cheerful merchant waves from their cart, seemingly unconcerned about the world ending...',
+    intro: 'A portly merchant sits by a colorful cart, munching on an apple. "Well met, friend! Business is BOOMING with all this dragon nonsense! Everyone needs supplies! Care to browse?"',
+    
+    choices: [
+        {
+            text: 'Browse their wares',
+            outcomes: [
+                {
+                    weight: 40,
+                    text: 'They have some surprisingly good gear! "Looted from... I mean, salvaged from abandoned towns!"',
+                    nextChoices: [  // Add nested choice here
+                        {
+                            text: 'Take the dragon scale cloak (light, fire-resistant)',
+                            outcomes: [
+                                {
+                                    weight: 100,
+                                    text: 'You wrap the cloak around your shoulders. It feels warm and protective.',
+                                    rewards: { gold: -150, items: ['dragon_scale_cloak'], xp: 50 }
+                                }
+                            ]
+                        },
+                        {
+                            text: 'Take the dragonhide gloves (tough, dexterous)',
+                            outcomes: [
+                                {
+                                    weight: 100,
+                                    text: 'The gloves fit perfectly. Your grip feels stronger already.',
+                                    rewards: { gold: -150, items: ['dragonhide_gloves'], xp: 50 }
+                                }
+                            ]
+                        },
+                        {
+                            text: 'Ask what else they have',
+                            outcomes: [
+                                {
+                                    weight: 60,
+                                    text: 'They pull out a gleaming drake scale vest! "This one is special..."',
+                                    rewards: { gold: -280, items: ['drake_scale_vest'], xp: 75 }
+                                },
+                                {
+                                    weight: 40,
+                                    text: '"Just this old thing." They hand you a mysterious potion.',
+                                    rewards: { gold: -50, items: ['mystery_potion'], xp: 25 }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    weight: 35,
+                    text: 'Mostly junk, but one item catches your eye...',
+                    rewards: { gold: -80, items: ['mystery_potion'], xp: 30 }
+                },
+                {
+                    weight: 25,
+                    text: '"This here\'s a genuine DRAGON SCALE!" (It\'s painted wood. You paid 200 gold.)',
+                    rewards: { gold: -200, items: ['painted_scale'], xp: 10 }
+                }
+            ]
+        },
+        {
+            text: 'Warn them about the danger',
+            outcomes: [
+                {
+                    weight: 50,
+                    text: 'They laugh. "Danger? Friend, I survived the Goblin Wars! I\'ll be fine!" They give you a free health potion for caring.',
+                    rewards: { items: ['health_potion'], xp: 100 }
+                },
+                {
+                    weight: 30,
+                    text: 'Their face goes pale. "The dragon? It\'s... real?" They pack up immediately, leaving goods behind!',
+                    rewards: { items: ['dragon_scale_cloak', 'health_potion'], xp: 150 }
+                },
+                {
+                    weight: 20,
+                    text: '"I KNEW IT! Here, take this!" They give you a map to a safe haven!',
+                    rewards: { items: ['safe_haven_map'], xp: 200 }
+                }
+            ]
+        },
+        {
+            text: 'Keep walking',
+            outcomes: [
+                {
+                    weight: 100,
+                    text: 'The merchant shrugs. "Your loss! Come back anytime!"',
+                    rewards: { xp: 25 }
+                }
+            ]
+        }
+    ]
+},
+
+
+
+
     // 6. SEALED TEMPLE AWAKENING
-    // ═══════════════════════════════════════════════════════════════
     sealed_temple: {
         id: 'sealed_temple',
         name: 'Sealed Temple Awakening',
         rarity: 'rare',
-        
-        minLevel: 9,description: 'An ancient temple\'s seal shatters as you approach...',
+        minLevel: 9,
+        description: 'An ancient temple\'s seal shatters as you approach...',
         intro: 'A massive stone temple looms before you, covered in glowing seals. As you watch, the seals crack and shatter! The doors grind open on their own, revealing darkness within. A voice whispers: "Finally... free..."',
-        
+
         choices: [
             {
                 text: 'Enter the temple',
@@ -2423,17 +2380,17 @@ whispering_lights: {
                     {
                         weight: 35,
                         text: 'Inside, you find ancient treasures and a warning: "The dragon\'s lieutenant was sealed here."',
-                        rewards: { gold: 500, xp: 400, items: ['/* ancient_treasure */'] }
+                        rewards: { gold: 500, xp: 400, items: ['ancient_treasure'] }
                     },
                     {
                         weight: 40,
                         text: 'A monstrous guardian, sealed for a thousand years, awakens and attacks!',
-                        combat: ['/* ancient_temple_guardian */']
+                        combat: ['ancient_temple_guardian']
                     },
                     {
                         weight: 25,
                         text: 'You find a priest, somehow still alive after 1000 years! They beg for help stopping the dragon!',
-                        rewards: { xp: 450,}
+                        rewards: { xp: 450 }
                     }
                 ],
                 nestedChoices: [
@@ -2448,12 +2405,12 @@ whispering_lights: {
                             {
                                 weight: 35,
                                 text: 'You find it! The lieutenant is still trapped, but the seal is weakening!',
-                                combat: ['/* weakened_dragon_lieutenant */']
+                                combat: ['weakened_dragon_lieutenant']
                             },
                             {
                                 weight: 25,
                                 text: 'The prison contains only bones and a powerful artifact the lieutenant left behind!',
-                                rewards: { items: ['/* lieutenant_artifact */'], xp: 400 }
+                                rewards: { items: ['lieutenant_artifact'], xp: 400 }
                             }
                         ]
                     },
@@ -2468,12 +2425,12 @@ whispering_lights: {
                             {
                                 weight: 30,
                                 text: 'The priest is actually possessed! "FOOLISH MORTAL!" They transform!',
-                                combat: ['/* possessed_priest */']
+                                combat: ['possessed_priest']
                             },
                             {
                                 weight: 20,
                                 text: 'The priest dies in your arms, but not before revealing a crucial secret!',
-                                rewards: { xp: 450, items: ['/* priest_final_message */'] }
+                                rewards: { xp: 450, items: ['priest_final_message'] }
                             }
                         ]
                     },
@@ -2493,7 +2450,8 @@ whispering_lights: {
                             {
                                 weight: 20,
                                 text: 'You fail! The seal energy backlashes, and something escapes!',
-                                combat: ['/* temple_horror */'], rewards: { damage: 100 }
+                                combat: ['temple_horror'],
+                                rewards: { damage: 100 }
                             }
                         ]
                     }
@@ -2515,7 +2473,7 @@ whispering_lights: {
                     {
                         weight: 25,
                         text: 'Your attempt triggers a defense mechanism! Guardian statues animate!',
-                        combat: ['/* stone_guardians */']
+                        combat: ['stone_guardians']
                     }
                 ]
             },
@@ -2530,24 +2488,22 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'As you run, something emerges from the temple and pursues you!',
-                        combat: ['/* temple_spawn */']
+                        combat: ['temple_spawn']
                     }
                 ]
             }
         ]
     },
 
-    // ═══════════════════════════════════════════════════════════════
     // 7. THE DRAGON EGG
-    // ═══════════════════════════════════════════════════════════════
     dragon_egg: {
         id: 'dragon_egg',
         name: 'The Dragon Egg',
         rarity: 'rare',
-        
-        minLevel: 9,description: 'You discover a massive egg, warm to the touch and glowing faintly...',
+        minLevel: 9,
+        description: 'You discover a massive egg, warm to the touch and glowing faintly...',
         intro: 'Hidden in a cave, you find an enormous egg, easily the size of a barrel. It pulses with inner fire. Dragon cultists were clearly guarding it before you killed them. What do you do?',
-        
+
         choices: [
             {
                 text: 'Destroy the egg',
@@ -2555,17 +2511,17 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'You shatter it. The unborn wyrmling dies. You\'ve prevented one future threat.',
-                        rewards: { xp: 500, items: ['/* dragon_egg_fragment */'] }
+                        rewards: { xp: 500, items: ['dragon_egg_fragment'] }
                     },
                     {
                         weight: 35,
                         text: 'It explodes in flames! But from the ashes, you salvage valuable dragon materials!',
-                        rewards: { damage: 90, items: ['/* dragon_scales */', '/* dragon_essence */'], xp: 400 }
+                        rewards: { damage: 90, items: ['dragon_scales', 'dragon_essence'], xp: 400 }
                     },
                     {
                         weight: 25,
                         text: 'The egg hatches prematurely! The wyrmling attacks in self-defense!',
-                        combat: ['/* wyrmling */']
+                        combat: ['wyrmling']
                     }
                 ]
             },
@@ -2575,17 +2531,17 @@ whispering_lights: {
                     {
                         weight: 35,
                         text: 'You carefully transport it. Dragon eggs are worth a FORTUNE to collectors!',
-                        rewards: { items: ['/* dragon_egg */'], xp: 300 }
+                        rewards: { items: ['dragon_egg'], xp: 300 }
                     },
                     {
                         weight: 40,
                         text: 'It\'s heavier than you thought! Hauling it exhausts you, but you manage.',
-                        rewards: { items: ['/* dragon_egg */'], damage: 40, xp: 250 }
+                        rewards: { items: ['dragon_egg'], damage: 40, xp: 250 }
                     },
                     {
                         weight: 25,
                         text: 'The egg\'s parent returns! An ADULT DRAGON descends in fury!',
-                        combat: ['/* adult_dragon */'] // Boss fight!
+                        combat: ['adult_dragon']
                     }
                 ],
                 nestedChoices: [
@@ -2600,7 +2556,7 @@ whispering_lights: {
                             {
                                 weight: 30,
                                 text: 'The collector is actually a dragon cultist! They steal it and attack!',
-                                combat: ['/* cultist_thief */']
+                                combat: ['cultist_thief']
                             },
                             {
                                 weight: 20,
@@ -2635,12 +2591,12 @@ whispering_lights: {
                             {
                                 weight: 60,
                                 text: 'Scholars study it and learn crucial weaknesses about dragons! They reward you generously!',
-                                rewards: { gold: 800, xp: 600, items: ['/* dragon_research_notes */'] }
+                                rewards: { gold: 800, xp: 600, items: ['dragon_research_notes'] }
                             },
                             {
                                 weight: 40,
                                 text: 'The scholars accidentally hatch it during study! Chaos ensues!',
-                                combat: ['/* escaped_wyrmling */']
+                                combat: ['escaped_wyrmling']
                             }
                         ]
                     }
@@ -2669,17 +2625,15 @@ whispering_lights: {
         ]
     },
 
-    // ═══════════════════════════════════════════════════════════════
     // 8. THE CURSED TREASURE HOARD
-    // ═══════════════════════════════════════════════════════════════
     cursed_hoard: {
         id: 'cursed_hoard',
         name: 'The Cursed Treasure Hoard',
         rarity: 'uncommon',
-        
-        minLevel: 9,description: 'You discover a cave filled with gold... but something feels wrong...',
+        minLevel: 9,
+        description: 'You discover a cave filled with gold... but something feels wrong...',
         intro: 'A cave entrance yawns before you. Inside, you see MOUNTAINS of gold, weapons, and jewels! But the air feels heavy with malice. Skeletons in armor litter the floor. All died reaching for the treasure...',
-        
+
         choices: [
             {
                 text: 'Take treasure carefully',
@@ -2687,7 +2641,7 @@ whispering_lights: {
                     {
                         weight: 35,
                         text: 'You successfully avoid the curse triggers! You\'re rich!',
-                        rewards: { gold: 800, items: ['/* cursed_treasure */'], xp: 300 }
+                        rewards: { gold: 800, items: ['cursed_treasure'], xp: 300 }
                     },
                     {
                         weight: 40,
@@ -2697,7 +2651,7 @@ whispering_lights: {
                     {
                         weight: 25,
                         text: 'The treasure is guarded by a dragon-cursed guardian!',
-                        combat: ['/* treasure_guardian */']
+                        combat: ['treasure_guardian']
                     }
                 ],
                 nestedChoices: [
@@ -2717,7 +2671,7 @@ whispering_lights: {
                             {
                                 weight: 20,
                                 text: 'The priest tries but the curse transfers to THEM! They attack you, possessed!',
-                                combat: ['/* possessed_priest */']
+                                combat: ['possessed_priest']
                             }
                         ]
                     },
@@ -2727,7 +2681,7 @@ whispering_lights: {
                             {
                                 weight: 40,
                                 text: 'The curse brings bad luck, but the gold is worth it... right?',
-                                rewards: { gold: 1000,}
+                                rewards: { gold: 1000 }
                             },
                             {
                                 weight: 35,
@@ -2737,7 +2691,7 @@ whispering_lights: {
                             {
                                 weight: 25,
                                 text: 'The curse summons the original owner - a dragon wraith!',
-                                combat: ['/* dragon_wraith */']
+                                combat: ['dragon_wraith']
                             }
                         ]
                     },
@@ -2747,12 +2701,12 @@ whispering_lights: {
                             {
                                 weight: 60,
                                 text: 'The temple purifies it and returns half to you as a reward!',
-                                rewards: { gold: 500, xp: 400,}
+                                rewards: { gold: 500, xp: 400 }
                             },
                             {
                                 weight: 40,
                                 text: 'The temple keeps it all but blesses you in return!',
-                                rewards: { xp: 500,}
+                                rewards: { xp: 500 }
                             }
                         ]
                     }
@@ -2769,7 +2723,7 @@ whispering_lights: {
                     {
                         weight: 35,
                         text: 'One skeleton rises! "Leave... the hoard... ALONE!"',
-                        combat: ['/* skeletal_guardian */']
+                        combat: ['skeletal_guardian']
                     },
                     {
                         weight: 25,
@@ -2796,17 +2750,15 @@ whispering_lights: {
         ]
     },
 
-    // ═══════════════════════════════════════════════════════════════
     // 9. THE LAST DRAGONSLAYER
-    // ═══════════════════════════════════════════════════════════════
     last_dragonslayer: {
         id: 'last_dragonslayer',
         name: 'The Last Dragonslayer',
         rarity: 'rare',
-        
-        minLevel: 17,description: 'An ancient warrior sits by a campfire, their armor scorched and melted...',
+        minLevel: 17,
+        description: 'An ancient warrior sits by a campfire, their armor scorched and melted...',
         intro: 'You find a grizzled warrior, armor burnt and scarred. Their sword glows faintly with dragon-slaying magic. "I was there," they rasp. "A thousand years ago. When we sealed the Calamity. I was the only survivor. And now... the seal breaks."',
-        
+
         choices: [
             {
                 text: 'Ask them to train you',
@@ -2814,17 +2766,17 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: '"You have potential." They teach you the ancient dragonslayer techniques!',
-                        rewards: { xp: 700,}
+                        rewards: { xp: 700 }
                     },
                     {
                         weight: 35,
                         text: '"I\'m too old for this. But take my sword. You\'ll need it more than I do."',
-                        rewards: { items: ['/* ancient_dragonslayer_blade */'], xp: 500 }
+                        rewards: { items: ['ancient_dragon_slayer'], xp: 500 }
                     },
                     {
                         weight: 25,
                         text: '"I\'ll test you first." They attack! If you survive, you\'re worthy!',
-                        combat: ['/* dragonslayer_veteran */']
+                        combat: ['dragonslayer_veteran']
                     }
                 ],
                 nestedChoices: [
@@ -2834,7 +2786,7 @@ whispering_lights: {
                             {
                                 weight: 50,
                                 text: 'You train for days. Your attacks will now deal massive damage to dragons!',
-                                rewards: { xp: 800,}
+                                rewards: { xp: 800 }
                             },
                             {
                                 weight: 30,
@@ -2844,7 +2796,7 @@ whispering_lights: {
                             {
                                 weight: 20,
                                 text: 'You fail the training. The dragonslayer is disappointed but gives you a consolation prize.',
-                                rewards: { items: ['/* training_manual */'], xp: 300 }
+                                rewards: { items: ['training_manual'], xp: 300 }
                             }
                         ]
                     },
@@ -2854,7 +2806,7 @@ whispering_lights: {
                             {
                                 weight: 50,
                                 text: 'They describe the Calamity\'s weaknesses! This knowledge is invaluable!',
-                                rewards: { xp: 600, items: ['/* calamity_weakness_scroll */'] }
+                                rewards: { xp: 600, items: ['calamity_weakness_scroll'] }
                             },
                             {
                                 weight: 30,
@@ -2874,12 +2826,12 @@ whispering_lights: {
                             {
                                 weight: 40,
                                 text: '"One more battle. Why not?" They agree to join when the time comes!',
-                                rewards: { xp: 500,}
+                                rewards: { xp: 500 }
                             },
                             {
                                 weight: 35,
                                 text: '"I\'m too old. I\'d only slow you down. But take my armor!"',
-                                rewards: { items: ['/* dragonslayer_armor */'], xp: 400 }
+                                rewards: { items: ['dragonslayer_armor'], xp: 400 }
                             },
                             {
                                 weight: 25,
@@ -2896,17 +2848,17 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: '"Earn it." They toss you a training sword. "Beat me."',
-                        combat: ['/* dragonslayer_duel */']
+                        combat: ['dragonslayer_duel']
                     },
                     {
                         weight: 35,
                         text: '"You\'re bold. I like that." They give you the sword.',
-                        rewards: { items: ['/* dragonslayer_sword */'], xp: 400 }
+                        rewards: { items: ['scale_piercer'], xp: 400 }
                     },
                     {
                         weight: 25,
                         text: '"This blade is cursed with the dragon\'s dying rage. You sure you want it?"',
-                        rewards: { items: ['/* cursed_dragonslayer_blade */'], xp: 300 }
+                        rewards: { items: ['cursed_dragonslayer_blade'], xp: 300 }
                     }
                 ]
             },
@@ -2916,34 +2868,32 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'They smile. "Thank you. I just need... rest." They close their eyes and pass peacefully. They leave you their belongings.',
-                        rewards: { gold: 400, items: ['/* dragonslayer_legacy */'], xp: 450 }
+                        rewards: { gold: 400, items: ['dragonslayer_legacy'], xp: 450 }
                     },
                     {
                         weight: 30,
                         text: '"Help? I need you to finish what we started." They give you a map to the dragon\'s lair!',
-                        rewards: { items: ['/* dragon_lair_map */'], xp: 500 }
+                        rewards: { items: ['dragon_lair_map'], xp: 500 }
                     },
                     {
                         weight: 20,
                         text: '"There is no help for me. I\'m bound to this world until the dragon falls. End my curse."',
-                        combat: ['/* cursed_dragonslayer */']
+                        combat: ['cursed_dragonslayer']
                     }
                 ]
             }
         ]
     },
 
-    // ═══════════════════════════════════════════════════════════════
     // 10. THE FINAL WARNING
-    // ═══════════════════════════════════════════════════════════════
     final_warning: {
         id: 'final_warning',
         name: 'The Final Warning',
         rarity: 'uncommon',
-        
-        minLevel: 17,description: 'The sky turns blood red. A voice echoes across the land...',
+        minLevel: 17,
+        description: 'The sky turns blood red. A voice echoes across the land...',
         intro: 'The earth trembles violently. The sky darkens to crimson. A booming voice speaks directly into your mind: "MORTALS. THE TIME OF RECKONING APPROACHES. I AM AWAKENING. FLEE... OR STAND AND BE CONSUMED." The Calamity Dragon has spoken.',
-        
+
         choices: [
             {
                 text: 'Shout defiance at the sky',
@@ -2951,7 +2901,7 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: '"I WILL STOP YOU!" Your courage resonates! Divine forces take notice!',
-                        rewards: { xp: 600,}
+                        rewards: { xp: 600 }
                     },
                     {
                         weight: 35,
@@ -2961,7 +2911,7 @@ whispering_lights: {
                     {
                         weight: 25,
                         text: 'The dragon\'s presence focuses on YOU. "I WILL REMEMBER YOUR NAME, MORTAL."',
-                        rewards: { xp: 500,}
+                        rewards: { xp: 500 }
                     }
                 ],
                 nestedChoices: [
@@ -2971,7 +2921,7 @@ whispering_lights: {
                             {
                                 weight: 50,
                                 text: 'Your courage inspires nearby villagers! They pledge to help fight the dragon!',
-                                rewards: { xp: 500,}
+                                rewards: { xp: 500 }
                             },
                             {
                                 weight: 30,
@@ -2981,7 +2931,7 @@ whispering_lights: {
                             {
                                 weight: 20,
                                 text: 'A dragon cultist in the crowd reveals themselves and attacks!',
-                                combat: ['/* hidden_cultist */']
+                                combat: ['hidden_cultist']
                             }
                         ]
                     },
@@ -2991,17 +2941,17 @@ whispering_lights: {
                             {
                                 weight: 50,
                                 text: 'An old sage tells you of a legendary sword hidden in a sealed vault!',
-                                rewards: { xp: 400, items: ['/* vault_key */'] }
+                                rewards: { xp: 400, items: ['vault_key'] }
                             },
                             {
                                 weight: 30,
                                 text: 'You find rumors of the "Dragon\'s Bane" - an arrow that can pierce dragon scales!',
-                                rewards: { xp: 450, items: ['/* map_to_bane */'] }
+                                rewards: { xp: 450, items: ['map_to_bane'] }
                             },
                             {
                                 weight: 20,
                                 text: 'The weapons are guarded by a trial. You must prove yourself!',
-                                combat: ['/* trial_guardian */']
+                                combat: ['trial_guardian']
                             }
                         ]
                     },
@@ -3011,7 +2961,7 @@ whispering_lights: {
                             {
                                 weight: 50,
                                 text: 'The prophecy reveals the EXACT moment when the dragon will be most vulnerable!',
-                                rewards: { xp: 700, items: ['/* prophecy_scroll */'] }
+                                rewards: { xp: 700, items: ['prophecy_scroll'] }
                             },
                             {
                                 weight: 30,
@@ -3021,7 +2971,7 @@ whispering_lights: {
                             {
                                 weight: 20,
                                 text: 'The prophecy speaks of YOU. "The unlikely hero will stand alone against the end."',
-                                rewards: { xp: 600,}
+                                rewards: { xp: 600 }
                             }
                         ]
                     }
@@ -3033,7 +2983,7 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'You fortify your position and gather supplies. You\'ll be ready.',
-                        rewards: { xp: 300, items: ['/* survival_supplies */'] }
+                        rewards: { xp: 300, items: ['survival_supplies'] }
                     },
                     {
                         weight: 35,
@@ -3053,7 +3003,7 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'A divine voice answers: "We grant you our blessing, champion. You will need it."',
-                        rewards: { xp: 500,}
+                        rewards: { xp: 500 }
                     },
                     {
                         weight: 35,
@@ -3063,7 +3013,7 @@ whispering_lights: {
                     {
                         weight: 25,
                         text: 'A god responds: "We sealed it once. You must seal it again. Here - take this." A holy relic materializes!',
-                        rewards: { items: ['/* holy_sealing_relic */'], xp: 600 }
+                        rewards: { items: ['holy_sealing_relic'], xp: 600 }
                     }
                 ]
             }
@@ -3072,18 +3022,6 @@ whispering_lights: {
 
     // ═══════════════════════════════════════════════════════════════
     // CALAMITY DUNGEON ADVENTURES — SET 2
-    // 30 encounters spanning all levels
-    // EARLY (Levels 1-8): frightened_villager, mysterious_cave_painting, abandoned_camp,
-    //   strange_merchant_cart, helpful_spirit, old_battlefield, lost_child,
-    //   festival_interrupted, cursed_well, rookie_cultist
-    // MID (Levels 9-16): dragon_scale_hunter, corrupted_forest, ancient_library,
-    //   possessed_statue, dragon_dream, rival_adventurer, breaking_seal,
-    //   town_under_siege, underground_laboratory, time_anomaly
-    // LATE (Levels 17-25): dragon_lieutenant, portal_to_prison, ancient_weapon_vault,
-    //   dragon_prophet, corrupted_hero, mass_ritual, dragon_heart_fragment,
-    //   reality_tear, celestial_intervention, pre_awakening
-    // ═══════════════════════════════════════════════════════════════
-    // ═══════════════════════════════════════════════════════════════
     // EARLY GAME ADVENTURES (Levels 1-8)
     // ═══════════════════════════════════════════════════════════════
 
@@ -3092,10 +3030,10 @@ whispering_lights: {
         id: 'frightened_villager',
         name: 'Frightened Villager',
         rarity: 'common',
-        minLevel: 1, // LEVEL REQUIREMENT
+        minLevel: 1,
         description: 'A terrified villager runs toward you, screaming about "fire in the sky"...',
         intro: 'A farmer crashes into you, eyes wild with panic. "I saw it! In the mountains! A red glow! And... and WINGS! The old stories are true! The dragon is real!"',
-        
+
         choices: [
             {
                 text: 'Calm them down and get details',
@@ -3103,7 +3041,7 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'They describe a location where dragon cultists are gathering! Useful intel!',
-                        rewards: { xp: 100, items: ['/* rough_map */'] }
+                        rewards: { xp: 100, items: ['rough_map'] }
                     },
                     {
                         weight: 30,
@@ -3113,7 +3051,7 @@ whispering_lights: {
                     {
                         weight: 20,
                         text: 'As they describe what they saw, cultists emerge from hiding! "SILENCE THE WITNESS!"',
-                        combat: ['/* cultist_scouts_easy */']
+                        combat: ['cultist_scouts_easy']
                     }
                 ]
             },
@@ -3133,7 +3071,7 @@ whispering_lights: {
                     {
                         weight: 25,
                         text: 'You find a small wyrmling den! The babies attack to defend their nest!',
-                        combat: ['/* wyrmling_babies_2 */']
+                        combat: ['wyrmling_babies_2']
                     }
                 ]
             },
@@ -3148,7 +3086,7 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'Weeks later, their village burns. You ignored a real warning.',
-                        rewards: { xp: 50,}
+                        rewards: { xp: 50 }
                     }
                 ]
             }
@@ -3163,7 +3101,7 @@ whispering_lights: {
         minLevel: 2,
         description: 'You discover ancient paintings depicting a massive dragon...',
         intro: 'In a shallow cave, you find wall paintings thousands of years old. They show a giant dragon destroying cities, then being sealed away by warriors. The final image shows the seal... cracking.',
-        
+
         choices: [
             {
                 text: 'Study the paintings carefully',
@@ -3171,7 +3109,7 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'You decipher ancient symbols! They describe the sealing ritual!',
-                        rewards: { xp: 150, items: ['/* ancient_knowledge_scroll */'] }
+                        rewards: { xp: 150, items: ['ancient_knowledge_scroll'] }
                     },
                     {
                         weight: 30,
@@ -3196,12 +3134,12 @@ whispering_lights: {
                     {
                         weight: 30,
                         text: 'A cult spy steals your copies! They don\'t want this knowledge spreading!',
-                        combat: ['/* cult_thief_easy */']
+                        combat: ['cult_thief_easy']
                     },
                     {
                         weight: 20,
                         text: 'The copies are cursed! Anyone who looks at them has nightmares.',
-                        rewards: { gold: 50,}
+                        rewards: { gold: 50 }
                     }
                 ]
             },
@@ -3221,7 +3159,7 @@ whispering_lights: {
                     {
                         weight: 25,
                         text: 'A cave bat swarm attacks! Not dangerous, just annoying.',
-                        combat: ['/* bat_swarm */']
+                        combat: ['bat_swarm']
                     }
                 ]
             }
@@ -3236,7 +3174,7 @@ whispering_lights: {
         minLevel: 3,
         description: 'You find a hastily abandoned camp, food still warm on the fire...',
         intro: 'Tents flap in the wind. A cook pot bubbles over a fire. Belongings are scattered everywhere. Whatever made these people flee left in a HURRY. And recently.',
-        
+
         choices: [
             {
                 text: 'Search the camp for clues',
@@ -3244,17 +3182,17 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'You find a journal! "Day 12: We saw it flying overhead. It\'s real. We\'re leaving before it notices us."',
-                        rewards: { xp: 120, items: ['/* survivor_journal */'] }
+                        rewards: { xp: 120, items: ['survivor_journal'] }
                     },
                     {
                         weight: 35,
                         text: 'Scavengeable supplies! Food, rope, and some coins!',
-                        rewards: { gold: 100, items: ['/* camping_supplies */'] }
+                        rewards: { gold: 100, items: ['camping_supplies'] }
                     },
                     {
                         weight: 25,
                         text: 'You hear a noise! Survivors return and think YOU drove them off! They attack!',
-                        combat: ['/* angry_campers */']
+                        combat: ['angry_campers']
                     }
                 ]
             },
@@ -3264,7 +3202,7 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'You find the campers hiding in a nearby cave! They\'re grateful and share intel!',
-                        rewards: { xp: 150, items: ['/* dragon_sighting_report */'] }
+                        rewards: { xp: 150, items: ['dragon_sighting_report'] }
                     },
                     {
                         weight: 35,
@@ -3274,7 +3212,7 @@ whispering_lights: {
                     {
                         weight: 25,
                         text: 'The tracks lead into a monster den! You disturb the resident!',
-                        combat: ['/* cave_troll */']
+                        combat: ['cave_troll']
                     }
                 ]
             },
@@ -3304,7 +3242,7 @@ whispering_lights: {
         minLevel: 2,
         description: 'An ornate cart sits unattended by the road, filled with exotic wares...',
         intro: 'A beautiful merchant cart is parked by the roadside. No merchant in sight. The cart is filled with strange items: glowing potions, weird trinkets, and a sign: "Take what you need. Pay what you can. -The Wanderer"',
-        
+
         choices: [
             {
                 text: 'Take something and leave payment',
@@ -3312,17 +3250,17 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'You take a potion and leave fair payment. The cart glows briefly. A voice whispers: "Thank you."',
-                        rewards: { gold: -50, items: ['/* mystery_potion */'], xp: 80 }
+                        rewards: { gold: -50, items: ['mystery_potion'], xp: 80 }
                     },
                     {
                         weight: 30,
                         text: 'The item you take is enchanted! It bonds to you permanently! (Could be good or bad...)',
-                        rewards: { gold: -50, items: ['/* bonded_trinket */'] }
+                        rewards: { gold: -50, items: ['bonded_trinket'] }
                     },
                     {
                         weight: 20,
                         text: 'Your honesty is rewarded! Extra items appear in the cart as a gift!',
-                        rewards: { gold: -50, items: ['/* blessed_gear */', '/* health_potion */'], xp: 150 }
+                        rewards: { gold: -50, items: ['blessed_gear', 'health_potion'], xp: 150 }
                     }
                 ]
             },
@@ -3332,7 +3270,7 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'The cart vanishes in smoke! A voice booms: "THIEF!" You\'re cursed!',
-                        rewards: { items: ['/* cursed_item */'],}
+                        rewards: { items: ['cursed_item'] }
                     },
                     {
                         weight: 35,
@@ -3342,7 +3280,7 @@ whispering_lights: {
                     {
                         weight: 25,
                         text: 'A guardian golem activates! "PAYMENT REQUIRED!"',
-                        combat: ['/* merchant_golem */']
+                        combat: ['merchant_golem']
                     }
                 ]
             },
@@ -3357,7 +3295,7 @@ whispering_lights: {
                     {
                         weight: 30,
                         text: 'A voice calls out: "Too cautious! Here - a gift for your honesty!" A potion appears!',
-                        rewards: { items: ['/* merchant_gift */'], xp: 100 }
+                        rewards: { items: ['merchant_gift'], xp: 100 }
                     }
                 ]
             }
@@ -3372,7 +3310,7 @@ whispering_lights: {
         minLevel: 4,
         description: 'A glowing spirit appears before you, smiling sadly...',
         intro: 'A translucent figure materializes - a young woman in ancient clothing. "Please... I\'ve waited so long. I died during the first Dragon War. I can help you... if you help me find peace."',
-        
+
         choices: [
             {
                 text: 'Ask how you can help her',
@@ -3380,17 +3318,17 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'She wants you to tell her family she loves them. You promise. She teaches you a protective spell!',
-                        rewards: { xp: 200,}
+                        rewards: { xp: 200 }
                     },
                     {
                         weight: 30,
                         text: 'Her family is long dead. She weeps but thanks you for trying. She blesses you.',
-                        rewards: { xp: 150,}
+                        rewards: { xp: 150 }
                     },
                     {
                         weight: 20,
                         text: 'She asks you to destroy a cursed item that bound her! It fights back!',
-                        combat: ['/* cursed_artifact_guardian */']
+                        combat: ['cursed_artifact_guardian']
                     }
                 ]
             },
@@ -3400,7 +3338,7 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'She tells you secrets! "The dragon fears silver blessed by moonlight!" Crucial weakness!',
-                        rewards: { xp: 250, items: ['/* dragon_weakness_note */'] }
+                        rewards: { xp: 250, items: ['dragon_weakness_note'] }
                     },
                     {
                         weight: 30,
@@ -3410,7 +3348,7 @@ whispering_lights: {
                     {
                         weight: 20,
                         text: 'Reliving the memories is too painful! She screams and lashes out!',
-                        combat: ['/* tormented_spirit */']
+                        combat: ['tormented_spirit']
                     }
                 ]
             },
@@ -3420,7 +3358,7 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'She fades away sadly. "I only wanted to help..." You feel guilty.',
-                        rewards: { xp: 50,}
+                        rewards: { xp: 50 }
                     },
                     {
                         weight: 30,
@@ -3445,7 +3383,7 @@ whispering_lights: {
         minLevel: 3,
         description: 'You cross a field littered with ancient armor and weapons...',
         intro: 'Rusty swords and shattered shields dot the landscape. Skeletons in armor lie where they fell, a thousand years ago. This was a battlefield from the Dragon War. The air feels heavy with old death.',
-        
+
         choices: [
             {
                 text: 'Search for salvageable equipment',
@@ -3453,7 +3391,7 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'You find an ancient sword, still sharp! The metal is unusual - dragon-forged!',
-                        rewards: { items: ['/* ancient_sword */'], xp: 150 }
+                        rewards: { items: ['dragon_kin_blade'], xp: 150 }
                     },
                     {
                         weight: 35,
@@ -3463,7 +3401,7 @@ whispering_lights: {
                     {
                         weight: 25,
                         text: 'A cursed weapon! When you touch it, an undead warrior rises to reclaim it!',
-                        combat: ['/* undead_warrior */']
+                        combat: ['undead_warrior']
                     }
                 ]
             },
@@ -3473,7 +3411,7 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'A ghostly warrior appears, salutes you, and leaves a blessing. "Thank you for remembering us."',
-                        rewards: { xp: 180,}
+                        rewards: { xp: 180 }
                     },
                     {
                         weight: 30,
@@ -3483,7 +3421,7 @@ whispering_lights: {
                     {
                         weight: 20,
                         text: 'Your respect awakens the field! ALL the dead rise! "Join us in eternal battle!"',
-                        combat: ['/* undead_legion_small */']
+                        combat: ['undead_legion_small']
                     }
                 ]
             },
@@ -3513,7 +3451,7 @@ whispering_lights: {
         minLevel: 1,
         description: 'A small child sits crying by the roadside...',
         intro: 'A young boy, no more than 8 years old, sobs alone. "I can\'t find my mommy! There was fire and screaming and we ran but I got lost! Please help me!"',
-        
+
         choices: [
             {
                 text: 'Help find his family',
@@ -3521,7 +3459,7 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'You reunite him with his grateful mother! She gives you her family heirloom as thanks!',
-                        rewards: { xp: 150, items: ['/* family_heirloom */'],}
+                        rewards: { xp: 150, items: ['family_heirloom'] }
                     },
                     {
                         weight: 30,
@@ -3531,7 +3469,7 @@ whispering_lights: {
                     {
                         weight: 20,
                         text: 'You lead him home, but cultists ambush you! "The child saw too much!"',
-                        combat: ['/* cultist_assassins_easy */']
+                        combat: ['cultist_assassins_easy']
                     }
                 ]
             },
@@ -3566,7 +3504,7 @@ whispering_lights: {
                     {
                         weight: 20,
                         text: 'You later hear he was taken by bandits. You feel guilty.',
-                        rewards: { gold: -30, xp: 50,}
+                        rewards: { gold: -30, xp: 50 }
                     }
                 ]
             }
@@ -3581,7 +3519,7 @@ whispering_lights: {
         minLevel: 2,
         description: 'A village festival is in full swing when disaster strikes...',
         intro: 'Music, dancing, laughter! A harvest festival is underway. Then - a ROAR splits the sky. People scream and point upward. Something huge and winged circles overhead, blotting out the sun...',
-        
+
         choices: [
             {
                 text: 'Help evacuate villagers',
@@ -3589,7 +3527,7 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'You save dozens of lives! The village elder promises they owe you a debt!',
-                        rewards: { xp: 200, gold: 150,}
+                        rewards: { xp: 200, gold: 150 }
                     },
                     {
                         weight: 30,
@@ -3609,12 +3547,12 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'You\'re brave but it\'s too powerful! You wound it slightly before it flees!',
-                        rewards: { xp: 180, damage: 60, items: ['/* dragon_blood_vial */'] }
+                        rewards: { xp: 180, damage: 60, items: ['dragon_blood_vial'] }
                     },
                     {
                         weight: 35,
                         text: 'Your attacks get its attention! It focuses on YOU! You barely survive!',
-                        combat: ['/* young_wyvern */']
+                        combat: ['young_wyvern']
                     },
                     {
                         weight: 25,
@@ -3629,7 +3567,7 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'You note its flight pattern and behavior. Valuable intelligence!',
-                        rewards: { xp: 150, items: ['/* creature_behavior_notes */'] }
+                        rewards: { xp: 150, items: ['creature_behavior_notes'] }
                     },
                     {
                         weight: 30,
@@ -3639,7 +3577,7 @@ whispering_lights: {
                     {
                         weight: 20,
                         text: 'It spots YOU hiding! Those eyes lock onto yours!',
-                        combat: ['/* territorial_wyvern */']
+                        combat: ['territorial_wyvern']
                     }
                 ]
             }
@@ -3654,7 +3592,7 @@ whispering_lights: {
         minLevel: 5,
         description: 'A village well has been poisoned by dark magic...',
         intro: 'The village well bubbles with black ooze. "It happened overnight!" the mayor cries. "Dragon cultists cursed it! Now our water is poison! Can you help?"',
-        
+
         choices: [
             {
                 text: 'Attempt to purify the well',
@@ -3682,12 +3620,12 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'You find them! Defeating them breaks the curse automatically!',
-                        combat: ['/* cultist_curse_casters */']
+                        combat: ['cultist_curse_casters']
                     },
                     {
                         weight: 35,
                         text: 'You find their camp but they\'ve fled. You recover ritual notes!',
-                        rewards: { xp: 180, items: ['/* curse_ritual_notes */'] }
+                        rewards: { xp: 180, items: ['curse_ritual_notes'] }
                     },
                     {
                         weight: 25,
@@ -3712,7 +3650,7 @@ whispering_lights: {
                     {
                         weight: 20,
                         text: 'You find water... but it\'s guarded by territorial monsters!',
-                        combat: ['/* water_elementals */']
+                        combat: ['water_elementals']
                     }
                 ]
             }
@@ -3727,7 +3665,7 @@ whispering_lights: {
         minLevel: 4,
         description: 'You catch a young cultist practicing their "evil laugh"...',
         intro: 'Behind a tree, a teenager in ill-fitting robes practices: "MWAHAHA! No wait... MWA-HA-HA-HA!" They spot you. "Oh no! A witness! Um... BEHOLD THE DRAGON\'S WRATH!" They fumble for a weapon.',
-        
+
         choices: [
             {
                 text: 'Talk them out of the cult',
@@ -3735,7 +3673,7 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: '"You\'re right. This IS stupid." They thank you and share cult secrets before running home!',
-                        rewards: { xp: 180, items: ['/* cult_secrets_scroll */'],}
+                        rewards: { xp: 180, items: ['cult_secrets_scroll'] }
                     },
                     {
                         weight: 30,
@@ -3745,7 +3683,7 @@ whispering_lights: {
                     {
                         weight: 20,
                         text: '"NEVER! I\'m devoted!" They attack! ...poorly.',
-                        combat: ['/* incompetent_cultist */']
+                        combat: ['incompetent_cultist']
                     }
                 ]
             },
@@ -3765,7 +3703,7 @@ whispering_lights: {
                     {
                         weight: 20,
                         text: 'They panic and accidentally set off a signal flare! Real cultists arrive!',
-                        combat: ['/* cultist_veterans */']
+                        combat: ['cultist_veterans']
                     }
                 ]
             },
@@ -3775,7 +3713,7 @@ whispering_lights: {
                     {
                         weight: 60,
                         text: 'They have 80 gold and some cult documents. Easy pickings.',
-                        rewards: { gold: 80, items: ['/* cult_pamphlet */'] }
+                        rewards: { gold: 80, items: ['cult_pamphlet'] }
                     },
                     {
                         weight: 40,
@@ -3799,7 +3737,7 @@ whispering_lights: {
         minLevel: 9,
         description: 'A grizzled hunter offers you a partnership...',
         intro: 'An experienced hunter approaches. "You look capable. I track dragons for their scales - worth a fortune! I found a molting site. Help me harvest scales, 50-50 split?"',
-        
+
         choices: [
             {
                 text: 'Accept the partnership',
@@ -3807,17 +3745,17 @@ whispering_lights: {
                     {
                         weight: 45,
                         text: 'You collect valuable scales! The hunter splits fairly! Big payday!',
-                        rewards: { gold: 800, items: ['/* dragon_scales_3 */'], xp: 400 }
+                        rewards: { gold: 800, items: ['dragon_scales_3'], xp: 400 }
                     },
                     {
                         weight: 35,
                         text: 'The dragon returns mid-harvest! You barely escape with a few scales!',
-                        rewards: { gold: 300, items: ['/* dragon_scale */'], damage: 80, xp: 350 }
+                        rewards: { gold: 300, items: ['dragon_scale'], damage: 80, xp: 350 }
                     },
                     {
                         weight: 20,
                         text: 'The hunter betrays you! "I\'ll take it ALL!" They attack!',
-                        combat: ['/* treacherous_hunter */']
+                        combat: ['treacherous_hunter']
                     }
                 ]
             },
@@ -3827,7 +3765,7 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'They agree! "Fair enough." You get the better deal!',
-                        rewards: { gold: 900, items: ['/* dragon_scales_3 */'], xp: 450 }
+                        rewards: { gold: 900, items: ['dragon_scales_3'], xp: 450 }
                     },
                     {
                         weight: 35,
@@ -3837,7 +3775,7 @@ whispering_lights: {
                     {
                         weight: 25,
                         text: '"Fine! But YOU go first then!" They push you into the dragon\'s den!',
-                        combat: ['/* angry_dragon_adult */']
+                        combat: ['angry_dragon_adult']
                     }
                 ]
             },
@@ -3852,7 +3790,7 @@ whispering_lights: {
                     {
                         weight: 30,
                         text: '"Authorities? They\'re in on it!" The hunter is a cult agent! They attack!',
-                        combat: ['/* cult_infiltrator */']
+                        combat: ['cult_infiltrator']
                     },
                     {
                         weight: 20,
@@ -3872,7 +3810,7 @@ whispering_lights: {
         minLevel: 10,
         description: 'The forest ahead is dying, trees blackened and twisted...',
         intro: 'What was once a lush forest is now a nightmare. Trees are charred black, animals flee, and the ground smokes. Dragon magic is corrupting this place. At the center, you sense something powerful...',
-        
+
         choices: [
             {
                 text: 'Investigate the corruption source',
@@ -3880,17 +3818,17 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'You find a dragon cult totem! Destroying it purifies the forest!',
-                        rewards: { xp: 600,}
+                        rewards: { xp: 600 }
                     },
                     {
                         weight: 35,
                         text: 'A corrupted treant guards the source! "Leave... or join the forest... in death..."',
-                        combat: ['/* corrupted_treant */']
+                        combat: ['corrupted_treant']
                     },
                     {
                         weight: 25,
                         text: 'The corruption is spreading from a dragon\'s blood! It seeped into the ground!',
-                        rewards: { xp: 450, items: ['/* corrupted_earth_sample */'] }
+                        rewards: { xp: 450, items: ['corrupted_earth_sample'] }
                     }
                 ]
             },
@@ -3900,7 +3838,7 @@ whispering_lights: {
                     {
                         weight: 45,
                         text: 'Your efforts work! Green returns to the forest! Nature is grateful!',
-                        rewards: { xp: 650,}
+                        rewards: { xp: 650 }
                     },
                     {
                         weight: 35,
@@ -3910,7 +3848,7 @@ whispering_lights: {
                     {
                         weight: 20,
                         text: 'The corruption fights back! Dark vines entangle and poison you!',
-                        rewards: { damage: 100,}
+                        rewards: { damage: 100 }
                     }
                 ]
             },
@@ -3940,7 +3878,7 @@ whispering_lights: {
         minLevel: 11,
         description: 'You discover a hidden library filled with pre-Dragon War knowledge...',
         intro: 'Thousands of books line the shelves, preserved by magic for a millennium. These contain knowledge lost to time! But... you\'re not alone. Someone else is here, gathering books frantically.',
-        
+
         choices: [
             {
                 text: 'Search for dragon-related texts',
@@ -3948,17 +3886,17 @@ whispering_lights: {
                     {
                         weight: 45,
                         text: 'You find "The Calamity\'s Weakness" - a complete bestiary entry!',
-                        rewards: { xp: 700, items: ['/* calamity_bestiary */'] }
+                        rewards: { xp: 700, items: ['calamity_bestiary'] }
                     },
                     {
                         weight: 35,
                         text: 'Multiple useful books! Battle tactics, weaknesses, sealing rituals!',
-                        rewards: { xp: 600, items: ['/* dragon_lore_collection */'] }
+                        rewards: { xp: 600, items: ['dragon_lore_collection'] }
                     },
                     {
                         weight: 20,
                         text: 'A trapped book! Opening it releases a knowledge-guardian demon!',
-                        combat: ['/* library_guardian_demon */']
+                        combat: ['library_guardian_demon']
                     }
                 ]
             },
@@ -3968,17 +3906,17 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'It\'s a scholar! "We can share! There\'s enough knowledge here for everyone!"',
-                        rewards: { xp: 500, items: ['/* scholar_notes */'] }
+                        rewards: { xp: 500, items: ['scholar_notes'] }
                     },
                     {
                         weight: 35,
                         text: 'It\'s a dragon cultist! "This knowledge is for the Calamity alone!"',
-                        combat: ['/* cultist_scholar */']
+                        combat: ['cultist_scholar']
                     },
                     {
                         weight: 25,
                         text: 'It\'s a rival adventurer! They challenge you to see who\'s faster at looting!',
-                        rewards: { xp: 450 } // Mini-game or race
+                        rewards: { xp: 450 }
                     }
                 ]
             },
@@ -3988,17 +3926,17 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'You load up on valuable texts! Scholars will pay fortunes for these!',
-                        rewards: { gold: 1000, items: ['/* ancient_books_collection */'], xp: 550 }
+                        rewards: { gold: 1000, items: ['ancient_books_collection'], xp: 550 }
                     },
                     {
                         weight: 30,
                         text: 'The books are magically protected! They burn anyone who steals!',
-                        rewards: { damage: 90, items: ['/* singed_books */'] }
+                        rewards: { damage: 90, items: ['singed_books'] }
                     },
                     {
                         weight: 20,
                         text: 'You trigger a trap! The library begins collapsing!',
-                        rewards: { damage: 100, items: ['/* salvaged_notes */'], xp: 400 }
+                        rewards: { damage: 100, items: ['salvaged_notes'], xp: 400 }
                     }
                 ]
             }
@@ -4013,7 +3951,7 @@ whispering_lights: {
         minLevel: 12,
         description: 'A statue of an ancient hero begins moving...',
         intro: 'In a town square stands a statue of a legendary dragon slayer. As you pass, its stone eyes follow you. Then it speaks: "The dragon stirs... I am needed again... but I am trapped in stone..."',
-        
+
         choices: [
             {
                 text: 'Try to free the hero\'s spirit',
@@ -4021,17 +3959,17 @@ whispering_lights: {
                     {
                         weight: 45,
                         text: 'You break the spell! The hero\'s spirit manifests! "Thank you! Take my blessing!"',
-                        rewards: { xp: 600, items: ['/* hero_token */'] }
+                        rewards: { xp: 600, items: ['hero_token'] }
                     },
                     {
                         weight: 35,
                         text: 'Partial success! The hero can speak but remains trapped. They share wisdom!',
-                        rewards: { xp: 500, items: ['/* ancient_tactics_scroll */'] }
+                        rewards: { xp: 500, items: ['ancient_tactics_scroll'] }
                     },
                     {
                         weight: 20,
                         text: 'The spirit was corrupted over the centuries! It attacks!',
-                        combat: ['/* corrupted_hero_spirit */']
+                        combat: ['corrupted_hero_spirit']
                     }
                 ]
             },
@@ -4041,7 +3979,7 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: '"Aim for the heart. Always the heart." They describe the dragon\'s weak point!',
-                        rewards: { xp: 550, items: ['/* weak_point_diagram */'] }
+                        rewards: { xp: 550, items: ['weak_point_diagram'] }
                     },
                     {
                         weight: 30,
@@ -4066,12 +4004,12 @@ whispering_lights: {
                     {
                         weight: 35,
                         text: 'Bad idea! The spirit was PROTECTING the town! Monsters now attack!',
-                        combat: ['/* unleashed_horrors */']
+                        combat: ['unleashed_horrors']
                     },
                     {
                         weight: 25,
                         text: 'The statue contained a trapped demon! You just freed it! It laughs and flees!',
-                        rewards: { xp: 300,}
+                        rewards: { xp: 300 }
                     }
                 ]
             }
@@ -4086,7 +4024,7 @@ whispering_lights: {
         minLevel: 13,
         description: 'You fall asleep and dream of the Calamity Dragon...',
         intro: 'In your dream, you stand before the Calamity itself. Its eyes burn like suns. It speaks: "Why do you resist? I offer POWER. Serve me, and you will rule this world at my side."',
-        
+
         choices: [
             {
                 text: 'Refuse its offer',
@@ -4094,7 +4032,7 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'You wake up stronger! Your resolve is unshakeable!',
-                        rewards: { xp: 600,}
+                        rewards: { xp: 600 }
                     },
                     {
                         weight: 30,
@@ -4114,7 +4052,7 @@ whispering_lights: {
                     {
                         weight: 45,
                         text: 'The dragon reveals its plans! You learn when it will awaken!',
-                        rewards: { xp: 700, items: ['/* dragon_prophecy */'] }
+                        rewards: { xp: 700, items: ['dragon_prophecy'] }
                     },
                     {
                         weight: 35,
@@ -4124,7 +4062,7 @@ whispering_lights: {
                     {
                         weight: 20,
                         text: 'You learn TOO much! The knowledge threatens to overwhelm your mind!',
-                        rewards: { xp: 650, damage: 80,}
+                        rewards: { xp: 650, damage: 80 }
                     }
                 ]
             },
@@ -4134,7 +4072,7 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'You wound it! In dreams, willpower is everything! You wake victorious!',
-                        rewards: { xp: 650,}
+                        rewards: { xp: 650 }
                     },
                     {
                         weight: 35,
@@ -4144,15 +4082,12 @@ whispering_lights: {
                     {
                         weight: 25,
                         text: 'Your attack enrages it! "IMPUDENT MORTAL!" It marks you for death!',
-                        combat: ['/* dream_manifestation */']
+                        combat: ['dream_manifestation']
                     }
                 ]
             }
         ]
     },
-
-    // Continuing with adventures 16-20 (MID GAME) and then 21-30 (LATE GAME)...
-    // [I'll continue in the next part to stay within reasonable length]
 
     // 16. RIVAL ADVENTURER
     rival_adventurer: {
@@ -4162,7 +4097,7 @@ whispering_lights: {
         minLevel: 10,
         description: 'Another adventurer claims they\'ll stop the dragon before you...',
         intro: 'A cocky adventurer blocks your path. "YOU\'re the famous dragon hunter? Ha! I\'ll slay the Calamity first and claim ALL the glory! Try to keep up, amateur!"',
-        
+
         choices: [
             {
                 text: 'Challenge them to a friendly competition',
@@ -4170,7 +4105,7 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'You both benefit! "You\'re not bad! Let\'s team up instead!" Gained an ally!',
-                        rewards: { xp: 500,}
+                        rewards: { xp: 500 }
                     },
                     {
                         weight: 30,
@@ -4180,7 +4115,7 @@ whispering_lights: {
                     {
                         weight: 20,
                         text: 'They cheat and attack you for real!',
-                        combat: ['/* dirty_fighter */']
+                        combat: ['dirty_fighter']
                     }
                 ]
             },
@@ -4210,7 +4145,7 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'Your honesty impresses them. "You\'re alright. Here, take this info."',
-                        rewards: { xp: 450, items: ['/* adventurer_notes */'] }
+                        rewards: { xp: 450, items: ['adventurer_notes'] }
                     },
                     {
                         weight: 30,
@@ -4220,7 +4155,7 @@ whispering_lights: {
                     {
                         weight: 20,
                         text: 'They think you\'re trying to scare them away from glory! They attack!',
-                        combat: ['/* paranoid_adventurer */']
+                        combat: ['paranoid_adventurer']
                     }
                 ]
             }
@@ -4235,7 +4170,7 @@ whispering_lights: {
         minLevel: 14,
         description: 'You witness one of the prison seals shattering...',
         intro: 'A massive stone pillar glows with ancient runes. Suddenly, cracks spread across it! The seal is BREAKING! You have moments to act before it fails completely!',
-        
+
         choices: [
             {
                 text: 'Try to reinforce the seal',
@@ -4243,7 +4178,7 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'You succeed! The seal holds! You bought precious time!',
-                        rewards: { xp: 800,}
+                        rewards: { xp: 800 }
                     },
                     {
                         weight: 35,
@@ -4263,12 +4198,12 @@ whispering_lights: {
                     {
                         weight: 30,
                         text: 'INSANE but brilliant! The dragon emerges early, confused and weak!',
-                        combat: ['/* weakened_calamity_manifestation */'] // Epic fight!
+                        combat: ['weakened_calamity_manifestation']
                     },
                     {
                         weight: 40,
                         text: 'It emerges at FULL POWER! You\'ve doomed everyone!',
-                        combat: ['/* full_power_dragon_avatar */'] // Probably die
+                        combat: ['full_power_dragon_avatar']
                     },
                     {
                         weight: 30,
@@ -4283,7 +4218,7 @@ whispering_lights: {
                     {
                         weight: 60,
                         text: 'You alert nearby towns! Thousands evacuate before the seal fails!',
-                        rewards: { xp: 700,}
+                        rewards: { xp: 700 }
                     },
                     {
                         weight: 40,
@@ -4303,7 +4238,7 @@ whispering_lights: {
         minLevel: 13,
         description: 'Dragon cultists are attacking a fortified town...',
         intro: 'Smoke rises from the walls! A town is under siege by dragon cultists! They chant: "Burn! Burn for the Scaled Lord! Sacrifice this town to hasten his awakening!"',
-        
+
         choices: [
             {
                 text: 'Help defend the walls',
@@ -4336,12 +4271,12 @@ whispering_lights: {
                     {
                         weight: 30,
                         text: 'You\'re caught! Fight your way out!',
-                        combat: ['/* cultist_siege_squad */']
+                        combat: ['cultist_siege_squad']
                     },
                     {
                         weight: 25,
                         text: 'You assassinate the cult leader! The siege collapses!',
-                        rewards: { xp: 750, items: ['/* cult_leader_equipment */'] }
+                        rewards: { xp: 750, items: ['cult_leader_equipment'] }
                     }
                 ]
             },
@@ -4351,7 +4286,7 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'You save hundreds of civilians! They owe you their lives!',
-                        rewards: { xp: 600,}
+                        rewards: { xp: 600 }
                     },
                     {
                         weight: 30,
@@ -4361,7 +4296,7 @@ whispering_lights: {
                     {
                         weight: 20,
                         text: 'Cultists attack the evacuation! Defend the innocent!',
-                        combat: ['/* cultist_raiders */']
+                        combat: ['cultist_raiders']
                     }
                 ]
             }
@@ -4376,7 +4311,7 @@ whispering_lights: {
         minLevel: 15,
         description: 'You discover a secret lab experimenting with dragon blood...',
         intro: 'Beneath a ruin, you find a hidden laboratory! Vials of glowing dragon blood line the walls! Notes read: "Subject 12 - Dragon blood fusion - SUCCESS! Subject 13 - DECEASED. Will attempt Subject 14 tomorrow."',
-        
+
         choices: [
             {
                 text: 'Investigate the experiments',
@@ -4384,17 +4319,17 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'You learn how to weaponize dragon blood! This could be useful!',
-                        rewards: { xp: 700, items: ['/* dragon_blood_weapon_formula */'] }
+                        rewards: { xp: 700, items: ['dragon_blood_weapon_formula'] }
                     },
                     {
                         weight: 35,
                         text: 'The notes reveal a cult plot to create dragon-human hybrids!',
-                        rewards: { xp: 650, items: ['/* hybrid_research_notes */'] }
+                        rewards: { xp: 650, items: ['hybrid_research_notes'] }
                     },
                     {
                         weight: 25,
                         text: '"Subject 14" awakens! A monstrous fusion of man and dragon!',
-                        combat: ['/* dragon_hybrid_abomination */']
+                        combat: ['dragon_hybrid_abomination']
                     }
                 ]
             },
@@ -4404,7 +4339,7 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'You burn it all! This evil research ends here!',
-                        rewards: { xp: 600,}
+                        rewards: { xp: 600 }
                     },
                     {
                         weight: 30,
@@ -4414,7 +4349,7 @@ whispering_lights: {
                     {
                         weight: 20,
                         text: 'Destroying the lab releases all the test subjects! They attack!',
-                        combat: ['/* escaped_experiments */']
+                        combat: ['escaped_experiments']
                     }
                 ]
             },
@@ -4429,12 +4364,12 @@ whispering_lights: {
                     {
                         weight: 35,
                         text: 'The samples corrupt you! Dragon blood is dangerous!',
-                        rewards: { items: ['/* dragon_blood_vials */'], damage: 80,}
+                        rewards: { items: ['dragon_blood_vials'], damage: 80 }
                     },
                     {
                         weight: 20,
                         text: 'A rival steals your samples! "This research is MINE!"',
-                        combat: ['/* researcher_thief */']
+                        combat: ['researcher_thief']
                     }
                 ]
             }
@@ -4449,7 +4384,7 @@ whispering_lights: {
         minLevel: 16,
         description: 'Reality fractures, showing you glimpses of past and future...',
         intro: 'Time itself warps! You see visions: The dragon\'s first rampage. The sealing ritual. And... the FUTURE. The dragon awakened, cities burning, the world ending. Then it snaps back to normal.',
-        
+
         choices: [
             {
                 text: 'Focus on the vision of the sealing ritual',
@@ -4457,7 +4392,7 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'You witness the EXACT ritual used! You could replicate it!',
-                        rewards: { xp: 800,}
+                        rewards: { xp: 800 }
                     },
                     {
                         weight: 30,
@@ -4477,7 +4412,7 @@ whispering_lights: {
                     {
                         weight: 45,
                         text: 'You see yourself victorious! This future CAN be changed!',
-                        rewards: { xp: 750,}
+                        rewards: { xp: 750 }
                     },
                     {
                         weight: 35,
@@ -4487,7 +4422,7 @@ whispering_lights: {
                     {
                         weight: 20,
                         text: 'The future is uncertain! Multiple timelines! Too many possibilities!',
-                        rewards: { xp: 550,}
+                        rewards: { xp: 550 }
                     }
                 ]
             },
@@ -4507,7 +4442,7 @@ whispering_lights: {
                     {
                         weight: 20,
                         text: 'The anomaly pulls you IN! You experience all timelines at once!',
-                        rewards: { xp: 850, damage: 130, items: ['/* temporal_shard */'] }
+                        rewards: { xp: 850, damage: 130, items: ['temporal_shard'] }
                     }
                 ]
             }
@@ -4526,7 +4461,7 @@ whispering_lights: {
         minLevel: 17,
         description: 'One of the Calamity Dragon\'s ancient generals has awoken...',
         intro: 'A massive armored drake lands before you, scales gleaming with dark magic. "I am Vorthax, Lieutenant of the Calamity! I was sealed with my lord, but I have broken free! Kneel... or be incinerated!"',
-        
+
         choices: [
             {
                 text: 'Fight the lieutenant',
@@ -4534,7 +4469,7 @@ whispering_lights: {
                     {
                         weight: 100,
                         text: 'This is it! The lieutenant attacks with the fury of dragonkind!',
-                        combat: ['/* dragon_lieutenant_vorthax */'] // Major boss fight
+                        combat: ['dragon_lieutenant_vorthax']
                     }
                 ]
             },
@@ -4544,7 +4479,7 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'Your magic works! The lieutenant is resealed! But for how long?',
-                        rewards: { xp: 1000,}
+                        rewards: { xp: 1000 }
                     },
                     {
                         weight: 35,
@@ -4554,7 +4489,7 @@ whispering_lights: {
                     {
                         weight: 25,
                         text: 'The seal fails! Now it\'s ANGRY! You have to fight!',
-                        combat: ['/* enraged_lieutenant */']
+                        combat: ['enraged_lieutenant']
                     }
                 ]
             },
@@ -4569,7 +4504,7 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'The lieutenant pursues! "You cannot escape!"',
-                        combat: ['/* pursuing_lieutenant */']
+                        combat: ['pursuing_lieutenant']
                     }
                 ]
             }
@@ -4584,7 +4519,7 @@ whispering_lights: {
         minLevel: 18,
         description: 'A rift opens to the dragon\'s prison dimension...',
         intro: 'Reality tears open! Through the rift, you see it: the Calamity Dragon\'s prison! A realm of chains and seals! The dragon itself is visible, struggling against its bonds! The rift won\'t last long!',
-        
+
         choices: [
             {
                 text: 'Enter the prison and strengthen the seals',
@@ -4597,7 +4532,7 @@ whispering_lights: {
                     {
                         weight: 35,
                         text: 'The dragon notices you! "MORTAL! YOU DARE?!" It attacks through the rift!',
-                        combat: ['/* prison_dragon_manifestation */']
+                        combat: ['prison_dragon_manifestation']
                     },
                     {
                         weight: 25,
@@ -4612,7 +4547,7 @@ whispering_lights: {
                     {
                         weight: 45,
                         text: 'You land a solid hit! The dragon BLEEDS! It CAN be hurt!',
-                        rewards: { xp: 1000, items: ['/* dragon_blood_evidence */'], damage: 160 }
+                        rewards: { xp: 1000, items: ['dragon_blood_evidence'], damage: 160 }
                     },
                     {
                         weight: 35,
@@ -4637,15 +4572,12 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'Too late! Something escapes before it closes!',
-                        combat: ['/* escaped_prison_horror */']
+                        combat: ['escaped_prison_horror']
                     }
                 ]
             }
         ]
     },
-
-    // 23-30 continue with more LATE GAME adventures...
-    // [Continuing with remaining late-game adventures]
 
     // 23. ANCIENT WEAPON VAULT
     ancient_weapon_vault: {
@@ -4655,7 +4587,7 @@ whispering_lights: {
         minLevel: 19,
         description: 'You find the legendary vault of dragon-slaying weapons...',
         intro: 'Deep underground, sealed for a millennium: THE VAULT. Weapons forged specifically to kill the Calamity! Swords, spears, arrows - all imbued with dragon-slaying magic! But... they\'re guarded by ancient golems.',
-        
+
         choices: [
             {
                 text: 'Fight the guardians',
@@ -4663,7 +4595,7 @@ whispering_lights: {
                     {
                         weight: 100,
                         text: 'The vault guardians activate! "INTRUDERS WILL BE ELIMINATED!"',
-                        combat: ['/* vault_guardian_golems */'] // Tough fight, great rewards
+                        combat: ['vault_guardian_golems']
                     }
                 ]
             },
@@ -4673,17 +4605,17 @@ whispering_lights: {
                     {
                         weight: 45,
                         text: 'You find the control runes! Guardians deactivate! Vault is yours!',
-                        rewards: { xp: 1100, items: ['/* legendary_dragon_slayer_weapon */'] }
+                        rewards: { xp: 1100, items: ['ancient_dragon_slayer'] }
                     },
                     {
                         weight: 35,
                         text: 'Partial success! Some guardians remain active but weakened!',
-                        combat: ['/* weakened_guardians */']
+                        combat: ['weakened_guardians']
                     },
                     {
                         weight: 20,
                         text: 'You trigger a security protocol! ADDITIONAL guardians activate!',
-                        combat: ['/* vault_security_swarm */']
+                        combat: ['vault_security_swarm']
                     }
                 ]
             },
@@ -4693,17 +4625,17 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'You grab the nearest weapon and run! It\'s... a legendary spear!',
-                        rewards: { items: ['/* dragon_piercer_spear */'], xp: 900 }
+                        rewards: { items: ['dragon_piercer_spear'], xp: 900 }
                     },
                     {
                         weight: 30,
                         text: 'The weapon you grab is cursed! It burns your hand!',
-                        rewards: { items: ['/* cursed_dragon_blade */'], damage: 140 }
+                        rewards: { items: ['cursed_dragon_blade'], damage: 140 }
                     },
                     {
                         weight: 20,
                         text: 'The guardians pursue you! You must fight while retreating!',
-                        combat: ['/* pursuing_guardians */']
+                        combat: ['pursuing_guardians']
                     }
                 ]
             }
@@ -4718,7 +4650,7 @@ whispering_lights: {
         minLevel: 20,
         description: 'A prophet speaks of the dragon\'s inevitable victory...',
         intro: 'An ancient oracle stands before you, eyes glowing with dragon fire. "I have seen the end. The Calamity rises. The world burns. All you do is futile. Join us now, and you may survive what comes."',
-        
+
         choices: [
             {
                 text: 'Reject the prophecy',
@@ -4726,12 +4658,12 @@ whispering_lights: {
                     {
                         weight: 45,
                         text: '"The future is not set! I\'ll change it!" Your conviction shakes the prophet!',
-                        rewards: { xp: 1000,}
+                        rewards: { xp: 1000 }
                     },
                     {
                         weight: 35,
                         text: 'The prophet laughs. "Denial changes nothing." They attack to "show you truth"!',
-                        combat: ['/* dragon_prophet */']
+                        combat: ['dragon_prophet']
                     },
                     {
                         weight: 20,
@@ -4746,7 +4678,7 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'The prophet actually tells you! "It fears... the light of creation itself."',
-                        rewards: { xp: 1100, items: ['/* calamity_weakness_revealed */'] }
+                        rewards: { xp: 1100, items: ['calamity_weakness_revealed'] }
                     },
                     {
                         weight: 35,
@@ -4756,7 +4688,7 @@ whispering_lights: {
                     {
                         weight: 25,
                         text: 'The prophet tries to possess you! "Let me SHOW you the dragon\'s power!"',
-                        combat: ['/* possession_attempt */']
+                        combat: ['possession_attempt']
                     }
                 ]
             },
@@ -4776,7 +4708,7 @@ whispering_lights: {
                     {
                         weight: 20,
                         text: 'The prophet was immortal! They reform! "You cannot kill the future!"',
-                        combat: ['/* immortal_prophet */']
+                        combat: ['immortal_prophet']
                     }
                 ]
             }
@@ -4791,7 +4723,7 @@ whispering_lights: {
         minLevel: 21,
         description: 'A legendary hero has joined the dragon cult...',
         intro: 'You face a warrior whose name is legendary - the hero who saved kingdoms! But now... they wear dragon cult robes. "I was wrong to fight it," they say. "The dragon offers PEACE. Eternal peace in flame and ash."',
-        
+
         choices: [
             {
                 text: 'Try to redeem them',
@@ -4799,7 +4731,7 @@ whispering_lights: {
                     {
                         weight: 35,
                         text: 'Your words break through! "What... have I done?!" They rebel against the cult!',
-                        rewards: { xp: 1200,}
+                        rewards: { xp: 1200 }
                     },
                     {
                         weight: 40,
@@ -4809,7 +4741,7 @@ whispering_lights: {
                     {
                         weight: 25,
                         text: '"SILENCE!" The corruption is too deep! They attack!',
-                        combat: ['/* corrupted_legendary_hero */']
+                        combat: ['corrupted_legendary_hero']
                     }
                 ]
             },
@@ -4819,7 +4751,7 @@ whispering_lights: {
                     {
                         weight: 100,
                         text: 'The corrupted hero challenges you! This will be your toughest battle yet!',
-                        combat: ['/* legendary_hero_boss */']
+                        combat: ['legendary_hero_boss']
                     }
                 ]
             },
@@ -4839,15 +4771,12 @@ whispering_lights: {
                     {
                         weight: 20,
                         text: '"The dragon showed me POWER!" They attack to demonstrate!',
-                        combat: ['/* power_mad_hero */']
+                        combat: ['power_mad_hero']
                     }
                 ]
             }
         ]
     },
-
-    // 26-30: Final late-game adventures
-    // [I'll create the last 5 in the final section]
 
     // 26. MASS RITUAL
     mass_ritual: {
@@ -4857,7 +4786,7 @@ whispering_lights: {
         minLevel: 22,
         description: 'Hundreds of cultists gather for the final awakening ritual...',
         intro: 'An entire CITY has been converted to the dragon cult! Thousands chant in unison! The sky turns red! The ground quakes violently! This is the FINAL ritual! If it completes, the dragon awakens NOW!',
-        
+
         choices: [
             {
                 text: 'Disrupt the ritual at all costs',
@@ -4865,7 +4794,7 @@ whispering_lights: {
                     {
                         weight: 100,
                         text: 'You charge into HUNDREDS of cultists! This is madness! This is heroism!',
-                        combat: ['/* mass_cultist_ritual */'] // Epic army battle
+                        combat: ['mass_cultist_ritual']
                     }
                 ]
             },
@@ -4875,17 +4804,17 @@ whispering_lights: {
                     {
                         weight: 45,
                         text: 'You take out the high priests! The ritual collapses! You saved the world!',
-                        rewards: { xp: 1500,}
+                        rewards: { xp: 1500 }
                     },
                     {
                         weight: 35,
                         text: 'You kill some leaders but there are too many! The ritual continues!',
-                        combat: ['/* ritual_defenders */']
+                        combat: ['ritual_defenders']
                     },
                     {
                         weight: 20,
                         text: 'You\'re discovered! Every cultist turns on you!',
-                        combat: ['/* cultist_swarm */']
+                        combat: ['cultist_swarm']
                     }
                 ]
             },
@@ -4920,7 +4849,7 @@ whispering_lights: {
         minLevel: 23,
         description: 'A piece of the Calamity\'s heart, split during the sealing...',
         intro: 'Pulsing with dark magic, a fragment of the dragon\'s actual HEART beats before you. Legend says pieces were scattered to weaken it. This one pulses with terrible power. Destroying it would weaken the dragon... or you could use its power...',
-        
+
         choices: [
             {
                 text: 'Destroy the heart fragment',
@@ -4948,7 +4877,7 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'You gain draconic power! But... at what cost to your humanity?',
-                        rewards: { xp: 1200,}
+                        rewards: { xp: 1200 }
                     },
                     {
                         weight: 35,
@@ -4958,7 +4887,7 @@ whispering_lights: {
                     {
                         weight: 25,
                         text: 'The dragon\'s consciousness tries to possess you through the heart!',
-                        combat: ['/* dragon_possession */']
+                        combat: ['dragon_possession']
                     }
                 ]
             },
@@ -4978,7 +4907,7 @@ whispering_lights: {
                     {
                         weight: 20,
                         text: 'The fragment fights back! It summons guardians!',
-                        combat: ['/* heart_fragment_guardians */']
+                        combat: ['heart_fragment_guardians']
                     }
                 ]
             }
@@ -4993,7 +4922,7 @@ whispering_lights: {
         minLevel: 24,
         description: 'The dragon\'s awakening is tearing reality apart...',
         intro: 'Space itself cracks! You can see OTHER DIMENSIONS through the rifts! Monsters from beyond pour through! The dragon\'s power is so immense it\'s breaking the laws of physics!',
-        
+
         choices: [
             {
                 text: 'Seal the tears',
@@ -5011,7 +4940,7 @@ whispering_lights: {
                     {
                         weight: 20,
                         text: 'The rifts are too powerful! Something massive comes through!',
-                        combat: ['/* extradimensional_horror */']
+                        combat: ['extradimensional_horror']
                     }
                 ]
             },
@@ -5021,7 +4950,7 @@ whispering_lights: {
                     {
                         weight: 40,
                         text: 'You find a path directly to the dragon! Time to end this!',
-                        rewards: { xp: 1400,}
+                        rewards: { xp: 1400 }
                     },
                     {
                         weight: 35,
@@ -5031,7 +4960,7 @@ whispering_lights: {
                     {
                         weight: 25,
                         text: 'The dragon senses you! "APPROACHING YOUR DOOM, MORTAL?"',
-                        combat: ['/* dragon_avatar_projection */']
+                        combat: ['dragon_avatar_projection']
                     }
                 ]
             },
@@ -5041,7 +4970,7 @@ whispering_lights: {
                     {
                         weight: 60,
                         text: 'You save thousands! Reality may fall but humanity survives!',
-                        rewards: { xp: 1300,}
+                        rewards: { xp: 1300 }
                     },
                     {
                         weight: 40,
@@ -5061,7 +4990,7 @@ whispering_lights: {
         minLevel: 24,
         description: 'The gods themselves take notice of the crisis...',
         intro: 'A being of pure light descends! An angel! A god! "Mortal," they speak with a voice like thunder, "The Calamity threatens all creation. We offer you divine power... but there is a price. Always a price."',
-        
+
         choices: [
             {
                 text: 'Accept the divine power',
@@ -5069,17 +4998,17 @@ whispering_lights: {
                     {
                         weight: 45,
                         text: 'You are blessed by the gods! Divine fire courses through you!',
-                        rewards: { xp: 1400,}
+                        rewards: { xp: 1400 }
                     },
                     {
                         weight: 35,
                         text: 'The power is overwhelming! You burn with holy fire!',
-                        rewards: { xp: 1200, damage: 200,}
+                        rewards: { xp: 1200, damage: 200 }
                     },
                     {
                         weight: 20,
                         text: '"You are not worthy!" The celestial tests you!',
-                        combat: ['/* celestial_trial */']
+                        combat: ['celestial_trial']
                     }
                 ]
             },
@@ -5089,7 +5018,7 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'The celestial smiles. "Courage! Very well. We shall not interfere." Respect earned!',
-                        rewards: { xp: 1300,}
+                        rewards: { xp: 1300 }
                     },
                     {
                         weight: 30,
@@ -5099,7 +5028,7 @@ whispering_lights: {
                     {
                         weight: 20,
                         text: '"Then you shall PROVE your worth!" They attack to test you!',
-                        combat: ['/* celestial_challenger */']
+                        combat: ['celestial_challenger']
                     }
                 ]
             },
@@ -5134,7 +5063,7 @@ whispering_lights: {
         minLevel: 25,
         description: 'The final seal cracks. The dragon is about to emerge...',
         intro: 'This is it. The last seal SHATTERS! The earth splits open! A roar that shakes the heavens! You can see it: the Calamity Dragon, rising from its prison! Wings that blot out the sun! Eyes like dying stars! This is the end... or the beginning of your legend!',
-        
+
         choices: [
             {
                 text: 'Face the dragon (FINAL BATTLE)',
@@ -5142,7 +5071,7 @@ whispering_lights: {
                     {
                         weight: 100,
                         text: 'You draw your weapon. The dragon sees you. It SMILES. "Finally... a worthy death for you, little mortal." BATTLE FOR THE FATE OF THE WORLD!',
-                        combat: ['/* CALAMITY_DRAGON_FINAL_BOSS */']
+                        combat: ['CALAMITY_DRAGON_FINAL_BOSS']
                     }
                 ]
             },
@@ -5162,7 +5091,7 @@ whispering_lights: {
                     {
                         weight: 25,
                         text: 'The dragon breaks your seal! "FUTILE!" It\'s free! You must fight!',
-                        combat: ['/* ENRAGED_CALAMITY_DRAGON */']
+                        combat: ['ENRAGED_CALAMITY_DRAGON']
                     }
                 ]
             },
@@ -5172,7 +5101,7 @@ whispering_lights: {
                     {
                         weight: 50,
                         text: 'Heroes, armies, mages - EVERYONE you\'ve helped arrives! "We stand with you!" EPIC BATTLE!',
-                        rewards: { xp: 1800,}
+                        rewards: { xp: 1800 }
                     },
                     {
                         weight: 30,
@@ -5182,7 +5111,7 @@ whispering_lights: {
                     {
                         weight: 20,
                         text: 'You stand alone. Everyone else fled. So be it. You vs the dragon.',
-                        combat: ['/* SOLO_CALAMITY_FIGHT */']
+                        combat: ['SOLO_CALAMITY_FIGHT']
                     }
                 ]
             }
@@ -5194,18 +5123,16 @@ whispering_lights: {
     // Levels 11-25: lost_lighthouse, alchemy_cauldron, knave_card_game,
     //   silent_glacier, wanderers_map, drowning_knight
     // ═══════════════════════════════════════════════════════════════
-    // ═══════════════════════════════════════════════════════════════
-    // NEW ADVENTURES — LEVELS 11-25  (10 NEW LAYERS-DEEP STORIES)
-    // ═══════════════════════════════════════════════════════════════
 
     // ── 11. THE LOST LIGHTHOUSE ─────────────────────────────────────
     lost_lighthouse: {
         id: 'lost_lighthouse',
         name: 'The Lost Lighthouse',
         rarity: 'uncommon',
+        minLevel: 11,
         description: 'A stone tower juts out of the cliffs, lit by a single, flickering lantern...',
         intro: 'The storm is raging outside. Through the crashing waves, a beam of light cuts the rain from afar. It leads to the abandoned Lighthouse. The iron door is rusted shut, but a small hatch hangs slightly ajar.',
-        
+
         choices: [
             {
                 text: 'Break through the rusted door',
@@ -5288,9 +5215,10 @@ whispering_lights: {
         id: 'alchemy_cauldron',
         name: 'The Alchemy Cauldron',
         rarity: 'uncommon',
+        minLevel: 12,
         description: 'In the heart of a village, a massive bubbling cauldron steams endlessly...',
         intro: 'The air smells of sulfur and old herbs. A wizard is stirring the liquid in a cauldron made of copper and gold. "The Balance is tipping," they mutter nervously. "It needs... ingredients.",',
-        
+
         choices: [
             {
                 text: 'Ask for the secret formula',
@@ -5356,14 +5284,15 @@ whispering_lights: {
         ]
     },
 
-    // ── 13. THE KNAVE\'S CARD GAME ──────────────────────────────────
+    // ── 13. THE KNAVE'S CARD GAME ──────────────────────────────────
     knave_card_game: {
         id: 'knave_card_game',
         name: 'The Knave\'s Card Game',
         rarity: 'rare',
+        minLevel: 13,
         description: 'A table set up for a high-stakes game. The cards are strange, shifting shapes...',
         intro: 'A noble lounges on a velvet sofa, shuffling cards that shift from hearts to spades depending on who you look at. "Come," they say. "The house always wins, unless you know the rules."',
-        
+
         choices: [
             {
                 text: 'Challenge the noble',
@@ -5429,9 +5358,10 @@ whispering_lights: {
         id: 'ghost_forge',
         name: 'The Ghost Forge',
         rarity: 'uncommon',
+        minLevel: 14,
         description: 'Hammer strikes echo in an abandoned smithy. A spirit tends the fire...',
         intro: 'The forge is burning bright in the dead of night. A shadowy smith turns the tongs. "Forging armor for the void," they rasp.',
-        
+
         choices: [
             {
                 text: 'Ask about the armor',
@@ -5497,9 +5427,10 @@ whispering_lights: {
         id: 'silent_glacier',
         name: 'The Silent Glacier',
         rarity: 'rare',
+        minLevel: 15,
         description: 'A massive ice wall blocks the path. Snow crunches underfoot, but silence is the law.',
         intro: 'The ice is so cold it steals heat from the air. Carvings on the wall tell of an ancient civilization that froze to end a plague.',
-        
+
         choices: [
             {
                 text: 'Cut through the ice',
@@ -5545,14 +5476,15 @@ whispering_lights: {
         ]
     },
 
-    // ── 16. THE WANDERER\'S MAP ──────────────────────────────────────
+    // ── 16. THE WANDERER'S MAP ──────────────────────────────────────
     wanderers_map: {
         id: 'wanderers_map',
         name: 'The Wanderer\'s Map',
         rarity: 'common',
+        minLevel: 16,
         description: 'A cartographer lies on the floor of a tavern. He draws frantically with charcoal.',
         intro: '"You can\'t trust the maps," he says, gasping for air. "The ink changes... the geography moves."',
-        
+
         choices: [
             {
                 text: 'Take the map',
@@ -5592,9 +5524,10 @@ whispering_lights: {
         id: 'drowning_knight',
         name: 'The Drowning Knight',
         rarity: 'uncommon',
+        minLevel: 17,
         description: 'A knight sinks in a flooded crypt. Bubbles escape from his sealed helm.',
         intro: 'He hasn\'t moved in decades, but his armor is wet. Something in the depths below keeps him there.',
-        
+
         choices: [
             {
                 text: 'Dive down to him',
@@ -5654,7 +5587,6 @@ whispering_lights: {
             }
         ]
     }
-
 };
 
 // Special enemies for adventures
@@ -5839,28 +5771,60 @@ const ADVENTURE_ENEMIES = {
         dropRates: { uncommon: 0.4478, rare: 0.3731, epic: 0.1791 }
     },
     mine_horror: {
-    name: 'Mine Horror',
-    baseHp: 260,
-    baseDamage: 34,
-    baseDefense: 16,
-    baseXp: 1300,
-    baseGold: 420,
-    level: 9,
-    possibleDrops: ['worm_hide', 'large_gem', 'bone_dust'],
-    dropRates: { uncommon: 0.5555, rare: 0.3175, epic: 0.127 }
-},
-
-demon_overlord: {
-    name: 'Demon Overlord',
-    baseHp: 400,
-    baseDamage: 55,
-    baseDefense: 35,
-    baseXp: 3000,
-    baseGold: 2000,
-    level: 17,
-    possibleDrops: ['demon_core'],
-    dropRates: { legendary: 1 }
-}
+        name: 'Mine Horror',
+        baseHp: 260,
+        baseDamage: 34,
+        baseDefense: 16,
+        baseXp: 1300,
+        baseGold: 420,
+        level: 9,
+        possibleDrops: ['worm_hide', 'large_gem', 'bone_dust'],
+        dropRates: { uncommon: 0.5555, rare: 0.3175, epic: 0.127 }
+    },
+    demon_overlord: {
+        name: 'Demon Overlord',
+        baseHp: 400,
+        baseDamage: 55,
+        baseDefense: 35,
+        baseXp: 3000,
+        baseGold: 2000,
+        level: 17,
+        possibleDrops: ['demon_core'],
+        dropRates: { legendary: 1 }
+    },
+    corrupted_knight_enemy: {
+        name: 'Corrupted Knight',
+        baseHp: 350,
+        baseDamage: 42,
+        baseDefense: 30,
+        baseXp: 1800,
+        baseGold: 600,
+        level: 12,
+        possibleDrops: ['cursed_blade', 'dark_armor'],
+        dropRates: { epic: 1 }
+    },
+    ancient_stone_guardian: {
+        name: 'Ancient Stone Guardian',
+        baseHp: 400,
+        baseDamage: 38,
+        baseDefense: 45,
+        baseXp: 1500,
+        baseGold: 500,
+        level: 10,
+        possibleDrops: ['ancient_relic', 'stone_core'],
+        dropRates: { rare: 1 }
+    },
+    spectral_cultist: {
+        name: 'Spectral Cultist',
+        baseHp: 280,
+        baseDamage: 35,
+        baseDefense: 20,
+        baseXp: 1400,
+        baseGold: 400,
+        level: 11,
+        possibleDrops: ['cult_artifact', 'spirit_essence'],
+        dropRates: { rare: 1 }
+    }
 };
 
 // Rarity chances
@@ -5884,7 +5848,7 @@ function rollForAdventure(playerLevel) {
 
         if (roll < cumulative) {
             const eligibleAdventures = Object.values(ADVENTURES)
-                .filter(adv => adv.rarity === rarity);
+                .filter(adv => adv.rarity === rarity && playerLevel >= (adv.minLevel || 1));
 
             if (!eligibleAdventures.length) return null;
 
@@ -5896,7 +5860,6 @@ function rollForAdventure(playerLevel) {
 
     return null;
 }
-
 
 // Export
 if (typeof module !== 'undefined' && module.exports) {

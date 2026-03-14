@@ -477,19 +477,20 @@ window.checkBountyEncounter = function(locKey) {
     if (!matchingIds.length) return false;
 
     // 10% chance per exploration tick
-    const roll = Math.random();
-    const hit  = roll < 0.10;
+    // 10% chance per exploration tick
+const roll = Math.random();
+const hit  = roll < 0.10;  // 10% chance
 
-    if (_debug && typeof termAppend === 'function') {
-        const names = matchingIds.map(id => BOUNTIES[id] ? BOUNTIES[id].name : id).join(', ');
-        const rollPct = (roll * 100).toFixed(2);
-        termAppend(
-            `<span style="color:#334466;">⚓ [BOUNTY] Hunting <b style="color:#cc66ff;">${names}</b> in <b>${locKey}</b>: ` +
-            `rolled <b>${rollPct}%</b> / need ≤5.00% → ` +
-            `${hit ? '<b style="color:#cc66ff;">✅ ENCOUNTER</b>' : '<span style="color:#555;">❌ miss</span>'}</span>`,
-            'term-dim'
-        );
-    }
+if (_debug && typeof termAppend === 'function') {
+    const names = matchingIds.map(id => BOUNTIES[id] ? BOUNTIES[id].name : id).join(', ');
+    const rollPct = (roll * 100).toFixed(2);
+    termAppend(
+        `<span style="color:#334466;">⚓ [BOUNTY] Hunting <b style="color:#cc66ff;">${names}</b> in <b>${locKey}</b>: ` +
+        `rolled <b>${rollPct}%</b> / need ≤10.00% → ` +  // Changed from 5% to 10%
+        `${hit ? '<b style="color:#cc66ff;">✅ ENCOUNTER</b>' : '<span style="color:#555;">❌ miss</span>'}</span>`,
+        'term-dim'
+    );
+}
 
     if (!hit) return false;
 

@@ -245,7 +245,50 @@ const WEAPON_MODIFIERS = {
         statusEffect: 'confused',
         statusChance: 0.2, // 20% chance to confuse
         color: '#FF00FF'
+    },
+
+        // Add these new modifiers after 'confuse':
+
+    dragon_bane: {
+        name: 'Dragon Bane',
+        description: 'Extra damage against dragons',
+        minDamage: 8,
+        maxDamage: 15,
+        statusEffect: null,
+        vsDragonBonus: 2.5, // 2.5x damage vs dragons
+        color: '#FF4444'
+    },
+    
+    giant_slayer: {
+        name: 'Giant Slayer',
+        description: 'Crushes giant foes',
+        minDamage: 6,
+        maxDamage: 12,
+        statusEffect: null,
+        vsGiantBonus: 2.0,
+        color: '#884422'
+    },
+    
+    vorpal: {
+        name: 'Vorpal',
+        description: 'Strikes with deadly precision',
+        minDamage: 5,
+        maxDamage: 10,
+        statusEffect: null,
+        critBonus: 15,
+        color: '#AA88FF'
+    },
+    
+    thunderous: {
+        name: 'Thunderous',
+        description: 'Crackles with lightning',
+        minDamage: 6,
+        maxDamage: 12,
+        statusEffect: 'stunned',
+        statusChance: 0.2,
+        color: '#FFDD44'
     }
+
 };
 
 // ═══════════════════════════════════════════════════════════════

@@ -1,314 +1,620 @@
 // ═══════════════════════════════════════════════════════════════
-// guild.js — ADVENTURERS GUILD SYSTEM
+// guild.js — ADVENTURERS GUILD SYSTEM (COMPLETE)
 //
-// HOW IT WORKS:
-// 1. Guild board available in all 3 towns
-// 2. One quest per player level (levels 1-25)
-// 3. Kill quests: slay X of a specific enemy type
-//    - Kill count tracks via p.kills[] (already tracked in checkCombatEnd)
-//    - Quest TEXT says "bring me X goblin ears" but tracks kills
-// 4. Alternating rewards:
-//    - Odd levels  (1,3,5...25): Blue (rare) class-specific weapon + 1 empty gem slot
-//    - Even levels (2,4,6...24): Blue (rare) class-appropriate armor
-//    - All quests: scaling gold + XP
-// 5. On turn-in: player chooses from 2 reward options
-// 6. Quest tied to the town it was accepted from — must return to same town
-//
-// PLAYER DATA (stored on gameState.player):
-//   p.guildQuests = {
-//     active:    { questId, townId, kills: 0 }   — current active quest
-//     completed: { 'guild_1': true, ... }         — permanently completed
-//   }
+// PROGRESSION:
+// Standard (lv1,4,7,10,13,16,19) → Kill 5 normals → Gold+XP → Unlocks Elite
+// Elite    (lv2,5,8,11,14,17,20) → Kill 3 rares   → Gold+XP+Blue Armor → Unlocks Boss
+// Boss     (lv3,6,9,12,15,18,21) → Kill 1 boss    → Gold+XP+Purple Weapon
+// Ultimate (lv22,23,24)           → Kill 1 epic boss → Gold+XP+Orange Weapon
+// Final    (lv25)                  → Special dragon quest
 // ═══════════════════════════════════════════════════════════════
 
-// ── Kill counts scale with level ─────────────────────────────────
-function guildKillCount(level) {
-    if (level <= 5)  return 5;
-    if (level <= 10) return 8;
-    if (level <= 15) return 10;
-    if (level <= 20) return 12;
-    return 15;
+// ── Kill counts by quest type ─────────────────────────────────
+function guildKillCount(questType) {
+    if (questType === 'standard') return 5;
+    if (questType === 'elite') return 3;
+    return 1; // boss, ultimate, and final
 }
 
-// ── XP/Gold rewards scale with level ─────────────────────────────
-function guildXpReward(level)   { return level * 120; }
-function guildGoldReward(level) { return level * 80;  }
+// ── XP/Gold rewards (scaled by quest type) ────────────────────
+function guildXpReward(level, questType) {
+    let mult = 1.0;
+    if (questType === 'elite') mult = 1.3;
+    if (questType === 'boss') mult = 1.6;
+    if (questType === 'ultimate') mult = 2.0;
+    if (questType === 'final') mult = 3.0;
+    return Math.floor(level * 100 * mult);
+}
 
-// ── Quest definitions — one per level ────────────────────────────
-// target:     enemy key from p.kills[] (set in checkCombatEnd via dead.key)
-// targetName: display name
-// flavorItem: the "bring me X of these" flavor text item
-// zone:       where to find them (flavor only)
-const GUILD_QUESTS = {
-    // Whispering Forest (lv1+): goblin, wolf, giant_rat, kobold, forest_imp, giant_spider, wild_boar, goblin_shaman, wild_lynx, plague_rat
-    guild_1:  { level:1,  target:'goblin',           targetName:'Goblin',           flavorItem:'Goblin Ears',          zone:'the Whispering Forest',    emoji:'👺' },
-    guild_2:  { level:2,  target:'giant_rat',        targetName:'Giant Rat',        flavorItem:'Rat Tails',            zone:'the Whispering Forest',    emoji:'🐀' },
-    guild_3:  { level:3,  target:'wolf',             targetName:'Wolf',             flavorItem:'Wolf Pelts',           zone:'the Whispering Forest',    emoji:'🐺' },
-    guild_4:  { level:4,  target:'harpy',            targetName:'Harpy',            flavorItem:'Harpy Feathers',       zone:'the Misty Riverside',      emoji:'🦅' },
-    // Misty Riverside (lv4+): river_troll, swamp_lurker, giant_frog, bandit, harpy, gnoll, lizardfolk
-    guild_5:  { level:5,  target:'bandit',           targetName:'Bandit',           flavorItem:'Bandit Badges',        zone:'the Misty Riverside',      emoji:'🗡️' },
-    guild_6:  { level:6,  target:'gnoll',            targetName:'Gnoll',            flavorItem:'Gnoll Fangs',          zone:'the Misty Riverside',      emoji:'🐾' },
-    // Haunted Graveyard (lv7+): zombie, ghoul, skeleton, grave_robber, spirit, bone_archer, shadow_hound, death_cultist, vampire_thrall
-    guild_7:  { level:7,  target:'skeleton',         targetName:'Skeleton',         flavorItem:'Finger Bones',         zone:'the Haunted Graveyard',    emoji:'💀' },
-    guild_8:  { level:8,  target:'zombie',           targetName:'Zombie',           flavorItem:'Zombie Teeth',         zone:'the Haunted Graveyard',    emoji:'🧟' },
-    guild_9:  { level:9,  target:'grave_robber',     targetName:'Grave Robber',     flavorItem:'Stolen Grave Goods',   zone:'the Haunted Graveyard',    emoji:'⚰️' },
-    // Blackwater Swamp / Windswept Plains (lv10+): werewolf, dire_wolf, cave_basilisk, iron_golem, plague_zombie
-    guild_10: { level:10, target:'werewolf',         targetName:'Werewolf',         flavorItem:'Werewolf Claws',       zone:'the Blackwater Swamp',     emoji:'🐺' },
-    guild_11: { level:11, target:'dire_wolf',        targetName:'Dire Wolf',        flavorItem:'Dire Wolf Pelts',      zone:'the Windswept Plains',     emoji:'🐺' },
-    guild_12: { level:12, target:'iron_golem',       targetName:'Iron Golem',       flavorItem:'Golem Core Fragments', zone:'the Windswept Plains',     emoji:'🗿' },
-    // Cursed Ruins (lv13+): cursed_knight, shadow_stalker, dark_priest, necromancer, dark_champion, elder_wraith, black_knight
-    guild_13: { level:13, target:'necromancer',      targetName:'Necromancer',      flavorItem:'Necromancer Tomes',    zone:'the Cursed Ruins',         emoji:'📖' },
-    guild_14: { level:14, target:'dark_priest',      targetName:'Dark Priest',      flavorItem:'Blasphemous Relics',   zone:'the Cursed Ruins',         emoji:'🔮' },
-    guild_15: { level:15, target:'death_cultist',    targetName:'Death Cultist',    flavorItem:'Cultist Medallions',   zone:'the Haunted Graveyard',    emoji:'☠️' },
-    // Shadow Cavern (lv16+): troll, shadow_dragon, bone_colossus, doom_knight, wyvern, plague_lord
-    guild_16: { level:16, target:'troll',            targetName:'Troll',            flavorItem:'Troll Hide',           zone:'the Shadow Cavern',        emoji:'🧌' },
-    guild_17: { level:17, target:'wyvern',           targetName:'Wyvern',           flavorItem:'Wyvern Scales',        zone:'the Shadow Cavern',        emoji:'🐉' },
-    guild_18: { level:18, target:'doom_knight',      targetName:'Doom Knight',      flavorItem:'Cursed Sigils',        zone:'the Shadow Cavern',        emoji:'⚔️' },
-    // Ancient Crypt (lv19+): lich, vampire_lord, ancient_lich, soul_reaper, wyvern, doom_knight
-    guild_19: { level:19, target:'vampire_lord',     targetName:'Vampire Lord',     flavorItem:'Vampire Lord Fangs',   zone:'the Ancient Crypt',        emoji:'🧛' },
-    guild_20: { level:20, target:'lich',             targetName:'Lich',             flavorItem:'Phylactery Shards',    zone:'the Ancient Crypt',        emoji:'💀' },
-    // Demon Portal (lv22+): elder_vampire, pit_fiend, void_titan, elder_vampire, reality_shredder
-    guild_21: { level:21, target:'soul_reaper',      targetName:'Soul Reaper',      flavorItem:'Harvested Souls',      zone:'the Ancient Crypt',        emoji:'👁️' },
-    guild_22: { level:22, target:'elder_vampire',    targetName:'Elder Vampire',    flavorItem:'Elder Fangs',          zone:'the Demon Portal',         emoji:'🧛' },
-    guild_23: { level:23, target:'pit_fiend',        targetName:'Pit Fiend',        flavorItem:'Infernal Brands',      zone:'the Demon Portal',         emoji:'😈' },
-    // Corrupted Temple / Volcanic Wastes (lv25): fallen_angel, chaos_dragon, god_avatar
-    guild_24: { level:24, target:'chaos_dragon',     targetName:'Chaos Dragon',     flavorItem:'Chaos Dragon Scales',  zone:'the Corrupted Temple',     emoji:'🐲' },
-    guild_25: { level:25, target:'god_avatar',       targetName:'God Avatar',       flavorItem:'Divine Fragments',     zone:'the Celestial Spire',      emoji:'✨' },
-};
+function guildGoldReward(level, questType) {
+    let mult = 1.0;
+    if (questType === 'elite') mult = 1.3;
+    if (questType === 'boss') mult = 1.6;
+    if (questType === 'ultimate') mult = 2.0;
+    if (questType === 'final') mult = 3.0;
+    return Math.floor(level * 60 * mult);
+}
 
-// ── Class-specific weapon types for rewards ───────────────────────
-const GUILD_WEAPON_TYPES = {
-    warrior:     ['sword', 'axe', 'greatsword'],
-    rogue:       ['dagger', 'shortsword'],
-    paladin:     ['mace', 'sword', 'warhammer'],
-    acolyte:     ['staff', 'mace'],
-    necrolyte:   ['staff', 'scythe'],
-    sorceror:    ['staff', 'wand'],
-    archer:      ['bow', 'crossbow'],
+// ── Class weapon pools for rewards ────────────────────────────
+const GUILD_WEAPON_POOLS = {
+    warrior:     ['sword', 'axe', 'hammer'],
+    paladin:     ['sword', 'mace', 'hammer'],
+    cleric:      ['tome', 'staff', 'mace'],
+    mage:        ['wand', 'staff', 'orb'],
+    warlock:     ['staff', 'wand', 'dagger'],
+    rogue:       ['dagger', 'short_sword'],
+    hunter:      ['bow', 'crossbow'],
+    ranger:      ['bow', 'crossbow'],
     druid:       ['staff', 'club'],
-    hunter:      ['bow', 'spear'],
-    warlock:     ['staff', 'dagger'],
-    runesmith:   ['hammer', 'axe'],
-    // evolved classes
+    runesmith:   ['hammer', 'axe', 'staff'],
+    // Evolved classes
     warlord:     ['sword', 'axe', 'greatsword'],
-    shadowmaster:['dagger', 'shortsword'],
-    crusader:    ['mace', 'warhammer'],
-    high_priest: ['staff', 'mace'],
-    lich:        ['staff', 'scythe'],
-    archmage:    ['staff', 'wand'],
-    deadeye:     ['bow', 'crossbow'],
-    archdruid:   ['staff', 'club'],
+    crusader:    ['sword', 'mace', 'warhammer'],
+    high_priest: ['tome', 'staff', 'mace'],
+    archmage:    ['wand', 'staff', 'orb'],
+    demonlord:   ['staff', 'wand', 'dagger'],
+    shadowmaster:['dagger', 'short_sword'],
     beastlord:   ['bow', 'spear'],
-    demonlord:   ['staff', 'dagger'],
+    deadeye:     ['bow', 'crossbow']
 };
 
-// ── Generate a rare (blue) guild weapon reward ────────────────────
-function generateGuildWeaponReward(p, level) {
+// ── Class armor pools ─────────────────────────────────────────
+const GUILD_ARMOR_POOLS = {
+    warrior:     ['plate', 'chain'],
+    paladin:     ['plate', 'chain'],
+    cleric:      ['robe', 'leather'],
+    mage:        ['robe'],
+    warlock:     ['robe', 'leather'],
+    rogue:       ['leather'],
+    hunter:      ['leather'],
+    ranger:      ['leather'],
+    druid:       ['leather', 'robe'],
+    runesmith:   ['chain', 'leather'],
+    // Evolved classes
+    warlord:     ['plate'],
+    crusader:    ['plate'],
+    high_priest: ['robe'],
+    archmage:    ['robe'],
+    demonlord:   ['robe', 'leather'],
+    shadowmaster:['leather'],
+    beastlord:   ['leather']
+};
+
+// ── Generate elite reward (Blue armor) ────────────────────────
+function generateEliteArmorReward(p, questLevel) {
     const baseClass = p.baseClass || p.class;
-    const types     = GUILD_WEAPON_TYPES[baseClass] || ['sword'];
-    const wType     = types[Math.floor(Math.random() * types.length)];
-    const id        = `guild_weapon_${baseClass}_lv${level}_${Date.now()}`;
+    const armorTypes = GUILD_ARMOR_POOLS[baseClass] || ['leather'];
+    const armorType = armorTypes[Math.floor(Math.random() * armorTypes.length)];
+    const id = `guild_elite_armor_${baseClass}_lv${questLevel}_${Date.now()}`;
+    
+    // Scale defense to QUEST LEVEL
+    const baseDef = Math.floor(questLevel * 1.5 + 5);
+    
+    const armor = {
+        id,
+        name: `Guild Elite ${armorType.charAt(0).toUpperCase() + armorType.slice(1)}`,
+        type: armorType,
+        quality: 'rare', // Blue
+        level: questLevel,
+        baseDefense: baseDef,
+        baseMagicBonus: Math.floor(questLevel * 0.5),
+        cost: 0,
+        sellValue: Math.floor(questLevel * 40),
+        classRestriction: baseClass,
+        gems: [], // 1 empty slot
+        isGuildReward: true,
+        isDropped: true,
+        unarmored: false,
+        description: `Elite guild armor from level ${questLevel} quest`
+    };
+    
+    return armor;
+}
 
-    // Scale damage to level
-    const baseDmg = Math.floor(level * 2.5 + 8);
-    const maxDmg  = Math.floor(baseDmg * 1.6);
-    const hasMagic = ['sorceror','acolyte','necrolyte','druid','warlock','archmage','lich','high_priest','archdruid','demonlord'].includes(baseClass);
-
+// ═══════════════════════════════════════════════════════════════
+// GENERATE BOSS WEAPON REWARD - With Thematic Names
+// ═══════════════════════════════════════════════════════════════
+function generateBossWeaponReward(p, questLevel) {
+    const baseClass = p.baseClass || p.class;
+    const weaponTypes = GUILD_WEAPON_POOLS[baseClass] || ['sword'];
+    const weaponType = weaponTypes[Math.floor(Math.random() * weaponTypes.length)];
+    const id = `guild_boss_weapon_${baseClass}_lv${questLevel}_${Date.now()}`;
+    
+    // Scale damage to QUEST LEVEL
+    const baseDmg = Math.floor(questLevel * 2.5 + 8);
+    const maxDmg = Math.floor(baseDmg * 1.6);
+    const hasMagic = ['mage','warlock','cleric','druid','archmage','high_priest','demonlord'].includes(baseClass);
+    
+    // Generate thematic name based on class and weapon type
+    let themedName = '';
+    
+    // ======================================================
+    // CLERIC / HIGH PRIEST NAMES
+    // ======================================================
+    if (baseClass === 'cleric' || baseClass === 'high_priest') {
+        const clericNames = {
+            tome: [
+                'Tome of Divine Judgment', 'Codex of Eternal Light', 'Scripture of the Faithful',
+                'Gospel of Redemption', 'Book of Blessings', 'Word of the Gods',
+                'Scrolls of Healing', 'Prayer Book of the Saints', 'Canticle of Light'
+            ],
+            mace: [
+                'Sacred Mace of Light', 'Hammer of the Healer', 'Mace of Redemption',
+                'Crusader\'s Flail', 'Rod of Correction', 'Scepter of the Dawn',
+                'Bludgeon of Faith', 'War Mace of the Clergy', 'Morning Star of Hope'
+            ],
+            staff: [
+                'Staff of the Pilgrim', 'Crook of the Shepherd', 'Rod of Blessings',
+                'Pilgrim\'s Staff', 'Staff of Healing', 'Rod of the Healer',
+                'Pastoral Staff', 'Crosier of the High Priest', 'Staff of Life'
+            ]
+        };
+        const options = clericNames[weaponType] || [`${weaponType.charAt(0).toUpperCase() + weaponType.slice(1)} of Faith`];
+        themedName = options[Math.floor(Math.random() * options.length)];
+    }
+    
+    // ======================================================
+    // WARRIOR / WARLORD NAMES
+    // ======================================================
+    else if (baseClass === 'warrior' || baseClass === 'warlord') {
+        const warriorNames = {
+            sword: [
+                'Sword of Conquest', 'Blade of the Legion', 'Warblade',
+                'Greatsword of Glory', 'Battlefield Legacy', 'Sword of Victory',
+                'Conqueror\'s Blade', 'Honor\'s Edge', 'Triumphal Sword'
+            ],
+            axe: [
+                'Axe of Ruin', 'Cleaver of Battle', 'Sundering Axe',
+                'Bloodaxe of the North', 'Warbringer', 'Skullcleaver',
+                'Battle Axe of Fury', 'Rage\'s Edge', 'Executioner\'s Axe'
+            ],
+            hammer: [
+                'Hammer of Wrath', 'Maul of the Colossus', 'Crusher',
+                'War Hammer of the Mountain', 'Thunderstrike', 'Earthshaker',
+                'Skullcracker', 'Oathkeeper\'s Hammer', 'Might of the Mountain'
+            ],
+            greatsword: [
+                'Titan\'s Greatsword', 'Sword of Kings', 'Blade of Legends',
+                'Mountaincleaver', 'Dragonfang', 'Victory\'s Promise'
+            ]
+        };
+        const options = warriorNames[weaponType] || [`${weaponType.charAt(0).toUpperCase() + weaponType.slice(1)} of Might`];
+        themedName = options[Math.floor(Math.random() * options.length)];
+    }
+    
+    // ======================================================
+    // PALADIN / CRUSADER NAMES
+    // ======================================================
+    else if (baseClass === 'paladin' || baseClass === 'crusader') {
+        const paladinNames = {
+            sword: [
+                'Sword of the Light', 'Blade of the Order', 'Crusader\'s Oath',
+                'Vindicator', 'Justice\'s Edge', 'Holy Avenger',
+                'Sword of Righteousness', 'Oathkeeper', 'Dawnbringer'
+            ],
+            mace: [
+                'Mace of the Just', 'Hammer of the Crusade', 'War Mace of the Faith',
+                'Righteous Flail', 'Scepter of Truth', 'Mace of Valor',
+                'Holy Mace of the Templar', 'Crusher of Heretics', 'Light\'s Judgment'
+            ],
+            hammer: [
+                'Hammer of the Crusader', 'Warhammer of the Order', "Judgment's Maul",
+                'Hammer of Righteous Fury', "Justice's Hammer", 'Hammer of the Dawn'
+            ]
+        };
+        const options = paladinNames[weaponType] || [`${weaponType.charAt(0).toUpperCase() + weaponType.slice(1)} of the Order`];
+        themedName = options[Math.floor(Math.random() * options.length)];
+    }
+    
+    // ======================================================
+    // MAGE / ARCHMAGE NAMES
+    // ======================================================
+    else if (baseClass === 'mage' || baseClass === 'archmage') {
+        const mageNames = {
+            wand: [
+                'Wand of Arcane Fire', 'Spellwood Wand', 'Conduit of Power',
+                'Wand of the Magi', 'Spellstrike', 'Focus of the Weave',
+                'Arcane Conduit', 'Wand of Wonders', 'Spellspire'
+            ],
+            staff: [
+                'Staff of the Magi', 'Archspire', 'Rod of Focus',
+                'Staff of the Sorcerer', 'Spellweaver\'s Staff', 'Arcane Pillar',
+                'Staff of the Archmage', 'Magefire Staff', 'Conjurer\'s Rod'
+            ],
+            orb: [
+                'Orb of Scrying', 'Crystal of Dominion', 'Sphere of Secrets',
+                'Orb of the Magi', 'Crystal Ball of Farseeing', 'Sphere of Power',
+                'Orb of Infinite Wisdom', 'Crystal of the Weave', 'Focus of the Arcane'
+            ]
+        };
+        const options = mageNames[weaponType] || [`${weaponType.charAt(0).toUpperCase() + weaponType.slice(1)} of Sorcery`];
+        themedName = options[Math.floor(Math.random() * options.length)];
+    }
+    
+    // ======================================================
+    // WARLOCK / DEMONLORD NAMES
+    // ======================================================
+    else if (baseClass === 'warlock' || baseClass === 'demonlord') {
+        const warlockNames = {
+            staff: [
+                'Staff of Shadows', 'Soulbinder', 'Rod of the Void',
+                'Staff of the Nether', 'Shadowspire', 'Cursed Crook',
+                'Staff of Torment', 'Abyssal Scepter', 'Voidcaller\'s Staff'
+            ],
+            wand: [
+                'Wand of Dark Whispers', 'Shadow Wand', 'Soul Drainer',
+                'Wand of the Abyss', 'Cursed Focus', 'Wand of Torment',
+                'Shadowtongue', 'Void Wand', 'Demonheart Wand'
+            ],
+            dagger: [
+                'Soulreaper Dagger', 'Shadowfang', 'Demon Stiletto',
+                'Dagger of the Void', 'Cursed Blade', 'Soulpiercer',
+                'Abyssal Dagger', 'Dark Ritual Dagger', 'Bloodletter'
+            ]
+        };
+        const options = warlockNames[weaponType] || [`${weaponType.charAt(0).toUpperCase() + weaponType.slice(1)} of the Void`];
+        themedName = options[Math.floor(Math.random() * options.length)];
+    }
+    
+    // ======================================================
+    // ROGUE / SHADOWMASTER NAMES
+    // ======================================================
+    else if (baseClass === 'rogue' || baseClass === 'shadowmaster') {
+        const rogueNames = {
+            dagger: [
+                'Shadow Dagger', 'Night\'s Edge', 'Assassin\'s Kiss',
+                'Silent Blade', 'Venomfang', 'Death\'s Whisper',
+                'Gloom Dagger', 'Shadowpiercer', 'Throatcutter'
+            ],
+            short_sword: [
+                'Quickblade', 'Swift Stinger', 'Fleetfang',
+                'Shadow Shortsword', 'Crimson Edge', 'Dancing Blade',
+                'Nightrunner\'s Sword', 'Silent Death', 'Flickerblade'
+            ]
+        };
+        const options = rogueNames[weaponType] || [`${weaponType.charAt(0).toUpperCase() + weaponType.slice(1)} of Shadows`];
+        themedName = options[Math.floor(Math.random() * options.length)];
+    }
+    
+    // ======================================================
+    // HUNTER / BEASTLORD NAMES
+    // ======================================================
+    else if (baseClass === 'hunter' || baseClass === 'beastlord') {
+        const hunterNames = {
+            bow: [
+                'Longbow of the Hunt', 'Stag\'s Antler Bow', 'Windcaller',
+                'Eagle Eye', 'Trailblazer', 'Forest Guardian',
+                'Bow of the Stalker', 'Silent Wind', 'Predator\'s Kiss'
+            ],
+            crossbow: [
+                'Heavy Crossbow of the Hunt', 'Siege Crossbow', 'Beast Piercer',
+                'Quickfire Crossbow', 'Hunter\'s Friend', 'Bolt Thrower',
+                'Stag Piercer', 'Deadeye Crossbow', 'Swift Bolt'
+            ],
+            spear: [
+                'Hunting Spear', 'Beast Impaler', 'Wildheart Spear',
+                'Tracker\'s Spear', 'Boar Sticker', 'Forest Pike',
+                'Stag Spear', 'Hunter\'s Lance', 'Bloodseeker'
+            ]
+        };
+        const options = hunterNames[weaponType] || [`${weaponType.charAt(0).toUpperCase() + weaponType.slice(1)} of the Hunt`];
+        themedName = options[Math.floor(Math.random() * options.length)];
+    }
+    
+    // ======================================================
+    // DRUID / ARCHDRUID NAMES
+    // ======================================================
+    else if (baseClass === 'druid' || baseClass === 'archdruid') {
+        const druidNames = {
+            staff: [
+                'Staff of the Forest', 'Oakheart', 'Willow Wand',
+                'Staff of Seasons', 'Thorned Staff', 'Grovetender',
+                'Staff of the Wild', 'Forestkeeper', 'Branch of the Ancients'
+            ],
+            club: [
+                'Wildwood Club', 'Stone Club', 'Feral Maul',
+                'Club of the Bear', 'Rootclub', 'Thorn Maul',
+                'Earthcracker', 'Boulder Club', 'Primeval Cudgel'
+            ]
+        };
+        const options = druidNames[weaponType] || [`${weaponType.charAt(0).toUpperCase() + weaponType.slice(1)} of the Wild`];
+        themedName = options[Math.floor(Math.random() * options.length)];
+    }
+    
+    // ======================================================
+    // RUNESMITH NAMES
+    // ======================================================
+    else if (baseClass === 'runesmith') {
+        const runesmithNames = {
+            hammer: [
+                'Rune Hammer', 'Inscribed Maul', 'Forgehammer',
+                'Hammer of the Smith', 'Rune-etched Maul', 'Anvilstrike',
+                'Hammer of Making', 'Sigil Hammer', 'Rune Forger'
+            ],
+            axe: [
+                'Rune Axe', 'Inscribed Cleaver', 'Glyph Axe',
+                'Axe of the Smith', 'Rune-etched Axe', 'Spellaxe',
+                'Sigil Axe', 'Rune Rend', 'Enchanted Cleaver'
+            ],
+            staff: [
+                'Rune Staff', 'Inscribed Staff', 'Glyph Rod',
+                'Staff of the Smith', 'Rune-etched Staff', 'Spellstaff',
+                'Sigil Staff', 'Rune Spire', 'Enchanted Staff'
+            ]
+        };
+        const options = runesmithNames[weaponType] || [`Rune-Infused ${weaponType.charAt(0).toUpperCase() + weaponType.slice(1)}`];
+        themedName = options[Math.floor(Math.random() * options.length)];
+    }
+    
+    // ======================================================
+    // DEFAULT FALLBACK
+    // ======================================================
+    else {
+        const genericNames = {
+            sword: ['Guild Champion Sword', 'Legion Blade', 'Honor\'s Edge'],
+            axe: ['Guild Champion Axe', 'Battle Cleaver', 'Glory\'s Edge'],
+            hammer: ['Guild Champion Hammer', 'War Maul', 'Might\'s Echo'],
+            dagger: ['Guild Champion Dagger', 'Shadow\'s Kiss', 'Silent Edge'],
+            bow: ['Guild Champion Bow', 'Wind\'s Whisper', 'Eagle\'s Eye'],
+            staff: ['Guild Champion Staff', 'Sage\'s Friend', 'Mage\'s Support']
+        };
+        const options = genericNames[weaponType] || [`Guild Boss ${weaponType.charAt(0).toUpperCase() + weaponType.slice(1)}`];
+        themedName = options[Math.floor(Math.random() * options.length)];
+    }
+    
+    // Create the weapon object
     const weapon = {
         id,
-        name:           `Guild ${wType.charAt(0).toUpperCase() + wType.slice(1)} of ${p.name}`,
-        type:           wType,
-        quality:        'rare',
-        level,
-        baseDamage:     baseDmg,
-        maxDamage:      maxDmg,
-        baseMagicDamage: hasMagic ? Math.floor(level * 1.8 + 5) : 0,
-        cost:           0,
-        sellValue:      Math.floor(level * 50),
+        name: themedName,
+        type: weaponType,
+        quality: 'epic', // Purple
+        level: questLevel,
+        baseDamage: baseDmg,
+        maxDamage: maxDmg,
+        baseMagicDamage: hasMagic ? Math.floor(questLevel * 1.5 + 4) : 0,
+        cost: 0,
+        sellValue: Math.floor(questLevel * 60),
         classRestriction: baseClass,
-        gems:           [],   // one empty slot — getGemSlots('rare') returns 1
-        modifiers:      [],
-        isGuildReward:  true,
-        isDropped:      true,  // required so save system persists this weapon
-        unarmed:        false,
+        gems: [], // 2 empty slots
+        modifiers: [],
+        isGuildReward: true,
+        isDropped: true,
+        unarmed: false,
+        description: `A powerful ${questLevel > 15 ? 'legendary' : 'epic'} weapon earned from a guild boss contract.`
     };
-
+    
     return weapon;
 }
 
-// ── Generate rare (blue) guild armor reward ───────────────────────
-function generateGuildArmorReward(p, level) {
-    const baseClass  = p.baseClass || p.class;
-    const id         = `guild_armor_${baseClass}_lv${level}_${Date.now()}`;
-    const isHeavy    = ['warrior','paladin','warlord','crusader'].includes(baseClass);
-    const isMedium   = ['rogue','archer','hunter','shadowmaster','deadeye','beastlord'].includes(baseClass);
-    const armorType  = isHeavy ? 'plate' : isMedium ? 'leather' : 'robe';
-    const baseDef    = isHeavy
-        ? Math.floor(level * 2.2 + 6)
-        : isMedium
-        ? Math.floor(level * 1.6 + 4)
-        : Math.floor(level * 1.0 + 3);
-    const hasMagicBonus = ['sorceror','acolyte','necrolyte','druid','warlock','archmage','lich','high_priest','archdruid','demonlord'].includes(baseClass);
+// ═══════════════════════════════════════════════════════════════
+// QUEST DEFINITIONS
+// ═══════════════════════════════════════════════════════════════
 
-    const armor = {
-        id,
-        name:           `Guild ${armorType.charAt(0).toUpperCase() + armorType.slice(1)} of ${p.name}`,
-        type:           armorType,
-        quality:        'rare',
-        level,
-        baseDefense:    baseDef,
-        baseMagicBonus: hasMagicBonus ? Math.floor(level * 0.8 + 2) : 0,
-        cost:           0,
-        sellValue:      Math.floor(level * 40),
-        classRestriction: baseClass,
-        gems:           [],
-        isGuildReward:  true,
-        isDropped:      true,  // required so save system persists this armor
-        unarmored:      false,
-    };
+const GUILD_QUESTS = {
+    // LEVEL 1-3 - Whispering Forest
+    guild_1: { id:'guild_1', level:1, type:'standard', target:'goblin', targetName:'Goblin',
+               flavorItem:'Goblin Ears', zone:'the Whispering Forest', emoji:'👺', nextQuest:'guild_2' },
+    guild_2: { id:'guild_2', level:2, type:'elite', target:'goblin_shaman', targetName:'Goblin Shaman',
+               flavorItem:'Shaman Totems', zone:'the Whispering Forest', emoji:'🔮', nextQuest:'guild_3' },
+    guild_3: { id:'guild_3', level:3, type:'boss', target:'ogre', targetName:'Ogre',
+               flavorItem:'Ogre Hide', zone:'the Whispering Forest', emoji:'👹', nextQuest:null },
+    
+    // LEVEL 4-6 - Misty Riverside
+    guild_4: { id:'guild_4', level:4, type:'standard', target:'harpy', targetName:'Harpy',
+               flavorItem:'Harpy Feathers', zone:'the Misty Riverside', emoji:'🦅', nextQuest:'guild_5' },
+    guild_5: { id:'guild_5', level:5, type:'elite', target:'bandit', targetName:'Bandit Leader',
+               flavorItem:'Stolen Goods', zone:'the Misty Riverside', emoji:'🗡️', nextQuest:'guild_6' },
+    guild_6: { id:'guild_6', level:6, type:'boss', target:'flesh_golem', targetName:'Flesh Golem',
+               flavorItem:'Golem Heart', zone:'the Misty Riverside', emoji:'🧟', nextQuest:null },
+    
+    // LEVEL 7-9 - Haunted Graveyard
+    guild_7: { id:'guild_7', level:7, type:'standard', target:'skeleton', targetName:'Skeleton',
+               flavorItem:'Finger Bones', zone:'the Haunted Graveyard', emoji:'💀', nextQuest:'guild_8' },
+    guild_8: { id:'guild_8', level:8, type:'elite', target:'zombie', targetName:'Plague Zombie',
+               flavorItem:'Plague Samples', zone:'the Haunted Graveyard', emoji:'🧟', nextQuest:'guild_9' },
+    guild_9: { id:'guild_9', level:9, type:'boss', target:'werewolf', targetName:'Werewolf Alpha',
+               flavorItem:'Alpha Claw', zone:'the Haunted Graveyard', emoji:'🐺', nextQuest:null },
+    
+    // LEVEL 10-12 - Blackwater Swamp
+    guild_10: { id:'guild_10', level:10, type:'standard', target:'troll', targetName:'Troll',
+                flavorItem:'Troll Hide', zone:'the Blackwater Swamp', emoji:'🧌', nextQuest:'guild_11' },
+    guild_11: { id:'guild_11', level:11, type:'elite', target:'werewolf', targetName:'Werewolf',
+                flavorItem:'Wolf Fangs', zone:'the Blackwater Swamp', emoji:'🐺', nextQuest:'guild_12' },
+    guild_12: { id:'guild_12', level:12, type:'boss', target:'troll', targetName:'Cave Troll',
+                flavorItem:'Troll Teeth', zone:'the Blackwater Swamp', emoji:'🧌', nextQuest:null },
+    
+    // LEVEL 13-15 - Cursed Ruins
+    guild_13: { id:'guild_13', level:13, type:'standard', target:'dark_cultist', targetName:'Dark Cultist',
+                flavorItem:'Cult Robes', zone:'the Cursed Ruins', emoji:'🔮', nextQuest:'guild_14' },
+    guild_14: { id:'guild_14', level:14, type:'elite', target:'dark_priest', targetName:'Dark Priest',
+                flavorItem:'Cursed Idols', zone:'the Cursed Ruins', emoji:'🗿', nextQuest:'guild_15' },
+    guild_15: { id:'guild_15', level:15, type:'boss', target:'golem', targetName:'Ancient Golem',
+                flavorItem:'Golem Core', zone:'the Cursed Ruins', emoji:'🗿', nextQuest:null },
+    
+    // LEVEL 16-18 - Shadow Cavern
+    guild_16: { id:'guild_16', level:16, type:'standard', target:'cave_troll', targetName:'Cave Troll',
+                flavorItem:'Troll Fat', zone:'the Shadow Cavern', emoji:'🧌', nextQuest:'guild_17' },
+    guild_17: { id:'guild_17', level:17, type:'elite', target:'stone_golem', targetName:'Stone Golem',
+                flavorItem:'Golem Core', zone:'the Shadow Cavern', emoji:'🗿', nextQuest:'guild_18' },
+    guild_18: { id:'guild_18', level:18, type:'boss', target:'minotaur', targetName:'Minotaur',
+                flavorItem:'Minotaur Horn', zone:'the Shadow Cavern', emoji:'🐂', nextQuest:null },
+    
+    // LEVEL 19-21 - Ancient Crypt
+    guild_19: { id:'guild_19', level:19, type:'standard', target:'skeleton_warrior', targetName:'Skeleton Warrior',
+                flavorItem:'Rusted Swords', zone:'the Ancient Crypt', emoji:'⚔️', nextQuest:'guild_20' },
+    guild_20: { id:'guild_20', level:20, type:'elite', target:'vampire', targetName:'Vampire',
+                flavorItem:'Vampire Fangs', zone:'the Ancient Crypt', emoji:'🧛', nextQuest:'guild_21' },
+    guild_21: { id:'guild_21', level:21, type:'boss', target:'vampire_lord', targetName:'Vampire Lord',
+                flavorItem:'Vampire Heart', zone:'the Ancient Crypt', emoji:'🧛', nextQuest:null },
+    
+    // LEVEL 22-24 - Demon Portal
+    guild_22: { id:'guild_22', level:22, type:'standard', target:'demon', targetName:'Demon',
+                flavorItem:'Demon Horn', zone:'the Demon Portal', emoji:'😈', nextQuest:'guild_23' },
+    guild_23: { id:'guild_23', level:23, type:'elite', target:'pit_fiend', targetName:'Pit Fiend',
+                flavorItem:'Infernal Brand', zone:'the Demon Portal', emoji:'🔥', nextQuest:'guild_24' },
+    guild_24: { id:'guild_24', level:24, type:'boss', target:'dragon', targetName:'Dragon',
+                flavorItem:'Dragon Scale', zone:'the Demon Portal', emoji:'🐉', nextQuest:null }
+};
 
-    return armor;
-}
+// ═══════════════════════════════════════════════════════════════
+// BOSS ENEMY MAPPING - Maps guild quests to actual boss enemies
+// ═══════════════════════════════════════════════════════════════
+const BOSS_ENEMIES = {
+    guild_3: 'ogre',
+    guild_6: 'flesh_golem',
+    guild_9: 'werewolf',
+    guild_12: 'troll',
+    guild_15: 'golem',
+    guild_18: 'minotaur',
+    guild_21: 'vampire_lord',
+    guild_24: 'dragon'
+};
 
 // ═══════════════════════════════════════════════════════════════
 // SHOW GUILD BOARD
 // ═══════════════════════════════════════════════════════════════
 function showGuild() {
-    const p      = gameState.player;
-    const tid    = gameState.currentTown || 'town1';
+    const p = gameState.player;
     const screen = document.getElementById('mainScreen');
-
-    if (!p.guildQuests) p.guildQuests = { active: null, completed: {} };
+    
+    // Initialize guildQuests if needed
+    if (!p.guildQuests) p.guildQuests = { active: [], completed: {} };
+    if (!Array.isArray(p.guildQuests.active)) p.guildQuests.active = [];
+    
     const gq = p.guildQuests;
-
-    const level    = p.level;
-    const questId  = `guild_${level}`;
-    const questDef = GUILD_QUESTS[questId];
-    const isCompleted = gq.completed && gq.completed[questId];
-    const hasActive   = gq.active && gq.active.questId === questId;
-    const isWeaponQuest = level % 2 === 1; // odd = weapon, even = armor
-
-    // Build header
+    const playerLevel = p.level;
+    
     let html = `
         <div class="location-header">⚔️ ADVENTURERS GUILD</div>
         <button onclick="showTown()" style="margin-bottom:10px;">← BACK</button>
         ${renderPlayerStats()}
         <div class="message" style="border-color:#FFD700;">
             <p style="color:#FFD700;letter-spacing:2px;">GUILD NOTICE BOARD</p>
-            <p style="font-size:13px;color:#888;">Complete guild contracts to earn rare equipment and renown.
-            One contract is available per level. Contracts must be turned in at the issuing guild hall.</p>
+            <p style="font-size:13px;color:#888;">Complete contracts to earn rewards and unlock tougher challenges.</p>
         </div>
     `;
-
-    if (!questDef) {
-        html += `<div class="message"><p style="color:#888;">No contracts available at your current level.</p></div>`;
-        screen.innerHTML = html;
-        return;
+    
+    // ── ACTIVE QUESTS SECTION ─────────────────────────────────────
+    if (gq.active.length > 0) {
+        html += `
+            <div style="margin:15px 0;">
+                <p style="color:#FFD700;font-size:15px;letter-spacing:2px;">⚔️ ACTIVE CONTRACTS (${gq.active.length})</p>`;
+        
+        gq.active.forEach(activeQuest => {
+            const questDef = GUILD_QUESTS[activeQuest.questId];
+            if (!questDef) return;
+            
+            const killCount = guildKillCount(questDef.type);
+            const currentKills = Math.max(0, (p.kills?.[questDef.target] || 0) - (activeQuest.killsAtAccept || 0));
+            const killProgress = Math.min(killCount, currentKills);
+            const pct = Math.min(100, Math.floor((killProgress / killCount) * 100));
+            const isReady = killProgress >= killCount;
+            
+            html += `
+                <div class="message" style="border-color:${isReady ? '#00FF88' : '#FF8800'};margin-bottom:12px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <span style="font-size:16px;">${questDef.emoji} ${questDef.targetName} (${questDef.type})</span>
+                        <span style="color:${isReady ? '#00FF88' : '#FF8800'};font-size:12px;">
+                            ${isReady ? '✓ READY' : killProgress + '/' + killCount}
+                        </span>
+                    </div>
+                    <p style="font-size:13px;color:#888;margin:5px 0;">
+                        Slay ${questDef.targetName}s in ${questDef.zone}
+                    </p>
+                    <div style="margin:8px 0;">
+                        <div style="background:#111;border:1px solid #333;height:15px;border-radius:8px;overflow:hidden;">
+                            <div style="background:linear-gradient(90deg,#FF8800,#FFD700);height:100%;width:${pct}%;border-radius:8px;"></div>
+                        </div>
+                    </div>`;
+            
+            if (isReady) {
+                html += `
+                    <div class="menu-option" onclick="showGuildTurnIn('${questDef.id}')"
+                         style="border-color:#00FF88;color:#00FF88;text-align:center;margin-top:8px;padding:8px;">
+                        ⚔️ TURN IN CONTRACT
+                    </div>`;
+            }
+            
+            html += `
+                <div class="menu-option" onclick="abandonGuildQuest('${questDef.id}')"
+                     style="border-color:#ff4444;color:#ff4444;text-align:center;margin-top:8px;font-size:12px;padding:6px;">
+                    ✕ ABANDON
+                </div>
+            </div>`;
+        });
+        
+        html += `</div>`;
     }
-
-    const killCount    = guildKillCount(level);
-    const xpReward     = guildXpReward(level);
-    const goldReward   = guildGoldReward(level);
-    const currentKills = hasActive
-        ? Math.min(killCount, p.kills?.[questDef.target] || 0) - (gq.active.killsAtAccept || 0)
-        : 0;
-    const killProgress = hasActive ? Math.max(0, currentKills) : 0;
-    const isReadyToTurnIn = hasActive && killProgress >= killCount && gq.active.townId === tid;
-    const wrongTown       = hasActive && killProgress >= killCount && gq.active.townId !== tid;
-
-    // ── Completed ─────────────────────────────────────────────────
-    if (isCompleted) {
+    
+    // ── AVAILABLE QUESTS SECTION ─────────────────────────────────
+    html += `<div style="margin:15px 0;"><p style="color:#4488FF;font-size:15px;letter-spacing:2px;">📋 AVAILABLE CONTRACTS</p>`;
+    
+    // Show all quests up to player level that are not completed or active
+    for (let lvl = 1; lvl <= playerLevel; lvl++) {
+        const questId = `guild_${lvl}`;
+        const questDef = GUILD_QUESTS[questId];
+        if (!questDef) continue;
+        
+        // Skip if completed
+        if (gq.completed[questId]) continue;
+        
+        // Skip if already active
+        if (gq.active.some(a => a.questId === questId)) continue;
+        
+        // PROGRESSION LOGIC:
+        let shouldShow = false;
+        
+        if (questDef.type === 'standard') {
+            shouldShow = true;
+        }
+        else if (questDef.type === 'elite') {
+            const prevStandardId = `guild_${lvl-1}`;
+            if (gq.completed[prevStandardId]) {
+                shouldShow = true;
+            }
+        }
+        else if (questDef.type === 'boss' || questDef.type === 'ultimate') {
+            const prevEliteId = `guild_${lvl-1}`;
+            if (gq.completed[prevEliteId]) {
+                shouldShow = true;
+            }
+        }
+        
+        if (!shouldShow) continue;
+        
+        const killCount = guildKillCount(questDef.type);
+        const rewardDesc = questDef.type === 'standard' ? 'Gold + XP' :
+                          questDef.type === 'elite' ? 'Gold + XP + Blue Armor' :
+                          questDef.type === 'boss' ? 'Gold + XP + Purple Weapon' :
+                          'Gold + XP + Orange Weapon';
+        
         html += `
-            <div class="message" style="border-color:#555;">
-                <p style="color:#555;letter-spacing:2px;">CONTRACT FULFILLED</p>
-                <p style="font-size:15px;color:#444;">${questDef.emoji} Level ${level} contract has already been completed.</p>
-                <p style="font-size:13px;color:#333;">Check back when you reach the next level.</p>
-            </div>`;
-
-    // ── Active quest — ready to turn in ───────────────────────────
-    } else if (isReadyToTurnIn) {
-        html += `
-            <div class="message" style="border-color:#00FF88;">
-                <p style="color:#00FF88;letter-spacing:2px;">✅ CONTRACT COMPLETE — READY FOR TURN-IN</p>
-                <p style="font-size:18px;">${questDef.emoji} ${questDef.targetName} Slayer</p>
-                <p>You have slain <span style="color:#FFD700;">${killCount} ${questDef.targetName}s</span>
-                   and collected their ${questDef.flavorItem}.</p>
-                <p style="color:#888;font-size:13px;">Reward: <span style="color:#FFD700;">${goldReward}g</span> +
-                   <span style="color:#00FF88;">${xpReward} XP</span> +
-                   <span style="color:#4488FF;">${isWeaponQuest ? 'Rare Class Weapon' : 'Rare Class Armor'}</span></p>
-                <div class="menu-option" onclick="showGuildTurnIn()"
-                     style="border-color:#00FF88;color:#00FF88;text-align:center;margin-top:10px;">
-                    ⚔️ TURN IN CONTRACT
+            <div class="message" style="border-color:#4488FF;margin-bottom:12px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:16px;">${questDef.emoji} ${questDef.targetName} (Level ${lvl} - ${questDef.type})</span>
                 </div>
-            </div>`;
-
-    // ── Active quest — in progress ────────────────────────────────
-    } else if (hasActive) {
-        const pct = Math.min(100, Math.floor((killProgress / killCount) * 100));
-        html += `
-            <div class="message" style="border-color:#FF8800;">
-                <p style="color:#FF8800;letter-spacing:2px;">📋 ACTIVE CONTRACT</p>
-                <p style="font-size:18px;">${questDef.emoji} ${questDef.targetName} Slayer</p>
-                <p>Slay <span style="color:#FFD700;">${killCount} ${questDef.targetName}s</span>
-                   in ${questDef.zone} and return with their ${questDef.flavorItem}.</p>
-                <div style="margin:10px 0;">
-                    <div style="display:flex;justify-content:space-between;font-size:13px;color:#888;margin-bottom:4px;">
-                        <span>Progress</span>
-                        <span style="color:#FFD700;">${killProgress} / ${killCount}</span>
-                    </div>
-                    <div style="background:#111;border:1px solid #333;height:18px;border-radius:9px;overflow:hidden;">
-                        <div style="background:linear-gradient(90deg,#FF8800,#FFD700);height:100%;width:${pct}%;border-radius:9px;transition:width 0.3s;"></div>
-                    </div>
-                </div>
-                ${wrongTown ? `<p style="color:#ff6666;font-size:13px;">⚠️ Return to the guild hall where you accepted this contract to turn it in.</p>` : ''}
-                <p style="color:#888;font-size:13px;">Reward: <span style="color:#FFD700;">${goldReward}g</span> +
-                   <span style="color:#00FF88;">${xpReward} XP</span> +
-                   <span style="color:#4488FF;">${isWeaponQuest ? 'Rare Class Weapon' : 'Rare Class Armor'}</span></p>
-                <div class="menu-option" onclick="abandonGuildQuest()"
-                     style="border-color:#ff4444;color:#ff4444;text-align:center;margin-top:10px;font-size:14px;">
-                    ✕ ABANDON CONTRACT
-                </div>
-            </div>`;
-
-    // ── Available quest ────────────────────────────────────────────
-    } else {
-        html += `
-            <div class="message" style="border-color:#4488FF;">
-                <p style="color:#4488FF;letter-spacing:2px;">📋 AVAILABLE CONTRACT — LEVEL ${level}</p>
-                <p style="font-size:20px;">${questDef.emoji} ${questDef.targetName} Slayer</p>
-                <p style="color:#aaa;font-size:14px;font-style:italic;margin-bottom:10px;">
-                    "We need someone to deal with the ${questDef.targetName} problem in ${questDef.zone}.
-                    Bring back ${killCount} ${questDef.flavorItem} as proof."
+                <p style="font-size:13px;color:#888;margin:5px 0;">
+                    Slay ${killCount} ${questDef.targetName}s in ${questDef.zone}
                 </p>
-                <p><strong style="color:#FFD700;">Targets:</strong>
-                   Slay <span style="color:#FF8800;">${killCount} ${questDef.targetName}s</span></p>
-                <p><strong style="color:#FFD700;">Location:</strong> ${questDef.zone}</p>
-                <p><strong style="color:#FFD700;">Reward:</strong>
-                   <span style="color:#FFD700;">${goldReward}g</span> +
-                   <span style="color:#00FF88;">${xpReward} XP</span> +
-                   <span style="color:#4488FF;">your choice of ${isWeaponQuest ? 'Rare Class Weapon' : 'Rare Class Armor'}</span>
-                </p>
-                <p style="font-size:12px;color:#555;">⚠️ You must return to THIS guild hall to turn in your contract.</p>
-                <div class="menu-option" onclick="acceptGuildQuest('${questId}', '${tid}')"
-                     style="border-color:#4488FF;color:#4488FF;text-align:center;margin-top:12px;">
+                <p><strong style="color:#FFD700;">Reward:</strong> ${rewardDesc}</p>
+                <div class="menu-option" onclick="acceptGuildQuest('${questDef.id}')"
+                     style="border-color:#4488FF;color:#4488FF;text-align:center;margin-top:8px;padding:8px;">
                     ✦ ACCEPT CONTRACT
                 </div>
             </div>`;
     }
-
-    // ── Completed contracts log ───────────────────────────────────
-    const completedIds = Object.keys(gq.completed || {});
-    if (completedIds.length > 0) {
+    
+    html += `</div>`;
+    
+    // ── COMPLETED QUESTS ─────────────────────────────────────
+    const completedCount = Object.keys(gq.completed).length;
+    if (completedCount > 0) {
         html += `
             <div style="margin-top:20px;">
-                <p style="color:#333;letter-spacing:2px;font-size:13px;">COMPLETED CONTRACTS (${completedIds.length})</p>`;
-        completedIds.forEach(cid => {
-            const cd = GUILD_QUESTS[cid];
-            if (cd) html += `<p style="color:#2a2a2a;font-size:13px;">✓ Lv${cd.level} — ${cd.emoji} ${cd.targetName} Slayer</p>`;
-        });
+                <p style="color:#333;letter-spacing:2px;font-size:13px;">✓ COMPLETED CONTRACTS (${completedCount})</p>`;
         html += `</div>`;
     }
-
+    
     html += `<button onclick="showTown()" style="margin-top:16px;">← BACK TO TOWN</button>`;
     screen.innerHTML = html;
 }
@@ -316,219 +622,542 @@ function showGuild() {
 // ═══════════════════════════════════════════════════════════════
 // ACCEPT QUEST
 // ═══════════════════════════════════════════════════════════════
-function acceptGuildQuest(questId, townId) {
-    const p  = gameState.player;
-    if (!p.guildQuests) p.guildQuests = { active: null, completed: {} };
-
+function acceptGuildQuest(questId) {
+    const p = gameState.player;
     const questDef = GUILD_QUESTS[questId];
     if (!questDef) return;
-
-    // Store kill count at time of acceptance so progress = kills_now - kills_then
+    
+    // Initialize if needed
+    if (!p.guildQuests) p.guildQuests = { active: [], completed: {} };
+    if (!Array.isArray(p.guildQuests.active)) p.guildQuests.active = [];
+    
+    // Check if already active or completed
+    if (p.guildQuests.active.some(a => a.questId === questId)) {
+        alert('You already have this contract!');
+        return;
+    }
+    if (p.guildQuests.completed[questId]) {
+        alert('You have already completed this contract!');
+        return;
+    }
+    
+    // Store kill count at acceptance
     const killsAtAccept = p.kills?.[questDef.target] || 0;
-
-    p.guildQuests.active = {
+    
+    p.guildQuests.active.push({
         questId,
-        townId,
         killsAtAccept,
-    };
-
+        acceptedAt: Date.now()
+    });
+    
     saveGame();
     showGuild();
+    
+    // Flash confirmation
+    const flash = document.createElement('div');
+    flash.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#0a0a0a;border:2px solid #4488FF;padding:10px 20px;color:#4488FF;z-index:9999;';
+    flash.textContent = `📋 Accepted: ${questDef.targetName} (${questDef.type})`;
+    document.body.appendChild(flash);
+    setTimeout(() => flash.remove(), 2000);
 }
 
 // ═══════════════════════════════════════════════════════════════
 // ABANDON QUEST
 // ═══════════════════════════════════════════════════════════════
-function abandonGuildQuest() {
+function abandonGuildQuest(questId) {
     const p = gameState.player;
-    if (!p.guildQuests) return;
-    if (confirm('Abandon this contract? Your kill progress will be lost.')) {
-        p.guildQuests.active = null;
+    if (!p.guildQuests || !Array.isArray(p.guildQuests.active)) return;
+    
+    const questDef = GUILD_QUESTS[questId];
+    if (!questDef) return;
+    
+    if (confirm(`Abandon the ${questDef.targetName} contract? Progress will be lost.`)) {
+        p.guildQuests.active = p.guildQuests.active.filter(q => q.questId !== questId);
         saveGame();
         showGuild();
     }
 }
 
 // ═══════════════════════════════════════════════════════════════
-// TURN IN — show reward choice
+// CELEBRATION ANIMATION - FIXED VERSION
 // ═══════════════════════════════════════════════════════════════
-function showGuildTurnIn() {
-    const p      = gameState.player;
-    const screen = document.getElementById('mainScreen');
-    const level  = p.level;
-    const questId = `guild_${level}`;
-    const questDef = GUILD_QUESTS[questId];
-    if (!questDef) return;
-
-    const isWeaponQuest  = level % 2 === 1;
-    const xpReward       = guildXpReward(level);
-    const goldReward     = guildGoldReward(level);
-
-    // Pre-generate two reward options
-    let option1, option2, option1Html, option2Html;
-
-    if (isWeaponQuest) {
-        option1 = generateGuildWeaponReward(p, level);
-        option2 = generateGuildWeaponReward(p, level);
-        const qc = QUALITY_CONFIG['rare'];
-
-        function weaponHtml(w, idx) {
-            const qb   = getQualityBonus(w.quality, w.baseDamage);
-            const tMin = w.baseDamage + qb;
-            const tMax = w.maxDamage  + getQualityBonus(w.quality, w.maxDamage - w.baseDamage);
-            return `
-                <div class="menu-option" onclick="claimGuildReward('weapon', ${idx})"
-                     style="border-color:${qc.color};margin-bottom:8px;">
-                    <div style="color:${qc.color};font-size:17px;">⚔️ ${w.name}</div>
-                    <div style="font-size:13px;color:#888;">Rare ${w.type} · Level ${w.level}</div>
-                    <div style="font-size:13px;">${buildWeaponDmgLine(w, null, p)}</div>
-                    ${w.baseMagicDamage > 0 ? `<div style="color:#88aaff;font-size:13px;">MAGIC: +${w.baseMagicDamage}</div>` : ''}
-                    <div style="color:#555;font-size:12px;">○ 1 empty gem slot</div>
-                    <div style="color:#4488FF;font-size:13px;margin-top:4px;">► CHOOSE THIS WEAPON</div>
-                </div>`;
-        }
-        option1Html = weaponHtml(option1, 0);
-        option2Html = weaponHtml(option2, 1);
-
-        // Stash options temporarily
-        window._guildRewardOptions = [option1, option2];
-        window._guildRewardType    = 'weapon';
-
-    } else {
-        option1 = generateGuildArmorReward(p, level);
-        option2 = generateGuildArmorReward(p, level);
-        const qc = QUALITY_CONFIG['rare'];
-
-        function armorHtml(a, idx) {
-            const qb   = getQualityBonus(a.quality, a.baseDefense);
-            const tDef = a.baseDefense + qb + (p.con || 0);
-            return `
-                <div class="menu-option" onclick="claimGuildReward('armor', ${idx})"
-                     style="border-color:${qc.color};margin-bottom:8px;">
-                    <div style="color:${qc.color};font-size:17px;">🛡️ ${a.name}</div>
-                    <div style="font-size:13px;color:#888;">Rare ${a.type} armor · Level ${a.level}</div>
-                    <div style="font-size:13px;color:#88ccff;">YOUR DEF: ${tDef}${a.baseMagicBonus > 0 ? ` | MAG+: ${a.baseMagicBonus}` : ''}</div>
-                    <div style="color:#555;font-size:12px;">○ 1 empty gem slot</div>
-                    <div style="color:#4488FF;font-size:13px;margin-top:4px;">► CHOOSE THIS ARMOR</div>
-                </div>`;
-        }
-        option1Html = armorHtml(option1, 0);
-        option2Html = armorHtml(option2, 1);
-
-        window._guildRewardOptions = [option1, option2];
-        window._guildRewardType    = 'armor';
+function playGuildCompletionAnimation(questDef) {
+    // Create flash overlay
+    const flash = document.createElement('div');
+    flash.id = 'guild-completion-flash';
+    flash.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: white;
+        z-index: 10000;
+        opacity: 0;
+        pointer-events: none;
+        animation: guildCompletionFlash 0.8s ease-out forwards;
+    `;
+    document.body.appendChild(flash);
+    
+    // Add animation keyframes if they don't exist
+    if (!document.getElementById('guild-animation-styles')) {
+        const style = document.createElement('style');
+        style.id = 'guild-animation-styles';
+        style.textContent = `
+            @keyframes guildCompletionFlash {
+                0% { opacity: 0; }
+                20% { opacity: 0.9; }
+                40% { opacity: 0.4; }
+                60% { opacity: 0.7; }
+                80% { opacity: 0.2; }
+                100% { opacity: 0; }
+            }
+            
+            @keyframes guildCompletionBurst {
+                0% { transform: scale(0.3); opacity: 0; }
+                50% { transform: scale(1.2); opacity: 1; }
+                100% { transform: scale(1); opacity: 1; }
+            }
+            
+            @keyframes guildRewardPulse {
+                0%, 100% { box-shadow: 0 0 20px rgba(255,215,0,0.3); }
+                50% { box-shadow: 0 0 40px rgba(255,215,0,0.8); }
+            }
+        `;
+        document.head.appendChild(style);
     }
+    
+    // Create announcement banner - FIXED VERSION
+    const bannerWrapper = document.createElement('div');
+    bannerWrapper.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10001;
+        pointer-events: none;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: auto;
+        height: auto;
+    `;
 
-    const html = `
-        <div class="location-header">⚔️ CONTRACT COMPLETE!</div>
-        <div class="message" style="border-color:#FFD700;">
-            <p style="color:#FFD700;font-size:18px;">Well done, adventurer!</p>
-            <p>The guild thanks you for your service. Your payment has been prepared.</p>
-            <p style="color:#00FF88;">+ ${xpReward} XP &nbsp;|&nbsp; <span style="color:#FFD700;">+ ${goldReward}g</span></p>
+    const banner = document.createElement('div');
+    banner.id = 'guild-completion-banner';
+    banner.style.cssText = `
+        position: relative;
+        text-align: center;
+        animation: guildCompletionBurst 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        transform-origin: center center;
+        background: rgba(0,0,0,0.8);
+        padding: 30px 50px;
+        border-radius: 20px;
+        border: 2px solid #FFD700;
+        box-shadow: 0 0 50px rgba(255,215,0,0.3);
+        white-space: nowrap;
+    `;
+    
+    banner.innerHTML = `
+        <div style="font-size: 60px; margin-bottom: 10px; filter: drop-shadow(0 0 20px gold);">✨</div>
+        <div style="font-family: 'Georgia', serif; font-size: 32px; color: #FFD700; text-shadow: 0 0 20px rgba(255,215,0,0.8); letter-spacing: 4px; white-space: nowrap;">
+            CONTRACT COMPLETE!
         </div>
-        <div class="message" style="border-color:#4488FF;">
-            <p style="color:#4488FF;letter-spacing:2px;">CHOOSE YOUR REWARD</p>
-            <p style="font-size:13px;color:#666;">Select one item to keep. The other will be returned to the guild stores.</p>
-            ${option1Html}
-            ${option2Html}
+        <div style="font-family: 'VT323', monospace; font-size: 24px; color: #00FF88; margin-top: 10px; white-space: nowrap;">
+            ${questDef.emoji} ${questDef.targetName} Slayer
         </div>
     `;
-    screen.innerHTML = html;
+
+    bannerWrapper.appendChild(banner);
+    document.body.appendChild(bannerWrapper);
+    
+    // Remove animation elements after they finish
+    setTimeout(() => {
+        if (flash && flash.parentNode) flash.remove();
+        if (bannerWrapper && bannerWrapper.parentNode) bannerWrapper.remove();
+    }, 2000);
 }
 
 // ═══════════════════════════════════════════════════════════════
-// CLAIM REWARD — player picks option 0 or 1
+// SHOW TURN-IN SCREEN with celebration animation
 // ═══════════════════════════════════════════════════════════════
-function claimGuildReward(type, idx) {
-    const p        = gameState.player;
-    const level    = p.level;
-    const questId  = `guild_${level}`;
-    const chosen   = window._guildRewardOptions[idx];
-    const xpReward = guildXpReward(level);
-    const goldReward = guildGoldReward(level);
+function showGuildTurnIn(questId) {
+    const p = gameState.player;
+    const screen = document.getElementById('mainScreen');
+    const questDef = GUILD_QUESTS[questId];
+    if (!questDef) return;
+    
+    // Play celebration animation
+    playGuildCompletionAnimation(questDef);
+    
+    // Show the reward selection screen after animation starts
+    setTimeout(() => {
+        showGuildRewardSelection(questId);
+    }, 800);
+}
 
-    // Apply gold + XP
-    p.gold += goldReward;
-    p.xp   += xpReward;
-
-    // Add item to game data and inventory
-    if (type === 'weapon') {
-        WEAPONS[chosen.id] = chosen;
-        p.inventory.push(chosen.id);
-    } else {
-        ARMOR[chosen.id] = chosen;
-        p.inventory.push(chosen.id);
+// ═══════════════════════════════════════════════════════════════
+// REWARD SELECTION SCREEN
+// ═══════════════════════════════════════════════════════════════
+function showGuildRewardSelection(questId) {
+    const p = gameState.player;
+    const screen = document.getElementById('mainScreen');
+    const questDef = GUILD_QUESTS[questId];
+    if (!questDef) return;
+    
+    const xpReward = guildXpReward(questDef.level, questDef.type);
+    const goldReward = guildGoldReward(questDef.level, questDef.type);
+    
+    let rewardHtml = '';
+    let rewardChoiceHtml = '';
+    
+    // Standard quest: just gold and XP
+    if (questDef.type === 'standard') {
+        rewardHtml = `
+            <div style="background: linear-gradient(135deg, #1a3a1a, #0a1a0a); border-radius: 8px; padding: 15px; margin: 15px 0;">
+                <p style="color:#00FF88; font-size: 20px; margin: 0;">+ ${xpReward} XP</p>
+                <p style="color:#FFD700; font-size: 20px; margin: 5px 0 0;">+ ${goldReward} Gold</p>
+            </div>
+        `;
+        rewardChoiceHtml = `
+            <div style="margin-top: 25px; animation: guildRewardPulse 2s ease-in-out infinite;">
+                <div class="menu-option" onclick="claimGuildReward('${questDef.id}', null, null)"
+                     style="border-color:#00FF88; color:#00FF88; text-align:center; padding:15px; font-size:18px;">
+                    ⚔️ CLAIM REWARD
+                </div>
+            </div>
+        `;
     }
+    // Elite quest: choose between two armor pieces
+    else if (questDef.type === 'elite') {
+        const option1 = generateEliteArmorReward(p, questDef.level);
+        const option2 = generateEliteArmorReward(p, questDef.level);
+        
+        window._guildRewardOptions = [option1, option2];
+        window._guildRewardQuestId = questDef.id;
+        window._guildRewardType = 'armor';
+        
+        rewardHtml = `
+            <div style="background: linear-gradient(135deg, #1a3a1a, #0a1a0a); border-radius: 8px; padding: 15px; margin: 15px 0;">
+                <p style="color:#00FF88; font-size: 20px; margin: 0;">+ ${xpReward} XP</p>
+                <p style="color:#FFD700; font-size: 20px; margin: 5px 0;">+ ${goldReward} Gold</p>
+                <p style="color:#4488FF; font-size: 18px; margin: 10px 0 0;">+ Blue (rare) class armor</p>
+            </div>
+        `;
+        
+        rewardChoiceHtml = `
+            <div style="margin-top: 20px;">
+                <p style="color:#4488FF; font-size: 20px; margin-bottom: 15px; text-align:center;">✨ CHOOSE YOUR REWARD ✨</p>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;">
+                    <div class="menu-option" onclick="claimGuildReward('${questDef.id}', 'armor', 0)"
+                         style="border-color:#4488FF; flex: 1; min-width: 200px; padding: 15px; transition: transform 0.2s; cursor: pointer;">
+                        <div style="font-size: 40px; margin-bottom: 5px;">🛡️</div>
+                        <div style="color:#4488FF; font-size: 18px;">${option1.name}</div>
+                        <div style="color:#888; font-size: 14px; margin-top: 5px;">DEF: ${option1.baseDefense} | 1 gem slot</div>
+                    </div>
+                    <div class="menu-option" onclick="claimGuildReward('${questDef.id}', 'armor', 1)"
+                         style="border-color:#4488FF; flex: 1; min-width: 200px; padding: 15px; transition: transform 0.2s; cursor: pointer;">
+                        <div style="font-size: 40px; margin-bottom: 5px;">🛡️</div>
+                        <div style="color:#4488FF; font-size: 18px;">${option2.name}</div>
+                        <div style="color:#888; font-size: 14px; margin-top: 5px;">DEF: ${option2.baseDefense} | 1 gem slot</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    // Boss quest: choose between two weapons
+    else if (questDef.type === 'boss') {
+        const option1 = generateBossWeaponReward(p, questDef.level);
+        const option2 = generateBossWeaponReward(p, questDef.level);
+        
+        window._guildRewardOptions = [option1, option2];
+        window._guildRewardQuestId = questDef.id;
+        window._guildRewardType = 'weapon';
+        
+        rewardHtml = `
+            <div style="background: linear-gradient(135deg, #1a3a1a, #0a1a0a); border-radius: 8px; padding: 15px; margin: 15px 0;">
+                <p style="color:#00FF88; font-size: 20px; margin: 0;">+ ${xpReward} XP</p>
+                <p style="color:#FFD700; font-size: 20px; margin: 5px 0;">+ ${goldReward} Gold</p>
+                <p style="color:#9933FF; font-size: 18px; margin: 10px 0 0;">+ Purple (epic) class weapon</p>
+            </div>
+        `;
+        
+        rewardChoiceHtml = `
+            <div style="margin-top: 20px;">
+                <p style="color:#9933FF; font-size: 20px; margin-bottom: 15px; text-align:center;">✨ CHOOSE YOUR REWARD ✨</p>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;">
+                    <div class="menu-option" onclick="claimGuildReward('${questDef.id}', 'weapon', 0)"
+                         style="border-color:#9933FF; flex: 1; min-width: 200px; padding: 15px; transition: transform 0.2s; cursor: pointer;">
+                        <div style="font-size: 40px; margin-bottom: 5px;">⚔️</div>
+                        <div style="color:#9933FF; font-size: 18px;">${option1.name}</div>
+                        <div style="color:#888; font-size: 14px; margin-top: 5px;">DMG: ${option1.baseDamage}-${option1.maxDamage} | 2 gem slots</div>
+                    </div>
+                    <div class="menu-option" onclick="claimGuildReward('${questDef.id}', 'weapon', 1)"
+                         style="border-color:#9933FF; flex: 1; min-width: 200px; padding: 15px; transition: transform 0.2s; cursor: pointer;">
+                        <div style="font-size: 40px; margin-bottom: 5px;">⚔️</div>
+                        <div style="color:#9933FF; font-size: 18px;">${option2.name}</div>
+                        <div style="color:#888; font-size: 14px; margin-top: 5px;">DMG: ${option2.baseDamage}-${option2.maxDamage} | 2 gem slots</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    // Ultimate quest: choose between two legendary weapons
+    else if (questDef.type === 'ultimate') {
+        const option1 = generateUltimateWeaponReward(p, questDef.level);
+        const option2 = generateUltimateWeaponReward(p, questDef.level);
+        
+        window._guildRewardOptions = [option1, option2];
+        window._guildRewardQuestId = questDef.id;
+        window._guildRewardType = 'weapon';
+        
+        rewardHtml = `
+            <div style="background: linear-gradient(135deg, #1a3a1a, #0a1a0a); border-radius: 8px; padding: 15px; margin: 15px 0;">
+                <p style="color:#00FF88; font-size: 20px; margin: 0;">+ ${xpReward} XP</p>
+                <p style="color:#FFD700; font-size: 20px; margin: 5px 0;">+ ${goldReward} Gold</p>
+                <p style="color:#FF9900; font-size: 18px; margin: 10px 0 0;">+ Orange (legendary) class weapon</p>
+            </div>
+        `;
+        
+        rewardChoiceHtml = `
+            <div style="margin-top: 20px;">
+                <p style="color:#FF9900; font-size: 20px; margin-bottom: 15px; text-align:center;">✨ CHOOSE YOUR LEGENDARY REWARD ✨</p>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;">
+                    <div class="menu-option" onclick="claimGuildReward('${questDef.id}', 'weapon', 0)"
+                         style="border-color:#FF9900; flex: 1; min-width: 200px; padding: 15px; transition: transform 0.2s; cursor: pointer;">
+                        <div style="font-size: 40px; margin-bottom: 5px;">⚔️</div>
+                        <div style="color:#FF9900; font-size: 18px;">${option1.name}</div>
+                        <div style="color:#888; font-size: 14px; margin-top: 5px;">DMG: ${option1.baseDamage}-${option1.maxDamage} | 3 gem slots</div>
+                    </div>
+                    <div class="menu-option" onclick="claimGuildReward('${questDef.id}', 'weapon', 1)"
+                         style="border-color:#FF9900; flex: 1; min-width: 200px; padding: 15px; transition: transform 0.2s; cursor: pointer;">
+                        <div style="font-size: 40px; margin-bottom: 5px;">⚔️</div>
+                        <div style="color:#FF9900; font-size: 18px;">${option2.name}</div>
+                        <div style="color:#888; font-size: 14px; margin-top: 5px;">DMG: ${option2.baseDamage}-${option2.maxDamage} | 3 gem slots</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    const html = `
+        <div class="location-header" style="animation: none;">⚔️ CONTRACT COMPLETE!</div>
+        <div class="message" style="border-color:#FFD700; background: linear-gradient(135deg, #1a1a0a, #0a0a00);">
+            <p style="color:#FFD700; font-size: 24px; text-align:center; margin: 0 0 10px;">🏆 ${questDef.emoji} ${questDef.targetName} 🏆</p>
+            <p style="color:#888; font-size: 16px; text-align:center; margin: 0 0 15px;">You've slain the required targets and collected their ${questDef.flavorItem}.</p>
+            ${rewardHtml}
+        </div>
+        ${rewardChoiceHtml}
+        <button onclick="showGuild()" style="margin-top: 20px;">← BACK TO GUILD BOARD</button>
+    `;
+    
+    screen.innerHTML = html;
+    
+    // Add hover effects to reward options
+    setTimeout(() => {
+        document.querySelectorAll('.menu-option[onclick*="claimGuildReward"]').forEach(el => {
+            el.addEventListener('mouseenter', function() {
+                this.style.transform = 'scale(1.05)';
+                this.style.boxShadow = '0 0 30px currentColor';
+            });
+            el.addEventListener('mouseleave', function() {
+                this.style.transform = 'scale(1)';
+                this.style.boxShadow = 'none';
+            });
+        });
+    }, 100);
+}
 
-    // Mark quest complete
-    if (!p.guildQuests) p.guildQuests = { active: null, completed: {} };
+// ═══════════════════════════════════════════════════════════════
+// CLAIM REWARD
+// ═══════════════════════════════════════════════════════════════
+function claimGuildReward(questId, rewardType, optionIndex) {
+    const p = gameState.player;
+    const questDef = GUILD_QUESTS[questId];
+    if (!questDef) return;
+    
+    const xpReward = guildXpReward(questDef.level, questDef.type);
+    const goldReward = guildGoldReward(questDef.level, questDef.type);
+    
+    // Apply gold and XP
+    p.gold += goldReward;
+    p.xp += xpReward;
+    
+    // Handle item rewards for elite/boss/ultimate quests
+    if (rewardType && optionIndex !== null && window._guildRewardOptions) {
+        const chosen = window._guildRewardOptions[optionIndex];
+        
+        if (rewardType === 'armor') {
+            ARMOR[chosen.id] = chosen;
+            p.inventory.push(chosen.id);
+        } else if (rewardType === 'weapon') {
+            WEAPONS[chosen.id] = chosen;
+            p.inventory.push(chosen.id);
+        }
+        
+        // Clear temp storage
+        window._guildRewardOptions = null;
+        window._guildRewardQuestId = null;
+        window._guildRewardType = null;
+    }
+    
+    // Mark quest as completed
+    if (!p.guildQuests) p.guildQuests = { active: [], completed: {} };
     p.guildQuests.completed[questId] = true;
-    p.guildQuests.active = null;
-
-    // Clean up temp storage
-    window._guildRewardOptions = null;
-    window._guildRewardType    = null;
-
+    
+    // Remove from active quests
+    p.guildQuests.active = p.guildQuests.active.filter(q => q.questId !== questId);
+    
     // Check for level up
     let leveledUp = false;
     while (p.xp >= p.xpToNext && p.level < 25) {
         levelUp();
         leveledUp = true;
     }
-
+    
     saveGame();
     updateHud();
-
-    // Show confirmation
+    
+    // Show confirmation screen
     const screen = document.getElementById('mainScreen');
-    const qc     = QUALITY_CONFIG['rare'];
+    const rewardName = (rewardType && optionIndex !== null && window._guildRewardOptions) 
+        ? window._guildRewardOptions[optionIndex]?.name 
+        : null;
+    
+    let rewardLine = '';
+    if (rewardName) {
+        rewardLine = `<p style="color:#00FF88; font-size: 16px; margin-top: 10px;">Received: ${rewardName}</p>`;
+    }
+    
     screen.innerHTML = `
         <div class="location-header">⚔️ REWARD CLAIMED</div>
         <div class="message" style="border-color:#00FF88;">
-            <p style="color:#00FF88;font-size:18px;">Contract fulfilled!</p>
-            <p>Added to your inventory:</p>
-            <p style="color:${qc.color};font-size:18px;">${type === 'weapon' ? '⚔️' : '🛡️'} ${chosen.name}</p>
-            <p style="color:#FFD700;">+ ${goldReward}g &nbsp;|&nbsp; <span style="color:#00FF88;">+ ${xpReward} XP</span></p>
-            ${leveledUp ? `<p style="color:#FFD700;font-size:16px;">⭐ LEVEL UP!</p>` : ''}
-            <p style="color:#555;font-size:12px;">This item has 1 empty gem slot — visit the Blacksmith to enhance it.</p>
+            <p style="color:#00FF88; font-size: 18px;">Contract Complete!</p>
+            <p style="color:#FFD700;">+ ${goldReward} Gold</p>
+            <p style="color:#00FF88;">+ ${xpReward} XP</p>
+            ${rewardLine}
+            ${leveledUp ? '<p style="color:#FFD700; font-size: 16px; margin-top: 10px;">⭐ LEVEL UP!</p>' : ''}
         </div>
-        <div class="menu-option" onclick="showGuild()" style="text-align:center;">
-            ► VIEW GUILD BOARD
+        <div class="menu-option" onclick="showGuild()" style="text-align:center; margin: 10px 0;">
+            ► BACK TO GUILD BOARD
         </div>
-        <button onclick="showTown()" style="margin-top:10px;">← BACK TO TOWN</button>
+        <button onclick="showTown()">← BACK TO TOWN</button>
     `;
 }
 
 // ═══════════════════════════════════════════════════════════════
-// GUILD KILL PROGRESS CHECK
-// Call this from onMonsterKill() to notify the player when their
-// active guild quest target is killed
+// GUILD ENCOUNTER SYSTEM - Checks for elite/boss spawns
+// ═══════════════════════════════════════════════════════════════
+function checkGuildEncounter(locKey) {
+    const p = gameState.player;
+    if (!p.guildQuests || !Array.isArray(p.guildQuests.active) || p.guildQuests.active.length === 0) return false;
+    
+    let encounterTriggered = false;
+    
+    // Check each active quest
+    p.guildQuests.active.forEach(activeQuest => {
+        const questDef = GUILD_QUESTS[activeQuest.questId];
+        if (!questDef) return;
+        
+        // Only elite and boss quests have special encounters
+        if (questDef.type === 'standard') return;
+        
+        // Zone matching
+        let zoneMatch = false;
+        if (locKey === 'forest' && questDef.zone.includes('Whispering')) zoneMatch = true;
+        if (locKey === 'riverside' && questDef.zone.includes('Misty')) zoneMatch = true;
+        if (locKey === 'haunted_graveyard' && questDef.zone.includes('Haunted')) zoneMatch = true;
+        if (locKey === 'dark_swamp' && questDef.zone.includes('Blackwater')) zoneMatch = true;
+        if (locKey === 'cursed_ruins' && questDef.zone.includes('Cursed')) zoneMatch = true;
+        if (locKey === 'cave' && questDef.zone.includes('Shadow')) zoneMatch = true;
+        if (locKey === 'crypt' && questDef.zone.includes('Ancient')) zoneMatch = true;
+        if (locKey === 'demon_portal' && questDef.zone.includes('Demon')) zoneMatch = true;
+        
+        if (!zoneMatch) return;
+        
+        // 10% chance
+        if (Math.random() < 0.10) {
+            encounterTriggered = true;
+            
+            // Show message
+            termAppend('', 'term-separator');
+            termAppend(`<span style="color:#FF4444;font-size:18px;">⚠ GUILD TARGET APPEARS!</span>`, 'term-highlight');
+            
+            if (questDef.type === 'elite') {
+                termAppend(`<span style="color:#FF8800;">An elite ${questDef.targetName} and its minions attack!</span>`, 'term-warning');
+                // Start combat with 2 rare enemies
+                startCombat([questDef.target, questDef.target], false, ['rare', 'rare']);
+                
+            } else { // boss
+                // Get the boss enemy key from our mapping
+                const bossKey = BOSS_ENEMIES[questDef.id];
+                if (!bossKey) {
+                    console.error('No boss mapped for', questDef.id);
+                    return;
+                }
+                
+                const bossEnemy = ENEMIES[bossKey];
+                if (!bossEnemy) {
+                    console.error('Boss enemy not found:', bossKey);
+                    return;
+                }
+                
+                termAppend(`<span style="color:#9933FF;">The ${bossEnemy.name} appears! Defeat it to complete your contract!</span>`, 'term-victory');
+                
+                // Start combat with 1 epic boss enemy
+                startCombat([bossKey], false, ['epic']);
+            }
+        }
+    });
+    
+    return encounterTriggered;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// GUILD KILL PROGRESS CHECK (called from onMonsterKill)
 // ═══════════════════════════════════════════════════════════════
 function checkGuildKillProgress(killKey) {
     const p = gameState.player;
-    if (!p.guildQuests || !p.guildQuests.active) return;
-
-    const gq       = p.guildQuests;
-    const questId  = gq.active.questId;
-    const questDef = GUILD_QUESTS[questId];
-    if (!questDef) return;
-    if (questDef.target !== killKey) return;
-
-    const killCount    = guildKillCount(p.level);
-    const currentKills = Math.max(0, (p.kills?.[killKey] || 0) - (gq.active.killsAtAccept || 0));
-
-    if (currentKills >= killCount) {
-        // Quest complete — notify in terminal if in combat
-        if (typeof termAppend === 'function') {
-            termAppend('', 'term-separator');
-            termAppend(`<span style="color:#FFD700;">⚔️ GUILD CONTRACT COMPLETE!</span> Return to the guild hall to claim your reward.`, 'term-loot');
+    if (!p.guildQuests || !Array.isArray(p.guildQuests.active) || p.guildQuests.active.length === 0) return;
+    
+    // Check each active quest
+    p.guildQuests.active.forEach(activeQuest => {
+        const questDef = GUILD_QUESTS[activeQuest.questId];
+        if (!questDef) return;
+        if (questDef.target !== killKey) return;
+        
+        const killCount = guildKillCount(questDef.type);
+        const currentKills = Math.max(0, (p.kills?.[killKey] || 0) - (activeQuest.killsAtAccept || 0));
+        
+        if (currentKills >= killCount) {
+            // Quest complete — notify
+            if (typeof termAppend === 'function') {
+                termAppend('', 'term-separator');
+                termAppend(`<span style="color:#FFD700;">⚔️ GUILD CONTRACT COMPLETE: ${questDef.targetName} (${questDef.type})!</span> Return to the guild to claim your reward.`, 'term-loot');
+            }
+        } else {
+            // Progress update on each kill
+            if (typeof termAppend === 'function') {
+                termAppend(`<span style="color:#4488FF;">📋 Guild: ${questDef.targetName} (${questDef.type}) ${currentKills}/${killCount}</span>`, 'term-dim');
+            }
         }
-    } else {
-        // Progress update every kill
-        if (typeof termAppend === 'function') {
-            termAppend(`<span style="color:#4488FF;">📋 Guild: ${questDef.targetName} ${currentKills}/${killCount}</span>`, 'term-dim');
-        }
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MIGRATION HELPER - ensures old saves have proper guild data
+// ═══════════════════════════════════════════════════════════════
+function migrateGuildData(p) {
+    if (!p) return;
+    if (!p.guildQuests) {
+        p.guildQuests = { active: [], completed: {} };
+    }
+    if (!Array.isArray(p.guildQuests.active)) {
+        p.guildQuests.active = [];
+    }
+    if (!p.guildQuests.completed) {
+        p.guildQuests.completed = {};
     }
 }
 
-console.log('✅ Guild system loaded');
+console.log('✅ Guild system loaded with 3-tier progression (Standard → Elite → Boss)');
