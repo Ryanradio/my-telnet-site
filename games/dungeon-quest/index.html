@@ -6110,74 +6110,147 @@ guildQuests: (() => {
         currentTown: gameState.currentTown || 'town1',
         
         // ═══════════════════════════════════════════════════════════════
-        // GENERATED WEAPONS - Save all dynamically created weapon drops
-        // ═══════════════════════════════════════════════════════════════
+// GENERATED WEAPONS - Save all dynamically created weapon drops
+// ═══════════════════════════════════════════════════════════════
 generatedWeapons: (() => {
     const generated = {};
-    const isGenerated = (w) => w && (w.isDropped || w.isGuildReward);
-    (p.inventory || []).forEach(itemKey => {
-        const weapon = WEAPONS[itemKey];
-        if (isGenerated(weapon)) {
-            generated[itemKey] = weapon;
+    
+    // Check inventory for weapon instances
+    (p.inventory || []).forEach(item => {
+        // Handle weapon instances (objects with weaponId)
+        if (item && typeof item === 'object' && item.weaponId && item.instanceId) {
+            // Get the full weapon data from WEAPONS
+            const weaponData = WEAPONS[item.weaponId];
+            if (weaponData) {
+                // Store the instance data needed to reconstruct
+                generated[item.instanceId] = {
+                    weaponId: item.weaponId,
+                    instanceId: item.instanceId,
+                    quality: item.quality,
+                    modifiers: item.modifiers || [],
+                    gemSlots: item.gemSlots || 0,
+                    gems: item.gems || [],
+                    dropLevel: item.dropLevel,
+                    dropTime: item.dropTime
+                };
+            }
         }
     });
-    if (p.weapon && isGenerated(WEAPONS[p.weapon])) {
-        generated[p.weapon] = WEAPONS[p.weapon];
+    
+    // Check equipped weapon
+    if (p.weapon && typeof p.weapon === 'string' && p.weapon.includes('_')) {
+        const instance = p.inventory.find(item => 
+            item && typeof item === 'object' && item.instanceId === p.weapon
+        );
+        if (instance) {
+            generated[instance.instanceId] = {
+                weaponId: instance.weaponId,
+                instanceId: instance.instanceId,
+                quality: instance.quality,
+                modifiers: instance.modifiers || [],
+                gemSlots: instance.gemSlots || 0,
+                gems: instance.gems || [],
+                dropLevel: instance.dropLevel,
+                dropTime: instance.dropTime
+            };
+        }
     }
+    
     return generated;
 })(),
-        
-        // ═══════════════════════════════════════════════════════════════
-        // GENERATED ARMOR - Save all dynamically created armor drops
-        // ═══════════════════════════════════════════════════════════════
-  generatedArmor: (() => {
+
+// ═══════════════════════════════════════════════════════════════
+// GENERATED ARMOR - Save all dynamically created armor drops
+// ═══════════════════════════════════════════════════════════════
+generatedArmor: (() => {
     const generated = {};
-    const isGenerated = (a) => a && (a.isDropped || a.isGuildReward);
-    (p.inventory || []).forEach(itemKey => {
-        const armor = ARMOR[itemKey];
-        if (isGenerated(armor)) {
-            generated[itemKey] = armor;
+    
+    // Check inventory for armor instances
+    (p.inventory || []).forEach(item => {
+        // Handle armor instances (objects with armorId)
+        if (item && typeof item === 'object' && item.armorId && item.instanceId) {
+            // Get the full armor data from ARMOR
+            const armorData = ARMOR[item.armorId] || ARMOR[item.instanceId];
+            if (armorData) {
+                // Store the instance data needed to reconstruct
+                generated[item.instanceId] = {
+                    armorId: item.armorId,
+                    instanceId: item.instanceId,
+                    quality: item.quality,
+                    dropLevel: item.dropLevel,
+                    dropTime: item.dropTime
+                };
+            }
         }
     });
-    if (p.armor && isGenerated(ARMOR[p.armor])) {
-        generated[p.armor] = ARMOR[p.armor];
+    
+    // Check equipped armor
+    if (p.armor && typeof p.armor === 'string' && p.armor.includes('_')) {
+        const instance = p.inventory.find(item => 
+            item && typeof item === 'object' && item.instanceId === p.armor
+        );
+        if (instance) {
+            generated[instance.instanceId] = {
+                armorId: instance.armorId,
+                instanceId: instance.instanceId,
+                quality: instance.quality,
+                dropLevel: instance.dropLevel,
+                dropTime: instance.dropTime
+            };
+        }
     }
+    
     return generated;
 })(),
 
-        // ═══════════════════════════════════════════════════════════════
-        // STATIC ITEM GEMS - Save gems socketed into non-dropped weapons/armor.
-        // Static items live in WEAPONS/ARMOR (from weapons.js / armor.js) and
-        // are rebuilt fresh on every page load, so any socketed gems would be
-        // wiped out. We save them here keyed by item ID and restore below.
-        // ═══════════════════════════════════════════════════════════════
-        staticWeaponGems: (() => {
-            const map = {};
-            // Check equipped weapon
-            if (p.weapon && WEAPONS[p.weapon] && !WEAPONS[p.weapon].isDropped && WEAPONS[p.weapon].gems?.length) {
-                map[p.weapon] = WEAPONS[p.weapon].gems;
-            }
-            // Check inventory
-            (p.inventory || []).forEach(itemKey => {
-                if (typeof itemKey !== 'string') return;
-                const w = WEAPONS[itemKey];
-                if (w && !w.isDropped && w.gems?.length) map[itemKey] = w.gems;
-            });
-            return map;
-        })(),
+       // ═══════════════════════════════════════════════════════════════
+// STATIC ITEM GEMS - Save gems socketed into weapons/armor
+// ═══════════════════════════════════════════════════════════════
+staticWeaponGems: (() => {
+    const map = {};
+    
+    // Check inventory for weapon instances with gems
+    (p.inventory || []).forEach(item => {
+        if (item && typeof item === 'object' && item.weaponId && item.gems?.length) {
+            map[item.instanceId] = item.gems;
+        }
+    });
+    
+    // Check equipped weapon
+    if (p.weapon && typeof p.weapon === 'string' && p.weapon.includes('_')) {
+        const instance = p.inventory.find(item => 
+            item && typeof item === 'object' && item.instanceId === p.weapon
+        );
+        if (instance && instance.gems?.length) {
+            map[instance.instanceId] = instance.gems;
+        }
+    }
+    
+    return map;
+})(),
 
-        staticArmorGems: (() => {
-            const map = {};
-            if (p.armor && ARMOR[p.armor] && !ARMOR[p.armor].isDropped && ARMOR[p.armor].gems?.length) {
-                map[p.armor] = ARMOR[p.armor].gems;
-            }
-            (p.inventory || []).forEach(itemKey => {
-                if (typeof itemKey !== 'string') return;
-                const a = ARMOR[itemKey];
-                if (a && !a.isDropped && a.gems?.length) map[itemKey] = a.gems;
-            });
-            return map;
-        })(),
+staticArmorGems: (() => {
+    const map = {};
+    
+    // Check inventory for armor instances with gems
+    (p.inventory || []).forEach(item => {
+        if (item && typeof item === 'object' && item.armorId && item.gems?.length) {
+            map[item.instanceId] = item.gems;
+        }
+    });
+    
+    // Check equipped armor
+    if (p.armor && typeof p.armor === 'string' && p.armor.includes('_')) {
+        const instance = p.inventory.find(item => 
+            item && typeof item === 'object' && item.instanceId === p.armor
+        );
+        if (instance && instance.gems?.length) {
+            map[instance.instanceId] = instance.gems;
+        }
+    }
+    
+    return map;
+})(),
 
         // Current location/state
         currentLocation: gameState.currentLocation,
@@ -11035,24 +11108,102 @@ function showMainMenu() {
                 }
                 
                 // ═══════════════════════════════════════════════════════════════
-                // RESTORE GENERATED WEAPONS - Must happen BEFORE equipment check!
-                // ═══════════════════════════════════════════════════════════════
-                if (data.generatedWeapons) {
-                    Object.keys(data.generatedWeapons).forEach(weaponId => {
-                        WEAPONS[weaponId] = data.generatedWeapons[weaponId];
-                    });
-                    console.log(`✅ Restored ${Object.keys(data.generatedWeapons).length} generated weapons`);
-                }
+// RESTORE GENERATED WEAPONS - Must happen BEFORE equipment check!
+// ═══════════════════════════════════════════════════════════════
+if (data.generatedWeapons) {
+    Object.keys(data.generatedWeapons).forEach(instanceId => {
+        const weaponData = data.generatedWeapons[instanceId];
+        
+        // Get the base weapon
+        const baseWeapon = WEAPONS[weaponData.weaponId];
+        if (!baseWeapon) {
+            console.warn(`Base weapon ${weaponData.weaponId} not found for instance ${instanceId}`);
+            return;
+        }
+        
+        // Get quality bonus percentage
+        const bonusPct = QUALITY_CONFIG[weaponData.quality]?.bonusPct || 0;
+        
+        // Reconstruct the full weapon instance
+        WEAPONS[instanceId] = {
+            id: weaponData.weaponId,
+            instanceId: instanceId,
+            name: `${weaponData.quality.charAt(0).toUpperCase() + weaponData.quality.slice(1)} ${baseWeapon.name}`,
+            baseName: baseWeapon.name,
+            type: baseWeapon.type || baseWeapon.weaponSubtype,
+            weaponSubtype: baseWeapon.weaponSubtype || baseWeapon.type,
+            
+            // Base stats with quality bonus
+            baseDamage: baseWeapon.baseDamage + Math.floor(baseWeapon.baseDamage * bonusPct),
+            maxDamage: baseWeapon.maxDamage + Math.floor(baseWeapon.maxDamage * bonusPct),
+            baseMagicDamage: baseWeapon.baseMagicDamage ? 
+                baseWeapon.baseMagicDamage + Math.floor(baseWeapon.baseMagicDamage * bonusPct) : 0,
+            healingBonus: baseWeapon.healingBonus ? 
+                baseWeapon.healingBonus + Math.floor(baseWeapon.healingBonus * bonusPct) : 0,
+            
+            level: weaponData.dropLevel || baseWeapon.level,
+            originalLevel: baseWeapon.level,
+            quality: weaponData.quality,
+            qualityBonus: bonusPct,
+            
+            modifiers: weaponData.modifiers || [],
+            gemSlots: weaponData.gemSlots || 0,
+            gems: weaponData.gems || [],
+            
+            cost: baseWeapon.cost,
+            description: baseWeapon.description || `A ${weaponData.quality} quality ${baseWeapon.name}.`,
+            isDropped: true,
+            dropTimestamp: weaponData.dropTime || Date.now()
+        };
+    });
+    console.log(`✅ Restored ${Object.keys(data.generatedWeapons).length} generated weapons`);
+}
                 
                 // ═══════════════════════════════════════════════════════════════
-                // RESTORE GENERATED ARMOR - Must happen BEFORE equipment check!
-                // ═══════════════════════════════════════════════════════════════
-                if (data.generatedArmor) {
-                    Object.keys(data.generatedArmor).forEach(armorId => {
-                        ARMOR[armorId] = data.generatedArmor[armorId];
-                    });
-                    console.log(`✅ Restored ${Object.keys(data.generatedArmor).length} generated armor pieces`);
-                }
+// RESTORE GENERATED ARMOR - Save all dynamically created armor drops
+// ═══════════════════════════════════════════════════════════════
+if (data.generatedArmor) {
+    Object.keys(data.generatedArmor).forEach(instanceId => {
+        const armorData = data.generatedArmor[instanceId];
+        
+        // Get the base armor
+        const baseArmor = ARMOR[armorData.armorId];
+        if (!baseArmor) {
+            console.warn(`Base armor ${armorData.armorId} not found for instance ${instanceId}`);
+            return;
+        }
+        
+        // Get quality bonus percentage
+        const bonusPct = QUALITY_CONFIG[armorData.quality]?.bonusPct || 0;
+        
+        // Reconstruct the full armor instance
+        ARMOR[instanceId] = {
+            id: armorData.armorId,
+            instanceId: instanceId,
+            name: `${armorData.quality.charAt(0).toUpperCase() + armorData.quality.slice(1)} ${baseArmor.name}`,
+            baseName: baseArmor.name,
+            type: baseArmor.type || baseArmor.armorSubtype,
+            
+            // Base stats with quality bonus
+            baseDefense: baseArmor.baseDefense + Math.floor(baseArmor.baseDefense * bonusPct),
+            baseMagicBonus: baseArmor.baseMagicBonus ? 
+                baseArmor.baseMagicBonus + Math.floor(baseArmor.baseMagicBonus * bonusPct) : 0,
+            
+            level: armorData.dropLevel || baseArmor.level,
+            originalLevel: baseArmor.level,
+            quality: armorData.quality,
+            qualityBonus: bonusPct,
+            
+            gems: armorData.gems || [],
+            
+            cost: baseArmor.cost,
+            description: baseArmor.description || `A ${armorData.quality} quality ${baseArmor.name}.`,
+            isDropped: true,
+            dropTimestamp: armorData.dropTime || Date.now()
+        };
+    });
+    console.log(`✅ Restored ${Object.keys(data.generatedArmor).length} generated armor pieces`);
+}
                 
                 // ═══════════════════════════════════════════════════════════════
                 // RESTORE STATIC ITEM GEMS - Re-apply gems socketed into
@@ -13810,282 +13961,539 @@ async function loadCloudCharacter(saveId) {
 }
 
 
-        function showShopBuy() {
-            const p = gameState.player;
-            const playerClass = p.baseClass || p.class;
+        
+
+function showShopBuy() {
+    const p = gameState.player;
+    const playerClass = p.baseClass || p.class;
+    
+    let shopHtml = `
+        <div style="margin: 20px 0;">
+            <h3 style="color: var(--highlight-color);">WEAPONS</h3>
+            <div class="inventory-grid">
+    `;
+
+    Object.keys(WEAPONS).forEach(key => {
+        const weapon = WEAPONS[key];
+        
+        if (!weapon.unarmed && weapon.quality === 'normal' && weapon.level <= p.level + 2 && canUseWeapon(playerClass, weapon)) {
+            const owned = p.inventory.includes(key);
+            const equipped = p.weapon === key;
+            const qualityColor = QUALITY_CONFIG[weapon.quality].color;
             
-            let shopHtml = `
-                <div style="margin: 20px 0;">
-                    <h3 style="color: var(--highlight-color);">WEAPONS</h3>
-                    <div class="inventory-grid">
-            `;
-
-            Object.keys(WEAPONS).forEach(key => {
-                const weapon = WEAPONS[key];
-                
-                // Filter by level, class, and quality — shop only sells common (normal) gear.
-                // Higher quality items come from drops only. Also enforce class restrictions.
-                if (!weapon.unarmed && weapon.quality === 'normal' && weapon.level <= p.level + 2 && canUseWeapon(playerClass, weapon)) {
-                    const owned = p.inventory.includes(key);
-                    const equipped = p.weapon === key;
-                    const qualityColor = QUALITY_CONFIG[weapon.quality].color;
-                    const qualityBonus = getQualityBonus(weapon.quality, weapon.baseDamage);
-                    const totalDmg = weapon.baseDamage + qualityBonus;
-                    const totalMag = weapon.baseMagicDamage + getQualityBonus(weapon.quality, weapon.baseMagicDamage);
-                    
-                    // Build modifier display
-                    let modifierHtml = '';
-                    if (weapon.modifiers && weapon.modifiers.length > 0) {
-                        modifierHtml = '<div style="margin-top:3px;font-size:11px;">';
-                        weapon.modifiers.forEach(modKey => {
-                            const mod = WEAPON_MODIFIERS[modKey];
-                            if (mod) {
-                                modifierHtml += `<div style="color:${mod.color};">• ${mod.name}</div>`;
-                            }
-                        });
-                        modifierHtml += '</div>';
-                    }
-                    
-                    shopHtml += `
-                        <div class="item-card ${equipped ? 'equipped' : ''}">
-                            <div style="color: ${qualityColor};">${weapon.name}</div>
-                            <div style="font-size:12px;">${buildWeaponDmgLine(weapon, null, p)}</div>
-                            ${modifierHtml}
-                            ${buildGemSlotHtml(weapon)}
-                            <div>Level: ${weapon.level}</div>
-                            ${owned ? '<div style="color: var(--border-color);">OWNED</div>' : 
-                              `<button onclick="buyItem('weapon', '${key}', ${weapon.cost})">Buy ${weapon.cost}G</button>`}
-                            ${p.cha ? '<div style="color:#8aaa8a;font-size:15px;">CHA disc: ' + calcChaDiscount(p.cha) + '%</div>' : ''}
-                        </div>
-                    `;
-                }
-            });
-
             shopHtml += `
-                    </div>
-                    <h3 style="color: var(--highlight-color); margin-top: 20px;">ARMOR</h3>
-                    <div class="inventory-grid">
-            `;
-
-            Object.keys(ARMOR).forEach(key => {
-                const armor = ARMOR[key];
-                
-                // Filter: shop only sells normal quality, class-appropriate armor.
-                // Better armor drops from enemies. Skip virtual slots and drop-only pieces.
-                if (!armor.unarmored && !armor.isDropped && armor.quality === 'normal' && armor.level <= p.level + 2 && canUseArmor(playerClass, armor)) {
-                    const owned = p.inventory.includes(key);
-                    const equipped = p.armor === key;
-                    const qualityColor = QUALITY_CONFIG[armor.quality].color;
-                    const qualityBonus = getQualityBonus(armor.quality, armor.baseDefense);
-                    const totalDef = armor.baseDefense + qualityBonus;
-                    const totalMag = (armor.baseMagicBonus || 0) + getQualityBonus(armor.quality, armor.baseMagicBonus || 0);
-                    
-                    shopHtml += `
-                        <div class="item-card ${equipped ? 'equipped' : ''}">
-                            <div style="color: ${qualityColor};">${armor.name}</div>
-                            <div style="font-size:12px;">${buildArmorDefLine(armor, p)}</div>
-                            <div>Level: ${armor.level}</div>
-                            ${owned ? '<div style="color: var(--border-color);">OWNED</div>' : 
-                              `<button onclick="buyItem('armor', '${key}', ${armor.cost})">Buy ${armor.cost}G</button>`}
-                            ${p.cha ? '<div style="color:#8aaa8a;font-size:15px;">CHA disc: ' + calcChaDiscount(p.cha) + '%</div>' : ''}
-                        </div>
-                    `;
-                }
-            });
-
-            shopHtml += `
-                    </div>
-                    <h3 style="color: var(--highlight-color); margin-top: 20px;">POTIONS</h3>
-                    <div class="inventory-grid">
-            `;
-
-            // Add potions to shop
-            const potionsForSale = ['health_potion', 'greater_health_potion', 'superior_health_potion',
-                                   'mana_potion', 'greater_mana_potion', 'superior_mana_potion', 'elixir',
-                                   'recall_potion'];
-            
-            potionsForSale.forEach(key => {
-                if (ITEMS[key]) {
-                    const item = ITEMS[key];
-                    const p = gameState.player;
-
-                    if (key === 'recall_potion') {
-                        // Special recall potion card — one per character, dungeon use only
-                        const alreadyOwned = p.inventory.includes('recall_potion');
-                        shopHtml += `
-                            <div class="item-card" style="border-color:#AA88FF;">
-                                <div style="color:#AA88FF;font-size:17px;">🌀 ${item.name}</div>
-                                <div style="color:#888;font-size:13px;font-style:italic;">${item.lore}</div>
-                                <div style="color:#ffcc00;margin-top:4px;">${item.description}</div>
-                                <div style="color:#ff8800;font-size:13px;">⚠ Dungeon use only · 1 per adventure</div>
-                                ${alreadyOwned
-                                    ? '<div style="color:#AA88FF;font-size:14px;margin-top:4px;">ALREADY OWNED</div>'
-                                    : `<button onclick="buyItem('item', 'recall_potion', 1000)"
-                                        style="border-color:#AA88FF;color:#AA88FF;margin-top:6px;">Buy 1000G</button>`
-                                }
-                            </div>
-                        `;
-                    } else {
-                        const _held = item.maxStack ? p.inventory.filter(k => k === key).length : 0;
-                        const _capped = item.maxStack && _held >= item.maxStack;
-                        const _stackLabel = item.maxStack
-                            ? `<span style="color:${_capped ? '#ff6666' : '#888'};font-size:12px;"> ${_held}/${item.maxStack}</span>`
-                            : '';
-                        shopHtml += `
-                            <div class="item-card">
-                                <div style="color: var(--highlight-color);">${item.name}${_stackLabel}</div>
-                                <div>${item.description}</div>
-                                <div>Power: ${item.power || 'Full'}</div>
-                                ${_capped
-                                    ? `<div style="color:#ff6666;font-size:13px;margin-top:4px;">BAG FULL (${item.maxStack}/${item.maxStack})</div>`
-                                    : `<button onclick="buyItem('item', '${key}', ${item.cost})">Buy ${item.cost}G</button>`
-                                }
-                                ${p.cha && !_capped ? '<div style="color:#8aaa8a;font-size:15px;">CHA disc: ' + calcChaDiscount(p.cha) + '%</div>' : ''}
-                            </div>
-                        `;
-                    }
-                }
-            });
-
-            shopHtml += `
-                    </div>
+                <div class="item-card ${equipped ? 'equipped' : ''}">
+                    <div style="color: ${qualityColor};">${weapon.name}</div>
+                    <div style="font-size:12px;">${buildWeaponDmgLine(weapon, null, p)}</div>
+                    <div>Level: ${weapon.level}</div>
+                    ${owned ? '<div style="color: var(--border-color);">OWNED</div>' : 
+                      `<button onclick="buyItem('weapon', '${key}', ${weapon.cost})">Buy ${weapon.cost}G</button>`}
+                    ${p.cha ? '<div style="color:#8aaa8a;font-size:15px;">CHA disc: ' + calcChaDiscount(p.cha) + '%</div>' : ''}
                 </div>
             `;
-            
-            document.getElementById('shopContent').innerHTML = shopHtml;
         }
+    });
 
-        function showShopSell() {
-            const p = gameState.player;
-            const QUALITY_ORDER = ['poor','normal','rare','epic','legendary','godly'];
+    shopHtml += `
+            </div>
+            <h3 style="color: var(--highlight-color); margin-top: 20px;">ARMOR</h3>
+            <div class="inventory-grid">
+    `;
 
-            // Current sell threshold from UI (default: poor = only poor)
-            const thresholdEl = document.getElementById('sellQualityThreshold');
-            const threshold   = thresholdEl ? thresholdEl.value : 'poor';
-            const thresholdIdx = QUALITY_ORDER.indexOf(threshold);
-
-            // Build sellable item list
-            const itemCounts = {};
-            p.inventory.forEach(itemKey => {
-                if (ITEMS[itemKey] && (ITEMS[itemKey].sellValue > 0)) {
-                    if (!itemCounts[itemKey]) itemCounts[itemKey] = { type:'item', count:0 };
-                    itemCounts[itemKey].count++;
-                } else if (WEAPONS[itemKey] && itemKey !== p.weapon && !WEAPONS[itemKey].unarmed) {
-                    // Group by itemKey + quality to avoid stacking different qualities
-                    const wpn = WEAPONS[itemKey];
-                    const groupKey = `${itemKey}__${wpn.quality || 'normal'}`;
-                    if (!itemCounts[groupKey]) itemCounts[groupKey] = { type:'weapon', count:0, baseKey:itemKey, quality:wpn.quality };
-                    itemCounts[groupKey].count++;
-                } else if (ARMOR[itemKey] && itemKey !== p.armor && !ARMOR[itemKey].unarmored) {
-                    // Group by itemKey + quality to avoid stacking different qualities
-                    const arm = ARMOR[itemKey];
-                    const groupKey = `${itemKey}__${arm.quality || 'normal'}`;
-                    if (!itemCounts[groupKey]) itemCounts[groupKey] = { type:'armor', count:0, baseKey:itemKey, quality:arm.quality };
-                    itemCounts[groupKey].count++;
-                }
-            });
-
-            // Determine which items are within the sell threshold
-            function getItemQualityIdx(itemKey, type) {
-                if (type === 'item') return -1; // items always sellable
-                if (type === 'weapon') return QUALITY_ORDER.indexOf(WEAPONS[itemKey]?.quality || 'poor');
-                if (type === 'armor')  return QUALITY_ORDER.indexOf(ARMOR[itemKey]?.quality || 'poor');
-                return -1;
-            }
-
-            // Count gold total for "sell all" preview
-            let sellAllGold = 0;
-            let sellAllCount = 0;
-            Object.entries(itemCounts).forEach(([groupKey, data]) => {
-                const actualKey = data.baseKey || groupKey;  // weapons/armor use baseKey
-                const qIdx = getItemQualityIdx(actualKey, data.type);
-                if (data.type === 'item' || qIdx <= thresholdIdx) {
-                    const sv = getSellValue(actualKey, data.type);
-                    sellAllGold  += sv * data.count;
-                    sellAllCount += data.count;
-                }
-            });
-
-            const qualityOptions = QUALITY_ORDER.map(q => {
-                const cfg = QUALITY_CONFIG[q];
-                return `<option value="${q}" ${q === threshold ? 'selected' : ''}>
-                    ${cfg.name} and below
-                </option>`;
-            }).join('');
-
-            let sellHtml = `
-                <div style="margin-bottom:12px;">
-                    <div style="color:var(--highlight-color);font-size:18px;margin-bottom:8px;">SELL ITEMS</div>
-                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">
-                        <label style="font-size:14px;color:#aaa;">Sell threshold:</label>
-                        <select id="sellQualityThreshold"
-                            style="background:#111;border:1px solid var(--border-color);color:#fff;padding:4px 8px;font-size:14px;"
-                            onchange="showShopSell()">
-                            ${qualityOptions}
-                        </select>
-                        <button onclick="sellAllBelowThreshold()"
-                            style="background:#222;border:1px solid #ff8c00;color:#ff8c00;padding:5px 14px;font-size:14px;cursor:pointer;">
-                            💰 SELL ALL (${sellAllCount} items · ${sellAllGold}g)
-                        </button>
-                    </div>
-                    <div style="font-size:12px;color:#666;">Items at or below the chosen quality tier will be sold. Equipped gear is never sold.</div>
+    Object.keys(ARMOR).forEach(key => {
+        const armor = ARMOR[key];
+        
+        if (!armor.unarmored && !armor.isDropped && armor.quality === 'normal' && armor.level <= p.level + 2 && canUseArmor(playerClass, armor)) {
+            const owned = p.inventory.includes(key);
+            const equipped = p.armor === key;
+            const qualityColor = QUALITY_CONFIG[armor.quality].color;
+            
+            shopHtml += `
+                <div class="item-card ${equipped ? 'equipped' : ''}">
+                    <div style="color: ${qualityColor};">${armor.name}</div>
+                    <div style="font-size:12px;">${buildArmorDefLine(armor, p)}</div>
+                    <div>Level: ${armor.level}</div>
+                    ${owned ? '<div style="color: var(--border-color);">OWNED</div>' : 
+                      `<button onclick="buyItem('armor', '${key}', ${armor.cost})">Buy ${armor.cost}G</button>`}
+                    ${p.cha ? '<div style="color:#8aaa8a;font-size:15px;">CHA disc: ' + calcChaDiscount(p.cha) + '%</div>' : ''}
                 </div>
-                <div class="inventory-grid">`;
+            `;
+        }
+    });
 
-            const itemKeys = Object.keys(itemCounts);
-            if (itemKeys.length === 0) {
-                sellHtml += '<div class="message">You have nothing to sell.</div>';
+    shopHtml += `
+            </div>
+            <h3 style="color: var(--highlight-color); margin-top: 20px;">POTIONS</h3>
+            <div class="inventory-grid">
+    `;
+
+    const potionsForSale = ['health_potion', 'greater_health_potion', 'superior_health_potion',
+                           'mana_potion', 'greater_mana_potion', 'superior_mana_potion', 'elixir',
+                           'recall_potion'];
+    
+    potionsForSale.forEach(key => {
+        if (ITEMS[key]) {
+            const item = ITEMS[key];
+            
+            if (key === 'recall_potion') {
+                const alreadyOwned = p.inventory.includes('recall_potion');
+                shopHtml += `
+                    <div class="item-card" style="border-color:#AA88FF;">
+                        <div style="color:#AA88FF;font-size:17px;">🌀 ${item.name}</div>
+                        <div style="color:#888;font-size:13px;font-style:italic;">${item.lore}</div>
+                        <div style="color:#ffcc00;margin-top:4px;">${item.description}</div>
+                        <div style="color:#ff8800;font-size:13px;">⚠ Dungeon use only · 1 per adventure</div>
+                        ${alreadyOwned
+                            ? '<div style="color:#AA88FF;font-size:14px;margin-top:4px;">ALREADY OWNED</div>'
+                            : `<button onclick="buyItem('item', 'recall_potion', 1000)"
+                                style="border-color:#AA88FF;color:#AA88FF;margin-top:6px;">Buy 1000G</button>`
+                        }
+                    </div>
+                `;
             } else {
-                itemKeys.forEach(groupKey => {
-                    const data = itemCounts[groupKey];
-                    // For weapons/armor, use baseKey to lookup the actual item; for items, groupKey = itemKey
-                    const actualItemKey = data.baseKey || groupKey;
-                    const qIdx = getItemQualityIdx(actualItemKey, data.type);
-                    const withinThreshold = data.type === 'item' || qIdx <= thresholdIdx;
-
-                    let itemName, itemColor, sellValue, itemDesc, qualityLabel = '';
-
-                    if (data.type === 'item') {
-                        const item = ITEMS[actualItemKey];
-                        itemName  = item.name;
-                        itemColor = '#00FF00';
-                        sellValue = item.sellValue;
-                        itemDesc  = item.description;
-                    } else if (data.type === 'weapon') {
-                        const weapon = WEAPONS[actualItemKey];
-                        itemName     = weapon.name;
-                        itemColor    = QUALITY_CONFIG[weapon.quality]?.color || '#fff';
-                        sellValue    = getSellValue(actualItemKey, 'weapon');
-                        qualityLabel = QUALITY_CONFIG[weapon.quality]?.name || '';
-                        const qb     = getQualityBonus(weapon.quality, weapon.baseDamage);
-                        itemDesc     = `DMG: ${weapon.baseDamage+qb}`;
-                    } else if (data.type === 'armor') {
-                        const armor = ARMOR[actualItemKey];
-                        itemName     = armor.name;
-                        itemColor    = QUALITY_CONFIG[armor.quality]?.color || '#fff';
-                        sellValue    = getSellValue(actualItemKey, 'armor');
-                        qualityLabel = QUALITY_CONFIG[armor.quality]?.name || '';
-                        const qb     = getQualityBonus(armor.quality, armor.baseDefense);
-                        itemDesc     = `DEF: ${armor.baseDefense+qb}`;
-                    }
-
-                    const dimmed = !withinThreshold ? 'opacity:0.4;' : '';
-
-                    sellHtml += `
-                        <div class="item-card" style="${dimmed}">
-                            <div style="color:${itemColor};">${itemName}${qualityLabel ? ` <span style="font-size:11px;">[${qualityLabel}]</span>` : ''}${data.count > 1 ? ` <span style="color:#FFD700;">x${data.count}</span>` : ''}</div>
-                            <div style="font-size:14px;color:#aaa;">${itemDesc}</div>
-                            <div style="color:var(--border-color);margin-top:6px;">${sellValue}g each</div>
-                            ${withinThreshold
-                                ? `<button onclick="sellItemGroup('${groupKey}', ${sellValue}, ${data.count})" style="margin-top:6px;">SELL${data.count > 1 ? ` ALL (${sellValue*data.count}g)` : ` (${sellValue}g)`}</button>`
-                                : `<div style="font-size:11px;color:#555;margin-top:6px;">Above threshold</div>`
-                            }
-                        </div>`;
-                });
+                const _held = item.maxStack ? p.inventory.filter(k => k === key).length : 0;
+                const _capped = item.maxStack && _held >= item.maxStack;
+                const _stackLabel = item.maxStack
+                    ? `<span style="color:${_capped ? '#ff6666' : '#888'};font-size:12px;"> ${_held}/${item.maxStack}</span>`
+                    : '';
+                shopHtml += `
+                    <div class="item-card">
+                        <div style="color: var(--highlight-color);">${item.name}${_stackLabel}</div>
+                        <div>${item.description}</div>
+                        <div>Power: ${item.power || 'Full'}</div>
+                        ${_capped
+                            ? `<div style="color:#ff6666;font-size:13px;margin-top:4px;">BAG FULL (${item.maxStack}/${item.maxStack})</div>`
+                            : `<button onclick="buyItem('item', '${key}', ${item.cost})">Buy ${item.cost}G</button>`
+                        }
+                        ${p.cha && !_capped ? '<div style="color:#8aaa8a;font-size:15px;">CHA disc: ' + calcChaDiscount(p.cha) + '%</div>' : ''}
+                    </div>
+                `;
             }
-            sellHtml += '</div>';
-            document.getElementById('shopContent').innerHTML = sellHtml;
         }
+    });
+
+    shopHtml += `
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('shopContent').innerHTML = shopHtml;
+}
+
+function showShopSell() {
+    const p = gameState.player;
+    const QUALITY_ORDER = ['poor','normal','rare','epic','legendary','godly'];
+
+    // Get threshold
+    const thresholdEl = document.getElementById('sellQualityThreshold');
+    const threshold = thresholdEl ? thresholdEl.value : 'poor';
+    const thresholdIdx = QUALITY_ORDER.indexOf(threshold);
+
+    // Build quality options
+    const qualityOptions = QUALITY_ORDER.map(q => {
+        const cfg = QUALITY_CONFIG[q];
+        return `<option value="${q}" ${q === threshold ? 'selected' : ''}>${cfg.name} and below</option>`;
+    }).join('');
+
+    // Group items
+    const weaponInstances = [];
+    const armorInstances = [];
+    const stringWeapons = {};
+    const stringArmor = {};
+    const items = {};
+    const gems = [];
+
+    p.inventory.forEach((item, index) => {
+        // Weapon instances
+        if (typeof item === 'object' && item !== null && item.weaponId) {
+            weaponInstances.push({ item, index });
+        }
+        // Armor instances
+        else if (typeof item === 'object' && item !== null && item.armorId) {
+            armorInstances.push({ item, index });
+        }
+        // Gems
+        else if (typeof item === 'object' && item !== null && item.cut) {
+            gems.push({ item, index });
+        }
+        // Items (potions)
+        else if (typeof item === 'string' && ITEMS[item] && ITEMS[item].sellValue > 0) {
+            items[item] = items[item] || { count: 0, indices: [] };
+            items[item].count++;
+            items[item].indices.push(index);
+        }
+        // String weapons
+        else if (typeof item === 'string' && WEAPONS[item] && item !== p.weapon) {
+            stringWeapons[item] = stringWeapons[item] || { count: 0, indices: [] };
+            stringWeapons[item].count++;
+            stringWeapons[item].indices.push(index);
+        }
+        // String armor
+        else if (typeof item === 'string' && ARMOR[item] && item !== p.armor) {
+            stringArmor[item] = stringArmor[item] || { count: 0, indices: [] };
+            stringArmor[item].count++;
+            stringArmor[item].indices.push(index);
+        }
+    });
+
+    console.log("Gems found:", gems.length, gems);
+
+    // Calculate sell all totals
+    let sellAllGold = 0;
+    let sellAllCount = 0;
+
+    weaponInstances.forEach(({ item }) => {
+        const qIdx = QUALITY_ORDER.indexOf(item.quality || 'normal');
+        if (qIdx <= thresholdIdx) {
+            const weapon = WEAPONS[item.weaponId];
+            sellAllGold += Math.floor((weapon.cost || 100) * 0.1);
+            sellAllCount++;
+        }
+    });
+
+    armorInstances.forEach(({ item }) => {
+        const qIdx = QUALITY_ORDER.indexOf(item.quality || 'normal');
+        if (qIdx <= thresholdIdx) {
+            const armor = ARMOR[item.armorId] || ARMOR[item.instanceId];
+            sellAllGold += Math.floor((armor.cost || 100) * 0.1);
+            sellAllCount++;
+        }
+    });
+
+    gems.forEach(() => {
+        sellAllGold += 100;
+        sellAllCount++;
+    });
+
+    Object.entries(stringWeapons).forEach(([key, data]) => {
+        const weapon = WEAPONS[key];
+        const qIdx = QUALITY_ORDER.indexOf(weapon.quality || 'normal');
+        if (qIdx <= thresholdIdx) {
+            sellAllGold += Math.floor((weapon.cost || 100) * 0.1) * data.count;
+            sellAllCount += data.count;
+        }
+    });
+
+    Object.entries(stringArmor).forEach(([key, data]) => {
+        const armor = ARMOR[key];
+        const qIdx = QUALITY_ORDER.indexOf(armor.quality || 'normal');
+        if (qIdx <= thresholdIdx) {
+            sellAllGold += Math.floor((armor.cost || 100) * 0.1) * data.count;
+            sellAllCount += data.count;
+        }
+    });
+
+    Object.entries(items).forEach(([key, data]) => {
+        sellAllGold += (ITEMS[key].sellValue || 0) * data.count;
+        sellAllCount += data.count;
+    });
+
+    // Start building HTML
+    let sellHtml = `
+        <div style="margin-bottom:12px;">
+            <div style="color:var(--highlight-color);font-size:18px;margin-bottom:8px;">SELL ITEMS</div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">
+                <label style="font-size:14px;color:#aaa;">Sell threshold:</label>
+                <select id="sellQualityThreshold" style="background:#111;border:1px solid var(--border-color);color:#fff;padding:4px 8px;font-size:14px;" onchange="showShopSell()">
+                    ${qualityOptions}
+                </select>
+                <button onclick="sellAllBelowThreshold()" style="background:#222;border:1px solid #ff8c00;color:#ff8c00;padding:5px 14px;font-size:14px;cursor:pointer;">
+                    💰 SELL ALL (${sellAllCount} items · ${sellAllGold}g)
+                </button>
+            </div>
+            <div style="font-size:12px;color:#666;">Items at or below the chosen quality tier will be sold. Equipped gear is never sold.</div>
+        </div>
+        <div class="inventory-grid">
+    `;
+
+    // WEAPON INSTANCES (with full stats)
+    weaponInstances.forEach(({ item, index }) => {
+        const weapon = WEAPONS[item.weaponId];
+        if (!weapon) return;
+        
+        // Get instance quality or use base
+        const displayQuality = item.quality || weapon.quality;
+        const qualityColor = QUALITY_CONFIG[displayQuality]?.color || '#00FF00';
+        const sellValue = Math.floor((weapon.cost || 100) * 0.1);
+        const qIdx = QUALITY_ORDER.indexOf(displayQuality);
+        const withinThreshold = qIdx <= thresholdIdx;
+        
+        // Build modifier display
+        let modifierHtml = '';
+        const modifiers = item.modifiers || weapon.modifiers || [];
+        if (modifiers.length > 0) {
+            modifierHtml = '<div style="margin-top:3px;font-size:11px;">';
+            modifiers.forEach(modKey => {
+                const mod = WEAPON_MODIFIERS?.[modKey];
+                if (mod) {
+                    modifierHtml += `<div style="color:${mod.color};">• ${mod.name}</div>`;
+                }
+            });
+            modifierHtml += '</div>';
+        }
+        
+        // Build gem slot display
+        let gemSlotHtml = '';
+        const slots = item.gemSlots || weapon.gemSlots || 0;
+        if (slots > 0) {
+            gemSlotHtml = '<div style="margin-top:3px;font-size:11px;">';
+            for (let i = 0; i < slots; i++) {
+                gemSlotHtml += '<span style="color:#333;">⬤</span> ';
+            }
+            gemSlotHtml += `<span style="color:#555;">${slots} slot${slots>1?'s':''}</span></div>`;
+        }
+        
+        sellHtml += `
+            <div class="item-card" style="${withinThreshold ? '' : 'opacity:0.4;'}">
+                <div style="color: ${qualityColor};">⚔️ ${weapon.name} [${displayQuality}]</div>
+                <div style="font-size:12px;">${buildWeaponDmgLine(weapon, null, p)}</div>
+                <div style="color:#888; font-size:11px;">Level ${weapon.level}</div>
+                ${modifierHtml}
+                ${gemSlotHtml}
+                <div>Sell Value: ${sellValue}g</div>
+                ${withinThreshold ? `<button onclick="confirmSellWeaponInstance(${index}, '${weapon.name}', ${sellValue})">SELL</button>` : '<div style="font-size:11px;color:#555;">Above threshold</div>'}
+            </div>
+        `;
+    });
+
+    // ARMOR INSTANCES (with full stats)
+    armorInstances.forEach(({ item, index }) => {
+        const armor = ARMOR[item.armorId] || ARMOR[item.instanceId];
+        if (!armor) return;
+        
+        const displayQuality = item.quality || armor.quality;
+        const qualityColor = QUALITY_CONFIG[displayQuality]?.color || '#00FF00';
+        const sellValue = Math.floor((armor.cost || 100) * 0.1);
+        const qIdx = QUALITY_ORDER.indexOf(displayQuality);
+        const withinThreshold = qIdx <= thresholdIdx;
+        
+        // Build defense line
+        const qb = getQualityBonus(displayQuality, armor.baseDefense);
+        const totalDef = armor.baseDefense + qb;
+        const totalMag = (armor.baseMagicBonus || 0) + getQualityBonus(displayQuality, armor.baseMagicBonus || 0);
+        
+        sellHtml += `
+            <div class="item-card" style="${withinThreshold ? '' : 'opacity:0.4;'}">
+                <div style="color: ${qualityColor};">🛡️ ${armor.name} [${displayQuality}]</div>
+                <div style="font-size:12px;">DEF: ${totalDef}${totalMag > 0 ? ` | MAG: +${totalMag}` : ''}</div>
+                <div style="color:#888; font-size:11px;">Level ${armor.level || 1}</div>
+                <div>Sell Value: ${sellValue}g</div>
+                ${withinThreshold ? `<button onclick="confirmSellArmorInstance(${index}, '${armor.name}', ${sellValue})">SELL</button>` : '<div style="font-size:11px;color:#555;">Above threshold</div>'}
+            </div>
+        `;
+    });
+
+    // STRING WEAPONS (grouped, with stats)
+    Object.entries(stringWeapons).forEach(([key, data]) => {
+        const weapon = WEAPONS[key];
+        const qualityColor = QUALITY_CONFIG[weapon.quality]?.color || '#00FF00';
+        const sellValue = Math.floor((weapon.cost || 100) * 0.1);
+        const qIdx = QUALITY_ORDER.indexOf(weapon.quality || 'normal');
+        const withinThreshold = qIdx <= thresholdIdx;
+        const totalValue = sellValue * data.count;
+        
+        sellHtml += `
+            <div class="item-card" style="${withinThreshold ? '' : 'opacity:0.4;'}">
+                <div style="color: ${qualityColor};">⚔️ ${weapon.name} ${data.count > 1 ? `x${data.count}` : ''}</div>
+                <div style="font-size:12px;">${buildWeaponDmgLine(weapon, null, p)}</div>
+                <div style="color:#888; font-size:11px;">Level ${weapon.level}</div>
+                <div>Sell Value: ${sellValue}g each</div>
+                <div>Total: ${totalValue}g</div>
+                ${withinThreshold ? `<button onclick="confirmSellItemGroup('${key}', ${sellValue}, ${data.count}, 'weapon')">SELL ALL</button>` : '<div style="font-size:11px;color:#555;">Above threshold</div>'}
+            </div>
+        `;
+    });
+
+    // STRING ARMOR (grouped, with stats)
+    Object.entries(stringArmor).forEach(([key, data]) => {
+        const armor = ARMOR[key];
+        const qualityColor = QUALITY_CONFIG[armor.quality]?.color || '#00FF00';
+        const sellValue = Math.floor((armor.cost || 100) * 0.1);
+        const qIdx = QUALITY_ORDER.indexOf(armor.quality || 'normal');
+        const withinThreshold = qIdx <= thresholdIdx;
+        const totalValue = sellValue * data.count;
+        
+        // Build defense line
+        const qb = getQualityBonus(armor.quality, armor.baseDefense);
+        const totalDef = armor.baseDefense + qb;
+        const totalMag = (armor.baseMagicBonus || 0) + getQualityBonus(armor.quality, armor.baseMagicBonus || 0);
+        
+        sellHtml += `
+            <div class="item-card" style="${withinThreshold ? '' : 'opacity:0.4;'}">
+                <div style="color: ${qualityColor};">🛡️ ${armor.name} ${data.count > 1 ? `x${data.count}` : ''}</div>
+                <div style="font-size:12px;">DEF: ${totalDef}${totalMag > 0 ? ` | MAG: +${totalMag}` : ''}</div>
+                <div style="color:#888; font-size:11px;">Level ${armor.level}</div>
+                <div>Sell Value: ${sellValue}g each</div>
+                <div>Total: ${totalValue}g</div>
+                ${withinThreshold ? `<button onclick="confirmSellItemGroup('${key}', ${sellValue}, ${data.count}, 'armor')">SELL ALL</button>` : '<div style="font-size:11px;color:#555;">Above threshold</div>'}
+            </div>
+        `;
+    });
+
+    /// GEMS
+gems.forEach(({ item, index }) => {
+    const sellValue = 100;
+    const gemColor = item.color || '#AAFFEE';
+    
+    // Build stats description
+    let statsDesc = '';
+    if (item.stats) {
+        statsDesc = Object.entries(item.stats)
+            .map(([stat, value]) => {
+                const statNames = {
+                    lightningDmg: '⚡ Lightning',
+                    critBonus: '🎯 Crit',
+                    weaponDmg: '⚔️ Damage',
+                    lifesteal: '🩸 Lifesteal',
+                    spellPower: '🔮 Spell',
+                    hpBonus: '❤️ HP',
+                    mpBonus: '💙 MP',
+                    defenseBonus: '🛡️ Defense',
+                    strBonus: '💪 STR',
+                    conBonus: '🛡️ CON',
+                    lckBonus: '🍀 LCK',
+                    poisonChance: '💀 Poison',
+                    fireDmg: '🔥 Fire',
+                    frostDmg: '❄️ Frost',
+                    hpRegen: '💚 HP Regen',
+                    mpRegen: '✨ MP Regen'
+                };
+                return `${statNames[stat] || stat} +${value}`;
+            })
+            .join(' · ');
+    }
+    
+    // If no stats object but has description, use that
+    const displayDesc = statsDesc || item.description || 'Cut gem';
+    
+    sellHtml += `
+        <div class="item-card">
+            <div style="color: ${gemColor};">💎 ${item.name}</div>
+            <div style="font-size:12px; color: #aaa; margin: 4px 0;">${displayDesc}</div>
+            <div style="color: #FFD700; margin: 4px 0;">Sell Value: ${sellValue}g</div>
+            <button onclick="confirmSellGem(${index}, '${item.name}', ${sellValue})" style="margin-top:4px;">SELL</button>
+        </div>
+    `;
+});
+
+    // ITEMS/POTIONS (grouped at the bottom)
+Object.entries(items).forEach(([key, data]) => {
+    const itemData = ITEMS[key];
+    const sellValue = itemData.sellValue || 0;
+    const totalValue = sellValue * data.count;
+    
+    // Choose icon based on item type
+    let icon = '🧪'; // default potion icon
+    if (key.startsWith('raw_')) {
+        icon = '💎'; // raw gem
+    } else if (key.includes('potion')) {
+        icon = '🧪'; // potion
+    } else if (key.includes('elixir')) {
+        icon = '⚗️'; // elixir
+    } else if (key.includes('seal_fragment')) {
+        icon = '📜'; // quest item
+    }
+    
+    sellHtml += `
+        <div class="item-card">
+            <div style="color: #00FF00;">${icon} ${itemData.name} ${data.count > 1 ? `x${data.count}` : ''}</div>
+            <div style="font-size:12px;">${itemData.description || ''}</div>
+            <div>Sell Value: ${sellValue}g each</div>
+            <div>Total: ${totalValue}g</div>
+            <button onclick="confirmSellItemGroup('${key}', ${sellValue}, ${data.count}, 'item')">SELL ALL</button>
+        </div>
+    `;
+});
+
+    sellHtml += `</div>`;
+    document.getElementById('shopContent').innerHTML = sellHtml;
+}
+
+
+
+       function sellArmorInstance(index) {
+    const p = gameState.player;
+    const item = p.inventory[index];
+    
+    if (item && typeof item === 'object' && item.armorId) {
+        const armor = ARMOR[item.armorId] || ARMOR[item.instanceId];
+        const sellValue = Math.floor((armor.cost || 100) * 0.1);
+        
+        p.inventory.splice(index, 1);
+        p.gold += sellValue;
+        
+        console.log(`Sold ${armor.name} for ${sellValue}g`);
+        saveGame();
+        showShopSell();
+    }
+}
+
+
+function confirmSellItemGroup(key, value, count, type) {
+    const p = gameState.player;
+    const bonus = calcChaSellBonus(p.cha);
+    const unitValue = Math.floor(value * (1 + bonus/100));
+    const total = unitValue * count;
+    
+    let name = '';
+    if (type === 'item') {
+        name = ITEMS[key]?.name || key;
+    } else if (type === 'weapon') {
+        name = WEAPONS[key]?.name || key;
+    } else if (type === 'armor') {
+        name = ARMOR[key]?.name || key;
+    }
+    
+    const message = count > 1 
+        ? `Sell ${count}x ${name} for ${total}g?`
+        : `Sell ${name} for ${value}g?`;
+    
+    if (confirm(message)) {
+        sellItemGroup(key, value, count, type);
+    }
+}
+
+
+function confirmSellGem(index, name, value) {
+    if (confirm(`Sell ${name} for ${value}g?`)) {
+        sellGem(index);
+    }
+}
+
+
+// Helper function to sell weapon instances
+function sellWeaponInstance(index) {
+    const p = gameState.player;
+    const item = p.inventory[index];
+    
+    if (item && typeof item === 'object' && item.weaponId) {
+        const weapon = WEAPONS[item.weaponId];
+        const sellValue = Math.floor((weapon.cost || 100) * 0.1);
+        
+        p.inventory.splice(index, 1);
+        p.gold += sellValue;
+        
+        console.log(`Sold ${weapon.name} for ${sellValue}g`);
+        saveGame();
+        showShopSell();
+    }
+}
+
+// Helper function to sell gems
+function sellGem(index) {
+    const p = gameState.player;
+    const item = p.inventory[index];
+    
+    if (item && typeof item === 'object' && item.cut) {
+        p.inventory.splice(index, 1);
+        p.gold += 100;
+        
+        console.log(`Sold ${item.name} for 100g`);
+        saveGame();
+        showShopSell();
+    }
+}
+
 
         // Returns sell value for a weapon or armor (10% of cost)
         function getSellValue(itemKey, type) {
@@ -14159,51 +14567,55 @@ async function loadCloudCharacter(saveId) {
             });
         }
 
-        function sellItemGroup(groupKey, baseValue, quantity = 1) {
-            const p = gameState.player;
-            const parts = groupKey.split('__');
-            const actualItemKey = parts[0];
-            const targetQuality = parts[1];
-            const bonus     = calcChaSellBonus(p.cha);
-            const unitValue = Math.floor(baseValue * (1 + bonus/100));
-            const total     = unitValue * quantity;
-            const qLabel    = targetQuality && QUALITY_CONFIG[targetQuality] ? ` [${QUALITY_CONFIG[targetQuality].name}]` : '';
-            const name      = getItemName(actualItemKey) + qLabel;
-
-            _showSellConfirm(
-                [{ name, count: quantity, each: unitValue, total }],
-                total,
-                () => {
-                    let removed = 0;
-                    for (let i = p.inventory.length - 1; i >= 0 && removed < quantity; i--) {
-                        const invKey = p.inventory[i];
-                        if (typeof invKey !== 'string') continue;
-                        if (invKey === actualItemKey || invKey.startsWith(actualItemKey)) {
-                            if (targetQuality) {
-                                const item = WEAPONS[invKey] || ARMOR[invKey];
-                                if (item && item.quality === targetQuality) { p.inventory.splice(i, 1); removed++; }
-                            } else {
-                                p.inventory.splice(i, 1); removed++;
-                            }
-                        }
-                    }
-                    if (removed === 0) return;
-                    const totalValue = unitValue * removed;
-                    p.gold += totalValue;
-                    saveGame();
-                    showShopSell();
-                    const content = document.getElementById('shopContent');
-                    if (content) {
-                        const msg = document.createElement('div');
-                        msg.style.cssText = 'background:#111;border:1px solid #4a9a4a;color:#4a9a4a;padding:6px 12px;font-size:15px;margin-bottom:10px;';
-                        msg.textContent = `Sold ${removed > 1 ? removed+'x ' : ''}${name} for ${totalValue}g.`;
-                        content.prepend(msg);
-                        setTimeout(() => msg.remove(), 2500);
-                    }
-                }
-            );
+        function sellItemGroup(key, value, count, type) {
+    const p = gameState.player;
+    const bonus = calcChaSellBonus(p.cha);
+    const unitValue = Math.floor(value * (1 + bonus/100));
+    const total = unitValue * count;
+    
+    let name = '';
+    if (type === 'item') {
+        name = ITEMS[key]?.name || key;
+    } else if (type === 'weapon') {
+        name = WEAPONS[key]?.name || key;
+    } else if (type === 'armor') {
+        name = ARMOR[key]?.name || key;
+    }
+    
+    let removed = 0;
+    for (let i = p.inventory.length - 1; i >= 0 && removed < count; i--) {
+        if (type === 'item' && p.inventory[i] === key) {
+            p.inventory.splice(i, 1);
+            removed++;
+        } else if (type === 'weapon' && p.inventory[i] === key) {
+            p.inventory.splice(i, 1);
+            removed++;
+        } else if (type === 'armor' && p.inventory[i] === key) {
+            p.inventory.splice(i, 1);
+            removed++;
         }
-
+    }
+    
+    if (removed === 0) return;
+    
+    const totalValue = unitValue * removed;
+    p.gold += totalValue;
+    
+    const bonusText = bonus > 0 ? ` (+${bonus}% CHA)` : '';
+    
+    // Show success message
+    const content = document.getElementById('shopContent');
+    if (content) {
+        const msg = document.createElement('div');
+        msg.style.cssText = 'background:#111;border:1px solid #4a9a4a;color:#4a9a4a;padding:6px 12px;font-size:15px;margin-bottom:10px;';
+        msg.textContent = `Sold ${removed > 1 ? removed+'x ' : ''}${name} for ${totalValue}g${bonusText}.`;
+        content.prepend(msg);
+        setTimeout(() => msg.remove(), 2500);
+    }
+    
+    saveGame();
+    showShopSell();
+}
         function showSellQuantityPrompt(itemKey, unitPrice, totalCount) {
             // Legacy path — routes through sell confirmation
             sellItem(itemKey, unitPrice, totalCount);
@@ -14274,6 +14686,14 @@ async function loadCloudCharacter(saveId) {
             window._pendingSell = onConfirm;
             modal.classList.add('open');
         }
+
+
+function confirmSellWeaponInstance(index, name, value) {
+    if (confirm(`Sell ${name} for ${value}g?`)) {
+        sellWeaponInstance(index);
+    }
+}
+
 
         // ── Shop confirmation modal helpers ──────────────────────────────────
         function closeShopConfirm() {
@@ -14405,291 +14825,418 @@ async function loadCloudCharacter(saveId) {
         }
 
         function showInventory() {
-            checkGameVersion();
-            const p = gameState.player;
-            const playerClass = p.baseClass || p.class;
-            const screen = document.getElementById('mainScreen');
-            
-            let invHtml = `
-                <div class="location-header">INVENTORY</div>
-                <button onclick="showTown()" style="margin-bottom:10px;">BACK</button>
-                ${renderPlayerStats()}
-                <div style="margin: 20px 0;">
-                    <h3 style="color: var(--highlight-color);">WEAPONS</h3>
-                    <div class="inventory-grid">
-            `;
+    checkGameVersion();
+    const p = gameState.player;
+    const playerClass = p.baseClass || p.class;
+    const screen = document.getElementById('mainScreen');
+    
+    let invHtml = `
+        <div class="location-header">INVENTORY</div>
+        <button onclick="showTown()" style="margin-bottom:10px;">BACK</button>
+        ${renderPlayerStats()}
+        <div style="margin: 20px 0;">
+            <h3 style="color: var(--highlight-color);">WEAPONS</h3>
+            <div class="inventory-grid">
+    `;
 
-            // ── Currently equipped weapon slot ────────────────────────────
-            const eqWeapon    = WEAPONS[p.weapon];
-            const eqWIsUnarmed = !eqWeapon || !!eqWeapon.unarmed;
-            if (eqWIsUnarmed) {
-                invHtml += `
-                    <div class="item-card equipped" style="border-color:#555;">
-                        <div style="color:#888;">✊ Bare Fists</div>
-                        <div style="color:#555;font-size:13px;">DMG: 0 (stats only)</div>
-                        <div style="color:#555;font-size:12px;">No weapon equipped</div>
-                    </div>
-                `;
-            } else {
-                const qc   = QUALITY_CONFIG[eqWeapon.quality];
-                const qb   = getQualityBonus(eqWeapon.quality, eqWeapon.baseDamage);
-                const tMin = eqWeapon.baseDamage + qb;
-                const tMax = eqWeapon.maxDamage ? eqWeapon.maxDamage + getQualityBonus(eqWeapon.quality, eqWeapon.maxDamage - eqWeapon.baseDamage) : tMin;
-                const tMag = (eqWeapon.baseMagicDamage || 0) + Math.floor((eqWeapon.baseMagicDamage || 0) * (qc?.bonusPct || 0));
-                
-                // Build modifier display for equipped weapon
-                let eqModifierHtml = '';
-                if (eqWeapon.modifiers && eqWeapon.modifiers.length > 0) {
-                    eqModifierHtml = '<div style="margin-top:5px;font-size:12px;">';
-                    eqWeapon.modifiers.forEach(modKey => {
-                        if (typeof WEAPON_MODIFIERS === 'undefined') {
-                            eqModifierHtml += `<div style="color:#FF8800;">• ${modKey}</div>`;
-                            return;
-                        }
-                        const mod = WEAPON_MODIFIERS[modKey];
-                        if (mod) {
-                            eqModifierHtml += `<div style="color:${mod.color};">• ${mod.name}`;
-                            if (mod.minDamage) eqModifierHtml += ` (${mod.minDamage}-${mod.maxDamage})`;
-                            eqModifierHtml += `</div>`;
-                        }
-                    });
-                    eqModifierHtml += '</div>';
-                }
-                
-               invHtml += `
-    <div class="item-card equipped">
-        <div style="color:${qc?.color || '#0f0'};">⚔️ ${eqWeapon.name}</div>
-        <div style="font-size:12px;">${buildWeaponDmgLine(eqWeapon, null, p)}</div>
-        <div style="color:#888; font-size:11px; margin-top:2px;">Level ${eqWeapon.level || 1}</div>
-        ${eqModifierHtml}
-        ${buildGemSlotHtml(eqWeapon)}
-        <div style="color:var(--border-color);">EQUIPPED</div>
-        <button onclick="unequipItem('weapon')" style="border-color:#ff4444;color:#ff4444;margin-top:4px;">UNEQUIP</button>
-    </div>
-`;
+    // ── Currently equipped weapon slot ────────────────────────────
+    const eqWeapon = (() => {
+        if (!p.weapon || p.weapon === 'bare_fists') return null;
+        
+        // Check if equipped weapon is an instanceId
+        if (typeof p.weapon === 'string' && p.weapon.includes('_')) {
+            // Find the weapon instance in inventory
+            const instance = p.inventory.find(item => 
+                item && typeof item === 'object' && item.instanceId === p.weapon
+            );
+            if (instance && instance.weaponId) {
+                return WEAPONS[instance.weaponId];
             }
-
-            // ── Other weapons in inventory ────────────────────────────────
-            p.inventory.filter(item => {
-                const weapon = WEAPONS[item];
-                // Skip bare_fists (virtual slot) and currently equipped
-                return weapon && !weapon.unarmed;
-            }).forEach(key => {
-                const weapon = WEAPONS[key];
-                const equipped = p.weapon === key;
-                if (equipped) return; // already shown in the equipped slot above
-                
-                const canEquip = canUseWeapon(playerClass, weapon);
-                const qualityColor = QUALITY_CONFIG[weapon.quality].color;
-                const qualityBonus = getQualityBonus(weapon.quality, weapon.baseDamage);
-                const totalDmg = weapon.baseDamage + qualityBonus;
-                const totalMag = weapon.baseMagicDamage + Math.floor(weapon.baseMagicDamage * (QUALITY_CONFIG[weapon.quality]?.bonusPct || 0));
-                const totalMax = weapon.maxDamage ? weapon.maxDamage + getQualityBonus(weapon.quality, weapon.maxDamage - weapon.baseDamage) : totalDmg;
-                
-                // Build modifier display
-                let modifierHtml = '';
-                if (weapon.modifiers && weapon.modifiers.length > 0) {
-                    modifierHtml = '<div style="margin-top:5px;font-size:12px;">';
-                    weapon.modifiers.forEach(modKey => {
-                        if (typeof WEAPON_MODIFIERS === 'undefined') {
-                            console.warn('WEAPON_MODIFIERS not loaded');
-                            modifierHtml += `<div style="color:#FF8800;">• ${modKey}</div>`;
-                            return;
-                        }
-                        const mod = WEAPON_MODIFIERS[modKey];
-                        if (mod) {
-                            modifierHtml += `<div style="color:${mod.color};">• ${mod.name}`;
-                            if (mod.minDamage) modifierHtml += ` (${mod.minDamage}-${mod.maxDamage})`;
-                            modifierHtml += `</div>`;
-                        } else {
-                            console.warn(`Modifier ${modKey} not found in WEAPON_MODIFIERS`);
-                        }
-                    });
-                    modifierHtml += '</div>';
-                }
-                
-               invHtml += `
-    <div class="item-card${canEquip ? '' : ' unusable'}" style="${canEquip ? '' : 'opacity:0.5;border-color:#555;'}">
-        <div style="color: ${qualityColor};">${weapon.name}</div>
-        <div style="font-size:12px;">${buildWeaponDmgLine(weapon, null, p)}</div>
-        ${weapon ? `<div style="color:#888; font-size:11px; margin-top:2px;">Level ${weapon.level || 1}</div>` : ''}
-        ${modifierHtml}
-        ${buildGemSlotHtml(weapon)}
-        ${canEquip 
-            ? `<button onclick="equipItem('weapon', '${key}')">EQUIP</button>`
-            : `<button disabled style="opacity:0.4;">CANNOT EQUIP</button>`
         }
-    </div>
-`;
+        
+        // Fallback to treating as direct weapon key
+        return WEAPONS[p.weapon];
+    })();
+    
+    const eqWIsUnarmed = !eqWeapon || !!eqWeapon.unarmed;
+    if (eqWIsUnarmed) {
+        invHtml += `
+            <div class="item-card equipped" style="border-color:#555;">
+                <div style="color:#888;">✊ Bare Fists</div>
+                <div style="color:#555;font-size:13px;">DMG: 0 (stats only)</div>
+                <div style="color:#555;font-size:12px;">No weapon equipped</div>
+            </div>
+        `;
+    } else {
+        // Find the equipped instance to get quality and modifiers
+        const equippedInstance = p.inventory.find(item => 
+            item && typeof item === 'object' && item.instanceId === p.weapon
+        );
+        
+        const displayQuality = equippedInstance?.quality || eqWeapon.quality;
+        const qc = QUALITY_CONFIG[displayQuality];
+        const qualityColor = qc?.color || '#0f0';
+        
+        // Build modifier display
+        let eqModifierHtml = '';
+        const modifiers = equippedInstance?.modifiers || eqWeapon.modifiers || [];
+        if (modifiers.length > 0) {
+            eqModifierHtml = '<div style="margin-top:5px;font-size:12px;">';
+            modifiers.forEach(modKey => {
+                if (typeof WEAPON_MODIFIERS === 'undefined') {
+                    eqModifierHtml += `<div style="color:#FF8800;">• ${modKey}</div>`;
+                    return;
+                }
+                const mod = WEAPON_MODIFIERS[modKey];
+                if (mod) {
+                    eqModifierHtml += `<div style="color:${mod.color};">• ${mod.name}`;
+                    if (mod.minDamage) eqModifierHtml += ` (${mod.minDamage}-${mod.maxDamage})`;
+                    eqModifierHtml += `</div>`;
+                }
             });
+            eqModifierHtml += '</div>';
+        }
+        
+        invHtml += `
+            <div class="item-card equipped">
+                <div style="color:${qualityColor};">⚔️ ${eqWeapon.name}${displayQuality !== eqWeapon.quality ? ` [${displayQuality}]` : ''}</div>
+                <div style="font-size:12px;">${buildWeaponDmgLine({...eqWeapon, quality: displayQuality}, displayQuality, p)}</div>
+                <div style="color:#888; font-size:11px; margin-top:2px;">Level ${eqWeapon.level || 1}</div>
+                ${eqModifierHtml}
+                ${buildGemSlotHtml({
+                    ...eqWeapon,
+                    quality: displayQuality,
+                    gems: equippedInstance?.gems || []
+                })}
+                <div style="color:var(--border-color);">EQUIPPED</div>
+                <button onclick="unequipItem('weapon')" style="border-color:#ff4444;color:#ff4444;margin-top:4px;">UNEQUIP</button>
+            </div>
+        `;
+    }
 
-            invHtml += `
-                    </div>
-                    <h3 style="color: var(--highlight-color); margin-top: 20px;">ARMOR</h3>
-                    <div class="inventory-grid">
-            `;
-
-            // ── Currently equipped armor slot ─────────────────────────────
-            const eqArmor      = ARMOR[p.armor];
-            const eqAIsUnarmored = !eqArmor || !!eqArmor.unarmored;
-            if (eqAIsUnarmored) {
-                invHtml += `
-                    <div class="item-card equipped" style="border-color:#555;">
-                        <div style="color:#888;">🫥 No Armor</div>
-                        <div style="color:#555;font-size:13px;">DEF: 0</div>
-                        <div style="color:#555;font-size:12px;">No armor equipped</div>
-                    </div>
-                `;
-            } else {
-                const aqc  = QUALITY_CONFIG[eqArmor.quality];
-                const aqb  = getQualityBonus(eqArmor.quality, eqArmor.baseDefense);
-                const tDef = eqArmor.baseDefense + aqb;
-                const tMag = (eqArmor.baseMagicBonus || 0) + Math.floor((eqArmor.baseMagicBonus || 0) * (aqc?.bonusPct || 0));
-                invHtml += `
-                    <div class="item-card equipped">
-                        <div style="color:${aqc?.color || '#0f0'};">🛡️ ${eqArmor.name}</div>
-                        <div style="font-size:12px;">${buildArmorDefLine(eqArmor, p)}</div>
-                        <div style="color:var(--border-color);">EQUIPPED</div>
-                        <button onclick="unequipItem('armor')" style="border-color:#ff4444;color:#ff4444;margin-top:4px;">UNEQUIP</button>
-                    </div>
-                `;
-            }
-
-            // ── Other armors in inventory ─────────────────────────────────
-            p.inventory.filter(item => {
-                const armor = ARMOR[item];
-                // Skip no_armor (virtual slot) and currently equipped
-                return armor && !armor.unarmored;
-            }).forEach(key => {
-                const armor = ARMOR[key];
-                const equipped = p.armor === key;
-                if (equipped) return; // already shown in the equipped slot above
-                
-                const canEquip = canUseArmor(playerClass, armor);
-                const qualityColor = QUALITY_CONFIG[armor.quality].color;
-                const qualityBonus = getQualityBonus(armor.quality, armor.baseDefense);
-                const totalDef = armor.baseDefense + qualityBonus;
-                const totalMag = (armor.baseMagicBonus || 0) + Math.floor((armor.baseMagicBonus || 0) * (QUALITY_CONFIG[armor.quality]?.bonusPct || 0));
-                
-                invHtml += `
-                    <div class="item-card${canEquip ? '' : ' unusable'}" style="${canEquip ? '' : 'opacity:0.5;border-color:#555;'}">
-                        <div style="color: ${qualityColor};">${armor.name}</div>
-                        <div style="font-size:12px;">${buildArmorDefLine(armor, p)}</div>
-                        ${canEquip
-                            ? `<button onclick="equipItem('armor', '${key}')">EQUIP</button>`
-                            : `<button disabled style="opacity:0.4;">CANNOT EQUIP</button>`
-                        }
-                    </div>
-                `;
-            });
-
-            invHtml += `
-                    </div>
-                    <h3 style="color: var(--highlight-color); margin-top: 20px;">SPELLS</h3>
-                    <div class="inventory-grid">
-            `;
-
-            if (p.knownSpells.length === 0) {
-                invHtml += '<div class="message">No spells learned yet.</div>';
-            } else {
-                p.knownSpells.forEach(spellKey => {
-                    const spell = ensureSpellExists(spellKey) || SPELLS[spellKey];
-                    if (!spell) {
-                        console.warn(`⚠️ Spell '${spellKey}' not found in SPELLS object (inventory display)`);
-                        return; // Skip this spell
-                    }
-                    invHtml += `
-                        <div class="item-card">
-                            <div style="color: var(--highlight-color);">${spell.name}</div>
-                            <div>MP Cost: ${spell.mpCost}</div>
-                            <div>${spell.minPower !== undefined ? `Power: ${spell.minPower}–${spell.maxPower}` : ''}</div>
-                            <div>${spell.description}</div>
-                        </div>
-                    `;
+    // ── Other weapons in inventory ────────────────────────────────
+    // Collect all weapon items
+    const weaponItems = [];
+    
+    p.inventory.forEach((item, index) => {
+        // Handle string weapon keys
+        if (typeof item === 'string') {
+            const weapon = WEAPONS[item];
+            if (weapon && !weapon.unarmed) {
+                weaponItems.push({
+                    type: 'string',
+                    key: item,
+                    weapon: weapon,
+                    instanceData: null,
+                    index: index
                 });
             }
-
-            invHtml += `
-                    </div>
-                    <h3 style="color: var(--highlight-color); margin-top: 20px;">CONSUMABLES & ITEMS</h3>
-                    <div class="inventory-grid">
-            `;
-
-            // Count and display items — EXCLUDE dungeon keys (shown in Key Ring below)
-            const itemCounts = {};
-            p.inventory.filter(item => ITEMS[item] && ITEMS[item].subtype !== 'dungeon_key').forEach(key => {
-                itemCounts[key] = (itemCounts[key] || 0) + 1;
-            });
-
-            if (Object.keys(itemCounts).length === 0) {
-                invHtml += '<div class="message">No items.</div>';
-            } else {
-                Object.keys(itemCounts).forEach(itemKey => {
-                    const item = ITEMS[itemKey];
-                    const count = itemCounts[itemKey];
-                    const color = item.type === 'sellable' ? '#FFD700' : 
-                                 item.subtype === 'heal_hp' ? '#FF0000' :
-                                 item.subtype === 'heal_mp' ? '#0000FF' : '#00FF00';
-                    
-                    // Check if it's a usable potion
-                    const isPotion = item.subtype === 'heal_hp' || 
-                                    item.subtype === 'heal_mp' || 
-                                    item.subtype === 'full_restore' ||
-                                    item.subtype?.startsWith('buff_');
-                    
-                    // Check if at full HP/MP for healing potions
-                    let canUse = true;
-                    let disabledReason = '';
-                    if (item.subtype === 'heal_hp' && p.hp >= p.maxHp) {
-                        canUse = false;
-                        disabledReason = '(Already at full HP)';
-                    } else if (item.subtype === 'heal_mp' && p.mp >= p.maxMp) {
-                        canUse = false;
-                        disabledReason = '(Already at full MP)';
-                    } else if (item.subtype === 'full_restore' && p.hp >= p.maxHp && p.mp >= p.maxMp) {
-                        canUse = false;
-                        disabledReason = '(Already fully restored)';
-                    }
-                    
-                    // Show total value if sellable and multiple
-                    let valueDisplay = '';
-                    if (item.sellValue) {
-                        if (count > 1) {
-                            valueDisplay = `<div style="color: var(--border-color);">${item.sellValue}g each | <span style="color:#FFD700;">Total: ${item.sellValue * count}g</span></div>`;
-                        } else {
-                            valueDisplay = `<div style="color: var(--border-color);">Value: ${item.sellValue}g</div>`;
-                        }
-                    }
-                    
-                    // Add USE button for potions
-                    let buttonHtml = '';
-                    if (isPotion) {
-                        buttonHtml = canUse ? 
-                            `<button onclick="useInventoryPotion('${itemKey}')">USE</button>` :
-                            `<div style="color:#666;font-size:12px;">${disabledReason}</div>`;
-                    }
-                    
-                    invHtml += `
-                        <div class="item-card">
-                            <div style="color: ${color};">${item.name} ${count > 1 ? `<span style="color:#FFD700;">x${count}</span>` : ''}</div>
-                            <div style="font-size: 16px;">${item.description}</div>
-                            ${valueDisplay}
-                            ${buttonHtml}
-                        </div>
-                    `;
+        }
+        // Handle weapon instances
+        else if (item && typeof item === 'object' && item.weaponId) {
+            const weapon = WEAPONS[item.weaponId];
+            if (weapon && !weapon.unarmed) {
+                weaponItems.push({
+                    type: 'instance',
+                    key: item.instanceId,
+                    weapon: weapon,
+                    instanceData: item,
+                    index: index
                 });
             }
+        }
+    });
+    
+    // Display each weapon
+    weaponItems.forEach(weaponItem => {
+        const { type, key, weapon, instanceData } = weaponItem;
+        
+        // Check if equipped
+        const equipped = p.weapon === key;
+        if (equipped) return;
+        
+        const canEquip = canUseWeapon(playerClass, weapon);
+        
+        // Use instance quality if available
+        const displayQuality = instanceData?.quality || weapon.quality;
+        const qualityColor = QUALITY_CONFIG[displayQuality]?.color || '#00FF00';
+        
+        // Use instance modifiers if available
+        const modifiers = instanceData?.modifiers || weapon.modifiers || [];
+        
+        // Build modifier display
+        let modifierHtml = '';
+        if (modifiers.length > 0) {
+            modifierHtml = '<div style="margin-top:5px;font-size:12px;">';
+            modifiers.forEach(modKey => {
+                if (typeof WEAPON_MODIFIERS === 'undefined') {
+                    modifierHtml += `<div style="color:#FF8800;">• ${modKey}</div>`;
+                    return;
+                }
+                const mod = WEAPON_MODIFIERS[modKey];
+                if (mod) {
+                    modifierHtml += `<div style="color:${mod.color};">• ${mod.name}`;
+                    if (mod.minDamage) modifierHtml += ` (${mod.minDamage}-${mod.maxDamage})`;
+                    modifierHtml += `</div>`;
+                }
+            });
+            modifierHtml += '</div>';
+        }
+        
+        invHtml += `
+            <div class="item-card${canEquip ? '' : ' unusable'}" style="${canEquip ? '' : 'opacity:0.5;border-color:#555;'}">
+                <div style="color: ${qualityColor};">⚔️ ${weapon.name}${displayQuality !== weapon.quality ? ` [${displayQuality}]` : ''}</div>
+                <div style="font-size:12px;">${buildWeaponDmgLine({...weapon, quality: displayQuality}, displayQuality, p)}</div>
+                <div style="color:#888; font-size:11px; margin-top:2px;">Level ${weapon.level || 1}</div>
+                ${modifierHtml}
+                ${buildGemSlotHtml({
+                    ...weapon,
+                    quality: displayQuality,
+                    gems: instanceData?.gems || []
+                })}
+                ${canEquip 
+                    ? `<button onclick="equipItem('weapon', '${key}')">EQUIP</button>`
+                    : `<button disabled style="opacity:0.4;">CANNOT EQUIP</button>`
+                }
+            </div>
+        `;
+    });
 
+    invHtml += `
+            </div>
+            <h3 style="color: var(--highlight-color); margin-top: 20px;">ARMOR</h3>
+            <div class="inventory-grid">
+    `;
+
+    // ── Currently equipped armor slot ─────────────────────────────
+    const eqArmor = (() => {
+        if (!p.armor || p.armor === 'no_armor') return null;
+        
+        // Check if equipped armor is an instanceId
+        if (typeof p.armor === 'string' && p.armor.includes('_')) {
+            // Find the armor instance in inventory
+            const instance = p.inventory.find(item => 
+                item && typeof item === 'object' && item.instanceId === p.armor
+            );
+            if (instance && instance.armorId) {
+                return ARMOR[instance.armorId] || ARMOR[instance.instanceId];
+            }
+        }
+        
+        // Fallback to treating as direct armor key
+        return ARMOR[p.armor];
+    })();
+    
+    const eqAIsUnarmored = !eqArmor || !!eqArmor.unarmored;
+    if (eqAIsUnarmored) {
+        invHtml += `
+            <div class="item-card equipped" style="border-color:#555;">
+                <div style="color:#888;">🫥 No Armor</div>
+                <div style="color:#555;font-size:13px;">DEF: 0</div>
+                <div style="color:#555;font-size:12px;">No armor equipped</div>
+            </div>
+        `;
+    } else {
+        // Find the equipped instance to get quality
+        const equippedInstance = p.inventory.find(item => 
+            item && typeof item === 'object' && item.instanceId === p.armor
+        );
+        
+        const displayQuality = equippedInstance?.quality || eqArmor.quality;
+        const aqc = QUALITY_CONFIG[displayQuality];
+        const qualityColor = aqc?.color || '#0f0';
+        
+        invHtml += `
+            <div class="item-card equipped">
+                <div style="color:${qualityColor};">🛡️ ${eqArmor.name}${displayQuality !== eqArmor.quality ? ` [${displayQuality}]` : ''}</div>
+                <div style="font-size:12px;">${buildArmorDefLine({...eqArmor, quality: displayQuality}, p)}</div>
+                <div style="color:var(--border-color);">EQUIPPED</div>
+                <button onclick="unequipItem('armor')" style="border-color:#ff4444;color:#ff4444;margin-top:4px;">UNEQUIP</button>
+            </div>
+        `;
+    }
+
+    // ── Other armors in inventory ─────────────────────────────────
+    // Collect all armor items
+    const armorItems = [];
+    
+    p.inventory.forEach((item, index) => {
+        // Handle string armor keys
+        if (typeof item === 'string') {
+            const armor = ARMOR[item];
+            if (armor && !armor.unarmored) {
+                armorItems.push({
+                    type: 'string',
+                    key: item,
+                    armor: armor,
+                    instanceData: null,
+                    index: index
+                });
+            }
+        }
+        // Handle armor instances
+        else if (item && typeof item === 'object' && item.armorId) {
+            const armor = ARMOR[item.armorId] || ARMOR[item.instanceId];
+            if (armor && !armor.unarmored) {
+                armorItems.push({
+                    type: 'instance',
+                    key: item.instanceId,
+                    armor: armor,
+                    instanceData: item,
+                    index: index
+                });
+            }
+        }
+    });
+    
+    // Display each armor item
+    armorItems.forEach(armorItem => {
+        const { type, key, armor, instanceData } = armorItem;
+        
+        // Check if equipped
+        const equipped = p.armor === key;
+        if (equipped) return;
+        
+        const canEquip = canUseArmor(playerClass, armor);
+        
+        // Use instance quality if available
+        const displayQuality = instanceData?.quality || armor.quality;
+        const qualityColor = QUALITY_CONFIG[displayQuality]?.color || '#00FF00';
+        
+        invHtml += `
+            <div class="item-card${canEquip ? '' : ' unusable'}" style="${canEquip ? '' : 'opacity:0.5;border-color:#555;'}">
+                <div style="color: ${qualityColor};">🛡️ ${armor.name}${displayQuality !== armor.quality ? ` [${displayQuality}]` : ''}</div>
+                <div style="font-size:12px;">${buildArmorDefLine({...armor, quality: displayQuality}, p)}</div>
+                <div style="color:#888; font-size:11px; margin-top:2px;">Level ${armor.level || 1}</div>
+                ${canEquip
+                    ? `<button onclick="equipItem('armor', '${key}')">EQUIP</button>`
+                    : `<button disabled style="opacity:0.4;">CANNOT EQUIP</button>`
+                }
+            </div>
+        `;
+    });
+
+    invHtml += `
+            </div>
+            <h3 style="color: var(--highlight-color); margin-top: 20px;">SPELLS</h3>
+            <div class="inventory-grid">
+    `;
+
+    if (p.knownSpells.length === 0) {
+        invHtml += '<div class="message">No spells learned yet.</div>';
+    } else {
+        p.knownSpells.forEach(spellKey => {
+            const spell = ensureSpellExists(spellKey) || SPELLS[spellKey];
+            if (!spell) return;
             invHtml += `
-                    </div>
+                <div class="item-card">
+                    <div style="color: var(--highlight-color);">${spell.name}</div>
+                    <div>MP Cost: ${spell.mpCost}</div>
+                    <div>${spell.minPower !== undefined ? `Power: ${spell.minPower}–${spell.maxPower}` : ''}</div>
+                    <div>${spell.description}</div>
                 </div>
-                ${renderKeyRing(p)}
-                <button onclick="showTown()">BACK</button>
             `;
+        });
+    }
 
-            screen.innerHTML = invHtml;
+    invHtml += `
+            </div>
+            <h3 style="color: var(--highlight-color); margin-top: 20px;">CONSUMABLES & ITEMS</h3>
+            <div class="inventory-grid">
+    `;
+
+    // Count and display items
+    const itemCounts = {};
+    p.inventory.filter(item => {
+        if (typeof item === 'string') {
+            return ITEMS[item] && ITEMS[item].subtype !== 'dungeon_key';
         }
+        return false;
+    }).forEach(key => {
+        itemCounts[key] = (itemCounts[key] || 0) + 1;
+    });
 
+    if (Object.keys(itemCounts).length === 0) {
+        invHtml += '<div class="message">No items.</div>';
+    } else {
+        Object.keys(itemCounts).forEach(itemKey => {
+            const item = ITEMS[itemKey];
+            const count = itemCounts[itemKey];
+            
+            // Choose icon based on item type
+            let icon = '🧪';
+            if (itemKey.startsWith('raw_')) {
+                icon = '💎';
+            } else if (itemKey.includes('potion')) {
+                icon = '🧪';
+            } else if (itemKey.includes('elixir')) {
+                icon = '⚗️';
+            } else if (itemKey.includes('seal_fragment')) {
+                icon = '📜';
+            }
+            
+            const color = item.type === 'sellable' ? '#FFD700' : 
+                         item.subtype === 'heal_hp' ? '#FF0000' :
+                         item.subtype === 'heal_mp' ? '#0000FF' : '#00FF00';
+            
+            // Check if it's a usable potion
+            const isPotion = item.subtype === 'heal_hp' || 
+                            item.subtype === 'heal_mp' || 
+                            item.subtype === 'full_restore' ||
+                            item.subtype?.startsWith('buff_');
+            
+            // Check if at full HP/MP for healing potions
+            let canUse = true;
+            let disabledReason = '';
+            if (item.subtype === 'heal_hp' && p.hp >= p.maxHp) {
+                canUse = false;
+                disabledReason = '(Already at full HP)';
+            } else if (item.subtype === 'heal_mp' && p.mp >= p.maxMp) {
+                canUse = false;
+                disabledReason = '(Already at full MP)';
+            } else if (item.subtype === 'full_restore' && p.hp >= p.maxHp && p.mp >= p.maxMp) {
+                canUse = false;
+                disabledReason = '(Already fully restored)';
+            }
+            
+            // Show total value if sellable and multiple
+            let valueDisplay = '';
+            if (item.sellValue) {
+                if (count > 1) {
+                    valueDisplay = `<div style="color: var(--border-color);">${item.sellValue}g each | <span style="color:#FFD700;">Total: ${item.sellValue * count}g</span></div>`;
+                } else {
+                    valueDisplay = `<div style="color: var(--border-color);">Value: ${item.sellValue}g</div>`;
+                }
+            }
+            
+            // Add USE button for potions
+            let buttonHtml = '';
+            if (isPotion) {
+                buttonHtml = canUse ? 
+                    `<button onclick="useInventoryPotion('${itemKey}')">USE</button>` :
+                    `<div style="color:#666;font-size:12px;">${disabledReason}</div>`;
+            }
+            
+            invHtml += `
+                <div class="item-card">
+                    <div style="color: ${color};">${icon} ${item.name} ${count > 1 ? `<span style="color:#FFD700;">x${count}</span>` : ''}</div>
+                    <div style="font-size: 16px;">${item.description}</div>
+                    ${valueDisplay}
+                    ${buttonHtml}
+                </div>
+            `;
+        });
+    }
+
+    invHtml += `
+            </div>
+        </div>
+        ${renderKeyRing(p)}
+        <button onclick="showTown()">BACK</button>
+    `;
+
+    screen.innerHTML = invHtml;
+}
         function renderKeyRing(p) {
             // ── Key metadata: ASCII art + color for each key type ──
             const KEY_META = {
@@ -17078,63 +17625,86 @@ function showInventoryOverlay() {
     }
 
     // WEAPONS
-    html += `<div style="color:var(--highlight-color);font-size:15px;letter-spacing:2px;margin-bottom:6px;">— WEAPONS —</div>`;
-    html += `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">`;
-    const eqW = WEAPONS[p.weapon];
-    if (eqW && !eqW.unarmed) {
-        const qc  = QUALITY_CONFIG[eqW.quality];
-        const qb  = getQualityBonus(eqW.quality, eqW.baseDamage);
-        let eqWModHtml = '';
-        if (eqW.modifiers && eqW.modifiers.length > 0) {
-            eqWModHtml = '<div style="margin-top:4px;">';
-            eqW.modifiers.forEach(modKey => {
-                const mod = typeof WEAPON_MODIFIERS !== 'undefined' ? WEAPON_MODIFIERS[modKey] : null;
-                if (mod) {
-                    eqWModHtml += `<div style="color:${mod.color};font-size:12px;">• ${mod.name}${mod.minDamage ? ` (${mod.minDamage}-${mod.maxDamage})` : ''}</div>`;
-                }
-            });
-            eqWModHtml += '</div>';
-        }
-        html += `<div style="min-width:130px;padding:10px;border:2px solid ${qc?.color||'#0f0'};background:#050a05;font-size:14px;">
-            <div style="color:${qc?.color||'#0f0'};">${eqW.name}</div>
-            <div style="color:#aaa;font-size:12px;">${buildWeaponDmgLine(eqW, null, p)}</div>
-            ${eqWModHtml}
-            ${buildGemSlotHtml(eqW)}
-            <div style="color:var(--highlight-color);font-size:12px;">★ EQUIPPED</div>
-        </div>`;
+html += `<div style="color:var(--highlight-color);font-size:15px;letter-spacing:2px;margin-bottom:6px;">— WEAPONS —</div>`;
+html += `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">`;
+
+const eqW = WEAPONS[p.weapon];
+if (eqW && !eqW.unarmed) {
+    const qc  = QUALITY_CONFIG[eqW.quality];
+    const qb  = getQualityBonus(eqW.quality, eqW.baseDamage);
+    let eqWModHtml = '';
+    if (eqW.modifiers && eqW.modifiers.length > 0) {
+        eqWModHtml = '<div style="margin-top:4px;">';
+        eqW.modifiers.forEach(modKey => {
+            const mod = typeof WEAPON_MODIFIERS !== 'undefined' ? WEAPON_MODIFIERS[modKey] : null;
+            if (mod) {
+                eqWModHtml += `<div style="color:${mod.color};font-size:12px;">• ${mod.name}${mod.minDamage ? ` (${mod.minDamage}-${mod.maxDamage})` : ''}</div>`;
+            }
+        });
+        eqWModHtml += '</div>';
     }
-    if (weapons.length === 0 && (!eqW || eqW.unarmed)) {
-        html += `<div style="color:#555;font-size:13px;">No weapons.</div>`;
+    
+    // Find equipped instance
+    const equippedInstance = p.inventory.find(item => 
+        item && typeof item === 'object' && item.instanceId === p.weapon
+    );
+    
+    html += `<div style="min-width:130px;padding:10px;border:2px solid ${qc?.color||'#0f0'};background:#050a05;font-size:14px;">
+        <div style="color:${qc?.color||'#0f0'};">${eqW.name}</div>
+        <div style="color:#aaa;font-size:12px;">${buildWeaponDmgLine(eqW, null, p)}</div>
+        ${eqWModHtml}
+        ${buildGemSlotHtml({
+            ...eqW,
+            quality: equippedInstance?.quality || eqW.quality,
+            gems: equippedInstance?.gems || []
+        })}
+        <div style="color:var(--highlight-color);font-size:12px;">★ EQUIPPED</div>
+    </div>`;
+}
+
+if (weapons.length === 0 && (!eqW || eqW.unarmed)) {
+    html += `<div style="color:#555;font-size:13px;">No weapons.</div>`;
+}
+
+weapons.forEach(ik => {
+    if (ik === p.weapon) return;
+    
+    const w = WEAPONS[ik];
+    const qc = QUALITY_CONFIG[w.quality];
+    const closeFn = inDungeon ? 'renderDungeonActionBar()' : 'renderActionBar()';
+    
+    let modHtml = '';
+    if (w.modifiers && w.modifiers.length > 0) {
+        modHtml = '<div style="margin-top:4px;">';
+        w.modifiers.forEach(modKey => {
+            const mod = typeof WEAPON_MODIFIERS !== 'undefined' ? WEAPON_MODIFIERS[modKey] : null;
+            if (mod) {
+                modHtml += `<div style="color:${mod.color};font-size:12px;">• ${mod.name}${mod.minDamage ? ` (${mod.minDamage}-${mod.maxDamage})` : ''}</div>`;
+            }
+        });
+        modHtml += '</div>';
     }
-    weapons.forEach(ik => {
-        if (ik === p.weapon) return;
-        const w   = WEAPONS[ik];
-        const qc  = QUALITY_CONFIG[w.quality];
-        const closeFn = inDungeon ? 'renderDungeonActionBar()' : 'renderActionBar()';
-        let modHtml = '';
-        if (w.modifiers && w.modifiers.length > 0) {
-            modHtml = '<div style="margin-top:4px;">';
-            w.modifiers.forEach(modKey => {
-                const mod = typeof WEAPON_MODIFIERS !== 'undefined' ? WEAPON_MODIFIERS[modKey] : null;
-                if (mod) {
-                    modHtml += `<div style="color:${mod.color};font-size:12px;">• ${mod.name}${mod.minDamage ? ` (${mod.minDamage}-${mod.maxDamage})` : ''}</div>`;
-                }
-            });
-            modHtml += '</div>';
-        }
-        const canEquip = canUseWeapon(playerClass, w);
-        html += `<button onclick="${canEquip ? `equipItem('weapon','${ik}');document.getElementById('dungeonInvOverlay').remove();${closeFn};` : ''}"
-            style="min-width:130px;padding:10px;border:2px solid ${canEquip ? (qc?.color||'#0f0') : '#555'};
-            background:#050a05;font-size:14px;text-align:left;cursor:${canEquip ? 'pointer' : 'default'};
-            opacity:${canEquip ? 1 : 0.5};">
-            <div style="color:${canEquip ? (qc?.color||'#0f0') : '#888'};">${w.name}</div>
-            <div style="color:#aaa;font-size:12px;">${buildWeaponDmgLine(w, null, p)}</div>
-            ${modHtml}
-            ${buildGemSlotHtml(w)}
-            <div style="color:${canEquip ? '#FFD700' : '#555'};font-size:12px;">${canEquip ? '▶ EQUIP' : 'CANNOT EQUIP'}</div>
-        </button>`;
-    });
-    html += `</div>`;
+    
+    const canEquip = canUseWeapon(playerClass, w);
+    
+    // Simple version - use weapon's own quality
+    const displayQuality = w.quality;
+    const qualityColor = QUALITY_CONFIG[displayQuality]?.color || '#0f0';
+
+    html += `<button onclick="${canEquip ? `equipItem('weapon','${ik}');document.getElementById('dungeonInvOverlay').remove();${closeFn};` : ''}"
+        style="min-width:130px;padding:10px;border:2px solid ${canEquip ? qualityColor : '#555'};
+        background:#050a05;font-size:14px;text-align:left;cursor:${canEquip ? 'pointer' : 'default'};
+        opacity:${canEquip ? 1 : 0.5};">
+        <div style="color:${canEquip ? qualityColor : '#888'};">${w.name}</div>
+        <div style="color:#aaa;font-size:12px;">${buildWeaponDmgLine(w, null, p)}</div>
+        ${modHtml}
+        ${buildGemSlotHtml(w)}
+        <div style="color:${canEquip ? '#FFD700' : '#555'};font-size:12px;">${canEquip ? '▶ EQUIP' : 'CANNOT EQUIP'}</div>
+    </button>`;
+});
+html += `</div>`;
+// END WEAPONS
+
 
     // ARMOR
     html += `<div style="color:var(--highlight-color);font-size:15px;letter-spacing:2px;margin-bottom:6px;">— ARMOR —</div>`;
@@ -21724,7 +22294,7 @@ function endCombat(victory) {
             gameState.player.inventory.push(weaponDrop.id);
             
             // Show drop message with quality color
-            const qualityColor = QUALITY_CONFIG[weaponDrop.quality].color;
+            const qualityColor = QUALITY_CONFIG[weapon.quality].color;
             termAppend('', 'term-separator');
             termAppend(`💎 <span style="color:${qualityColor};font-size:18px;font-weight:bold;">WEAPON DROP!</span>`, 'term-victory');
             termAppend(`<span style="color:${qualityColor};">${weaponDrop.name}</span>`, 'term-loot');
@@ -23026,36 +23596,56 @@ function showCharacterStats() {
         }
 
         function doSocketGem(cutGemInventoryIndex, target) {
-            const p = gameState.player;
-            if (p.gold < 100) { alert("You need 100 gold to socket a gem."); return; }
-            const isArmor = target === 'armor';
-            const item = isArmor
-                ? (p.armor ? ARMOR[p.armor] : null)
-                : (p.weapon ? WEAPONS[p.weapon] : null);
-            const itemLabel = isArmor ? 'armor' : 'weapon';
-            if (!item) { alert(`No ${itemLabel} equipped.`); return; }
-            if (!item.gems) item.gems = [];
-            const slots = getGemSlots(item.quality);
-            if (item.gems.length >= slots) { alert(`No open slots on this ${itemLabel}.`); return; }
-            const cutGems = p.inventory.filter(k => typeof k === 'object' && k && k.cut);
-            const gem = cutGems[cutGemInventoryIndex];
-            if (!gem) { alert("Gem not found."); return; }
-            const invIdx = p.inventory.indexOf(gem);
-            if (invIdx < 0) { alert("Gem not in inventory."); return; }
-            if (!confirm(`Socket ${gem.name} into ${item.name}? This is permanent and cannot be undone.`)) return;
-            p.gold -= 100;
-            p.inventory.splice(invIdx, 1);
-            item.gems.push(gem);
-            recalcGemStats(p);
-            saveGame();
-            const flash = document.createElement('div');
-            flash.style.cssText = `position:fixed;top:15px;left:50%;transform:translateX(-50%);background:#0a0a0a;border:2px solid ${gem.color};padding:14px 24px;color:${gem.color};font-size:15px;z-index:9999;text-align:center;max-width:340px;`;
-            flash.innerHTML = `⚙️ <strong>Gem Socketed!</strong><br><span style="font-size:12px;color:#ccc;">${gem.name} fused into ${item.name} permanently.</span>`;
-            document.body.appendChild(flash);
-            setTimeout(() => flash.remove(), 3500);
-            showBlacksmith('socket', target);
-        }
-
+    const p = gameState.player;
+    if (p.gold < 100) { alert("You need 100 gold to socket a gem."); return; }
+    
+    const isArmor = target === 'armor';
+    const itemKey = isArmor ? p.armor : p.weapon;
+    const item = isArmor ? ARMOR[itemKey] : WEAPONS[itemKey];
+    const itemLabel = isArmor ? 'armor' : 'weapon';
+    
+    if (!item) { alert(`No ${itemLabel} equipped.`); return; }
+    if (!item.gems) item.gems = [];
+    
+    const slots = getGemSlots(item.quality);
+    if (item.gems.length >= slots) { alert(`No open slots on this ${itemLabel}.`); return; }
+    
+    const cutGems = p.inventory.filter(k => typeof k === 'object' && k && k.cut);
+    const gem = cutGems[cutGemInventoryIndex];
+    if (!gem) { alert("Gem not found."); return; }
+    
+    const invIdx = p.inventory.indexOf(gem);
+    if (invIdx < 0) { alert("Gem not in inventory."); return; }
+    
+    if (!confirm(`Socket ${gem.name} into ${item.name}? This is permanent and cannot be undone.`)) return;
+    
+    p.gold -= 100;
+    p.inventory.splice(invIdx, 1);
+    
+    // Add gem to the equipped item
+    item.gems.push(gem);
+    
+    // ALSO update the inventory object if it exists
+    const inventoryItem = p.inventory.find(invItem => 
+        invItem && typeof invItem === 'object' && invItem.instanceId === itemKey
+    );
+    
+    if (inventoryItem) {
+        if (!inventoryItem.gems) inventoryItem.gems = [];
+        inventoryItem.gems.push(gem);
+    }
+    
+    recalcGemStats(p);
+    saveGame();
+    
+    const flash = document.createElement('div');
+    flash.style.cssText = `position:fixed;top:15px;left:50%;transform:translateX(-50%);background:#0a0a0a;border:2px solid ${gem.color};padding:14px 24px;color:${gem.color};font-size:15px;z-index:9999;text-align:center;max-width:340px;`;
+    flash.innerHTML = `⚙️ <strong>Gem Socketed!</strong><br><span style="font-size:12px;color:#ccc;">${gem.name} fused into ${item.name} permanently.</span>`;
+    document.body.appendChild(flash);
+    setTimeout(() => flash.remove(), 3500);
+    
+    showBlacksmith('socket', target);
+}
         // ═══════════════════════════════════════════════════════════════
         // TEMPLE OF REBIRTH (Stat Reset)
         // ═══════════════════════════════════════════════════════════════
