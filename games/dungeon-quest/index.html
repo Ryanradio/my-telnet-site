@@ -10983,17 +10983,7 @@ function showMainMenu() {
             });
         }
 
-        function confirmDeleteCharacter(charId, charName) {
-            if (confirm(`Are you sure you want to DELETE ${charName}? This cannot be undone!`)) {
-                if (deleteCharacter(charId)) {
-                    showCharacterSelect(); // Refresh the list
-                } else {
-                    alert('Error deleting character!');
-                }
-            }
-        }
-
-  async function loadCharacter(characterId) {
+async function loadCharacter(characterId) {
     try {
         // RECONCILE FIRST
         // Get character name quickly for reconciliation
@@ -11010,657 +11000,1240 @@ function showMainMenu() {
         }
 
         const data = saveData; // Use the reconciled data
+        let legacyMigrationPerformed = false; // Track if legacy migration happened
                 
-                // Validate save data structure
-                if (!data.player) {
-                    throw new Error('Invalid save data: missing player data');
+        // Validate save data structure
+        if (!data.player) {
+            throw new Error('Invalid save data: missing player data');
+        }
+        
+        // Restore complete player state
+        gameState.player = {
+            ...data.player,
+            // Ensure all arrays are properly restored
+            inventory: data.player.inventory || [],
+            knownSpells: data.player.knownSpells || [],
+            defeatedMasters: data.player.defeatedMasters || [],
+            
+            unlockedAreas: data.player.unlockedAreas || [],
+            activeBounties: data.player.activeBounties || [],
+            pendingBounties: data.player.pendingBounties || [],
+            collectedBounties: data.player.collectedBounties || {},
+            // Ensure bankGold exists (for old saves)
+            bankGold: data.player.bankGold || 0,
+            achievements: data.player.achievements || [],
+            runestones: data.player.runestones || [],
+            // Portal unlock — false for old saves that predate this flag
+            portalUnlocked: data.player.portalUnlocked || false,
+            // ═══════════════════════════════════════════════════════════════
+            // PERSISTENT DUNGEON MAPS - Restore and convert arrays back to Sets
+            // ═══════════════════════════════════════════════════════════════
+            dungeonMaps: (() => {
+                const maps = {};
+                if (data.player.dungeonMaps) {
+                    for (const dungeonKey in data.player.dungeonMaps) {
+                        maps[dungeonKey] = {};
+                        for (const floorNum in data.player.dungeonMaps[dungeonKey]) {
+                            // Convert arrays back to Sets
+                            maps[dungeonKey][floorNum] = new Set(data.player.dungeonMaps[dungeonKey][floorNum]);
+                        }
+                    }
+                }
+                return maps;
+            })(),
+
+            // Restore enemy respawn timers (prune any that expired while offline)
+            dungeonTimers: (() => {
+                const timers = {};
+                const now = Date.now();
+                if (data.player.dungeonTimers) {
+                    for (const dk in data.player.dungeonTimers) {
+                        const valid = (data.player.dungeonTimers[dk] || []).filter(e => now < e.respawnTime);
+                        if (valid.length > 0) timers[dk] = valid;
+                    }
+                }
+                return timers;
+            })(),
+
+            // ═══════════════════════════════════════════════════════════════
+            // GUILD QUESTS - Restore from save data
+            // ═══════════════════════════════════════════════════════════════
+            guildQuests: data.player.guildQuests || { active: [], completed: [], progress: {} },
+
+            // ═══════════════════════════════════════════════════════════════
+            // BESTIARY — restore kill counts (empty obj for old saves)
+            // ═══════════════════════════════════════════════════════════════
+            kills: Object.assign({}, data.player.kills || {}),
+            bestiaryRead: Object.assign({}, data.player.bestiaryRead || {}),
+            // ═══════════════════════════════════════════════════════════════
+            // CHRONICLE — restore lore state, initialise for old saves
+            // ═══════════════════════════════════════════════════════════════
+            chronicle: {
+                unlockedEntries: [...((data.player.chronicle && data.player.chronicle.unlockedEntries) || [])],
+                readEntries:     [...((data.player.chronicle && data.player.chronicle.readEntries)     || [])],
+            },
+        };
+        
+        // Restore current town
+        gameState.currentTown = data.currentTown || 'town1';
+        // Sync guild quests from player object to gameState
+        gameState.guildQuests = gameState.player.guildQuests;
+
+        // ═══════════════════════════════════════════════════════════════
+        // MIGRATIONS — patch existing saves when base values change
+        // ═══════════════════════════════════════════════════════════════
+        const p = gameState.player;
+        const playerClass = p.baseClass || p.class;
+
+        // Cleric MP migration
+        if (playerClass === 'cleric') {
+            const expectedMaxMp = 100 + (p.level - 1) * 10;
+            if (p.maxMp < expectedMaxMp) {
+                const diff = expectedMaxMp - p.maxMp;
+                p.maxMp += diff;
+                p.mp = Math.min(p.mp + diff, p.maxMp);
+                console.log(`🔧 Cleric MP migration: +${diff} MP (now ${p.mp}/${p.maxMp})`);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // STEP 1: RESTORE GENERATED WEAPONS (from save data)
+        // ═══════════════════════════════════════════════════════════════
+        if (data.generatedWeapons) {
+            Object.keys(data.generatedWeapons).forEach(instanceId => {
+                const weaponData = data.generatedWeapons[instanceId];
+                
+                // Get the base weapon
+                const baseWeapon = WEAPONS[weaponData.weaponId];
+                if (!baseWeapon) {
+                    console.warn(`Base weapon ${weaponData.weaponId} not found for instance ${instanceId}`);
+                    return;
                 }
                 
-                // Restore complete player state
-                gameState.player = {
-                    ...data.player,
-                    // Ensure all arrays are properly restored
-                    inventory: data.player.inventory || [],
-                    knownSpells: data.player.knownSpells || [],
-                    defeatedMasters: data.player.defeatedMasters || [],
+                // Get quality bonus percentage
+                const bonusPct = QUALITY_CONFIG[weaponData.quality]?.bonusPct || 0;
+                
+                // Reconstruct the full weapon instance
+                WEAPONS[instanceId] = {
+                    id: weaponData.weaponId,
+                    instanceId: instanceId,
+                    name: `${weaponData.quality.charAt(0).toUpperCase() + weaponData.quality.slice(1)} ${baseWeapon.name}`,
+                    baseName: baseWeapon.name,
+                    type: baseWeapon.type || baseWeapon.weaponSubtype,
+                    weaponSubtype: baseWeapon.weaponSubtype || baseWeapon.type,
                     
-                    unlockedAreas: data.player.unlockedAreas || [],
-                    activeBounties: data.player.activeBounties || [],
-                    pendingBounties: data.player.pendingBounties || [],
-                    collectedBounties: data.player.collectedBounties || {},
-                    // Ensure bankGold exists (for old saves)
-                    bankGold: data.player.bankGold || 0,
-                    achievements: data.player.achievements || [],
-                    runestones: data.player.runestones || [],
-                    // Portal unlock — false for old saves that predate this flag
-                    portalUnlocked: data.player.portalUnlocked || false,
-                    // ═══════════════════════════════════════════════════════════════
-                    // PERSISTENT DUNGEON MAPS - Restore and convert arrays back to Sets
-                    // ═══════════════════════════════════════════════════════════════
-                    dungeonMaps: (() => {
-                        const maps = {};
-                        if (data.player.dungeonMaps) {
-                            for (const dungeonKey in data.player.dungeonMaps) {
-                                maps[dungeonKey] = {};
-                                for (const floorNum in data.player.dungeonMaps[dungeonKey]) {
-                                    // Convert arrays back to Sets
-                                    maps[dungeonKey][floorNum] = new Set(data.player.dungeonMaps[dungeonKey][floorNum]);
-                                }
-                            }
-                        }
-                        return maps;
-                    })(),
-
-                                       // Restore enemy respawn timers (prune any that expired while offline)
-                    dungeonTimers: (() => {
-                        const timers = {};
-                        const now = Date.now();
-                        if (data.player.dungeonTimers) {
-                            for (const dk in data.player.dungeonTimers) {
-                                const valid = (data.player.dungeonTimers[dk] || []).filter(e => now < e.respawnTime);
-                                if (valid.length > 0) timers[dk] = valid;
-                            }
-                        }
-                        return timers;
-                    })(),
-
-                    // ═══════════════════════════════════════════════════════════════
-                    // GUILD QUESTS - Restore from save data
-                    // ═══════════════════════════════════════════════════════════════
-                    guildQuests: data.player.guildQuests || { active: [], completed: [], progress: {} },
-
-                    // ═══════════════════════════════════════════════════════════════
-                    // BESTIARY — restore kill counts (empty obj for old saves)
-                    // ═══════════════════════════════════════════════════════════════
-                    kills: Object.assign({}, data.player.kills || {}),
-                    bestiaryRead: Object.assign({}, data.player.bestiaryRead || {}),
-                    // ═══════════════════════════════════════════════════════════════
-                    // CHRONICLE — restore lore state, initialise for old saves
-                    // ═══════════════════════════════════════════════════════════════
-                    chronicle: {
-                        unlockedEntries: [...((data.player.chronicle && data.player.chronicle.unlockedEntries) || [])],
-                        readEntries:     [...((data.player.chronicle && data.player.chronicle.readEntries)     || [])],
-                    },
+                    // Base stats with quality bonus
+                    baseDamage: baseWeapon.baseDamage + Math.floor(baseWeapon.baseDamage * bonusPct),
+                    maxDamage: baseWeapon.maxDamage + Math.floor(baseWeapon.maxDamage * bonusPct),
+                    baseMagicDamage: baseWeapon.baseMagicDamage ? 
+                        baseWeapon.baseMagicDamage + Math.floor(baseWeapon.baseMagicDamage * bonusPct) : 0,
+                    healingBonus: baseWeapon.healingBonus ? 
+                        baseWeapon.healingBonus + Math.floor(baseWeapon.healingBonus * bonusPct) : 0,
+                    
+                    level: weaponData.dropLevel || baseWeapon.level,
+                    originalLevel: baseWeapon.level,
+                    quality: weaponData.quality,
+                    qualityBonus: bonusPct,
+                    
+                    modifiers: weaponData.modifiers || [],
+                    gemSlots: weaponData.gemSlots || 0,
+                    gems: weaponData.gems || [],
+                    
+                    cost: baseWeapon.cost,
+                    description: baseWeapon.description || `A ${weaponData.quality} quality ${baseWeapon.name}.`,
+                    isDropped: true,
+                    dropTimestamp: weaponData.dropTime || Date.now()
                 };
-                
-                // Restore current town
-                gameState.currentTown = data.currentTown || 'town1';
-                // Sync guild quests from player object to gameState
-                gameState.guildQuests = gameState.player.guildQuests;
-
-                // ═══════════════════════════════════════════════════════════════
-                // MIGRATIONS — patch existing saves when base values change
-                // ═══════════════════════════════════════════════════════════════
-                const _p = gameState.player;
-                const _class = _p.baseClass || _p.class;
-
-                // Cleric MP raised from 70 → 100 starting (same as mage).
-                // Each level gains +10 MP, so expected maxMp = 100 + (level-1)*10.
-                // If their maxMp is below that, they were created before the change.
-                if (_class === 'cleric') {
-                    const expectedMaxMp = 100 + (_p.level - 1) * 10;
-                    if (_p.maxMp < expectedMaxMp) {
-                        const diff = expectedMaxMp - _p.maxMp;
-                        _p.maxMp += diff;
-                        _p.mp = Math.min(_p.mp + diff, _p.maxMp);
-                        console.log(`🔧 Cleric MP migration: +${diff} MP (now ${_p.mp}/${_p.maxMp})`);
-                    }
-                }
-                
-                // ═══════════════════════════════════════════════════════════════
-// RESTORE GENERATED WEAPONS - Must happen BEFORE equipment check!
-// ═══════════════════════════════════════════════════════════════
-if (data.generatedWeapons) {
-    Object.keys(data.generatedWeapons).forEach(instanceId => {
-        const weaponData = data.generatedWeapons[instanceId];
-        
-        // Get the base weapon
-        const baseWeapon = WEAPONS[weaponData.weaponId];
-        if (!baseWeapon) {
-            console.warn(`Base weapon ${weaponData.weaponId} not found for instance ${instanceId}`);
-            return;
+            });
+            console.log(`✅ Restored ${Object.keys(data.generatedWeapons).length} generated weapons`);
         }
-        
-        // Get quality bonus percentage
-        const bonusPct = QUALITY_CONFIG[weaponData.quality]?.bonusPct || 0;
-        
-        // Reconstruct the full weapon instance
-        WEAPONS[instanceId] = {
-            id: weaponData.weaponId,
-            instanceId: instanceId,
-            name: `${weaponData.quality.charAt(0).toUpperCase() + weaponData.quality.slice(1)} ${baseWeapon.name}`,
-            baseName: baseWeapon.name,
-            type: baseWeapon.type || baseWeapon.weaponSubtype,
-            weaponSubtype: baseWeapon.weaponSubtype || baseWeapon.type,
-            
-            // Base stats with quality bonus
-            baseDamage: baseWeapon.baseDamage + Math.floor(baseWeapon.baseDamage * bonusPct),
-            maxDamage: baseWeapon.maxDamage + Math.floor(baseWeapon.maxDamage * bonusPct),
-            baseMagicDamage: baseWeapon.baseMagicDamage ? 
-                baseWeapon.baseMagicDamage + Math.floor(baseWeapon.baseMagicDamage * bonusPct) : 0,
-            healingBonus: baseWeapon.healingBonus ? 
-                baseWeapon.healingBonus + Math.floor(baseWeapon.healingBonus * bonusPct) : 0,
-            
-            level: weaponData.dropLevel || baseWeapon.level,
-            originalLevel: baseWeapon.level,
-            quality: weaponData.quality,
-            qualityBonus: bonusPct,
-            
-            modifiers: weaponData.modifiers || [],
-            gemSlots: weaponData.gemSlots || 0,
-            gems: weaponData.gems || [],
-            
-            cost: baseWeapon.cost,
-            description: baseWeapon.description || `A ${weaponData.quality} quality ${baseWeapon.name}.`,
-            isDropped: true,
-            dropTimestamp: weaponData.dropTime || Date.now()
-        };
-    });
-    console.log(`✅ Restored ${Object.keys(data.generatedWeapons).length} generated weapons`);
-}
+
+        // ═══════════════════════════════════════════════════════════════
+        // STEP 2: RESTORE GENERATED ARMOR (from save data)
+        // ═══════════════════════════════════════════════════════════════
+        if (data.generatedArmor) {
+            Object.keys(data.generatedArmor).forEach(instanceId => {
+                const armorData = data.generatedArmor[instanceId];
                 
-                // ═══════════════════════════════════════════════════════════════
-// RESTORE GENERATED ARMOR - Save all dynamically created armor drops
-// ═══════════════════════════════════════════════════════════════
-if (data.generatedArmor) {
-    Object.keys(data.generatedArmor).forEach(instanceId => {
-        const armorData = data.generatedArmor[instanceId];
-        
-        // Get the base armor
-        const baseArmor = ARMOR[armorData.armorId];
-        if (!baseArmor) {
-            console.warn(`Base armor ${armorData.armorId} not found for instance ${instanceId}`);
-            return;
+                // Get the base armor
+                const baseArmor = ARMOR[armorData.armorId];
+                if (!baseArmor) {
+                    console.warn(`Base armor ${armorData.armorId} not found for instance ${instanceId}`);
+                    return;
+                }
+                
+                // Get quality bonus percentage
+                const bonusPct = QUALITY_CONFIG[armorData.quality]?.bonusPct || 0;
+                
+                // Reconstruct the full armor instance
+                ARMOR[instanceId] = {
+                    id: armorData.armorId,
+                    instanceId: instanceId,
+                    name: `${armorData.quality.charAt(0).toUpperCase() + armorData.quality.slice(1)} ${baseArmor.name}`,
+                    baseName: baseArmor.name,
+                    type: baseArmor.type || baseArmor.armorSubtype,
+                    
+                    // Base stats with quality bonus
+                    baseDefense: baseArmor.baseDefense + Math.floor(baseArmor.baseDefense * bonusPct),
+                    baseMagicBonus: baseArmor.baseMagicBonus ? 
+                        baseArmor.baseMagicBonus + Math.floor(baseArmor.baseMagicBonus * bonusPct) : 0,
+                    
+                    level: armorData.dropLevel || baseArmor.level,
+                    originalLevel: baseArmor.level,
+                    quality: armorData.quality,
+                    qualityBonus: bonusPct,
+                    
+                    gems: armorData.gems || [],
+                    
+                    cost: baseArmor.cost,
+                    description: baseArmor.description || `A ${armorData.quality} quality ${baseArmor.name}.`,
+                    isDropped: true,
+                    dropTimestamp: armorData.dropTime || Date.now()
+                };
+            });
+            console.log(`✅ Restored ${Object.keys(data.generatedArmor).length} generated armor pieces`);
         }
-        
-        // Get quality bonus percentage
-        const bonusPct = QUALITY_CONFIG[armorData.quality]?.bonusPct || 0;
-        
-        // Reconstruct the full armor instance
-        ARMOR[instanceId] = {
-            id: armorData.armorId,
-            instanceId: instanceId,
-            name: `${armorData.quality.charAt(0).toUpperCase() + armorData.quality.slice(1)} ${baseArmor.name}`,
-            baseName: baseArmor.name,
-            type: baseArmor.type || baseArmor.armorSubtype,
+
+        // ═══════════════════════════════════════════════════════════════
+        // STEP 3: RESTORE STATIC ITEM GEMS
+        // ═══════════════════════════════════════════════════════════════
+        if (data.staticWeaponGems) {
+            Object.entries(data.staticWeaponGems).forEach(([itemId, gems]) => {
+                if (WEAPONS[itemId]) {
+                    WEAPONS[itemId].gems = gems;
+                }
+            });
+            console.log(`✅ Restored static weapon gems for: ${Object.keys(data.staticWeaponGems).join(', ') || 'none'}`);
+        }
+        if (data.staticArmorGems) {
+            Object.entries(data.staticArmorGems).forEach(([itemId, gems]) => {
+                if (ARMOR[itemId]) {
+                    ARMOR[itemId].gems = gems;
+                }
+            });
+            console.log(`✅ Restored static armor gems for: ${Object.keys(data.staticArmorGems).join(', ') || 'none'}`);
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // STEP 3.5: CLEANUP MALFORMED INSTANCE IDS
+        // ═══════════════════════════════════════════════════════════════
+        (function cleanupMalformedInstances(playerData) {
+            let cleaned = 0;
+            const newInventory = [];
             
-            // Base stats with quality bonus
-            baseDefense: baseArmor.baseDefense + Math.floor(baseArmor.baseDefense * bonusPct),
-            baseMagicBonus: baseArmor.baseMagicBonus ? 
-                baseArmor.baseMagicBonus + Math.floor(baseArmor.baseMagicBonus * bonusPct) : 0,
-            
-            level: armorData.dropLevel || baseArmor.level,
-            originalLevel: baseArmor.level,
-            quality: armorData.quality,
-            qualityBonus: bonusPct,
-            
-            gems: armorData.gems || [],
-            
-            cost: baseArmor.cost,
-            description: baseArmor.description || `A ${armorData.quality} quality ${baseArmor.name}.`,
-            isDropped: true,
-            dropTimestamp: armorData.dropTime || Date.now()
-        };
-    });
-    console.log(`✅ Restored ${Object.keys(data.generatedArmor).length} generated armor pieces`);
-}
-                
-                // ═══════════════════════════════════════════════════════════════
-                // RESTORE STATIC ITEM GEMS - Re-apply gems socketed into
-                // non-dropped (static) weapons and armor. These items are rebuilt
-                // from weapons.js / armor.js on every load, so gems must be
-                // re-attached here from the saved map.
-                // ═══════════════════════════════════════════════════════════════
-                if (data.staticWeaponGems) {
-                    Object.entries(data.staticWeaponGems).forEach(([itemId, gems]) => {
-                        if (WEAPONS[itemId]) {
-                            WEAPONS[itemId].gems = gems;
+            playerData.inventory.forEach(item => {
+                // Check for malformed instance IDs (double legacy_equipped)
+                if (typeof item === 'object' && item !== null && item.instanceId && 
+                    item.instanceId.includes('_legacy_equipped_') && 
+                    item.instanceId.split('_legacy_equipped_').length > 2) {
+                    
+                    console.log(`🧹 Cleaning malformed instance: ${item.instanceId}`);
+                    
+                    // Fix the instance ID - take the first part only
+                    const parts = item.instanceId.split('_legacy_equipped_');
+                    const baseId = parts[0];
+                    const cleanInstanceId = `${baseId}_legacy_equipped_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+                    
+                    // Update the item with clean ID
+                    item.instanceId = cleanInstanceId;
+                    
+                    // If it's armor, also update the ARMOR object
+                    if (item.armorId) {
+                        const baseArmor = ARMOR[item.armorId];
+                        if (baseArmor) {
+                            ARMOR[cleanInstanceId] = {
+                                id: item.armorId,
+                                instanceId: cleanInstanceId,
+                                name: baseArmor.name,
+                                baseName: baseArmor.name,
+                                type: baseArmor.type || baseArmor.armorSubtype,
+                                baseDefense: baseArmor.baseDefense,
+                                baseMagicBonus: baseArmor.baseMagicBonus || 0,
+                                level: baseArmor.level || 1,
+                                quality: item.quality || baseArmor.quality || 'normal',
+                                gems: item.gems || [],
+                                cost: baseArmor.cost || 100,
+                                isDropped: true
+                            };
+                            
+                            // Delete the old malformed entry if it exists
+                            if (ARMOR[item.instanceId]) {
+                                delete ARMOR[item.instanceId];
+                            }
                         }
-                    });
-                    console.log(`✅ Restored static weapon gems for: ${Object.keys(data.staticWeaponGems).join(', ') || 'none'}`);
-                }
-                if (data.staticArmorGems) {
-                    Object.entries(data.staticArmorGems).forEach(([itemId, gems]) => {
-                        if (ARMOR[itemId]) {
-                            ARMOR[itemId].gems = gems;
-                        }
-                    });
-                    console.log(`✅ Restored static armor gems for: ${Object.keys(data.staticArmorGems).join(', ') || 'none'}`);
-                }
-                
-                // ═══════════════════════════════════════════════════════════════
-                // EQUIPMENT MIGRATION (fix old save data with missing weapons/armor)
-                // ═══════════════════════════════════════════════════════════════
-                const p = gameState.player;
-                
-                // Check if weapon exists (null/undefined = intentionally unarmed)
-                if (p.weapon && !WEAPONS[p.weapon]) {
-                    console.warn(`⚠️ Weapon '${p.weapon}' not found. Migrating to bare_fists...`);
-                    p.weapon = 'bare_fists';
-                    console.log(`✅ Migrated weapon to: bare_fists`);
-                }
-                if (!p.weapon) p.weapon = 'bare_fists';
-                
-                // Check if armor exists (null/undefined = intentionally unarmored)
-                if (p.armor && !ARMOR[p.armor]) {
-                    console.warn(`⚠️ Armor '${p.armor}' not found. Migrating to no_armor...`);
-                    p.armor = 'no_armor';
-                    console.log(`✅ Migrated armor to: no_armor`);
-                }
-                if (!p.armor) p.armor = 'no_armor';
-                
-                // Ensure className exists (for old saves)
-                if (!p.className && p.class && CLASSES[p.class]) {
-                    p.className = CLASSES[p.class].name;
-                    console.log(`✅ Added className: ${p.className}`);
-                }
-
-                // ═══════════════════════════════════════════════════════════════
-                // ROGUE WEAPON MIGRATION — daggers only (force old rogues to comply)
-                // ═══════════════════════════════════════════════════════════════
-                const baseClassCheck = p.baseClass || p.class;
-                if (baseClassCheck === 'rogue' && p.weapon && WEAPONS[p.weapon]) {
-                    const wpn = WEAPONS[p.weapon];
-                    const isDagger = wpn.classRestriction === 'rogue'
-                        || (wpn.name && (wpn.name.toLowerCase().includes('dagger') || wpn.name.toLowerCase().includes('shiv')))
-                        || (p.weapon && (p.weapon.toLowerCase().includes('dagger') || p.weapon.toLowerCase().includes('shiv')));
-                    if (!isDagger) {
-                        console.warn(`⚠️ Rogue has non-dagger weapon '${p.weapon}'. Migrating to rusty_shiv...`);
-                        // Strip the non-dagger from inventory if present
-                        const idx = p.inventory.indexOf(p.weapon);
-                        if (idx !== -1) p.inventory.splice(idx, 1);
-                        // Equip rusty_shiv
-                        p.weapon = 'rusty_shiv';
-                        if (!p.inventory.includes('rusty_shiv')) p.inventory.push('rusty_shiv');
-                        console.log(`✅ Rogue weapon migrated to rusty_shiv`);
                     }
+                    
+                    cleaned++;
                 }
+                newInventory.push(item);
+            });
+            
+            playerData.inventory = newInventory;
+            
+            if (cleaned > 0) {
+                legacyMigrationPerformed = true;
+                console.log(`✅ Cleaned up ${cleaned} malformed instance IDs`);
+            }
+        })(p);
 
-                // ═══════════════════════════════════════════════════════════════
-                // XP SYSTEM MIGRATION — running total (v2) vs per-level (v1)
-                // Old saves store p.xp as XP earned within the current level
-                // (always < xpToNext). New system stores p.xp as a cumulative
-                // running total (always >= getXpForLevel(cls, level)).
-                // We detect old saves and convert them automatically.
-                // ═══════════════════════════════════════════════════════════════
-                (function migrateXp(p) {
-                    if (p.level <= 1) return; // Level 1 needs no migration
-                    const cls = p.baseClass || p.class;
-                    const levelFloor = getXpForLevel(cls, p.level);
-                    if (p.xp < levelFloor) {
-                        // Old-style save: p.xp is within-level XP.
-                        // Convert to running total by adding the level's base threshold.
-                        const oldXp = p.xp;
-                        p.xp = levelFloor + oldXp;
-                        console.log(`✅ XP migration: level ${p.level} ${cls} | ${oldXp} within-level → ${p.xp} running total`);
-                    }
-                    // Also ensure xpToNext matches the cumulative table value
-                    p.xpToNext = getXpToNextLevel(cls, p.level);
-                })(p);
+        // ═══════════════════════════════════════════════════════════════
+        // STEP 4: LEGACY MIGRATION - Convert old string weapons/armor to instances
+        // (Handles simple string weapons like "dagger", "mace", etc.)
+        // ═══════════════════════════════════════════════════════════════
+        (function migrateLegacyEquipment(playerData) {
+            let migrated = 0;
+            const newInventory = [];
+            
+            // Process inventory
+            playerData.inventory.forEach(item => {
+                // Skip if already an instance (prevent double migration)
+                if (typeof item === 'object' && item !== null && (item.instanceId || item.weaponId || item.armorId)) {
+                    newInventory.push(item);
+                    return;
+                }
                 
-                gameState.currentLocation = data.currentLocation || 'silverdale';
-
-                // ═══════════════════════════════════════════════════════════════
-                // CHRONICLE MIGRATION — retroactively unlock all entries the player
-                // has earned based on their current level. This runs for both new
-                // and existing players. For existing players it silently fills in
-                // every entry they would have earned so far. No prompt, no friction.
-                // ═══════════════════════════════════════════════════════════════
-                retroactivelyUnlockChronicle(p);
-
-                // ═══════════════════════════════════════════════════════════════
-                // ZONE MIGRATION — clean up unlockedAreas from old saves.
-                // Old code had no town filtering so players accumulated zones from
-                // all towns in their save. Strip any zone that doesn't belong to
-                // any known town's zone list, and remove deleted zones (fireMountain).
-                // The correct zones will be re-unlocked by the retroactive master
-                // migration in showExplore().
-                // ═══════════════════════════════════════════════════════════════
-                (function migrateUnlockedAreas(p) {
-                    if (!p.unlockedAreas) { p.unlockedAreas = []; return; }
-
-                    // Build master list of all valid zone keys across all towns
-                    const allValidZones = new Set();
-                    if (typeof TOWNS !== 'undefined') {
-                        Object.values(TOWNS).forEach(t => (t.zones || []).forEach(z => allValidZones.add(z)));
-                    }
-                    // Always keep forest and riverside regardless
-                    allValidZones.add('forest');
-                    allValidZones.add('riverside');
-
-                    // Explicitly deleted zones
-                    const deletedZones = new Set(['fireMountain', 'fire_mountain']);
-
-                    const before = p.unlockedAreas.length;
-                    p.unlockedAreas = p.unlockedAreas.filter(z => {
-                        if (deletedZones.has(z)) return false;
-                        // If we know all valid zones, filter to only those
-                        if (allValidZones.size > 0 && !allValidZones.has(z)) return false;
-                        return true;
-                    });
-                    if (p.unlockedAreas.length !== before) {
-                        console.log(`✅ Zone migration: removed ${before - p.unlockedAreas.length} stale zones from unlockedAreas`);
-                    }
-
-                    // Ensure forest is always unlocked (starter zone)
-                    if (!p.unlockedAreas.includes('forest')) p.unlockedAreas.push('forest');
-                })(p);
-
-                // Restore dungeon state if applicable
-                if (data.meta?.inDungeon && data.dungeon) {
-                    // Check if DUNGEONS is loaded
-                    if (typeof DUNGEONS === 'undefined') {
-                        console.error('⚠️ DUNGEONS not loaded! Check dungeon-data.js for syntax errors.');
-                        alert('⚠️ Dungeon data failed to load. Returning to town.');
-                        gameState.dungeon = null;
-                        showTown();
+                // Check if it's a simple string weapon (legacy)
+                if (typeof item === 'string' && WEAPONS[item] && !WEAPONS[item].unarmed) {
+                    // Skip if this weapon was already migrated
+                    if (playerData.inventory.some(invItem => 
+                        typeof invItem === 'object' && invItem.weaponId === item)) {
+                        newInventory.push(item);
                         return;
                     }
                     
-                    console.log('🔍 Loading dungeon:', data.dungeon.dungeonKey);
-                    console.log('📦 Available dungeons:', Object.keys(DUNGEONS));
+                    const baseWeapon = WEAPONS[item];
                     
-                    let dungeonKey = data.dungeon.dungeonKey;
+                    // Create a new instance
+                    const instanceId = `${item}_legacy_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+                    const quality = baseWeapon.quality || 'normal';
                     
-                    // Migrate old dungeon keys if needed
-                    if (!DUNGEONS[dungeonKey]) {
-                        console.warn(`⚠️ Dungeon "${dungeonKey}" not found. Attempting migration...`);
-                        const availableDungeons = Object.keys(DUNGEONS);
-                        if (availableDungeons.length > 0) {
-                            dungeonKey = availableDungeons[0];
-                            console.log(`✅ Migrated to dungeon: ${dungeonKey}`);
-                        } else {
-                            console.error('❌ No dungeons available!');
-                            alert('⚠️ Dungeon not found. Returning to town.');
-                            gameState.dungeon = null;
-                            showTown();
-                            return;
-                        }
-                    }
-                    
-                    const dungeon = DUNGEONS[dungeonKey];
-                    
-                    // ═══════════════════════════════════════════════════════════════
-                    // MERGE: Load persistent map + current session discovered rooms
-                    // Only merge rooms that belong to the current floor to prevent
-                    // cross-floor contamination when room IDs are shared across floors.
-                    // ═══════════════════════════════════════════════════════════════
-                    const floorNum = data.dungeon.floor;
-                    const persistentMap = loadDungeonMap(p, dungeonKey, floorNum);
-                    const sessionRooms = new Set(data.dungeon.discoveredRooms || []);
-                    
-                    // Merge session rooms into persistent map — current floor only
-                    sessionRooms.forEach(roomKey => {
-                        if (roomKey.includes(':')) {
-                            const [floor, roomId] = roomKey.split(':');
-                            const roomFloor = parseInt(floor);
-                            // Only merge rooms belonging to the current floor
-                            if (roomFloor === floorNum) {
-                                persistentMap.add(roomKey);
-                                saveRoomDiscovery(p, dungeonKey, roomFloor, roomId);
-                            } else {
-                                // Save other floors to their own persistent maps but don't pollute current
-                                saveRoomDiscovery(p, dungeonKey, roomFloor, roomId);
-                            }
-                        } else {
-                            // Old unscoped format — scope to current floor
-                            persistentMap.add(`${floorNum}:${roomKey}`);
-                            saveRoomDiscovery(p, dungeonKey, floorNum, roomKey);
-                        }
-                    });
-                    
-                    gameState.dungeon = {
-                        dungeonKey: dungeonKey,
-                        floor: floorNum,
-                        currentRoom: data.dungeon.currentRoom,
-                        discoveredRooms: persistentMap, // Use merged map
-                        spawnedRooms: new Set(data.dungeon.spawnedRooms || []),
-                        activeEnemies: (data.dungeon.activeEnemies || []).map(e => ({
-                            ...e,
-                            isChasing: false,
-                            roomsFollowed: 0
-                        })),
-                        defeatedEnemies: (data.dungeon.defeatedEnemies || []).map(e => ({
-                            ...e
-                        }))
+                    // Create weapon instance in WEAPONS
+                    WEAPONS[instanceId] = {
+                        id: item,
+                        instanceId: instanceId,
+                        name: baseWeapon.name,
+                        baseName: baseWeapon.name,
+                        type: baseWeapon.type || baseWeapon.weaponSubtype,
+                        weaponSubtype: baseWeapon.weaponSubtype || baseWeapon.type,
+                        baseDamage: baseWeapon.baseDamage,
+                        maxDamage: baseWeapon.maxDamage || baseWeapon.baseDamage,
+                        baseMagicDamage: baseWeapon.baseMagicDamage || 0,
+                        healingBonus: baseWeapon.healingBonus || 0,
+                        level: baseWeapon.level || 1,
+                        originalLevel: baseWeapon.level || 1,
+                        quality: quality,
+                        qualityBonus: QUALITY_CONFIG[quality]?.bonusPct || 0,
+                        modifiers: baseWeapon.modifiers || [],
+                        gemSlots: getGemSlots(quality),
+                        gems: [],
+                        cost: baseWeapon.cost || 100,
+                        description: baseWeapon.description || `A ${quality} quality ${baseWeapon.name}.`,
+                        isDropped: false,
+                        isLegacy: true
                     };
                     
-                    // ═══════════════════════════════════════════════════════════════
-                    // MIGRATION: Ensure discoveredRooms only contains current-floor keys
-                    // ═══════════════════════════════════════════════════════════════
-                    const ds = gameState.dungeon;
-                    const migratedSet = new Set();
-                    ds.discoveredRooms.forEach(entry => {
-                        if (entry.includes(':')) {
-                            const [floor] = entry.split(':');
-                            // Only keep entries for the current floor
-                            if (parseInt(floor) === ds.floor) {
-                                migratedSet.add(entry);
-                            }
-                        } else {
-                            // Old format (just roomId) — scope to current floor
-                            migratedSet.add(`${ds.floor}:${entry}`);
-                        }
+                    // Add instance reference to inventory
+                    newInventory.push({
+                        weaponId: item,
+                        instanceId: instanceId,
+                        quality: quality,
+                        modifiers: baseWeapon.modifiers || [],
+                        gemSlots: getGemSlots(quality),
+                        gems: [],
+                        dropLevel: baseWeapon.level || 1,
+                        dropTime: Date.now(),
+                        isLegacy: true
                     });
-                    ds.discoveredRooms = migratedSet;
                     
-                    // Open dungeon UI
-                    openTerminalView(dungeonKey);
-                    
-                    const floor = dungeon.floors[data.dungeon.floor];
-                    if (!floor) {
-                        console.error(`⚠️ Floor ${data.dungeon.floor} not found!`);
-                        alert('⚠️ Invalid dungeon floor. Returning to town.');
-                        gameState.dungeon = null;
-                        showTown();
+                    migrated++;
+                }
+                // Check if it's a simple string armor (legacy)
+                else if (typeof item === 'string' && ARMOR[item] && !ARMOR[item].unarmored) {
+                    // Skip if this armor was already migrated
+                    if (playerData.inventory.some(invItem => 
+                        typeof invItem === 'object' && invItem.armorId === item)) {
+                        newInventory.push(item);
                         return;
                     }
                     
-                    const room = floor.rooms[data.dungeon.currentRoom];
-                    if (!room) {
-                        console.error(`⚠️ Room ${data.dungeon.currentRoom} not found!`);
-                        alert('⚠️ Invalid dungeon room. Returning to town.');
-                        gameState.dungeon = null;
-                        showTown();
-                        return;
-                    }
+                    const baseArmor = ARMOR[item];
                     
-                    termAppend('', 'term-separator');
-                    termAppend(`<strong>${room.name}</strong>`);
-                    termAppend(room.description, 'term-dim');
+                    // Create a new instance
+                    const instanceId = `${item}_legacy_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+                    const quality = baseArmor.quality || 'normal';
                     
-                    const exits = Object.keys(room.exits).map(d => d.toUpperCase()).join(', ');
-                    termAppend(`You see exits: ${exits}.`, 'term-dim');
+                    // Create armor instance in ARMOR
+                    ARMOR[instanceId] = {
+                        id: item,
+                        instanceId: instanceId,
+                        name: baseArmor.name,
+                        baseName: baseArmor.name,
+                        type: baseArmor.type || baseArmor.armorSubtype,
+                        baseDefense: baseArmor.baseDefense,
+                        baseMagicBonus: baseArmor.baseMagicBonus || 0,
+                        level: baseArmor.level || 1,
+                        originalLevel: baseArmor.level || 1,
+                        quality: quality,
+                        qualityBonus: QUALITY_CONFIG[quality]?.bonusPct || 0,
+                        gems: [],
+                        cost: baseArmor.cost || 100,
+                        description: baseArmor.description || `A ${quality} quality ${baseArmor.name}.`,
+                        isDropped: false,
+                        isLegacy: true
+                    };
                     
-                    checkEnemiesInRoom(data.dungeon.currentRoom);
-                    renderDungeonActionBar();
+                    // Add instance reference to inventory
+                    newInventory.push({
+                        armorId: item,
+                        instanceId: instanceId,
+                        quality: quality,
+                        dropLevel: baseArmor.level || 1,
+                        dropTime: Date.now(),
+                        isLegacy: true
+                    });
                     
-                    // Start regeneration in dungeon (normal speed)
-                    startMpRegen(false);
-                    startResting(false);
-                } else if (data.activeCombat && data.activeCombat.monsters && data.activeCombat.monsters.length > 0) {
-                    // ═══════════════════════════════════════════════════════════════
-                    // RESTORE MID-COMBAT STATE - enemies still waiting from last session
-                    // ═══════════════════════════════════════════════════════════════
-                    const ac = data.activeCombat;
-                    const p  = gameState.player;
-
-
-                    // DEBUG: Log what we're restoring
-    console.log('📂 RESTORING COMBAT STATE:', ac.monsters.map(m => ({
-        name: m.name,
-        hp: m.hp,
-        maxHp: m.maxHp,
-        key: m.key
-    })));
-                    
-                    // Restore pip array
-                    const pipCount  = ac.pipCount || calcPlayerHits(p);
-                    const pipTimers = Array(pipCount).fill(10);
-                    const pipReady  = ac.pipsReady || Array(pipCount).fill(true);
-                    
-                    gameState.combatState = {
-    monsters:           ac.monsters,
-    currentTarget:      ac.currentTarget || 0,
-    messages:           [],
-    defeatedMonsters:   [],
-    pipTimers:          pipTimers,
-    pipAvailable:       pipReady,
-    enemyTimer:         ac.enemyDelay || 15,
-    enemyDelay:         ac.enemyDelay || 15,
-    enemyHits:          ac.enemyHits  || 1,
-    enemyHitsLeft:      ac.enemyHitsLeft || 1,
-    playerStatusEffects:  [],
-    monsterStatusEffects: {},
-    dotTimers:            {},
-    actionMode:           'main',
-    shieldActive:         false  // Warrior shield starts inactive
-};
-                    
-                    // Open the terminal view for the saved location
-                    const loc = ac.location || gameState.currentLocation;
-                    gameState.currentLocation = loc;
-                    gameState._terminalOpen = false;
-                    openTerminalView(loc);
-                    
-                    // Print restoration message
-                    termAppend('', 'term-separator');
-                    termAppend(`<span style="color:#FF8800;">⚠️ You were mid-combat when you left!</span>`, 'term-enemy');
-                    
-                    const names = ac.monsters.map(m =>
-                        `<span style="color:${m.rarityColor};">${m.name}</span> (${m.hp}/${m.maxHp} HP)`
-                    ).join(', ');
-                    termAppend(`Still fighting: ${names}`, 'term-enemy');
-                    
-                    // Start regen, render UI
-                    startMpRegen(false);
-                    startResting(false);
-                    renderEnemyCards();
-                    renderActionBar();
-                    startCombatTimer();
-                    
-                    console.log(`⚔️ Restored combat: ${ac.monsters.length} enemies waiting`);
+                    migrated++;
                 } else {
-                    maybeShowLegacyWelcome();
+                    // Keep existing items (objects, potions, etc.)
+                    newInventory.push(item);
+                }
+            });
+            
+            // Update player's inventory
+            playerData.inventory = newInventory;
+            
+            // Migrate equipped weapon
+            if (playerData.weapon && typeof playerData.weapon === 'string' && WEAPONS[playerData.weapon] && playerData.weapon !== 'bare_fists') {
+                // Check if already migrated
+                if (!playerData.inventory.some(item => typeof item === 'object' && item.weaponId === playerData.weapon)) {
+                    const baseWeapon = WEAPONS[playerData.weapon];
+                    const instanceId = `${playerData.weapon}_legacy_equipped_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+                    const quality = baseWeapon.quality || 'normal';
+                    
+                    WEAPONS[instanceId] = {
+                        id: playerData.weapon,
+                        instanceId: instanceId,
+                        name: baseWeapon.name,
+                        baseName: baseWeapon.name,
+                        type: baseWeapon.type || baseWeapon.weaponSubtype,
+                        weaponSubtype: baseWeapon.weaponSubtype || baseWeapon.type,
+                        baseDamage: baseWeapon.baseDamage,
+                        maxDamage: baseWeapon.maxDamage || baseWeapon.baseDamage,
+                        baseMagicDamage: baseWeapon.baseMagicDamage || 0,
+                        healingBonus: baseWeapon.healingBonus || 0,
+                        level: baseWeapon.level || 1,
+                        originalLevel: baseWeapon.level || 1,
+                        quality: quality,
+                        qualityBonus: QUALITY_CONFIG[quality]?.bonusPct || 0,
+                        modifiers: baseWeapon.modifiers || [],
+                        gemSlots: getGemSlots(quality),
+                        gems: [],
+                        cost: baseWeapon.cost || 100,
+                        description: baseWeapon.description || `A ${quality} quality ${baseWeapon.name}.`,
+                        isDropped: false,
+                        isLegacy: true
+                    };
+                    
+                    playerData.weapon = instanceId;
+                    
+                    // Add to inventory
+                    playerData.inventory.push({
+                        weaponId: playerData.weapon,
+                        instanceId: instanceId,
+                        quality: quality,
+                        modifiers: baseWeapon.modifiers || [],
+                        gemSlots: getGemSlots(quality),
+                        gems: [],
+                        dropLevel: baseWeapon.level || 1,
+                        dropTime: Date.now(),
+                        isLegacy: true
+                    });
+                    migrated++;
+                }
+            }
+            
+            // Migrate equipped armor
+            if (playerData.armor && typeof playerData.armor === 'string' && ARMOR[playerData.armor] && playerData.armor !== 'no_armor') {
+                // Check if already migrated
+                if (!playerData.inventory.some(item => typeof item === 'object' && item.armorId === playerData.armor)) {
+                    const baseArmor = ARMOR[playerData.armor];
+                    const instanceId = `${playerData.armor}_legacy_equipped_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+                    const quality = baseArmor.quality || 'normal';
+                    
+                    ARMOR[instanceId] = {
+                        id: playerData.armor,
+                        instanceId: instanceId,
+                        name: baseArmor.name,
+                        baseName: baseArmor.name,
+                        type: baseArmor.type || baseArmor.armorSubtype,
+                        baseDefense: baseArmor.baseDefense,
+                        baseMagicBonus: baseArmor.baseMagicBonus || 0,
+                        level: baseArmor.level || 1,
+                        originalLevel: baseArmor.level || 1,
+                        quality: quality,
+                        qualityBonus: QUALITY_CONFIG[quality]?.bonusPct || 0,
+                        gems: [],
+                        cost: baseArmor.cost || 100,
+                        description: baseArmor.description || `A ${quality} quality ${baseArmor.name}.`,
+                        isDropped: false,
+                        isLegacy: true
+                    };
+                    
+                    playerData.armor = instanceId;
+                    
+                    // Add to inventory
+                    playerData.inventory.push({
+                        armorId: playerData.armor,
+                        instanceId: instanceId,
+                        quality: quality,
+                        dropLevel: baseArmor.level || 1,
+                        dropTime: Date.now(),
+                        isLegacy: true
+                    });
+                    migrated++;
+                }
+            }
+            
+            if (migrated > 0) {
+                legacyMigrationPerformed = true;
+                console.log(`✅ Migrated ${migrated} legacy items to new instance system`);
+            }
+            
+            return playerData;
+        })(p);
+
+        // ═══════════════════════════════════════════════════════════════
+        // STEP 5: RECOVER LEGACY DYNAMIC WEAPON STRINGS - UNIVERSAL
+        // (Handles complex strings like "dagger_legendary_12345")
+        // ═══════════════════════════════════════════════════════════════
+        (function recoverLegacyDynamicWeapons(playerData) {
+            let recovered = 0;
+            let recoveredGems = 0;
+            const newInventory = [];
+            const playerClass = playerData.baseClass || playerData.class;
+            
+            // Common weapon type mappings
+            const weaponTypeMap = {
+                // Axes
+                'battleaxe': 'battle_axe',
+                'handaxe': 'hand_axe',
+                'woodaxe': 'wood_axe',
+                'greataxe': 'great_axe',
+                
+                // Hammers
+                'warhammer': 'war_hammer',
+                'ironhammer': 'iron_hammer',
+                'stonehammer': 'stone_hammer',
+                
+                // Swords
+                'greatsword': 'greatsword',
+                'longsword': 'long_sword',
+                'shortsword': 'short_sword',
+                'iron_sword': 'iron_sword',
+                
+                // Maces
+                'mace': 'mace',
+                'ironmace': 'iron_mace',
+                'flangedmace': 'flanged_mace',
+                'holymace': 'holy_mace',
+                'blessedmace': 'blessed_mace',
+                
+                // Daggers
+                'dagger': 'dagger',
+                'poison_dagger': 'poison_dagger',
+                'assassin_blade': 'assassin_blade',
+                
+                // Staves
+                'staff': 'wooden_staff',
+                'woodenstaff': 'wooden_staff',
+                'holystaff': 'holy_staff',
+                
+                // Wands
+                'wand': 'apprentice_wand',
+                
+                // Bows
+                'bow': 'short_bow',
+                'longbow': 'longbow',
+                'shortbow': 'short_bow',
+                
+                // Special
+                'magical_butterknife': 'magical_butterknife'
+            };
+            
+            // Class-specific preferred weapon types
+            const classWeaponPreferences = {
+                'warrior': ['battle_axe', 'greatsword', 'war_hammer', 'iron_sword'],
+                'paladin': ['holy_mace', 'blessed_mace', 'crusader_sword', 'war_hammer'],
+                'cleric': ['holy_mace', 'blessed_mace', 'holy_staff'],
+                'rogue': ['dagger', 'poison_dagger', 'assassin_blade'],
+                'mage': ['apprentice_wand', 'wooden_staff'],
+                'warlock': ['dark_staff', 'void_staff'],
+                'hunter': ['short_bow', 'longbow'],
+                'ranger': ['longbow', 'composite_bow']
+            };
+            
+            // Special cases for legendary/godly weapons
+            const forcedGodlyWeapons = [
+                'magical_butterknife',
+                'genesis',
+                'genesis_mace',
+                'genesis_sword',
+                'genesis_axe',
+                'apocalypse',
+                'apocalypse_blade',
+                'eternity',
+                'eternity_blade',
+                'cosmic',
+                'cosmic_blade',
+                'divine',
+                'divine_blade',
+                'primordial',
+                'godslayer',
+                'god_blade',
+                'infinity_blade',
+                'oblivion',
+                'oblivion_blade'
+            ];
+
+            const forcedLegendaryWeapons = [
+                'ancient_dragon_slayer',
+                'dragon_heart',
+                'dragonscale_blade',
+                'celestial_blade',
+                'heavenly_blade',
+                'hellforged_blade',
+                'void_blade',
+                'titan_blade',
+                'runic_blade',
+                'holy_avenger'
+            ];
+            
+            // Get all weapons of a certain type for fallback
+            function findBestWeaponMatch(baseType, quality, targetLevel) {
+                const possibleKeys = [];
+                
+                // First, try direct mapping
+                const mappedKey = weaponTypeMap[baseType];
+                if (mappedKey && WEAPONS[mappedKey]) {
+                    return mappedKey;
                 }
                 
-                // Apply gem HP/MP/defense bonuses from equipped items
-recalcGemStats(gameState.player);
-
-// ═══════════════════════════════════════════════════════════════
-// GEM FIX - Run after character is fully loaded
-// ═══════════════════════════════════════════════════════════════
-function fixAllGems() {
-    if (!gameState?.player) return;
-    
-    console.log('💎 Checking gems...');
-    let fixed = 0;
-    
-    function fixGem(gem) {
-        if (!gem) return false;
-        
-        const isBroken = !gem.stats || Object.keys(gem.stats).length === 0 || 
-                         (gem.name && gem.name.includes('undefined'));
-        
-        if (!isBroken) return false;
-        
-        if (gem.type === 'topaz' || gem.name?.includes('Topaz')) {
-            gem.stats = { lightningDmg: 9, critBonus: 4 };
-            gem.tier = 1;
-            gem.name = 'T1 Topaz';
-            gem.description = '+9 Lightning DMG, +4 Crit %';
-            return true;
-        }
-        if (gem.type === 'emerald' || gem.name?.includes('Emerald')) {
-            gem.stats = { weaponDmg: 6, lifesteal: 2 };
-            gem.tier = 1;
-            gem.name = 'T1 Emerald';
-            gem.description = '+6 Weapon DMG, +2 Lifesteal %';
-            return true;
-        }
-        return false;
-    }
-    
-    // Check equipped weapon
-    if (gameState.player.weapon) {
-        const weapon = WEAPONS[gameState.player.weapon];
-        if (weapon?.gems) {
-            weapon.gems.forEach(gem => {
-                if (fixGem(gem)) fixed++;
-            });
-        }
-    }
-    
-    // Check inventory
-    if (gameState.player.inventory) {
-        gameState.player.inventory.forEach(item => {
-            if (item?.gems) {
-                item.gems.forEach(gem => {
-                    if (fixGem(gem)) fixed++;
+                // If baseType itself might be a weapon key
+                if (WEAPONS[baseType]) {
+                    return baseType;
+                }
+                
+                // Try to find weapons with similar name
+                Object.keys(WEAPONS).forEach(key => {
+                    const weapon = WEAPONS[key];
+                    if (!weapon || weapon.unarmed) return;
+                    
+                    // Check if weapon name contains the base type
+                    if (key.includes(baseType) || 
+                        (weapon.name && weapon.name.toLowerCase().includes(baseType.toLowerCase()))) {
+                        possibleKeys.push(key);
+                    }
+                    
+                    // Check for partial matches
+                    if (baseType.length > 3) {
+                        const basePart = baseType.substring(0, 4);
+                        if (key.includes(basePart) || 
+                            (weapon.name && weapon.name.toLowerCase().includes(basePart))) {
+                            possibleKeys.push(key);
+                        }
+                    }
+                });
+                
+                // If we found possible matches, pick the best one
+                if (possibleKeys.length > 0) {
+                    // Prefer weapons within 2 levels of target level
+                    const levelAppropriate = possibleKeys.filter(key => 
+                        Math.abs((WEAPONS[key].level || 1) - targetLevel) <= 2
+                    );
+                    
+                    if (levelAppropriate.length > 0) {
+                        return levelAppropriate[0];
+                    }
+                    return possibleKeys[0];
+                }
+                
+                // Last resort: use class preferences
+                const preferences = classWeaponPreferences[playerClass] || ['iron_sword', 'dagger'];
+                for (const prefKey of preferences) {
+                    if (WEAPONS[prefKey]) {
+                        return prefKey;
+                    }
+                }
+                
+                // Absolute last resort
+                return 'dagger';
+            }
+            
+            // First, check if we have any saved weapon data in the original save
+            const originalSaveData = data;
+            const savedWeaponData = {};
+            
+            if (originalSaveData && originalSaveData.player && originalSaveData.player.inventory) {
+                originalSaveData.player.inventory.forEach((savedItem, idx) => {
+                    if (typeof savedItem === 'object' && savedItem !== null) {
+                        if (savedItem.weaponId && savedItem.gems && savedItem.gems.length > 0) {
+                            const instanceId = savedItem.instanceId || `temp_${idx}`;
+                            savedWeaponData[instanceId] = savedItem;
+                            console.log(`📦 Found saved weapon with gems:`, savedItem);
+                        }
+                    }
                 });
             }
-        });
-    }
-    
-    if (fixed > 0) {
-        console.log(`✅ Fixed ${fixed} gem(s)!`);
-        if (typeof localSave === 'function') localSave();
-    }
-}
-
-// Run the gem fix
-fixAllGems();
-
-console.log(`✅ Character loaded: ${data.characterName}`);
-console.log(`   Weapon: ${gameState.player.weapon} | Armor: ${gameState.player.armor}`);
-
-
-
-// ═══════════════════════════════════════════════════════════════
-// TRACK LOGIN TO GOOGLE SHEETS
-// ═══════════════════════════════════════════════════════════════
-(async function() {
-    const location = await getPlayerLocation();
-    
-    const loginData = {
-        name: gameState.player.name,
-        class: gameState.player.className || CLASSES[gameState.player.class]?.name || gameState.player.class,
-        level: gameState.player.level,
-        createdDate: new Date().toISOString(),
-        country: location.country,
-        state: location.state,
-        event: 'character_login'
-    };
-    
-    await savePlayerToSheet(loginData);
-})();
-
-            } catch (e) {
-                console.error('Error loading character:', e);
-                alert('⚠️ Failed to load save file. The data may be corrupted. Returning to main menu.');
-                
-                // Clean up corrupted state
-                gameState.player = null;
-                gameState.dungeon = null;
-                gameState.combatState = null;
-                
-                // Try to delete corrupted save
-                try {
-                    deleteCharacter(characterId);
-                } catch (deleteError) {
-                    console.error('Could not delete corrupted save:', deleteError);
+            
+            playerData.inventory.forEach((item, index) => {
+                // Skip if already an object (already processed)
+                if (typeof item === 'object' && item !== null) {
+                    newInventory.push(item);
+                    return;
                 }
                 
-                // PUT IT HERE???
-
-                // Always return to main menu on error
-                showMainMenu();
+                // Check if it's a legacy dynamic weapon string
+                if (typeof item === 'string' && 
+                    (item.includes('_epic_') || item.includes('_rare_') || 
+                     item.includes('_legendary_') || item.includes('_godly_') ||
+                     item.includes('_normal_') || item.includes('_poor_'))) {
+                    
+                    // Extract base type and quality
+                    const parts = item.split('_');
+                    const baseType = parts[0];
+                    let quality = parts[1]; // epic, rare, normal, etc.
+                    
+                    // Special cases for legendary/godly weapons
+                    if (forcedGodlyWeapons.some(name => item.includes(name) || baseType.includes(name))) {
+                        quality = 'godly';
+                        console.log(`✨ Forcing Godly quality for ${baseType}`);
+                    }
+                    else if (forcedLegendaryWeapons.some(name => item.includes(name) || baseType.includes(name))) {
+                        quality = 'legendary';
+                        console.log(`✨ Forcing Legendary quality for ${baseType}`);
+                    }
+                    else if (baseType === 'magical' || item.includes('magical_butterknife')) {
+                        quality = 'godly';
+                        console.log(`✨ Forcing Godly quality for Magical Butterknife`);
+                    }
+                    else if (baseType === 'genesis' || item.includes('genesis_mace')) {
+                        quality = 'godly';
+                        console.log(`✨ Forcing Godly quality for Genesis Mace`);
+                    }
+                    
+                    // Try to extract level from the string if possible
+                    let targetLevel = playerData.level || 1;
+                    
+                    // Find the best matching weapon key
+                    const weaponKey = findBestWeaponMatch(baseType, quality, targetLevel);
+                    
+                    if (WEAPONS[weaponKey]) {
+                        const baseWeapon = WEAPONS[weaponKey];
+                        const instanceId = `${weaponKey}_recovered_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+                        const gemSlots = getGemSlots(quality);
+                        
+                        // Try to find saved gem data for this weapon
+                        let gems = [];
+                        let savedGems = [];
+                        
+                        Object.values(savedWeaponData).forEach(saved => {
+                            if (saved.instanceId && item.includes(saved.instanceId.split('_').slice(-2).join('_'))) {
+                                savedGems = saved.gems || [];
+                                console.log(`✨ Found saved gem data for ${item}:`, savedGems);
+                            }
+                        });
+                        
+                        if (savedGems.length > 0) {
+                            gems = savedGems;
+                            recoveredGems += gems.length;
+                        }
+                        
+                        // Create new weapon instance with appropriate level
+                        const weaponLevel = Math.min(25, Math.max(1, targetLevel));
+                        
+                        WEAPONS[instanceId] = {
+                            id: weaponKey,
+                            instanceId: instanceId,
+                            name: `${quality.charAt(0).toUpperCase() + quality.slice(1)} ${baseWeapon.name}`,
+                            baseName: baseWeapon.name,
+                            type: baseWeapon.type || baseWeapon.weaponSubtype,
+                            weaponSubtype: baseWeapon.weaponSubtype || baseWeapon.type,
+                            baseDamage: baseWeapon.baseDamage,
+                            maxDamage: baseWeapon.maxDamage || baseWeapon.baseDamage,
+                            baseMagicDamage: baseWeapon.baseMagicDamage || 0,
+                            level: weaponLevel,
+                            quality: quality,
+                            modifiers: [],
+                            gemSlots: gemSlots,
+                            gems: gems,
+                            cost: baseWeapon.cost || 100,
+                            description: `A ${quality} quality ${baseWeapon.name}.`,
+                            isDropped: true,
+                            isRecovered: true
+                        };
+                        
+                        newInventory.push({
+                            weaponId: weaponKey,
+                            instanceId: instanceId,
+                            quality: quality,
+                            modifiers: [],
+                            gemSlots: gemSlots,
+                            gems: gems,
+                            dropLevel: weaponLevel,
+                            dropTime: Date.now(),
+                            isRecovered: true
+                        });
+                        
+                        if (gems.length > 0) {
+                            console.log(`💎 Restored ${gems.length} gem(s) to ${quality} ${baseWeapon.name}`);
+                        }
+                        
+                        recovered++;
+                        console.log(`🔄 Recovered legacy weapon: ${item} -> ${weaponKey} (${quality}) [Lvl ${weaponLevel}]`);
+                    } else {
+                        console.log(`⚠️ Could not recover ${item} - no suitable weapon found`);
+                        newInventory.push(item);
+                    }
+                } else {
+                    // Keep non-matching items
+                    newInventory.push(item);
+                }
+            });
+            
+            if (recovered > 0) {
+                playerData.inventory = newInventory;
+                console.log(`✅ Recovered ${recovered} legacy dynamic weapons with ${recoveredGems} gems`);
+                legacyMigrationPerformed = true;
             }
+        })(p);
 
-                // Start auto-save timer
-                setupAutoSaveTriggers();
+        // ═══════════════════════════════════════════════════════════════
+        // STEP 6: EQUIPMENT VALIDATION (now that all items are restored)
+        // ═══════════════════════════════════════════════════════════════
+        
+        // Check if weapon exists (null/undefined = intentionally unarmed)
+        if (p.weapon && !WEAPONS[p.weapon] && p.weapon !== 'bare_fists') {
+            console.warn(`⚠️ Weapon '${p.weapon}' not found. Migrating to bare_fists...`);
+            p.weapon = 'bare_fists';
+            console.log(`✅ Migrated weapon to: bare_fists`);
+        }
+        if (!p.weapon) p.weapon = 'bare_fists';
+        
+        // Check if armor exists (null/undefined = intentionally unarmored)
+        if (p.armor && !ARMOR[p.armor] && p.armor !== 'no_armor') {
+            console.warn(`⚠️ Armor '${p.armor}' not found. Migrating to no_armor...`);
+            p.armor = 'no_armor';
+            console.log(`✅ Migrated armor to: no_armor`);
+        }
+        if (!p.armor) p.armor = 'no_armor';
+        
+        // Ensure className exists (for old saves)
+        if (!p.className && p.class && CLASSES[p.class]) {
+            p.className = CLASSES[p.class].name;
+            console.log(`✅ Added className: ${p.className}`);
         }
 
+        // ═══════════════════════════════════════════════════════════════
+        // ROGUE WEAPON MIGRATION — daggers only (force old rogues to comply)
+        // ═══════════════════════════════════════════════════════════════
+        const baseClassCheck = p.baseClass || p.class;
+        if (baseClassCheck === 'rogue' && p.weapon && WEAPONS[p.weapon]) {
+            const wpn = WEAPONS[p.weapon];
+            const isDagger = wpn.classRestriction === 'rogue'
+                || (wpn.name && (wpn.name.toLowerCase().includes('dagger') || wpn.name.toLowerCase().includes('shiv')))
+                || (p.weapon && (p.weapon.toLowerCase().includes('dagger') || p.weapon.toLowerCase().includes('shiv')));
+            if (!isDagger) {
+                console.warn(`⚠️ Rogue has non-dagger weapon '${p.weapon}'. Migrating to rusty_shiv...`);
+                // Strip the non-dagger from inventory if present
+                const idx = p.inventory.indexOf(p.weapon);
+                if (idx !== -1) p.inventory.splice(idx, 1);
+                // Equip rusty_shiv
+                p.weapon = 'rusty_shiv';
+                if (!p.inventory.includes('rusty_shiv')) p.inventory.push('rusty_shiv');
+                console.log(`✅ Rogue weapon migrated to rusty_shiv`);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // XP SYSTEM MIGRATION — running total (v2) vs per-level (v1)
+        // ═══════════════════════════════════════════════════════════════
+        (function migrateXp(p) {
+            if (p.level <= 1) return; // Level 1 needs no migration
+            const cls = p.baseClass || p.class;
+            const levelFloor = getXpForLevel(cls, p.level);
+            if (p.xp < levelFloor) {
+                // Old-style save: p.xp is within-level XP.
+                // Convert to running total by adding the level's base threshold.
+                const oldXp = p.xp;
+                p.xp = levelFloor + oldXp;
+                console.log(`✅ XP migration: level ${p.level} ${cls} | ${oldXp} within-level → ${p.xp} running total`);
+            }
+            // Also ensure xpToNext matches the cumulative table value
+            p.xpToNext = getXpToNextLevel(cls, p.level);
+        })(p);
+        
+        gameState.currentLocation = data.currentLocation || 'silverdale';
+
+        // ═══════════════════════════════════════════════════════════════
+        // CHRONICLE MIGRATION — retroactively unlock all entries the player
+        // has earned based on their current level.
+        // ═══════════════════════════════════════════════════════════════
+        retroactivelyUnlockChronicle(p);
+
+        // ═══════════════════════════════════════════════════════════════
+        // ZONE MIGRATION — clean up unlockedAreas from old saves.
+        // ═══════════════════════════════════════════════════════════════
+        (function migrateUnlockedAreas(p) {
+            if (!p.unlockedAreas) { p.unlockedAreas = []; return; }
+
+            // Build master list of all valid zone keys across all towns
+            const allValidZones = new Set();
+            if (typeof TOWNS !== 'undefined') {
+                Object.values(TOWNS).forEach(t => (t.zones || []).forEach(z => allValidZones.add(z)));
+            }
+            // Always keep forest and riverside regardless
+            allValidZones.add('forest');
+            allValidZones.add('riverside');
+
+            // Explicitly deleted zones
+            const deletedZones = new Set(['fireMountain', 'fire_mountain']);
+
+            const before = p.unlockedAreas.length;
+            p.unlockedAreas = p.unlockedAreas.filter(z => {
+                if (deletedZones.has(z)) return false;
+                // If we know all valid zones, filter to only those
+                if (allValidZones.size > 0 && !allValidZones.has(z)) return false;
+                return true;
+            });
+            if (p.unlockedAreas.length !== before) {
+                console.log(`✅ Zone migration: removed ${before - p.unlockedAreas.length} stale zones from unlockedAreas`);
+            }
+
+            // Ensure forest is always unlocked (starter zone)
+            if (!p.unlockedAreas.includes('forest')) p.unlockedAreas.push('forest');
+        })(p);
+
+        // Restore dungeon state if applicable
+        if (data.meta?.inDungeon && data.dungeon) {
+            // Check if DUNGEONS is loaded
+            if (typeof DUNGEONS === 'undefined') {
+                console.error('⚠️ DUNGEONS not loaded! Check dungeon-data.js for syntax errors.');
+                alert('⚠️ Dungeon data failed to load. Returning to town.');
+                gameState.dungeon = null;
+                showTown();
+                return;
+            }
+            
+            console.log('🔍 Loading dungeon:', data.dungeon.dungeonKey);
+            console.log('📦 Available dungeons:', Object.keys(DUNGEONS));
+            
+            let dungeonKey = data.dungeon.dungeonKey;
+            
+            // Migrate old dungeon keys if needed
+            if (!DUNGEONS[dungeonKey]) {
+                console.warn(`⚠️ Dungeon "${dungeonKey}" not found. Attempting migration...`);
+                const availableDungeons = Object.keys(DUNGEONS);
+                if (availableDungeons.length > 0) {
+                    dungeonKey = availableDungeons[0];
+                    console.log(`✅ Migrated to dungeon: ${dungeonKey}`);
+                } else {
+                    console.error('❌ No dungeons available!');
+                    alert('⚠️ Dungeon not found. Returning to town.');
+                    gameState.dungeon = null;
+                    showTown();
+                    return;
+                }
+            }
+            
+            const dungeon = DUNGEONS[dungeonKey];
+            
+            // ═══════════════════════════════════════════════════════════════
+            // MERGE: Load persistent map + current session discovered rooms
+            // Only merge rooms that belong to the current floor to prevent
+            // cross-floor contamination when room IDs are shared across floors.
+            // ═══════════════════════════════════════════════════════════════
+            const floorNum = data.dungeon.floor;
+            const persistentMap = loadDungeonMap(p, dungeonKey, floorNum);
+            const sessionRooms = new Set(data.dungeon.discoveredRooms || []);
+            
+            // Merge session rooms into persistent map — current floor only
+            sessionRooms.forEach(roomKey => {
+                if (roomKey.includes(':')) {
+                    const [floor, roomId] = roomKey.split(':');
+                    const roomFloor = parseInt(floor);
+                    // Only merge rooms belonging to the current floor
+                    if (roomFloor === floorNum) {
+                        persistentMap.add(roomKey);
+                        saveRoomDiscovery(p, dungeonKey, roomFloor, roomId);
+                    } else {
+                        // Save other floors to their own persistent maps but don't pollute current
+                        saveRoomDiscovery(p, dungeonKey, roomFloor, roomId);
+                    }
+                } else {
+                    // Old unscoped format — scope to current floor
+                    persistentMap.add(`${floorNum}:${roomKey}`);
+                    saveRoomDiscovery(p, dungeonKey, floorNum, roomKey);
+                }
+            });
+            
+            gameState.dungeon = {
+                dungeonKey: dungeonKey,
+                floor: floorNum,
+                currentRoom: data.dungeon.currentRoom,
+                discoveredRooms: persistentMap, // Use merged map
+                spawnedRooms: new Set(data.dungeon.spawnedRooms || []),
+                activeEnemies: (data.dungeon.activeEnemies || []).map(e => ({
+                    ...e,
+                    isChasing: false,
+                    roomsFollowed: 0
+                })),
+                defeatedEnemies: (data.dungeon.defeatedEnemies || []).map(e => ({
+                    ...e
+                }))
+            };
+            
+            // ═══════════════════════════════════════════════════════════════
+            // MIGRATION: Ensure discoveredRooms only contains current-floor keys
+            // ═══════════════════════════════════════════════════════════════
+            const ds = gameState.dungeon;
+            const migratedSet = new Set();
+            ds.discoveredRooms.forEach(entry => {
+                if (entry.includes(':')) {
+                    const [floor] = entry.split(':');
+                    // Only keep entries for the current floor
+                    if (parseInt(floor) === ds.floor) {
+                        migratedSet.add(entry);
+                    }
+                } else {
+                    // Old format (just roomId) — scope to current floor
+                    migratedSet.add(`${ds.floor}:${entry}`);
+                }
+            });
+            ds.discoveredRooms = migratedSet;
+            
+            // Open dungeon UI
+            openTerminalView(dungeonKey);
+            
+            const floor = dungeon.floors[data.dungeon.floor];
+            if (!floor) {
+                console.error(`⚠️ Floor ${data.dungeon.floor} not found!`);
+                alert('⚠️ Invalid dungeon floor. Returning to town.');
+                gameState.dungeon = null;
+                showTown();
+                return;
+            }
+            
+            const room = floor.rooms[data.dungeon.currentRoom];
+            if (!room) {
+                console.error(`⚠️ Room ${data.dungeon.currentRoom} not found!`);
+                alert('⚠️ Invalid dungeon room. Returning to town.');
+                gameState.dungeon = null;
+                showTown();
+                return;
+            }
+            
+            termAppend('', 'term-separator');
+            termAppend(`<strong>${room.name}</strong>`);
+            termAppend(room.description, 'term-dim');
+            
+            const exits = Object.keys(room.exits).map(d => d.toUpperCase()).join(', ');
+            termAppend(`You see exits: ${exits}.`, 'term-dim');
+            
+            checkEnemiesInRoom(data.dungeon.currentRoom);
+            renderDungeonActionBar();
+            
+            // Start regeneration in dungeon (normal speed)
+            startMpRegen(false);
+            startResting(false);
+        } else if (data.activeCombat && data.activeCombat.monsters && data.activeCombat.monsters.length > 0) {
+            // ═══════════════════════════════════════════════════════════════
+            // RESTORE MID-COMBAT STATE - enemies still waiting from last session
+            // ═══════════════════════════════════════════════════════════════
+            const ac = data.activeCombat;
+            const p  = gameState.player;
+
+            // DEBUG: Log what we're restoring
+            console.log('📂 RESTORING COMBAT STATE:', ac.monsters.map(m => ({
+                name: m.name,
+                hp: m.hp,
+                maxHp: m.maxHp,
+                key: m.key
+            })));
+            
+            // Restore pip array
+            const pipCount  = ac.pipCount || calcPlayerHits(p);
+            const pipTimers = Array(pipCount).fill(10);
+            const pipReady  = ac.pipsReady || Array(pipCount).fill(true);
+            
+            gameState.combatState = {
+                monsters:           ac.monsters,
+                currentTarget:      ac.currentTarget || 0,
+                messages:           [],
+                defeatedMonsters:   [],
+                pipTimers:          pipTimers,
+                pipAvailable:       pipReady,
+                enemyTimer:         ac.enemyDelay || 15,
+                enemyDelay:         ac.enemyDelay || 15,
+                enemyHits:          ac.enemyHits  || 1,
+                enemyHitsLeft:      ac.enemyHitsLeft || 1,
+                playerStatusEffects:  [],
+                monsterStatusEffects: {},
+                dotTimers:            {},
+                actionMode:           'main',
+                shieldActive:         false  // Warrior shield starts inactive
+            };
+            
+            // Open the terminal view for the saved location
+            const loc = ac.location || gameState.currentLocation;
+            gameState.currentLocation = loc;
+            gameState._terminalOpen = false;
+            openTerminalView(loc);
+            
+            // Print restoration message
+            termAppend('', 'term-separator');
+            termAppend(`<span style="color:#FF8800;">⚠️ You were mid-combat when you left!</span>`, 'term-enemy');
+            
+            const names = ac.monsters.map(m =>
+                `<span style="color:${m.rarityColor};">${m.name}</span> (${m.hp}/${m.maxHp} HP)`
+            ).join(', ');
+            termAppend(`Still fighting: ${names}`, 'term-enemy');
+            
+            // Start regen, render UI
+            startMpRegen(false);
+            startResting(false);
+            renderEnemyCards();
+            renderActionBar();
+            startCombatTimer();
+            
+            console.log(`⚔️ Restored combat: ${ac.monsters.length} enemies waiting`);
+        } else {
+            maybeShowLegacyWelcome();
+        }
+        
+        // Apply gem HP/MP/defense bonuses from equipped items
+        recalcGemStats(gameState.player);
+
+        // ═══════════════════════════════════════════════════════════════
+        // GEM FIX - Run after character is fully loaded
+        // ═══════════════════════════════════════════════════════════════
+        function fixAllGems() {
+            if (!gameState?.player) return;
+            
+            console.log('💎 Checking gems...');
+            let fixed = 0;
+            
+            function fixGem(gem) {
+                if (!gem) return false;
+                
+                const isBroken = !gem.stats || Object.keys(gem.stats).length === 0 || 
+                                 (gem.name && gem.name.includes('undefined'));
+                
+                if (!isBroken) return false;
+                
+                if (gem.type === 'topaz' || gem.name?.includes('Topaz')) {
+                    gem.stats = { lightningDmg: 9, critBonus: 4 };
+                    gem.tier = 1;
+                    gem.name = 'T1 Topaz';
+                    gem.description = '+9 Lightning DMG, +4 Crit %';
+                    return true;
+                }
+                if (gem.type === 'emerald' || gem.name?.includes('Emerald')) {
+                    gem.stats = { weaponDmg: 6, lifesteal: 2 };
+                    gem.tier = 1;
+                    gem.name = 'T1 Emerald';
+                    gem.description = '+6 Weapon DMG, +2 Lifesteal %';
+                    return true;
+                }
+                return false;
+            }
+            
+            // Check equipped weapon
+            if (gameState.player.weapon) {
+                const weapon = WEAPONS[gameState.player.weapon];
+                if (weapon?.gems) {
+                    weapon.gems.forEach(gem => {
+                        if (fixGem(gem)) fixed++;
+                    });
+                }
+            }
+            
+            // Check inventory
+            if (gameState.player.inventory) {
+                gameState.player.inventory.forEach(item => {
+                    if (item?.gems) {
+                        item.gems.forEach(gem => {
+                            if (fixGem(gem)) fixed++;
+                        });
+                    }
+                });
+            }
+            
+            if (fixed > 0) {
+                console.log(`✅ Fixed ${fixed} gem(s)!`);
+                if (typeof localSave === 'function') localSave();
+            }
+        }
+
+        // Run the gem fix
+        fixAllGems();
+
+        console.log(`✅ Character loaded: ${data.characterName}`);
+        console.log(`   Weapon: ${gameState.player.weapon} | Armor: ${gameState.player.armor}`);
+
+        // ═══════════════════════════════════════════════════════════════
+        // SHOW LEGACY MIGRATION NOTICE IF NEEDED
+        // ═══════════════════════════════════════════════════════════════
+        if (legacyMigrationPerformed) {
+            setTimeout(() => {
+                alert('📦 LEGACY ITEMS UPDATED\n\nYour old weapons and armor have been converted to the new system.\nPlease check your inventory and re-equip your items.');
+            }, 500);
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // TRACK LOGIN TO GOOGLE SHEETS
+        // ═══════════════════════════════════════════════════════════════
+        (async function() {
+            const location = await getPlayerLocation();
+            
+            const loginData = {
+                name: gameState.player.name,
+                class: gameState.player.className || CLASSES[gameState.player.class]?.name || gameState.player.class,
+                level: gameState.player.level,
+                createdDate: new Date().toISOString(),
+                country: location.country,
+                state: location.state,
+                event: 'character_login'
+            };
+            
+            await savePlayerToSheet(loginData);
+        })();
+
+        // ⭐ SHOW THE TOWN AFTER SUCCESSFUL LOAD ⭐
+        showTown();
+
+    } catch (e) {
+        console.error('Error loading character:', e);
+        alert('⚠️ Failed to load save file. The data may be corrupted. Returning to main menu.');
+        
+        // Clean up corrupted state
+        gameState.player = null;
+        gameState.dungeon = null;
+        gameState.combatState = null;
+        
+        // Try to delete corrupted save
+        try {
+            deleteCharacter(characterId);
+        } catch (deleteError) {
+            console.error('Could not delete corrupted save:', deleteError);
+        }
+        
+        // Always return to main menu on error
+        showMainMenu();
+    }
+
+    // Start auto-save timer
+    setupAutoSaveTriggers();
+}
 
 // ======================================================
 // AUTO-SAVE TRIGGERS
