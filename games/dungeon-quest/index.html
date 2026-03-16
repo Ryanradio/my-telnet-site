@@ -18036,15 +18036,34 @@ function showInventoryOverlay() {
     });
 
     // ── Weapons ──────────────────────────────────────────────────────
-    const weapons = p.inventory.filter(ik => {
-        const w = WEAPONS[ik];
-        return w && !w.unarmed && canUseWeapon(playerClass, w);
-    });
+    // Collect all weapon items (both strings and objects)
+    const weaponItems = [];
 
-    // ── Armor ────────────────────────────────────────────────────────
-    const armors = p.inventory.filter(ik => {
-        const a = ARMOR[ik];
-        return a && !a.unarmored && canUseArmor(playerClass, a);
+    p.inventory.forEach(item => {
+        // Handle weapon instances (objects)
+        if (typeof item === 'object' && item !== null && item.weaponId) {
+            const weaponData = WEAPONS[item.weaponId];
+            if (weaponData && !weaponData.unarmed) {
+                weaponItems.push({
+                    type: 'instance',
+                    key: item.instanceId,
+                    weapon: weaponData,
+                    instanceData: item,
+                    quality: item.quality || weaponData.quality
+                });
+            }
+        }
+        // Handle weapon strings
+        else if (typeof item === 'string' && WEAPONS[item] && !WEAPONS[item].unarmed) {
+            const weaponData = WEAPONS[item];
+            weaponItems.push({
+                type: 'string',
+                key: item,
+                weapon: weaponData,
+                instanceData: null,
+                quality: weaponData.quality
+            });
+        }
     });
 
     // ── Healing spells (out of combat only) ──────────────────────────
@@ -18197,143 +18216,217 @@ function showInventoryOverlay() {
         html += `</div>`;
     }
 
-    // WEAPONS
-html += `<div style="color:var(--highlight-color);font-size:15px;letter-spacing:2px;margin-bottom:6px;">— WEAPONS —</div>`;
-html += `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">`;
+    // WEAPONS SECTION
+    html += `<div style="color:var(--highlight-color);font-size:15px;letter-spacing:2px;margin-bottom:6px;">— WEAPONS —</div>`;
+    html += `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">`;
 
-const eqW = WEAPONS[p.weapon];
-if (eqW && !eqW.unarmed) {
-    const qc  = QUALITY_CONFIG[eqW.quality];
-    const qb  = getQualityBonus(eqW.quality, eqW.baseDamage);
-    let eqWModHtml = '';
-    if (eqW.modifiers && eqW.modifiers.length > 0) {
-        eqWModHtml = '<div style="margin-top:4px;">';
-        eqW.modifiers.forEach(modKey => {
-            const mod = typeof WEAPON_MODIFIERS !== 'undefined' ? WEAPON_MODIFIERS[modKey] : null;
-            if (mod) {
-                eqWModHtml += `<div style="color:${mod.color};font-size:12px;">• ${mod.name}${mod.minDamage ? ` (${mod.minDamage}-${mod.maxDamage})` : ''}</div>`;
+    // Handle equipped weapon
+    let equippedWeaponData = null;
+    let equippedInstance = null;
+
+    if (p.weapon && p.weapon !== 'bare_fists') {
+        // Check if equipped weapon is an instance
+        if (typeof p.weapon === 'string' && p.weapon.includes('_')) {
+            equippedInstance = p.inventory.find(item => 
+                item && typeof item === 'object' && item.instanceId === p.weapon
+            );
+            if (equippedInstance && equippedInstance.weaponId) {
+                equippedWeaponData = WEAPONS[equippedInstance.weaponId];
             }
-        });
-        eqWModHtml += '</div>';
+        } else {
+            equippedWeaponData = WEAPONS[p.weapon];
+        }
     }
-    
-    // Find equipped instance
-    const equippedInstance = p.inventory.find(item => 
-        item && typeof item === 'object' && item.instanceId === p.weapon
-    );
-    
-    html += `<div style="min-width:130px;padding:10px;border:2px solid ${qc?.color||'#0f0'};background:#050a05;font-size:14px;">
-        <div style="color:${qc?.color||'#0f0'};">${eqW.name}</div>
-        <div style="color:#aaa;font-size:12px;">${buildWeaponDmgLine(eqW, null, p)}</div>
-        ${eqWModHtml}
-        ${buildGemSlotHtml({
-            ...eqW,
-            quality: equippedInstance?.quality || eqW.quality,
-            gems: equippedInstance?.gems || []
-        })}
-        <div style="color:var(--highlight-color);font-size:12px;">★ EQUIPPED</div>
-    </div>`;
-}
 
-if (weapons.length === 0 && (!eqW || eqW.unarmed)) {
-    html += `<div style="color:#555;font-size:13px;">No weapons.</div>`;
-}
-
-weapons.forEach(ik => {
-    if (ik === p.weapon) return;
-    
-    const w = WEAPONS[ik];
-    const qc = QUALITY_CONFIG[w.quality];
-    const closeFn = inDungeon ? 'renderDungeonActionBar()' : 'renderActionBar()';
-    
-    let modHtml = '';
-    if (w.modifiers && w.modifiers.length > 0) {
-        modHtml = '<div style="margin-top:4px;">';
-        w.modifiers.forEach(modKey => {
-            const mod = typeof WEAPON_MODIFIERS !== 'undefined' ? WEAPON_MODIFIERS[modKey] : null;
-            if (mod) {
-                modHtml += `<div style="color:${mod.color};font-size:12px;">• ${mod.name}${mod.minDamage ? ` (${mod.minDamage}-${mod.maxDamage})` : ''}</div>`;
-            }
-        });
-        modHtml += '</div>';
+    const eqW = equippedWeaponData;
+    if (eqW && !eqW.unarmed) {
+        const displayQuality = equippedInstance?.quality || eqW.quality;
+        const qc = QUALITY_CONFIG[displayQuality];
+        const qualityColor = qc?.color || '#0f0';
+        const qb = getQualityBonus(displayQuality, eqW.baseDamage);
+        
+        let eqWModHtml = '';
+        const modifiers = equippedInstance?.modifiers || eqW.modifiers || [];
+        if (modifiers.length > 0) {
+            eqWModHtml = '<div style="margin-top:4px;">';
+            modifiers.forEach(modKey => {
+                const mod = typeof WEAPON_MODIFIERS !== 'undefined' ? WEAPON_MODIFIERS[modKey] : null;
+                if (mod) {
+                    eqWModHtml += `<div style="color:${mod.color};font-size:12px;">• ${mod.name}${mod.minDamage ? ` (${mod.minDamage}-${mod.maxDamage})` : ''}</div>`;
+                }
+            });
+            eqWModHtml += '</div>';
+        }
+        
+        html += `<div style="min-width:130px;padding:10px;border:2px solid ${qualityColor};background:#050a05;font-size:14px;">
+            <div style="color:${qualityColor};">⚔️ ${eqW.name}${displayQuality !== eqW.quality ? ` [${displayQuality}]` : ''}</div>
+            <div style="color:#aaa;font-size:12px;">${buildWeaponDmgLine({...eqW, quality: displayQuality}, displayQuality, p)}</div>
+            ${eqWModHtml}
+            ${buildGemSlotHtml({
+                ...eqW,
+                quality: displayQuality,
+                gems: equippedInstance?.gems || []
+            })}
+            <div style="color:var(--highlight-color);font-size:12px;">★ EQUIPPED</div>
+        </div>`;
     }
-    
-    const canEquip = canUseWeapon(playerClass, w);
-    
-    // Simple version - use weapon's own quality
-    const displayQuality = w.quality;
-    const qualityColor = QUALITY_CONFIG[displayQuality]?.color || '#0f0';
 
-    html += `<button onclick="${canEquip ? `equipItem('weapon','${ik}');document.getElementById('dungeonInvOverlay').remove();${closeFn};` : ''}"
-        style="min-width:130px;padding:10px;border:2px solid ${canEquip ? qualityColor : '#555'};
-        background:#050a05;font-size:14px;text-align:left;cursor:${canEquip ? 'pointer' : 'default'};
-        opacity:${canEquip ? 1 : 0.5};">
-        <div style="color:${canEquip ? qualityColor : '#888'};">${w.name}</div>
-        <div style="color:#aaa;font-size:12px;">${buildWeaponDmgLine(w, null, p)}</div>
-        ${modHtml}
-        ${buildGemSlotHtml(w)}
-        <div style="color:${canEquip ? '#FFD700' : '#555'};font-size:12px;">${canEquip ? '▶ EQUIP' : 'CANNOT EQUIP'}</div>
-    </button>`;
-});
-html += `</div>`;
-// END WEAPONS
+    if (weaponItems.length === 0 && (!eqW || eqW.unarmed)) {
+        html += `<div style="color:#555;font-size:13px;">No weapons.</div>`;
+    }
 
+    weaponItems.forEach(weaponItem => {
+        if (weaponItem.key === p.weapon) return;
+        
+        const { weapon, instanceData, quality: itemQuality } = weaponItem;
+        const displayQuality = instanceData?.quality || itemQuality || weapon.quality;
+        const qc = QUALITY_CONFIG[displayQuality];
+        const qualityColor = qc?.color || '#0f0';
+        const closeFn = inDungeon ? 'renderDungeonActionBar()' : 'renderActionBar()';
+        
+        let modHtml = '';
+        const modifiers = instanceData?.modifiers || weapon.modifiers || [];
+        if (modifiers.length > 0) {
+            modHtml = '<div style="margin-top:4px;">';
+            modifiers.forEach(modKey => {
+                const mod = typeof WEAPON_MODIFIERS !== 'undefined' ? WEAPON_MODIFIERS[modKey] : null;
+                if (mod) {
+                    modHtml += `<div style="color:${mod.color};font-size:12px;">• ${mod.name}${mod.minDamage ? ` (${mod.minDamage}-${mod.maxDamage})` : ''}</div>`;
+                }
+            });
+            modHtml += '</div>';
+        }
+        
+        const canEquip = canUseWeapon(playerClass, weapon);
+        const equipKey = instanceData ? instanceData.instanceId : weaponItem.key;
+
+        html += `<button onclick="${canEquip ? `equipItem('weapon','${equipKey}');document.getElementById('dungeonInvOverlay').remove();${closeFn};` : ''}"
+            style="min-width:130px;padding:10px;border:2px solid ${canEquip ? qualityColor : '#555'};
+            background:#050a05;font-size:14px;text-align:left;cursor:${canEquip ? 'pointer' : 'default'};
+            opacity:${canEquip ? 1 : 0.5};">
+            <div style="color:${canEquip ? qualityColor : '#888'};">⚔️ ${weapon.name}${displayQuality !== weapon.quality ? ` [${displayQuality}]` : ''}</div>
+            <div style="color:#aaa;font-size:12px;">${buildWeaponDmgLine({...weapon, quality: displayQuality}, displayQuality, p)}</div>
+            ${modHtml}
+            ${buildGemSlotHtml({
+                ...weapon,
+                quality: displayQuality,
+                gems: instanceData?.gems || []
+            })}
+            <div style="color:${canEquip ? '#FFD700' : '#555'};font-size:12px;">${canEquip ? '▶ EQUIP' : 'CANNOT EQUIP'}</div>
+        </button>`;
+    });
+    html += `</div>`;
+    // END WEAPONS
 
     // ARMOR
     html += `<div style="color:var(--highlight-color);font-size:15px;letter-spacing:2px;margin-bottom:6px;">— ARMOR —</div>`;
     html += `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px;">`;
-    const eqA = ARMOR[p.armor];
-    if (eqA && !eqA.unarmored) {
-        const aqc  = QUALITY_CONFIG[eqA.quality];
-        const aqb  = getQualityBonus(eqA.quality, eqA.baseDefense);
-        const tDef = eqA.baseDefense + aqb;
-        const tMag = (eqA.baseMagicBonus || 0) + Math.floor((eqA.baseMagicBonus || 0) * (aqc?.bonusPct || 0));
-        const eqASlots = getGemSlots(eqA.quality);
-        const eqAGems  = eqA.gems || [];
-        let eqAGemHtml = '';
-        if (eqASlots > 0) {
-            for (let i = 0; i < eqASlots; i++) {
-                const g = eqAGems[i];
-                eqAGemHtml += g
-                    ? `<div style="font-size:12px;color:${g.color};">${g.emoji} ${g.name}${g.statKey ? ` <span style="color:#aaa;">(+${g.bonus} ${g.statKey.toUpperCase()})</span>` : ''}</div>`
-                    : `<div style="font-size:10px;color:#333;">⬤ empty slot</div>`;
+    
+    // Handle equipped armor
+    let equippedArmorData = null;
+    let equippedArmorInstance = null;
+
+    if (p.armor && p.armor !== 'no_armor') {
+        if (typeof p.armor === 'string' && p.armor.includes('_')) {
+            equippedArmorInstance = p.inventory.find(item => 
+                item && typeof item === 'object' && item.instanceId === p.armor
+            );
+            if (equippedArmorInstance && equippedArmorInstance.armorId) {
+                equippedArmorData = ARMOR[equippedArmorInstance.armorId] || ARMOR[equippedArmorInstance.instanceId];
             }
+        } else {
+            equippedArmorData = ARMOR[p.armor];
         }
-        html += `<div style="min-width:130px;padding:10px;border:2px solid ${aqc?.color||'#0f0'};background:#050a05;font-size:14px;">
-            <div style="color:${aqc?.color||'#0f0'};">${eqA.name}</div>
+    }
+
+    const eqA = equippedArmorData;
+    if (eqA && !eqA.unarmored) {
+        const displayQuality = equippedArmorInstance?.quality || eqA.quality;
+        const aqc = QUALITY_CONFIG[displayQuality];
+        const qualityColor = aqc?.color || '#0f0';
+        const aqb = getQualityBonus(displayQuality, eqA.baseDefense);
+        const tDef = eqA.baseDefense + aqb;
+        const tMag = (eqA.baseMagicBonus || 0) + getQualityBonus(displayQuality, eqA.baseMagicBonus || 0);
+        
+        let eqAGemHtml = '';
+        const aGems = equippedArmorInstance?.gems || eqA.gems || [];
+        if (aGems.length > 0) {
+            aGems.forEach(g => {
+                eqAGemHtml += `<div style="font-size:12px;color:${g.color};">${g.emoji} ${g.name} - ${g.description}</div>`;
+            });
+        }
+        
+        html += `<div style="min-width:130px;padding:10px;border:2px solid ${qualityColor};background:#050a05;font-size:14px;">
+            <div style="color:${qualityColor};">🛡️ ${eqA.name}${displayQuality !== eqA.quality ? ` [${displayQuality}]` : ''}</div>
             <div style="color:#aaa;font-size:12px;">DEF: ${tDef}${tMag > 0 ? ` | MAG+: ${tMag}` : ''}</div>
             ${eqAGemHtml}
             <div style="color:var(--highlight-color);font-size:12px;">★ EQUIPPED</div>
         </div>`;
     }
-    if (armors.length === 0 && (!eqA || eqA.unarmored)) {
-        html += `<div style="color:#555;font-size:13px;">No armor.</div>`;
-    }
-    armors.forEach(ik => {
-        if (ik === p.armor) return;
-        const a    = ARMOR[ik];
-        const aqc  = QUALITY_CONFIG[a.quality];
-        const aqb  = getQualityBonus(a.quality, a.baseDefense);
-        const tDef = a.baseDefense + aqb;
-        const tMag = (a.baseMagicBonus || 0) + Math.floor((a.baseMagicBonus || 0) * (QUALITY_CONFIG[a.quality]?.bonusPct || 0));
-        const aSlots = getGemSlots(a.quality);
-        const aGems  = a.gems || [];
-        let aGemHtml = '';
-        if (aSlots > 0) {
-            for (let i = 0; i < aSlots; i++) {
-                const g = aGems[i];
-                aGemHtml += g
-                    ? `<div style="font-size:12px;color:${g.color};">${g.emoji} ${g.name}${g.statKey ? ` <span style="color:#aaa;">(+${g.bonus} ${g.statKey.toUpperCase()})</span>` : ''}</div>`
-                    : `<div style="font-size:10px;color:#333;">⬤ empty slot</div>`;
+
+    // Collect all armor items (both strings and objects)
+    const armorItems = [];
+
+    p.inventory.forEach(item => {
+        // Handle armor instances (objects)
+        if (typeof item === 'object' && item !== null && item.armorId) {
+            const armorData = ARMOR[item.armorId] || ARMOR[item.instanceId];
+            if (armorData && !armorData.unarmored) {
+                armorItems.push({
+                    type: 'instance',
+                    key: item.instanceId,
+                    armor: armorData,
+                    instanceData: item,
+                    quality: item.quality || armorData.quality
+                });
             }
         }
-        const canEquip = canUseArmor(playerClass, a);
-        const closeFn  = inDungeon ? 'renderDungeonActionBar()' : 'renderActionBar()';
-        html += `<button onclick="${canEquip ? `equipItem('armor','${ik}');document.getElementById('dungeonInvOverlay').remove();${closeFn};` : ''}"
-            style="min-width:130px;padding:10px;border:2px solid ${canEquip ? (aqc?.color||'#0f0') : '#555'};
+        // Handle armor strings
+        else if (typeof item === 'string' && ARMOR[item] && !ARMOR[item].unarmored) {
+            const armorData = ARMOR[item];
+            armorItems.push({
+                type: 'string',
+                key: item,
+                armor: armorData,
+                instanceData: null,
+                quality: armorData.quality
+            });
+        }
+    });
+
+    if (armorItems.length === 0 && (!eqA || eqA.unarmored)) {
+        html += `<div style="color:#555;font-size:13px;">No armor.</div>`;
+    }
+
+    armorItems.forEach(armorItem => {
+        if (armorItem.key === p.armor) return;
+        
+        const { armor, instanceData, quality: itemQuality } = armorItem;
+        const displayQuality = instanceData?.quality || itemQuality || armor.quality;
+        const aqc = QUALITY_CONFIG[displayQuality];
+        const qualityColor = aqc?.color || '#0f0';
+        const closeFn = inDungeon ? 'renderDungeonActionBar()' : 'renderActionBar()';
+        
+        const aqb = getQualityBonus(displayQuality, armor.baseDefense);
+        const tDef = armor.baseDefense + aqb;
+        const tMag = (armor.baseMagicBonus || 0) + getQualityBonus(displayQuality, armor.baseMagicBonus || 0);
+        
+        let aGemHtml = '';
+        const aGems = instanceData?.gems || armor.gems || [];
+        if (aGems.length > 0) {
+            aGems.forEach(g => {
+                aGemHtml += `<div style="font-size:12px;color:${g.color};">${g.emoji} ${g.name} - ${g.description}</div>`;
+            });
+        }
+        
+        const canEquip = canUseArmor(playerClass, armor);
+        const equipKey = instanceData ? instanceData.instanceId : armorItem.key;
+
+        html += `<button onclick="${canEquip ? `equipItem('armor','${equipKey}');document.getElementById('dungeonInvOverlay').remove();${closeFn};` : ''}"
+            style="min-width:130px;padding:10px;border:2px solid ${canEquip ? qualityColor : '#555'};
             background:#050a05;font-size:14px;text-align:left;cursor:${canEquip ? 'pointer' : 'default'};
             opacity:${canEquip ? 1 : 0.5};">
-            <div style="color:${canEquip ? (aqc?.color||'#0f0') : '#888'};">${a.name}</div>
+            <div style="color:${canEquip ? qualityColor : '#888'};">🛡️ ${armor.name}${displayQuality !== armor.quality ? ` [${displayQuality}]` : ''}</div>
             <div style="color:#aaa;font-size:12px;">DEF: ${tDef}${tMag > 0 ? ` | MAG+: ${tMag}` : ''}</div>
             ${aGemHtml}
             <div style="color:${canEquip ? '#FFD700' : '#555'};font-size:12px;">${canEquip ? '▶ EQUIP' : 'CANNOT EQUIP'}</div>
@@ -18366,8 +18459,441 @@ html += `</div>`;
     } else {
         document.body.appendChild(overlay);
     }
-}
+}// ── Unified full-screen inventory overlay (dungeon + exploration, combat + not) ──
+// ── Unified full-screen inventory overlay (dungeon + exploration, combat + not) ──
+function showInventoryOverlay() {
+    const p  = gameState.player;
+    const cs = gameState.combatState;
+    const inCombat = cs && !cs.combatOver;
+    const inDungeon = !!gameState.dungeon;
+    const playerClass = p.baseClass || p.class;
+    const hasStatPoints = (p.statPoints || 0) > 0;
 
+    function closeOverlay() {
+        const ov = document.getElementById('dungeonInvOverlay');
+        if (ov) ov.remove();
+        if (inDungeon) renderDungeonActionBar();
+        else renderActionBar();
+    }
+
+    function sellGem(invIndex) {
+        const item = p.inventory[invIndex];
+        if (item === undefined) return;
+        let sellVal = 0;
+        let gemName = '';
+        if (typeof item === 'string' && item.startsWith('raw_')) {
+            const def = ITEMS[item];
+            sellVal = def ? (def.sellValue || 25) : 25;
+            gemName = def ? def.name : item;
+        } else if (typeof item === 'object' && item && item.cut) {
+            sellVal = 100;
+            gemName = item.name;
+        } else return;
+        if (!confirm('Sell ' + gemName + ' for ' + sellVal + 'g?')) return;
+        p.inventory.splice(invIndex, 1);
+        p.gold += sellVal;
+        saveGame();
+        showInventoryOverlay();
+    }
+
+    function potColor(st) {
+        if (st==='heal_hp')      return '#ff4444';
+        if (st==='heal_mp')      return '#4488ff';
+        if (st==='full_restore') return '#FFD700';
+        if (st==='recall')       return '#AA88FF';
+        if (st?.startsWith('buff_')) return '#00FF88';
+        return '#00FF00';
+    }
+    function potIcon(st) {
+        if (st==='heal_hp')      return '❤️';
+        if (st==='heal_mp')      return '💙';
+        if (st==='full_restore') return '✨';
+        if (st==='recall')       return '🌀';
+        if (st==='buff_str')     return '💪';
+        if (st==='buff_def')     return '🛡️';
+        if (st==='buff_magic')   return '🔮';
+        if (st==='buff_damage')  return '⚔️';
+        if (st==='buff_regen')   return '💚';
+        if (st==='buff_crit')    return '🎯';
+        if (st?.startsWith('buff_')) return '🧪';
+        return '🧪';
+    }
+
+    // ── Potions ──────────────────────────────────────────────────────
+    const potions = {};
+    p.inventory.forEach(ik => {
+        const item = ITEMS[ik];
+        if (!item) return;
+        if (item.subtype === 'recall' && inCombat) return;
+        if (['heal_hp','heal_mp','full_restore','recall'].includes(item.subtype) || item.subtype?.startsWith('buff_')) {
+            if (!potions[ik]) potions[ik] = { item, count: 0 };
+            potions[ik].count++;
+        }
+    });
+
+    // ── Healing spells (out of combat only) ──────────────────────────
+    let healingSpellsHtml = '';
+    if (!inCombat && p.knownSpells && p.knownSpells.length > 0) {
+        const spellTree = CLASS_SPELL_TREES[playerClass]?.spellTree || {};
+        const healSpells = p.knownSpells.filter(sk => {
+            const sp = SPELLS[sk] || spellTree[sk];
+            return sp && (sp.type === 'heal' || sp.type === 'lifesteal');
+        });
+        if (healSpells.length > 0) {
+            healingSpellsHtml = `<div style="color:var(--highlight-color);font-size:15px;letter-spacing:2px;margin:10px 0 6px;">— HEALING SPELLS —</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">`;
+            healSpells.forEach(sk => {
+                const sp = SPELLS[sk] || spellTree[sk];
+                const atFull = p.hp >= p.maxHp;
+                const noMp   = p.mp < sp.mpCost;
+                const dis    = atFull || noMp;
+                healingSpellsHtml += `<button onclick="castHealingSpellOutOfCombat('${sk}');showInventoryOverlay();"
+                    ${dis?'disabled':''} style="padding:8px 10px;font-size:14px;
+                    color:#00FF00;border:2px solid #00FF00;background:#050a05;opacity:${dis?0.4:1};">
+                    ✨ ${sp.name}<br><span style="color:#aaa;font-size:11px;">${sp.mpCost} MP</span>
+                </button>`;
+            });
+            healingSpellsHtml += `</div>`;
+        }
+    }
+
+    // ── Build HTML ───────────────────────────────────────────────────
+    let html = `
+    <div id="dungeonInvOverlay" style="
+        position:fixed;inset:0;z-index:2500;
+        display:flex;align-items:stretch;justify-content:center;
+        background:rgba(0,0,0,0.7);
+        font-family:'VT323',monospace;
+    ">
+        <!-- Inner panel matches game column width -->
+        <div style="
+            width:100%;max-width:820px;
+            background:#000d00;
+            display:flex;flex-direction:column;
+            overflow:hidden;
+        ">
+        <!-- Fixed header -->
+        <div style="flex:0 0 auto;padding:10px 12px 8px;border-bottom:2px solid var(--border-color);
+                    display:flex;justify-content:space-between;align-items:center;background:#000d00;">
+            <span style="color:var(--highlight-color);font-size:20px;letter-spacing:3px;">🎒 INVENTORY</span>
+            <span style="color:#8aaa8a;font-size:14px;">
+                ❤️ ${p.hp}/${p.maxHp} &nbsp; 💙 ${p.mp}/${p.maxMp}
+                ${inCombat ? ' &nbsp;<span style="color:#ff4444;">⚔️ COMBAT</span>' : ''}
+            </span>
+        </div>
+
+        <!-- Scrollable body -->
+        <div style="flex:1 1 0;overflow-y:auto;padding:10px 12px;-webkit-overflow-scrolling:touch;">`;
+
+    // STAT POINTS BUTTON — only when points available
+    if (hasStatPoints) {
+        html += `
+        <div style="margin-bottom:14px;">
+            <button onclick="document.getElementById('dungeonInvOverlay').remove();
+                             ${inDungeon ? 'renderDungeonActionBar();' : 'renderActionBar();'}
+                             showLevelUpModal();"
+                style="width:100%;padding:12px;font-size:18px;font-weight:bold;
+                       border:2px solid #FFD700;color:#FFD700;background:#0a0800;
+                       animation:hpLowPulse 1.2s ease-in-out infinite;">
+                ⬆ ${p.statPoints} STAT POINT${p.statPoints>1?'S':''} TO SPEND — Tap to Allocate
+            </button>
+        </div>`;
+    }
+
+    // POTIONS
+    html += `<div style="color:var(--highlight-color);font-size:15px;letter-spacing:2px;margin-bottom:6px;">— POTIONS —</div>`;
+    const potKeys = Object.keys(potions);
+    if (potKeys.length === 0) {
+        html += `<div style="color:#555;font-size:13px;margin-bottom:10px;">No potions.</div>`;
+    } else {
+        html += `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">`;
+        potKeys.forEach(pk => {
+            const pd = potions[pk];
+            const col = potColor(pd.item.subtype);
+            const ico = potIcon(pd.item.subtype);
+            const atFull = (pd.item.subtype==='heal_hp' && p.hp>=p.maxHp) ||
+                           (pd.item.subtype==='heal_mp' && p.mp>=p.maxMp) ||
+                           (pd.item.subtype==='full_restore' && p.hp>=p.maxHp && p.mp>=p.maxMp);
+            const useFn = inCombat
+                ? `usePotion('${pk}');showInventoryOverlay();`
+                : `usePotionExplore('${pk}');showInventoryOverlay();`;
+            html += `<button onclick="${useFn}" ${atFull?'disabled':''} style="
+                min-width:110px;padding:10px 12px;
+                color:${col};border:2px solid ${col};
+                background:#050a05;font-size:15px;
+                opacity:${atFull?0.4:1};text-align:center;">
+                ${ico} ${pd.item.name}<br>
+                <span style="color:#aaa;font-size:12px;">x${pd.count}</span>
+            </button>`;
+        });
+        html += `</div>`;
+    }
+
+    // HEALING SPELLS
+    html += healingSpellsHtml;
+
+    // GEMS — raw and cut
+    const rawGems = p.inventory
+        .map((item, idx) => ({item, idx}))
+        .filter(({item}) => typeof item === 'string' && item.startsWith('raw_'));
+    const cutGems_inv = p.inventory
+        .map((item, idx) => ({item, idx}))
+        .filter(({item}) => typeof item === 'object' && item && item.cut);
+
+    if (rawGems.length > 0 || cutGems_inv.length > 0) {
+        html += `<div style="color:var(--highlight-color);font-size:15px;letter-spacing:2px;margin-bottom:6px;">— GEMS —</div>`;
+        html += `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">`;
+
+        rawGems.forEach(({item: ik, idx}) => {
+            const def = ITEMS[ik];
+            const gemDef = def ? GEM_TYPES[def.gemType] : null;
+            const color  = gemDef ? gemDef.color : '#AAFFEE';
+            const emoji  = gemDef ? gemDef.emoji : '💎';
+            const name   = def ? def.name : ik;
+            const tier   = def ? def.gemTier : '?';
+            const desc   = def ? def.description : '';
+            const sell   = def ? (def.sellValue || 25) : 25;
+            html += `<div style="min-width:130px;padding:10px;border:2px solid ${color};background:#050a05;font-size:13px;">
+                <div style="color:${color};font-size:15px;">${emoji} ${name}</div>
+                <div style="color:#888;font-size:11px;margin:2px 0;">${def ? def.description.split('.')[0] : ''}</div>
+                <div style="display:flex;gap:6px;margin-top:6px;">
+                    <div style="flex:1;font-size:11px;color:#555;text-align:center;padding:4px 0;">
+                        Sell at shop (${sell}g)
+                    </div>
+                </div>
+            </div>`;
+        });
+
+        cutGems_inv.forEach(({item: gem, idx}) => {
+            const color = gem.color || '#AAFFEE';
+            html += `<div style="min-width:130px;padding:10px;border:2px solid ${color};background:#050a05;font-size:13px;">
+                <div style="color:${color};font-size:15px;">${gem.emoji || '💎'} ${gem.name}</div>
+                <div style="color:#888;font-size:11px;margin:2px 0;">${gem.description || ''}</div>
+                <div style="color:#555;font-size:10px;margin:2px 0;">✂️ Already cut</div>
+                <div style="display:flex;gap:6px;margin-top:6px;">
+                    <div style="flex:1;font-size:11px;color:#555;text-align:center;padding:4px 0;">
+                        Sell at shop (100g)
+                    </div>
+                </div>
+            </div>`;
+        });
+
+        html += `</div>`;
+    }
+
+    // WEAPONS SECTION
+    html += `<div style="color:var(--highlight-color);font-size:15px;letter-spacing:2px;margin-bottom:6px;">— WEAPONS —</div>`;
+    html += `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">`;
+
+    // Collect all weapon items (both strings and objects)
+    const weaponItems = [];
+
+    p.inventory.forEach(item => {
+        // Handle weapon instances (objects)
+        if (typeof item === 'object' && item !== null && item.weaponId) {
+            const weaponData = WEAPONS[item.weaponId];
+            if (weaponData && !weaponData.unarmed) {
+                weaponItems.push({
+                    type: 'instance',
+                    key: item.instanceId,
+                    weapon: weaponData,
+                    instanceData: item,
+                    quality: item.quality || weaponData.quality
+                });
+            }
+        }
+        // Handle weapon strings
+        else if (typeof item === 'string' && WEAPONS[item] && !WEAPONS[item].unarmed) {
+            const weaponData = WEAPONS[item];
+            weaponItems.push({
+                type: 'string',
+                key: item,
+                weapon: weaponData,
+                instanceData: null,
+                quality: weaponData.quality
+            });
+        }
+    });
+
+    // Display all weapons (including equipped)
+    weaponItems.forEach(weaponItem => {
+        const isEquipped = weaponItem.key === p.weapon;
+        const { weapon, instanceData, quality: itemQuality } = weaponItem;
+        const displayQuality = instanceData?.quality || itemQuality || weapon.quality;
+        const qc = QUALITY_CONFIG[displayQuality];
+        const qualityColor = qc?.color || '#0f0';
+        const closeFn = inDungeon ? 'renderDungeonActionBar()' : 'renderActionBar()';
+        
+        let modHtml = '';
+        const modifiers = instanceData?.modifiers || weapon.modifiers || [];
+        if (modifiers.length > 0) {
+            modHtml = '<div style="margin-top:4px;">';
+            modifiers.forEach(modKey => {
+                const mod = typeof WEAPON_MODIFIERS !== 'undefined' ? WEAPON_MODIFIERS[modKey] : null;
+                if (mod) {
+                    modHtml += `<div style="color:${mod.color};font-size:12px;">• ${mod.name}${mod.minDamage ? ` (${mod.minDamage}-${mod.maxDamage})` : ''}</div>`;
+                }
+            });
+            modHtml += '</div>';
+        }
+        
+        const canEquip = canUseWeapon(playerClass, weapon);
+        const equipKey = instanceData ? instanceData.instanceId : weaponItem.key;
+
+        // If equipped, show as a non-clickable card
+        if (isEquipped) {
+            html += `<div style="min-width:130px;padding:10px;border:2px solid ${qualityColor};background:#050a05;font-size:14px; opacity:0.9;">
+                <div style="color:${qualityColor};">⚔️ ${weapon.name}${displayQuality !== weapon.quality ? ` [${displayQuality}]` : ''}</div>
+                <div style="color:#aaa;font-size:12px;">${buildWeaponDmgLine({...weapon, quality: displayQuality}, displayQuality, p)}</div>
+                ${modHtml}
+                ${buildGemSlotHtml({
+                    ...weapon,
+                    quality: displayQuality,
+                    gems: instanceData?.gems || []
+                })}
+                <div style="color:var(--highlight-color);font-size:12px;">★ EQUIPPED</div>
+            </div>`;
+        } 
+        // If not equipped, show as clickable equip button
+        else {
+            html += `<button onclick="${canEquip ? `equipItem('weapon','${equipKey}');document.getElementById('dungeonInvOverlay').remove();${closeFn};` : ''}"
+                style="min-width:130px;padding:10px;border:2px solid ${canEquip ? qualityColor : '#555'};
+                background:#050a05;font-size:14px;text-align:left;cursor:${canEquip ? 'pointer' : 'default'};
+                opacity:${canEquip ? 1 : 0.5};">
+                <div style="color:${canEquip ? qualityColor : '#888'};">⚔️ ${weapon.name}${displayQuality !== weapon.quality ? ` [${displayQuality}]` : ''}</div>
+                <div style="color:#aaa;font-size:12px;">${buildWeaponDmgLine({...weapon, quality: displayQuality}, displayQuality, p)}</div>
+                ${modHtml}
+                ${buildGemSlotHtml({
+                    ...weapon,
+                    quality: displayQuality,
+                    gems: instanceData?.gems || []
+                })}
+                <div style="color:${canEquip ? '#FFD700' : '#555'};font-size:12px;">${canEquip ? '▶ EQUIP' : 'CANNOT EQUIP'}</div>
+            </button>`;
+        }
+    });
+
+    if (weaponItems.length === 0) {
+        html += `<div style="color:#555;font-size:13px;">No weapons.</div>`;
+    }
+
+    html += `</div>`;
+    // END WEAPONS
+
+    // ARMOR SECTION
+    html += `<div style="color:var(--highlight-color);font-size:15px;letter-spacing:2px;margin-bottom:6px;">— ARMOR —</div>`;
+    html += `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px;">`;
+
+    // Collect all armor items (both strings and objects)
+    const armorItems = [];
+
+    p.inventory.forEach(item => {
+        // Handle armor instances (objects)
+        if (typeof item === 'object' && item !== null && item.armorId) {
+            const armorData = ARMOR[item.armorId] || ARMOR[item.instanceId];
+            if (armorData && !armorData.unarmored) {
+                armorItems.push({
+                    type: 'instance',
+                    key: item.instanceId,
+                    armor: armorData,
+                    instanceData: item,
+                    quality: item.quality || armorData.quality
+                });
+            }
+        }
+        // Handle armor strings
+        else if (typeof item === 'string' && ARMOR[item] && !ARMOR[item].unarmored) {
+            const armorData = ARMOR[item];
+            armorItems.push({
+                type: 'string',
+                key: item,
+                armor: armorData,
+                instanceData: null,
+                quality: armorData.quality
+            });
+        }
+    });
+
+    // Display all armor (including equipped)
+    armorItems.forEach(armorItem => {
+        const isEquipped = armorItem.key === p.armor;
+        const { armor, instanceData, quality: itemQuality } = armorItem;
+        const displayQuality = instanceData?.quality || itemQuality || armor.quality;
+        const aqc = QUALITY_CONFIG[displayQuality];
+        const qualityColor = aqc?.color || '#0f0';
+        const closeFn = inDungeon ? 'renderDungeonActionBar()' : 'renderActionBar()';
+        
+        const aqb = getQualityBonus(displayQuality, armor.baseDefense);
+        const tDef = armor.baseDefense + aqb;
+        const tMag = (armor.baseMagicBonus || 0) + getQualityBonus(displayQuality, armor.baseMagicBonus || 0);
+        
+        let aGemHtml = '';
+        const aGems = instanceData?.gems || armor.gems || [];
+        if (aGems.length > 0) {
+            aGems.forEach(g => {
+                aGemHtml += `<div style="font-size:12px;color:${g.color};">${g.emoji} ${g.name} - ${g.description}</div>`;
+            });
+        }
+        
+        const canEquip = canUseArmor(playerClass, armor);
+        const equipKey = instanceData ? instanceData.instanceId : armorItem.key;
+
+        // If equipped, show as a non-clickable card
+        if (isEquipped) {
+            html += `<div style="min-width:130px;padding:10px;border:2px solid ${qualityColor};background:#050a05;font-size:14px; opacity:0.9;">
+                <div style="color:${qualityColor};">🛡️ ${armor.name}${displayQuality !== armor.quality ? ` [${displayQuality}]` : ''}</div>
+                <div style="color:#aaa;font-size:12px;">DEF: ${tDef}${tMag > 0 ? ` | MAG+: ${tMag}` : ''}</div>
+                ${aGemHtml}
+                <div style="color:var(--highlight-color);font-size:12px;">★ EQUIPPED</div>
+            </div>`;
+        }
+        // If not equipped, show as clickable equip button
+        else {
+            html += `<button onclick="${canEquip ? `equipItem('armor','${equipKey}');document.getElementById('dungeonInvOverlay').remove();${closeFn};` : ''}"
+                style="min-width:130px;padding:10px;border:2px solid ${canEquip ? qualityColor : '#555'};
+                background:#050a05;font-size:14px;text-align:left;cursor:${canEquip ? 'pointer' : 'default'};
+                opacity:${canEquip ? 1 : 0.5};">
+                <div style="color:${canEquip ? qualityColor : '#888'};">🛡️ ${armor.name}${displayQuality !== armor.quality ? ` [${displayQuality}]` : ''}</div>
+                <div style="color:#aaa;font-size:12px;">DEF: ${tDef}${tMag > 0 ? ` | MAG+: ${tMag}` : ''}</div>
+                ${aGemHtml}
+                <div style="color:${canEquip ? '#FFD700' : '#555'};font-size:12px;">${canEquip ? '▶ EQUIP' : 'CANNOT EQUIP'}</div>
+            </button>`;
+        }
+    });
+
+    if (armorItems.length === 0) {
+        html += `<div style="color:#555;font-size:13px;">No armor.</div>`;
+    }
+
+    html += `</div>`;
+    // END ARMOR
+
+    // ── Close button fixed at bottom ──────────────────────────────────
+    html += `
+        <div style="flex:0 0 auto;padding:8px 12px;border-top:2px solid var(--border-color);background:#000d00;">
+            <button onclick="(document.getElementById('dungeonInvOverlay').remove(),${inDungeon?'renderDungeonActionBar()':'renderActionBar()'})"
+                style="width:100%;font-size:18px;padding:10px;border-color:#ff4444;color:#ff4444;letter-spacing:2px;">
+                ✕ CLOSE INVENTORY
+            </button>
+        </div>
+    </div>`; // end inner panel
+    html += `</div>`; // end outer overlay
+
+    const existing = document.getElementById('dungeonInvOverlay');
+    if (existing) existing.remove();
+    const overlay = document.createElement('div');
+    overlay.id = 'dungeonInvOverlay';
+    overlay.innerHTML = html;
+    // Move the actual overlay div (not wrapper) to body
+    const innerEl = overlay.firstElementChild;
+    if (innerEl) {
+        innerEl.id = 'dungeonInvOverlay';
+        overlay.id = '';
+        document.body.appendChild(innerEl);
+    } else {
+        document.body.appendChild(overlay);
+    }
+}
 // ── Central dungeon navigation handler (buttons + keyboard) ──────────
 function dungeonNav(input) {
     // Normalise aliases
@@ -20318,7 +20844,18 @@ if (type === 'magic' && defender.magicResist) {
     const p  = gameState.player;
     const ti = cs.currentTarget;
     const enemy = cs.monsters[ti];
-    let weapon = WEAPONS[p.weapon];
+    
+    // Get weapon data - handle both string keys and instance IDs
+    let weapon = null;
+    if (p.weapon) {
+        if (typeof p.weapon === 'string' && p.weapon.includes('_')) {
+            // This is an instance ID
+            weapon = WEAPONS[p.weapon];
+        } else {
+            // This is a base weapon key
+            weapon = WEAPONS[p.weapon];
+        }
+    }
     
     // No weapon equipped → fight with bare fists
     if (!weapon) {
@@ -20433,8 +20970,8 @@ if (type === 'magic' && defender.magicResist) {
         gemFireDmg      += gem.stats.fireDmg      || 0;
         gemFrostDmg     += gem.stats.frostDmg     || 0;
         gemSpellLeech   += gem.stats.spellLeech   || 0;
-        gemHpBonus      += gem.stats.hpBonus      || 0;   // ← was never read
-        gemDefBonus     += gem.stats.defenseBonus || 0;   // ← was never read
+        gemHpBonus      += gem.stats.hpBonus      || 0;
+        gemDefBonus     += gem.stats.defenseBonus || 0;
     }
 
     const physicalBase =
@@ -20442,7 +20979,7 @@ if (type === 'magic' && defender.magicResist) {
 
     const magicBase =
         (weapon.baseMagicDamage || 0) +
-        Math.floor((p.wis || 0) * 1.5) + gemMagicDmg;  // WIS (point-buy) drives magic-weapon bonus
+        Math.floor((p.wis || 0) * 1.5) + gemMagicDmg;
 
     // Use whichever damage type is higher for this weapon — don't add both
     let totalBase = Math.floor(
@@ -20460,12 +20997,7 @@ if (type === 'magic' && defender.magicResist) {
         if (gameState.sysop && gameState.sysop.authenticated) {
             termAppend('<span style="color:#003355;">  ⚠️ [INTIMIDATED] damage penalty: -' + Math.round((cs.playerIntimidated||0)*100) + '%</span>', 'term-dim');
         }
-        // Applied as a multiplier after all other damage calcs
-        // We store it in cs so executeAttack can read it
     }
-
-    // ── SILENCED: prevents spell casting ─────────────────────────────
-    // (checked in castSpell before pip consumption)
 
     // ── BLINDED: goblin dirty strike — player has extra miss chance ───
     if ((cs.playerBlindedMissChance || 0) > 0) {
@@ -20608,7 +21140,8 @@ if (type === 'magic' && defender.magicResist) {
                 `</span>`, 'term-dim');
         }
         enemy.hp -= finalDamage;
-        // ── HAPTIC: player hit ────────────────────────────────────────────
+        
+        // HAPTIC feedback
         if (result.crit) {
             haptic(attackType === 'special' ? 'special' : 'crit');
         } else if (attackType === 'heavy') {
@@ -20616,7 +21149,114 @@ if (type === 'magic' && defender.magicResist) {
         } else {
             haptic('hit');
         }
-        // ─────────────────────────────────────────────────────────────────
+
+        // ═══════════════════════════════════════════════════════════════
+        // ROGUE DOUBLE-STRIKE - Dagger-wielding rogues strike twice
+        // ═══════════════════════════════════════════════════════════════
+        let isDaggerWeapon = false;
+        
+        // Check if the equipped weapon is a dagger (handles both base keys and instance IDs)
+        if (p.weapon) {
+            let weaponData = null;
+            
+            // Get the actual weapon data
+            if (typeof p.weapon === 'string' && p.weapon.includes('_')) {
+                // This is an instance ID - look it up in WEAPONS
+                weaponData = WEAPONS[p.weapon];
+            } else {
+                // This is a base weapon key
+                weaponData = WEAPONS[p.weapon];
+            }
+            
+            if (weaponData) {
+                // Check if it's a dagger
+                isDaggerWeapon = weaponData.classRestriction === 'rogue'
+                    || (weaponData.name && (weaponData.name.toLowerCase().includes('dagger') || weaponData.name.toLowerCase().includes('shiv')))
+                    || (weaponData.weaponSubtype === 'dagger')
+                    || (weaponData.type === 'dagger');
+            }
+        }
+        
+        // Also check the current weapon object (as fallback)
+        if (!isDaggerWeapon && weapon) {
+            isDaggerWeapon = weapon.classRestriction === 'rogue'
+                || (weapon.name && (weapon.name.toLowerCase().includes('dagger') || weapon.name.toLowerCase().includes('shiv')))
+                || (weapon.weaponSubtype === 'dagger')
+                || (weapon.type === 'dagger');
+        }
+        
+        // Execute double strike if conditions are met
+        if (baseClass === 'rogue' && isDaggerWeapon && enemy.hp > 0) {
+            // Get the weapon data again to ensure we have it
+            let weaponData = weapon;
+            if (!weaponData && p.weapon) {
+                if (typeof p.weapon === 'string' && p.weapon.includes('_')) {
+                    weaponData = WEAPONS[p.weapon];
+                } else {
+                    weaponData = WEAPONS[p.weapon];
+                }
+            }
+            
+            if (weaponData) {
+                const minDmg2 = weaponData.baseDamage + qBonus;
+                const maxDmg2 = (weaponData.maxDamage || weaponData.baseDamage) + qBonus;
+                let weaponDamage2 = Math.floor(Math.random() * (maxDmg2 - minDmg2 + 1)) + minDmg2;
+                
+                // Include gem melee bonus
+                const physBase2 = weaponDamage2 + Math.floor((p.str || 0) * 1.5) + gemMeleeDmg;
+                const magicBase2 = (weaponData.baseMagicDamage || 0) + Math.floor((p.wis || 0) * 1.5) + gemMagicDmg;
+                
+                // Independent damage roll — no carry-over from first hit
+                let totalBase2 = Math.floor(Math.max(physBase2, magicBase2) * 1.0);
+                totalBase2 = Math.floor(totalBase2 * classMult);
+                totalBase2 = Math.max(1, Math.floor(totalBase2 * lvlMult.playerDealt));
+                
+                // Add elemental gem bonuses
+                totalBase2 += gemLightningDmg + gemFireDmg + gemFrostDmg;
+
+                const result2 = calculateDamage({
+                    attacker: p, defender: enemy,
+                    base: totalBase2,
+                    type: _attackDmgType,
+                    critChance: Math.min(0.75, (calcCritChance(p.lck || 0, p) / 100) + (gemCritBonus / 100)),
+                    dodgeChance: enemyDodgeChance,
+                    armorPiercing
+                });
+
+                if (!result2.dodged) {
+                    const mod2 = applyWeaponModifiers(p, enemy, result2.damage, weaponData);
+                    enemy.hp -= mod2.totalDamage;
+                    const crit2Tag = result2.crit
+                        ? ' <span style="color:#FFD700;">★ CRIT!</span>'
+                        : '';
+                    modifierResult.messages.push(
+                        `↪ Second strike: <span class="dmg-enemy">${mod2.totalDamage} damage</span>${crit2Tag}`
+                    );
+                    
+                    // Gem lifesteal on second hit
+                    if (gemLifesteal > 0) {
+                        const steal2 = Math.max(1, Math.floor(mod2.totalDamage * (gemLifesteal / 100)));
+                        p.hp = Math.min(p.maxHp, p.hp + steal2);
+                        modifierResult.messages.push(`<span style="color:#FF4488;">💎 Ruby: Lifesteal +${steal2} HP</span>`);
+                    }
+                    
+                    // Poison on second hit
+                    if (weaponData.poisonChance && Math.random() < weaponData.poisonChance && enemy.hp > 0) {
+                        applyStatusEffect(enemy, 'poisoned', false);
+                        modifierResult.messages.push('<span style="color:#00FF00;">💀 Poisoned!</span>');
+                    }
+                    
+                    // Gem poison on second hit
+                    if (gemPoisonChance > 0 && Math.random() < (gemPoisonChance / 100) && enemy.hp > 0) {
+                        applyStatusEffect(enemy, 'poisoned', false);
+                        modifierResult.messages.push('<span style="color:#00EE00;">💎 Emerald: Poisoned!</span>');
+                    }
+                } else {
+                    modifierResult.messages.push('↪ Second strike: <span style="color:#88ff88;">DODGED!</span>');
+                }
+            }
+        }
+        // ── END ROGUE DOUBLE-STRIKE ──────────────────────────────────
 
         // ── HUNTER PET ATTACK ──────────────────────────────────────────
         // Hunter's pet attacks immediately after hunter deals damage
@@ -20649,83 +21289,22 @@ if (type === 'magic' && defender.magicResist) {
         }
 
         // ── GEM ELEMENTAL DAMAGE DISPLAY ─────────────────────────────────
-if (gemLightningDmg > 0) {
-    modifierResult.messages.push(`<span style="color:#FFD700;">⚡ +${gemLightningDmg} Lightning damage</span>`);
-}
-if (gemFireDmg > 0) {
-    modifierResult.messages.push(`<span style="color:#FF6600;">🔥 +${gemFireDmg} Fire damage</span>`);
-}
-if (gemFrostDmg > 0) {
-    modifierResult.messages.push(`<span style="color:#88EEFF;">❄️ +${gemFrostDmg} Frost damage</span>`);
-}
+        if (gemLightningDmg > 0) {
+            modifierResult.messages.push(`<span style="color:#FFD700;">⚡ +${gemLightningDmg} Lightning damage</span>`);
+        }
+        if (gemFireDmg > 0) {
+            modifierResult.messages.push(`<span style="color:#FF6600;">🔥 +${gemFireDmg} Fire damage</span>`);
+        }
+        if (gemFrostDmg > 0) {
+            modifierResult.messages.push(`<span style="color:#88EEFF;">❄️ +${gemFrostDmg} Frost damage</span>`);
+        }
 
-        // Voidstone spell leech — converts portion of melee hit to MP (unique: restores mana, not HP)
+        // Voidstone spell leech — converts portion of melee hit to MP
         if (gemSpellLeech > 0 && finalDamage > 0) {
             const mpSteal = Math.max(1, Math.floor(finalDamage * (gemSpellLeech / 100)));
             p.mp = Math.min(p.maxMp, p.mp + mpSteal);
             modifierResult.messages.push(`<span style="color:#AA55FF;">💎 Voidstone: Drained +${mpSteal} MP</span>`);
         }
-
-        // ── ROGUE DOUBLE-STRIKE ───────────────────────────────────────
-        // Every dagger pip fires twice. Roll a second independent hit.
-        // Triggers if: classRestriction='rogue' OR weapon name/key contains dagger/shiv
-        const isDaggerWeapon = weapon.classRestriction === 'rogue'
-            || (weapon.name && (weapon.name.toLowerCase().includes('dagger') || weapon.name.toLowerCase().includes('shiv')))
-            || (p.weapon && (p.weapon.toLowerCase().includes('dagger') || p.weapon.toLowerCase().includes('shiv')));
-        if (baseClass === 'rogue' && isDaggerWeapon && enemy.hp > 0) {
-            const minDmg2 = weapon.baseDamage + qBonus;
-            const maxDmg2 = (weapon.maxDamage || weapon.baseDamage) + qBonus;
-            let weaponDamage2 = Math.floor(Math.random() * (maxDmg2 - minDmg2 + 1)) + minDmg2;
-            // ── Include gem melee bonus (was missing) ──────────────
-            const physBase2 = weaponDamage2 + Math.floor((p.str || 0) * 1.5) + gemMeleeDmg;
-            const magicBase2 = (weapon.baseMagicDamage || 0) + Math.floor((p.wis || 0) * 1.5) + gemMagicDmg;
-            // ── Independent damage roll — no carry-over from first hit
-            let totalBase2 = Math.floor(Math.max(physBase2, magicBase2) * 1.0); // always 1x — second strike is not a heavy/special
-            totalBase2 = Math.floor(totalBase2 * classMult);
-            totalBase2 = Math.max(1, Math.floor(totalBase2 * lvlMult.playerDealt));
-            // Add elemental gem bonuses
-            totalBase2 += gemLightningDmg + gemFireDmg + gemFrostDmg;
-
-            const result2 = calculateDamage({
-                attacker: p, defender: enemy,
-                base: totalBase2,
-                type: _attackDmgType,
-                critChance: Math.min(0.75, (calcCritChance(p.lck || 0, p) / 100) + (gemCritBonus / 100)),
-                dodgeChance: enemyDodgeChance,
-                armorPiercing
-            });
-
-            if (!result2.dodged) {
-                const mod2 = applyWeaponModifiers(p, enemy, result2.damage, weapon);
-                enemy.hp -= mod2.totalDamage;
-                const crit2Tag = result2.crit
-                    ? ' <span style="color:#FFD700;">★ CRIT!</span>'
-                    : '';
-                modifierResult.messages.push(
-                    `↪ Second strike: <span class="dmg-enemy">${mod2.totalDamage} damage</span>${crit2Tag}`
-                );
-                // Gem lifesteal on second hit
-                if (gemLifesteal > 0) {
-                    const steal2 = Math.max(1, Math.floor(mod2.totalDamage * (gemLifesteal / 100)));
-                    p.hp = Math.min(p.maxHp, p.hp + steal2);
-                    modifierResult.messages.push(`<span style="color:#FF4488;">💎 Ruby: Lifesteal +${steal2} HP</span>`);
-                }
-                // Poison on second hit
-                if (weapon.poisonChance && Math.random() < weapon.poisonChance && enemy.hp > 0) {
-                    applyStatusEffect(enemy, 'poisoned', false);
-                    modifierResult.messages.push('<span style="color:#00FF00;">💀 Poisoned!</span>');
-                }
-                // Gem poison on second hit
-                if (gemPoisonChance > 0 && Math.random() < (gemPoisonChance / 100) && enemy.hp > 0) {
-                    applyStatusEffect(enemy, 'poisoned', false);
-                    modifierResult.messages.push('<span style="color:#00EE00;">💎 Emerald: Poisoned!</span>');
-                }
-            } else {
-                modifierResult.messages.push('↪ Second strike: <span style="color:#88ff88;">DODGED!</span>');
-            }
-        }
-        // ── END ROGUE DOUBLE-
-
 
         // Calculate condition text
         const hpPct = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
@@ -20736,66 +21315,23 @@ if (gemFrostDmg > 0) {
         if (hpPct < 10) condition = 'barely standing';
 
         // ========== COMPREHENSIVE COLOR MAP FOR ALL ABILITIES ==========
-const DAMAGE_COLORS = {
-    // Elemental types
-    shock: '#FFD700',        // Shock - Bright gold/yellow (like lightning)
-    lightning: '#FFD700',    // Lightning - Bright gold/yellow
-    shadow: '#AA44FF',       // Shadow purple
-    void: '#6600BB',         // Void purple
-    fire: '#FF6600',         // Fire orange
-    frost: '#88EEFF',        // Frost cyan
-    ice: '#88EEFF',          // Ice cyan
-    poison: '#00EE00',       // Poison green
-    acid: '#a8e63d',         // Acid green
-    bleed: '#FF4488',        // Bleed pink
-    holy: '#FFFF88',         // Holy yellow
-    chaos: '#FF88FF',        // Chaos pink
-    arcane: '#AA88FF',       // Arcane purple
-    nature: '#88FF88',       // Nature green
-    dark: '#8844AA',         // Dark purple
-    light: '#FFFFAA',        // Light yellow
-    
-    // Weapon modifiers
-    power: '#FFAA00',         // Power - orange/gold
-    razor: '#CCCCCC',         // Razor - silver
-    sharp: '#CCCCCC',         // Sharp - silver
-    piercing: '#AAAAAA',      // Piercing - grey
-    crushing: '#BB8844',      // Crushing - bronze
-    slashing: '#DDDDDD',      // Slashing - white
-    bleeding: '#FF4488',      // Bleeding - pink
-    wounding: '#FF6666',      // Wounding - red
-    
-    // Magic modifiers
-    spell: '#AA88FF',         // Spell - purple
-    magic: '#8888FF',         // Magic - blue
-    mana: '#4488FF',          // Mana - blue
-    soul: '#AA44AA',          // Soul - purple
-    spirit: '#88AAFF',        // Spirit - light blue
-    
-    // Status effects
-    burning: '#FF8800',       // Burning - orange
-    frozen: '#88FFFF',        // Frozen - cyan
-    stunned: '#FFFF88',       // Stunned - yellow
-    slowed: '#888888',        // Slowed - grey
-    weakened: '#AA8888',      // Weakened - brownish grey
-    cursed: '#884488',        // Cursed - dark purple
-    hexed: '#AA44AA',         // Hexed - purple
-    diseased: '#88AA44',      // Diseased - olive
-    
-    // Healing/Lifesteal
-    heal: '#88FF88',          // Heal - green
-    lifesteal: '#FF8888',     // Lifesteal - red
-    leech: '#FF88AA',         // Leech - pink
-    
-    // Buffs
-    strength: '#FF8888',      // Strength - red
-    agility: '#88FF88',       // Agility - green
-    intellect: '#8888FF',     // Intellect - blue
-    vitality: '#88FFAA',      // Vitality - mint
-    
-    // Default
-    default: '#FFFFFF'        // White
-};
+        const DAMAGE_COLORS = {
+            shock: '#FFD700', lightning: '#FFD700', shadow: '#AA44FF',
+            void: '#6600BB', fire: '#FF6600', frost: '#88EEFF',
+            ice: '#88EEFF', poison: '#00EE00', acid: '#a8e63d',
+            bleed: '#FF4488', holy: '#FFFF88', chaos: '#FF88FF',
+            arcane: '#AA88FF', nature: '#88FF88', dark: '#8844AA',
+            light: '#FFFFAA', power: '#FFAA00', razor: '#CCCCCC',
+            sharp: '#CCCCCC', piercing: '#AAAAAA', crushing: '#BB8844',
+            slashing: '#DDDDDD', bleeding: '#FF4488', wounding: '#FF6666',
+            spell: '#AA88FF', magic: '#8888FF', mana: '#4488FF',
+            soul: '#AA44AA', spirit: '#88AAFF', burning: '#FF8800',
+            frozen: '#88FFFF', stunned: '#FFFF88', slowed: '#888888',
+            weakened: '#AA8888', cursed: '#884488', hexed: '#AA44AA',
+            diseased: '#88AA44', heal: '#88FF88', lifesteal: '#FF8888',
+            leech: '#FF88AA', strength: '#FF8888', agility: '#88FF88',
+            intellect: '#8888FF', vitality: '#88FFAA', default: '#FFFFFF'
+        };
 
         // Calculate total damage and build colored parts
         let elementalTotal = 0;
@@ -20809,42 +21345,27 @@ const DAMAGE_COLORS = {
                 const type = damageMatch[2].toLowerCase().trim();
                 elementalTotal += dmg;
                 
-                // Get color for this damage type (case insensitive)
-                const colorKey = type.split(' ')[0]; // Take first word for matching
+                const colorKey = type.split(' ')[0];
                 const color = DAMAGE_COLORS[colorKey] || DAMAGE_COLORS[type] || DAMAGE_COLORS.default;
                 
-                // Build colored part
                 elementalParts.push(`<span style="color:${color};">+${dmg} ${type}</span>`);
             }
         });
 
-                // Build the main damage number with enemy damage color (red pulsing)
+        // Build the main damage number with enemy damage color (red pulsing)
         const mainDamageSpan = `<span class="dmg-enemy">${finalDamage}</span>`;
 
-        // Calculate elemental total and build colored parts
-        
         let elementalString = '';
-        
         if (elementalParts.length > 0) {
-            // Calculate total from elemental parts
-            elementalParts.forEach(part => {
-                const match = part.match(/\+(\d+)/);
-              // Duplicate  if (match) elementalTotal += parseInt(match[1]);
-            });
-            
             elementalString = ' + ' + elementalParts.join(' + ');
         }
 
-        // Calculate total damage
         const totalDamage = finalDamage + elementalTotal;
 
-        // Format the message based on whether there are bonuses
         let damageMessage;
         if (elementalParts.length > 0) {
-            // Has bonuses - show breakdown
             damageMessage = `You ${attackName} ${tName} for ${mainDamageSpan}${elementalString} for <span class="dmg-enemy">${totalDamage}</span> total damage!${critTag}`;
         } else {
-            // No bonuses - simple message
             damageMessage = `You ${attackName} ${tName} for <span class="dmg-enemy">${finalDamage}</span> total damage!${critTag}`;
         }
 
@@ -20852,9 +21373,7 @@ const DAMAGE_COLORS = {
             damageMessage,
             null,
             () => {
-                // Show any non-elemental modifier messages (status effects, lifesteal, etc.)
                 modifierResult.messages.forEach(msg => {
-                    // Skip elemental damage messages (already shown)
                     if (!msg.match(/\+(\d+) ([\w\s]+) damage/)) {
                         termAppend(`→ ${msg}`, 'term-loot');
                     }
@@ -20875,14 +21394,10 @@ const DAMAGE_COLORS = {
         );
     }
 
-    // Immediate UI update (pip display — callbacks handle full re-render)
     updateEnemyCards();
     updateHud();
     localSave();
-    // Note: renderActionBar() is called by termAppend callbacks above
-    // to ensure it fires AFTER streaming completes, not before.
 }
-
 
 
        // Legacy function kept for compatibility
