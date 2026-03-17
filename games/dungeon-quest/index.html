@@ -22239,13 +22239,11 @@ function endCombat(victory) {
 
         if (!isLevel1) {
             // ── XP penalty: 10% of total accumulated XP ────────────────
-            // p.xp is now a running total, so it IS the total XP so far.
             xpLost = Math.floor(p.xp * 0.10);
 
             // Never drop a level — floor XP at the start-of-current-level threshold
             const xpFloor = getXpForLevel(p.class, p.level);
             p.xp = Math.max(xpFloor, p.xp - xpLost);
-            // xpToNext stays the same (level doesn't change)
 
             // ── Gold penalty: lose ALL carried gold (bank is safe) ──────
             goldLost = p.gold;
@@ -22262,13 +22260,10 @@ function endCombat(victory) {
         gameState.postCombatRecovery   = false;
 
         updateHud();
-        saveGame();  // persist penalties immediately
+        saveGame();
 
         // ── Build death screen shown IN THE TERMINAL ──────────────────
-        // Separator
         termAppend('', 'term-separator');
-
-        // Big skull header
         termAppend(
             `<span style="color:#ff2222;font-size:26px;letter-spacing:4px;">💀  YOU HAVE DIED  💀</span>`,
             'term-error'
@@ -22276,7 +22271,6 @@ function endCombat(victory) {
         termAppend('', 'term-separator');
 
         if (isLevel1) {
-            // No penalties at level 1
             termAppend(
                 `<span style="color:#88ff88;">You are a <strong>Level 1</strong> adventurer — no penalties apply.</span>`,
                 'term-loot'
@@ -22285,7 +22279,6 @@ function endCombat(victory) {
                 `<span style="color:#aaaaaa;">You wake up bruised but no worse for wear...</span>`
             );
         } else {
-            // Show each penalty
             termAppend(
                 `<span style="color:#ff6666;">💸 Gold Lost: </span>` +
                 `<span style="color:#ffaa00;font-size:18px;">${goldLost.toLocaleString()}g</span>` +
@@ -22375,7 +22368,6 @@ function endCombat(victory) {
     // Only calculate if NOT already given
     if (!rewardsAlreadyGiven) {
         defeated.forEach(e => {
-            // Calculate XP based on level difference and rarity
             const xpReward = calculateXpReward(e, gameState.player.level);
             totalXp   += xpReward;
             totalGold += e.gold;
@@ -22394,7 +22386,6 @@ function endCombat(victory) {
     // ── Remove ALL defeated dungeon enemies & award drops ──
     if (gameState.dungeon && gameState.combatState) {
         const cs = gameState.combatState;
-        // Collect all dungeon enemy IDs linked to this combat
         const linkedIds = cs.dungeonEnemyIds || (cs.dungeonEnemyId ? [cs.dungeonEnemyId] : []);
 
         linkedIds.forEach(dungeonEnemyId => {
@@ -22402,7 +22393,6 @@ function endCombat(victory) {
                 e => e.id === dungeonEnemyId
             );
 
-            // Award the drop item if set
             if (defeatedDungeonEnemy && defeatedDungeonEnemy.drop) {
                 const dropKey = defeatedDungeonEnemy.drop;
                 if (dropKey && ITEMS[dropKey]) {
@@ -22418,23 +22408,20 @@ function endCombat(victory) {
             }
         });
 
-        // Move defeated enemies to defeatedEnemies with death timestamp for 30min respawn
         if (linkedIds.length > 0) {
             if (!gameState.dungeon.defeatedEnemies) gameState.dungeon.defeatedEnemies = [];
             
             linkedIds.forEach(dungeonEnemyId => {
                 const defeatedEnemy = gameState.dungeon.activeEnemies.find(e => e.id === dungeonEnemyId);
                 if (defeatedEnemy) {
-                    // Store with death timestamp for respawn system
                     gameState.dungeon.defeatedEnemies.push({
                         ...defeatedEnemy,
                         deathTime: Date.now(),
-                        respawnTime: Date.now() + (30 * 60 * 1000) // 30 minutes from now
+                        respawnTime: Date.now() + (30 * 60 * 1000)
                     });
                 }
             });
             
-            // Remove from active enemies
             gameState.dungeon.activeEnemies = gameState.dungeon.activeEnemies.filter(
                 e => !linkedIds.includes(e.id)
             );
@@ -22462,7 +22449,6 @@ function endCombat(victory) {
         );
     }
 
-    // Only show total XP/Gold if NOT already shown during combat
     if (!rewardsAlreadyGiven) {
         termAppend(
             `Gained <span style="color:#FFD700;">${totalXp} XP</span> and ` +
@@ -22474,7 +22460,6 @@ function endCombat(victory) {
         haptic('loot');
         termAppend('⚡ LOOT:', 'term-loot');
         allLoot.forEach(ik => {
-            // Enforce maxStack for potions (cap = 10)
             const _def = ITEMS[ik];
             const _cap = _def?.maxStack;
             if (_cap) {
@@ -22485,7 +22470,7 @@ function endCombat(victory) {
                         'term-loot'
                     );
                     gameState.player.gold += _def.sellValue;
-                    return; // skip adding to inventory
+                    return;
                 }
             }
             gameState.player.inventory.push(ik);
@@ -22501,39 +22486,31 @@ function endCombat(victory) {
     // ═══════════════════════════════════════════════════════════
     // WEAPON + ARMOR DROPS 🗡️🛡️
     // ═══════════════════════════════════════════════════════════
-    const _debugDrops = gameState.sysop && gameState.sysop.authenticated;
     defeated.forEach((monster, index) => {
         // ── Weapon drop ───────────────────────────────────────
-        const _wBase   = 0.04;
-        const _wMult   = ({common:1,uncommon:1.5,rare:1.5,epic:2.5,boss:5.0})[monster.rarity||'common'] || 1;
-        const _wChance = _wBase * _wMult;
-        const _wRoll   = Math.random();
-        const _wHit    = _wRoll < _wChance;
-        if (_debugDrops) termAppend(`<span style="color:#334466;">🗡️ [WEAPON] ${monster.name} (${monster.rarity||'common'}): rolled <b>${(_wRoll*100).toFixed(2)}%</b> / need ≤${(_wChance*100).toFixed(1)}% → ${_wHit ? '✅ DROP' : '❌ miss'}</span>`, 'term-dim');
-        const weaponDrop = _wHit ? generateWeaponDrop(
+        // FIXED: Pass monster.level, NOT player level!
+        const weaponDrop = generateWeaponDrop(
             gameState.player, 
-            monster.level, 
+            monster.level,      // ← Use monster's level for appropriate gear
             monster.rarity || 'common',
-            true  // skip internal roll — already decided
-        ) : null;
-        if (_debugDrops && weaponDrop) termAppend(`<span style="color:#334466;">  → ${weaponDrop.quality} ${weaponDrop.type}: ${weaponDrop.name}</span>`, 'term-dim');
+            false,              // ← false = real drop with RNG
+            null                // ← null = random quality based on rollQuality()
+        );
         
         if (weaponDrop) {
-            // Add to WEAPONS object
-            WEAPONS[weaponDrop.id] = weaponDrop;
-            
-            // Add to player inventory
-            gameState.player.inventory.push(weaponDrop.id);
+            // Add to player inventory - ONLY ONCE
+            gameState.player.inventory.push(weaponDrop.instanceId);
             
             // Show drop message with quality color
-            const qualityColor = QUALITY_CONFIG[weaponDrop.quality].color;  // ✅ FIXED
+            const qualityColor = QUALITY_CONFIG[weaponDrop.quality].color;
             termAppend('', 'term-separator');
             termAppend(`💎 <span style="color:${qualityColor};font-size:18px;font-weight:bold;">WEAPON DROP!</span>`, 'term-victory');
             termAppend(`<span style="color:${qualityColor};">${weaponDrop.name}</span>`, 'term-loot');
             termAppend(`<span style="color:#8aaa8a;">Level ${weaponDrop.level} ${weaponDrop.quality} ${weaponDrop.type}</span>`, 'term-dim');
             termAppend(`<span style="color:#FFD700;">DMG: ${weaponDrop.baseDamage}-${weaponDrop.maxDamage}</span>`);
+            
             // Show gem slots on drop
-            const dropSlots = getGemSlots(weaponDrop.quality || 'normal');
+            const dropSlots = getGemSlots(weaponDrop.quality);
             if (dropSlots > 0) {
                 const slotCircles = '⬤'.repeat(dropSlots);
                 termAppend(`<span style="color:#333;font-size:13px;">${slotCircles}</span> <span style="color:#555;font-size:11px;">${dropSlots} gem slot${dropSlots>1?'s':''} — visit the Blacksmith to socket gems</span>`);
@@ -22562,39 +22539,31 @@ function endCombat(victory) {
         }
 
         // ── Armor drop ────────────────────────────────────────
-        if (typeof generateArmorDrop !== 'undefined') {
-            const _aBase   = 0.04;
-            const _aMult   = ({common:1,uncommon:1.5,rare:1.5,epic:2.5,boss:5.0})[monster.rarity||'common'] || 1;
-            const _aChance = _aBase * _aMult;
-            const _aRoll   = Math.random();
-            const _aHit    = _aRoll < _aChance;
-            if (_debugDrops) termAppend(`<span style="color:#334466;">🛡️ [ARMOR] ${monster.name} (${monster.rarity||'common'}): rolled <b>${(_aRoll*100).toFixed(2)}%</b> / need ≤${(_aChance*100).toFixed(1)}% → ${_aHit ? '✅ DROP' : '❌ miss'}</span>`, 'term-dim');
-            const armorDrop = _aHit ? generateArmorDrop(
-                gameState.player,
-                monster.level,
-                monster.rarity || 'common',
-                true  // skip internal roll — already decided
-            ) : null;
-            if (_debugDrops && armorDrop) termAppend(`<span style="color:#334466;">  → ${armorDrop.quality} ${armorDrop.name}</span>`, 'term-dim');
-
-            if (armorDrop) {
-                // armorDrop is already the full armor instance
-                // Show drop message with quality color
-                const qColor = QUALITY_CONFIG[armorDrop.quality]?.color || '#00FF00';
-                const totalDef = armorDrop.baseDefense;
-                const dropSlots = armorDrop.gemSlots || getGemSlots(armorDrop.quality);
-
-                termAppend('', 'term-separator');
-                termAppend(`🛡️ <span style="color:${qColor};font-size:18px;font-weight:bold;">ARMOR DROP!</span>`, 'term-victory');
-                termAppend(`<span style="color:${qColor};">${armorDrop.name}</span>`, 'term-loot');
-                termAppend(`<span style="color:#8aaa8a;">Level ${armorDrop.level || 1} ${armorDrop.quality} armor</span>`, 'term-dim');
-                termAppend(`<span style="color:#00AAFF;">DEF: ${totalDef}${armorDrop.baseMagicBonus > 0 ? ` | MAG BONUS: +${armorDrop.baseMagicBonus}` : ''}</span>`);
-                if (dropSlots > 0) {
-                    const slotCircles = '⬤'.repeat(dropSlots);
-                    termAppend(`<span style="color:#333;font-size:13px;">${slotCircles}</span> <span style="color:#555;font-size:11px;">${dropSlots} gem slot${dropSlots>1?'s':''} — visit the Blacksmith to socket gems</span>`);
-                }
-                termAppend('', 'term-separator');
+        // Using your existing generateArmorDrop function (already handles inventory)
+        const armorDrop = generateArmorDrop(
+            gameState.player,
+            monster.level,      // ← Use monster's level for appropriate gear
+            monster.rarity || 'common',
+            false,              // ← false = real drop with RNG
+            null                // ← null = random quality
+        );
+        
+        if (armorDrop) {
+            // generateArmorDrop already adds to inventory, so we just show the message
+            const qColor = QUALITY_CONFIG[armorDrop.quality]?.color || '#00FF00';
+            
+            termAppend('', 'term-separator');
+            termAppend(`🛡️ <span style="color:${qColor};font-size:18px;font-weight:bold;">ARMOR DROP!</span>`, 'term-victory');
+            termAppend(`<span style="color:${qColor};">${armorDrop.name}</span>`, 'term-loot');
+            termAppend(`<span style="color:#8aaa8a;">Level ${armorDrop.level || 1} ${armorDrop.quality} armor</span>`, 'term-dim');
+            termAppend(`<span style="color:#00AAFF;">DEF: ${armorDrop.baseDefense}${armorDrop.baseMagicBonus > 0 ? ` | MAG BONUS: +${armorDrop.baseMagicBonus}` : ''}</span>`);
+            
+            const dropSlots = armorDrop.gemSlots || getGemSlots(armorDrop.quality);
+            if (dropSlots > 0) {
+                const slotCircles = '⬤'.repeat(dropSlots);
+                termAppend(`<span style="color:#333;font-size:13px;">${slotCircles}</span> <span style="color:#555;font-size:11px;">${dropSlots} gem slot${dropSlots>1?'s':''} — visit the Blacksmith to socket gems</span>`);
             }
+            termAppend('', 'term-separator');
         }
     });
 
@@ -22609,7 +22578,6 @@ function endCombat(victory) {
             termAppend(`<span style="color:#00FFFF;">→ Tap </span><span style="color:#00FF88;font-weight:bold;">🎒 Inventory</span><span style="color:#00FFFF;"> to spend them now, or visit </span><span style="color:#FFD700;font-weight:bold;">CHARACTER STATS</span><span style="color:#00FFFF;"> in town.</span>`, 'term-loot');
         }
         
-        // Check for class evolution announcement
         if (gameState.player._justEvolved) {
             termAppend('', 'term-separator');
             termAppend(`<span style="color:#FF00FF;font-size:24px;font-weight:bold;">⚡ CLASS EVOLUTION! ⚡</span>`, 'term-victory');
@@ -22623,43 +22591,34 @@ function endCombat(victory) {
     // Max level message
     if (gameState.player.level >= 25 && gameState.player.xp >= gameState.player.xpToNext) {
         termAppend(`🌟 You have reached MAX LEVEL! (25)`, 'term-victory');
-        gameState.player.xp = gameState.player.xpToNext; // Cap at max threshold
+        gameState.player.xp = gameState.player.xpToNext;
     }
 
     updateHud();
-    
-    // 💾 AUTO-SAVE after victory
     saveGame();
 
     // ─────────────────────────────────────────
     // ✅ EXIT COMBAT, ENTER EXHAUSTION
     // ─────────────────────────────────────────
-  // Mark combat as finished, but keep state for timers & UI
-  cleanupCombatStatusEffects(); // Clear all DOT timers and status effects
-gameState.combatState.combatOver = true;
-gameState.postCombatRecovery = true;
+    cleanupCombatStatusEffects();
+    gameState.combatState.combatOver = true;
+    gameState.postCombatRecovery = true;
 
-    // Resume regeneration after combat (normal speed - you're still in the field)
     startMpRegen(false);
     startResting(false);
 
     const ab = document.getElementById('actionBar');
     
-    // Check if we're in a dungeon
     if (gameState.dungeon) {
-        // After a short delay, check if more enemies are still in the room
         if (victory) {
             setTimeout(() => {
                 const ds = gameState.dungeon;
                 if (!ds) return;
                 const remaining = ds.activeEnemies.filter(e => e.currentRoom === ds.currentRoom);
                 if (remaining.length > 0) {
-                    // More enemies in room — start new combat
                     checkEnemiesInRoom(ds.currentRoom);
                 } else {
-                    // No more enemies — show exploration buttons
                     renderDungeonActionBar();
-                    // Fire any Chronicle entries unlocked during this fight
                     if (window._pendingChronicleEntries && window._pendingChronicleEntries.length > 0) {
                         setTimeout(playPendingChronicleEntries, 800);
                     }
@@ -22679,7 +22638,6 @@ gameState.postCombatRecovery = true;
             <button onclick="tryGoBackToTown()">🏘️ RETURN TO TOWN</button>`;
         renderActionBar();
         stabilizeTerminalLayout();
-        // Fire any Chronicle entries unlocked during this fight
         if (window._pendingChronicleEntries && window._pendingChronicleEntries.length > 0) {
             setTimeout(playPendingChronicleEntries, 800);
         }
@@ -22695,18 +22653,16 @@ gameState.postCombatRecovery = true;
     const p = gameState.player;
     const baseClass = p.baseClass || p.class;
     if (baseClass === 'rogue' && victory) {
-        // Clear any existing timer
         if (p.shadowStrikeTimer) {
             clearTimeout(p.shadowStrikeTimer);
         }
         
-        // Set 5-second timer for Shadow Strike
         p.shadowStrikeTimer = setTimeout(() => {
             p.shadowStrikeReady = true;
             termAppend('', 'term-separator');
             termAppend('🌑 You melt into the shadows... <span style="color:#8888FF;">[Shadow Strike Ready]</span>', 'term-highlight');
         }, 5000);
-    }localSave;
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -23611,24 +23567,25 @@ function showCharacterStats() {
 
         
 
-        // ═══════════════════════════════════════════════════════════════
-        // BLACKSMITH — Cut gems (200g) and Socket gems (100g)
-        // ═══════════════════════════════════════════════════════════════
-        function showBlacksmith(subview, subview_target) {
-            const p = gameState.player;
-            const screen = document.getElementById('mainScreen');
-            subview = subview || 'main';
+// ═══════════════════════════════════════════════════════════════
+// BLACKSMITH — Cut gems (200g) and Socket gems (100g)
+// ═══════════════════════════════════════════════════════════════
+function showBlacksmith(subview, subview_target) {
+    const p = gameState.player;
+    const screen = document.getElementById('mainScreen');
+    subview = subview || 'main';
 
-            // ── Helper: find raw gems in inventory ──
-            function getRawGems() {
-                return (p.inventory || []).filter(k => typeof k === 'string' && k.startsWith('raw_'));
-            }
-            // ── Helper: find cut gems (objects) in inventory ──
-            function getCutGems() {
-                return (p.inventory || []).filter(k => typeof k === 'object' && k && k.cut);
-            }
+    // ── Helper: find raw gems in inventory ──
+    function getRawGems() {
+        return (p.inventory || []).filter(k => typeof k === 'string' && k.startsWith('raw_'));
+    }
+    
+    // ── Helper: find cut gems (objects) in inventory ──
+    function getCutGems() {
+        return (p.inventory || []).filter(k => typeof k === 'object' && k && k.cut);
+    }
 
-            const anvil = `<pre style="color:#cc5500;font-size:9.5px;line-height:1.18;text-align:center;font-family:'Courier New',monospace;">
+    const anvil = `<pre style="color:#cc5500;font-size:9.5px;line-height:1.18;text-align:center;font-family:'Courier New',monospace;">
             ___________________
       _____/                   \_____
      /    /   V A L D R A K ' S \    \
@@ -23643,237 +23600,305 @@ function showCharacterStats() {
      |        ⚒️  SMITH  ⚒️           |
      |___________________________________|</pre>`;
 
-            if (subview === 'main') {
-                const rawCount = getRawGems().length;
-                const cutCount = getCutGems().length;
-                screen.innerHTML = `
-                    <div class="location-header">⚒️ VALDRAK'S FORGE</div>
-                    ${anvil}
-                    <div class="message" style="color:#cc7733;font-style:italic;text-align:center;margin-bottom:12px;">
-                        "Bring me your rough stones and I'll make them sing."<br>
-                        <span style="font-size:11px;color:#664422;">— Valdrak, Master Smith</span>
-                    </div>
-                    <div style="margin:16px 0;">
-                        <div class="menu-option" onclick="showBlacksmith('cut')" style="border-color:#FF7722;">
-                            ► 💎 CUT GEMS <span style="color:#888;font-size:12px;">(200g each — ${rawCount} raw gem${rawCount!==1?'s':''} in bag)</span>
-                        </div>
-                        <div class="menu-option" onclick="showBlacksmith('socket')" style="border-color:#c8a000;">
-                            ► ⚙️ SOCKET GEM INTO WEAPON <span style="color:#888;font-size:12px;">(100g — ${cutCount} cut gem${cutCount!==1?'s':''} available)</span>
-                        </div>
-                        <div class="menu-option" onclick="showBlacksmith('info')" style="border-color:#444;">
-                            ► 📖 HOW GEMS WORK
-                        </div>
-                        <div class="menu-option" onclick="showTown()">← BACK TO TOWN</div>
-                    </div>`;
-            }
-
-            else if (subview === 'cut') {
-                const rawGems = getRawGems();
-                if (rawGems.length === 0) {
-                    screen.innerHTML = `
-                        <div class="location-header">⚒️ CUT GEMS</div>
-                        ${anvil}
-                        <div class="message" style="color:#888;text-align:center;padding:20px;">
-                            You have no raw gems to cut.<br>
-                            <span style="font-size:12px;color:#555;">Gems drop from any enemy (4% chance). Keep adventuring!</span>
-                        </div>
-                        <button onclick="showBlacksmith()" style="margin-top:10px;">← BACK</button>`;
-                    return;
-                }
-                let gemListHtml = rawGems.map(gk => {
-                    const parts = gk.split('_');
-                    const typeKey = parts[1];
-                    const tier = parts[2] ? parseInt(parts[2].replace('t','')) : 1;
-                    const gem = GEM_TYPES[typeKey];
-                    const canAfford = p.gold >= 200;
-                    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;margin:4px 0;border:1px solid ${gem?gem.color:'#444'};background:rgba(0,0,0,0.3);">
-                        <span style="color:${gem?gem.color:'#ccc'};">${gem?gem.emoji:'💎'} T${tier} Raw ${gem?gem.name:typeKey} <span style="color:#555;font-size:11px;">${gem?gem.desc:''}</span></span>
-                        <button onclick="doCutGem('${gk}')" ${canAfford?'':'disabled title="Not enough gold"'}
-                            style="border-color:#FF7722;color:#FF7722;font-size:12px;padding:4px 10px;">CUT (200g)</button>
-                    </div>`;
-                }).join('');
-                screen.innerHTML = `
-                    <div class="location-header">⚒️ CUT GEMS — ${p.gold}g</div>
-                    ${anvil}
-                    <div class="message" style="color:#888;font-size:12px;text-align:center;">
-                        Cutting reveals a gem's permanent stats at random. Stats cannot be rerolled.
-                    </div>
-                    <div style="margin:10px 0;">${gemListHtml}</div>
-                    <button onclick="showBlacksmith()" style="margin-top:8px;">← BACK</button>`;
-            }
-
-            else if (subview === 'socket') {
-                const socketTarget = subview_target || 'weapon'; // 'weapon' or 'armor'
-                const weapon = p.weapon ? WEAPONS[p.weapon] : null;
-                const armor  = p.armor  ? ARMOR[p.armor]   : null;
-                const cutGems = getCutGems();
-
-                // Build item card HTML for weapon or armor
-                function itemSocketCard(item, itemName, isArmor) {
-                    if (!item) return `<div style="color:#555;font-size:13px;padding:8px;">No ${isArmor?'armor':'weapon'} equipped.</div>`;
-                    const slots    = getGemSlots(item.quality);
-                    const usedSlots = (item.gems || []).length;
-                    const openSlots = slots - usedSlots;
-                    const slotsHtml = slots === 0
-                        ? `<span style="color:#555;font-size:11px;">No gem slots (need rare+ quality drop)</span>`
-                        : Array.from({length:slots}).map((_,i) => {
-                            const g = (item.gems||[])[i];
-                            return g
-                                ? `<span style="color:${g.color};">${g.emoji} ${g.name} [${g.description}]</span>`
-                                : `<span style="color:#444;">[ OPEN SLOT ]</span>`;
-                          }).join('<br>');
-                    const active = socketTarget === (isArmor?'armor':'weapon');
-                    return `<div style="padding:10px 16px;border:2px solid ${active?'#c8a000':'#333'};margin:6px 0;cursor:pointer;"
-                                onclick="showBlacksmith('socket','${isArmor?'armor':'weapon'}')">
-                        <div style="color:#ccc;font-size:13px;margin-bottom:2px;">${isArmor?'🛡️':'⚔️'} ${item.name} <span style="color:#888;font-size:11px;">[${item.quality}]</span></div>
-                        <div style="font-size:12px;color:#888;">Slots: ${usedSlots}/${slots} used</div>
-                        <div style="margin-top:4px;font-size:12px;">${slotsHtml}</div>
-                    </div>`;
-                }
-
-                const activeItem = socketTarget === 'armor' ? armor : weapon;
-                const activeSlots = activeItem ? getGemSlots(activeItem.quality) : 0;
-                const activeUsed  = activeItem ? (activeItem.gems||[]).length : 0;
-                const openSlots   = activeSlots - activeUsed;
-
-                if (cutGems.length === 0) {
-                    screen.innerHTML = `<div class="location-header">⚒️ SOCKET GEM</div>${anvil}
-                        <div class="message" style="color:#888;text-align:center;padding:20px;">
-                            You have no cut gems to socket.<br>
-                            <span style="font-size:12px;">Cut a raw gem first at the forge.</span>
-                        </div>
-                        <button onclick="showBlacksmith()">← BACK</button>`;
-                    return;
-                }
-
-                const gemButtons = (activeItem && openSlots > 0) ? cutGems.map((g,idx) =>
-                    `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;margin:4px 0;border:1px solid ${g.color};background:rgba(0,0,0,0.3);">
-                        <span style="color:${g.color};">${g.emoji} ${g.name}<br><span style="color:#888;font-size:11px;">${g.description}</span></span>
-                        <button onclick="doSocketGem(${idx},'${socketTarget}')" ${p.gold>=100?'':'disabled title="Need 100g"'}
-                            style="border-color:#c8a000;color:#c8a000;font-size:12px;padding:4px 10px;">SOCKET (100g)</button>
-                    </div>`).join('')
-                : `<div style="color:#888;text-align:center;padding:10px;">${activeItem && activeSlots===0 ? 'Equipped item has no gem slots.' : 'No open slots — gems are permanent once socketed.'}</div>`;
-
-                screen.innerHTML = `
-                    <div class="location-header">⚒️ SOCKET GEM — ${p.gold}g</div>
-                    ${anvil}
-                    <div style="color:#aaa;font-size:12px;margin:4px 0 2px;">Select item to socket into:</div>
-                    ${itemSocketCard(weapon, weapon?.name, false)}
-                    ${itemSocketCard(armor,  armor?.name,  true)}
-                    <div style="margin-top:10px;color:#aaa;font-size:12px;text-align:center;">⚠️ Socketed gems are permanent and cannot be removed.</div>
-                    <div style="margin:8px 0;">${gemButtons}</div>
-                    <button onclick="showBlacksmith()" style="margin-top:8px;">← BACK</button>`;
-            }
-
-            else if (subview === 'info') {
-                screen.innerHTML = `
-                    <div class="location-header">⚒️ HOW GEMS WORK</div>
-                    ${anvil}
-                    <div class="message" style="font-size:13px;line-height:1.6;">
-                        <p><strong style="color:#FF7722;">Finding Gems</strong><br>
-                        Raw gems have a <strong>4% drop chance</strong> from any enemy. Enemy level determines gem tier:<br>
-                        Lv1-6 = Tier 1 &nbsp;|&nbsp; Lv7-12 = Tier 2 &nbsp;|&nbsp; Lv13-18 = Tier 3 &nbsp;|&nbsp; Lv19+ = Tier 4</p>
-                        <p><strong style="color:#c8a000;">Cutting (200g)</strong><br>
-                        Cutting a raw gem gives it permanent random stats. Higher tier gems roll stronger bonuses. Stats cannot be rerolled — choose wisely.</p>
-                        <p><strong style="color:#00FF88;">Socketing (100g)</strong><br>
-                        Socket a cut gem into your equipped weapon or armor. Once socketed, a gem <strong>cannot be removed or replaced</strong>.</p>
-                        <p><strong style="color:#AA88FF;">Gem Slots by Quality (Weapons &amp; Armor)</strong><br>
-                        Rare: 1 slot &nbsp;|&nbsp; Epic: 2 slots &nbsp;|&nbsp; Legendary: 3 slots &nbsp;|&nbsp; Godly: 4 slots<br>
-                        <span style="color:#555;font-size:11px;">Only dropped gear has gem slots — shop gear does not.</span></p>
-                        <p><strong style="color:#FF6688;">Gem Colors — Original</strong><br>
-                        🔴 Ruby: Weapon DMG + Lifesteal &nbsp;|&nbsp; 🔵 Sapphire: Spell Power + MP<br>
-                        🟡 Topaz: Crit + Lightning &nbsp;|&nbsp; 🟢 Emerald: Poison + STR<br>
-                        🟣 Amethyst: Defense + HP &nbsp;|&nbsp; ⬛ Onyx: Armor Pierce + Speed<br>
-                        🔷 Opal: Luck + Gold Find &nbsp;|&nbsp; 🟤 Garnet: STR + CON</p>
-                        <p><strong style="color:#FF6688;">Gem Colors — Rare</strong><br>
-                        🩸 Bloodstone: Max HP + HP Regen per turn<br>
-                        🌙 Moonstone: MP Regen per turn + Cooldown reduction<br>
-                        ☀️ Sunstone: Fire DMG + STR (works on spells)<br>
-                        🔮 Voidstone: Spell Leech → absorbs MP + WIS<br>
-                        🩶 Ironheart: Defense + CON<br>
-                        ⛈️ Stormglass: Lightning DMG + Frost DMG (both elements, both damage types)</p>
-                        <p style="color:#888;font-size:11px;">Lightning, Fire, Frost, Poison all apply to both melee and spells.<br>
-                        Weapon DMG (Ruby) is melee only. Spell Power (Sapphire) is spells only.<br>
-                        Lifesteal (Ruby) works on both melee and spells.</p>
-                    </div>
-                    <button onclick="showBlacksmith()">← BACK</button>`;
-            }
-        }
-
-        function doCutGem(rawGemKey) {
-            const p = gameState.player;
-            if (p.gold < 200) { alert("You need 200 gold to cut a gem."); return; }
-            const idx = p.inventory.indexOf(rawGemKey);
-            if (idx < 0) { alert("Gem not found in inventory."); return; }
-            p.gold -= 200;
-            p.inventory.splice(idx, 1);
-            const cut = cutGem(rawGemKey);
-            if (!cut) { alert("Could not cut gem — unknown type."); p.gold += 200; return; }
-            p.inventory.push(cut);
-            saveGame();
-            const parts = rawGemKey.split('_');
-            const typeKey = parts[1];
-            const gem = GEM_TYPES[typeKey];
-            // Show result flash
-            const flash = document.createElement('div');
-            flash.style.cssText = `position:fixed;top:15px;left:50%;transform:translateX(-50%);background:#0a0a0a;border:2px solid ${gem?gem.color:'#FF7722'};padding:14px 24px;color:${gem?gem.color:'#FF7722'};font-size:15px;z-index:9999;text-align:center;max-width:340px;`;
-            flash.innerHTML = `⚒️ <strong>Gem Cut!</strong><br><span style="font-size:12px;color:#ccc;">${cut.name}<br>${cut.description}</span>`;
-            document.body.appendChild(flash);
-            setTimeout(() => flash.remove(), 3500);
-            showBlacksmith('cut');
-        }
-
-        function doSocketGem(cutGemInventoryIndex, target) {
-    const p = gameState.player;
-    if (p.gold < 100) { alert("You need 100 gold to socket a gem."); return; }
-    
-    const isArmor = target === 'armor';
-    const itemKey = isArmor ? p.armor : p.weapon;
-    const item = isArmor ? ARMOR[itemKey] : WEAPONS[itemKey];
-    const itemLabel = isArmor ? 'armor' : 'weapon';
-    
-    if (!item) { alert(`No ${itemLabel} equipped.`); return; }
-    if (!item.gems) item.gems = [];
-    
-    const slots = getGemSlots(item.quality);
-    if (item.gems.length >= slots) { alert(`No open slots on this ${itemLabel}.`); return; }
-    
-    const cutGems = p.inventory.filter(k => typeof k === 'object' && k && k.cut);
-    const gem = cutGems[cutGemInventoryIndex];
-    if (!gem) { alert("Gem not found."); return; }
-    
-    const invIdx = p.inventory.indexOf(gem);
-    if (invIdx < 0) { alert("Gem not in inventory."); return; }
-    
-    if (!confirm(`Socket ${gem.name} into ${item.name}? This is permanent and cannot be undone.`)) return;
-    
-    p.gold -= 100;
-    p.inventory.splice(invIdx, 1);
-    
-    // Add gem to the equipped item
-    item.gems.push(gem);
-    
-    // ALSO update the inventory object if it exists
-    const inventoryItem = p.inventory.find(invItem => 
-        invItem && typeof invItem === 'object' && invItem.instanceId === itemKey
-    );
-    
-    if (inventoryItem) {
-        if (!inventoryItem.gems) inventoryItem.gems = [];
-        inventoryItem.gems.push(gem);
+    if (subview === 'main') {
+        const rawCount = getRawGems().length;
+        const cutCount = getCutGems().length;
+        screen.innerHTML = `
+            <div class="location-header">⚒️ VALDRAK'S FORGE</div>
+            ${anvil}
+            <div class="message" style="color:#cc7733;font-style:italic;text-align:center;margin-bottom:12px;">
+                "Bring me your rough stones and I'll make them sing."<br>
+                <span style="font-size:11px;color:#664422;">— Valdrak, Master Smith</span>
+            </div>
+            <div style="margin:16px 0;">
+                <div class="menu-option" onclick="showBlacksmith('cut')" style="border-color:#FF7722;">
+                    ► 💎 CUT GEMS <span style="color:#888;font-size:12px;">(200g each — ${rawCount} raw gem${rawCount!==1?'s':''} in bag)</span>
+                </div>
+                <div class="menu-option" onclick="showBlacksmith('socket')" style="border-color:#c8a000;">
+                    ► ⚙️ SOCKET GEM INTO WEAPON <span style="color:#888;font-size:12px;">(100g — ${cutCount} cut gem${cutCount!==1?'s':''} available)</span>
+                </div>
+                <div class="menu-option" onclick="showBlacksmith('info')" style="border-color:#444;">
+                    ► 📖 HOW GEMS WORK
+                </div>
+                <div class="menu-option" onclick="showTown()">← BACK TO TOWN</div>
+            </div>`;
     }
-    
-    recalcGemStats(p);
-    saveGame();
-    
-    const flash = document.createElement('div');
-    flash.style.cssText = `position:fixed;top:15px;left:50%;transform:translateX(-50%);background:#0a0a0a;border:2px solid ${gem.color};padding:14px 24px;color:${gem.color};font-size:15px;z-index:9999;text-align:center;max-width:340px;`;
-    flash.innerHTML = `⚙️ <strong>Gem Socketed!</strong><br><span style="font-size:12px;color:#ccc;">${gem.name} fused into ${item.name} permanently.</span>`;
-    document.body.appendChild(flash);
-    setTimeout(() => flash.remove(), 3500);
-    
-    showBlacksmith('socket', target);
+
+    else if (subview === 'cut') {
+        const rawGems = getRawGems();
+        if (rawGems.length === 0) {
+            screen.innerHTML = `
+                <div class="location-header">⚒️ CUT GEMS</div>
+                ${anvil}
+                <div class="message" style="color:#888;text-align:center;padding:20px;">
+                    You have no raw gems to cut.<br>
+                    <span style="font-size:12px;color:#555;">Gems drop from any enemy (4% chance). Keep adventuring!</span>
+                </div>
+                <button onclick="showBlacksmith()" style="margin-top:10px;">← BACK</button>`;
+            return;
+        }
+        let gemListHtml = rawGems.map(gk => {
+            const parts = gk.split('_');
+            const typeKey = parts[1];
+            const tier = parts[2] ? parseInt(parts[2].replace('t','')) : 1;
+            const gem = GEM_TYPES[typeKey];
+            const canAfford = p.gold >= 200;
+            return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;margin:4px 0;border:1px solid ${gem?gem.color:'#444'};background:rgba(0,0,0,0.3);">
+                <span style="color:${gem?gem.color:'#ccc'};">${gem?gem.emoji:'💎'} T${tier} Raw ${gem?gem.name:typeKey} <span style="color:#555;font-size:11px;">${gem?gem.desc:''}</span></span>
+                <button onclick="doCutGem('${gk}')" ${canAfford?'':'disabled title="Not enough gold"'}
+                    style="border-color:#FF7722;color:#FF7722;font-size:12px;padding:4px 10px;">CUT (200g)</button>
+            </div>`;
+        }).join('');
+        screen.innerHTML = `
+            <div class="location-header">⚒️ CUT GEMS — ${p.gold}g</div>
+            ${anvil}
+            <div class="message" style="color:#888;font-size:12px;text-align:center;">
+                Cutting reveals a gem's permanent stats at random. Stats cannot be rerolled.
+            </div>
+            <div style="margin:10px 0;">${gemListHtml}</div>
+            <button onclick="showBlacksmith()" style="margin-top:8px;">← BACK</button>`;
+    }
+
+    else if (subview === 'socket') {
+        const socketTarget = subview_target || 'weapon';
+        
+        // Get equipped weapon data the SAME WAY inventory does
+        let weaponData = null;
+        let weaponInstance = null;
+        let weaponDisplayQuality = 'normal';
+        let weaponName = '';
+        let weaponQualityColor = '#0f0';
+        
+        if (p.weapon && p.weapon !== 'bare_fists') {
+            // Find the weapon instance in inventory (same as inventory code)
+            weaponInstance = p.inventory.find(item => 
+                item && typeof item === 'object' && item.instanceId === p.weapon
+            );
+            
+            if (weaponInstance && weaponInstance.weaponId) {
+                // Get base weapon data
+                weaponData = WEAPONS[weaponInstance.weaponId];
+                weaponDisplayQuality = weaponInstance.quality || weaponData?.quality || 'normal';
+            } else {
+                // Fallback to direct weapon key
+                weaponData = WEAPONS[p.weapon];
+                weaponDisplayQuality = weaponData?.quality || 'normal';
+            }
+            
+            if (weaponData) {
+                weaponName = weaponData.name || 'Unknown Weapon';
+                const qc = QUALITY_CONFIG[weaponDisplayQuality];
+                weaponQualityColor = qc?.color || '#0f0';
+            }
+        }
+        
+        // Get equipped armor data the SAME WAY
+        let armorData = null;
+        let armorInstance = null;
+        let armorDisplayQuality = 'normal';
+        let armorName = '';
+        let armorQualityColor = '#0f0';
+        
+        if (p.armor && p.armor !== 'no_armor') {
+            armorInstance = p.inventory.find(item => 
+                item && typeof item === 'object' && item.instanceId === p.armor
+            );
+            
+            if (armorInstance && armorInstance.armorId) {
+                armorData = ARMOR[armorInstance.armorId] || ARMOR[armorInstance.instanceId];
+                armorDisplayQuality = armorInstance.quality || armorData?.quality || 'normal';
+            } else {
+                armorData = ARMOR[p.armor];
+                armorDisplayQuality = armorData?.quality || 'normal';
+            }
+            
+            if (armorData) {
+                armorName = armorData.name || 'Unknown Armor';
+                const qc = QUALITY_CONFIG[armorDisplayQuality];
+                armorQualityColor = qc?.color || '#0f0';
+            }
+        }
+        
+        const cutGems = getCutGems();
+
+        // Build weapon card using inventory's logic
+        function weaponSocketCard() {
+            if (!weaponData) {
+                return `<div style="color:#555;font-size:13px;padding:8px;border:1px solid #333;background:#0a0a0a;">
+                    No weapon equipped.
+                </div>`;
+            }
+            
+            const slots = getGemSlots(weaponDisplayQuality);
+            const usedSlots = (weaponInstance?.gems || weaponData.gems || []).length;
+            const active = socketTarget === 'weapon';
+            
+            // Build slots HTML (copied from inventory's buildGemSlotHtml style)
+            let slotsHtml = '';
+            if (slots === 0) {
+                slotsHtml = `<span style="color:#555;font-size:11px;">No gem slots (need rare+ quality drop)</span>`;
+            } else {
+                for (let i = 0; i < slots; i++) {
+                    const gem = (weaponInstance?.gems || weaponData.gems || [])[i];
+                    if (gem) {
+                        slotsHtml += `<div style="margin:4px 0; padding:2px 0; border-bottom:1px solid #222;">
+                            <span style="color:${gem.color};">⬤ ${gem.emoji} ${gem.name}</span><br>
+                            <span style="color:#888;font-size:11px; margin-left:15px;">${gem.description}</span>
+                        </div>`;
+                    } else {
+                        slotsHtml += `<div style="margin:4px 0; color:#666; padding:2px 0;">
+                            ⬤ EMPTY SLOT ${i+1}
+                        </div>`;
+                    }
+                }
+            }
+            
+            return `<div style="padding:10px 16px;border:2px solid ${active ? weaponQualityColor : '#333'};margin:6px 0;cursor:pointer;background:#0a0a0a;"
+                        onclick="showBlacksmith('socket','weapon')">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <span style="color:${weaponQualityColor}; font-size:15px; font-weight:bold;">⚔️</span>
+                            <span style="color:${weaponQualityColor};"> ${weaponName}</span>
+                            <span style="color:#888; font-size:11px; margin-left:8px;">[${weaponDisplayQuality}]</span>
+                        </div>
+                        ${active ? '<span style="color:#c8a000; font-size:12px;">▼ SELECTED</span>' : ''}
+                    </div>
+                    <div style="font-size:12px; color:#aaa; margin-top:6px;">Slots: ${usedSlots}/${slots} used</div>
+                    <div style="margin-top:8px; font-size:12px;">${slotsHtml}</div>
+                </div>`;
+        }
+
+        // Build armor card using inventory's logic
+        function armorSocketCard() {
+            if (!armorData) {
+                return `<div style="color:#555;font-size:13px;padding:8px;border:1px solid #333;background:#0a0a0a;">
+                    No armor equipped.
+                </div>`;
+            }
+            
+            const slots = getGemSlots(armorDisplayQuality);
+            const usedSlots = (armorInstance?.gems || armorData.gems || []).length;
+            const active = socketTarget === 'armor';
+            
+            let slotsHtml = '';
+            if (slots === 0) {
+                slotsHtml = `<span style="color:#555;font-size:11px;">No gem slots (need rare+ quality drop)</span>`;
+            } else {
+                for (let i = 0; i < slots; i++) {
+                    const gem = (armorInstance?.gems || armorData.gems || [])[i];
+                    if (gem) {
+                        slotsHtml += `<div style="margin:4px 0; padding:2px 0; border-bottom:1px solid #222;">
+                            <span style="color:${gem.color};">⬤ ${gem.emoji} ${gem.name}</span><br>
+                            <span style="color:#888;font-size:11px; margin-left:15px;">${gem.description}</span>
+                        </div>`;
+                    } else {
+                        slotsHtml += `<div style="margin:4px 0; color:#666; padding:2px 0;">
+                            ⬤ EMPTY SLOT ${i+1}
+                        </div>`;
+                    }
+                }
+            }
+            
+            return `<div style="padding:10px 16px;border:2px solid ${active ? armorQualityColor : '#333'};margin:6px 0;cursor:pointer;background:#0a0a0a;"
+                        onclick="showBlacksmith('socket','armor')">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <span style="color:${armorQualityColor}; font-size:15px; font-weight:bold;">🛡️</span>
+                            <span style="color:${armorQualityColor};"> ${armorName}</span>
+                            <span style="color:#888; font-size:11px; margin-left:8px;">[${armorDisplayQuality}]</span>
+                        </div>
+                        ${active ? '<span style="color:#c8a000; font-size:12px;">▼ SELECTED</span>' : ''}
+                    </div>
+                    <div style="font-size:12px; color:#aaa; margin-top:6px;">Slots: ${usedSlots}/${slots} used</div>
+                    <div style="margin-top:8px; font-size:12px;">${slotsHtml}</div>
+                </div>`;
+        }
+
+        const activeItem = socketTarget === 'armor' ? armorData : weaponData;
+        const activeQuality = socketTarget === 'armor' ? armorDisplayQuality : weaponDisplayQuality;
+        const activeSlots = activeItem ? getGemSlots(activeQuality) : 0;
+        const activeGems = socketTarget === 'armor' 
+            ? (armorInstance?.gems || armorData?.gems || []) 
+            : (weaponInstance?.gems || weaponData?.gems || []);
+        const activeUsed = activeGems.length;
+        const openSlots = activeSlots - activeUsed;
+
+        if (cutGems.length === 0) {
+            screen.innerHTML = `<div class="location-header">⚒️ SOCKET GEM</div>${anvil}
+                <div class="message" style="color:#888;text-align:center;padding:20px;">
+                    You have no cut gems to socket.<br>
+                    <span style="font-size:12px;">Cut a raw gem first at the forge.</span>
+                </div>
+                <button onclick="showBlacksmith()">← BACK</button>`;
+            return;
+        }
+
+        const gemButtons = (activeItem && openSlots > 0) 
+            ? cutGems.map((g, idx) => {
+                const canAfford = p.gold >= 100;
+                return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;margin:4px 0;border:1px solid ${g.color};background:rgba(0,0,0,0.3);">
+                    <div style="flex:1;">
+                        <span style="color:${g.color};">⬤ ${g.emoji} ${g.name}</span>
+                        <div style="color:#888;font-size:11px;margin-top:2px;">${g.description}</div>
+                    </div>
+                    <button onclick="doSocketGem(${idx},'${socketTarget}')" ${canAfford?'':'disabled title="Need 100g"'}
+                        style="border-color:#c8a000;color:#c8a000;font-size:12px;padding:6px 12px;min-width:80px;border-radius:4px;">SOCKET (100g)</button>
+                </div>`;
+            }).join('')
+            : `<div style="color:#888;text-align:center;padding:15px;background:#0a0a0a;border:1px solid #333;">${
+                activeItem 
+                    ? (activeSlots === 0 
+                        ? '✨ This item has no gem slots.' 
+                        : '⚠️ No open slots — gems are permanent once socketed.')
+                    : '👆 Select a weapon or armor above to socket gems.'
+              }</div>`;
+
+        screen.innerHTML = `
+            <div class="location-header">⚒️ SOCKET GEM — ${p.gold}g</div>
+            ${anvil}
+            <div style="color:#aaa;font-size:12px;margin:4px 0 2px;">Click on an item to select it for socketing:</div>
+            ${weaponSocketCard()}
+            ${armorSocketCard()}
+            <div style="margin-top:15px;color:#aaa;font-size:12px;text-align:center;">⚠️ Socketed gems are permanent and cannot be removed.</div>
+            <div style="margin:10px 0; max-height:300px; overflow-y:auto;">${gemButtons}</div>
+            <button onclick="showBlacksmith()" style="margin-top:8px; padding:8px 16px;">← BACK</button>`;
+    }
+
+    else if (subview === 'info') {
+        screen.innerHTML = `
+            <div class="location-header">⚒️ HOW GEMS WORK</div>
+            ${anvil}
+            <div class="message" style="font-size:13px;line-height:1.6;">
+                <p><strong style="color:#FF7722;">Finding Gems</strong><br>
+                Raw gems have a <strong>4% drop chance</strong> from any enemy. Enemy level determines gem tier:<br>
+                Lv1-6 = Tier 1 &nbsp;|&nbsp; Lv7-12 = Tier 2 &nbsp;|&nbsp; Lv13-18 = Tier 3 &nbsp;|&nbsp; Lv19+ = Tier 4</p>
+                <p><strong style="color:#c8a000;">Cutting (200g)</strong><br>
+                Cutting a raw gem gives it permanent random stats. Higher tier gems roll stronger bonuses. Stats cannot be rerolled — choose wisely.</p>
+                <p><strong style="color:#00FF88;">Socketing (100g)</strong><br>
+                Socket a cut gem into your equipped weapon or armor. Once socketed, a gem <strong>cannot be removed or replaced</strong>.</p>
+                <p><strong style="color:#AA88FF;">Gem Slots by Quality (Weapons &amp; Armor)</strong><br>
+                Rare: 1 slot &nbsp;|&nbsp; Epic: 2 slots &nbsp;|&nbsp; Legendary: 3 slots &nbsp;|&nbsp; Godly: 4 slots<br>
+                <span style="color:#555;font-size:11px;">Only dropped gear has gem slots — shop gear does not.</span></p>
+                <p><strong style="color:#FF6688;">Gem Colors — Original</strong><br>
+                🔴 Ruby: Weapon DMG + Lifesteal &nbsp;|&nbsp; 🔵 Sapphire: Spell Power + MP<br>
+                🟡 Topaz: Crit + Lightning &nbsp;|&nbsp; 🟢 Emerald: Poison + STR<br>
+                🟣 Amethyst: Defense + HP &nbsp;|&nbsp; ⬛ Onyx: Armor Pierce + Speed<br>
+                🔷 Opal: Luck + Gold Find &nbsp;|&nbsp; 🟤 Garnet: STR + CON</p>
+                <p><strong style="color:#FF6688;">Gem Colors — Rare</strong><br>
+                🩸 Bloodstone: Max HP + HP Regen per turn<br>
+                🌙 Moonstone: MP Regen per turn + Cooldown reduction<br>
+                ☀️ Sunstone: Fire DMG + STR (works on spells)<br>
+                🔮 Voidstone: Spell Leech → absorbs MP + WIS<br>
+                🩶 Ironheart: Defense + CON<br>
+                ⛈️ Stormglass: Lightning DMG + Frost DMG (both elements, both damage types)</p>
+                <p style="color:#888;font-size:11px;">Lightning, Fire, Frost, Poison all apply to both melee and spells.<br>
+                Weapon DMG (Ruby) is melee only. Spell Power (Sapphire) is spells only.<br>
+                Lifesteal (Ruby) works on both melee and spells.</p>
+            </div>
+            <button onclick="showBlacksmith()">← BACK</button>`;
+    }
 }
+
         // ═══════════════════════════════════════════════════════════════
         // TEMPLE OF REBIRTH (Stat Reset)
         // ═══════════════════════════════════════════════════════════════

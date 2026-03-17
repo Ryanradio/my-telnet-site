@@ -58,6 +58,15 @@ const CLASS_WEAPON_POOLS = {
  * @param {string} enemyRarity - Rarity of defeated enemy
  * @returns {object|null} Generated weapon or null if no drop
  */
+/**
+ * Generate a random weapon drop for a player
+ * @param {object} player - The player object
+ * @param {number} enemyLevel - Level of defeated enemy
+ * @param {string} enemyRarity - Rarity of defeated enemy
+ * @param {boolean} skipRoll - Skip drop chance roll (for sysop/migration)
+ * @param {string} forcedQuality - Force a specific quality
+ * @returns {object|null} Generated weapon or null if no drop
+ */
 function generateWeaponDrop(player, enemyLevel, enemyRarity = 'common', skipRoll = false, forcedQuality = null) {
     // Calculate drop chance (skip if forced)
     if (!skipRoll) {
@@ -70,12 +79,16 @@ function generateWeaponDrop(player, enemyLevel, enemyRarity = 'common', skipRoll
         }
     }
     
-    // Determine weapon level (player level or +1)
+    // Determine weapon level - CRITICAL FIX: use enemyLevel for real drops
     let weaponLevel;
     if (skipRoll) {
-        weaponLevel = player.level; // Sysop commands get exact level
+        // For sysop commands or migration, use player level as baseline
+        weaponLevel = player.level;
     } else {
-        weaponLevel = player.level + (Math.random() < 0.3 ? 1 : 0); // Normal random drop
+        // For real drops: base on enemy level, with chance to be +1
+        weaponLevel = enemyLevel + (Math.random() < 0.3 ? 1 : 0);
+        // Cap at reasonable range (don't exceed max weapon levels)
+        weaponLevel = Math.min(30, Math.max(1, weaponLevel));
     }
     
     // Get player's class for weapon pool
@@ -89,6 +102,9 @@ function generateWeaponDrop(player, enemyLevel, enemyRarity = 'common', skipRoll
     
     // First try to find weapons of exact level
     for (const [weaponId, weapon] of Object.entries(WEAPONS)) {
+        // Skip unarmed and non-weapons
+        if (weapon.unarmed) continue;
+        
         if (weapon.level === weaponLevel) {
             const weaponType = weapon.weaponSubtype || weapon.type;
             if (weaponTypes.includes(weaponType)) {
@@ -105,6 +121,8 @@ function generateWeaponDrop(player, enemyLevel, enemyRarity = 'common', skipRoll
     // If no weapons of exact level, try ±1 level
     if (eligibleWeapons.length === 0) {
         for (const [weaponId, weapon] of Object.entries(WEAPONS)) {
+            if (weapon.unarmed) continue;
+            
             if (Math.abs(weapon.level - weaponLevel) <= 1) {
                 const weaponType = weapon.weaponSubtype || weapon.type;
                 if (weaponTypes.includes(weaponType)) {
@@ -122,6 +140,8 @@ function generateWeaponDrop(player, enemyLevel, enemyRarity = 'common', skipRoll
     // If still no weapons, try any level of correct type
     if (eligibleWeapons.length === 0) {
         for (const [weaponId, weapon] of Object.entries(WEAPONS)) {
+            if (weapon.unarmed) continue;
+            
             const weaponType = weapon.weaponSubtype || weapon.type;
             if (weaponTypes.includes(weaponType)) {
                 if (!weapon.allowedClasses || weapon.allowedClasses.includes(playerClass)) {
@@ -163,7 +183,7 @@ function generateWeaponDrop(player, enemyLevel, enemyRarity = 'common', skipRoll
         quality = rollQuality();
     }
     
-    // Get quality bonus percentage from config (now using updated values)
+    // Get quality bonus percentage from config
     const qualityData = QUALITY_CONFIG[quality] || QUALITY_CONFIG.normal;
     const bonusPct = qualityData.bonusPct;
     
@@ -183,110 +203,80 @@ function generateWeaponDrop(player, enemyLevel, enemyRarity = 'common', skipRoll
     if (quality === 'legendary') gemSlots = 3;
     if (quality === 'godly') gemSlots = 4;
     
-    // Generate new name with quality prefix and modifier suffix
-    // Generate new name with quality prefix and modifier suffix
-let weaponName = baseWeapon.name;
-
-// Add quality prefix only for non-normal qualities
-if (quality !== 'normal') {
-    // Capitalize first letter of quality
-    const qualityDisplay = quality.charAt(0).toUpperCase() + quality.slice(1);
-    weaponName = `${qualityDisplay} ${baseWeapon.name}`;
-}
-
-// Add modifier suffix if exists (only for rare+)
-if (modifiers && modifiers.length > 0 && quality !== 'normal' && quality !== 'poor') {
-    const modifierSuffixes = {
-        fire_damage: 'of Flames',
-        ice_damage: 'of Frost',
-        poison_damage: 'of Venom',
-        lightning_damage: 'of Lightning',
-        shadow_damage: 'of Shadows',
-        bleed: 'of Bleeding',
-        damage_bonus: 'of Might',
-        critical_bonus: 'of Precision',
-        flaming: 'of Flames',
-        freezing: 'of Frost',
-        shocking: 'of Lightning',
-        poisonous: 'of Venom',
-        vampiric: 'of the Vampire',
-        holy: 'of the Divine',
-        cursed: 'of Darkness',
-        keen: 'of Precision',
-        heavy: 'of Might',
-        swift: 'of Speed'
+    // Generate weapon name
+    let weaponName = baseWeapon.name;
+    if (quality !== 'normal') {
+        const qualityDisplay = quality.charAt(0).toUpperCase() + quality.slice(1);
+        weaponName = `${qualityDisplay} ${baseWeapon.name}`;
+    }
+    
+    // Add modifier suffix if exists (only for rare+)
+    if (modifiers && modifiers.length > 0 && quality !== 'normal' && quality !== 'poor') {
+        const modifierSuffixes = {
+            fire_damage: 'of Flames',
+            ice_damage: 'of Frost',
+            poison_damage: 'of Venom',
+            lightning_damage: 'of Lightning',
+            shadow_damage: 'of Shadows',
+            bleed: 'of Bleeding',
+            damage_bonus: 'of Might',
+            critical_bonus: 'of Precision',
+            flaming: 'of Flames',
+            freezing: 'of Frost',
+            shocking: 'of Lightning',
+            poisonous: 'of Venom',
+            vampiric: 'of the Vampire',
+            holy: 'of the Divine',
+            cursed: 'of Darkness',
+            keen: 'of Precision',
+            heavy: 'of Might',
+            swift: 'of Speed'
+        };
+        
+        const suffix = modifierSuffixes[modifiers[0]] || '';
+        if (suffix) {
+            weaponName = `${weaponName} ${suffix}`;
+        }
+    }
+    
+    // Create unique instance ID
+    const instanceId = `${baseWeapon.id}_${quality}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    
+    // Create weapon object
+    const weapon = {
+        id: baseWeapon.id,
+        instanceId: instanceId,
+        name: weaponName,
+        baseName: baseWeapon.name,
+        type: baseWeapon.type || baseWeapon.weaponSubtype,
+        weaponSubtype: baseWeapon.weaponSubtype || baseWeapon.type,
+        
+        // Base stats from weapons.js + quality bonus
+        baseDamage: baseWeapon.baseDamage + baseDamageBonus,
+        maxDamage: baseWeapon.maxDamage + maxDamageBonus,
+        baseMagicDamage: baseWeapon.baseMagicDamage ? baseWeapon.baseMagicDamage + magicDamageBonus : 0,
+        healingBonus: baseWeapon.healingBonus ? baseWeapon.healingBonus + healingBonus : 0,
+        
+        level: weaponLevel,
+        originalLevel: baseWeapon.level,
+        quality: quality,
+        qualityBonus: bonusPct,
+        
+        modifiers: modifiers,
+        gemSlots: gemSlots,
+        gems: [],
+        
+        cost: calculateWeaponValue(weaponLevel, quality, modifiers),
+        description: baseWeapon.description || `A ${quality} quality ${baseWeapon.name}.`,
+        isDropped: true,
+        dropTimestamp: Date.now()
     };
     
-    const suffix = modifierSuffixes[modifiers[0]] || '';
-    if (suffix) {
-        weaponName = `${weaponName} ${suffix}`;
-    }
-}
+    // Store the weapon instance in WEAPONS using instanceId as key
+    WEAPONS[instanceId] = weapon;
     
-    // Create unique ID for tracking, but keep original weapon ID for the weapon itself
-const instanceId = `${baseWeapon.id}_${quality}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-
-// Create weapon object - USING BASE WEAPON STATS + QUALITY BONUS
-// BUT using the ORIGINAL weapon ID from weapons.js
-const weapon = {
-    id: baseWeapon.id,  // Use the original ID like "holy_mace", not a generated one
-    instanceId: instanceId, // Store generated ID separately for inventory tracking
-    name: weaponName,
-    baseName: baseWeapon.name,
-    type: baseWeapon.type || baseWeapon.weaponSubtype,
-    weaponSubtype: baseWeapon.weaponSubtype || baseWeapon.type,
-    
-    // Base stats from weapons.js + quality bonus
-    baseDamage: baseWeapon.baseDamage + baseDamageBonus,
-    maxDamage: baseWeapon.maxDamage + maxDamageBonus,
-    baseMagicDamage: baseWeapon.baseMagicDamage ? baseWeapon.baseMagicDamage + magicDamageBonus : 0,
-    healingBonus: baseWeapon.healingBonus ? baseWeapon.healingBonus + healingBonus : 0,
-    
-    level: weaponLevel,
-    originalLevel: baseWeapon.level,
-    quality: quality,
-    qualityBonus: bonusPct,
-    
-    modifiers: modifiers,
-    gemSlots: gemSlots,
-    gems: [], // Initialize empty gems array
-    
-    cost: calculateWeaponValue(weaponLevel, quality, modifiers),
-    description: baseWeapon.description || `A ${quality} quality ${baseWeapon.name}.`,
-    isDropped: true,
-        dropTimestamp: Date.now() // Track when it dropped
-};
-
-console.log("🔍 Step A: Weapon object created", !!weapon);
-
-// Store the weapon instance in WEAPONS using instanceId as key
-console.log("🔍 Step B: About to store in WEAPONS");
-WEAPONS[instanceId] = weapon;
-console.log("🔍 Step C: Stored in WEAPONS, exists now?", !!WEAPONS[instanceId]);
-
-// Store the weapon instance in WEAPONS using instanceId as key
-WEAPONS[instanceId] = weapon;
-
-
-// Create inventory reference object
-const inventoryItem = {
-    weaponId: weapon.id,           // The base weapon ID (e.g., "holy_mace")
-    instanceId: weapon.instanceId,  // The unique instance ID
-    quality: weapon.quality,
-    modifiers: weapon.modifiers || [],
-    gemSlots: weapon.gemSlots || 0,
-    gems: [],                       // Empty array for gems
-    dropLevel: weapon.level,
-    dropTime: Date.now()
-};
-
-// Add to player's inventory
-if (gameState && gameState.player && gameState.player.inventory) {
-    gameState.player.inventory.push(inventoryItem);
-    console.log("📦 Added to inventory:", inventoryItem); // Debug line
-}
-
-return weapon;
+    // Return the weapon - caller is responsible for adding to inventory
+    return weapon;
 }
 
 /**
