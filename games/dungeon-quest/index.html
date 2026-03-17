@@ -5961,6 +5961,18 @@ function buildSaveSnapshot() {
     }
 
     const p = gameState.player;
+
+    // Ensure p.armor is correctly set before saving
+if ((!p.armor || p.armor === 'no_armor') && p.inventory) {
+    const armorInInv = p.inventory.find(item =>
+        item && typeof item === 'object' && item.armorId &&
+        item.instanceId && ARMOR[item.instanceId]
+    );
+    if (armorInInv) {
+        p.armor = armorInInv.instanceId;
+        console.log(`🔧 Fixed p.armor before save: ${p.armor}`);
+    }
+}
     
     const snapshot = {
         version: 1,
@@ -6108,102 +6120,157 @@ guildQuests: (() => {
         
         // Town hub the player is in
         currentTown: gameState.currentTown || 'town1',
+       
         
-        // ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
 // GENERATED WEAPONS - Save all dynamically created weapon drops
 // ═══════════════════════════════════════════════════════════════
 generatedWeapons: (() => {
     const generated = {};
-    
-    // Check inventory for weapon instances
+
+    function buildFullWeapon(item) {
+        // Try to get it from WEAPONS[] first (exists if not yet reloaded)
+        const live = WEAPONS[item.instanceId];
+        if (live && live.baseDamage !== undefined) return live;
+
+        // Reconstruct from base + quality
+        const baseWeapon = WEAPONS[item.weaponId];
+        if (!baseWeapon) return null;
+
+        const qualityData = QUALITY_CONFIG[item.quality] || QUALITY_CONFIG.normal;
+        const bonusPct = qualityData.bonusPct;
+        const qualityDisplay = item.quality.charAt(0).toUpperCase() + item.quality.slice(1);
+
+        return {
+            id: item.weaponId,
+            instanceId: item.instanceId,
+            name: item.quality !== 'normal'
+                ? `${qualityDisplay} ${baseWeapon.name}`
+                : baseWeapon.name,
+            baseName: baseWeapon.name,
+            type: baseWeapon.type || baseWeapon.weaponSubtype,
+            weaponSubtype: baseWeapon.weaponSubtype || baseWeapon.type,
+            baseDamage: baseWeapon.baseDamage + Math.floor(baseWeapon.baseDamage * bonusPct),
+            maxDamage: baseWeapon.maxDamage
+                ? baseWeapon.maxDamage + Math.floor(baseWeapon.maxDamage * bonusPct)
+                : baseWeapon.baseDamage + Math.floor(baseWeapon.baseDamage * bonusPct),
+            baseMagicDamage: baseWeapon.baseMagicDamage
+                ? baseWeapon.baseMagicDamage + Math.floor(baseWeapon.baseMagicDamage * bonusPct)
+                : 0,
+            healingBonus: baseWeapon.healingBonus
+                ? baseWeapon.healingBonus + Math.floor(baseWeapon.healingBonus * bonusPct)
+                : 0,
+            level: baseWeapon.level || 1,
+            originalLevel: baseWeapon.level || 1,
+            quality: item.quality,
+            qualityBonus: bonusPct,
+            modifiers: item.modifiers || [],
+            gems: item.gems || [],
+            gemSlots: item.gemSlots || 0,
+            cost: baseWeapon.cost || 100,
+            allowedClasses: baseWeapon.allowedClasses || null,
+            classRestriction: baseWeapon.classRestriction || null,
+            description: baseWeapon.description || `A ${item.quality} quality ${baseWeapon.name}.`,
+            isDropped: true,
+            dropTimestamp: item.dropTime || Date.now()
+        };
+    }
+
+    // Scan inventory for weapon instances
     (p.inventory || []).forEach(item => {
-        // Handle weapon instances (objects with weaponId)
         if (item && typeof item === 'object' && item.weaponId && item.instanceId) {
-            // Get the full weapon data from WEAPONS
-            const weaponData = WEAPONS[item.weaponId];
-            if (weaponData) {
-                // Store the instance data needed to reconstruct
-                generated[item.instanceId] = {
-                    weaponId: item.weaponId,
-                    instanceId: item.instanceId,
-                    quality: item.quality,
-                    modifiers: item.modifiers || [],
-                    gemSlots: item.gemSlots || 0,
-                    gems: item.gems || [],
-                    dropLevel: item.dropLevel,
-                    dropTime: item.dropTime
-                };
-            }
+            const full = buildFullWeapon(item);
+            if (full) generated[item.instanceId] = full;
         }
     });
-    
-    // Check equipped weapon
+
+    // Also catch equipped weapon if not already covered
     if (p.weapon && typeof p.weapon === 'string' && p.weapon.includes('_')) {
-        const instance = p.inventory.find(item => 
-            item && typeof item === 'object' && item.instanceId === p.weapon
-        );
-        if (instance) {
-            generated[instance.instanceId] = {
-                weaponId: instance.weaponId,
-                instanceId: instance.instanceId,
-                quality: instance.quality,
-                modifiers: instance.modifiers || [],
-                gemSlots: instance.gemSlots || 0,
-                gems: instance.gems || [],
-                dropLevel: instance.dropLevel,
-                dropTime: instance.dropTime
-            };
+        if (!generated[p.weapon]) {
+            const instance = (p.inventory || []).find(i =>
+                i && typeof i === 'object' && i.instanceId === p.weapon
+            );
+            if (instance) {
+                const full = buildFullWeapon(instance);
+                if (full) generated[p.weapon] = full;
+            }
         }
     }
-    
+
     return generated;
 })(),
+
 
 // ═══════════════════════════════════════════════════════════════
 // GENERATED ARMOR - Save all dynamically created armor drops
 // ═══════════════════════════════════════════════════════════════
 generatedArmor: (() => {
     const generated = {};
-    
-    // Check inventory for armor instances
+
+    function buildFullArmor(item) {
+        // Try to get it from ARMOR[] first (exists if not yet reloaded)
+        const live = ARMOR[item.instanceId];
+        if (live && live.baseDefense !== undefined) return live;
+
+        // Reconstruct from base + quality
+        const baseArmor = ARMOR[item.armorId];
+        if (!baseArmor) return null;
+
+        const qualityData = QUALITY_CONFIG[item.quality] || QUALITY_CONFIG.normal;
+        const bonusPct = qualityData.bonusPct;
+        const qualityDisplay = item.quality.charAt(0).toUpperCase() + item.quality.slice(1);
+
+        return {
+            id: item.armorId,
+            instanceId: item.instanceId,
+            name: item.quality !== 'normal'
+                ? `${qualityDisplay} ${baseArmor.name}`
+                : baseArmor.name,
+            baseName: baseArmor.name,
+            type: baseArmor.type || baseArmor.armorSubtype || baseArmor.slot || 'armor',
+armorSubtype: baseArmor.armorSubtype || baseArmor.type || baseArmor.slot || 'armor',
+            baseDefense: baseArmor.baseDefense + Math.floor(baseArmor.baseDefense * bonusPct),
+            baseMagicBonus: baseArmor.baseMagicBonus
+                ? baseArmor.baseMagicBonus + Math.floor(baseArmor.baseMagicBonus * bonusPct)
+                : 0,
+            level: baseArmor.level || 1,
+            originalLevel: baseArmor.level || 1,
+            quality: item.quality,
+            qualityBonus: bonusPct,
+            gems: item.gems || [],
+            gemSlots: item.gemSlots || 0,
+            cost: baseArmor.cost || 100,
+            description: baseArmor.description || `A ${item.quality} quality ${baseArmor.name}.`,
+            isDropped: true,
+            dropTimestamp: item.dropTime || Date.now()
+        };
+    }
+
+    // Scan inventory for armor instances
     (p.inventory || []).forEach(item => {
-        // Handle armor instances (objects with armorId)
         if (item && typeof item === 'object' && item.armorId && item.instanceId) {
-            // Get the full armor data from ARMOR
-            const armorData = ARMOR[item.armorId] || ARMOR[item.instanceId];
-            if (armorData) {
-                // Store the instance data needed to reconstruct
-                generated[item.instanceId] = {
-                    armorId: item.armorId,
-                    instanceId: item.instanceId,
-                    quality: item.quality,
-                    dropLevel: item.dropLevel,
-                    dropTime: item.dropTime
-                };
-            }
+            const full = buildFullArmor(item);
+            if (full) generated[item.instanceId] = full;
         }
     });
-    
-    // Check equipped armor
+
+    // Also catch equipped armor if not already in inventory scan
     if (p.armor && typeof p.armor === 'string' && p.armor.includes('_')) {
-        const instance = p.inventory.find(item => 
-            item && typeof item === 'object' && item.instanceId === p.armor
-        );
-        if (instance) {
-            generated[instance.instanceId] = {
-                armorId: instance.armorId,
-                instanceId: instance.instanceId,
-                quality: instance.quality,
-                dropLevel: instance.dropLevel,
-                dropTime: instance.dropTime
-            };
+        if (!generated[p.armor]) {
+            const instance = (p.inventory || []).find(i =>
+                i && typeof i === 'object' && i.instanceId === p.armor
+            );
+            if (instance) {
+                const full = buildFullArmor(instance);
+                if (full) generated[p.armor] = full;
+            }
         }
     }
-    
+
     return generated;
 })(),
 
-       // ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
 // STATIC ITEM GEMS - Save gems socketed into weapons/armor
 // ═══════════════════════════════════════════════════════════════
 staticWeaponGems: (() => {
@@ -11431,41 +11498,115 @@ async function loadCharacter(characterId) {
             }
         })(p);
 
-        // ======================================================
         // STEP 3: RESTORE GENERATED WEAPONS FROM SAVE DATA
-        // ======================================================
-        if (data.generatedWeapons) {
-            Object.keys(data.generatedWeapons).forEach(instanceId => {
-                const weaponData = data.generatedWeapons[instanceId];
-                
-                // Skip if weaponData is malformed (missing weaponId)
-                if (!weaponData || !weaponData.weaponId) {
-                    console.warn(`⚠️ Malformed weapon data for instance ${instanceId}, skipping`);
-                    return;
-                }
-                
-                // Direct restore - no recalculation needed
-                WEAPONS[instanceId] = weaponData;
-            });
-            console.log(`✅ Restored ${Object.keys(data.generatedWeapons).length} generated weapons`);
+if (data.generatedWeapons) {
+    Object.keys(data.generatedWeapons).forEach(instanceId => {
+        const weaponData = data.generatedWeapons[instanceId];
+        
+        // Check if this is a FULL weapon object (has baseDamage)
+        if (weaponData.baseDamage !== undefined) {
+            // It's a full weapon object - restore directly
+            WEAPONS[instanceId] = weaponData;
+            console.log(`✅ Restored full weapon: ${weaponData.name}`);
+        } else {
+            // It's a reference - reconstruct from base weapon
+            const baseWeapon = WEAPONS[weaponData.weaponId];
+            if (!baseWeapon) {
+                console.warn(`Base weapon ${weaponData.weaponId} not found for instance ${instanceId}`);
+                return;
+            }
+            const bonusPct = QUALITY_CONFIG[weaponData.quality]?.bonusPct || 0;
+            WEAPONS[instanceId] = {
+                id: weaponData.weaponId,
+                instanceId: instanceId,
+                name: `${weaponData.quality.charAt(0).toUpperCase() + weaponData.quality.slice(1)} ${baseWeapon.name}`,
+                baseName: baseWeapon.name,
+                type: baseWeapon.type || baseWeapon.weaponSubtype,
+                weaponSubtype: baseWeapon.weaponSubtype || baseWeapon.type,
+                baseDamage: baseWeapon.baseDamage + Math.floor(baseWeapon.baseDamage * bonusPct),
+                maxDamage: baseWeapon.maxDamage + Math.floor(baseWeapon.maxDamage * bonusPct),
+                baseMagicDamage: baseWeapon.baseMagicDamage ? baseWeapon.baseMagicDamage + Math.floor(baseWeapon.baseMagicDamage * bonusPct) : 0,
+                healingBonus: baseWeapon.healingBonus ? baseWeapon.healingBonus + Math.floor(baseWeapon.healingBonus * bonusPct) : 0,
+                level: weaponData.dropLevel || baseWeapon.level,
+                originalLevel: baseWeapon.level,
+                quality: weaponData.quality,
+                qualityBonus: bonusPct,
+                modifiers: weaponData.modifiers || [],
+                gemSlots: weaponData.gemSlots || 0,
+                gems: weaponData.gems || [],
+                cost: baseWeapon.cost,
+                description: baseWeapon.description || `A ${weaponData.quality} quality ${baseWeapon.name}.`,
+                isDropped: true,
+                dropTimestamp: weaponData.dropTime || Date.now()
+            };
         }
+    });
+    console.log(`✅ Restored ${Object.keys(data.generatedWeapons).length} generated weapons`);
+}
 
-        // ======================================================
-        // STEP 4: RESTORE GENERATED ARMOR FROM SAVE DATA
-        // ======================================================
-        if (data.generatedArmor) {
-            Object.keys(data.generatedArmor).forEach(instanceId => {
-                const armorData = data.generatedArmor[instanceId];
-                
-                if (!armorData || !armorData.armorId) {
-                    console.warn(`⚠️ Malformed armor data for instance ${instanceId}, skipping`);
-                    return;
-                }
-                
-                ARMOR[instanceId] = armorData;
-            });
-            console.log(`✅ Restored ${Object.keys(data.generatedArmor).length} generated armor pieces`);
+
+// ======================================================
+// STEP 4: RESTORE GENERATED ARMOR FROM SAVE DATA
+// ======================================================
+if (data.generatedArmor) {
+    Object.keys(data.generatedArmor).forEach(instanceId => {
+        const armorData = data.generatedArmor[instanceId];
+        
+        // Check if this is a FULL armor object (has baseDefense)
+        if (armorData.baseDefense !== undefined) {
+            ARMOR[instanceId] = armorData;
+            console.log(`✅ Restored full armor: ${armorData.name}`);
+        } else {
+            // It's a reference - reconstruct from base armor
+            const baseArmor = ARMOR[armorData.armorId];
+            if (!baseArmor) {
+                console.warn(`Base armor ${armorData.armorId} not found for instance ${instanceId}`);
+                return;
+            }
+            const bonusPct = QUALITY_CONFIG[armorData.quality]?.bonusPct || 0;
+            const q = armorData.quality.charAt(0).toUpperCase() + armorData.quality.slice(1);
+            ARMOR[instanceId] = {
+                id: armorData.armorId,
+                instanceId: instanceId,
+                name: armorData.quality !== 'normal' ? `${q} ${baseArmor.name}` : baseArmor.name,
+                baseName: baseArmor.name,
+                type: baseArmor.slot || baseArmor.armorSubtype || 'armor',
+                armorSubtype: baseArmor.slot || baseArmor.armorSubtype || 'armor',
+                baseDefense: baseArmor.baseDefense + Math.floor(baseArmor.baseDefense * bonusPct),
+                baseMagicBonus: baseArmor.baseMagicBonus
+                    ? baseArmor.baseMagicBonus + Math.floor(baseArmor.baseMagicBonus * bonusPct)
+                    : 0,
+                level: baseArmor.level || 1,
+                originalLevel: baseArmor.level || 1,
+                quality: armorData.quality,
+                qualityBonus: bonusPct,
+                gems: armorData.gems || [],
+                gemSlots: armorData.gemSlots || 0,
+                cost: baseArmor.cost || 100,
+                description: baseArmor.description || `A ${armorData.quality} quality ${baseArmor.name}.`,
+                isDropped: true,
+                dropTimestamp: armorData.dropTimestamp || Date.now()
+            };
         }
+    });
+
+// Re-point p.armor if it's no_armor but we just restored armor instances
+if ((!p.armor || p.armor === 'no_armor') && p.inventory) {
+    const order = ['godly','legendary','epic','rare','normal','poor'];
+    const armorItems = p.inventory.filter(item =>
+        item && typeof item === 'object' && item.armorId &&
+        item.instanceId && ARMOR[item.instanceId]
+    );
+    armorItems.sort((a,b) => order.indexOf(a.quality) - order.indexOf(b.quality));
+    if (armorItems.length > 0) {
+        p.armor = armorItems[0].instanceId;
+        console.log(`✅ Re-pointed equipped armor to: ${p.armor}`);
+    }
+}
+
+    console.log(`✅ Restored ${Object.keys(data.generatedArmor).length} generated armor pieces`);
+}
+
 
         // ======================================================
         // STEP 5: RESTORE STATIC ITEM GEMS
@@ -12163,11 +12304,11 @@ exploreLocation = function(locKey) {
                     <p>Equipment has a quality tier that boosts its base stats by a percentage. Quality is shown by the item's name color:</p>
                     <p style="margin-top:6px;">
                         <span style="color:#808080;">■ Poor</span> — No bonus (base stats only)<br>
-                        <span style="color:#00FF00;">■ Normal</span> — +10% stats<br>
-                        <span style="color:#0099FF;">■ Rare</span> — +25% stats<br>
-                        <span style="color:#9933FF;">■ Epic</span> — +40% stats<br>
-                        <span style="color:#FF9900;">■ Legendary</span> — +60% stats<br>
-                        <span style="color:#FF0000;">■ Godly</span> — +85% stats (extremely rare)
+<span style="color:#00FF00;">■ Normal</span> — +5% stats<br>
+<span style="color:#0099FF;">■ Rare</span> — +10% stats<br>
+<span style="color:#9933FF;">■ Epic</span> — +20% stats<br>
+<span style="color:#FF9900;">■ Legendary</span> — +30% stats<br>
+<span style="color:#FF0000;">■ Godly</span> — +50% stats (extremely rare)
                     </p>
                 </div>
 
@@ -15212,7 +15353,7 @@ function confirmSellArmorInstance(index, name, value) {
     p.inventory.forEach((item, index) => {
         // Handle weapon instances (objects)
         if (typeof item === 'object' && item !== null && item.weaponId) {
-            const weaponData = WEAPONS[item.weaponId];
+            const weaponData = WEAPONS[item.instanceId];
             if (weaponData && !weaponData.unarmed) {
                 weaponItems.push({
                     type: 'instance',
@@ -17837,7 +17978,7 @@ function showInventoryOverlay() {
     p.inventory.forEach(item => {
         // Handle weapon instances (objects)
         if (typeof item === 'object' && item !== null && item.weaponId) {
-            const weaponData = WEAPONS[item.weaponId];
+            const weaponData = WEAPONS[item.instanceId];
             if (weaponData && !weaponData.unarmed) {
                 weaponItems.push({
                     type: 'instance',

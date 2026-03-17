@@ -914,7 +914,7 @@ const WEAPONS = {
         "name": "Holy Mace",
         "baseDamage": 24,
         "maxDamage": 36,
-        "baseMagicDamage": 4,
+        "baseMagicDamage": 5,
         "cost": 1930,
         "level": 6,
         "quality": "normal",
