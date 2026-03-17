@@ -459,7 +459,7 @@ const CLASS_ARMOR_POOLS = {
  * @param {string} enemyRarity - Rarity string of the enemy
  * @returns {string|null} ARMOR key or null if no drop
  */
-function generateArmorDrop(player, enemyLevel, enemyRarity = 'common', skipRoll = false) {
+function generateArmorDrop(player, enemyLevel, enemyRarity = 'common', skipRoll = false, forcedQuality = null) {
     // Roll drop chance (same structure as weapon drops)
     const baseChance  = ARMOR_DROP_CONFIG.baseDropChance;
     const rarityMult  = ARMOR_DROP_CONFIG.rarityMultipliers[enemyRarity] || 1.0;
@@ -489,17 +489,85 @@ function generateArmorDrop(player, enemyLevel, enemyRarity = 'common', skipRoll 
     }
 
     if (candidates.length === 0) return null;
-    return candidates[Math.floor(Math.random() * candidates.length)];
-}
-
-// Export
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { 
-        generateWeaponDrop,
-        generateArmorDrop,
-        CLASS_WEAPON_POOLS,
-        CLASS_ARMOR_POOLS,
-        WEAPON_DROP_CONFIG,
-        ARMOR_DROP_CONFIG
+    
+    // Pick random base armor from candidates
+    const baseArmorKey = candidates[Math.floor(Math.random() * candidates.length)];
+    const baseArmor = ARMOR[baseArmorKey];
+    
+    // Determine quality
+    let quality;
+    if (forcedQuality) {
+        quality = forcedQuality;
+    } else {
+        quality = rollQuality(); // Use the same quality rolling function as weapons
+    }
+    
+    // Get quality bonus percentage
+    const qualityData = QUALITY_CONFIG[quality] || QUALITY_CONFIG.normal;
+    const bonusPct = qualityData.bonusPct;
+    
+    // Apply quality bonus to stats
+    const defenseBonus = Math.floor(baseArmor.baseDefense * bonusPct);
+    const magicBonus = baseArmor.baseMagicBonus ? Math.floor(baseArmor.baseMagicBonus * bonusPct) : 0;
+    
+    // Generate gem slots based on quality
+    let gemSlots = 0;
+    if (quality === 'rare') gemSlots = 1;
+    if (quality === 'epic') gemSlots = 2;
+    if (quality === 'legendary') gemSlots = 3;
+    if (quality === 'godly') gemSlots = 4;
+    
+    // Create unique instance ID
+    const instanceId = `${baseArmorKey}_${quality}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    
+    // Generate armor name with quality prefix
+    let armorName = baseArmor.name;
+    if (quality !== 'normal') {
+        const qualityDisplay = quality.charAt(0).toUpperCase() + quality.slice(1);
+        armorName = `${qualityDisplay} ${baseArmor.name}`;
+    }
+    
+    // Create armor instance in ARMOR object
+    const armorInstance = {
+        id: baseArmorKey,
+        instanceId: instanceId,
+        name: armorName,
+        baseName: baseArmor.name,
+        type: baseArmor.type || baseArmor.armorSubtype,
+        armorSubtype: baseArmor.armorSubtype || baseArmor.type,
+        baseDefense: baseArmor.baseDefense + defenseBonus,
+        baseMagicBonus: (baseArmor.baseMagicBonus || 0) + magicBonus,
+        level: baseArmor.level || 1,
+        originalLevel: baseArmor.level || 1,
+        quality: quality,
+        qualityBonus: bonusPct,
+        gems: [],
+        gemSlots: gemSlots,
+        cost: baseArmor.cost || 100,
+        description: baseArmor.description || `A ${quality} quality ${baseArmor.name}.`,
+        isDropped: true,
+        dropTimestamp: Date.now()
     };
+    
+    // Store in ARMOR object using instanceId as key
+    ARMOR[instanceId] = armorInstance;
+    
+    // Create inventory reference object
+    const inventoryItem = {
+        armorId: baseArmorKey,
+        instanceId: instanceId,
+        quality: quality,
+        gems: [],
+        gemSlots: gemSlots,
+        dropLevel: enemyLevel,
+        dropTime: Date.now()
+    };
+    
+    // Add to player's inventory
+    if (gameState && gameState.player && gameState.player.inventory) {
+        gameState.player.inventory.push(inventoryItem);
+        console.log(`📦 Added armor to inventory:`, inventoryItem);
+    }
+    
+    return armorInstance;
 }
