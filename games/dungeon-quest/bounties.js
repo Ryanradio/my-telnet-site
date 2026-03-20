@@ -912,7 +912,27 @@ window.showBountyBoard = function() {
             : `<span style="color:#FFD700;">${b.bountyGold.toLocaleString()}g</span>`;
 
         return `
-            <div class="${cardClass}" onclick="showBountyDetail('${b.id}')">
+            <div class="${cardClass}" onclick="showBountyDetail('${b.id}')" style="position:relative;overflow:hidden;">
+                ${onCooldown ? `
+                <div style="
+                    position:absolute; inset:0; pointer-events:none; z-index:10;
+                    display:flex; align-items:center; justify-content:center;
+                    transform:rotate(-25deg);
+                ">
+                    <span style="
+                        color:#cc0000;
+                        font-size:28px;
+                        font-weight:900;
+                        letter-spacing:4px;
+                        border:4px solid #cc0000;
+                        padding:4px 12px;
+                        opacity:0.75;
+                        text-transform:uppercase;
+                        font-family:Georgia,serif;
+                        text-shadow:0 0 8px rgba(200,0,0,0.4);
+                        white-space:nowrap;
+                    ">COMPLETED</span>
+                </div>` : ''}
                 <!-- Left: emoji + name -->
                 <div style="display:flex;align-items:center;gap:10px;">
                     <span style="font-size:22px;animation:bounty-flicker ${8 + b.level}s ease-in-out infinite;">

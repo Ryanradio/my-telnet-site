@@ -4317,7 +4317,6 @@ function recalcGemStats(player) {
     
     for (const gem of allGems) {
         if (!gem?.stats) continue;
-        
         hpBonus    += gem.stats.hpBonus      || 0;
         mpBonus    += gem.stats.mpBonus      || 0;
         defBonus   += gem.stats.defenseBonus || 0;
@@ -4330,6 +4329,44 @@ function recalcGemStats(player) {
         critBonus  += gem.stats.critBonus    || 0;
         pierceBonus+= gem.stats.armorPierce  || 0;
         spellBonus += gem.stats.spellPower   || 0;
+    }
+
+    // ── INFLATION DETECTION & AUTO-FIX ───────────────────────────
+    // If _gem* trackers were never saved (old saves), the old bonus
+    // is stuck baked into the stat. Detect this and strip it out.
+    const gemStatTotal = strBonus + dexBonus + conBonus + wisBonus + chaBonus + lckBonus;
+    const oldGemStatTotal = (player._gemStrBonus||0) + (player._gemDexBonus||0) +
+                            (player._gemConBonus||0) + (player._gemWisBonus||0) +
+                            (player._gemChaBonus||0) + (player._gemLckBonus||0);
+    const expectedMaxBase = 20 + ((player.level||1) * 6); // generous ceiling
+    const currentBaseStats = (player.str||0) + (player.dex||0) + (player.con||0) +
+                             (player.wis||0) + (player.cha||0) + (player.lck||0);
+    const trueBases = currentBaseStats - oldGemStatTotal;
+
+    if (trueBases > expectedMaxBase && gemStatTotal > 0) {
+        // Stats are inflated — gem bonuses got baked in on previous loads
+        // Strip out ALL current gem bonuses from base stats before proceeding
+        console.warn(`⚠️ Gem inflation detected (base stats ${trueBases} > max ${expectedMaxBase}) — auto-fixing...`);
+        player.str = Math.max(0, (player.str||0) - oldGemStatTotal > 0 
+            ? (player.str||0) - (player._gemStrBonus||0) 
+            : (player.str||0));
+        player.dex = Math.max(0, (player.dex||0) - (player._gemDexBonus||0));
+        player.con = Math.max(0, (player.con||0) - (player._gemConBonus||0));
+        player.wis = Math.max(0, (player.wis||0) - (player._gemWisBonus||0));
+        player.cha = Math.max(0, (player.cha||0) - (player._gemChaBonus||0));
+        player.lck = Math.max(0, (player.lck||0) - (player._gemLckBonus||0));
+        // Also fix HP inflation from hpBonus compounding
+        const oldHpBaked = player._gemHpBonus || 0;
+        if (oldHpBaked > 0) {
+            player.maxHp = Math.max(1, player.maxHp - oldHpBaked);
+            player.hp = Math.min(player.hp, player.maxHp);
+        }
+        // Reset all trackers to zero so the apply below starts clean
+        player._gemHpBonus=0; player._gemMpBonus=0; player._gemDefBonus=0;
+        player._gemStrBonus=0; player._gemDexBonus=0; player._gemConBonus=0;
+        player._gemWisBonus=0; player._gemChaBonus=0; player._gemLckBonus=0;
+        player._gemCritBonus=0; player._gemPierceBonus=0; player._gemSpellBonus=0;
+        console.warn('✅ Gem inflation corrected');
     }
 
     // Remove old gem bonuses before applying new totals
@@ -4348,7 +4385,7 @@ function recalcGemStats(player) {
     player.hp    = Math.min(player.hp,  player.maxHp);
     player.mp    = Math.min(player.mp,  player.maxMp);
 
-    // Apply stat changes - update base stats
+    // Apply stat changes
     player.str = (player.str || 0) - oldStr + strBonus;
     player.dex = (player.dex || 0) - oldDex + dexBonus;
     player.con = (player.con || 0) - oldCon + conBonus;
@@ -4372,8 +4409,6 @@ function recalcGemStats(player) {
 
     console.log(`💎 Gem stats applied: STR +${strBonus}, DEX +${dexBonus}, CON +${conBonus}, etc.`);
 }
-
-
 
 
 function updateTerminalSafeArea() {
@@ -4633,10 +4668,13 @@ const OPPOSITE_DIR = {
             const qb  = getQualityBonus(weapon.quality, weapon.baseDamage);
             const tMin = weapon.baseDamage + qb;
             const tMax = weapon.maxDamage ? weapon.maxDamage + getQualityBonus(weapon.quality, weapon.maxDamage - weapon.baseDamage) : tMin;
-            const tMag = (weapon.baseMagicDamage || 0) + Math.floor((weapon.baseMagicDamage || 0) * (qc?.bonusPct || 0));
+            const tMagMin = (weapon.baseMagicDamage || 0) + Math.floor((weapon.baseMagicDamage || 0) * (qc?.bonusPct || 0));
+const tMagMax = weapon.maxMagicDamage 
+    ? (weapon.maxMagicDamage || 0) + Math.floor((weapon.maxMagicDamage || 0) * (qc?.bonusPct || 0))
+    : tMagMin;
 
             // Base line (weapon only, no stats)
-            let line = `<span style="color:#888;font-size:12px;">BASE: ${tMin}${tMax > tMin ? '-'+tMax : ''}${tMag > 0 ? ` | MAG: +${tMag}` : ''}</span>`;
+            let line = `<span style="color:#888;font-size:12px;">BASE: ${tMin}${tMax > tMin ? '-'+tMax : ''}${tMagMin > 0 ? ` | MAG: ${tMagMin}${tMagMax > tMagMin ? '-'+tMagMax : ''}` : ''}</span>`;
 
             // With-stats line (only if player provided)
             if (p) {
@@ -4655,8 +4693,9 @@ const OPPOSITE_DIR = {
                 const elemBonus = gemLightning + gemFire + gemFrost;
                 const yourMin   = tMin + strBonus + gemMelee + elemBonus;
                 const yourMax   = tMax + strBonus + gemMelee + elemBonus;
-                const yourMag   = tMag + wisBonus + gemMagic;
-                line += `<br><span style="color:#ffcc88;">YOUR DMG: ${yourMin}${yourMax > yourMin ? '-'+yourMax : ''}${yourMag > 0 ? ` | MAG: +${yourMag}` : ''}</span>`;
+                const yourMagMin = tMagMin + wisBonus + gemMagic;
+const yourMagMax = tMagMax + wisBonus + gemMagic;
+line += `<br><span style="color:#ffcc88;">YOUR DMG: ${yourMin}${yourMax > yourMin ? '-'+yourMax : ''}${yourMagMin > 0 ? ` | MAG: ${yourMagMin}${yourMagMax > yourMagMin ? '-'+yourMagMax : ''}` : ''}</span>`;
             }
             return line;
         }
@@ -6106,8 +6145,23 @@ guildQuests: (() => {
                 return maps;
             })(),
 
+// Gem bonus trackers — must be saved or recalcGemStats compounds on reload
+_gemHpBonus:     p._gemHpBonus     || 0,
+_gemMpBonus:     p._gemMpBonus     || 0,
+_gemDefBonus:    p._gemDefBonus    || 0,
+_gemStrBonus:    p._gemStrBonus    || 0,
+_gemDexBonus:    p._gemDexBonus    || 0,
+_gemConBonus:    p._gemConBonus    || 0,
+_gemWisBonus:    p._gemWisBonus    || 0,
+_gemChaBonus:    p._gemChaBonus    || 0,
+_gemLckBonus:    p._gemLckBonus    || 0,
+_gemCritBonus:   p._gemCritBonus   || 0,
+_gemPierceBonus: p._gemPierceBonus || 0,
+_gemSpellBonus:  p._gemSpellBonus  || 0,
+dungeonTimers: (() => {
+
             // Persistent enemy respawn timers (survive town visits)
-            dungeonTimers: (() => {
+          
                 const timers = {};
                 const now = Date.now();
                 for (const dk in (p.dungeonTimers || {})) {
@@ -11135,252 +11189,7 @@ async function loadCharacter(characterId) {
             }
         }
 
-        // ======================================================
-// STEP 1: CLEAN UP ALL MALFORMED LEGACY ITEMS
-// Delete anything with _recovered_, _legacy_, or malformed patterns
-// BUT track what they were so we can regenerate them
-// ======================================================
-(function cleanupMalformedItems(playerData) {
-    const malformedPatterns = ['_recovered_', '_legacy_', 'legacy_equipped'];
-    let cleaned = 0;
-    const newInventory = [];
-    const itemsToRegenerate = []; // Track what we need to recreate
-    
-    // List of weapons that should ALWAYS be godly
-    const FORCED_GODLY_WEAPONS = [
-        'magical_butterknife',
-        'genesis',
-        'genesis_mace',
-        'genesis_sword',
-        'genesis_axe',
-        'god_blade',
-        'god_plate',
-        'infinity_blade',
-        'oblivion_blade',
-        'apocalypse',
-        'apocalypse_blade',
-        'primordial',
-        'godslayer'
-    ];
-    
-    // List of weapons that should ALWAYS be legendary
-    const FORCED_LEGENDARY_WEAPONS = [
-        'ancient_dragon_slayer',
-        'dragon_heart',
-        'dragonscale_blade',
-        'celestial_blade',
-        'heavenly_blade',
-        'hellforged_blade',
-        'void_blade',
-        'titan_blade',
-        'runic_blade',
-        'holy_avenger'
-    ];
-    
-    // Track equipped items that need replacement
-    const equippedWeaponNeedsReplacement = playerData.weapon && 
-        malformedPatterns.some(p => String(playerData.weapon).includes(p));
-    const equippedArmorNeedsReplacement = playerData.armor && 
-        malformedPatterns.some(p => String(playerData.armor).includes(p));
-    
-    // Save what was equipped for regeneration
-    if (equippedWeaponNeedsReplacement) {
-        const baseInfo = extractBaseType(String(playerData.weapon));
-        if (baseInfo) {
-            let quality = extractQuality(String(playerData.weapon));
-            
-            // Check for forced qualities
-            if (FORCED_GODLY_WEAPONS.includes(baseInfo.key)) {
-                quality = 'godly';
-                console.log(`✨ Forcing GODLY quality for special weapon: ${baseInfo.key}`);
-            } else if (FORCED_LEGENDARY_WEAPONS.includes(baseInfo.key)) {
-                quality = 'legendary';
-                console.log(`✨ Forcing LEGENDARY quality for special weapon: ${baseInfo.key}`);
-            }
-            
-            itemsToRegenerate.push({
-                ...baseInfo,
-                quality: quality,
-                wasEquipped: true
-            });
-            console.log(`📝 Will regenerate equipped weapon: ${baseInfo.key} (${quality})`);
-        } else {
-            // If we can't identify it, give them a level-appropriate weapon
-            const classWeapon = getClassAppropriateWeapon(playerData.class || 'warrior', playerData.level || 1);
-            itemsToRegenerate.push({
-                type: 'weapon',
-                key: classWeapon,
-                quality: 'normal',
-                wasEquipped: true
-            });
-            console.log(`📝 Could not identify weapon, giving ${classWeapon}`);
-        }
-        playerData.weapon = null; // Clear it
-    }
-    
-    if (equippedArmorNeedsReplacement) {
-        const baseInfo = extractBaseType(String(playerData.armor));
-        if (baseInfo) {
-            let quality = extractQuality(String(playerData.armor));
-            
-            // Check for forced qualities (armor equivalents)
-            if (baseInfo.key === 'god_plate' || baseInfo.key === 'genesis_plate') {
-                quality = 'godly';
-                console.log(`✨ Forcing GODLY quality for special armor: ${baseInfo.key}`);
-            }
-            
-            itemsToRegenerate.push({
-                ...baseInfo,
-                quality: quality,
-                wasEquipped: true
-            });
-            console.log(`📝 Will regenerate equipped armor: ${baseInfo.key} (${quality})`);
-        } else {
-            // If we can't identify it, give them level-appropriate armor
-            const classArmor = getClassAppropriateArmor(playerData.class || 'warrior', playerData.level || 1);
-            itemsToRegenerate.push({
-                type: 'armor',
-                key: classArmor,
-                quality: 'normal',
-                wasEquipped: true
-            });
-            console.log(`📝 Could not identify armor, giving ${classArmor}`);
-        }
-        playerData.armor = null; // Clear it
-    }
-    
-    // Process inventory
-    playerData.inventory.forEach(item => {
-        // If it's an object, check its instanceId for malformed patterns
-        if (typeof item === 'object' && item !== null && item.instanceId) {
-            if (malformedPatterns.some(p => item.instanceId.includes(p))) {
-                console.log(`🧹 Removing malformed item: ${item.instanceId}`);
-                
-                // Try to extract base type for regeneration
-                const baseInfo = extractBaseType(item.instanceId);
-                if (baseInfo) {
-                    let quality = item.quality || extractQuality(item.instanceId);
-                    
-                    // Check for forced qualities
-                    if (FORCED_GODLY_WEAPONS.includes(baseInfo.key)) {
-                        quality = 'godly';
-                        console.log(`✨ Forcing GODLY quality for special weapon: ${baseInfo.key}`);
-                    } else if (FORCED_LEGENDARY_WEAPONS.includes(baseInfo.key)) {
-                        quality = 'legendary';
-                        console.log(`✨ Forcing LEGENDARY quality for special weapon: ${baseInfo.key}`);
-                    }
-                    
-                    itemsToRegenerate.push({
-                        ...baseInfo,
-                        quality: quality
-                    });
-                }
-                cleaned++;
-                return; // Skip adding to newInventory
-            } else {
-                newInventory.push(item);
-            }
-        }
-        // If it's a string that looks like a malformed ID (has timestamps)
-        else if (typeof item === 'string' && item.includes('_') && 
-                 (item.match(/_\d{13,}_/g) || item.match(/_\d+_\d+$/g))) {
-            
-            // Check if it's actually a clean weapon key first
-            if (WEAPONS[item] || ARMOR[item]) {
-                // It's actually a clean weapon key - keep it for migration
-                newInventory.push(item);
-            } else {
-                console.log(`🧹 Removing malformed string: ${item}`);
-                
-                // Try to extract base type for regeneration
-                const baseInfo = extractBaseType(item);
-                if (baseInfo) {
-                    let quality = extractQuality(item);
-                    
-                    // Check for forced qualities
-                    if (FORCED_GODLY_WEAPONS.includes(baseInfo.key)) {
-                        quality = 'godly';
-                        console.log(`✨ Forcing GODLY quality for special weapon: ${baseInfo.key}`);
-                    } else if (FORCED_LEGENDARY_WEAPONS.includes(baseInfo.key)) {
-                        quality = 'legendary';
-                        console.log(`✨ Forcing LEGENDARY quality for special weapon: ${baseInfo.key}`);
-                    }
-                    
-                    itemsToRegenerate.push({
-                        ...baseInfo,
-                        quality: quality
-                    });
-                }
-                cleaned++;
-            }
-        } else {
-            newInventory.push(item);
-        }
-    });
-    
-    // Regenerate all the items we marked for recreation using DROP SYSTEM with FORCED QUALITY
-    itemsToRegenerate.forEach(itemInfo => {
-        if (itemInfo.type === 'weapon') {
-            console.log(`♻️ Regenerating weapon via drop system: ${itemInfo.key} (${itemInfo.quality})`);
-            
-            // Use the SAME system as enemy drops, but FORCE the quality
-            const newWeapon = generateWeaponDrop(
-                playerData,                    // player object
-                playerData.level || 1,          // enemy level (use player level)
-                itemInfo.quality,               // enemyRarity (affects drop tables, but we skip roll)
-                true,                            // skipRoll = true (force drop)
-                itemInfo.quality                 // forcedQuality - THIS is the key!
-            );
-            
-            if (newWeapon) {
-                // Find the inventory item that was created
-                const inventoryItem = playerData.inventory.find(
-                    invItem => typeof invItem === 'object' && invItem.instanceId === newWeapon.instanceId
-                );
-                
-                if (inventoryItem) {
-                    newInventory.push(inventoryItem);
-                    if (itemInfo.wasEquipped) {
-                        playerData.weapon = inventoryItem.instanceId;
-                        console.log(`✅ Re-equipped weapon: ${inventoryItem.instanceId}`);
-                    }
-                }
-            }
-        } else if (itemInfo.type === 'armor') {
-            console.log(`♻️ Regenerating armor via drop system: ${itemInfo.key} (${itemInfo.quality})`);
-            
-            const newArmor = generateArmorDrop(
-                playerData,
-                playerData.level || 1,
-                itemInfo.quality,
-                true,
-                itemInfo.quality
-            );
-            
-            if (newArmor) {
-                const inventoryItem = playerData.inventory.find(
-                    invItem => typeof invItem === 'object' && invItem.instanceId === newArmor.instanceId
-                );
-                
-                if (inventoryItem) {
-                    newInventory.push(inventoryItem);
-                    if (itemInfo.wasEquipped) {
-                        playerData.armor = inventoryItem.instanceId;
-                        console.log(`✅ Re-equipped armor: ${inventoryItem.instanceId}`);
-                    }
-                }
-            }
-        }
-    });
-    
-    playerData.inventory = newInventory;
-    
-    if (cleaned > 0 || itemsToRegenerate.length > 0) {
-        legacyMigrationPerformed = true;
-        console.log(`✅ Cleaned up ${cleaned} malformed items and regenerated ${itemsToRegenerate.length} new ones via drop system`);
-        console.log(`   Forced qualities applied to special weapons as needed`);
-    }
-})(p);
+
         // ======================================================
         // STEP 2: MIGRATE LEGACY STRING ITEMS TO INSTANCES
         // Convert simple strings like "holy_mace" to proper instances
@@ -11431,69 +11240,56 @@ async function loadCharacter(characterId) {
             // Generate new instances for all legacy strings
             itemsToGenerate.forEach(item => {
                 if (item.type === 'weapon') {
-                    const newWeapon = generateMigratedWeapon(playerData, playerLevel, item.quality);
+                    // Use the SPECIFIC weapon key, not a random class weapon
+                    const newWeapon = generateLegacyWeaponInstance(item.key, playerLevel, item.quality);
                     if (newWeapon) {
-                        const inventoryItem = playerData.inventory.find(
-                            invItem => typeof invItem === 'object' && invItem.instanceId === newWeapon.instanceId
-                        );
-                        if (inventoryItem) {
-                            newInventory.push(inventoryItem);
-                        }
+                        newInventory.push(newWeapon);
+                        console.log(`✅ Converted legacy weapon: ${item.key} → ${newWeapon.instanceId}`);
                     }
                 } else if (item.type === 'armor') {
-                    const newArmor = generateMigratedArmor(playerData, playerLevel, item.quality);
+                    // Use the SPECIFIC armor key
+                    const newArmor = generateLegacyArmorInstance(item.key, playerLevel, item.quality);
                     if (newArmor) {
-                        const inventoryItem = playerData.inventory.find(
-                            invItem => typeof invItem === 'object' && invItem.instanceId === newArmor.instanceId
-                        );
-                        if (inventoryItem) {
-                            newInventory.push(inventoryItem);
-                        }
+                        newInventory.push(newArmor);
+                        console.log(`✅ Converted legacy armor: ${item.key} → ${newArmor.instanceId}`);
                     }
                 }
             });
             
             // Handle equipped items (if they're still strings after cleanup)
             if (playerData.weapon && typeof playerData.weapon === 'string' && 
-                WEAPONS[playerData.weapon] && !playerData.weapon.includes('_')) {
+    WEAPONS[playerData.weapon] && !playerData.weapon.match(/_\d{13,}_\d+$/)) {
                 console.log(`🔍 Equipped legacy weapon: ${playerData.weapon}`);
-                const newWeapon = generateMigratedWeapon(playerData, playerLevel, 'normal');
+                const newWeapon = generateLegacyWeaponInstance(playerData.weapon, playerLevel, 'normal');
                 if (newWeapon) {
-                    const inventoryItem = playerData.inventory.find(
-                        invItem => typeof invItem === 'object' && invItem.instanceId === newWeapon.instanceId
-                    );
-                    if (inventoryItem) {
-                        playerData.weapon = inventoryItem.instanceId;
-                        if (!newInventory.some(i => i && i.instanceId === inventoryItem.instanceId)) {
-                            newInventory.push(inventoryItem);
-                        }
-                        migrated++;
+                    playerData.weapon = newWeapon.instanceId;
+                    if (!newInventory.some(i => i && i.instanceId === newWeapon.instanceId)) {
+                        newInventory.push(newWeapon);
                     }
+                    migrated++;
                 }
+                
             }
             
             if (playerData.armor && typeof playerData.armor === 'string' && 
-                ARMOR[playerData.armor] && !playerData.armor.includes('_')) {
+    ARMOR[playerData.armor] && !playerData.armor.match(/_\d{13,}_\d+$/)) {
                 console.log(`🔍 Equipped legacy armor: ${playerData.armor}`);
-                const newArmor = generateMigratedArmor(playerData, playerLevel, 'normal');
+                const newArmor = generateLegacyArmorInstance(playerData.armor, playerLevel, 'normal');
                 if (newArmor) {
-                    const inventoryItem = playerData.inventory.find(
-                        invItem => typeof invItem === 'object' && invItem.instanceId === newArmor.instanceId
-                    );
-                    if (inventoryItem) {
-                        playerData.armor = inventoryItem.instanceId;
-                        if (!newInventory.some(i => i && i.instanceId === inventoryItem.instanceId)) {
-                            newInventory.push(inventoryItem);
-                        }
-                        migrated++;
+                    playerData.armor = newArmor.instanceId;
+                    if (!newInventory.some(i => i && i.instanceId === newArmor.instanceId)) {
+                        newInventory.push(newArmor);
                     }
+                    migrated++;
                 }
             }
+        
             
             playerData.inventory = newInventory;
             
             if (migrated > 0) {
                 legacyMigrationPerformed = true;
+console.log('⚠️ legacyMigrationPerformed set TRUE at:', new Error().stack.split('\n')[1]);
                 console.log(`✅ Migrated ${migrated} legacy string items to instances via drop system`);
             }
         })(p);
@@ -11651,7 +11447,9 @@ if ((!p.armor || p.armor === 'no_armor') && p.inventory) {
                     baseWeapon.maxDamage + Math.floor(baseWeapon.maxDamage * bonusPct) : 
                     weapon.baseDamage;
                 weapon.baseMagicDamage = baseWeapon.baseMagicDamage ? 
-                    baseWeapon.baseMagicDamage + Math.floor(baseWeapon.baseMagicDamage * bonusPct) : 0;
+    baseWeapon.baseMagicDamage + Math.floor(baseWeapon.baseMagicDamage * bonusPct) : 0;
+weapon.maxMagicDamage = baseWeapon.maxMagicDamage ? 
+    baseWeapon.maxMagicDamage + Math.floor(baseWeapon.maxMagicDamage * bonusPct) : weapon.baseMagicDamage;
                 weapon.healingBonus = baseWeapon.healingBonus ? 
                     baseWeapon.healingBonus + Math.floor(baseWeapon.healingBonus * bonusPct) : 0;
                 
@@ -11737,47 +11535,63 @@ if ((!p.armor || p.armor === 'no_armor') && p.inventory) {
         })(p);
 
         // ======================================================
-        // STEP 8: ENSURE NO ONE IS LEFT WITH BARE_HANDS
-        // ======================================================
-        (function ensurePlayerHasGear(playerData) {
-            let added = false;
-            
-            if (!playerData.weapon || playerData.weapon === 'bare_fists') {
-                const classWeapon = getClassAppropriateWeapon(playerData.class || 'warrior', playerData.level || 1);
-                console.log(`⚠️ Player has no weapon, giving them ${classWeapon} via drop system`);
-                
-                const newWeapon = generateMigratedWeapon(playerData, playerData.level || 1, 'normal');
-                if (newWeapon) {
-                    const inventoryItem = playerData.inventory.find(
-                        invItem => typeof invItem === 'object' && invItem.instanceId === newWeapon.instanceId
-                    );
-                    if (inventoryItem) {
-                        playerData.weapon = inventoryItem.instanceId;
-                        added = true;
-                    }
-                }
+// STEP 8: ENSURE NO ONE IS LEFT WITH BARE_HANDS
+// ======================================================
+(function ensurePlayerHasGear(playerData) {
+    let added = false;
+
+    if (!playerData.weapon || playerData.weapon === 'bare_fists') {
+        // Check if there's already a weapon in inventory we can equip
+        const existingWeapon = playerData.inventory.find(item =>
+            item && typeof item === 'object' && item.weaponId && item.instanceId &&
+            WEAPONS[item.instanceId]
+        );
+        if (existingWeapon) {
+            playerData.weapon = existingWeapon.instanceId;
+            console.log(`✅ Re-pointed weapon to existing inventory item: ${existingWeapon.instanceId}`);
+            added = true;
+        } else {
+            // Nothing in inventory — generate a new one
+            const classWeapon = getClassAppropriateWeapon(playerData.class || 'warrior', playerData.level || 1);
+            console.log(`⚠️ Player has no weapon, giving them ${classWeapon} via drop system`);
+            const instance = generateLegacyWeaponInstance(classWeapon, playerData.level || 1, 'normal');
+            if (instance) {
+                playerData.inventory.push(instance);
+                playerData.weapon = instance.instanceId;
+                console.log(`✅ Gave new weapon: ${instance.instanceId}`);
+                added = true;
             }
-            
-            if (!playerData.armor || playerData.armor === 'no_armor') {
-                const classArmor = getClassAppropriateArmor(playerData.class || 'warrior', playerData.level || 1);
-                console.log(`⚠️ Player has no armor, giving them ${classArmor} via drop system`);
-                
-                const newArmor = generateMigratedArmor(playerData, playerData.level || 1, 'normal');
-                if (newArmor) {
-                    const inventoryItem = playerData.inventory.find(
-                        invItem => typeof invItem === 'object' && invItem.instanceId === newArmor.instanceId
-                    );
-                    if (inventoryItem) {
-                        playerData.armor = inventoryItem.instanceId;
-                        added = true;
-                    }
-                }
+        }
+    }
+
+    if (!playerData.armor || playerData.armor === 'no_armor') {
+        // Check if there's already armor in inventory we can equip
+        const existingArmor = playerData.inventory.find(item =>
+            item && typeof item === 'object' && item.armorId && item.instanceId &&
+            ARMOR[item.instanceId]
+        );
+        if (existingArmor) {
+            playerData.armor = existingArmor.instanceId;
+            console.log(`✅ Re-pointed armor to existing inventory item: ${existingArmor.instanceId}`);
+            added = true;
+        } else {
+            // Nothing in inventory — generate a new one
+            const classArmor = getClassAppropriateArmor(playerData.class || 'warrior', playerData.level || 1);
+            console.log(`⚠️ Player has no armor, giving them ${classArmor} via drop system`);
+            const instance = generateLegacyArmorInstance(classArmor, playerData.level || 1, 'normal');
+            if (instance) {
+                playerData.inventory.push(instance);
+                playerData.armor = instance.instanceId;
+                console.log(`✅ Gave new armor: ${instance.instanceId}`);
+                added = true;
             }
-            
-            if (added) {
-                legacyMigrationPerformed = true;
-            }
-        })(p);
+        }
+    }
+
+    if (added) {
+        legacyMigrationPerformed = true;
+    }
+})(p);
 
         // ======================================================
         // STEP 9: EQUIPMENT VALIDATION
@@ -11966,6 +11780,9 @@ function generateLegacyWeaponInstance(weaponKey, playerLevel, quality = 'normal'
         baseDamage: baseWeapon.baseDamage + Math.floor(baseWeapon.baseDamage * bonusPct),
         maxDamage: baseWeapon.maxDamage ? baseWeapon.maxDamage + Math.floor(baseWeapon.maxDamage * bonusPct) : baseWeapon.baseDamage + Math.floor(baseWeapon.baseDamage * bonusPct),
         baseMagicDamage: baseWeapon.baseMagicDamage ? baseWeapon.baseMagicDamage + Math.floor(baseWeapon.baseMagicDamage * bonusPct) : 0,
+        maxMagicDamage: baseWeapon.maxMagicDamage
+    ? baseWeapon.maxMagicDamage + Math.floor(baseWeapon.maxMagicDamage * bonusPct)
+    : 0,
         healingBonus: baseWeapon.healingBonus ? baseWeapon.healingBonus + Math.floor(baseWeapon.healingBonus * bonusPct) : 0,
         level: playerLevel,
         originalLevel: baseWeapon.level,
@@ -15412,7 +15229,7 @@ function confirmSellArmorInstance(index, name, value) {
         invHtml += `
             <div class="item-card${canEquip ? '' : ' unusable'}" style="${canEquip ? '' : 'opacity:0.5;border-color:#555;'}">
                 <div style="color: ${qualityColor};">⚔️ ${weapon.name}${displayQuality !== weapon.quality ? ` [${displayQuality}]` : ''}</div>
-                <div style="font-size:12px;">${buildWeaponDmgLine({...weapon, quality: displayQuality}, displayQuality, p)}</div>
+                <div style="font-size:12px;">${buildWeaponDmgLine({...weapon, ...(instanceData ? WEAPONS[instanceData.instanceId] || {} : {}), quality: displayQuality}, displayQuality, p)}</div>
                 <div style="color:#888; font-size:11px; margin-top:2px;">Level ${weapon.level || 1}</div>
                 ${modHtml}
                 ${buildGemSlotHtml({
@@ -18475,7 +18292,10 @@ function dungeonNav(input) {
 
             let baseDamage = Math.floor(rolled * meleePct);
             const strBonus = Math.floor((p.str || p.strength || 0) * (isWand ? 0.8 : 0.4));
-            const magicBleed = isWand ? 0 : Math.floor((weapon ? weapon.baseMagicDamage || 0 : 0) * 0.2);
+            const magicRolled = (weapon && weapon.baseMagicDamage)
+    ? Math.floor(Math.random() * ((weapon.maxMagicDamage || weapon.baseMagicDamage) - weapon.baseMagicDamage + 1)) + weapon.baseMagicDamage
+    : 0;
+const magicBleed = isWand ? 0 : Math.floor(magicRolled * 0.2);
             
             // Total damage
             let totalDamage = baseDamage + strBonus + magicBleed;
@@ -18490,7 +18310,7 @@ function dungeonNav(input) {
                 defender: enemy,
                 base: totalDamage,
                 type: 'physical',
-                critChance: calcCritChance(p.lck || 0, p) / 100,
+                critChance: Math.min(0.75, (calcCritChance(p.lck || 0, p) / 100) + ((weapon && weapon.critBonus) ? weapon.critBonus / 100 : 0)),
                 dodgeChance: enemy.dodge || 0,
                 armorPiercing: 0
             });
@@ -20324,8 +20144,11 @@ if (type === 'magic' && defender.magicResist) {
     const physicalBase =
         weaponDamage + Math.floor((p.str || 0) * 1.5) + gemMeleeDmg;
 
+    const magicRolled = weapon.baseMagicDamage
+        ? Math.floor(Math.random() * ((weapon.maxMagicDamage || weapon.baseMagicDamage) - weapon.baseMagicDamage + 1)) + weapon.baseMagicDamage
+        : 0;
     const magicBase =
-        (weapon.baseMagicDamage || 0) +
+        magicRolled +
         Math.floor((p.wis || 0) * 1.5) + gemMagicDmg;
 
     // Use whichever damage type is higher for this weapon — don't add both
@@ -20400,7 +20223,8 @@ if (type === 'magic' && defender.magicResist) {
 
     // ── SYSOP DEBUG: pre-roll crit and dodge so we can show the numbers ──
     const _dbgAtk = gameState.sysop && gameState.sysop.authenticated;
-    const _critChance  = shadowStrike ? 1.0 : Math.min(0.75, (calcCritChance(p.lck || 0, p) / 100) + (gemCritBonus / 100));
+    const _weaponCritBonus = (weapon && weapon.critBonus) ? weapon.critBonus / 100 : 0;
+    const _critChance = shadowStrike ? 1.0 : Math.min(0.75, (calcCritChance(p.lck || 0, p) / 100) + (gemCritBonus / 100) + _weaponCritBonus);
     const _eDodgeChance = runeOverloadActive ? 0 : enemyDodgeChance;
     const _eDodgeRoll  = Math.random();
     const _eDodged     = _eDodgeRoll < _eDodgeChance;
@@ -20498,112 +20322,66 @@ if (type === 'magic' && defender.magicResist) {
         }
 
         // ═══════════════════════════════════════════════════════════════
-        // ROGUE DOUBLE-STRIKE - Dagger-wielding rogues strike twice
-        // ═══════════════════════════════════════════════════════════════
-        let isDaggerWeapon = false;
-        
-        // Check if the equipped weapon is a dagger (handles both base keys and instance IDs)
-        if (p.weapon) {
-            let weaponData = null;
-            
-            // Get the actual weapon data
-            if (typeof p.weapon === 'string' && p.weapon.includes('_')) {
-                // This is an instance ID - look it up in WEAPONS
-                weaponData = WEAPONS[p.weapon];
-            } else {
-                // This is a base weapon key
-                weaponData = WEAPONS[p.weapon];
-            }
-            
-            if (weaponData) {
-                // Check if it's a dagger
-                isDaggerWeapon = weaponData.classRestriction === 'rogue'
-                    || (weaponData.name && (weaponData.name.toLowerCase().includes('dagger') || weaponData.name.toLowerCase().includes('shiv')))
-                    || (weaponData.weaponSubtype === 'dagger')
-                    || (weaponData.type === 'dagger');
-            }
-        }
-        
-        // Also check the current weapon object (as fallback)
-        if (!isDaggerWeapon && weapon) {
-            isDaggerWeapon = weapon.classRestriction === 'rogue'
-                || (weapon.name && (weapon.name.toLowerCase().includes('dagger') || weapon.name.toLowerCase().includes('shiv')))
-                || (weapon.weaponSubtype === 'dagger')
-                || (weapon.type === 'dagger');
-        }
-        
-        // Execute double strike if conditions are met
-        if (baseClass === 'rogue' && isDaggerWeapon && enemy.hp > 0) {
-            // Get the weapon data again to ensure we have it
-            let weaponData = weapon;
-            if (!weaponData && p.weapon) {
-                if (typeof p.weapon === 'string' && p.weapon.includes('_')) {
-                    weaponData = WEAPONS[p.weapon];
-                } else {
-                    weaponData = WEAPONS[p.weapon];
-                }
-            }
-            
-            if (weaponData) {
-                const minDmg2 = weaponData.baseDamage + qBonus;
-                const maxDmg2 = (weaponData.maxDamage || weaponData.baseDamage) + qBonus;
-                let weaponDamage2 = Math.floor(Math.random() * (maxDmg2 - minDmg2 + 1)) + minDmg2;
-                
-                // Include gem melee bonus
-                const physBase2 = weaponDamage2 + Math.floor((p.str || 0) * 1.5) + gemMeleeDmg;
-                const magicBase2 = (weaponData.baseMagicDamage || 0) + Math.floor((p.wis || 0) * 1.5) + gemMagicDmg;
-                
-                // Independent damage roll — no carry-over from first hit
-                let totalBase2 = Math.floor(Math.max(physBase2, magicBase2) * 1.0);
-                totalBase2 = Math.floor(totalBase2 * classMult);
-                totalBase2 = Math.max(1, Math.floor(totalBase2 * lvlMult.playerDealt));
-                
-                // Add elemental gem bonuses
-                totalBase2 += gemLightningDmg + gemFireDmg + gemFrostDmg;
+// ROGUE DOUBLE-STRIKE - Dagger-wielding rogues strike twice
+// Rogues with swords get NO double strike — player choice tradeoff
+// critBonus on weapon still applies via _weaponCritBonus above
+// ═══════════════════════════════════════════════════════════════
+let isDaggerWeapon = false;
 
-                const result2 = calculateDamage({
-                    attacker: p, defender: enemy,
-                    base: totalBase2,
-                    type: _attackDmgType,
-                    critChance: Math.min(0.75, (calcCritChance(p.lck || 0, p) / 100) + (gemCritBonus / 100)),
-                    dodgeChance: enemyDodgeChance,
-                    armorPiercing
-                });
+// Strictly check weaponSubtype — swords never qualify even for rogues
+if (weapon) {
+    isDaggerWeapon = weapon.weaponSubtype === 'dagger' || weapon.type === 'dagger';
+}
 
-                if (!result2.dodged) {
-                    const mod2 = applyWeaponModifiers(p, enemy, result2.damage, weaponData);
-                    enemy.hp -= mod2.totalDamage;
-                    const crit2Tag = result2.crit
-                        ? ' <span style="color:#FFD700;">★ CRIT!</span>'
-                        : '';
-                    modifierResult.messages.push(
-                        `↪ Second strike: <span class="dmg-enemy">${mod2.totalDamage} damage</span>${crit2Tag}`
-                    );
-                    
-                    // Gem lifesteal on second hit
-                    if (gemLifesteal > 0) {
-                        const steal2 = Math.max(1, Math.floor(mod2.totalDamage * (gemLifesteal / 100)));
-                        p.hp = Math.min(p.maxHp, p.hp + steal2);
-                        modifierResult.messages.push(`<span style="color:#FF4488;">💎 Ruby: Lifesteal +${steal2} HP</span>`);
-                    }
-                    
-                    // Poison on second hit
-                    if (weaponData.poisonChance && Math.random() < weaponData.poisonChance && enemy.hp > 0) {
-                        applyStatusEffect(enemy, 'poisoned', false);
-                        modifierResult.messages.push('<span style="color:#00FF00;">💀 Poisoned!</span>');
-                    }
-                    
-                    // Gem poison on second hit
-                    if (gemPoisonChance > 0 && Math.random() < (gemPoisonChance / 100) && enemy.hp > 0) {
-                        applyStatusEffect(enemy, 'poisoned', false);
-                        modifierResult.messages.push('<span style="color:#00EE00;">💎 Emerald: Poisoned!</span>');
-                    }
-                } else {
-                    modifierResult.messages.push('↪ Second strike: <span style="color:#88ff88;">DODGED!</span>');
-                }
-            }
+// Execute double strike if conditions are met
+if (baseClass === 'rogue' && isDaggerWeapon && enemy.hp > 0) {
+    const minDmg2 = weapon.baseDamage + qBonus;
+    const maxDmg2 = (weapon.maxDamage || weapon.baseDamage) + qBonus;
+    let weaponDamage2 = Math.floor(Math.random() * (maxDmg2 - minDmg2 + 1)) + minDmg2;
+    
+    const physBase2  = weaponDamage2 + Math.floor((p.str || 0) * 1.5) + gemMeleeDmg;
+    const magicBase2 = (weapon.baseMagicDamage || 0) + Math.floor((p.wis || 0) * 1.5) + gemMagicDmg;
+    
+    let totalBase2 = Math.floor(Math.max(physBase2, magicBase2) * 1.0);
+    totalBase2 = Math.floor(totalBase2 * classMult);
+    totalBase2 = Math.max(1, Math.floor(totalBase2 * lvlMult.playerDealt));
+    totalBase2 += gemLightningDmg + gemFireDmg + gemFrostDmg;
+
+    const result2 = calculateDamage({
+        attacker: p, defender: enemy,
+        base: totalBase2,
+        type: _attackDmgType,
+        critChance: Math.min(0.75, (calcCritChance(p.lck || 0, p) / 100) + (gemCritBonus / 100) + _weaponCritBonus),
+        dodgeChance: enemyDodgeChance,
+        armorPiercing
+    });
+
+    if (!result2.dodged) {
+        const mod2 = applyWeaponModifiers(p, enemy, result2.damage, weapon);
+        enemy.hp -= mod2.totalDamage;
+        const crit2Tag = result2.crit ? ' <span style="color:#FFD700;">★ CRIT!</span>' : '';
+        modifierResult.messages.push(
+            `↪ Second strike: <span class="dmg-enemy">${mod2.totalDamage} damage</span>${crit2Tag}`
+        );
+        
+        if (gemLifesteal > 0) {
+            const steal2 = Math.max(1, Math.floor(mod2.totalDamage * (gemLifesteal / 100)));
+            p.hp = Math.min(p.maxHp, p.hp + steal2);
+            modifierResult.messages.push(`<span style="color:#FF4488;">💎 Ruby: Lifesteal +${steal2} HP</span>`);
         }
-        // ── END ROGUE DOUBLE-STRIKE ──────────────────────────────────
+        if (weapon.poisonChance && Math.random() < weapon.poisonChance && enemy.hp > 0) {
+            applyStatusEffect(enemy, 'poisoned', false);
+            modifierResult.messages.push('<span style="color:#00FF00;">💀 Poisoned!</span>');
+        }
+        if (gemPoisonChance > 0 && Math.random() < (gemPoisonChance / 100) && enemy.hp > 0) {
+            applyStatusEffect(enemy, 'poisoned', false);
+            modifierResult.messages.push('<span style="color:#00EE00;">💎 Emerald: Poisoned!</span>');
+        }
+    } else {
+        modifierResult.messages.push('↪ Second strike: <span style="color:#88ff88;">DODGED!</span>');
+    }
+}
+// ── END ROGUE DOUBLE-STRIKE ──────────────────────────────────
 
         // ── HUNTER PET ATTACK ──────────────────────────────────────────
         // Hunter's pet attacks immediately after hunter deals damage
@@ -22536,6 +22314,26 @@ function endCombat(victory) {
     // ── victory ──
     const defeated   = gameState.combatState.defeatedMonsters || [];
     const cs = gameState.combatState;
+
+// ── Process bounty victory if this was a bounty fight ──
+if (cs.isBountyFight) {
+    const capturedBountyId = processBountyVictory(cs);
+    if (capturedBountyId) {
+        const b = BOUNTIES[capturedBountyId];
+        termAppend('', 'term-separator');
+        termAppend(
+            `<span style="color:#FFD700;font-size:18px;">⚓ BOUNTY TARGET CAPTURED!</span>`,
+            'term-victory'
+        );
+        termAppend(
+            `<span style="color:#cc66ff;">${b.name}</span> has been defeated! ` +
+            `Return to the Bounty Board to collect your reward.`,
+            'term-loot'
+        );
+        termAppend('', 'term-separator');
+    }
+}
+
     const isMaster   = defeated.some(m => m.isMaster);
     let masterData   = null;
     let unlockedArea = null;
@@ -23865,7 +23663,7 @@ function showBlacksmith(subview, subview_target) {
     else if (subview === 'socket') {
         const socketTarget = subview_target || 'weapon';
         
-        // Get equipped weapon data the SAME WAY inventory does
+        // Get equipped weapon data
         let weaponData = null;
         let weaponInstance = null;
         let weaponDisplayQuality = 'normal';
@@ -23873,21 +23671,16 @@ function showBlacksmith(subview, subview_target) {
         let weaponQualityColor = '#0f0';
         
         if (p.weapon && p.weapon !== 'bare_fists') {
-            // Find the weapon instance in inventory (same as inventory code)
             weaponInstance = p.inventory.find(item => 
                 item && typeof item === 'object' && item.instanceId === p.weapon
             );
-            
             if (weaponInstance && weaponInstance.weaponId) {
-                // Get base weapon data
-                weaponData = WEAPONS[weaponInstance.weaponId];
+                weaponData = WEAPONS[p.weapon]; // use instanceId to get full instance
                 weaponDisplayQuality = weaponInstance.quality || weaponData?.quality || 'normal';
             } else {
-                // Fallback to direct weapon key
                 weaponData = WEAPONS[p.weapon];
                 weaponDisplayQuality = weaponData?.quality || 'normal';
             }
-            
             if (weaponData) {
                 weaponName = weaponData.name || 'Unknown Weapon';
                 const qc = QUALITY_CONFIG[weaponDisplayQuality];
@@ -23895,7 +23688,7 @@ function showBlacksmith(subview, subview_target) {
             }
         }
         
-        // Get equipped armor data the SAME WAY
+        // Get equipped armor data
         let armorData = null;
         let armorInstance = null;
         let armorDisplayQuality = 'normal';
@@ -23906,15 +23699,13 @@ function showBlacksmith(subview, subview_target) {
             armorInstance = p.inventory.find(item => 
                 item && typeof item === 'object' && item.instanceId === p.armor
             );
-            
             if (armorInstance && armorInstance.armorId) {
-                armorData = ARMOR[armorInstance.armorId] || ARMOR[armorInstance.instanceId];
+                armorData = ARMOR[p.armor] || ARMOR[armorInstance.armorId];
                 armorDisplayQuality = armorInstance.quality || armorData?.quality || 'normal';
             } else {
                 armorData = ARMOR[p.armor];
                 armorDisplayQuality = armorData?.quality || 'normal';
             }
-            
             if (armorData) {
                 armorName = armorData.name || 'Unknown Armor';
                 const qc = QUALITY_CONFIG[armorDisplayQuality];
@@ -23924,38 +23715,31 @@ function showBlacksmith(subview, subview_target) {
         
         const cutGems = getCutGems();
 
-        // Build weapon card using inventory's logic
         function weaponSocketCard() {
             if (!weaponData) {
                 return `<div style="color:#555;font-size:13px;padding:8px;border:1px solid #333;background:#0a0a0a;">
                     No weapon equipped.
                 </div>`;
             }
-            
             const slots = getGemSlots(weaponDisplayQuality);
-            const usedSlots = (weaponInstance?.gems || weaponData.gems || []).length;
+            const usedSlots = (weaponData.gems || []).length;
             const active = socketTarget === 'weapon';
-            
-            // Build slots HTML (copied from inventory's buildGemSlotHtml style)
             let slotsHtml = '';
             if (slots === 0) {
                 slotsHtml = `<span style="color:#555;font-size:11px;">No gem slots (need rare+ quality drop)</span>`;
             } else {
                 for (let i = 0; i < slots; i++) {
-                    const gem = (weaponInstance?.gems || weaponData.gems || [])[i];
+                    const gem = (weaponData.gems || [])[i];
                     if (gem) {
                         slotsHtml += `<div style="margin:4px 0; padding:2px 0; border-bottom:1px solid #222;">
                             <span style="color:${gem.color};">⬤ ${gem.emoji} ${gem.name}</span><br>
                             <span style="color:#888;font-size:11px; margin-left:15px;">${gem.description}</span>
                         </div>`;
                     } else {
-                        slotsHtml += `<div style="margin:4px 0; color:#666; padding:2px 0;">
-                            ⬤ EMPTY SLOT ${i+1}
-                        </div>`;
+                        slotsHtml += `<div style="margin:4px 0; color:#666; padding:2px 0;">⬤ EMPTY SLOT ${i+1}</div>`;
                     }
                 }
             }
-            
             return `<div style="padding:10px 16px;border:2px solid ${active ? weaponQualityColor : '#333'};margin:6px 0;cursor:pointer;background:#0a0a0a;"
                         onclick="showBlacksmith('socket','weapon')">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -23971,37 +23755,31 @@ function showBlacksmith(subview, subview_target) {
                 </div>`;
         }
 
-        // Build armor card using inventory's logic
         function armorSocketCard() {
             if (!armorData) {
                 return `<div style="color:#555;font-size:13px;padding:8px;border:1px solid #333;background:#0a0a0a;">
                     No armor equipped.
                 </div>`;
             }
-            
             const slots = getGemSlots(armorDisplayQuality);
-            const usedSlots = (armorInstance?.gems || armorData.gems || []).length;
+            const usedSlots = (armorData.gems || []).length;
             const active = socketTarget === 'armor';
-            
             let slotsHtml = '';
             if (slots === 0) {
                 slotsHtml = `<span style="color:#555;font-size:11px;">No gem slots (need rare+ quality drop)</span>`;
             } else {
                 for (let i = 0; i < slots; i++) {
-                    const gem = (armorInstance?.gems || armorData.gems || [])[i];
+                    const gem = (armorData.gems || [])[i];
                     if (gem) {
                         slotsHtml += `<div style="margin:4px 0; padding:2px 0; border-bottom:1px solid #222;">
                             <span style="color:${gem.color};">⬤ ${gem.emoji} ${gem.name}</span><br>
                             <span style="color:#888;font-size:11px; margin-left:15px;">${gem.description}</span>
                         </div>`;
                     } else {
-                        slotsHtml += `<div style="margin:4px 0; color:#666; padding:2px 0;">
-                            ⬤ EMPTY SLOT ${i+1}
-                        </div>`;
+                        slotsHtml += `<div style="margin:4px 0; color:#666; padding:2px 0;">⬤ EMPTY SLOT ${i+1}</div>`;
                     }
                 }
             }
-            
             return `<div style="padding:10px 16px;border:2px solid ${active ? armorQualityColor : '#333'};margin:6px 0;cursor:pointer;background:#0a0a0a;"
                         onclick="showBlacksmith('socket','armor')">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -24020,9 +23798,7 @@ function showBlacksmith(subview, subview_target) {
         const activeItem = socketTarget === 'armor' ? armorData : weaponData;
         const activeQuality = socketTarget === 'armor' ? armorDisplayQuality : weaponDisplayQuality;
         const activeSlots = activeItem ? getGemSlots(activeQuality) : 0;
-        const activeGems = socketTarget === 'armor' 
-            ? (armorInstance?.gems || armorData?.gems || []) 
-            : (weaponInstance?.gems || weaponData?.gems || []);
+        const activeGems = activeItem ? (activeItem.gems || []) : [];
         const activeUsed = activeGems.length;
         const openSlots = activeSlots - activeUsed;
 
@@ -24036,7 +23812,7 @@ function showBlacksmith(subview, subview_target) {
             return;
         }
 
-        const gemButtons = (activeItem && openSlots > 0) 
+        const gemButtons = (activeItem && openSlots > 0)
             ? cutGems.map((g, idx) => {
                 const canAfford = p.gold >= 100;
                 return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;margin:4px 0;border:1px solid ${g.color};background:rgba(0,0,0,0.3);">
@@ -24049,9 +23825,9 @@ function showBlacksmith(subview, subview_target) {
                 </div>`;
             }).join('')
             : `<div style="color:#888;text-align:center;padding:15px;background:#0a0a0a;border:1px solid #333;">${
-                activeItem 
-                    ? (activeSlots === 0 
-                        ? '✨ This item has no gem slots.' 
+                activeItem
+                    ? (activeSlots === 0
+                        ? '✨ This item has no gem slots.'
                         : '⚠️ No open slots — gems are permanent once socketed.')
                     : '👆 Select a weapon or armor above to socket gems.'
               }</div>`;
@@ -24102,6 +23878,83 @@ function showBlacksmith(subview, subview_target) {
     }
 }
 
+function doCutGem(rawGemKey) {
+    const p = gameState.player;
+    if (p.gold < 200) { alert("You need 200 gold to cut a gem."); return; }
+    const idx = p.inventory.indexOf(rawGemKey);
+    if (idx < 0) { alert("Gem not found in inventory."); return; }
+    p.gold -= 200;
+    p.inventory.splice(idx, 1);
+    const cut = cutGem(rawGemKey);
+    if (!cut) { alert("Could not cut gem — unknown type."); p.gold += 200; return; }
+    p.inventory.push(cut);
+    saveGame();
+    const parts = rawGemKey.split('_');
+    const typeKey = parts[1];
+    const gem = GEM_TYPES[typeKey];
+    const flash = document.createElement('div');
+    flash.style.cssText = `position:fixed;top:15px;left:50%;transform:translateX(-50%);background:#0a0a0a;border:2px solid ${gem?gem.color:'#FF7722'};padding:14px 24px;color:${gem?gem.color:'#FF7722'};font-size:15px;z-index:9999;text-align:center;max-width:340px;`;
+    flash.innerHTML = `⚒️ <strong>Gem Cut!</strong><br><span style="font-size:12px;color:#ccc;">${cut.name}<br>${cut.description}</span>`;
+    document.body.appendChild(flash);
+    setTimeout(() => flash.remove(), 3500);
+    showBlacksmith('cut');
+}
+
+function doSocketGem(cutGemInventoryIndex, target) {
+    const p = gameState.player;
+    if (p.gold < 100) { alert("You need 100 gold to socket a gem."); return; }
+    const isArmor = target === 'armor';
+
+    // Get the live instance from WEAPONS/ARMOR using the instanceId
+    const instanceId = isArmor ? p.armor : p.weapon;
+    const item = isArmor
+        ? (instanceId ? ARMOR[instanceId] : null)
+        : (instanceId ? WEAPONS[instanceId] : null);
+    const itemLabel = isArmor ? 'armor' : 'weapon';
+
+    if (!item) { alert(`No ${itemLabel} equipped.`); return; }
+    if (!item.gems) item.gems = [];
+
+    const itemQuality = item.quality || 'normal';
+    const slots = getGemSlots(itemQuality);
+    if (item.gems.length >= slots) {
+        alert(`No open slots on this ${itemLabel}.`);
+        return;
+    }
+
+    const cutGems = p.inventory.filter(k => typeof k === 'object' && k && k.cut);
+    const gem = cutGems[cutGemInventoryIndex];
+    if (!gem) { alert("Gem not found."); return; }
+    const invIdx = p.inventory.indexOf(gem);
+    if (invIdx < 0) { alert("Gem not in inventory."); return; }
+
+    if (!confirm(`Socket ${gem.name} into ${item.name}? This is permanent and cannot be undone.`)) return;
+
+    p.gold -= 100;
+    p.inventory.splice(invIdx, 1);
+
+    // Push gem onto the live WEAPONS/ARMOR instance
+    item.gems.push(gem);
+
+    // Also update the inventory reference object so gems survive save/load
+    const invRef = p.inventory.find(i =>
+        i && typeof i === 'object' && i.instanceId === instanceId
+    );
+    if (invRef) {
+        if (!invRef.gems) invRef.gems = [];
+        invRef.gems.push(gem);
+    }
+
+    recalcGemStats(p);
+    saveGame();
+
+    const flash = document.createElement('div');
+    flash.style.cssText = `position:fixed;top:15px;left:50%;transform:translateX(-50%);background:#0a0a0a;border:2px solid ${gem.color};padding:14px 24px;color:${gem.color};font-size:15px;z-index:9999;text-align:center;max-width:340px;`;
+    flash.innerHTML = `⚙️ <strong>Gem Socketed!</strong><br><span style="font-size:12px;color:#ccc;">${gem.name} fused into ${item.name} permanently.</span>`;
+    document.body.appendChild(flash);
+    setTimeout(() => flash.remove(), 3500);
+    showBlacksmith('socket', target);
+}
         // ═══════════════════════════════════════════════════════════════
         // TEMPLE OF REBIRTH (Stat Reset)
         // ═══════════════════════════════════════════════════════════════
