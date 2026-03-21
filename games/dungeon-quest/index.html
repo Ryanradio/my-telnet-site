@@ -4725,157 +4725,41 @@ line += `<br><span style="color:#ffcc88;">YOUR DMG: ${yourMin}${yourMax > yourMi
         }
 
         function canUseWeapon(playerClass, weapon) {
-            // Bare fists — always usable by everyone
-            if (weapon.unarmed) return true;
-            // If weapon has allowedClasses, check it
-            if (weapon.allowedClasses) {
-                return weapon.allowedClasses.includes(playerClass);
-            }
-            // RUNESMITH: can use staves, hammers, maces, and swords — the hybrid fighter/caster
-            if (playerClass === 'runesmith') {
-                if (!weapon.name) return false;
-                const wn = weapon.name.toLowerCase();
-                return weapon.weaponSubtype === 'staff'
-                    || wn.includes('staff')
-                    || wn.includes('hammer')
-                    || wn.includes('mace')
-                    || wn.includes('sword')
-                    || wn.includes('mattock')
-                    || wn.includes('maul')
-                    || wn.includes('axe')
-                    || weapon.type === 'hammer'
-                    || weapon.type === 'staff'
-                    || weapon.type === 'sword';
-            }
-            
-            // ROGUE: daggers only — no exceptions
-            // Also allow dropped weapons with type 'dagger' or 'poison_dagger' / 'assassin_blade' etc.
-            if (playerClass === 'rogue') {
-                const isDagger = weapon.classRestriction === 'rogue'
-                    || weapon.type === 'dagger'
-                    || weapon.type === 'poison_dagger'
-                    || weapon.type === 'assassin_blade'
-                    || weapon.type === 'short_sword'
-                    || (weapon.name && weapon.name.toLowerCase().includes('dagger'))
-                    || (weapon.name && weapon.name.toLowerCase().includes('shiv'))
-                    || (weapon.name && weapon.name.toLowerCase().includes('stiletto'))
-                    || (weapon.name && weapon.name.toLowerCase().includes('dirk'))
-                    || (weapon.name && weapon.name.toLowerCase().includes('blade'));
-                return isDagger;
-            }
-
-            // Default restrictions based on weapon type/name
-            const weaponName = weapon.name.toLowerCase();
-            const SPELL_CLASSES = ['mage', 'warlock', 'cleric', 'acolyte', 'necrolyte', 'druid', 'sorceror', 'runesmith'];
-            
-            // Staffs - magic users only
-            if (weaponName.includes('staff') || weapon.weaponSubtype === 'staff') {
-                return SPELL_CLASSES.includes(playerClass);
-            }
-            
-            // Wands - magic users only (but also accessible from shop for magic classes)
-            if (weaponName.includes('wand') || weapon.weaponSubtype === 'wand') {
-                return SPELL_CLASSES.includes(playerClass);
-            }
-            
-            // Also catch high-magic weapons by baseMagicDamage ratio
-            if (weapon.baseMagicDamage > weapon.baseDamage) {
-                return SPELL_CLASSES.includes(playerClass);
-            }
-
-            // Tomes, orbs, shadow_orb — magic users only (drop types with no keyword in name)
-            if (weapon.type === 'tome' || weapon.type === 'orb' || weapon.type === 'shadow_orb'
-                || weaponName.includes('tome') || weaponName.includes(' orb')) {
-                return SPELL_CLASSES.includes(playerClass);
-            }
-            
-            // Bows - rangers and archers only
-            if (weaponName.includes('bow') || weapon.weaponSubtype === 'bow') {
-                return ['ranger', 'archer', 'hunter'].includes(playerClass);
-            }
-            
-            // Daggers - rogues handled above; rangers/hunters can use too
-            if (weaponName.includes('dagger') || weapon.classRestriction === 'rogue'
-                || weapon.weaponSubtype === 'dagger') {
-                return ['ranger', 'hunter'].includes(playerClass);
-            }
-            
-            // Maces - paladins, clerics, warriors, runesmith
-            if (weaponName.includes('mace') || weaponName.includes('club')
-                || weaponName.includes('scepter') || weaponName.includes('crusher')
-                || weaponName.includes('judgment') || weaponName.includes('templar')
-                || weaponName.includes('thundermace') || weaponName.includes('wrath')
-                || weapon.weaponSubtype === 'mace') {
-                return ['paladin', 'cleric', 'acolyte', 'warrior', 'runesmith'].includes(playerClass);
-            }
-            
-            // Hammers - warriors, paladins, runesmith
-            if (weaponName.includes('hammer') || weaponName.includes('maul')
-                || weaponName.includes('mjolnite') || weaponName.includes('earthshaker')
-                || weaponName.includes('skullcracker') || weaponName.includes('siegebreaker')
-                || weaponName.includes('ragnarok') || weaponName.includes('colossus')
-                || weaponName.includes('voidhammer') || weaponName.includes('oblivion hammer')
-                || weapon.weaponSubtype === 'hammer') {
-                return ['warrior', 'paladin', 'runesmith'].includes(playerClass);
-            }
-            
-            // Axes - warriors, runesmith
-            if (weaponName.includes('axe') || weaponName.includes('cleaver')
-                || weaponName.includes('soulcleaver') || weaponName.includes('warbringer')
-                || weaponName.includes('ruinbringer') || weaponName.includes('sundering')
-                || weapon.weaponSubtype === 'axe') {
-                return ['warrior', 'paladin', 'runesmith'].includes(playerClass);
-            }
-            
-            // Swords - warriors, paladins (specific sword names)
-            if (weaponName.includes('sword') || weaponName.includes('blade')
-                || weaponName.includes('greatsword') || weaponName.includes('excalibur')) {
-                return ['warrior', 'paladin'].includes(playerClass);
-            }
-            
-            // Default: everyone except rogue can use
-            return true;
-        }
+    // Bare fists — always usable
+    if (weapon.unarmed) return true;
+    
+    // If allowedClasses is defined, use it as the sole authority
+    if (weapon.allowedClasses) {
+        return weapon.allowedClasses.includes(playerClass);
+    }
+    
+    // No allowedClasses set — fall back to weaponSubtype check
+    const magicTypes = ['staff', 'wand', 'tome', 'orb'];
+    const bowTypes = ['bow', 'crossbow'];
+    
+    if (magicTypes.includes(weapon.weaponSubtype)) {
+        return ['mage','warlock','cleric','acolyte','sorceror','druid','necrolyte','runesmith'].includes(playerClass);
+    }
+    if (bowTypes.includes(weapon.weaponSubtype)) {
+        return ['ranger','archer','hunter','deadeye','beastlord'].includes(playerClass);
+    }
+    
+    // Everything else — any class can use
+    return true;
+}
         
         function canUseArmor(playerClass, armor) {
-            // No Armor — always usable by everyone
-            if (armor.unarmored) return true;
-            // If armor has allowedClasses, check it
-            if (armor.allowedClasses) {
-                return armor.allowedClasses.includes(playerClass);
-            }
-            
-            // Default restrictions based on armor type/name
-            const armorName = armor.name.toLowerCase();
-            
-            // Robes - magic users only (runesmith cannot — too fragile for frontline)
-            if (armorName.includes('robe')) {
-                return ['mage', 'warlock', 'cleric', 'acolyte', 'necrolyte', 'druid', 'sorceror'].includes(playerClass);
-            }
-            
-            // Plate armor - heavy fighters only (runesmith cannot — too restrictive for rune casting)
-            if (armorName.includes('plate')) {
-                return ['warrior', 'paladin'].includes(playerClass);
-            }
-            
-            // Chainmail - medium armor (runesmith can wear — mobile enough for rune work)
-            if (armorName.includes('chain')) {
-                return ['warrior', 'paladin', 'cleric', 'ranger', 'runesmith'].includes(playerClass);
-            }
-            
-            // Scale / hide / studded — medium-heavy, runesmith fits here
-            if (armorName.includes('scale') || armorName.includes('hide') || armorName.includes('studded')) {
-                return ['warrior', 'paladin', 'cleric', 'ranger', 'hunter', 'runesmith'].includes(playerClass);
-            }
-            
-            // Leather - light armor, most classes
-            if (armorName.includes('leather')) {
-                return ['warrior', 'rogue', 'ranger', 'hunter', 'cleric', 'paladin', 'runesmith'].includes(playerClass);
-            }
-            
-            // Cloth - everyone can wear
-            return true;
-        }
+    // No armor — always usable by everyone
+    if (armor.unarmored) return true;
+    
+    // If allowedClasses is defined, use it as the sole authority
+    if (armor.allowedClasses) {
+        return armor.allowedClasses.includes(playerClass);
+    }
+    
+    // No allowedClasses set — default to anyone can wear it
+    return true;
+}
         function calcChaSellBonus(cha){ return Math.min(15, (cha||0) * 1); }   // sell %  bonus
         function calcInnCost(cha)     { return Math.max(20, 50 - (cha||0)); }
         function calcCritChance(lck, player)  { 

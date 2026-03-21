@@ -601,7 +601,7 @@ const WEAPONS = {
         "level": 4,
         "quality": "normal",
         "slot": "weapon",
-        "allowedClasses": ["cleric", "paladin"],
+        "allowedClasses": ["cleric", "paladin", "runesmith"],
         "weaponSubtype": "staff"
     },
     dark_staff: {
@@ -613,7 +613,7 @@ const WEAPONS = {
         "level": 5,
         "quality": "normal",
         "slot": "weapon",
-        "allowedClasses": ["warlock", "necrolyte"],
+        "allowedClasses": ["warlock", "necrolyte", "runesmith"],
         "weaponSubtype": "staff"
     },
     flame_staff: {
@@ -625,7 +625,7 @@ const WEAPONS = {
         "level": 6,
         "quality": "normal",
         "slot": "weapon",
-        "allowedClasses": ["mage", "warlock", "sorceror"],
+        "allowedClasses": ["mage", "warlock", "sorceror", "runesmith"],
         "weaponSubtype": "staff"
     },
     sacred_staff: {
@@ -637,7 +637,7 @@ const WEAPONS = {
         "level": 7,
         "quality": "normal",
         "slot": "weapon",
-        "allowedClasses": ["cleric", "paladin"],
+        "allowedClasses": ["cleric", "paladin", "runesmith"],
         "weaponSubtype": "staff"
     },
     ice_staff: {
@@ -649,7 +649,7 @@ const WEAPONS = {
         "level": 8,
         "quality": "normal",
         "slot": "weapon",
-        "allowedClasses": ["mage", "warlock", "sorceror"],
+        "allowedClasses": ["mage", "warlock", "sorceror", "runesmith"],
         "weaponSubtype": "staff"
     },
     cursed_staff: {
@@ -661,7 +661,7 @@ const WEAPONS = {
         "level": 9,
         "quality": "rare",
         "slot": "weapon",
-        "allowedClasses": ["warlock", "necrolyte"],
+        "allowedClasses": ["warlock", "necrolyte", "runesmith"],
         "weaponSubtype": "staff"
     },
     shadow_staff: {
@@ -673,7 +673,7 @@ const WEAPONS = {
         "level": 10,
         "quality": "rare",
         "slot": "weapon",
-        "allowedClasses": ["warlock", "necrolyte"],
+        "allowedClasses": ["warlock", "necrolyte", "runesmith"],
         "weaponSubtype": "staff"
     },
     lightning_staff: {
@@ -685,7 +685,7 @@ const WEAPONS = {
         "level": 11,
         "quality": "rare",
         "slot": "weapon",
-        "allowedClasses": ["mage", "warlock", "sorceror"],
+        "allowedClasses": ["mage", "warlock", "sorceror", "runesmith"],
         "weaponSubtype": "staff"
     },
     necromantic_staff: {
@@ -697,7 +697,7 @@ const WEAPONS = {
         "level": 12,
         "quality": "epic",
         "slot": "weapon",
-        "allowedClasses": ["necrolyte", "warlock"],
+        "allowedClasses": ["necrolyte", "warlock", "runesmith"],
         "weaponSubtype": "staff"
     },
     prophecy_staff: {
@@ -709,7 +709,7 @@ const WEAPONS = {
         "level": 13,
         "quality": "epic",
         "slot": "weapon",
-        "allowedClasses": ["cleric", "acolyte"],
+        "allowedClasses": ["cleric", "acolyte", "runesmith"],
         "weaponSubtype": "staff"
     },
     divine_staff: {
@@ -721,7 +721,7 @@ const WEAPONS = {
         "level": 14,
         "quality": "rare",
         "slot": "weapon",
-        "allowedClasses": ["cleric", "paladin"],
+        "allowedClasses": ["cleric", "paladin", "runesmith"],
         "weaponSubtype": "staff"
     },
     archmage_staff: {
@@ -733,7 +733,7 @@ const WEAPONS = {
         "level": 15,
         "quality": "rare",
         "slot": "weapon",
-        "allowedClasses": ["mage", "sorceror"],
+        "allowedClasses": ["mage", "sorceror", "runesmith"],
         "weaponSubtype": "staff"
     },
     void_staff: {
@@ -745,7 +745,7 @@ const WEAPONS = {
         "level": 16,
         "quality": "epic",
         "slot": "weapon",
-        "allowedClasses": ["warlock", "necrolyte"],
+        "allowedClasses": ["warlock", "necrolyte", "runesmith"],
         "weaponSubtype": "staff"
     },
     soul_staff: {
@@ -757,7 +757,7 @@ const WEAPONS = {
         "level": 17,
         "quality": "epic",
         "slot": "weapon",
-        "allowedClasses": ["warlock", "necrolyte"],
+        "allowedClasses": ["warlock", "necrolyte", "runesmith"],
         "weaponSubtype": "staff"
     },
     celestial_staff: {
@@ -769,7 +769,7 @@ const WEAPONS = {
         "level": 18,
         "quality": "epic",
         "slot": "weapon",
-        "allowedClasses": ["cleric", "acolyte"],
+        "allowedClasses": ["cleric", "acolyte", "runesmith"],
         "weaponSubtype": "staff"
     },
     celestial_rod: {
@@ -781,7 +781,7 @@ const WEAPONS = {
         "level": 19,
         "quality": "epic",
         "slot": "weapon",
-        "allowedClasses": ["cleric", "paladin"],
+        "allowedClasses": ["cleric", "paladin", "runesmith"],
         "weaponSubtype": "staff"
     },
     eternity_staff: {
@@ -793,7 +793,7 @@ const WEAPONS = {
         "level": 20,
         "quality": "legendary",
         "slot": "weapon",
-        "allowedClasses": ["mage", "warlock", "cleric"],
+        "allowedClasses": ["mage", "warlock", "cleric", "runesmith"],
         "weaponSubtype": "staff"
     },
     void_dark_staff: {
@@ -805,7 +805,7 @@ const WEAPONS = {
         "level": 21,
         "quality": "legendary",
         "slot": "weapon",
-        "allowedClasses": ["warlock", "necrolyte"],
+        "allowedClasses": ["warlock", "necrolyte", "runesmith"],
         "weaponSubtype": "staff"
     },
     apocalypse_staff: {
@@ -817,7 +817,7 @@ const WEAPONS = {
         "level": 22,
         "quality": "legendary",
         "slot": "weapon",
-        "allowedClasses": ["mage", "warlock", "sorceror"],
+        "allowedClasses": ["mage", "warlock", "sorceror", "runesmith"],
         "weaponSubtype": "staff"
     },
     cosmic_staff: {
@@ -829,7 +829,7 @@ const WEAPONS = {
         "level": 23,
         "quality": "legendary",
         "slot": "weapon",
-        "allowedClasses": ["mage", "sorceror"],
+        "allowedClasses": ["mage", "sorceror", "runesmith"],
         "weaponSubtype": "staff"
     },
     gods_scepter: {
@@ -841,7 +841,7 @@ const WEAPONS = {
         "level": 24,
         "quality": "legendary",
         "slot": "weapon",
-        "allowedClasses": ["cleric", "high_priest"],
+        "allowedClasses": ["cleric", "high_priest", "runesmith"],
         "weaponSubtype": "staff"
     },
 
@@ -859,7 +859,7 @@ const WEAPONS = {
         "quality": "poor",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["warrior", "paladin", "cleric"],
+        "allowedClasses": ["warrior", "paladin", "cleric", "runesmith"],
         "description": "A stone mace head with visible cracks. One solid hit might break it, but it'll hurt."
     },
     wooden_club: {
@@ -872,7 +872,7 @@ const WEAPONS = {
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["warrior", "paladin", "cleric"]
+        "allowedClasses": ["warrior", "paladin", "cleric", "runesmith"]
     },
     iron_mace: {
         "name": "Iron Mace",
@@ -884,7 +884,7 @@ const WEAPONS = {
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["warrior", "paladin", "cleric"]
+        "allowedClasses": ["warrior", "paladin", "cleric", "runesmith"]
     },
     flanged_mace: {
         "name": "Flanged Mace",
@@ -896,7 +896,7 @@ const WEAPONS = {
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["warrior", "paladin", "cleric"]
+        "allowedClasses": ["warrior", "paladin", "cleric", "runesmith"]
     },
     battlemace: {
         "name": "Battlemace",
@@ -907,7 +907,7 @@ const WEAPONS = {
         "level": 5,
         "quality": "normal",
         "slot": "weapon",
-        "allowedClasses": ["warrior", "paladin", "cleric"],
+        "allowedClasses": ["warrior", "paladin", "cleric", "runesmith"],
         "weaponSubtype": "mace"
     },
     holy_mace: {
@@ -920,7 +920,7 @@ const WEAPONS = {
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["cleric", "paladin"]
+        "allowedClasses": ["cleric", "paladin", "runesmith"]
     },
     war_mace: {
         "name": "War Mace",
@@ -932,7 +932,7 @@ const WEAPONS = {
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["warrior", "paladin", "cleric"]
+        "allowedClasses": ["warrior", "paladin", "cleric", "runesmith"]
     },
     blessed_mace: {
         "name": "Blessed Mace",
@@ -944,7 +944,7 @@ const WEAPONS = {
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["cleric", "paladin"]
+        "allowedClasses": ["cleric", "paladin", "runesmith"]
     },
     silver_mace: {
         "name": "Silver Mace",
@@ -956,7 +956,7 @@ const WEAPONS = {
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["cleric", "paladin"]
+        "allowedClasses": ["cleric", "paladin", "runesmith"]
     },
     crushmaster: {
         "name": "Crushmaster",
@@ -968,7 +968,7 @@ const WEAPONS = {
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["warrior", "paladin", "cleric"]
+        "allowedClasses": ["warrior", "paladin", "cleric", "runesmith"]
     },
     divine_mace: {
         "name": "Divine Mace",
@@ -980,7 +980,7 @@ const WEAPONS = {
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["cleric", "paladin"]
+        "allowedClasses": ["cleric", "paladin", "runesmith"]
     },
     soul_mace: {
         "name": "Soul Mace",
@@ -992,7 +992,7 @@ const WEAPONS = {
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["warrior", "paladin", "cleric"]
+        "allowedClasses": ["warrior", "paladin", "cleric", "runesmith"]
     },
     sanctified_mace: {
         "name": "Sanctified Mace",
@@ -1004,7 +1004,7 @@ const WEAPONS = {
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["cleric", "paladin"]
+        "allowedClasses": ["cleric", "paladin", "runesmith"]
     },
     judgment: {
         "name": "Judgment",
@@ -1016,7 +1016,7 @@ const WEAPONS = {
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["cleric", "paladin"]
+        "allowedClasses": ["cleric", "paladin", "runesmith"]
     },
     templar_mace: {
         "name": "Templar Mace",
@@ -1028,7 +1028,7 @@ const WEAPONS = {
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["cleric", "paladin"]
+        "allowedClasses": ["cleric", "paladin", "runesmith"]
     },
     thundermace: {
         "name": "Thundermace",
@@ -1040,7 +1040,7 @@ const WEAPONS = {
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["warrior", "paladin", "cleric"]
+        "allowedClasses": ["warrior", "paladin", "cleric", "runesmith"]
     },
     wrath_of_the_gods: {
         "name": "Wrath of the Gods",
@@ -1052,7 +1052,7 @@ const WEAPONS = {
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["cleric", "paladin"]
+        "allowedClasses": ["cleric", "paladin", "runesmith"]
     },
     celestial_crusher: {
         "name": "Celestial Crusher",
@@ -1064,7 +1064,7 @@ const WEAPONS = {
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["cleric", "paladin"]
+        "allowedClasses": ["cleric", "paladin", "runesmith"]
     },
     scepter_of_doom: {
         "name": "Scepter of Doom",
@@ -1076,7 +1076,7 @@ const WEAPONS = {
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["warrior", "paladin", "cleric"]
+        "allowedClasses": ["warrior", "paladin", "cleric", "runesmith"]
     },
     apocalypse_mace: {
         "name": "Apocalypse Mace",
@@ -1088,7 +1088,7 @@ const WEAPONS = {
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["cleric", "paladin"]
+        "allowedClasses": ["cleric", "paladin", "runesmith"]
     },
     world_mace: {
         "name": "World Mace",
@@ -1100,7 +1100,7 @@ const WEAPONS = {
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["warrior", "paladin", "cleric"]
+        "allowedClasses": ["warrior", "paladin", "cleric", "runesmith"]
     },
     eternity_crusher: {
         "name": "Eternity Crusher",
@@ -1112,7 +1112,7 @@ const WEAPONS = {
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["warrior", "paladin", "cleric"]
+        "allowedClasses": ["warrior", "paladin", "cleric", "runesmith"]
     },
     oblivion_scepter: {
         "name": "Oblivion Scepter",
@@ -1124,7 +1124,7 @@ const WEAPONS = {
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["cleric", "paladin"]
+        "allowedClasses": ["cleric", "paladin", "runesmith"]
     },
     genesis_mace: {
         "name": "Genesis Mace",
@@ -1136,7 +1136,7 @@ const WEAPONS = {
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["warrior", "paladin", "cleric"]
+        "allowedClasses": ["warrior", "paladin", "cleric", "runesmith"]
     },
 
     // ======================================================
@@ -1146,7 +1146,7 @@ const WEAPONS = {
     rusty_sword: {
         "name": "Rusty Sword",
         "baseDamage": 3,
-        "maxDamage": 5,
+        "maxDamage": 6,
         "baseMagicDamage": 0,
         "cost": 15,
         "level": 1,
@@ -1158,8 +1158,8 @@ const WEAPONS = {
     },
     iron_sword: {
         "name": "Iron Sword",
-        "baseDamage": 6,
-        "maxDamage": 8,
+        "baseDamage": 8,
+        "maxDamage": 14,
         "baseMagicDamage": 0,
         "cost": 100,
         "level": 2,
@@ -1170,8 +1170,8 @@ const WEAPONS = {
     },
     short_sword: {
         "name": "Short Sword",
-        "baseDamage": 9,
-        "maxDamage": 12,
+        "baseDamage": 11,
+        "maxDamage": 18,
         "baseMagicDamage": 0,
         "cost": 110,
         "level": 3,
@@ -1182,8 +1182,8 @@ const WEAPONS = {
     },
     steel_sword: {
         "name": "Steel Sword",
-        "baseDamage": 12,
-        "maxDamage": 15,
+        "baseDamage": 15,
+        "maxDamage": 24,
         "baseMagicDamage": 0,
         "cost": 1000,
         "level": 4,
@@ -1194,8 +1194,8 @@ const WEAPONS = {
     },
     crusader_sword: {
         "name": "Crusader Sword",
-        "baseDamage": 15,
-        "maxDamage": 18,
+        "baseDamage": 18,
+        "maxDamage": 30,
         "baseMagicDamage": 5,
         "cost": 500,
         "level": 5,
@@ -1206,8 +1206,8 @@ const WEAPONS = {
     },
     bastard_sword: {
         "name": "Bastard Sword",
-        "baseDamage": 18,
-        "maxDamage": 22,
+        "baseDamage": 22,
+        "maxDamage": 36,
         "baseMagicDamage": 0,
         "cost": 900,
         "level": 6,
@@ -1218,8 +1218,8 @@ const WEAPONS = {
     },
     ancient_sword: {
         "name": "Ancient Sword",
-        "baseDamage": 21,
-        "maxDamage": 25,
+        "baseDamage": 25,
+        "maxDamage": 40,
         "baseMagicDamage": 0,
         "cost": 1200,
         "level": 7,
@@ -1231,7 +1231,7 @@ const WEAPONS = {
     fire_blade: {
         "name": "Fire Blade",
         "baseDamage": 24,
-        "maxDamage": 28,
+        "maxDamage": 38,
         "baseMagicDamage": 5,
         "cost": 1500,
         "level": 8,
@@ -1243,7 +1243,7 @@ const WEAPONS = {
     frozen_blade: {
         "name": "Frozen Blade",
         "baseDamage": 24,
-        "maxDamage": 28,
+        "maxDamage": 38,
         "baseMagicDamage": 5,
         "cost": 1500,
         "level": 8,
@@ -1254,8 +1254,8 @@ const WEAPONS = {
     },
     cursed_sword: {
         "name": "Cursed Sword",
-        "baseDamage": 27,
-        "maxDamage": 32,
+        "baseDamage": 28,
+        "maxDamage": 44,
         "baseMagicDamage": 4,
         "cost": 1800,
         "level": 9,
@@ -1278,8 +1278,8 @@ const WEAPONS = {
     },
     shadowblade: {
         "name": "Shadowblade",
-        "baseDamage": 33,
-        "maxDamage": 38,
+        "baseDamage": 30,
+        "maxDamage": 48,
         "baseMagicDamage": 6,
         "cost": 2000,
         "level": 11,
@@ -1290,8 +1290,8 @@ const WEAPONS = {
     },
     holy_blade: {
         "name": "Holy Blade",
-        "baseDamage": 36,
-        "maxDamage": 42,
+        "baseDamage": 32,
+        "maxDamage": 50,
         "baseMagicDamage": 8,
         "cost": 2500,
         "level": 12,
@@ -1302,8 +1302,8 @@ const WEAPONS = {
     },
     spectral_blade: {
         "name": "Spectral Blade",
-        "baseDamage": 36,
-        "maxDamage": 42,
+        "baseDamage": 32,
+        "maxDamage": 50,
         "baseMagicDamage": 8,
         "cost": 2800,
         "level": 12,
@@ -1314,8 +1314,8 @@ const WEAPONS = {
     },
     excalibur: {
         "name": "Excalibur",
-        "baseDamage": 39,
-        "maxDamage": 45,
+        "baseDamage": 35,
+        "maxDamage": 55,
         "baseMagicDamage": 8,
         "cost": 2800,
         "level": 13,
@@ -1326,8 +1326,8 @@ const WEAPONS = {
     },
     infernal_blade: {
         "name": "Infernal Blade",
-        "baseDamage": 42,
-        "maxDamage": 48,
+        "baseDamage": 36,
+        "maxDamage": 56,
         "baseMagicDamage": 8,
         "cost": 3000,
         "level": 14,
@@ -1338,8 +1338,8 @@ const WEAPONS = {
     },
     vampire_blade: {
         "name": "Vampire Blade",
-        "baseDamage": 42,
-        "maxDamage": 48,
+        "baseDamage": 36,
+        "maxDamage": 56,
         "baseMagicDamage": 6,
         "cost": 3000,
         "level": 14,
@@ -1350,20 +1350,20 @@ const WEAPONS = {
     },
     runic_blade: {
         "name": "Runic Blade",
-        "baseDamage": 45,
-        "maxDamage": 52,
+        "baseDamage": 40,
+        "maxDamage": 62,
         "baseMagicDamage": 8,
         "cost": 4500,
         "level": 15,
         "quality": "legendary",
         "slot": "weapon",
         "weaponSubtype": "sword",
-        "allowedClasses": ["warrior", "paladin", "runesmith"]
+        "allowedClasses": ["warrior", "paladin"]
     },
     champion_sword: {
         "name": "Champion Sword",
-        "baseDamage": 45,
-        "maxDamage": 52,
+        "baseDamage": 42,
+        "maxDamage": 64,
         "baseMagicDamage": 0,
         "cost": 4000,
         "level": 15,
@@ -1374,8 +1374,8 @@ const WEAPONS = {
     },
     void_blade: {
         "name": "Void Blade",
-        "baseDamage": 48,
-        "maxDamage": 55,
+        "baseDamage": 45,
+        "maxDamage": 68,
         "baseMagicDamage": 10,
         "cost": 5000,
         "level": 16,
@@ -1387,7 +1387,7 @@ const WEAPONS = {
     titan_blade: {
         "name": "Titan Blade",
         "baseDamage": 48,
-        "maxDamage": 55,
+        "maxDamage": 72,
         "baseMagicDamage": 0,
         "cost": 5000,
         "level": 16,
@@ -1398,8 +1398,8 @@ const WEAPONS = {
     },
     titanforged_sword: {
         "name": "Titanforged Sword",
-        "baseDamage": 51,
-        "maxDamage": 58,
+        "baseDamage": 50,
+        "maxDamage": 76,
         "baseMagicDamage": 10,
         "cost": 7000,
         "level": 17,
@@ -1410,8 +1410,8 @@ const WEAPONS = {
     },
     celestial_blade: {
         "name": "Celestial Blade",
-        "baseDamage": 54,
-        "maxDamage": 62,
+        "baseDamage": 52,
+        "maxDamage": 78,
         "baseMagicDamage": 12,
         "cost": 8000,
         "level": 18,
@@ -1422,8 +1422,8 @@ const WEAPONS = {
     },
     heavenly_blade: {
         "name": "Heavenly Blade",
-        "baseDamage": 54,
-        "maxDamage": 62,
+        "baseDamage": 52,
+        "maxDamage": 78,
         "baseMagicDamage": 10,
         "cost": 7500,
         "level": 18,
@@ -1434,8 +1434,8 @@ const WEAPONS = {
     },
     hellforged_blade: {
         "name": "Hellforged Blade",
-        "baseDamage": 57,
-        "maxDamage": 65,
+        "baseDamage": 54,
+        "maxDamage": 82,
         "baseMagicDamage": 10,
         "cost": 8000,
         "level": 19,
@@ -1458,8 +1458,8 @@ const WEAPONS = {
     },
     abyssal_blade: {
         "name": "Abyssal Blade",
-        "baseDamage": 63,
-        "maxDamage": 72,
+        "baseDamage": 60,
+        "maxDamage": 92,
         "baseMagicDamage": 14,
         "cost": 10000,
         "level": 21,
@@ -1470,8 +1470,8 @@ const WEAPONS = {
     },
     oblivion_blade: {
         "name": "Oblivion Blade",
-        "baseDamage": 66,
-        "maxDamage": 75,
+        "baseDamage": 64,
+        "maxDamage": 98,
         "baseMagicDamage": 16,
         "cost": 15000,
         "level": 22,
@@ -1483,7 +1483,7 @@ const WEAPONS = {
     demonic_blade: {
         "name": "Demonic Blade",
         "baseDamage": 66,
-        "maxDamage": 75,
+        "maxDamage": 100,
         "baseMagicDamage": 14,
         "cost": 14000,
         "level": 22,
@@ -1494,8 +1494,8 @@ const WEAPONS = {
     },
     holy_avenger: {
         "name": "Holy Avenger",
-        "baseDamage": 69,
-        "maxDamage": 78,
+        "baseDamage": 62,
+        "maxDamage": 95,
         "baseMagicDamage": 18,
         "cost": 16000,
         "level": 23,
@@ -1506,8 +1506,8 @@ const WEAPONS = {
     },
     blade_of_judgement: {
         "name": "Blade of Judgement",
-        "baseDamage": 72,
-        "maxDamage": 82,
+        "baseDamage": 75,
+        "maxDamage": 115,
         "baseMagicDamage": 22,
         "cost": 28000,
         "level": 24,
@@ -1571,8 +1571,8 @@ const WEAPONS = {
     // ======================================================
     rusty_axe: {
         "name": "Rusty Axe",
-        "baseDamage": 3,
-        "maxDamage": 5,
+        "baseDamage": 4,
+        "maxDamage": 8,
         "baseMagicDamage": 0,
         "cost": 20,
         "level": 1,
@@ -1584,8 +1584,8 @@ const WEAPONS = {
     },
     hand_axe: {
         "name": "Hand Axe",
-        "baseDamage": 5,
-        "maxDamage": 10,
+        "baseDamage": 8,
+        "maxDamage": 14,
         "baseMagicDamage": 0,
         "cost": 150,
         "level": 2,
@@ -1596,8 +1596,8 @@ const WEAPONS = {
     },
     battle_axe: {
         "name": "Battle Axe",
-        "baseDamage": 7,
-        "maxDamage": 14,
+        "baseDamage": 13,
+        "maxDamage": 21,
         "baseMagicDamage": 0,
         "cost": 400,
         "level": 3,
@@ -1608,8 +1608,8 @@ const WEAPONS = {
     },
     wood_axe: {
         "name": "Wood Axe",
-        "baseDamage": 7,
-        "maxDamage": 14,
+        "baseDamage": 13,
+        "maxDamage": 21,
         "baseMagicDamage": 0,
         "cost": 400,
         "level": 3,
@@ -1620,8 +1620,8 @@ const WEAPONS = {
     },
     broad_axe: {
         "name": "Broad Axe",
-        "baseDamage": 10,
-        "maxDamage": 18,
+        "baseDamage": 20,
+        "maxDamage": 32,
         "baseMagicDamage": 0,
         "cost": 1200,
         "level": 4,
@@ -1632,8 +1632,8 @@ const WEAPONS = {
     },
     giant_axe: {
         "name": "Giant Axe",
-        "baseDamage": 12,
-        "maxDamage": 22,
+        "baseDamage": 22,
+        "maxDamage": 36,
         "baseMagicDamage": 0,
         "cost": 500,
         "level": 5,
@@ -1644,8 +1644,8 @@ const WEAPONS = {
     },
     reinforced_axe: {
         "name": "Reinforced Axe",
-        "baseDamage": 14,
-        "maxDamage": 27,
+        "baseDamage": 23,
+        "maxDamage": 38,
         "baseMagicDamage": 0,
         "cost": 1750,
         "level": 6,
@@ -1656,8 +1656,8 @@ const WEAPONS = {
     },
     raiders_axe: {
         "name": "Raider's Axe",
-        "baseDamage": 16,
-        "maxDamage": 31,
+        "baseDamage": 27,
+        "maxDamage": 45,
         "baseMagicDamage": 0,
         "cost": 2400,
         "level": 7,
@@ -1668,8 +1668,8 @@ const WEAPONS = {
     },
     dire_axe: {
         "name": "Dire Axe",
-        "baseDamage": 18,
-        "maxDamage": 35,
+        "baseDamage": 32,
+        "maxDamage": 52,
         "baseMagicDamage": 0,
         "cost": 3150,
         "level": 8,
@@ -1680,8 +1680,8 @@ const WEAPONS = {
     },
     great_axe: {
         "name": "Great Axe",
-        "baseDamage": 21,
-        "maxDamage": 40,
+        "baseDamage": 35,
+        "maxDamage": 57,
         "baseMagicDamage": 0,
         "cost": 4000,
         "level": 9,
@@ -1692,8 +1692,8 @@ const WEAPONS = {
     },
     berserker_axe: {
         "name": "Berserker Axe",
-        "baseDamage": 23,
-        "maxDamage": 44,
+        "baseDamage": 38,
+        "maxDamage": 62,
         "baseMagicDamage": 0,
         "cost": 4950,
         "level": 10,
@@ -1704,8 +1704,8 @@ const WEAPONS = {
     },
     stormaxe: {
         "name": "Stormaxe",
-        "baseDamage": 26,
-        "maxDamage": 48,
+        "baseDamage": 42,
+        "maxDamage": 69,
         "baseMagicDamage": 0,
         "cost": 6000,
         "level": 11,
@@ -1716,8 +1716,8 @@ const WEAPONS = {
     },
     bloodaxe: {
         "name": "Bloodaxe",
-        "baseDamage": 28,
-        "maxDamage": 52,
+        "baseDamage": 46,
+        "maxDamage": 76,
         "baseMagicDamage": 0,
         "cost": 7150,
         "level": 12,
@@ -1728,8 +1728,8 @@ const WEAPONS = {
     },
     titan_axe: {
         "name": "Titan Axe",
-        "baseDamage": 30,
-        "maxDamage": 56,
+        "baseDamage": 49,
+        "maxDamage": 80,
         "baseMagicDamage": 0,
         "cost": 8400,
         "level": 13,
@@ -1740,8 +1740,8 @@ const WEAPONS = {
     },
     soulcleaver: {
         "name": "Soulcleaver",
-        "baseDamage": 32,
-        "maxDamage": 60,
+        "baseDamage": 52,
+        "maxDamage": 86,
         "baseMagicDamage": 0,
         "cost": 9750,
         "level": 14,
@@ -1752,8 +1752,8 @@ const WEAPONS = {
     },
     warbringer: {
         "name": "Warbringer",
-        "baseDamage": 34,
-        "maxDamage": 65,
+        "baseDamage": 57,
+        "maxDamage": 93,
         "baseMagicDamage": 0,
         "cost": 11200,
         "level": 15,
@@ -1764,8 +1764,8 @@ const WEAPONS = {
     },
     dread_axe: {
         "name": "Dread Axe",
-        "baseDamage": 37,
-        "maxDamage": 70,
+        "baseDamage": 61,
+        "maxDamage": 100,
         "baseMagicDamage": 0,
         "cost": 12750,
         "level": 16,
@@ -1776,8 +1776,8 @@ const WEAPONS = {
     },
     voidedge_axe: {
         "name": "Voidedge Axe",
-        "baseDamage": 39,
-        "maxDamage": 74,
+        "baseDamage": 64,
+        "maxDamage": 106,
         "baseMagicDamage": 0,
         "cost": 14400,
         "level": 17,
@@ -1788,8 +1788,8 @@ const WEAPONS = {
     },
     ruinbringer: {
         "name": "Ruinbringer",
-        "baseDamage": 42,
-        "maxDamage": 78,
+        "baseDamage": 67,
+        "maxDamage": 110,
         "baseMagicDamage": 0,
         "cost": 16150,
         "level": 18,
@@ -1800,8 +1800,8 @@ const WEAPONS = {
     },
     cataclysm_axe: {
         "name": "Cataclysm Axe",
-        "baseDamage": 44,
-        "maxDamage": 82,
+        "baseDamage": 71,
+        "maxDamage": 117,
         "baseMagicDamage": 0,
         "cost": 18000,
         "level": 19,
@@ -1812,8 +1812,8 @@ const WEAPONS = {
     },
     sundering_axe: {
         "name": "Sundering Axe",
-        "baseDamage": 46,
-        "maxDamage": 86,
+        "baseDamage": 76,
+        "maxDamage": 124,
         "baseMagicDamage": 0,
         "cost": 19950,
         "level": 20,
@@ -1824,8 +1824,8 @@ const WEAPONS = {
     },
     world_splitter: {
         "name": "World Splitter",
-        "baseDamage": 48,
-        "maxDamage": 90,
+        "baseDamage": 79,
+        "maxDamage": 129,
         "baseMagicDamage": 0,
         "cost": 22000,
         "level": 21,
@@ -1836,8 +1836,8 @@ const WEAPONS = {
     },
     infinity_axe: {
         "name": "Infinity Axe",
-        "baseDamage": 50,
-        "maxDamage": 94,
+        "baseDamage": 86,
+        "maxDamage": 141,
         "baseMagicDamage": 0,
         "cost": 26400,
         "level": 22,
@@ -1848,8 +1848,8 @@ const WEAPONS = {
     },
     oblivion_cleaver: {
         "name": "Oblivion Cleaver",
-        "baseDamage": 53,
-        "maxDamage": 99,
+        "baseDamage": 93,
+        "maxDamage": 154,
         "baseMagicDamage": 0,
         "cost": 31200,
         "level": 23,
@@ -1860,8 +1860,8 @@ const WEAPONS = {
     },
     axe_of_genesis: {
         "name": "Axe of Genesis",
-        "baseDamage": 55,
-        "maxDamage": 104,
+        "baseDamage": 97,
+        "maxDamage": 159,
         "baseMagicDamage": 0,
         "cost": 33750,
         "level": 24,
@@ -1877,81 +1877,81 @@ const WEAPONS = {
     // ======================================================
     rusted_hammer: {
         "name": "Rusted Hammer",
-        "baseDamage": 2,
-        "maxDamage": 6,
+        "baseDamage": 4,
+        "maxDamage": 7,
         "baseMagicDamage": 0,
         "cost": 20,
         "level": 1,
         "quality": "poor",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"],
+        "allowedClasses": ["warrior", "paladin", "runesmith"],
         "description": "A blacksmith's hammer repurposed for combat. The head is loose but it packs a punch."
     },
     iron_maul: {
         "name": "Iron Maul",
-        "baseDamage": 4,
-        "maxDamage": 11,
+        "baseDamage": 9,
+        "maxDamage": 13,
         "baseMagicDamage": 0,
         "cost": 150,
         "level": 2,
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     stone_hammer: {
         "name": "Stone Hammer",
-        "baseDamage": 5,
-        "maxDamage": 16,
+        "baseDamage": 13,
+        "maxDamage": 20,
         "baseMagicDamage": 0,
         "cost": 400,
         "level": 3,
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     war_hammer: {
         "name": "War Hammer",
-        "baseDamage": 7,
-        "maxDamage": 22,
+        "baseDamage": 18,
+        "maxDamage": 27,
         "baseMagicDamage": 0,
         "cost": 750,
         "level": 4,
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     flanged_hammer: {
         "name": "Flanged Hammer",
-        "baseDamage": 8,
-        "maxDamage": 27,
+        "baseDamage": 21,
+        "maxDamage": 31,
         "baseMagicDamage": 0,
         "cost": 1200,
         "level": 5,
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     ironbane_hammer: {
         "name": "Ironbane Hammer",
-        "baseDamage": 10,
-        "maxDamage": 32,
+        "baseDamage": 24,
+        "maxDamage": 37,
         "baseMagicDamage": 0,
         "cost": 1750,
         "level": 6,
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     runic_hammer: {
         "name": "Runic Hammer",
-        "baseDamage": 12,
-        "maxDamage": 37,
+        "baseDamage": 29,
+        "maxDamage": 44,
         "baseMagicDamage": 0,
         "cost": 2400,
         "level": 7,
@@ -1962,140 +1962,140 @@ const WEAPONS = {
     },
     forge_hammer: {
         "name": "Forge Hammer",
-        "baseDamage": 13,
-        "maxDamage": 42,
+        "baseDamage": 33,
+        "maxDamage": 50,
         "baseMagicDamage": 0,
         "cost": 3150,
         "level": 8,
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     thunder_maul: {
         "name": "Thunder Maul",
-        "baseDamage": 15,
-        "maxDamage": 47,
+        "baseDamage": 36,
+        "maxDamage": 56,
         "baseMagicDamage": 0,
         "cost": 4000,
         "level": 9,
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     skullcracker: {
         "name": "Skullcracker",
-        "baseDamage": 16,
-        "maxDamage": 52,
+        "baseDamage": 40,
+        "maxDamage": 60,
         "baseMagicDamage": 0,
         "cost": 4950,
         "level": 10,
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     mjolnite_hammer: {
         "name": "Mjolnite Hammer",
-        "baseDamage": 18,
-        "maxDamage": 58,
+        "baseDamage": 44,
+        "maxDamage": 67,
         "baseMagicDamage": 0,
         "cost": 6000,
         "level": 11,
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     earthshaker: {
         "name": "Earthshaker",
-        "baseDamage": 19,
-        "maxDamage": 63,
+        "baseDamage": 48,
+        "maxDamage": 74,
         "baseMagicDamage": 0,
         "cost": 7150,
         "level": 12,
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     titans_fist: {
         "name": "Titan's Fist",
-        "baseDamage": 21,
-        "maxDamage": 68,
+        "baseDamage": 52,
+        "maxDamage": 78,
         "baseMagicDamage": 0,
         "cost": 8400,
         "level": 13,
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     siegebreaker: {
         "name": "Siegebreaker",
-        "baseDamage": 23,
-        "maxDamage": 73,
+        "baseDamage": 55,
+        "maxDamage": 84,
         "baseMagicDamage": 0,
         "cost": 9750,
         "level": 14,
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     devastator: {
         "name": "Devastator",
-        "baseDamage": 24,
-        "maxDamage": 78,
+        "baseDamage": 59,
+        "maxDamage": 91,
         "baseMagicDamage": 0,
         "cost": 11200,
         "level": 15,
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     ragnarok_maul: {
         "name": "Ragnarok Maul",
-        "baseDamage": 26,
-        "maxDamage": 84,
+        "baseDamage": 64,
+        "maxDamage": 97,
         "baseMagicDamage": 0,
         "cost": 12750,
         "level": 16,
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     colossus_hammer: {
         "name": "Colossus Hammer",
-        "baseDamage": 27,
-        "maxDamage": 89,
+        "baseDamage": 67,
+        "maxDamage": 103,
         "baseMagicDamage": 0,
         "cost": 14400,
         "level": 17,
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     godbreaker: {
         "name": "Godbreaker",
-        "baseDamage": 29,
-        "maxDamage": 94,
+        "baseDamage": 70,
+        "maxDamage": 108,
         "baseMagicDamage": 0,
         "cost": 16150,
         "level": 18,
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     voidhammer: {
         "name": "Voidhammer",
-        "baseDamage": 30,
-        "maxDamage": 99,
+        "baseDamage": 75,
+        "maxDamage": 114,
         "baseMagicDamage": 0,
         "cost": 18000,
         "level": 19,
@@ -2106,63 +2106,63 @@ const WEAPONS = {
     },
     eclipse_maul: {
         "name": "Eclipse Maul",
-        "baseDamage": 32,
-        "maxDamage": 104,
+        "baseDamage": 79,
+        "maxDamage": 121,
         "baseMagicDamage": 0,
         "cost": 19950,
         "level": 20,
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     world_ender: {
         "name": "World Ender",
-        "baseDamage": 34,
-        "maxDamage": 109,
+        "baseDamage": 82,
+        "maxDamage": 125,
         "baseMagicDamage": 0,
         "cost": 22000,
         "level": 21,
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     eternity_maul: {
         "name": "Eternity Maul",
-        "baseDamage": 35,
-        "maxDamage": 114,
+        "baseDamage": 90,
+        "maxDamage": 138,
         "baseMagicDamage": 0,
         "cost": 26400,
         "level": 22,
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     oblivion_hammer: {
         "name": "Oblivion Hammer",
-        "baseDamage": 37,
-        "maxDamage": 120,
+        "baseDamage": 98,
+        "maxDamage": 150,
         "baseMagicDamage": 0,
         "cost": 31200,
         "level": 23,
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     hammer_of_creation: {
         "name": "Hammer of Creation",
-        "baseDamage": 38,
-        "maxDamage": 125,
+        "baseDamage": 101,
+        "maxDamage": 155,
         "baseMagicDamage": 0,
         "cost": 33750,
         "level": 24,
         "quality": "normal",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
 
     // ======================================================
@@ -2173,7 +2173,6 @@ const WEAPONS = {
         "name": "Rusty Dagger",
         "baseDamage": 2,
         "maxDamage": 4,
-        "critBonus": 5.0,
         "baseMagicDamage": 0,
         "cost": 10,
         "level": 1,
@@ -2186,8 +2185,7 @@ const WEAPONS = {
     dagger: {
         "name": "Dagger",
         "baseDamage": 4,
-        "maxDamage": 6,
-        "critBonus": 5.4,
+        "maxDamage": 7,
         "baseMagicDamage": 0,
         "cost": 80,
         "level": 2,
@@ -2198,9 +2196,8 @@ const WEAPONS = {
     },
     iron_dagger: {
         "name": "Iron Dagger",
-        "baseDamage": 6,
-        "maxDamage": 9,
-        "critBonus": 5.8,
+        "baseDamage": 5,
+        "maxDamage": 8,
         "baseMagicDamage": 0,
         "cost": 150,
         "level": 3,
@@ -2211,9 +2208,8 @@ const WEAPONS = {
     },
     bone_pick: {
         "name": "Bone Pick",
-        "baseDamage": 8,
-        "maxDamage": 12,
-        "critBonus": 6.2,
+        "baseDamage": 5,
+        "maxDamage": 9,
         "baseMagicDamage": 0,
         "cost": 280,
         "level": 4,
@@ -2224,9 +2220,8 @@ const WEAPONS = {
     },
     poison_dagger: {
         "name": "Poison Dagger",
-        "baseDamage": 8,
-        "maxDamage": 12,
-        "critBonus": 6.2,
+        "baseDamage": 5,
+        "maxDamage": 8,
         "baseMagicDamage": 0,
         "cost": 150,
         "level": 4,
@@ -2238,9 +2233,8 @@ const WEAPONS = {
     },
     copper_stiletto: {
         "name": "Copper Stiletto",
-        "baseDamage": 10,
-        "maxDamage": 15,
-        "critBonus": 6.7,
+        "baseDamage": 6,
+        "maxDamage": 10,
         "baseMagicDamage": 0,
         "cost": 400,
         "level": 5,
@@ -2251,9 +2245,8 @@ const WEAPONS = {
     },
     throwing_knife: {
         "name": "Throwing Knife",
-        "baseDamage": 13,
-        "maxDamage": 20,
-        "critBonus": 7.1,
+        "baseDamage": 7,
+        "maxDamage": 11,
         "baseMagicDamage": 0,
         "cost": 520,
         "level": 6,
@@ -2264,9 +2257,8 @@ const WEAPONS = {
     },
     assassin_blade: {
         "name": "Assassin's Blade",
-        "baseDamage": 15,
-        "maxDamage": 22,
-        "critBonus": 7.5,
+        "baseDamage": 8,
+        "maxDamage": 13,
         "baseMagicDamage": 0,
         "cost": 700,
         "level": 7,
@@ -2277,9 +2269,8 @@ const WEAPONS = {
     },
     shadow_fang: {
         "name": "Shadow Fang",
-        "baseDamage": 17,
-        "maxDamage": 26,
-        "critBonus": 7.9,
+        "baseDamage": 6,
+        "maxDamage": 10,
         "baseMagicDamage": 0,
         "cost": 900,
         "level": 8,
@@ -2290,9 +2281,8 @@ const WEAPONS = {
     },
     venom_spike: {
         "name": "Venom Spike",
-        "baseDamage": 19,
-        "maxDamage": 28,
-        "critBonus": 8.3,
+        "baseDamage": 7,
+        "maxDamage": 12,
         "baseMagicDamage": 0,
         "cost": 1200,
         "level": 9,
@@ -2304,9 +2294,8 @@ const WEAPONS = {
     },
     midnight_dirk: {
         "name": "Midnight Dirk",
-        "baseDamage": 21,
-        "maxDamage": 32,
-        "critBonus": 8.8,
+        "baseDamage": 8,
+        "maxDamage": 13,
         "baseMagicDamage": 0,
         "cost": 1500,
         "level": 10,
@@ -2317,9 +2306,8 @@ const WEAPONS = {
     },
     blacksteel_dagger: {
         "name": "Blacksteel Dagger",
-        "baseDamage": 23,
-        "maxDamage": 34,
-        "critBonus": 9.2,
+        "baseDamage": 9,
+        "maxDamage": 15,
         "baseMagicDamage": 0,
         "cost": 2000,
         "level": 11,
@@ -2331,8 +2319,7 @@ const WEAPONS = {
     shadowstep_blade: {
         "name": "Shadowstep Blade",
         "baseDamage": 25,
-        "maxDamage": 38,
-        "critBonus": 9.6,
+        "maxDamage": 53,
         "baseMagicDamage": 0,
         "cost": 6000,
         "level": 12,
@@ -2343,9 +2330,8 @@ const WEAPONS = {
     },
     phantom_edge: {
         "name": "Phantom Edge",
-        "baseDamage": 27,
-        "maxDamage": 40,
-        "critBonus": 10.0,
+        "baseDamage": 10,
+        "maxDamage": 17,
         "baseMagicDamage": 0,
         "cost": 2600,
         "level": 13,
@@ -2356,9 +2342,8 @@ const WEAPONS = {
     },
     soul_piercer: {
         "name": "Soul Piercer",
-        "baseDamage": 29,
-        "maxDamage": 44,
-        "critBonus": 10.4,
+        "baseDamage": 11,
+        "maxDamage": 18,
         "baseMagicDamage": 0,
         "cost": 3400,
         "level": 14,
@@ -2369,9 +2354,8 @@ const WEAPONS = {
     },
     serpent_tooth: {
         "name": "Serpent's Tooth",
-        "baseDamage": 31,
-        "maxDamage": 46,
-        "critBonus": 10.8,
+        "baseDamage": 12,
+        "maxDamage": 20,
         "baseMagicDamage": 0,
         "cost": 4200,
         "level": 15,
@@ -2383,9 +2367,8 @@ const WEAPONS = {
     },
     venomfang_dagger: {
         "name": "Venomfang Dagger",
-        "baseDamage": 34,
-        "maxDamage": 51,
-        "critBonus": 11.2,
+        "baseDamage": 29,
+        "maxDamage": 62,
         "baseMagicDamage": 0,
         "cost": 8400,
         "level": 16,
@@ -2396,9 +2379,8 @@ const WEAPONS = {
     },
     twilight_shard: {
         "name": "Twilight Shard",
-        "baseDamage": 36,
-        "maxDamage": 54,
-        "critBonus": 11.7,
+        "baseDamage": 31,
+        "maxDamage": 66,
         "baseMagicDamage": 0,
         "cost": 9750,
         "level": 17,
@@ -2409,9 +2391,8 @@ const WEAPONS = {
     },
     eclipse_blade: {
         "name": "Eclipse Blade",
-        "baseDamage": 38,
-        "maxDamage": 57,
-        "critBonus": 12.1,
+        "baseDamage": 13,
+        "maxDamage": 22,
         "baseMagicDamage": 0,
         "cost": 5200,
         "level": 18,
@@ -2422,9 +2403,8 @@ const WEAPONS = {
     },
     dusk_blade: {
         "name": "Dusk Blade",
-        "baseDamage": 40,
-        "maxDamage": 60,
-        "critBonus": 12.5,
+        "baseDamage": 33,
+        "maxDamage": 71,
         "baseMagicDamage": 0,
         "cost": 11200,
         "level": 19,
@@ -2435,9 +2415,8 @@ const WEAPONS = {
     },
     wraithblade: {
         "name": "Wraithblade",
-        "baseDamage": 42,
-        "maxDamage": 63,
-        "critBonus": 12.9,
+        "baseDamage": 14,
+        "maxDamage": 23,
         "baseMagicDamage": 0,
         "cost": 6200,
         "level": 20,
@@ -2448,9 +2427,8 @@ const WEAPONS = {
     },
     crimson_fang: {
         "name": "Crimson Fang",
-        "baseDamage": 44,
-        "maxDamage": 66,
-        "critBonus": 13.3,
+        "baseDamage": 36,
+        "maxDamage": 77,
         "baseMagicDamage": 0,
         "cost": 12750,
         "level": 21,
@@ -2461,9 +2439,8 @@ const WEAPONS = {
     },
     shadow_reaver: {
         "name": "Shadow Reaver",
-        "baseDamage": 46,
-        "maxDamage": 69,
-        "critBonus": 13.8,
+        "baseDamage": 16,
+        "maxDamage": 26,
         "baseMagicDamage": 0,
         "cost": 7500,
         "level": 22,
@@ -2474,9 +2451,8 @@ const WEAPONS = {
     },
     void_stiletto: {
         "name": "Void Stiletto",
-        "baseDamage": 48,
-        "maxDamage": 72,
-        "critBonus": 14.2,
+        "baseDamage": 17,
+        "maxDamage": 28,
         "baseMagicDamage": 0,
         "cost": 9000,
         "level": 23,
@@ -2487,9 +2463,8 @@ const WEAPONS = {
     },
     death_whisper: {
         "name": "Death's Whisper",
-        "baseDamage": 50,
-        "maxDamage": 75,
-        "critBonus": 14.6,
+        "baseDamage": 18,
+        "maxDamage": 30,
         "baseMagicDamage": 0,
         "cost": 11000,
         "level": 24,
@@ -2500,9 +2475,8 @@ const WEAPONS = {
     },
     oblivion_shard: {
         "name": "Oblivion Shard",
-        "baseDamage": 52,
-        "maxDamage": 78,
-        "critBonus": 15.0,
+        "baseDamage": 20,
+        "maxDamage": 32,
         "baseMagicDamage": 0,
         "cost": 13500,
         "level": 25,
@@ -2513,9 +2487,8 @@ const WEAPONS = {
     },
     reaper_kiss: {
         "name": "Reaper's Kiss",
-        "baseDamage": 42,
-        "maxDamage": 63,
-        "critBonus": 12.9,
+        "baseDamage": 21,
+        "maxDamage": 34,
         "baseMagicDamage": 0,
         "cost": 16000,
         "level": 26,
@@ -2526,9 +2499,8 @@ const WEAPONS = {
     },
     bloodmoon_fang: {
         "name": "Bloodmoon Fang",
-        "baseDamage": 44,
-        "maxDamage": 66,
-        "critBonus": 13.3,
+        "baseDamage": 23,
+        "maxDamage": 37,
         "baseMagicDamage": 0,
         "cost": 20000,
         "level": 27,
@@ -2540,9 +2512,8 @@ const WEAPONS = {
     },
     shade_piercer: {
         "name": "Shade Piercer",
-        "baseDamage": 46,
-        "maxDamage": 69,
-        "critBonus": 13.8,
+        "baseDamage": 48,
+        "maxDamage": 103,
         "baseMagicDamage": 0,
         "cost": 24150,
         "level": 28,
@@ -2553,9 +2524,8 @@ const WEAPONS = {
     },
     eternal_night: {
         "name": "Eternal Night",
-        "baseDamage": 48,
-        "maxDamage": 72,
-        "critBonus": 14.2,
+        "baseDamage": 25,
+        "maxDamage": 40,
         "baseMagicDamage": 0,
         "cost": 25000,
         "level": 29,
@@ -2566,9 +2536,8 @@ const WEAPONS = {
     },
     nights_edge: {
         "name": "Night's Edge",
-        "baseDamage": 50,
-        "maxDamage": 75,
-        "critBonus": 14.6,
+        "baseDamage": 51,
+        "maxDamage": 108,
         "baseMagicDamage": 0,
         "cost": 26400,
         "level": 30,
@@ -3162,8 +3131,8 @@ const WEAPONS = {
         "name": "Dragon-kin Blade",
         "slot": "weapon",
         "weaponSubtype": "sword",
-        "baseDamage": 18,
-        "maxDamage": 22,
+        "baseDamage": 17,
+        "maxDamage": 26,
         "baseMagicDamage": 4,
         "level": 6,
         "quality": "rare",
@@ -3175,8 +3144,8 @@ const WEAPONS = {
         "name": "Scale Piercer",
         "slot": "weapon",
         "weaponSubtype": "axe",
-        "baseDamage": 18,
-        "maxDamage": 35,
+        "baseDamage": 22,
+        "maxDamage": 34,
         "level": 8,
         "quality": "epic",
         "description": "An axe designed to slip between dragon scales.",
@@ -3187,8 +3156,8 @@ const WEAPONS = {
         "name": "Drake-Tongue Blade",
         "slot": "weapon",
         "weaponSubtype": "sword",
-        "baseDamage": 21,
-        "maxDamage": 25,
+        "baseDamage": 19,
+        "maxDamage": 30,
         "baseMagicDamage": 6,
         "level": 7,
         "quality": "legendary",
@@ -3200,8 +3169,8 @@ const WEAPONS = {
         "name": "Soul Drinker",
         "slot": "weapon",
         "weaponSubtype": "sword",
-        "baseDamage": 27,
-        "maxDamage": 32,
+        "baseDamage": 24,
+        "maxDamage": 38,
         "level": 9,
         "quality": "legendary",
         "description": "Feeds on the souls of your enemies, returning vitality to you.",
@@ -3212,8 +3181,8 @@ const WEAPONS = {
         "name": "Dragon Piercer",
         "slot": "weapon",
         "weaponSubtype": "axe",
-        "baseDamage": 18,
-        "maxDamage": 35,
+        "baseDamage": 24,
+        "maxDamage": 36,
         "level": 8,
         "quality": "epic",
         "description": "Forged specifically to pierce dragon scales.",
@@ -3224,8 +3193,8 @@ const WEAPONS = {
         "name": "Purified Sacred Blade",
         "slot": "weapon",
         "weaponSubtype": "sword",
-        "baseDamage": 21,
-        "maxDamage": 25,
+        "baseDamage": 19,
+        "maxDamage": 30,
         "baseMagicDamage": 8,
         "level": 7,
         "quality": "epic",
@@ -3238,7 +3207,7 @@ const WEAPONS = {
         "slot": "weapon",
         "weaponSubtype": "sword",
         "baseDamage": 21,
-        "maxDamage": 25,
+        "maxDamage": 33,
         "baseMagicDamage": 5,
         "level": 7,
         "quality": "epic",
@@ -3250,8 +3219,8 @@ const WEAPONS = {
         "name": "Soul Render",
         "slot": "weapon",
         "weaponSubtype": "sword",
-        "baseDamage": 27,
-        "maxDamage": 32,
+        "baseDamage": 24,
+        "maxDamage": 38,
         "level": 9,
         "quality": "legendary",
         "description": "Feeds on the souls of your enemies, returning vitality to you.",
@@ -3288,8 +3257,8 @@ const WEAPONS = {
         "name": "Dragonscale Blade",
         "slot": "weapon",
         "weaponSubtype": "sword",
-        "baseDamage": 66,
-        "maxDamage": 75,
+        "baseDamage": 48,
+        "maxDamage": 76,
         "baseMagicDamage": 18,
         "level": 22,
         "quality": "legendary",
@@ -3301,8 +3270,8 @@ const WEAPONS = {
         "name": "Dragonheart Blade",
         "slot": "weapon",
         "weaponSubtype": "sword",
-        "baseDamage": 69,
-        "maxDamage": 78,
+        "baseDamage": 52,
+        "maxDamage": 84,
         "baseMagicDamage": 30,
         "level": 23,
         "quality": "legendary",
@@ -3542,46 +3511,6 @@ const WEAPONS = {
         "weaponSubtype": "crossbow",
         "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],
         "description": "Even the gods respect the range on this."
-    },
-    iron_sword_fine: {
-        "name": "Fine Iron Sword",
-        "baseDamage": 30, "maxDamage": 35,
-        "cost": 1800, "level": 10, "quality": "normal", "slot": "weapon",
-        "weaponSubtype": "sword",
-        "allowedClasses": ["warrior", "paladin", "rogue", "shadowmaster"],
-        "description": "A well-crafted iron sword, balanced for speed."
-    },
-    battle_sword: {
-        "name": "Battle Sword",
-        "baseDamage": 60, "maxDamage": 68,
-        "cost": 12000, "level": 20, "quality": "normal", "slot": "weapon",
-        "weaponSubtype": "sword",
-        "allowedClasses": ["warrior", "paladin", "rogue", "shadowmaster"],
-        "description": "A heavy sword built for prolonged combat."
-    },
-    genesis_sword: {
-        "name": "Genesis Sword",
-        "baseDamage": 75, "maxDamage": 85,
-        "cost": 35000, "level": 25, "quality": "legendary", "slot": "weapon",
-        "weaponSubtype": "sword",
-        "allowedClasses": ["warrior", "paladin", "rogue", "shadowmaster"],
-        "description": "A sword forged at the dawn of creation itself."
-    },
-    genesis_axe_supreme: {
-        "name": "Genesis Axe",
-        "baseDamage": 58, "maxDamage": 108,
-        "cost": 36000, "level": 25, "quality": "legendary", "slot": "weapon",
-        "weaponSubtype": "axe",
-        "allowedClasses": ["warrior", "paladin", "warlord"],
-        "description": "An axe that cleaves through reality itself."
-    },
-    world_breaker_hammer: {
-        "name": "World Breaker",
-        "baseDamage": 40, "maxDamage": 130,
-        "cost": 37000, "level": 25, "quality": "legendary", "slot": "weapon",
-        "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin", "warlord"],
-        "description": "A hammer so massive it cracks the earth with each swing."
     },
 };
 
