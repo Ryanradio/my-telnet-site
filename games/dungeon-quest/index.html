@@ -24614,42 +24614,77 @@ function doCutGem(rawGemKey) {
     showBlacksmith('cut');
 }
 
+// Fix the doSocketGem function
 function doSocketGem(cutGemInventoryIndex, target) {
     const p = gameState.player;
-    if (p.gold < 100) { alert("You need 100 gold to socket a gem."); return; }
+    if (p.gold < 100) { 
+        alert("You need 100 gold to socket a gem."); 
+        return; 
+    }
+    
     const isArmor = target === 'armor';
-
+    
     // Get the live instance from WEAPONS/ARMOR using the instanceId
     const instanceId = isArmor ? p.armor : p.weapon;
     const item = isArmor
         ? (instanceId ? ARMOR[instanceId] : null)
         : (instanceId ? WEAPONS[instanceId] : null);
     const itemLabel = isArmor ? 'armor' : 'weapon';
-
-    if (!item) { alert(`No ${itemLabel} equipped.`); return; }
+    
+    if (!item) { 
+        alert(`No ${itemLabel} equipped.`); 
+        return; 
+    }
     if (!item.gems) item.gems = [];
-
+    
     const itemQuality = item.quality || 'normal';
     const slots = getGemSlots(itemQuality);
-    if (item.gems.length >= slots) {
-        alert(`No open slots on this ${itemLabel}.`);
+    const usedSlots = item.gems.length;
+    const openSlots = slots - usedSlots;
+    
+    if (openSlots <= 0) {
+        alert(`No open slots on this ${itemLabel}. (${usedSlots}/${slots} slots used)`);
         return;
     }
-
-    const cutGems = p.inventory.filter(k => typeof k === 'object' && k && k.cut);
+    
+    // Get all cut gems in inventory (objects)
+    const cutGems = p.inventory.filter(k => typeof k === 'object' && k && k.cut === true);
+    
+    if (cutGemInventoryIndex < 0 || cutGemInventoryIndex >= cutGems.length) {
+        alert("Gem not found.");
+        return;
+    }
+    
     const gem = cutGems[cutGemInventoryIndex];
-    if (!gem) { alert("Gem not found."); return; }
-    const invIdx = p.inventory.indexOf(gem);
-    if (invIdx < 0) { alert("Gem not in inventory."); return; }
-
-    if (!confirm(`Socket ${gem.name} into ${item.name}? This is permanent and cannot be undone.`)) return;
-
+    if (!gem) { 
+        alert("Gem not found."); 
+        return; 
+    }
+    
+    // Find the actual index in the inventory array
+    const invIdx = p.inventory.findIndex(item => 
+        item && typeof item === 'object' && item.id === gem.id && item.name === gem.name
+    );
+    
+    if (invIdx === -1) { 
+        alert("Gem not in inventory."); 
+        return; 
+    }
+    
+    // Confirm before socketing
+    if (!confirm(`Socket ${gem.name} into ${item.name}? This is permanent and cannot be undone.`)) {
+        return;
+    }
+    
+    // Deduct gold
     p.gold -= 100;
+    
+    // Remove the gem from inventory (exactly ONE gem)
     p.inventory.splice(invIdx, 1);
-
+    
     // Push gem onto the live WEAPONS/ARMOR instance
     item.gems.push(gem);
-
+    
     // Also update the inventory reference object so gems survive save/load
     const invRef = p.inventory.find(i =>
         i && typeof i === 'object' && i.instanceId === instanceId
@@ -24658,15 +24693,19 @@ function doSocketGem(cutGemInventoryIndex, target) {
         if (!invRef.gems) invRef.gems = [];
         invRef.gems.push(gem);
     }
-
+    
+    // Recalculate stats
     recalcGemStats(p);
     saveGame();
-
+    
+    // Show success message
     const flash = document.createElement('div');
     flash.style.cssText = `position:fixed;top:15px;left:50%;transform:translateX(-50%);background:#0a0a0a;border:2px solid ${gem.color};padding:14px 24px;color:${gem.color};font-size:15px;z-index:9999;text-align:center;max-width:340px;`;
-    flash.innerHTML = `⚙️ <strong>Gem Socketed!</strong><br><span style="font-size:12px;color:#ccc;">${gem.name} fused into ${item.name} permanently.</span>`;
+    flash.innerHTML = `⚙️ <strong>Gem Socketed!</strong><br><span style="font-size:12px;color:#ccc;">${gem.name} fused into ${item.name} permanently.<br>Slot ${usedSlots + 1}/${slots}</span>`;
     document.body.appendChild(flash);
     setTimeout(() => flash.remove(), 3500);
+    
+    // Refresh the blacksmith view
     showBlacksmith('socket', target);
 }
         // ═══════════════════════════════════════════════════════════════
