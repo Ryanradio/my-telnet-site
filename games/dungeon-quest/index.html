@@ -11734,11 +11734,129 @@ weapon.maxMagicDamage = baseWeapon.maxMagicDamage ?
             if (!p.unlockedAreas.includes('forest')) p.unlockedAreas.push('forest');
         })(p);
 
-        // Apply gem stats
+                // Apply gem stats
         recalcGemStats(gameState.player);
 
-                // Apply gem stats
+        // Apply gem stats
         const gemResult = recalcGemStats(gameState.player);
+        
+        // ======================================================
+        // STAT VALIDATION FOR THE NEW LEVEL UP SYSTEM
+        // ======================================================
+        // This checks if a character has inflated stats from the old auto-increase system
+        // and resets them to proper values with ALL stat points returned.
+        
+        (function validateAndResetStatsForNewSystem(player) {
+            if (!player) return false;
+            
+            const baseClass = player.baseClass || player.class;
+            const level = player.level || 1;
+            
+            // Get class preset (level 1 base stats)
+            const preset = CLASS_STAT_PRESETS[baseClass] || CLASS_STAT_PRESETS.warrior;
+            
+            // Total points earned from leveling (3 per level, starting at level 1 with 0 points)
+            const totalPointsEarned = Math.max(0, (level - 1) * 3);
+            
+            // Remove gem bonuses to get base stats
+            const gemStrBonus = player._gemStrBonus || 0;
+            const gemDexBonus = player._gemDexBonus || 0;
+            const gemWisBonus = player._gemWisBonus || 0;
+            const gemChaBonus = player._gemChaBonus || 0;
+            const gemConBonus = player._gemConBonus || 0;
+            const gemLckBonus = player._gemLckBonus || 0;
+            
+            const currentStrBase = (player.str || 0) - gemStrBonus;
+            const currentDexBase = (player.dex || 0) - gemDexBonus;
+            const currentWisBase = (player.wis || 0) - gemWisBonus;
+            const currentChaBase = (player.cha || 0) - gemChaBonus;
+            const currentConBase = (player.con || 0) - gemConBonus;
+            const currentLckBase = (player.lck || 0) - gemLckBonus;
+            
+            // Calculate what stats SHOULD be
+            const presetTotal = preset.str + preset.dex + preset.wis + preset.cha + preset.con + preset.lck;
+            const maxPossibleTotal = presetTotal + totalPointsEarned;
+            const currentTotal = currentStrBase + currentDexBase + currentWisBase + currentChaBase + currentConBase + currentLckBase;
+            
+            // If stats are inflated (more than 5 points above max possible), reset them
+            if (currentTotal > maxPossibleTotal + 5) {
+                console.warn(`⚠️ STAT INFLATION DETECTED! Current total: ${currentTotal}, Max possible: ${maxPossibleTotal}`);
+                console.log('Resetting stats to proper values for the new level-up system...');
+                
+                // SIMPLE RESET: Set stats to class preset (level 1 base stats)
+                player.str = preset.str + gemStrBonus;
+                player.dex = preset.dex + gemDexBonus;
+                player.wis = preset.wis + gemWisBonus;
+                player.cha = preset.cha + gemChaBonus;
+                player.con = preset.con + gemConBonus;
+                player.lck = preset.lck + gemLckBonus;
+                
+                // Give ALL earned stat points back to the player to spend
+                player.statPoints = totalPointsEarned;
+                
+                // Clear any stored allocation tracking
+                if (player._allocatedStats) delete player._allocatedStats;
+                
+                // Recalculate HP based on new CON
+                const classHpBase = (() => {
+                    const hpBases = {
+                        warrior: 120, paladin: 100, rogue: 80, mage: 60,
+                        cleric: 90, ranger: 85, hunter: 85, warlock: 70, runesmith: 95
+                    };
+                    return hpBases[baseClass] || 90;
+                })();
+                const expectedHp = classHpBase + (level - 1) * 15 + (level - 1) * Math.max(0, (player.con - 10));
+                player.maxHp = Math.max(1, expectedHp);
+                player.hp = player.maxHp;  // Full heal on reset
+                
+                // Recalculate MP based on new stats
+                const classMpBase = (() => {
+                    const mpBases = {
+                        warrior: 20, paladin: 50, rogue: 30, mage: 100,
+                        cleric: 100, ranger: 40, hunter: 40, warlock: 90, runesmith: 70
+                    };
+                    return mpBases[baseClass] || 50;
+                })();
+                const expectedMp = classMpBase + (level - 1) * 10;
+                player.maxMp = Math.max(0, expectedMp);
+                player.mp = player.maxMp;  // Full mana on reset
+                
+                console.log('✅ Stats reset to class preset!');
+                console.log(`   Base Stats (without gems): STR:${preset.str} DEX:${preset.dex} WIS:${preset.wis} CHA:${preset.cha} CON:${preset.con} LCK:${preset.lck}`);
+                console.log(`   Stat points given back: ${player.statPoints}`);
+                console.log(`   HP: ${player.hp}/${player.maxHp} | MP: ${player.mp}/${player.maxMp}`);
+                
+                // Set a flag to show notification and redirect
+                window._statsJustReset = true;
+                
+                return true;
+            }
+            
+            return false;
+        })(gameState.player);
+        
+        // Check if stats were reset (detect by looking for a flag we set)
+        if (window._statsJustReset) {
+            window._statsJustReset = false;
+            
+            const pointsToSpend = gameState.player.statPoints;
+            
+            // Show a clear alert explaining what happened
+            alert('⚙️ STAT SYSTEM RESET\n\n' +
+                  'Your character stats have been recalibrated for the new level-up system!\n\n' +
+                  'Under the old system, stats increased automatically each level.\n' +
+                  'Now, only HP and MP increase automatically.\n\n' +
+                  'You have been given ' + pointsToSpend + ' stat points to reallocate.\n\n' +
+                  'You will now be taken to the Character Stats screen to spend your points!');
+            
+            // Ensure we're in town view and show character stats
+            setTimeout(() => {
+                if (document.body.classList.contains('terminal-mode')) {
+                    document.body.classList.remove('terminal-mode');
+                }
+                showCharacterStats();
+            }, 800);
+        }
         
         // Check if stats were reset (detect by looking for a flag we set)
         if (window._statsJustReset) {
@@ -17284,37 +17402,31 @@ function stabilizeTerminalLayout() {
     let dragonMultiplier = 1.0;
     let giantMultiplier = 1.0;
     
-    weapon.modifiers.forEach(modKey => {
-        const mod = WEAPON_MODIFIERS[modKey];
+    // FIX: mod is already the object, not a key
+    weapon.modifiers.forEach(mod => {
         if (!mod) return;
         
         // Add elemental/bonus damage
         if (mod.minDamage !== undefined) {
             const bonusDmg = Math.floor(Math.random() * (mod.maxDamage - mod.minDamage + 1)) + mod.minDamage;
             totalDamage += bonusDmg;
-            messages.push(`<span style="color:${mod.color};">+${bonusDmg} ${mod.name} damage</span>`);
+            messages.push(`<span style="color:${mod.color || '#FFD700'};">✨ +${bonusDmg} ${mod.name} damage</span>`);
         }
         
         // Apply status effect chance
         if (mod.statusEffect && mod.statusChance && Math.random() < mod.statusChance) {
             applyStatusEffect(target, mod.statusEffect, false);
+            messages.push(`<span style="color:${mod.color || '#FFD700'};">✨ ${mod.name}: ${mod.statusEffect} applied!</span>`);
         }
         
         // Apply lifesteal
         if (mod.lifestealPercent) {
             const heal = Math.floor(totalDamage * (mod.lifestealPercent / 100));
             attacker.hp = Math.min(attacker.maxHp, attacker.hp + heal);
-            messages.push(`<span style="color:#FF4488;">+${heal} HP (Lifesteal)</span>`);
+            messages.push(`<span style="color:#FF4488;">🩸 +${heal} HP (${mod.name} lifesteal)</span>`);
         }
         
-        // Apply crit bonus (will be used in executeAttack)
-        if (mod.critBonus) {
-            // Handled in executeAttack
-        }
-        
-        // ═══════════════════════════════════════════════════════════════
-        // NEW: Dragon/Giant Slayer multipliers
-        // ═══════════════════════════════════════════════════════════════
+        // Dragon/Giant Slayer multipliers
         if (mod.vsDragonBonus) {
             dragonMultiplier = Math.max(dragonMultiplier, mod.vsDragonBonus);
         }
@@ -20646,10 +20758,8 @@ if (type === 'magic' && defender.magicResist) {
         magicRolled +
         Math.floor((p.wis || 0) * 1.5) + gemMagicDmg;
 
-    // Use whichever damage type is higher for this weapon — don't add both
-    let totalBase = Math.floor(
-        Math.max(physicalBase, magicBase) * damageMultiplier
-    );
+    // For melee attacks, ALWAYS use physical damage (STR-based)
+let totalBase = Math.floor(physicalBase * damageMultiplier);
 
     const classMult = getClassDamageMultiplier(p);
     totalBase = Math.floor(totalBase * classMult);
@@ -21048,414 +21158,484 @@ if (baseClass === 'rogue' && isDaggerWeapon && enemy.hp > 0) {
 
 
             function castSpellOnTarget(spell) {
-            const p  = gameState.player;
-            const cs = gameState.combatState;
-            const spellKey = cs.pendingSpellKey;
-            
-            if (p.mp < spell.mpCost) {
-                termAppend('Not enough MP!', 'term-error');
-                return;
+    const p  = gameState.player;
+    const cs = gameState.combatState;
+    const spellKey = cs.pendingSpellKey;
+    
+    if (p.mp < spell.mpCost) {
+        termAppend('Not enough MP!', 'term-error');
+        return;
+    }
+    // ── SILENCED: enemy ability prevents spellcasting ────────
+    if (cs.playerSilenced) {
+        termAppend('<span style="color:#ff8800;">💀 You are silenced and cannot cast spells!</span>', 'term-warning');
+        cs.actionMode = 'main';
+        cs.pendingSpellKey = null;
+        renderActionBar();
+        return;
+    }
+    
+
+    // --- Pip check for spells ---
+    const availablePips = cs.pipAvailable.filter(x => x).length;
+
+    if (availablePips < (spell.pipCost || 1)) {
+        termAppend('Not enough spell charges!', 'term-error');
+        return;
+    }
+
+    // Consume spell pips
+    consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
+
+
+
+    p.mp -= spell.mpCost;
+    markMpAction();  // reset 15s MP regen countdown on every spell cast
+
+    // ── RUNESMITH: charge Rune Overload pip on every spell cast ──
+    if ((p.baseClass || p.class) === 'runesmith' && (p.runeOverloadPips || 0) < 3) {
+        p.runeOverloadPips = (p.runeOverloadPips || 0) + 1;
+        const rp = p.runeOverloadPips;
+        const rp1 = rp >= 1 ? '🔶' : '⬛'; const rp2 = rp >= 2 ? '🔶' : '⬛'; const rp3 = rp >= 3 ? '🔶' : '⬛';
+        if (rp >= 3) {
+            termAppend('⚒️ <span style="color:#FF8800;font-weight:bold;">RUNE OVERLOAD CHARGED!</span> <span style="color:#FFaa00;">Strike now for devastating, armor-piercing power!</span> 🔥');
+        } else {
+            termAppend(`⚒️ <span style="color:#c8a000;">Rune charged: ${rp1}${rp2}${rp3}</span>`);
+        }
+    }
+
+    if (spell.type === 'heal') {
+        // Healing spells: 5% chance to fail, random between minPower and maxPower
+        const _dbgSpell = gameState.sysop && gameState.sysop.authenticated;
+        const _fizzRoll = Math.random();
+        const spellFailed = _fizzRoll < 0.05;
+        if (_dbgSpell) {
+            termAppend('<span style="color:#004466;">✨ [HEAL] ' + spell.name
+                + ' | cost: ' + spell.mpCost + ' MP'
+                + ' | range: ' + (spell.minPower||10) + '–' + (spell.maxPower||spell.minPower||10)
+                + ' | fizzle roll: ' + (_fizzRoll*100).toFixed(2) + '% / need ≤5% → ' + (spellFailed ? '💀 FIZZLE' : '✅ ok')
+                + '</span>', 'term-dim');
+        }
+        if (spellFailed) {
+            termAppend(`You cast ${spell.name} but it <span style="color:#ff6666;">fizzles!</span> The gods did not answer.`);
+        } else {
+            // Calculate random heal between minPower and maxPower
+            const minHeal = spell.minPower || 10;
+            const maxHeal = spell.maxPower || minHeal;
+            const _healRoll = Math.floor(Math.random() * (maxHeal - minHeal + 1)) + minHeal;
+            const baseHeal = _healRoll;
+            const heal = baseHeal + Math.floor(p.magic * 1.5) + (p.wis || 0);
+            const actualHeal = Math.min(p.maxHp - p.hp, heal);
+            if (_dbgSpell) {
+                termAppend('<span style="color:#004466;">  rolled: ' + _healRoll
+                    + ' | +magic ' + Math.floor(p.magic*1.5) + ' | +WIS ' + (p.wis||0)
+                    + ' → heal: ' + heal + ' | actual: ' + actualHeal
+                    + ' (HP cap: ' + p.hp + '/' + p.maxHp + ')'
+                    + '</span>', 'term-dim');
             }
-            // ── SILENCED: enemy ability prevents spellcasting ────────
-            if (cs.playerSilenced) {
-                termAppend('<span style="color:#ff8800;">💀 You are silenced and cannot cast spells!</span>', 'term-warning');
-                cs.actionMode = 'main';
-                cs.pendingSpellKey = null;
-                renderActionBar();
-                return;
+            p.hp = Math.min(p.maxHp, p.hp + actualHeal);
+            updateHud();
+            renderActionBar();
+            termAppend(`You cast ${spell.name} and restore <span style="color:#88ff88;">${actualHeal} HP!</span>`);
+        }
+    } else if (spell.type === 'aoe_damage') {
+        // AOE DAMAGE - Hit all enemies for reduced damage each
+        const monsters = cs.monsters;
+        let totalDamage = 0;
+        let hitCount = 0;
+        
+        if (gameState.sysop && gameState.sysop.authenticated) {
+            const _aoeminP = spell.minPower||spell.power, _aoemaxP = spell.maxPower||spell.power;
+            termAppend('<span style="color:#004466;">✨ [AOE] ' + spell.name
+                + ' | cost: ' + spell.mpCost + ' MP | range: ' + _aoeminP + '–' + _aoemaxP
+                + ' | targets: ' + cs.monsters.filter(m=>m.hp>0).length
+                + '</span>', 'term-dim');
+        }
+        termAppend(`You cast ${spell.name}!`, 'term-highlight');
+        termAppend(`<span style="color:#FF8800;">🔥 AREA OF EFFECT! 🔥</span>`, 'term-victory');
+        
+        // Check if fire spell for burning
+        const spellName = spell.name.toLowerCase();
+        const isFire = spellName.includes('fire') || spellName.includes('flame') || 
+                       spellName.includes('burn') || spellName.includes('pyro') || 
+                       spellName.includes('inferno') || spellName.includes('ember');
+        
+        // ── Gem bonuses for spells (added for AOE) ─────────────────
+        const spellWeapon = WEAPONS[p.weapon];
+        let gemSpellBonus = 0;
+        let gemSpellCrit = 0;
+        let gemSpellPoison = 0;
+        let gemSpellUniversal = 0;
+        let gemSpellLifesteal = 0;
+        
+        if (spellWeapon && spellWeapon.gems) {
+            for (const sg of spellWeapon.gems) {
+                if (!sg || !sg.stats) continue;
+                gemSpellBonus += sg.stats.spellPower || 0;
+                gemSpellCrit += sg.stats.critBonus || 0;
+                gemSpellPoison += sg.stats.poisonChance || 0;
+                gemSpellUniversal += (sg.stats.lightningDmg || 0) + (sg.stats.fireDmg || 0) + (sg.stats.frostDmg || 0);
+                gemSpellLifesteal += sg.stats.lifesteal || 0;
             }
-            
-
-// --- Pip check for spells ---
-const availablePips = cs.pipAvailable.filter(x => x).length;
-
-if (availablePips < (spell.pipCost || 1)) {
-    termAppend('Not enough spell charges!', 'term-error');
-    return;
-}
-
-// Consume spell pips
-consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
-
-
-
-            p.mp -= spell.mpCost;
-            markMpAction();  // reset 15s MP regen countdown on every spell cast
-
-            // ── RUNESMITH: charge Rune Overload pip on every spell cast ──
-            if ((p.baseClass || p.class) === 'runesmith' && (p.runeOverloadPips || 0) < 3) {
-                p.runeOverloadPips = (p.runeOverloadPips || 0) + 1;
-                const rp = p.runeOverloadPips;
-                const rp1 = rp >= 1 ? '🔶' : '⬛'; const rp2 = rp >= 2 ? '🔶' : '⬛'; const rp3 = rp >= 3 ? '🔶' : '⬛';
-                if (rp >= 3) {
-                    termAppend('⚒️ <span style="color:#FF8800;font-weight:bold;">RUNE OVERLOAD CHARGED!</span> <span style="color:#FFaa00;">Strike now for devastating, armor-piercing power!</span> 🔥');
-                } else {
-                    termAppend(`⚒️ <span style="color:#c8a000;">Rune charged: ${rp1}${rp2}${rp3}</span>`);
-                }
-            }
-
-            if (spell.type === 'heal') {
-                // Healing spells: 5% chance to fail, random between minPower and maxPower
-                const _dbgSpell = gameState.sysop && gameState.sysop.authenticated;
-                const _fizzRoll = Math.random();
-                const spellFailed = _fizzRoll < 0.05;
-                if (_dbgSpell) {
-                    termAppend('<span style="color:#004466;">✨ [HEAL] ' + spell.name
-                        + ' | cost: ' + spell.mpCost + ' MP'
-                        + ' | range: ' + (spell.minPower||10) + '–' + (spell.maxPower||spell.minPower||10)
-                        + ' | fizzle roll: ' + (_fizzRoll*100).toFixed(2) + '% / need ≤5% → ' + (spellFailed ? '💀 FIZZLE' : '✅ ok')
-                        + '</span>', 'term-dim');
-                }
-                if (spellFailed) {
-                    termAppend(`You cast ${spell.name} but it <span style="color:#ff6666;">fizzles!</span> The gods did not answer.`);
-                } else {
-                    // Calculate random heal between minPower and maxPower
-                    const minHeal = spell.minPower || 10;
-                    const maxHeal = spell.maxPower || minHeal;
-                    const _healRoll = Math.floor(Math.random() * (maxHeal - minHeal + 1)) + minHeal;
-                    const baseHeal = _healRoll;
-                    const heal = baseHeal + Math.floor(p.magic * 1.5) + (p.wis || 0);
-                    const actualHeal = Math.min(p.maxHp - p.hp, heal);
-                    if (_dbgSpell) {
-                        termAppend('<span style="color:#004466;">  rolled: ' + _healRoll
-                            + ' | +magic ' + Math.floor(p.magic*1.5) + ' | +WIS ' + (p.wis||0)
-                            + ' → heal: ' + heal + ' | actual: ' + actualHeal
-                            + ' (HP cap: ' + p.hp + '/' + p.maxHp + ')'
-                            + '</span>', 'term-dim');
-                    }
-                    p.hp = Math.min(p.maxHp, p.hp + actualHeal);
-                    updateHud();
-                    renderActionBar();
-                    termAppend(`You cast ${spell.name} and restore <span style="color:#88ff88;">${actualHeal} HP!</span>`);
-                }
-            } else if (spell.type === 'aoe_damage') {
-                // AOE DAMAGE - Hit all enemies for reduced damage each
-                const monsters = cs.monsters;
-                let totalDamage = 0;
-                let hitCount = 0;
-                
-                if (gameState.sysop && gameState.sysop.authenticated) {
-                    const _aoeminP = spell.minPower||spell.power, _aoemaxP = spell.maxPower||spell.power;
-                    termAppend('<span style="color:#004466;">✨ [AOE] ' + spell.name
-                        + ' | cost: ' + spell.mpCost + ' MP | range: ' + _aoeminP + '–' + _aoemaxP
-                        + ' | targets: ' + cs.monsters.filter(m=>m.hp>0).length
-                        + '</span>', 'term-dim');
-                }
-                termAppend(`You cast ${spell.name}!`, 'term-highlight');
-                termAppend(`<span style="color:#FF8800;">🔥 AREA OF EFFECT! 🔥</span>`, 'term-victory');
-                
-                // Check if fire spell for burning
-                const spellName = spell.name.toLowerCase();
-                const isFire = spellName.includes('fire') || spellName.includes('flame') || 
-                               spellName.includes('burn') || spellName.includes('pyro') || 
-                               spellName.includes('inferno') || spellName.includes('ember');
-                
-                monsters.forEach((enemy, i) => {
-                    if (enemy.hp > 0) {
-                        // Calculate enemy dodge chance
-                        const enemyDodgeChance = calculateEnemyDodge(p.level, enemy.level);
-                        
-                        const tName = monsters.length > 1
-                            ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${i+1}</span>`
-                            : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
-                        
-                        // Check if enemy dodges
-                        const _aoeDbg = gameState.sysop && gameState.sysop.authenticated;
-                        const _aoeDodgeRoll = Math.random();
-                        const _aoeDodged = _aoeDodgeRoll < enemyDodgeChance;
-                        if (_aoeDbg) termAppend('<span style="color:#004466;">  [AOE→' + enemy.name + '] dodge: rolled '
-                            + (_aoeDodgeRoll*100).toFixed(2) + '% / need ≤' + (enemyDodgeChance*100).toFixed(1) + '% → '
-                            + (_aoeDodged ? '✅ DODGE' : '❌ hit') + '</span>', 'term-dim');
-                        if (_aoeDodged) {
-                            termAppend(`→ ${tName} <span style="color:#88ff88;">DODGES!</span>`);
-                            return; // Skip this enemy
-                        }
-                        
-                        // SPELL DAMAGE WITH WIDE RANGE ROLLING (each enemy rolls independently!)
-                        const minPower = spell.minPower || spell.power;
-                        const maxPower = spell.maxPower || spell.power;
-                        const spellRoll = Math.floor(Math.random() * (maxPower - minPower + 1)) + minPower;
-                        
-                        // Add weapon modifier bonus to offensive spells
-                        const modifierBonus = getWeaponModifierSpellBonus();
-                        
-                        const _aoeCritRoll = Math.random() * 100;
-                        const _aoeCritChance = calcCritChance(p.lck || 0, p);
-                        let dmg = Math.max(1, (spellRoll + p.magic + (p.wis || 0) + modifierBonus) - Math.floor(enemy.defense / 2));
-                        let crit = false;
-                        if (_aoeCritRoll < _aoeCritChance) { 
-                            dmg = Math.floor(dmg * 1.75); 
-                            crit = true; 
-                        }
-                        if (_aoeDbg) termAppend('<span style="color:#004466;">  roll: ' + spellRoll
-                            + ' | +magic ' + p.magic + ' | +WIS ' + (p.wis||0) + ' | +mod ' + modifierBonus
-                            + ' | -eDef/2 ' + Math.floor(enemy.defense/2)
-                            + ' → pre-crit: ' + Math.max(1, spellRoll + p.magic + (p.wis||0) + modifierBonus - Math.floor(enemy.defense/2))
-                            + ' | crit: ' + _aoeCritRoll.toFixed(2) + ' / need ≤' + _aoeCritChance.toFixed(1) + ' → ' + (crit ? '★ CRIT ×1.75' : 'no crit')
-                            + '</span>', 'term-dim');
-                        
-                        // Apply weapon modifiers to spell (status effects + elemental damage)
-                        const weapon = WEAPONS[p.weapon];
-                        const modifierResult = weapon ? applyWeaponModifiers(p, enemy, dmg, weapon) : { totalDamage: dmg, messages: [] };
-                        const finalDamage = modifierResult.totalDamage;
-                        
-                        enemy.hp -= finalDamage;
-                        totalDamage += finalDamage;
-                        hitCount++;
-                        
-                        const critTag = crit ? ' <span style="color:#FFD700;">★ CRIT!</span>' : '';
-                        let msg = `→ ${tName} takes <span class="dmg-enemy">${finalDamage} damage!</span>${critTag}`;
-                        if (modifierResult.messages.length > 0) {
-                            msg += ' ' + modifierResult.messages.join(' ');
-                        }
-                        termAppend(msg);
-                        
-                        // Apply burning to each enemy hit (AOE fire spells)
-                        if (isFire && Math.random() < 0.5 && enemy.hp > 0) { // 50% chance per target
-                            applyStatusEffect(enemy, 'burning', false);
-                        }
-                    }
-                });
-                
-                termAppend(`<span style="color:#FFD700;">Total: ${totalDamage} damage to ${hitCount} ${hitCount === 1 ? 'enemy' : 'enemies'}!</span>`, 'term-loot');
-                checkCombatEnd();
-                updateEnemyCards();
-                updateHud();
-                renderActionBar();
-            } else if (spell.type === 'lifesteal') {
-                // LIFESTEAL - damage enemy and heal yourself
-                const ti = cs.currentTarget;
-                const enemy = cs.monsters[ti];
-                
+        }
+        
+        monsters.forEach((enemy, i) => {
+            if (enemy.hp > 0) {
                 // Calculate enemy dodge chance
                 const enemyDodgeChance = calculateEnemyDodge(p.level, enemy.level);
                 
-                const tName = cs.monsters.length > 1
-                    ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${ti+1}</span>`
+                const tName = monsters.length > 1
+                    ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${i+1}</span>`
                     : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
                 
                 // Check if enemy dodges
-                const _lsDbg = gameState.sysop && gameState.sysop.authenticated;
-                const _lsDodgeRoll = Math.random();
-                const _lsDodged = _lsDodgeRoll < enemyDodgeChance;
-                if (_lsDbg) termAppend('<span style="color:#004466;">✨ [LIFESTEAL] ' + spell.name
-                    + ' | cost: ' + spell.mpCost + ' MP | range: ' + (spell.minPower||spell.power) + '–' + (spell.maxPower||spell.power)
-                    + ' | dodge: rolled ' + (_lsDodgeRoll*100).toFixed(2) + '% / need ≤' + (enemyDodgeChance*100).toFixed(1) + '% → '
-                    + (_lsDodged ? '✅ DODGE' : '❌ hit') + '</span>', 'term-dim');
-                if (_lsDodged) {
-                    termAppend(`You cast ${spell.name} but ${tName} <span style="color:#88ff88;">DODGES!</span>`);
-                    updateEnemyCards();
-                    updateHud();
-                    cs.actionMode = 'main';
-                    cs.pendingSpellKey = null;
-                    renderActionBar();
-                    return;
+                const _aoeDbg = gameState.sysop && gameState.sysop.authenticated;
+                const _aoeDodgeRoll = Math.random();
+                const _aoeDodged = _aoeDodgeRoll < enemyDodgeChance;
+                if (_aoeDbg) termAppend('<span style="color:#004466;">  [AOE→' + enemy.name + '] dodge: rolled '
+                    + (_aoeDodgeRoll*100).toFixed(2) + '% / need ≤' + (enemyDodgeChance*100).toFixed(1) + '% → '
+                    + (_aoeDodged ? '✅ DODGE' : '❌ hit') + '</span>', 'term-dim');
+                if (_aoeDodged) {
+                    termAppend(`→ ${tName} <span style="color:#88ff88;">DODGES!</span>`);
+                    return; // Skip this enemy
                 }
                 
-                // SPELL DAMAGE WITH WIDE RANGE ROLLING
+                // SPELL DAMAGE WITH WIDE RANGE ROLLING (each enemy rolls independently!)
                 const minPower = spell.minPower || spell.power;
                 const maxPower = spell.maxPower || spell.power;
                 const spellRoll = Math.floor(Math.random() * (maxPower - minPower + 1)) + minPower;
                 
                 // Add weapon modifier bonus to offensive spells
                 const modifierBonus = getWeaponModifierSpellBonus();
-
-                // ── Gem bonuses for spells ────────────────────────────────
-                const spellWeapon = WEAPONS[p.weapon];
-                let gemSpellBonus = 0, gemSpellCrit = 0, gemSpellPoison = 0;
-                let gemSpellUniversal = 0; // lightning + fire + frost all apply to spells
-                let gemSpellLeechPct = 0;  // voidstone: spell leech → MP
-                if (spellWeapon && spellWeapon.gems) {
-                    for (const sg of spellWeapon.gems) {
-                        if (!sg || !sg.stats) continue;
-                        gemSpellBonus    += sg.stats.spellPower    || 0;  // magic-only
-                        gemSpellCrit     += sg.stats.critBonus     || 0;  // universal
-                        gemSpellPoison   += sg.stats.poisonChance  || 0;  // universal
-                        gemSpellUniversal += (sg.stats.lightningDmg || 0)
-                                          + (sg.stats.fireDmg       || 0)
-                                          + (sg.stats.frostDmg      || 0); // universal elements
-                        gemSpellLeechPct += sg.stats.spellLeech    || 0;  // voidstone: MP leech
-                    }
-                }
                 
-                const _lsCritRoll = Math.random() * 100;
-                const spellCritChance = Math.min(75, calcCritChance(p.lck || 0, p) + gemSpellCrit);
+                const _aoeCritRoll = Math.random() * 100;
+                // UPDATED: include gemSpellCrit
+                const _aoeCritChance = calcCritChance(p.lck || 0, p) + gemSpellCrit;
+                // UPDATED: include gemSpellBonus + gemSpellUniversal
                 let dmg = Math.max(1, (spellRoll + p.magic + (p.wis || 0) + modifierBonus + gemSpellBonus + gemSpellUniversal) - Math.floor(enemy.defense / 2));
                 let crit = false;
-                if (_lsCritRoll < spellCritChance) { dmg = Math.floor(dmg * 1.75); crit = true; }
-                if (_lsDbg) termAppend('<span style="color:#004466;">  roll: ' + spellRoll
+                if (_aoeCritRoll < _aoeCritChance) { 
+                    dmg = Math.floor(dmg * 1.75); 
+                    crit = true; 
+                }
+                if (_aoeDbg) termAppend('<span style="color:#004466;">  roll: ' + spellRoll
                     + ' | +magic ' + p.magic + ' | +WIS ' + (p.wis||0) + ' | +mod ' + modifierBonus
                     + ' | +gemSP ' + gemSpellBonus + ' | +elem ' + gemSpellUniversal
                     + ' | -eDef/2 ' + Math.floor(enemy.defense/2)
                     + ' → pre-crit: ' + Math.max(1, spellRoll + p.magic + (p.wis||0) + modifierBonus + gemSpellBonus + gemSpellUniversal - Math.floor(enemy.defense/2))
-                    + ' | crit: ' + _lsCritRoll.toFixed(2) + ' / need ≤' + spellCritChance.toFixed(1) + ' → ' + (crit ? '★ CRIT ×1.75' : 'no crit')
-                    + ' | lifesteal: ' + (spell.lifestealPercent||25) + '%'
+                    + ' | crit: ' + _aoeCritRoll.toFixed(2) + ' / need ≤' + _aoeCritChance.toFixed(1) + ' → ' + (crit ? '★ CRIT ×1.75' : 'no crit')
                     + '</span>', 'term-dim');
                 
                 // Apply weapon modifiers to spell (status effects + elemental damage)
                 const weapon = WEAPONS[p.weapon];
                 const modifierResult = weapon ? applyWeaponModifiers(p, enemy, dmg, weapon) : { totalDamage: dmg, messages: [] };
                 const finalDamage = modifierResult.totalDamage;
-
-                // Gem poison proc on spell (universal gem)
+                
+                // ADDED: Gem poison effect for AOE
                 if (gemSpellPoison > 0 && Math.random() < (gemSpellPoison / 100) && enemy.hp > 0) {
                     applyStatusEffect(enemy, 'poisoned', false);
                     modifierResult.messages.push('<span style="color:#00EE00;">💎 Emerald: Poisoned!</span>');
                 }
                 
-                // Gem lifesteal on spells (ruby — works on both melee and spells per design)
-                let gemSpellLifesteal = 0;
-                if (spellWeapon && spellWeapon.gems) {
-                    for (const sg of spellWeapon.gems) {
-                        if (sg && sg.stats) gemSpellLifesteal += sg.stats.lifesteal || 0;
-                    }
-                }
-                if (gemSpellLifesteal > 0) {
+                // ADDED: Gem lifesteal for AOE
+                if (gemSpellLifesteal > 0 && finalDamage > 0) {
                     const lsHeal = Math.max(1, Math.floor(finalDamage * (gemSpellLifesteal / 100)));
                     p.hp = Math.min(p.maxHp, p.hp + lsHeal);
                     modifierResult.messages.push(`<span style="color:#FF4488;">💎 Ruby: Lifesteal +${lsHeal} HP</span>`);
                 }
-                // Voidstone spell leech → drains MP from enemy (magic absorb, not HP)
-                if (gemSpellLeechPct > 0) {
-                    const mpDrain = Math.max(1, Math.floor(finalDamage * (gemSpellLeechPct / 100)));
-                    p.mp = Math.min(p.maxMp, p.mp + mpDrain);
-                    modifierResult.messages.push(`<span style="color:#AA55FF;">💎 Voidstone: Absorbed +${mpDrain} MP</span>`);
-                }
-
-                enemy.hp -= finalDamage;
                 
-                // Heal based on lifesteal percentage (from the final damage including modifiers)
-                const lifestealPercent = spell.lifestealPercent || 25;
-                const healAmount = Math.floor(finalDamage * (lifestealPercent / 100));
-                p.hp = Math.min(p.maxHp, p.hp + healAmount);
+                enemy.hp -= finalDamage;
+                totalDamage += finalDamage;
+                hitCount++;
                 
                 const critTag = crit ? ' <span style="color:#FFD700;">★ CRIT!</span>' : '';
-                let spellMsg = `You cast ${spell.name} on ${tName} for <span class="dmg-enemy">${finalDamage} damage!</span>${critTag}`;
+                let msg = `→ ${tName} takes <span class="dmg-enemy">${finalDamage} damage!</span>${critTag}`;
                 if (modifierResult.messages.length > 0) {
-                    spellMsg += '<br>' + modifierResult.messages.join('<br>');
+                    msg += ' ' + modifierResult.messages.join(' ');
                 }
+                termAppend(msg);
                 
-                termAppend(spellMsg, null, () => {
-                    termAppend(`<span style="color:#00FF00;">🩸 Drained ${healAmount} HP!</span>`, 'term-loot');
-                    if (enemy.hp > 0) {
-                        const hpPct = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
-                        let condition = 'healthy';
-                        if (hpPct < 75) condition = 'injured';
-                        if (hpPct < 50) condition = 'wounded';
-                        if (hpPct < 25) condition = 'severely wounded';
-                        if (hpPct < 10) condition = 'barely standing';
-                        termAppend(`→ ${tName} is <span style="color:#8aaa8a;">${condition}</span>`, 'term-dim');
-                    }
-                    checkCombatEnd();
-                });
-            } else {
-                // REGULAR DAMAGE SPELL
-                const ti    = cs.currentTarget;
-                const enemy = cs.monsters[ti];
-                
-                // Calculate enemy dodge chance based on level difference
-                const enemyDodgeChance = calculateEnemyDodge(p.level, enemy.level);
-                
-                // Check if enemy dodges the spell
-                const _regDbg = gameState.sysop && gameState.sysop.authenticated;
-                const _regDodgeRoll = Math.random();
-                const _regDodged = _regDodgeRoll < enemyDodgeChance;
-                const tName = cs.monsters.length > 1
-                    ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${ti+1}</span>`
-                    : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
-                if (_regDbg) termAppend('<span style="color:#004466;">✨ [SPELL] ' + spell.name
-                    + ' | cost: ' + spell.mpCost + ' MP | range: ' + (spell.minPower||spell.power) + '–' + (spell.maxPower||spell.power)
-                    + ' | eDodge: rolled ' + (_regDodgeRoll*100).toFixed(2) + '% / need ≤' + (enemyDodgeChance*100).toFixed(1) + '% → '
-                    + (_regDodged ? '✅ enemy DODGES' : '❌ hit') + '</span>', 'term-dim');
-                if (_regDodged) {
-                    termAppend(`You cast ${spell.name} but ${tName} <span style="color:#88ff88;">DODGES!</span>`);
-                    updateEnemyCards();
-                    updateHud();
-                    cs.actionMode = 'main';
-                    cs.pendingSpellKey = null;
-                    renderActionBar();
-                    return;
+                // Apply burning to each enemy hit (AOE fire spells)
+                if (isFire && Math.random() < 0.5 && enemy.hp > 0) { // 50% chance per target
+                    applyStatusEffect(enemy, 'burning', false);
                 }
-                
-                // SPELL DAMAGE WITH WIDE RANGE ROLLING
-                const minPower = spell.minPower || spell.power;
-                const maxPower = spell.maxPower || spell.power;
-                const spellRoll = Math.floor(Math.random() * (maxPower - minPower + 1)) + minPower;
-                
-                // Add weapon modifier bonus to offensive spells
-                const modifierBonus = getWeaponModifierSpellBonus();
-                
-                const _regCritRoll = Math.random() * 100;
-                const _regCritChance = calcCritChance(p.lck||0, p);
-                let dmg = Math.max(1, (spellRoll + p.magic + (p.wis||0) + modifierBonus) - Math.floor(enemy.defense / 2));
-                let crit = false;
-                if (_regCritRoll < _regCritChance) { dmg = Math.floor(dmg*1.75); crit = true; }
-                if (_regDbg) termAppend('<span style="color:#004466;">  roll: ' + spellRoll
-                    + ' | +magic ' + p.magic + ' | +WIS ' + (p.wis||0) + ' | +mod ' + modifierBonus
-                    + ' | -eDef/2 ' + Math.floor(enemy.defense/2)
-                    + ' → pre-crit: ' + Math.max(1, spellRoll + p.magic + (p.wis||0) + modifierBonus - Math.floor(enemy.defense/2))
-                    + ' | crit: ' + _regCritRoll.toFixed(2) + ' / need ≤' + _regCritChance.toFixed(1) + ' → ' + (crit ? '★ CRIT ×1.75' : 'no crit')
-                    + ' | final: ' + dmg
-                    + '</span>', 'term-dim');
-                
-                // Apply weapon modifiers to spell (status effects + elemental damage)
-                const weapon = WEAPONS[p.weapon];
-                const modifierResult = weapon ? applyWeaponModifiers(p, enemy, dmg, weapon) : { totalDamage: dmg, messages: [] };
-                const finalDamage = modifierResult.totalDamage;
-                
-                enemy.hp -= finalDamage;
-                
-                // Check for spell status effects (burning from fire spells, etc.)
-                const spellName = spell.name.toLowerCase();
-                if ((spellName.includes('fire') || spellName.includes('flame') || spellName.includes('burn') || 
-                     spellName.includes('pyro') || spellName.includes('inferno') || spellName.includes('ember')) && 
-                    Math.random() < 0.5) { // 50% chance
-                    enemy.statusToApply = 'burning';
-                } else if ((spellName.includes('ice') || spellName.includes('frost') || spellName.includes('frozen')) && 
-                           Math.random() < 0.4) { // 40% chance
-                    enemy.statusToApply = 'frozen';
-                } else if (spellName.includes('lightning') && Math.random() < 0.2) { // 20% chance
-                    enemy.statusToApply = 'stunned';
-                } else if (spellName.includes('shadow') && Math.random() < 0.3) { // 30% chance
-                    enemy.statusToApply = 'blinded';
-                }
-                
-                const critTag = crit ? ' <span style="color:#FFD700;">★ CRIT!</span>' : '';
+            }
+        });
+        
+        termAppend(`<span style="color:#FFD700;">Total: ${totalDamage} damage to ${hitCount} ${hitCount === 1 ? 'enemy' : 'enemies'}!</span>`, 'term-loot');
+        checkCombatEnd();
+        updateEnemyCards();
+        updateHud();
+        renderActionBar();
+    } else if (spell.type === 'lifesteal') {
+        // LIFESTEAL - damage enemy and heal yourself
+        const ti = cs.currentTarget;
+        const enemy = cs.monsters[ti];
+        
+        // Calculate enemy dodge chance
+        const enemyDodgeChance = calculateEnemyDodge(p.level, enemy.level);
+        
+        const tName = cs.monsters.length > 1
+            ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${ti+1}</span>`
+            : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
+        
+        // Check if enemy dodges
+        const _lsDbg = gameState.sysop && gameState.sysop.authenticated;
+        const _lsDodgeRoll = Math.random();
+        const _lsDodged = _lsDodgeRoll < enemyDodgeChance;
+        if (_lsDbg) termAppend('<span style="color:#004466;">✨ [LIFESTEAL] ' + spell.name
+            + ' | cost: ' + spell.mpCost + ' MP | range: ' + (spell.minPower||spell.power) + '–' + (spell.maxPower||spell.power)
+            + ' | dodge: rolled ' + (_lsDodgeRoll*100).toFixed(2) + '% / need ≤' + (enemyDodgeChance*100).toFixed(1) + '% → '
+            + (_lsDodged ? '✅ DODGE' : '❌ hit') + '</span>', 'term-dim');
+        if (_lsDodged) {
+            termAppend(`You cast ${spell.name} but ${tName} <span style="color:#88ff88;">DODGES!</span>`);
+            updateEnemyCards();
+            updateHud();
+            cs.actionMode = 'main';
+            cs.pendingSpellKey = null;
+            renderActionBar();
+            return;
+        }
+        
+        // SPELL DAMAGE WITH WIDE RANGE ROLLING
+        const minPower = spell.minPower || spell.power;
+        const maxPower = spell.maxPower || spell.power;
+        const spellRoll = Math.floor(Math.random() * (maxPower - minPower + 1)) + minPower;
+        
+        // Add weapon modifier bonus to offensive spells
+        const modifierBonus = getWeaponModifierSpellBonus();
+
+        // ── Gem bonuses for spells ────────────────────────────────
+        const spellWeapon = WEAPONS[p.weapon];
+        let gemSpellBonus = 0, gemSpellCrit = 0, gemSpellPoison = 0;
+        let gemSpellUniversal = 0; // lightning + fire + frost all apply to spells
+        let gemSpellLeechPct = 0;  // voidstone: spell leech → MP
+        if (spellWeapon && spellWeapon.gems) {
+            for (const sg of spellWeapon.gems) {
+                if (!sg || !sg.stats) continue;
+                gemSpellBonus    += sg.stats.spellPower    || 0;  // magic-only
+                gemSpellCrit     += sg.stats.critBonus     || 0;  // universal
+                gemSpellPoison   += sg.stats.poisonChance  || 0;  // universal
+                gemSpellUniversal += (sg.stats.lightningDmg || 0)
+                                  + (sg.stats.fireDmg       || 0)
+                                  + (sg.stats.frostDmg      || 0); // universal elements
+                gemSpellLeechPct += sg.stats.spellLeech    || 0;  // voidstone: MP leech
+            }
+        }
+        
+        const _lsCritRoll = Math.random() * 100;
+        const spellCritChance = Math.min(75, calcCritChance(p.lck || 0, p) + gemSpellCrit);
+        let dmg = Math.max(1, (spellRoll + p.magic + (p.wis || 0) + modifierBonus + gemSpellBonus + gemSpellUniversal) - Math.floor(enemy.defense / 2));
+        let crit = false;
+        if (_lsCritRoll < spellCritChance) { dmg = Math.floor(dmg * 1.75); crit = true; }
+        if (_lsDbg) termAppend('<span style="color:#004466;">  roll: ' + spellRoll
+            + ' | +magic ' + p.magic + ' | +WIS ' + (p.wis||0) + ' | +mod ' + modifierBonus
+            + ' | +gemSP ' + gemSpellBonus + ' | +elem ' + gemSpellUniversal
+            + ' | -eDef/2 ' + Math.floor(enemy.defense/2)
+            + ' → pre-crit: ' + Math.max(1, spellRoll + p.magic + (p.wis||0) + modifierBonus + gemSpellBonus + gemSpellUniversal - Math.floor(enemy.defense/2))
+            + ' | crit: ' + _lsCritRoll.toFixed(2) + ' / need ≤' + spellCritChance.toFixed(1) + ' → ' + (crit ? '★ CRIT ×1.75' : 'no crit')
+            + ' | lifesteal: ' + (spell.lifestealPercent||25) + '%'
+            + '</span>', 'term-dim');
+        
+        // Apply weapon modifiers to spell (status effects + elemental damage)
+        const weapon = WEAPONS[p.weapon];
+        const modifierResult = weapon ? applyWeaponModifiers(p, enemy, dmg, weapon) : { totalDamage: dmg, messages: [] };
+        const finalDamage = modifierResult.totalDamage;
+
+        // Gem poison proc on spell (universal gem)
+        if (gemSpellPoison > 0 && Math.random() < (gemSpellPoison / 100) && enemy.hp > 0) {
+            applyStatusEffect(enemy, 'poisoned', false);
+            modifierResult.messages.push('<span style="color:#00EE00;">💎 Emerald: Poisoned!</span>');
+        }
+        
+        // Gem lifesteal on spells (ruby — works on both melee and spells per design)
+        let gemSpellLifesteal = 0;
+        if (spellWeapon && spellWeapon.gems) {
+            for (const sg of spellWeapon.gems) {
+                if (sg && sg.stats) gemSpellLifesteal += sg.stats.lifesteal || 0;
+            }
+        }
+        if (gemSpellLifesteal > 0) {
+            const lsHeal = Math.max(1, Math.floor(finalDamage * (gemSpellLifesteal / 100)));
+            p.hp = Math.min(p.maxHp, p.hp + lsHeal);
+            modifierResult.messages.push(`<span style="color:#FF4488;">💎 Ruby: Lifesteal +${lsHeal} HP</span>`);
+        }
+        // Voidstone spell leech → drains MP from enemy (magic absorb, not HP)
+        if (gemSpellLeechPct > 0) {
+            const mpDrain = Math.max(1, Math.floor(finalDamage * (gemSpellLeechPct / 100)));
+            p.mp = Math.min(p.maxMp, p.mp + mpDrain);
+            modifierResult.messages.push(`<span style="color:#AA55FF;">💎 Voidstone: Absorbed +${mpDrain} MP</span>`);
+        }
+
+        enemy.hp -= finalDamage;
+        
+        // Heal based on lifesteal percentage (from the final damage including modifiers)
+        const lifestealPercent = spell.lifestealPercent || 25;
+        const healAmount = Math.floor(finalDamage * (lifestealPercent / 100));
+        p.hp = Math.min(p.maxHp, p.hp + healAmount);
+        
+        const critTag = crit ? ' <span style="color:#FFD700;">★ CRIT!</span>' : '';
+        let spellMsg = `You cast ${spell.name} on ${tName} for <span class="dmg-enemy">${finalDamage} damage!</span>${critTag}`;
+        if (modifierResult.messages.length > 0) {
+            spellMsg += '<br>' + modifierResult.messages.join('<br>');
+        }
+        
+        termAppend(spellMsg, null, () => {
+            termAppend(`<span style="color:#00FF00;">🩸 Drained ${healAmount} HP!</span>`, 'term-loot');
+            if (enemy.hp > 0) {
                 const hpPct = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
                 let condition = 'healthy';
                 if (hpPct < 75) condition = 'injured';
                 if (hpPct < 50) condition = 'wounded';
                 if (hpPct < 25) condition = 'severely wounded';
                 if (hpPct < 10) condition = 'barely standing';
-                
-                // Build message with weapon modifier bonuses
-                let spellMsg = `You cast ${spell.name} on ${tName} for <span class="dmg-enemy">${finalDamage} damage!</span>${critTag}`;
-                if (modifierResult.messages.length > 0) {
-                    spellMsg += '<br>' + modifierResult.messages.join('<br>');
-                }
-                
-                termAppend(spellMsg, null, () => {
-                    // Apply status effect if flagged
-                    if (enemy.statusToApply && enemy.hp > 0) {
-                        applyStatusEffect(enemy, enemy.statusToApply, false);
-                        enemy.statusToApply = null;
-                    }
-                    
-                    if (enemy.hp > 0) {
-                        termAppend(`→ ${tName} is <span style="color:#8aaa8a;">${condition}</span>`, 'term-dim');
-                    }
-                    checkCombatEnd();
-                });
+                termAppend(`→ ${tName} is <span style="color:#8aaa8a;">${condition}</span>`, 'term-dim');
             }
-              updateEnemyCards();
-                updateHud();
-            
-            // Reset to main combat menu after spell cast
+            checkCombatEnd();
+        });
+    } else {
+        // REGULAR DAMAGE SPELL
+        const ti    = cs.currentTarget;
+        const enemy = cs.monsters[ti];
+        
+        // Calculate enemy dodge chance based on level difference
+        const enemyDodgeChance = calculateEnemyDodge(p.level, enemy.level);
+        
+        // Check if enemy dodges the spell
+        const _regDbg = gameState.sysop && gameState.sysop.authenticated;
+        const _regDodgeRoll = Math.random();
+        const _regDodged = _regDodgeRoll < enemyDodgeChance;
+        const tName = cs.monsters.length > 1
+            ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${ti+1}</span>`
+            : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
+        if (_regDbg) termAppend('<span style="color:#004466;">✨ [SPELL] ' + spell.name
+            + ' | cost: ' + spell.mpCost + ' MP | range: ' + (spell.minPower||spell.power) + '–' + (spell.maxPower||spell.power)
+            + ' | eDodge: rolled ' + (_regDodgeRoll*100).toFixed(2) + '% / need ≤' + (enemyDodgeChance*100).toFixed(1) + '% → '
+            + (_regDodged ? '✅ enemy DODGES' : '❌ hit') + '</span>', 'term-dim');
+        if (_regDodged) {
+            termAppend(`You cast ${spell.name} but ${tName} <span style="color:#88ff88;">DODGES!</span>`);
+            updateEnemyCards();
+            updateHud();
             cs.actionMode = 'main';
             cs.pendingSpellKey = null;
             renderActionBar();
-            localSave();
+            return;
         }
+        
+        // SPELL DAMAGE WITH WIDE RANGE ROLLING
+        const minPower = spell.minPower || spell.power;
+        const maxPower = spell.maxPower || spell.power;
+        const spellRoll = Math.floor(Math.random() * (maxPower - minPower + 1)) + minPower;
+        
+        // Add weapon modifier bonus to offensive spells
+        const modifierBonus = getWeaponModifierSpellBonus();
+        
+        // ── Gem bonuses for spells (added for regular damage) ────────────
+        const spellWeapon = WEAPONS[p.weapon];
+        let gemSpellBonus = 0;
+        let gemSpellCrit = 0;
+        let gemSpellPoison = 0;
+        let gemSpellUniversal = 0;
+        let gemSpellLifesteal = 0;
+        
+        if (spellWeapon && spellWeapon.gems) {
+            for (const sg of spellWeapon.gems) {
+                if (!sg || !sg.stats) continue;
+                gemSpellBonus += sg.stats.spellPower || 0;
+                gemSpellCrit += sg.stats.critBonus || 0;
+                gemSpellPoison += sg.stats.poisonChance || 0;
+                gemSpellUniversal += (sg.stats.lightningDmg || 0) + (sg.stats.fireDmg || 0) + (sg.stats.frostDmg || 0);
+                gemSpellLifesteal += sg.stats.lifesteal || 0;
+            }
+        }
+        
+        const _regCritRoll = Math.random() * 100;
+        // UPDATED: include gemSpellCrit
+        const _regCritChance = calcCritChance(p.lck||0, p) + gemSpellCrit;
+        // UPDATED: include gemSpellBonus + gemSpellUniversal
+        let dmg = Math.max(1, (spellRoll + p.magic + (p.wis||0) + modifierBonus + gemSpellBonus + gemSpellUniversal) - Math.floor(enemy.defense / 2));
+        let crit = false;
+        if (_regCritRoll < _regCritChance) { dmg = Math.floor(dmg*1.75); crit = true; }
+        if (_regDbg) termAppend('<span style="color:#004466;">  roll: ' + spellRoll
+            + ' | +magic ' + p.magic + ' | +WIS ' + (p.wis||0) + ' | +mod ' + modifierBonus
+            + ' | +gemSP ' + gemSpellBonus + ' | +elem ' + gemSpellUniversal
+            + ' | -eDef/2 ' + Math.floor(enemy.defense/2)
+            + ' → pre-crit: ' + Math.max(1, spellRoll + p.magic + (p.wis||0) + modifierBonus + gemSpellBonus + gemSpellUniversal - Math.floor(enemy.defense/2))
+            + ' | crit: ' + _regCritRoll.toFixed(2) + ' / need ≤' + _regCritChance.toFixed(1) + ' → ' + (crit ? '★ CRIT ×1.75' : 'no crit')
+            + ' | final: ' + dmg
+            + '</span>', 'term-dim');
+        
+        // Apply weapon modifiers to spell (status effects + elemental damage)
+        const weapon = WEAPONS[p.weapon];
+        const modifierResult = weapon ? applyWeaponModifiers(p, enemy, dmg, weapon) : { totalDamage: dmg, messages: [] };
+        const finalDamage = modifierResult.totalDamage;
+        
+        // ADDED: Gem poison effect for regular damage spell
+        if (gemSpellPoison > 0 && Math.random() < (gemSpellPoison / 100) && enemy.hp > 0) {
+            applyStatusEffect(enemy, 'poisoned', false);
+            modifierResult.messages.push('<span style="color:#00EE00;">💎 Emerald: Poisoned!</span>');
+        }
+        
+        // ADDED: Gem lifesteal for regular damage spell
+        if (gemSpellLifesteal > 0 && finalDamage > 0) {
+            const lsHeal = Math.max(1, Math.floor(finalDamage * (gemSpellLifesteal / 100)));
+            p.hp = Math.min(p.maxHp, p.hp + lsHeal);
+            modifierResult.messages.push(`<span style="color:#FF4488;">💎 Ruby: Lifesteal +${lsHeal} HP</span>`);
+        }
+        
+        enemy.hp -= finalDamage;
+        
+        // Check for spell status effects (burning from fire spells, etc.)
+        const spellName = spell.name.toLowerCase();
+        if ((spellName.includes('fire') || spellName.includes('flame') || spellName.includes('burn') || 
+             spellName.includes('pyro') || spellName.includes('inferno') || spellName.includes('ember')) && 
+            Math.random() < 0.5) { // 50% chance
+            enemy.statusToApply = 'burning';
+        } else if ((spellName.includes('ice') || spellName.includes('frost') || spellName.includes('frozen')) && 
+                   Math.random() < 0.4) { // 40% chance
+            enemy.statusToApply = 'frozen';
+        } else if (spellName.includes('lightning') && Math.random() < 0.2) { // 20% chance
+            enemy.statusToApply = 'stunned';
+        } else if (spellName.includes('shadow') && Math.random() < 0.3) { // 30% chance
+            enemy.statusToApply = 'blinded';
+        }
+        
+        const critTag = crit ? ' <span style="color:#FFD700;">★ CRIT!</span>' : '';
+        const hpPct = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
+        let condition = 'healthy';
+        if (hpPct < 75) condition = 'injured';
+        if (hpPct < 50) condition = 'wounded';
+        if (hpPct < 25) condition = 'severely wounded';
+        if (hpPct < 10) condition = 'barely standing';
+        
+        // Build message with weapon modifier bonuses
+        let spellMsg = `You cast ${spell.name} on ${tName} for <span class="dmg-enemy">${finalDamage} damage!</span>${critTag}`;
+        if (modifierResult.messages.length > 0) {
+            spellMsg += '<br>' + modifierResult.messages.join('<br>');
+        }
+        
+        termAppend(spellMsg, null, () => {
+            // Apply status effect if flagged
+            if (enemy.statusToApply && enemy.hp > 0) {
+                applyStatusEffect(enemy, enemy.statusToApply, false);
+                enemy.statusToApply = null;
+            }
+            
+            if (enemy.hp > 0) {
+                termAppend(`→ ${tName} is <span style="color:#8aaa8a;">${condition}</span>`, 'term-dim');
+            }
+            checkCombatEnd();
+        });
+    }
+      updateEnemyCards();
+        updateHud();
+    
+    // Reset to main combat menu after spell cast
+    cs.actionMode = 'main';
+    cs.pendingSpellKey = null;
+    renderActionBar();
+    localSave();
+}
 
         // Legacy function for backward compatibility
         function castSpell(spellKey) {
@@ -23451,88 +23631,96 @@ function playerIsExhausted() {
         }
 
         function levelUp() {
-            haptic('levelUp');
-            const p = gameState.player;
-            
-            // Cap at level 25
-            if (p.level >= 25) {
-                p.xp = p.xpToNext; // Pin running total at the max threshold
-                return;
-            }
-            
-            const oldLevel = p.level;
-            p.level++;
-            // XP is now a running total — do NOT subtract xpToNext.
-            // Just raise the bar to the next level's cumulative threshold.
-            p.xpToNext = getXpToNextLevel(p.baseClass || p.class, p.level);
+    haptic('levelUp');
+    const p = gameState.player;
+    
+    // Cap at level 25
+    if (p.level >= 25) {
+        p.xp = p.xpToNext;
+        return;
+    }
+    
+    const oldLevel = p.level;
+    p.level++;
+    
+    // XP is now a running total — do NOT subtract xpToNext.
+    // Just raise the bar to the next level's cumulative threshold.
+    p.xpToNext = getXpToNextLevel(p.baseClass || p.class, p.level);
 
-            // HP/MP increases (CON scaling for HP)
-            p.maxHp += 15 + (p.con||0);   // CON scales HP gain
-            p.hp     = p.maxHp;
-            p.maxMp += 10;
-            p.mp     = p.maxMp;
-            
-            // Legacy stats still auto-increase for backwards compatibility
-            p.strength += 2;
-            p.defense  += 2;
-            p.magic    += 2;
-            p.speed    += 1;
-
-            // ═══════════════════════════════════════════════════════════════
-            // NEW STAT POINT SYSTEM (3 points per level to allocate)
-            // ═══════════════════════════════════════════════════════════════
-            if (p.statPoints === undefined) {
-                p.statPoints = 0; // Initialize if not present (old saves)
-            }
-            p.statPoints += 3; // Give 3 stat points per level
-            
-            // Auto-allocate 1 point to each stat (base progression)
-            if (p.str !== undefined) {
-                p.str++; p.dex++; p.wis++; p.cha++; p.con++; p.lck++;
-                // Paladin bonus: extra +1 to both STR and WIS
-                if (p.class === 'paladin' || p.baseClass === 'paladin') { 
-                    p.str++; p.wis++; 
-                }
-            }
-            
-            // ═══════════════════════════════════════════════════════════════
-            // CHECK FOR NEW ZONE DISCOVERY
-            // ═══════════════════════════════════════════════════════════════
-            Object.keys(LOCATIONS).forEach(key => {
-                const loc = LOCATIONS[key];
-                if (key !== 'town' && loc.requiredLevel === p.level) {
-                    // Just reached the level for this zone!
-                    termAppend('', 'term-separator');
-                    termAppend(`<span style="color:#00FFFF;font-size:18px;">🗺️ NEW AREA DISCOVERED!</span>`, 'term-victory');
-                    termAppend(`<span style="color:#FFD700;">${loc.name} is now visible on the world map!</span>`, 'term-loot');
-                    termAppend(`<span style="color:#8aaa8a;">Check "Explore World" to visit this area.</span>`, 'term-dim');
-                }
-            });
-            
-            // ═══════════════════════════════════════════════════════════════
-            // CHECK FOR CLASS EVOLUTION AT LEVEL 20
-            // ═══════════════════════════════════════════════════════════════
-            if (p.level === 20 && evolveClass(p)) {
-                const evolution = ADVANCED_CLASSES[p.baseClass];
-                // Evolution message will be shown in endCombat
-                p._justEvolved = true;
-                p._evolutionMessage = evolution.announcement;
-            }
-
-            // ═══════════════════════════════════════════════════════════════
-            // CHRONICLE: unlock entries gated to this level
-            // ═══════════════════════════════════════════════════════════════
-            unlockChronicleEntries(p);
-            
-            // Spells are no longer auto-learned - must be purchased at temple!
-
-            // ── If player is in a dungeon, show the level-up stat modal immediately ──
-            if (gameState.dungeon && gameState.dungeon.active) {
-                // Small delay so the level-up terminal messages render first
-                setTimeout(showLevelUpModal, 400);
+    // ⚔️ ONLY INCREASE HP AND MP ⚔️
+    // HP increases based on CON (but CON is NOT auto-increased)
+    const conBonus = p.con || 0;
+    p.maxHp += 15 + conBonus;
+    p.hp = p.maxHp;  // Full heal on level up
+    
+    // MP increase: base 10 per level
+    p.maxMp += 10;
+    p.mp = p.maxMp;  // Full mana on level up
+    
+    // ❌ REMOVED: Auto stat increases to STR, DEX, WIS, CHA, CON, LCK
+    // ❌ REMOVED: Paladin bonus stats
+    // ❌ REMOVED: Legacy stat increases (strength, defense, magic, speed)
+    
+    // ⭐ GIVE STAT POINTS (3 per level to allocate manually)
+    if (p.statPoints === undefined) p.statPoints = 0;
+    p.statPoints += 3;
+    
+    console.log(`\n📈 LEVEL UP! You are now level ${p.level}`);
+    console.log(`   HP: +${15 + conBonus} (${p.maxHp} total)`);
+    console.log(`   MP: +10 (${p.maxMp} total)`);
+    console.log(`   ⭐ +3 Stat Points earned (${p.statPoints} total to spend)`);
+    console.log(`   Your base stats (STR, DEX, WIS, CHA, CON, LCK) remain unchanged.`);
+    console.log(`   Visit CHARACTER STATS to allocate your points!\n`);
+    
+    // ═══════════════════════════════════════════════════════════════
+    // CHECK FOR NEW ZONE DISCOVERY
+    // ═══════════════════════════════════════════════════════════════
+    Object.keys(LOCATIONS).forEach(key => {
+        const loc = LOCATIONS[key];
+        if (key !== 'town' && loc.requiredLevel === p.level) {
+            // Just reached the level for this zone!
+            if (typeof termAppend === 'function') {
+                termAppend('', 'term-separator');
+                termAppend(`<span style="color:#00FFFF;font-size:18px;">🗺️ NEW AREA DISCOVERED!</span>`, 'term-victory');
+                termAppend(`<span style="color:#FFD700;">${loc.name} is now visible on the world map!</span>`, 'term-loot');
+                termAppend(`<span style="color:#8aaa8a;">Check "Explore World" to visit this area.</span>`, 'term-dim');
             }
         }
+    });
+    
+    // ═══════════════════════════════════════════════════════════════
+    // CHECK FOR CLASS EVOLUTION AT LEVEL 20
+    // ═══════════════════════════════════════════════════════════════
+    if (p.level === 20 && evolveClass(p)) {
+        const evolution = ADVANCED_CLASSES[p.baseClass];
+        // Evolution message will be shown in endCombat
+        p._justEvolved = true;
+        p._evolutionMessage = evolution.announcement;
+        if (typeof termAppend === 'function') {
+            termAppend('', 'term-separator');
+            termAppend(`<span style="color:#FF00FF;font-size:24px;font-weight:bold;">⚡ CLASS EVOLUTION! ⚡</span>`, 'term-victory');
+            termAppend(evolution.announcement, 'term-victory');
+        }
+    }
 
+    // ═══════════════════════════════════════════════════════════════
+    // CHRONICLE: unlock entries gated to this level
+    // ═══════════════════════════════════════════════════════════════
+    if (typeof unlockChronicleEntries === 'function') {
+        unlockChronicleEntries(p);
+    }
+    
+    // ── If player is in a dungeon, show the level-up stat modal immediately ──
+    if (gameState.dungeon && gameState.dungeon.active && typeof showLevelUpModal === 'function') {
+        setTimeout(showLevelUpModal, 400);
+    }
+    
+    // Update HUD
+    if (typeof updateHud === 'function') updateHud();
+    
+    // Save after level up
+    if (typeof saveGame === 'function') saveGame();
+}
         // ═══════════════════════════════════════════════════════════════
         // LOOT DROP SYSTEM (Phase 1)
         // ═══════════════════════════════════════════════════════════════
