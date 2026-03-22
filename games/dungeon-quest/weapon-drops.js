@@ -391,6 +391,7 @@ if (skipRoll) {
     
     // Random selection - no sorting bias
     const baseWeapon = candidates[Math.floor(Math.random() * candidates.length)];
+    const baseWeaponId = baseWeapon.id;
     
     // Determine quality - Honor predefined quality
     let quality;
@@ -420,12 +421,12 @@ if (skipRoll) {
         godly: 4
     }[quality] || 0;
     
-    const instanceId = `${baseWeapon.id}_${quality}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+    const instanceId = `${baseWeaponId}_${quality}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
     const weaponName = generateEnhancedWeaponName(baseWeapon, quality, modifiers);
     
     const weapon = {
-        id: baseWeapon.id,
-        weaponId: baseWeapon.id,
+        id: baseWeaponId,
+        weaponId: baseWeaponId,
         instanceId: instanceId,
         name: weaponName,
         baseName: baseWeapon.name,
@@ -519,6 +520,7 @@ function generateArmorDrop(player, enemyLevel, enemyRarity = 'common', skipRoll 
     
     // Random selection
     const baseArmor = candidates[Math.floor(Math.random() * candidates.length)];
+    const baseArmorId = baseArmor.id;
     
     // Determine quality
     let quality;
@@ -545,7 +547,7 @@ function generateArmorDrop(player, enemyLevel, enemyRarity = 'common', skipRoll 
         godly: 4
     }[quality] || 0;
     
-    const instanceId = `${baseArmor.id}_${quality}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+    const instanceId = `${baseArmorId}_${quality}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
     
     let armorName = baseArmor.name;
     if (quality === 'legendary') {
@@ -560,8 +562,8 @@ function generateArmorDrop(player, enemyLevel, enemyRarity = 'common', skipRoll 
     }
     
     const armorInstance = {
-        id: baseArmor.id,
-        armorId: baseArmor.id,
+        id: baseArmorId,
+        armorId: baseArmorId,
         instanceId: instanceId,
         name: armorName,
         baseName: baseArmor.name,
