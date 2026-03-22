@@ -9534,40 +9534,85 @@ function bannerHoldCancel() {
             const quality = args[2] ? args[2].toLowerCase() : null;
 
             switch(type) {
-                case 'weapon':
+case 'weapon':
     if (WEAPONS[id]) {
-        if (quality && QUALITY_CONFIG[quality]) {
-            const baseWeapon = WEAPONS[id];
-            
-            // Create instance using the correct helper
-            const instance = generateLegacyWeaponInstance(id, gameState.player.level, quality);
-            
-            if (instance) {
-                // Push proper inventory reference object
-                gameState.player.inventory.push(instance);
-                
-                const liveWeapon = WEAPONS[instance.instanceId];
-                const slots = getGemSlots(quality);
-                let modText = '';
-                if (instance.modifiers && instance.modifiers.length > 0) {
-                    modText = ` with ${instance.modifiers.length} modifier(s)`;
-                }
-                terminalPrint(`SUCCESS: Gave ${quality} ${baseWeapon.name} (DMG:${liveWeapon?.baseDamage}-${liveWeapon?.maxDamage}${modText}, ${slots} gem slot${slots!==1?'s':''})`, 'success');
-            } else {
-                terminalPrint(`ERROR: Could not generate ${quality} ${baseWeapon.name}`, 'error');
-            }
-        } else {
-            // No quality — give base string key
-            if (!gameState.player.inventory.includes(id)) {
-                gameState.player.inventory.push(id);
-            }
-            terminalPrint(`SUCCESS: Gave weapon '${WEAPONS[id].name}' to player`, 'success');
+        const baseWeapon = WEAPONS[id];
+        let finalQuality = quality || 'normal';
+        
+        // Validate quality
+        if (!QUALITY_CONFIG[finalQuality]) {
+            terminalPrint(`ERROR: Invalid quality '${finalQuality}'. Use: poor, normal, rare, epic, legendary, godly`, 'error');
+            break;
         }
+        
+        const p = gameState.player;
+        const weaponLevel = p.level;
+        const bonusPct = QUALITY_CONFIG[finalQuality]?.bonusPct || 0;
+        const instanceId = `${id}_${finalQuality}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+        
+        // Generate modifiers
+        let modifiers = [];
+        if (typeof generateModifiers === 'function') {
+            modifiers = generateModifiers(finalQuality, weaponLevel);
+            console.log(`[DEBUG] Generated ${modifiers.length} modifiers for ${finalQuality} weapon`);
+        }
+        
+        // Calculate stats with quality bonus
+        const baseDamageBonus = Math.floor(baseWeapon.baseDamage * bonusPct);
+        const maxDamageBonus = baseWeapon.maxDamage ? Math.floor(baseWeapon.maxDamage * bonusPct) : baseDamageBonus;
+        const magicDamageBonus = baseWeapon.baseMagicDamage ? Math.floor(baseWeapon.baseMagicDamage * bonusPct) : 0;
+        
+        const gemSlots = {
+            rare: 1,
+            epic: 2,
+            legendary: 3,
+            godly: 4
+        }[finalQuality] || 0;
+        
+        // Generate enhanced name with modifiers
+        let weaponName;
+        if (typeof generateEnhancedWeaponName === 'function' && modifiers.length > 0) {
+            weaponName = generateEnhancedWeaponName(baseWeapon, finalQuality, modifiers);
+        } else {
+            const qualityDisplay = finalQuality.charAt(0).toUpperCase() + finalQuality.slice(1);
+            weaponName = `${qualityDisplay} ${baseWeapon.name}`;
+        }
+        
+        const weapon = {
+            id: id,
+            weaponId: id,
+            instanceId: instanceId,
+            name: weaponName,
+            baseName: baseWeapon.name,
+            type: baseWeapon.type || baseWeapon.weaponSubtype,
+            weaponSubtype: baseWeapon.weaponSubtype || baseWeapon.type,
+            baseDamage: baseWeapon.baseDamage + baseDamageBonus,
+            maxDamage: (baseWeapon.maxDamage || baseWeapon.baseDamage) + maxDamageBonus,
+            baseMagicDamage: baseWeapon.baseMagicDamage ? baseWeapon.baseMagicDamage + magicDamageBonus : 0,
+            level: weaponLevel,
+            quality: finalQuality,
+            qualityBonus: bonusPct,
+            modifiers: modifiers,
+            gemSlots: gemSlots,
+            gems: [],
+            cost: baseWeapon.cost,
+            description: baseWeapon.description || `A ${finalQuality} quality ${baseWeapon.name}.`,
+            allowedClasses: baseWeapon.allowedClasses,
+            isDropped: true,
+            dropTimestamp: Date.now()
+        };
+        
+        WEAPONS[instanceId] = weapon;
+        gameState.player.inventory.push(weapon);
+        
+        const modifierText = modifiers.length > 0 ? ` with ${modifiers.length} modifier(s)` : '';
+        terminalPrint(`SUCCESS: Gave ${weaponName}${modifierText} (${gemSlots} gem slot${gemSlots !== 1 ? 's' : ''})`, 'success');
     } else {
         terminalPrint(`ERROR: Weapon '${id}' not found`, 'error');
         terminalPrint('Use /listweapons to see available weapons', 'error');
     }
     break;
+
                 case 'armor':
     if (ARMOR[id]) {
         if (quality && QUALITY_CONFIG[quality]) {
@@ -10970,11 +11015,108 @@ async function loadCharacter(characterId) {
             },
         };
         
+
+        
+
+
         gameState.currentTown = data.currentTown || 'town1';
         gameState.guildQuests = gameState.player.guildQuests;
 
         const p = gameState.player;
         const playerClass = p.baseClass || p.class;
+
+        // ======================================================
+        // CLEANUP: Remove all orb instances from inventory and WEAPONS
+        // TODO: Remove this cleanup code when orbs are re-implemented
+        // ======================================================
+        (function cleanupOrbs(playerData) {
+            const orbBaseIds = [
+                'clouded_orb', 'crystal_orb', 'flame_orb', 'shadow_orb',
+                'void_orb', 'soul_orb', 'chaos_orb', 'void_shadow_orb', 'genesis_orb'
+            ];
+            
+            let removedCount = 0;
+            let removedFromWeapons = 0;
+            const newInventory = [];
+            
+            // Helper to check if an item is an orb
+            function isOrbItem(item) {
+                if (typeof item !== 'object' || item === null) return false;
+                
+                // Check by weaponId
+                if (item.weaponId && orbBaseIds.includes(item.weaponId)) {
+                    return true;
+                }
+                // Check by instanceId
+                if (item.instanceId) {
+                    for (const baseId of orbBaseIds) {
+                        if (item.instanceId.startsWith(baseId)) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+            
+            // Helper to get instance ID from an orb item
+            function getOrbInstanceId(item) {
+                if (typeof item === 'object' && item !== null && item.instanceId) {
+                    return item.instanceId;
+                }
+                return null;
+            }
+            
+            // First, scan WEAPONS for any orb instances and remove them
+            const allWeaponKeys = Object.keys(WEAPONS);
+            for (const key of allWeaponKeys) {
+                const weapon = WEAPONS[key];
+                if (weapon && weapon.weaponSubtype === 'orb' && weapon.instanceId) {
+                    // This is an orb instance in WEAPONS
+                    for (const baseId of orbBaseIds) {
+                        if (weapon.id === baseId || key.startsWith(baseId)) {
+                            delete WEAPONS[key];
+                            removedFromWeapons++;
+                            console.log(`🗑️ Cleaned up orb from WEAPONS: ${key}`);
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            // Now clean up inventory
+            playerData.inventory.forEach(item => {
+                if (isOrbItem(item)) {
+                    const instanceId = getOrbInstanceId(item);
+                    if (instanceId && WEAPONS[instanceId]) {
+                        delete WEAPONS[instanceId];
+                    }
+                    removedCount++;
+                    return;
+                }
+                newInventory.push(item);
+            });
+            
+            playerData.inventory = newInventory;
+            
+            // Check equipped weapon
+            if (playerData.weapon) {
+                let isEquippedOrb = false;
+                for (const baseId of orbBaseIds) {
+                    if (playerData.weapon.startsWith(baseId)) {
+                        isEquippedOrb = true;
+                        break;
+                    }
+                }
+                if (isEquippedOrb) {
+                    playerData.weapon = 'bare_fists';
+                    console.log('🔧 Unequipped orb, switched to bare fists');
+                }
+            }
+            
+            if (removedCount > 0 || removedFromWeapons > 0) {
+                console.log(`🧹 Cleaned up ${removedCount} orb instance(s) from inventory and ${removedFromWeapons} from WEAPONS`);
+            }
+        })(p);
 
         // Cleric MP migration
         if (playerClass === 'cleric') {
@@ -14047,10 +14189,33 @@ function getFeaturedItems(playerLevel, playerClass, rerollOffset) {
 
     const wIdx = Math.abs(Math.floor(Math.sin(weaponSeed + 99) * 99999)) % allWeapons.length;
     const aIdx = Math.abs(Math.floor(Math.sin(armorSeed  + 99) * 99999)) % allArmors.length;
+    
+    const weaponKey = allWeapons[wIdx];
+    const baseWeapon = WEAPONS[weaponKey];
+    
+    // Generate modifiers for the featured weapon based on its quality
+    let modifiers = [];
+    if (typeof generateModifiers === 'function' && weaponQuality !== 'normal' && weaponQuality !== 'poor') {
+        modifiers = generateModifiers(weaponQuality, playerLevel);
+    }
+    
+    // Generate enhanced name with modifiers
+    let weaponName = baseWeapon.name;
+    if (typeof generateEnhancedWeaponName === 'function' && modifiers.length > 0) {
+        weaponName = generateEnhancedWeaponName(baseWeapon, weaponQuality, modifiers);
+    } else {
+        const qualityDisplay = weaponQuality.charAt(0).toUpperCase() + weaponQuality.slice(1);
+        weaponName = `${qualityDisplay} ${baseWeapon.name}`;
+    }
 
     return {
-        weapon: { key: allWeapons[wIdx], quality: weaponQuality },
-        armor:  { key: allArmors[aIdx],  quality: armorQuality  },
+        weapon: { 
+            key: weaponKey, 
+            quality: weaponQuality,
+            name: weaponName,
+            modifiers: modifiers
+        },
+        armor:  { key: allArmors[aIdx], quality: armorQuality }
     };
 }
 
@@ -14124,8 +14289,19 @@ function renderShop(tab, section, typeFilter, levelFilter) {
             const canAfford = p.gold >= price;
             const isSpecial = ['legendary','godly'].includes(data.quality);
             const statLine  = type === 'weapon'
-                ? buildWeaponDmgLine({...item, quality:data.quality}, data.quality, p)
-                : buildArmorDefLine({...item, quality:data.quality}, p);
+    ? buildWeaponDmgLine({...item, quality:data.quality}, data.quality, p)
+    : buildArmorDefLine({...item, quality:data.quality}, p);
+
+// Build modifier display for featured weapon
+let modifierHtml = '';
+if (type === 'weapon' && data.modifiers && data.modifiers.length > 0) {
+    modifierHtml = '<div style="margin-top:5px;font-size:9px;">';
+    data.modifiers.forEach(mod => {
+        const modColor = mod.color || '#FFD700';
+        modifierHtml += `<span style="color:${modColor};margin-right:8px;">✨ ${mod.name}</span>`;
+    });
+    modifierHtml += '</div>';
+}
 
             html += `
             <div style="background:#080800;padding:10px 12px;position:relative;overflow:hidden;${isSpecial?`box-shadow:inset 0 0 20px ${color}08;`:''}">
@@ -14135,6 +14311,7 @@ function renderShop(tab, section, typeFilter, levelFilter) {
                 </div>
                 <div style="display:inline-block;background:${color}18;border:1px solid ${color}33;color:${color};font-size:9px;letter-spacing:1px;padding:1px 5px;margin-bottom:4px;font-family:'Courier New',monospace;">${data.quality.toUpperCase()}</div>
                 <div style="font-size:10px;margin-bottom:6px;">${statLine}</div>
+${modifierHtml}
                 <div style="color:#555;font-size:9px;margin-bottom:6px;font-family:'Courier New',monospace;">LV${item.level||1}</div>
                 <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid #151505;padding-top:6px;">
                     <span style="color:#c8a000;font-size:12px;font-family:'Courier New',monospace;">${price.toLocaleString()}g</span>
@@ -14613,19 +14790,21 @@ weaponInstances.forEach(({ item, index }) => {
     const withinThreshold = qIdx <= thresholdIdx;
     
     // Build modifier display
-    let modifierHtml = '';
-    const modifiers = item.modifiers || weapon.modifiers || [];
-    if (modifiers.length > 0) {
-        modifierHtml = '<div style="margin-top:3px;font-size:11px;">';
-        modifiers.forEach(modKey => {
-            const mod = WEAPON_MODIFIERS?.[modKey];
-            if (mod) {
-                modifierHtml += `<div style="color:${mod.color};">• ${mod.name}</div>`;
-            }
-        });
-        modifierHtml += '</div>';
-    }
-    
+// Build modifier display
+let modifierHtml = '';
+const modifiers = item.modifiers || weapon.modifiers || [];
+if (modifiers.length > 0) {
+    modifierHtml = '<div style="margin-top:3px;font-size:11px;">';
+    modifiers.forEach(mod => {
+        const modColor = mod.color || '#FFD700';
+        modifierHtml += `<div style="color:${modColor};">✨ ${mod.name}`;
+        if (mod.minDamage) modifierHtml += ` (${mod.minDamage}-${mod.maxDamage})`;
+        if (mod.statusEffect) modifierHtml += ` — ${mod.statusEffect}`;
+        modifierHtml += `</div>`;
+    });
+    modifierHtml += '</div>';
+}    
+
     // Build gem slot display - FIXED to show actual gems
     let gemSlotHtml = '';
     const slots = item.gemSlots || weapon.gemSlots || 0;
@@ -15388,24 +15567,20 @@ function _executeBuy(type, key, cost, itemName, disc) {
         const qualityColor = qc?.color || '#0f0';
         
         // Build modifier display
-        let eqModifierHtml = '';
-        const modifiers = equippedInstance?.modifiers || eqWeapon.modifiers || [];
-        if (modifiers.length > 0) {
-            eqModifierHtml = '<div style="margin-top:5px;font-size:12px;">';
-            modifiers.forEach(modKey => {
-                if (typeof WEAPON_MODIFIERS === 'undefined') {
-                    eqModifierHtml += `<div style="color:#FF8800;">• ${modKey}</div>`;
-                    return;
-                }
-                const mod = WEAPON_MODIFIERS[modKey];
-                if (mod) {
-                    eqModifierHtml += `<div style="color:${mod.color};">• ${mod.name}`;
-                    if (mod.minDamage) eqModifierHtml += ` (${mod.minDamage}-${mod.maxDamage})`;
-                    eqModifierHtml += `</div>`;
-                }
-            });
-            eqModifierHtml += '</div>';
-        }
+let eqModifierHtml = '';
+const modifiers = equippedInstance?.modifiers || eqWeapon.modifiers || [];
+if (modifiers.length > 0) {
+    eqModifierHtml = '<div style="margin-top:5px;font-size:12px;">';
+    modifiers.forEach(mod => {
+        // mod is already an object with name, color, etc.
+        const modColor = mod.color || '#FFD700';
+        eqModifierHtml += `<div style="color:${modColor};">✨ ${mod.name}`;
+        if (mod.minDamage) eqModifierHtml += ` (${mod.minDamage}-${mod.maxDamage})`;
+        if (mod.statusEffect) eqModifierHtml += ` — ${mod.statusEffect}`;
+        eqModifierHtml += `</div>`;
+    });
+    eqModifierHtml += '</div>';
+}
         
         invHtml += `
             <div class="item-card equipped">
@@ -15466,24 +15641,20 @@ function _executeBuy(type, key, cost, itemName, disc) {
         const weaponKey = instanceData ? instanceData.instanceId : weaponItem.key;
         
         // Build modifier display
-        let modHtml = '';
-        const modifiers = instanceData?.modifiers || weapon.modifiers || [];
-        if (modifiers.length > 0) {
-            modHtml = '<div style="margin-top:5px;font-size:12px;">';
-            modifiers.forEach(modKey => {
-                if (typeof WEAPON_MODIFIERS === 'undefined') {
-                    modHtml += `<div style="color:#FF8800;">• ${modKey}</div>`;
-                    return;
-                }
-                const mod = WEAPON_MODIFIERS[modKey];
-                if (mod) {
-                    modHtml += `<div style="color:${mod.color};">• ${mod.name}`;
-                    if (mod.minDamage) modHtml += ` (${mod.minDamage}-${mod.maxDamage})`;
-                    modHtml += `</div>`;
-                }
-            });
-            modHtml += '</div>';
-        }
+let modHtml = '';
+const modifiers = instanceData?.modifiers || weapon.modifiers || [];
+if (modifiers.length > 0) {
+    modHtml = '<div style="margin-top:5px;font-size:12px;">';
+    modifiers.forEach(mod => {
+        // mod is already an object with name, color, etc.
+        const modColor = mod.color || '#FFD700';
+        modHtml += `<div style="color:${modColor};">✨ ${mod.name}`;
+        if (mod.minDamage) modHtml += ` (${mod.minDamage}-${mod.maxDamage})`;
+        if (mod.statusEffect) modHtml += ` — ${mod.statusEffect}`;
+        modHtml += `</div>`;
+    });
+    modHtml += '</div>';
+}
         
         const canEquip = canUseWeapon(playerClass, weapon);
         

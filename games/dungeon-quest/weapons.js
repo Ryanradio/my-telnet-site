@@ -2998,6 +2998,7 @@ const WEAPONS = {
     // ORBS - Mage/Sorceror
     // Rustic starter: Clouded Orb
     // ======================================================
+    /*
     clouded_orb: {
         "name": "Clouded Orb",
         "baseDamage": 1,
@@ -3107,7 +3108,7 @@ const WEAPONS = {
         "weaponSubtype": "orb",
         "allowedClasses": ["warlock", "necrolyte"]
     },
-
+*/
     // ======================================================
     // BONE WEAPONS - Monster Drops
     // ======================================================
