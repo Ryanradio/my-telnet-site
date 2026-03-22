@@ -252,7 +252,7 @@ goblin: {
     baseGold: 15, 
     level: 1,
     description: 'A small, sneaky creature with crude weapons',
-    possibleDrops: ['health_potion', 'dagger', 'cloth_armor', 'small_gem'],
+    possibleDrops: ['health_potion', 'small_gem'],
     dropRates: { common: 0.606, uncommon: 0.303, rare: 0.0758, epic: 0.0152 },
     abilities: [
         {
@@ -545,7 +545,7 @@ kobold: {
     baseGold: 12,
     level: 1,
     description: 'A small reptilian humanoid with a spear',
-    possibleDrops: ['health_potion', 'dagger', 'small_gem'],
+    possibleDrops: ['health_potion', 'small_gem'],
     dropRates: { common: 0.6666, uncommon: 0.2667, rare: 0.0667 },
     abilities: [
         {
@@ -740,7 +740,7 @@ bandit: {
     baseGold: 50, 
     level: 3,
     description: 'A cunning thief who preys on travelers',
-    possibleDrops: ['health_potion', 'mana_potion', 'poison_dagger', 'medium_gem', 'gold_coins'],
+    possibleDrops: ['health_potion', 'mana_potion', 'medium_gem', 'gold_coins'],
     dropRates: { common: 0.3658, uncommon: 0.3659, rare: 0.1829, epic: 0.0732, legendary: 0.0122 },
     abilities: [
         {
@@ -1658,7 +1658,7 @@ river_pirate: {
     baseGold: 55,
     level: 4,
     description: 'A brigand who robs travelers crossing the ford',
-    possibleDrops: ['health_potion', 'gold_coins', 'dagger', 'small_gem'],
+    possibleDrops: ['health_potion', 'gold_coins','small_gem'],
     dropRates: { common: 0.5, uncommon: 0.35, rare: 0.125, epic: 0.025 },
     abilities: [
         {
@@ -2215,7 +2215,7 @@ bandit_scout: {
     baseGold: 48,
     level: 5,
     description: 'The eyes of a larger gang — quicker than a full bandit',
-    possibleDrops: ['health_potion', 'gold_coins', 'dagger', 'small_gem'],
+    possibleDrops: ['health_potion', 'gold_coins', 'small_gem'],
     dropRates: { common: 0.5, uncommon: 0.35, rare: 0.125, epic: 0.025 },
     abilities: [
         {
@@ -2293,7 +2293,7 @@ bandit_scout: {
     baseGold: 35, 
     level: 6,
     description: 'A brutish warrior with a battle axe',
-    possibleDrops: ['health_potion', 'iron_sword', 'leather_armor', 'medium_gem', 'warhammer'],
+    possibleDrops: ['health_potion', 'medium_gem'],
     dropRates: { common: 0.4488, uncommon: 0.3205, rare: 0.1538, epic: 0.0641, legendary: 0.0128 },
     abilities: [
         {
@@ -2512,7 +2512,7 @@ centaur: {
     baseGold: 55,
     level: 8,
     description: 'A half-human, half-horse warrior with a spear',
-    possibleDrops: ['health_potion', 'longbow', 'leather_armor', 'medium_gem'],
+    possibleDrops: ['health_potion', 'medium_gem'],
     abilities: [
         {
             id: 'trample',
@@ -2584,7 +2584,7 @@ plains_raider: {
     baseGold: 60,
     level: 7,
     description: 'A nomadic warrior on horseback',
-    possibleDrops: ['health_potion', 'steel_sword', 'gold_coins', 'medium_gem'],
+    possibleDrops: ['health_potion', 'gold_coins', 'medium_gem'],
     abilities: [
         {
             id: 'skirmish',
@@ -2655,7 +2655,7 @@ giant_scorpion: {
     baseGold: 38,
     level: 8,
     description: 'A massive arachnid with a poisonous stinger',
-    possibleDrops: ['health_potion', 'scorpion_venom', 'chitin_armor', 'medium_gem'],
+    possibleDrops: ['health_potion', 'scorpion_venom', 'medium_gem'],
     abilities: [
         {
             id: 'sting',
@@ -2885,7 +2885,7 @@ skeleton: {
     baseGold: 28,
     level: 7,
     description: 'An animated pile of bones with rusty weapons',
-    possibleDrops: ['health_potion', 'bone_dust', 'rusty_sword', 'medium_gem'],
+    possibleDrops: ['health_potion', 'bone_dust', 'medium_gem'],
     abilities: [
         {
             id: 'bone_rattle',
@@ -2961,7 +2961,7 @@ wraith: {
     baseGold: 60,
     level: 10,
     description: 'A spectral horror that feeds on life force',
-    possibleDrops: ['greater_health_potion', 'shadowblade', 'soul_essence', 'large_gem'],
+    possibleDrops: ['greater_health_potion', 'soul_essence', 'large_gem'],
     abilities: [
         {
             id: 'life_drain',
@@ -3177,7 +3177,7 @@ cave_orc: {
     baseGold: 32,
     level: 5,
     description: 'A pale orc who has never seen sunlight and is furious about it',
-    possibleDrops: ['health_potion', 'iron_sword', 'leather_armor', 'medium_gem'],
+    possibleDrops: ['health_potion', 'medium_gem'],
     dropRates: { common: 0.5128, uncommon: 0.3205, rare: 0.1282, epic: 0.0385 },
     abilities: [
         {
@@ -3233,7 +3233,7 @@ cave_gnoll: {
     baseGold: 28,
     level: 5,
     description: 'A hyena-headed scavenger that hunts in underground tunnels',
-    possibleDrops: ['health_potion', 'gnoll_hide', 'bone_club', 'small_gem'],
+    possibleDrops: ['health_potion', 'gnoll_hide', 'small_gem'],
     dropRates: { common: 0.5999, uncommon: 0.2667, rare: 0.1067, epic: 0.0267 },
     abilities: [
         {
@@ -3639,7 +3639,7 @@ troll: {
     baseGold: 80, 
     level: 11,
     description: 'A massive regenerating beast with incredible strength',
-    possibleDrops: ['greater_health_potion', 'steel_sword', 'steel_plate', 'large_gem', 'warhammer'],
+    possibleDrops: ['greater_health_potion', 'large_gem'],
     abilities: [
         {
             id: 'smash',
@@ -3706,7 +3706,7 @@ skeleton_warrior: {
     baseGold: 60, 
     level: 11,
     description: 'An animated skeleton in ancient armor',
-    possibleDrops: ['health_potion', 'bone_dust', 'cursed_sword', 'large_gem'],
+    possibleDrops: ['health_potion', 'bone_dust', 'large_gem'],
     abilities: [
         {
             id: 'shield_bash',
@@ -3766,7 +3766,7 @@ dark_mage: {
     baseGold: 100, 
     level: 12,
     description: 'A corrupted spellcaster wielding shadow magic',
-    possibleDrops: ['mana_potion', 'greater_mana_potion', 'flame_staff', 'enchanted_robes', 'large_gem'],
+    possibleDrops: ['mana_potion', 'greater_mana_potion', 'enchanted_robes', 'large_gem'],
     abilities: [
         {
             id: 'mana_siphon',
@@ -3920,7 +3920,7 @@ stone_golem: {
     baseGold: 70,
     level: 13,
     description: 'An animated construct of living stone',
-    possibleDrops: ['greater_health_potion', 'golem_core', 'stone_armor', 'large_gem'],
+    possibleDrops: ['greater_health_potion', 'golem_core', 'large_gem'],
     abilities: [
         {
             id: 'pulverize',
@@ -3989,7 +3989,7 @@ ogre: {
     baseGold: 90,
     level: 12,
     description: 'A dim-witted giant with a massive club',
-    possibleDrops: ['greater_health_potion', 'warhammer', 'steel_plate', 'large_gem'],
+    possibleDrops: ['greater_health_potion', 'large_gem'],
     abilities: [
         {
             id: 'club_slam',
@@ -4287,7 +4287,7 @@ bog_beast: {
     baseGold: 105,
     level: 14,
     description: 'A monstrous creature made of mud and vines',
-    possibleDrops: ['greater_health_potion', 'swamp_heart', 'bog_armor', 'large_gem'],
+    possibleDrops: ['greater_health_potion', 'swamp_heart', 'large_gem'],
     abilities: [
         {
             id: 'drag_under',
@@ -4443,7 +4443,7 @@ cursed_knight: {
     baseGold: 110,
     level: 14,
     description: 'A fallen warrior bound to guard these ruins',
-    possibleDrops: ['greater_health_potion', 'cursed_blade', 'ancient_armor', 'large_gem'],
+    possibleDrops: ['greater_health_potion', 'large_gem'],
     abilities: [
         {
             id: 'death_mark',
@@ -4516,7 +4516,7 @@ shadow_stalker: {
     baseGold: 100,
     level: 14,
     description: 'A creature born from darkness itself',
-    possibleDrops: ['greater_health_potion', 'shadowblade', 'dark_essence', 'large_gem'],
+    possibleDrops: ['greater_health_potion', 'dark_essence', 'large_gem'],
     abilities: [
         {
             id: 'eclipse_strike',
@@ -4586,7 +4586,7 @@ ruin_guardian: {
     baseGold: 140,
     level: 16,
     description: 'An ancient magical construct still on duty',
-    possibleDrops: ['greater_health_potion', 'guardian_core', 'enchanted_plate', 'huge_gem'],
+    possibleDrops: ['greater_health_potion', 'guardian_core', 'huge_gem'],
     abilities: [
         {
             id: 'arcane_pulse',
@@ -4660,7 +4660,7 @@ spectral_warrior: {
     baseGold: 105,
     level: 15,
     description: 'The ghost of a legendary warrior',
-    possibleDrops: ['greater_health_potion', 'spectral_blade', 'ghost_essence', 'large_gem'],
+    possibleDrops: ['greater_health_potion', 'ghost_essence', 'large_gem'],
     abilities: [
         {
             id: 'phase_shift',
@@ -4730,7 +4730,7 @@ dark_priest: {
     baseGold: 125,
     level: 16,
     description: 'A corrupted cleric who worships dark gods',
-    possibleDrops: ['greater_mana_potion', 'cursed_staff', 'dark_robes', 'huge_gem'],
+    possibleDrops: ['greater_mana_potion', 'huge_gem'],
     dropRates: { common: 0.2041, uncommon: 0.2551, rare: 0.2551, epic: 0.1837, legendary: 0.102 },
     abilities: [
         {
@@ -4809,7 +4809,7 @@ lich: {
     baseGold: 180, 
     level: 17,
     description: 'An undead sorcerer of terrible power',
-    possibleDrops: ['greater_health_potion', 'greater_mana_potion', 'archmage_staff', 'enchanted_robes', 'huge_gem', 'phylactery'],
+    possibleDrops: ['greater_health_potion', 'greater_mana_potion', 'huge_gem', 'phylactery'],
     dropRates: { common: 0.2063, uncommon: 0.2577, rare: 0.2577, epic: 0.1546, legendary: 0.1031, mythic: 0.0206 },
     abilities: [
         {
@@ -4885,7 +4885,7 @@ death_knight: {
     baseGold: 220, 
     level: 19,
     description: 'A fallen paladin cursed to serve in death',
-    possibleDrops: ['greater_health_potion', 'excalibur', 'dragon_scale', 'huge_gem', 'cursed_blade'],
+    possibleDrops: ['greater_health_potion', 'dragon_scale', 'huge_gem'],
     dropRates: { common: 0.15, uncommon: 0.25, rare: 0.25, epic: 0.2, legendary: 0.12, mythic: 0.03 },
     abilities: [
         {
@@ -4959,7 +4959,7 @@ bone_dragon: {
     baseGold: 250,
     level: 20,
     description: 'The skeletal remains of an ancient dragon',
-    possibleDrops: ['superior_health_potion', 'dragon_bone', 'necromantic_staff', 'pristine_gem'],
+    possibleDrops: ['superior_health_potion', 'dragon_bone', 'pristine_gem'],
     dropRates: { common: 0.15, uncommon: 0.2, rare: 0.25, epic: 0.22, legendary: 0.15, mythic: 0.03 },
     abilities: [
         {
@@ -5034,7 +5034,7 @@ vampire_lord: {
     baseGold: 240,
     level: 19,
     description: 'An ancient vampire of immense power',
-    possibleDrops: ['greater_health_potion', 'vampire_blade', 'blood_ruby', 'huge_gem'],
+    possibleDrops: ['greater_health_potion', 'blood_ruby', 'huge_gem'],
     dropRates: { common: 0.15, uncommon: 0.25, rare: 0.25, epic: 0.2, legendary: 0.12, mythic: 0.03 },
     abilities: [
         {
@@ -5109,7 +5109,7 @@ crypt_guard: {
     baseGold: 160,
     level: 17,
     description: 'An undead sentinel bound to guard eternal',
-    possibleDrops: ['greater_health_potion', 'ancient_sword', 'crypt_armor', 'huge_gem'],
+    possibleDrops: ['greater_health_potion', 'huge_gem'],
     dropRates: { common: 0.2041, uncommon: 0.2551, rare: 0.2551, epic: 0.1837, legendary: 0.102 },
     abilities: [
         {
@@ -5183,7 +5183,7 @@ lesser_demon: {
     baseGold: 190,
     level: 18,
     description: 'A fiend from the infernal planes',
-    possibleDrops: ['greater_health_potion', 'demon_horn', 'hellforged_blade', 'huge_gem'],
+    possibleDrops: ['greater_health_potion', 'demon_horn', 'huge_gem'],
     dropRates: { common: 0.18, uncommon: 0.25, rare: 0.25, epic: 0.2, legendary: 0.1, mythic: 0.02 },
     abilities: [
         {
@@ -5414,7 +5414,7 @@ pit_fiend: {
     baseGold: 230,
     level: 19,
     description: 'A powerful demon general',
-    possibleDrops: ['superior_health_potion', 'demonic_blade', 'fiend_armor', 'pristine_gem'],
+    possibleDrops: ['superior_health_potion', 'pristine_gem'],
     dropRates: { common: 0.15, uncommon: 0.2, rare: 0.25, epic: 0.22, legendary: 0.15, mythic: 0.03 },
     abilities: [
         {
@@ -5487,7 +5487,7 @@ pit_fiend: {
     baseGold: 280,
     level: 21,
     description: 'A ruler of the demonic hordes',
-    possibleDrops: ['superior_health_potion', 'demon_crown', 'infernal_blade', 'pristine_gem'],
+    possibleDrops: ['superior_health_potion', 'pristine_gem'],
     dropRates: { common: 0.0971, uncommon: 0.1942, rare: 0.2427, epic: 0.2427, legendary: 0.1748, mythic: 0.0485 },
     abilities: [
         {
@@ -5662,7 +5662,7 @@ corrupted_paladin: {
     baseGold: 260,
     level: 21,
     description: 'A holy warrior turned to evil',
-    possibleDrops: ['superior_health_potion', 'corrupted_mjolnir', 'tainted_plate', 'pristine_gem'],
+    possibleDrops: ['superior_health_potion', 'pristine_gem'],
     dropRates: { common: 0.1176, uncommon: 0.1961, rare: 0.2451, epic: 0.2451, legendary: 0.1569, mythic: 0.0392 },
     abilities: [
         {
@@ -5750,7 +5750,7 @@ dark_oracle: {
     baseGold: 240,
     level: 19,
     description: 'A seer who glimpses dark futures',
-    possibleDrops: ['superior_mana_potion', 'prophecy_staff', 'oracle_robes', 'pristine_gem'],
+    possibleDrops: ['superior_mana_potion', 'pristine_gem'],
     dropRates: { common: 0.15, uncommon: 0.2, rare: 0.25, epic: 0.22, legendary: 0.15, mythic: 0.03 },
     abilities: [
         {
@@ -5837,7 +5837,7 @@ abomination: {
     baseGold: 300,
     level: 22,
     description: 'A horrific fusion of flesh and dark magic',
-    possibleDrops: ['superior_health_potion', 'corrupted_essence', 'flesh_armor', 'pristine_gem'],
+    possibleDrops: ['superior_health_potion', 'corrupted_essence', 'pristine_gem'],
     dropRates: { common: 0.0972, uncommon: 0.1456, rare: 0.2427, epic: 0.2718, legendary: 0.1942, mythic: 0.0485 },
     abilities: [
         {
@@ -5924,7 +5924,7 @@ void_priest: {
     baseGold: 270,
     level: 21,
     description: 'A cultist who channels the void',
-    possibleDrops: ['superior_mana_potion', 'void_staff', 'nihil_robes', 'pristine_gem'],
+    possibleDrops: ['superior_mana_potion', 'pristine_gem'],
     dropRates: { common: 0.1176, uncommon: 0.1961, rare: 0.2451, epic: 0.2451, legendary: 0.1569, mythic: 0.0392 },
     abilities: [
         {
@@ -6021,7 +6021,7 @@ fire_elemental: {
     baseGold: 320, 
     level: 22,
     description: 'A being of pure flame and destruction',
-    possibleDrops: ['superior_health_potion', 'flame_staff', 'fire_blade', 'pristine_gem', 'fire_core'],
+    possibleDrops: ['superior_health_potion', 'pristine_gem', 'fire_core'],
     dropRates: { common: 0.0972, uncommon: 0.1456, rare: 0.2427, epic: 0.2718, legendary: 0.1942, mythic: 0.0485 },
     abilities: [
         {
@@ -6115,7 +6115,7 @@ lava_golem: {
     baseGold: 340,
     level: 23,
     description: 'A massive construct of molten rock',
-    possibleDrops: ['superior_health_potion', 'magma_core', 'lava_armor', 'pristine_gem'],
+    possibleDrops: ['superior_health_potion', 'magma_core', 'pristine_gem'],
     dropRates: { common: 0.0776, uncommon: 0.1165, rare: 0.2427, epic: 0.2913, legendary: 0.2136, mythic: 0.0583 },
     abilities: [
         {
@@ -6290,7 +6290,7 @@ magma_dragon: {
     baseGold: 450,
     level: 25,
     description: 'A dragon born in the heart of a volcano',
-    possibleDrops: ['superior_health_potion', 'dragonslayer', 'magma_scale', 'flawless_gem', 'dragon_heart'],
+    possibleDrops: ['superior_health_potion', 'magma_scale', 'flawless_gem', 'dragon_heart'],
     dropRates: { common: 0.0467, uncommon: 0.0935, rare: 0.1869, epic: 0.2804, legendary: 0.2804, mythic: 0.1121 },
     abilities: [
         {
@@ -6381,7 +6381,7 @@ flame_titan: {
     baseGold: 500,
     level: 25,
     description: 'A primordial giant of endless fire',
-    possibleDrops: ['superior_health_potion', 'titan_blade', 'flame_armor', 'flawless_gem'],
+    possibleDrops: ['superior_health_potion', 'flawless_gem'],
     dropRates: { common: 0.0277, uncommon: 0.0741, rare: 0.1667, epic: 0.2963, legendary: 0.2963, mythic: 0.1389 },
     isBoss: true,
     abilities: [
@@ -6475,7 +6475,7 @@ frost_giant: {
     baseGold: 370,
     level: 23,
     description: 'A colossal warrior from the frozen wastes',
-    possibleDrops: ['superior_health_potion', 'giant_axe', 'frost_armor', 'pristine_gem'],
+    possibleDrops: ['superior_health_potion', 'pristine_gem'],
     dropRates: { common: 0.0776, uncommon: 0.1165, rare: 0.2427, epic: 0.2913, legendary: 0.2136, mythic: 0.0583 },
     abilities: [
         {
@@ -6745,7 +6745,7 @@ frozen_revenant: {
     baseGold: 380,
     level: 23,
     description: 'An undead warrior encased in ice',
-    possibleDrops: ['superior_health_potion', 'frozen_blade', 'ice_armor', 'pristine_gem'],
+    possibleDrops: ['superior_health_potion', 'pristine_gem'],
     dropRates: { common: 0.0776, uncommon: 0.1165, rare: 0.2427, epic: 0.2913, legendary: 0.2136, mythic: 0.0583 },
     abilities: [
         {
@@ -6935,7 +6935,7 @@ void_walker: {
     baseGold: 400,
     level: 24,
     description: 'A creature from between dimensions',
-    possibleDrops: ['superior_health_potion', 'void_blade', 'null_essence', 'pristine_gem'],
+    possibleDrops: ['superior_health_potion', 'null_essence', 'pristine_gem'],
     dropRates: { common: 0.0571, uncommon: 0.1143, rare: 0.2095, epic: 0.3048, legendary: 0.2381, mythic: 0.0762 },
     abilities: [
         {
@@ -7109,7 +7109,7 @@ entropy_beast: {
     baseGold: 420,
     level: 24,
     description: 'A monster that embodies decay itself',
-    possibleDrops: ['superior_health_potion', 'entropy_core', 'chaos_armor', 'pristine_gem'],
+    possibleDrops: ['superior_health_potion', 'entropy_core', 'pristine_gem'],
     dropRates: { common: 0.0571, uncommon: 0.1143, rare: 0.2095, epic: 0.3048, legendary: 0.2381, mythic: 0.0762 },
     abilities: [
         {
@@ -7202,7 +7202,7 @@ nihil_spawn: {
     baseGold: 460,
     level: 25,
     description: 'A creature of pure nothingness',
-    possibleDrops: ['superior_health_potion', 'nihil_essence', 'void_armor', 'flawless_gem'],
+    possibleDrops: ['superior_health_potion', 'nihil_essence', 'flawless_gem'],
     dropRates: { common: 0.0467, uncommon: 0.0935, rare: 0.1869, epic: 0.2804, legendary: 0.2804, mythic: 0.1121 },
     abilities: [
         {
@@ -7285,7 +7285,7 @@ void_lord: {
     baseGold: 550,
     level: 25,
     description: 'A ruler of the emptiness between worlds',
-    possibleDrops: ['superior_health_potion', 'void_crown', 'oblivion_blade', 'flawless_gem'],
+    possibleDrops: ['superior_health_potion', 'flawless_gem'],
     dropRates: { common: 0.0277, uncommon: 0.0741, rare: 0.1667, epic: 0.2963, legendary: 0.2963, mythic: 0.1389 },
     isBoss: true,
     abilities: [
@@ -7376,7 +7376,7 @@ celestial_guardian: {
     baseGold: 480,
     level: 24,
     description: 'A divine protector of the heavens',
-    possibleDrops: ['superior_health_potion', 'holy_blade', 'divine_armor', 'flawless_gem'],
+    possibleDrops: ['superior_health_potion', 'flawless_gem'],
     dropRates: { common: 0.0467, uncommon: 0.0935, rare: 0.1869, epic: 0.2804, legendary: 0.2804, mythic: 0.1121 },
     abilities: [
         {
@@ -7464,7 +7464,7 @@ arch_angel: {
     baseGold: 520,
     level: 25,
     description: 'A powerful celestial warrior',
-    possibleDrops: ['superior_health_potion', 'angel_wing', 'celestial_blade', 'flawless_gem'],
+    possibleDrops: ['superior_health_potion', 'angel_wing', 'flawless_gem'],
     dropRates: { common: 0.037, uncommon: 0.0741, rare: 0.1667, epic: 0.2963, legendary: 0.2963, mythic: 0.1296 },
     abilities: [
         {
@@ -7551,7 +7551,7 @@ divine_champion: {
     baseGold: 510,
     level: 25,
     description: 'A mortal elevated to divine status',
-    possibleDrops: ['superior_health_potion', 'champion_sword', 'blessed_plate', 'flawless_gem'],
+    possibleDrops: ['superior_health_potion', 'flawless_gem'],
     dropRates: { common: 0.037, uncommon: 0.0741, rare: 0.1667, epic: 0.2963, legendary: 0.2963, mythic: 0.1296 },
     abilities: [
         {
@@ -7639,7 +7639,7 @@ seraphim: {
     baseGold: 570,
     level: 25,
     description: 'A six-winged angel of highest order',
-    possibleDrops: ['superior_health_potion', 'seraphim_feather', 'heavenly_blade', 'flawless_gem'],
+    possibleDrops: ['superior_health_potion', 'seraphim_feather', 'flawless_gem'],
     dropRates: { common: 0.0277, uncommon: 0.0648, rare: 0.1389, epic: 0.2778, legendary: 0.3241, mythic: 0.1667 },
     abilities: [
         {
@@ -7727,7 +7727,7 @@ god_avatar: {
     baseGold: 700,
     level: 25,
     description: 'A physical manifestation of divine power',
-    possibleDrops: ['superior_health_potion', 'divine_artifact', 'god_blade', 'flawless_gem', 'magical_butterknife'],
+    possibleDrops: ['superior_health_potion', 'divine_artifact','god_blade', 'flawless_gem', 'magical_butterknife'],
     dropRates: { common: 0.0183, uncommon: 0.0459, rare: 0.1101, epic: 0.2752, legendary: 0.3669, mythic: 0.1835, butterknife: 0.0001 },
     isBoss: true,
     abilities: [
@@ -7821,7 +7821,7 @@ god_avatar: {
     baseGold: 500, 
     level: 20,
     description: 'An ancient wyrm with scales like rubies',
-    possibleDrops: ['superior_health_potion', 'dragonslayer', 'dragon_scale', 'pristine_gem', 'dragon_heart', 'magical_butterknife'],
+    possibleDrops: ['superior_health_potion', 'dragon_scale', 'pristine_gem', 'dragon_heart', 'magical_butterknife'],
     dropRates: { common: 0.097, uncommon: 0.1456, rare: 0.2427, epic: 0.2427, legendary: 0.1942, mythic: 0.0777, butterknife: 0.0001 },
     isBoss: true,
     abilities: [
@@ -7916,7 +7916,7 @@ demon: {
     baseGold: 400, 
     level: 18,
     description: 'A powerful fiend from the infernal planes',
-    possibleDrops: ['superior_health_potion', 'superior_mana_potion', 'demonic_blade', 'demon_leather', 'pristine_gem', 'demon_core'],
+    possibleDrops: ['superior_health_potion', 'superior_mana_potion', 'pristine_gem', 'demon_core'],
     dropRates: { common: 0.1164, uncommon: 0.1748, rare: 0.2427, epic: 0.2136, legendary: 0.1748, mythic: 0.0777 },
     isBoss: true,
     abilities: [
@@ -8010,7 +8010,7 @@ vampire: {
     baseGold: 300,
     level: 16,
     description: 'A centuries-old blood-drinking undead',
-    possibleDrops: ['greater_health_potion', 'vampire_blade', 'noble_robes', 'huge_gem', 'blood_ruby'],
+    possibleDrops: ['greater_health_potion', 'huge_gem', 'blood_ruby'],
     dropRates: { common: 0.1471, uncommon: 0.2451, rare: 0.2451, epic: 0.1961, legendary: 0.1176, mythic: 0.049 },
     isBoss: true,
     abilities: [
@@ -8665,7 +8665,7 @@ river_pirate: {
     baseGold: 55,
     level: 4,
     description: 'A brigand who robs travelers crossing the ford',
-    possibleDrops: ['health_potion', 'gold_coins', 'dagger', 'small_gem'],
+    possibleDrops: ['health_potion', 'gold_coins', 'small_gem'],
     dropRates: { common: 0.5, uncommon: 0.35, rare: 0.125, epic: 0.025 },
     abilities: [
         {
@@ -9277,7 +9277,7 @@ bandit_scout: {
     baseGold: 48,
     level: 5,
     description: 'The eyes of a larger gang — quicker than a full bandit',
-    possibleDrops: ['health_potion', 'gold_coins', 'dagger', 'small_gem'],
+    possibleDrops: ['health_potion', 'gold_coins', 'small_gem'],
     dropRates: { common: 0.5, uncommon: 0.35, rare: 0.125, epic: 0.025 },
     abilities: [
         {
@@ -9420,7 +9420,7 @@ hobgoblin: {
     baseGold: 50,
     level: 6,
     description: 'A larger, meaner, well-organized cousin of the goblin',
-    possibleDrops: ['health_potion', 'iron_sword', 'medium_gem'],
+    possibleDrops: ['health_potion', 'medium_gem'],
     dropRates: { common: 0.4634, uncommon: 0.3415, rare: 0.1463, epic: 0.0488 },
     abilities: [
         {
@@ -9718,7 +9718,7 @@ bone_archer: {
     baseGold: 38,
     level: 7,
     description: 'A skeleton marksman that pins you from the shadows',
-    possibleDrops: ['health_potion', 'bone_dust', 'cursed_bow', 'medium_gem'],
+    possibleDrops: ['health_potion', 'bone_dust', 'medium_gem'],
     dropRates: { common: 0.5128, uncommon: 0.3205, rare: 0.1282, epic: 0.0385 },
     abilities: [
         {
@@ -10003,7 +10003,7 @@ grave_knight: {
     baseGold: 55,
     level: 7,
     description: 'A corrupted paladin still dutifully guarding his eternal post',
-    possibleDrops: ['health_potion', 'cursed_sword', 'medium_gem'],
+    possibleDrops: ['health_potion', 'medium_gem'],
     dropRates: { common: 0.4167, uncommon: 0.3333, rare: 0.1786, epic: 0.0714 },
     abilities: [
         {
@@ -10077,7 +10077,7 @@ orc_berserker: {
     baseGold: 48,
     level: 8,
     description: 'Fights naked and screaming — somehow more dangerous for it',
-    possibleDrops: ['health_potion', 'warhammer', 'medium_gem'],
+    possibleDrops: ['health_potion', 'medium_gem'],
     dropRates: { common: 0.4167, uncommon: 0.3333, rare: 0.1786, epic: 0.0714 },
     abilities: [
         {
@@ -10145,7 +10145,7 @@ giant_beetle: {
     baseGold: 40,
     level: 8,
     description: 'Sprays boiling acid. The shell is the least of your problems',
-    possibleDrops: ['health_potion', 'chitin_armor', 'medium_gem'],
+    possibleDrops: ['health_potion', 'medium_gem'],
     dropRates: { common: 0.4939, uncommon: 0.3086, rare: 0.1481, epic: 0.0494 },
     abilities: [
         {
@@ -10299,7 +10299,7 @@ minotaur_scout: {
     baseGold: 55,
     level: 8,
     description: 'Outrider of a minotaur warband — never comes alone for long',
-    possibleDrops: ['health_potion', 'iron_sword', 'medium_gem'],
+    possibleDrops: ['health_potion', 'medium_gem'],
     dropRates: { common: 0.4167, uncommon: 0.3333, rare: 0.1786, epic: 0.0714 },
     abilities: [
         {
@@ -10685,7 +10685,7 @@ gnoll_chief: {
     baseGold: 90,
     level: 9,
     description: 'The biggest, meanest hyena-man in the pack',
-    possibleDrops: ['health_potion', 'warhammer', 'medium_gem'],
+    possibleDrops: ['health_potion', 'medium_gem'],
     dropRates: { common: 0.3368, uncommon: 0.3158, rare: 0.2105, epic: 0.1053, legendary: 0.0316 },
     abilities: [
         {
@@ -10997,7 +10997,7 @@ rotting_knight: {
     baseGold: 80,
     level: 10,
     description: 'Fully armored and mostly decomposed',
-    possibleDrops: ['health_potion', 'ancient_sword', 'large_gem'],
+    possibleDrops: ['health_potion', 'large_gem'],
     dropRates: { common: 0.3158, uncommon: 0.2842, rare: 0.2316, epic: 0.1263, legendary: 0.0421 },
     abilities: [
         {
@@ -11259,7 +11259,7 @@ cave_basilisk: {
     baseGold: 92,
     level: 11,
     description: 'Avoid eye contact. Seriously. Eyes closed. Trust me',
-    possibleDrops: ['greater_health_potion', 'basilisk_eye', 'stone_armor', 'large_gem'],
+    possibleDrops: ['greater_health_potion', 'basilisk_eye', 'large_gem'],
     dropRates: { common: 0.2916, uncommon: 0.2813, rare: 0.2292, epic: 0.1458, legendary: 0.0521 },
     abilities: [
         {
@@ -11917,7 +11917,7 @@ dark_ranger: {
     baseGold: 130,
     level: 12,
     description: 'A veteran scout who switched sides for better pay',
-    possibleDrops: ['greater_health_potion', 'longbow', 'dark_essence', 'large_gem'],
+    possibleDrops: ['greater_health_potion', 'dark_essence', 'large_gem'],
     dropRates: { common: 0.2755, uncommon: 0.3061, rare: 0.2347, epic: 0.1327, legendary: 0.051 },
     abilities: [
         {
@@ -12010,7 +12010,7 @@ animated_armor: {
     baseGold: 100,
     level: 12,
     description: 'Empty inside. Very full of sword swings',
-    possibleDrops: ['greater_health_potion', 'ancient_armor', 'large_gem'],
+    possibleDrops: ['greater_health_potion', 'large_gem'],
     dropRates: { common: 0.3158, uncommon: 0.2842, rare: 0.2316, epic: 0.1263, legendary: 0.0421 },
     abilities: [
         {
@@ -12175,7 +12175,7 @@ chaos_knight: {
     baseGold: 145,
     level: 13,
     description: 'A mercenary who pledged himself to entropy and thriving',
-    possibleDrops: ['greater_health_potion', 'cursed_blade', 'chaos_armor', 'large_gem'],
+    possibleDrops: ['greater_health_potion', 'large_gem'],
     dropRates: { common: 0.25, uncommon: 0.28, rare: 0.25, epic: 0.15, legendary: 0.07 },
     abilities: [
         {
@@ -12438,7 +12438,7 @@ gargoyle: {
     baseGold: 118,
     level: 13,
     description: 'Was once a decoration. Developed ambitions',
-    possibleDrops: ['greater_health_potion', 'stone_armor', 'large_gem'],
+    possibleDrops: ['greater_health_potion', 'large_gem'],
     dropRates: { common: 0.3125, uncommon: 0.2708, rare: 0.2292, epic: 0.1354, legendary: 0.0521 },
     abilities: [
         {
@@ -12521,7 +12521,7 @@ necromancer: {
     baseGold: 170,
     level: 14,
     description: 'Has strong opinions about the definition of "alive"',
-    possibleDrops: ['greater_mana_potion', 'necromantic_staff', 'cursed_bone', 'large_gem'],
+    possibleDrops: ['greater_mana_potion', 'cursed_bone', 'large_gem'],
     dropRates: { common: 0.2157, uncommon: 0.2941, rare: 0.2549, epic: 0.1569, legendary: 0.0784 },
     abilities: [
         {
@@ -12687,7 +12687,7 @@ dark_champion: {
     baseGold: 165,
     level: 14,
     description: 'Elite guard of a dead king, still taking the job seriously',
-    possibleDrops: ['greater_health_potion', 'ancient_sword', 'ancient_armor', 'large_gem'],
+    possibleDrops: ['greater_health_potion', 'large_gem'],
     dropRates: { common: 0.2278, uncommon: 0.2772, rare: 0.2574, epic: 0.1584, legendary: 0.0792 },
     abilities: [
         {
@@ -12932,7 +12932,7 @@ elder_wraith: {
     baseGold: 190,
     level: 15,
     description: 'Older than the ruins it haunts, angrier than ever',
-    possibleDrops: ['greater_health_potion', 'soul_essence', 'shadowblade', 'huge_gem'],
+    possibleDrops: ['greater_health_potion', 'soul_essence', 'huge_gem'],
     dropRates: { common: 0.1961, uncommon: 0.2745, rare: 0.2745, epic: 0.1667, legendary: 0.0882 },
     abilities: [
         {
@@ -13022,7 +13022,7 @@ black_knight: {
     baseGold: 185,
     level: 15,
     description: "Refuses to acknowledge defeat. Refuses to acknowledge anything",
-    possibleDrops: ['greater_health_potion', 'cursed_blade', 'ancient_armor', 'huge_gem'],
+    possibleDrops: ['greater_health_potion', 'huge_gem'],
     dropRates: { common: 0.1961, uncommon: 0.2745, rare: 0.2745, epic: 0.1667, legendary: 0.0882 },
     abilities: [
         {
@@ -13197,7 +13197,7 @@ ancient_golem: {
     baseGold: 160,
     level: 15,
     description: 'The original model. No warranty remaining',
-    possibleDrops: ['greater_health_potion', 'golem_core', 'stone_armor', 'huge_gem'],
+    possibleDrops: ['greater_health_potion', 'golem_core', 'huge_gem'],
     dropRates: { common: 0.2157, uncommon: 0.2745, rare: 0.2647, epic: 0.1569, legendary: 0.0882 },
     abilities: [
         {
@@ -13278,7 +13278,7 @@ revenant: {
     baseGold: 195,
     level: 15,
     description: 'Back from the dead with a very specific grudge',
-    possibleDrops: ['greater_health_potion', 'cursed_sword', 'ghost_essence', 'huge_gem'],
+    possibleDrops: ['greater_health_potion', 'ghost_essence', 'huge_gem'],
     dropRates: { common: 0.204, uncommon: 0.2718, rare: 0.2718, epic: 0.165, legendary: 0.0874 },
     abilities: [
         {
@@ -13636,7 +13636,7 @@ demon_warrior: {
     baseGold: 290,
     level: 16,
     description: 'Forged in hellfire, deployed with enthusiasm',
-    possibleDrops: ['superior_health_potion', 'demon_horn', 'hellforged_blade', 'huge_gem'],
+    possibleDrops: ['superior_health_potion', 'demon_horn', 'huge_gem'],
     dropRates: { common: 0.17, uncommon: 0.25, rare: 0.27, epic: 0.19, legendary: 0.1, mythic: 0.02 },
     abilities: [
         {
@@ -13811,7 +13811,7 @@ undead_general: {
     baseGold: 295,
     level: 17,
     description: 'Still commanding an army of one, mostly himself',
-    possibleDrops: ['superior_health_potion', 'ancient_sword', 'crypt_armor', 'huge_gem'],
+    possibleDrops: ['superior_health_potion', 'huge_gem'],
     dropRates: { common: 0.16, uncommon: 0.24, rare: 0.28, epic: 0.2, legendary: 0.1, mythic: 0.02 },
     abilities: [
         {
@@ -13894,7 +13894,7 @@ doom_knight: {
     baseGold: 308,
     level: 17,
     description: 'The upgrade to death knight. Nobody asked for this',
-    possibleDrops: ['superior_health_potion', 'cursed_blade', 'demon_leather', 'huge_gem'],
+    possibleDrops: ['superior_health_potion', 'huge_gem'],
     dropRates: { common: 0.15, uncommon: 0.24, rare: 0.28, epic: 0.2, legendary: 0.11, mythic: 0.02 },
     abilities: [
         {
@@ -13984,7 +13984,7 @@ infernal_mage: {
     baseGold: 320,
     level: 17,
     description: 'Studied in hell. Graduated with honors in mass destruction',
-    possibleDrops: ['superior_mana_potion', 'archmage_staff', 'enchanted_robes', 'huge_gem'],
+    possibleDrops: ['superior_mana_potion', 'huge_gem'],
     dropRates: { common: 0.15, uncommon: 0.24, rare: 0.27, epic: 0.2, legendary: 0.11, mythic: 0.03 },
     abilities: [
         {
@@ -14343,7 +14343,7 @@ nightmare_steed: {
     baseGold: 340,
     level: 18,
     description: 'A horse bred in the underworld, unrideable, unconquerable',
-    possibleDrops: ['superior_health_potion', 'hellfire_fang', 'fiend_armor', 'pristine_gem'],
+    possibleDrops: ['superior_health_potion', 'hellfire_fang', 'pristine_gem'],
     dropRates: { common: 0.14, uncommon: 0.22, rare: 0.28, epic: 0.22, legendary: 0.12, mythic: 0.02 },
     abilities: [
         {
@@ -14431,7 +14431,7 @@ shadow_archon: {
     baseGold: 358,
     level: 18,
     description: 'A high-ranking void entity, condescending and dangerous',
-    possibleDrops: ['superior_mana_potion', 'void_blade', 'shadow_essence', 'pristine_gem'],
+    possibleDrops: ['superior_mana_potion', 'shadow_essence', 'pristine_gem'],
     dropRates: { common: 0.13, uncommon: 0.22, rare: 0.27, epic: 0.22, legendary: 0.13, mythic: 0.03 },
     abilities: [
         {
@@ -14519,7 +14519,7 @@ chaos_bringer: {
     baseGold: 348,
     level: 18,
     description: 'Does exactly what it says on the tin',
-    possibleDrops: ['superior_health_potion', 'chaos_armor', 'chaos_essence', 'pristine_gem'],
+    possibleDrops: ['superior_health_potion', 'chaos_essence', 'pristine_gem'],
     dropRates: { common: 0.13, uncommon: 0.22, rare: 0.28, epic: 0.22, legendary: 0.12, mythic: 0.03 },
     abilities: [
         {
@@ -14608,7 +14608,7 @@ soul_reaper: {
     baseGold: 362,
     level: 18,
     description: 'Carries a scythe that costs extra souls, not just one',
-    possibleDrops: ['superior_mana_potion', 'soul_essence', 'cursed_blade', 'pristine_gem'],
+    possibleDrops: ['superior_mana_potion', 'soul_essence', 'pristine_gem'],
     dropRates: { common: 0.12, uncommon: 0.22, rare: 0.28, epic: 0.22, legendary: 0.13, mythic: 0.03 },
     abilities: [
         {
@@ -14699,7 +14699,7 @@ infernal_titan: {
     baseGold: 388,
     level: 19,
     description: 'An enormous demon who never learned the meaning of "enough"',
-    possibleDrops: ['superior_health_potion', 'titan_blade', 'demon_crown', 'pristine_gem'],
+    possibleDrops: ['superior_health_potion', 'pristine_gem'],
     dropRates: { common: 0.12, uncommon: 0.2, rare: 0.27, epic: 0.24, legendary: 0.14, mythic: 0.03 },
     abilities: [
         {
@@ -14787,7 +14787,7 @@ void_assassin: {
     baseGold: 395,
     level: 19,
     description: 'Teleports. Silent. Has your name on a list',
-    possibleDrops: ['superior_health_potion', 'void_blade', 'shadow_essence', 'pristine_gem'],
+    possibleDrops: ['superior_health_potion', 'shadow_essence', 'pristine_gem'],
     dropRates: { common: 0.11, uncommon: 0.2, rare: 0.27, epic: 0.24, legendary: 0.15, mythic: 0.03 },
     abilities: [
         {
@@ -14976,7 +14976,7 @@ demon_sorceress: {
     baseGold: 390,
     level: 19,
     description: 'Brilliant, demonic, and insulted by the word "lesser"',
-    possibleDrops: ['superior_mana_potion', 'demonic_blade', 'oracle_robes', 'pristine_gem'],
+    possibleDrops: ['superior_mana_potion', 'pristine_gem'],
     dropRates: { common: 0.11, uncommon: 0.2, rare: 0.27, epic: 0.24, legendary: 0.15, mythic: 0.03 },
     abilities: [
         {
@@ -15064,7 +15064,7 @@ herald_of_doom: {
     baseGold: 385,
     level: 19,
     description: 'Arrives before something worse. That is his entire job',
-    possibleDrops: ['superior_health_potion', 'chaos_essence', 'infernal_blade', 'pristine_gem'],
+    possibleDrops: ['superior_health_potion', 'chaos_essence', 'pristine_gem'],
     dropRates: { common: 0.11, uncommon: 0.2, rare: 0.27, epic: 0.24, legendary: 0.15, mythic: 0.03 },
     abilities: [
         {
@@ -15241,7 +15241,7 @@ lava_titan: {
     baseGold: 412,
     level: 20,
     description: 'Born in the deepest volcanic fissure. Came up just for you',
-    possibleDrops: ['superior_health_potion', 'magma_core', 'lava_armor', 'pristine_gem'],
+    possibleDrops: ['superior_health_potion', 'magma_core', 'pristine_gem'],
     dropRates: { common: 0.0892, uncommon: 0.1782, rare: 0.2673, epic: 0.2574, legendary: 0.1683, mythic: 0.0396 },
     abilities: [
         {
@@ -15417,7 +15417,7 @@ corrupted_titan: {
     baseGold: 415,
     level: 20,
     description: 'A once-great giant warped beyond recognition',
-    possibleDrops: ['superior_health_potion', 'corrupted_essence', 'tainted_plate', 'pristine_gem'],
+    possibleDrops: ['superior_health_potion', 'corrupted_essence', 'pristine_gem'],
     dropRates: { common: 0.0991, uncommon: 0.1782, rare: 0.2673, epic: 0.2574, legendary: 0.1584, mythic: 0.0396 },
     abilities: [
         {
@@ -15505,7 +15505,7 @@ nightmare_dragon: {
     baseGold: 430,
     level: 20,
     description: 'Dreams made manifest. It chose these particular dreams',
-    possibleDrops: ['superior_health_potion', 'dragonslayer', 'dragon_heart', 'pristine_gem'],
+    possibleDrops: ['superior_health_potion', 'dragon_heart', 'pristine_gem'],
     dropRates: { common: 0.0784, uncommon: 0.1667, rare: 0.2647, epic: 0.2647, legendary: 0.1765, mythic: 0.049 },
     abilities: [
         {
@@ -15601,7 +15601,7 @@ void_titan: {
     baseGold: 452,
     level: 21,
     description: 'The void given size. You will need more health potions',
-    possibleDrops: ['superior_health_potion', 'void_crown', 'void_armor', 'pristine_gem'],
+    possibleDrops: ['superior_health_potion', 'pristine_gem'],
     dropRates: { common: 0.0793, uncommon: 0.1584, rare: 0.2673, epic: 0.2673, legendary: 0.1782, mythic: 0.0495 },
     abilities: [
         {
@@ -15689,7 +15689,7 @@ fallen_titan: {
     baseGold: 462,
     level: 21,
     description: 'A celestial giant that chose the wrong side',
-    possibleDrops: ['superior_health_potion', 'fallen_wing', 'titan_blade', 'pristine_gem'],
+    possibleDrops: ['superior_health_potion', 'fallen_wing', 'pristine_gem'],
     dropRates: { common: 0.0686, uncommon: 0.1471, rare: 0.2647, epic: 0.2745, legendary: 0.1961, mythic: 0.049 },
     abilities: [
         {
@@ -15777,7 +15777,7 @@ abyssal_knight: {
     baseGold: 445,
     level: 21,
     description: 'Armored in compressed darkness. Polished void',
-    possibleDrops: ['superior_health_potion', 'abyssal_blade', 'chaos_armor', 'pristine_gem'],
+    possibleDrops: ['superior_health_potion', 'pristine_gem'],
     dropRates: { common: 0.0793, uncommon: 0.1584, rare: 0.2673, epic: 0.2673, legendary: 0.1782, mythic: 0.0495 },
     abilities: [
         {
@@ -15865,7 +15865,7 @@ elder_vampire: {
     baseGold: 440,
     level: 21,
     description: 'Older than nations. Hungrier than you can imagine',
-    possibleDrops: ['superior_health_potion', 'blood_ruby', 'vampire_blade', 'pristine_gem'],
+    possibleDrops: ['superior_health_potion', 'blood_ruby', 'pristine_gem'],
     dropRates: { common: 0.0793, uncommon: 0.1584, rare: 0.2673, epic: 0.2673, legendary: 0.1782, mythic: 0.0495 },
     abilities: [
         {
@@ -16044,7 +16044,7 @@ eclipse_dragon: {
     baseGold: 492,
     level: 22,
     description: 'Blots out the sun when it spreads its wings. Rude',
-    possibleDrops: ['superior_health_potion', 'dragonslayer', 'dragon_scale', 'pristine_gem'],
+    possibleDrops: ['superior_health_potion', 'dragon_scale', 'pristine_gem'],
     dropRates: { common: 0.0686, uncommon: 0.1373, rare: 0.2549, epic: 0.2745, legendary: 0.2059, mythic: 0.0588 },
     abilities: [
         {
@@ -16223,7 +16223,7 @@ hellfire_knight: {
     baseGold: 485,
     level: 22,
     description: 'Armor made from solidified hellfire. Somehow still wearable',
-    possibleDrops: ['superior_health_potion', 'hellforged_blade', 'fiend_armor', 'pristine_gem'],
+    possibleDrops: ['superior_health_potion', 'pristine_gem'],
     dropRates: { common: 0.0686, uncommon: 0.1373, rare: 0.2549, epic: 0.2745, legendary: 0.2059, mythic: 0.0588 },
     abilities: [
         {
@@ -16311,7 +16311,7 @@ inferno_elemental: {
     baseGold: 500,
     level: 22,
     description: 'Fire too angry to stay confined to a fireplace',
-    possibleDrops: ['superior_health_potion', 'fire_core', 'fire_blade', 'pristine_gem'],
+    possibleDrops: ['superior_health_potion', 'fire_core', 'pristine_gem'],
     dropRates: { common: 0.0588, uncommon: 0.1275, rare: 0.2549, epic: 0.2843, legendary: 0.2157, mythic: 0.0588 },
     abilities: [
         {
@@ -16489,7 +16489,7 @@ storm_dragon: {
     baseGold: 530,
     level: 23,
     description: 'Permanent lightning storm wherever it lands',
-    possibleDrops: ['superior_health_potion', 'dragonslayer', 'dragon_heart', 'flawless_gem'],
+    possibleDrops: ['superior_health_potion', 'dragon_heart', 'flawless_gem'],
     dropRates: { common: 0.0476, uncommon: 0.0952, rare: 0.2286, epic: 0.2857, legendary: 0.2667, mythic: 0.0762 },
     abilities: [
         {
@@ -16577,7 +16577,7 @@ blizzard_titan: {
     baseGold: 522,
     level: 23,
     description: 'A walking snowstorm with opinions about warmth',
-    possibleDrops: ['superior_health_potion', 'frost_armor', 'ice_crystal', 'flawless_gem'],
+    possibleDrops: ['superior_health_potion', 'ice_crystal', 'flawless_gem'],
     dropRates: { common: 0.0471, uncommon: 0.1038, rare: 0.2264, epic: 0.283, legendary: 0.2642, mythic: 0.0755 },
     abilities: [
         {
@@ -16755,7 +16755,7 @@ void_dragon: {
     baseGold: 526,
     level: 23,
     description: 'From nowhere, going nowhere, destroying everything en route',
-    possibleDrops: ['superior_health_potion', 'void_blade', 'null_essence', 'flawless_gem'],
+    possibleDrops: ['superior_health_potion', 'null_essence', 'flawless_gem'],
     dropRates: { common: 0.048, uncommon: 0.0962, rare: 0.2308, epic: 0.2885, legendary: 0.2596, mythic: 0.0769 },
     abilities: [
         {
@@ -16936,7 +16936,7 @@ oblivion_herald: {
     baseGold: 562,
     level: 24,
     description: 'Announces the end. Extremely punctual',
-    possibleDrops: ['superior_health_potion', 'oblivion_blade', 'void_armor', 'flawless_gem'],
+    possibleDrops: ['superior_health_potion', 'flawless_gem'],
     dropRates: { common: 0.0382, uncommon: 0.0857, rare: 0.2, epic: 0.2952, legendary: 0.2857, mythic: 0.0952 },
     abilities: [
         {
@@ -17025,7 +17025,7 @@ eternal_warden: {
     baseGold: 550,
     level: 24,
     description: 'Has been guarding this realm since before time. Still annoyed',
-    possibleDrops: ['superior_health_potion', 'guardian_core', 'divine_armor', 'flawless_gem'],
+    possibleDrops: ['superior_health_potion', 'guardian_core', 'flawless_gem'],
     dropRates: { common: 0.0378, uncommon: 0.0849, rare: 0.2075, epic: 0.2925, legendary: 0.283, mythic: 0.0943 },
     abilities: [
         {
@@ -17108,7 +17108,7 @@ chaos_dragon: {
     baseGold: 568,
     level: 24,
     description: 'Five different breath weapons and no preference for any',
-    possibleDrops: ['superior_health_potion', 'dragon_heart', 'chaos_armor', 'flawless_gem'],
+    possibleDrops: ['superior_health_potion', 'dragon_heart', 'flawless_gem'],
     dropRates: { common: 0.0381, uncommon: 0.0857, rare: 0.2, epic: 0.2857, legendary: 0.2857, mythic: 0.1048 },
     abilities: [
         {
@@ -17204,7 +17204,7 @@ void_overlord: {
     baseGold: 572,
     level: 24,
     description: 'Rules the nothing between worlds with an iron nonexistent fist',
-    possibleDrops: ['superior_health_potion', 'void_crown', 'oblivion_blade', 'flawless_gem'],
+    possibleDrops: ['superior_health_potion', 'flawless_gem'],
     dropRates: { common: 0.0286, uncommon: 0.0762, rare: 0.2, epic: 0.2952, legendary: 0.2952, mythic: 0.1048 },
     abilities: [
         {
@@ -17293,7 +17293,7 @@ fallen_warlord: {
     baseGold: 558,
     level: 24,
     description: 'Once commanded divine armies. Still commands respect',
-    possibleDrops: ['superior_health_potion', 'titan_blade', 'blessed_plate', 'flawless_gem'],
+    possibleDrops: ['superior_health_potion', 'flawless_gem'],
     dropRates: { common: 0.0378, uncommon: 0.0849, rare: 0.2075, epic: 0.2925, legendary: 0.283, mythic: 0.0943 },
     abilities: [
         {
@@ -17466,7 +17466,7 @@ divine_executioner: {
     baseGold: 610,
     level: 25,
     description: 'Carries a heavenly blade the size of a building. Professional',
-    possibleDrops: ['superior_health_potion', 'heavenly_blade', 'divine_armor', 'flawless_gem'],
+    possibleDrops: ['superior_health_potion', 'flawless_gem'],
     dropRates: { common: 0.0277, uncommon: 0.0648, rare: 0.1389, epic: 0.2778, legendary: 0.3241, mythic: 0.1667 },
     abilities: [
         {
@@ -17554,7 +17554,7 @@ star_titan: {
     baseGold: 605,
     level: 25,
     description: 'Born from the collapse of a dying star. Warm to the touch',
-    possibleDrops: ['superior_health_potion', 'titan_blade', 'celestial_blade', 'flawless_gem'],
+    possibleDrops: ['superior_health_potion', 'flawless_gem'],
     dropRates: { common: 0.0277, uncommon: 0.0648, rare: 0.1389, epic: 0.2778, legendary: 0.3241, mythic: 0.1667 },
     abilities: [
         {
@@ -17647,7 +17647,7 @@ eternal_dragon: {
     baseGold: 632,
     level: 25,
     description: 'Has seen civilizations rise and fall. Still unimpressed',
-    possibleDrops: ['superior_health_potion', 'dragon_heart', 'dragonslayer', 'flawless_gem'],
+    possibleDrops: ['superior_health_potion', 'dragon_heart', 'flawless_gem'],
     dropRates: { common: 0.0185, uncommon: 0.055, rare: 0.1284, epic: 0.2752, legendary: 0.3394, mythic: 0.1835 },
     isBoss: true,
     abilities: [
@@ -17743,7 +17743,7 @@ oblivion_incarnate: {
     baseGold: 650,
     level: 25,
     description: 'The end of all things, and it is in a hurry',
-    possibleDrops: ['superior_health_potion', 'oblivion_blade', 'void_crown', 'flawless_gem'],
+    possibleDrops: ['superior_health_potion', 'flawless_gem'],
     dropRates: { common: 0.0184, uncommon: 0.0463, rare: 0.1204, epic: 0.2778, legendary: 0.3519, mythic: 0.1852 },
     isBoss: true,
     abilities: [
