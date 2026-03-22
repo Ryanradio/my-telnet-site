@@ -11213,6 +11213,86 @@ async function loadCharacter(characterId) {
 
 
         // ======================================================
+        // CLEANUP 3: Remove BROKEN WEAPON/ARMOR INSTANCES
+        // These are objects (weapon/armor instances) that have no base data
+        // in WEAPONS or ARMOR, making them impossible to sell or equip.
+        // ======================================================
+        (function cleanupBrokenInstances(playerData) {
+            let removedCount = 0;
+            let repairedCount = 0;
+            const newInventory = [];
+            
+            // Track which items are currently equipped
+            const equippedWeaponId = playerData.weapon;
+            const equippedArmorId = playerData.armor;
+            let needsWeaponFix = false;
+            let needsArmorFix = false;
+            
+            playerData.inventory.forEach((item, idx) => {
+                // Check weapon instances (objects with weaponId)
+                if (typeof item === 'object' && item !== null && item.weaponId) {
+                    const baseWeapon = WEAPONS[item.weaponId];
+                    if (!baseWeapon) {
+                        // Base weapon missing - this is a broken item
+                        console.warn(`🗑️ Removing broken weapon instance: ${item.instanceId || item.weaponId} (base weapon not found)`);
+                        removedCount++;
+                        
+                        // If this broken weapon was equipped, flag for repair
+                        if (equippedWeaponId === item.instanceId || equippedWeaponId === item.weaponId) {
+                            needsWeaponFix = true;
+                            console.warn(`⚠️ Broken weapon was equipped! Will replace with bare_fists.`);
+                        }
+                        return; // Skip adding to new inventory
+                    }
+                    // Valid weapon - keep it
+                    newInventory.push(item);
+                }
+                // Check armor instances (objects with armorId)
+                else if (typeof item === 'object' && item !== null && item.armorId) {
+                    const baseArmor = ARMOR[item.armorId];
+                    if (!baseArmor) {
+                        // Base armor missing - this is a broken item
+                        console.warn(`🗑️ Removing broken armor instance: ${item.instanceId || item.armorId} (base armor not found)`);
+                        removedCount++;
+                        
+                        // If this broken armor was equipped, flag for repair
+                        if (equippedArmorId === item.instanceId || equippedArmorId === item.armorId) {
+                            needsArmorFix = true;
+                            console.warn(`⚠️ Broken armor was equipped! Will replace with no_armor.`);
+                        }
+                        return; // Skip adding to new inventory
+                    }
+                    // Valid armor - keep it
+                    newInventory.push(item);
+                }
+                // Keep everything else (strings, potions, gems, etc.)
+                else {
+                    newInventory.push(item);
+                }
+            });
+            
+            // Fix equipped items if they were broken
+            if (needsWeaponFix) {
+                playerData.weapon = 'bare_fists';
+                console.log(`🔧 Fixed equipped weapon: set to bare_fists`);
+            }
+            if (needsArmorFix) {
+                playerData.armor = 'no_armor';
+                console.log(`🔧 Fixed equipped armor: set to no_armor`);
+            }
+            
+            playerData.inventory = newInventory;
+            
+            if (removedCount > 0) {
+                console.log(`🧹 Cleaned up ${removedCount} broken weapon/armor instance(s) from inventory`);
+                if (typeof legacyMigrationPerformed !== 'undefined') {
+                    window._legacyMigrationPerformed = true;
+                }
+            }
+        })(p);
+
+
+        // ======================================================
         // STEP 2: MIGRATE LEGACY STRING ITEMS TO INSTANCES
         // Convert simple strings like "holy_mace" to proper instances
         // ======================================================
