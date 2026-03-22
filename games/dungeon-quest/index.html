@@ -5986,52 +5986,56 @@ generatedWeapons: (() => {
     const generated = {};
 
     function buildFullWeapon(item) {
-        // Try to get it from WEAPONS[] first (exists if not yet reloaded)
-        const live = WEAPONS[item.instanceId];
-        if (live && live.baseDamage !== undefined) return live;
+    // Try to get it from WEAPONS[] first (exists if not yet reloaded)
+    const live = WEAPONS[item.instanceId];
+    if (live && live.baseDamage !== undefined) return live;
 
-        // Reconstruct from base + quality
-        const baseWeapon = WEAPONS[item.weaponId];
-        if (!baseWeapon) return null;
+    // Get the base weapon ID - it could be in item.weaponId OR item.id
+    const baseWeaponId = item.weaponId || item.id;
+    if (!baseWeaponId) return null;
+    
+    // Reconstruct from base + quality
+    const baseWeapon = WEAPONS[baseWeaponId];
+    if (!baseWeapon) return null;
 
-        const qualityData = QUALITY_CONFIG[item.quality] || QUALITY_CONFIG.normal;
-        const bonusPct = qualityData.bonusPct;
-        const qualityDisplay = item.quality.charAt(0).toUpperCase() + item.quality.slice(1);
+    const qualityData = QUALITY_CONFIG[item.quality] || QUALITY_CONFIG.normal;
+    const bonusPct = qualityData.bonusPct;
+    const qualityDisplay = item.quality.charAt(0).toUpperCase() + item.quality.slice(1);
 
-        return {
-            id: item.weaponId,
-            instanceId: item.instanceId,
-            name: item.quality !== 'normal'
-                ? `${qualityDisplay} ${baseWeapon.name}`
-                : baseWeapon.name,
-            baseName: baseWeapon.name,
-            type: baseWeapon.type || baseWeapon.weaponSubtype,
-            weaponSubtype: baseWeapon.weaponSubtype || baseWeapon.type,
-            baseDamage: baseWeapon.baseDamage + Math.floor(baseWeapon.baseDamage * bonusPct),
-            maxDamage: baseWeapon.maxDamage
-                ? baseWeapon.maxDamage + Math.floor(baseWeapon.maxDamage * bonusPct)
-                : baseWeapon.baseDamage + Math.floor(baseWeapon.baseDamage * bonusPct),
-            baseMagicDamage: baseWeapon.baseMagicDamage
-                ? baseWeapon.baseMagicDamage + Math.floor(baseWeapon.baseMagicDamage * bonusPct)
-                : 0,
-            healingBonus: baseWeapon.healingBonus
-                ? baseWeapon.healingBonus + Math.floor(baseWeapon.healingBonus * bonusPct)
-                : 0,
-            level: baseWeapon.level || 1,
-            originalLevel: baseWeapon.level || 1,
-            quality: item.quality,
-            qualityBonus: bonusPct,
-            modifiers: item.modifiers || [],
-            gems: item.gems || [],
-            gemSlots: item.gemSlots || 0,
-            cost: baseWeapon.cost || 100,
-            allowedClasses: baseWeapon.allowedClasses || null,
-            classRestriction: baseWeapon.classRestriction || null,
-            description: baseWeapon.description || `A ${item.quality} quality ${baseWeapon.name}.`,
-            isDropped: true,
-            dropTimestamp: item.dropTime || Date.now()
-        };
-    }
+    return {
+        id: baseWeaponId,
+        instanceId: item.instanceId,
+        name: item.quality !== 'normal'
+            ? `${qualityDisplay} ${baseWeapon.name}`
+            : baseWeapon.name,
+        baseName: baseWeapon.name,
+        type: baseWeapon.type || baseWeapon.weaponSubtype,
+        weaponSubtype: baseWeapon.weaponSubtype || baseWeapon.type,
+        baseDamage: baseWeapon.baseDamage + Math.floor(baseWeapon.baseDamage * bonusPct),
+        maxDamage: baseWeapon.maxDamage
+            ? baseWeapon.maxDamage + Math.floor(baseWeapon.maxDamage * bonusPct)
+            : baseWeapon.baseDamage + Math.floor(baseWeapon.baseDamage * bonusPct),
+        baseMagicDamage: baseWeapon.baseMagicDamage
+            ? baseWeapon.baseMagicDamage + Math.floor(baseWeapon.baseMagicDamage * bonusPct)
+            : 0,
+        healingBonus: baseWeapon.healingBonus
+            ? baseWeapon.healingBonus + Math.floor(baseWeapon.healingBonus * bonusPct)
+            : 0,
+        level: baseWeapon.level || 1,
+        originalLevel: baseWeapon.level || 1,
+        quality: item.quality,
+        qualityBonus: bonusPct,
+        modifiers: item.modifiers || [],
+        gems: item.gems || [],
+        gemSlots: item.gemSlots || 0,
+        cost: baseWeapon.cost || 100,
+        allowedClasses: baseWeapon.allowedClasses || null,
+        classRestriction: baseWeapon.classRestriction || null,
+        description: baseWeapon.description || `A ${item.quality} quality ${baseWeapon.name}.`,
+        isDropped: true,
+        dropTimestamp: item.dropTime || Date.now()
+    };
+}
 
     // Scan inventory for weapon instances
     (p.inventory || []).forEach(item => {
@@ -11090,21 +11094,29 @@ console.log('⚠️ legacyMigrationPerformed set TRUE at:', new Error().stack.sp
         })(p);
         */
 
-        // STEP 3: RESTORE GENERATED WEAPONS FROM SAVE DATA
+// STEP 3: RESTORE GENERATED WEAPONS FROM SAVE DATA
+console.log('🔄 STEP 3: Starting weapon restoration...');
 if (data.generatedWeapons) {
+    console.log(`📦 Found ${Object.keys(data.generatedWeapons).length} generated weapons in save`);
+    
     Object.keys(data.generatedWeapons).forEach(instanceId => {
         const weaponData = data.generatedWeapons[instanceId];
+        console.log(`  → Processing: ${instanceId}`);
+        console.log(`     weaponData type: ${typeof weaponData}`);
+        console.log(`     has baseDamage: ${weaponData.baseDamage !== undefined}`);
+        console.log(`     weapon name from data: ${weaponData.name}`);
         
         // Check if this is a FULL weapon object (has baseDamage)
         if (weaponData.baseDamage !== undefined) {
             // It's a full weapon object - restore directly
             WEAPONS[instanceId] = weaponData;
-            console.log(`✅ Restored full weapon: ${weaponData.name}`);
+            console.log(`     ✅ Restored full weapon: ${weaponData.name}`);
         } else {
             // It's a reference - reconstruct from base weapon
+            console.log(`     ⚠️ weaponData is a reference, attempting reconstruction...`);
             const baseWeapon = WEAPONS[weaponData.weaponId];
             if (!baseWeapon) {
-                console.warn(`Base weapon ${weaponData.weaponId} not found for instance ${instanceId}`);
+                console.warn(`     ❌ Base weapon ${weaponData.weaponId} not found for instance ${instanceId}`);
                 return;
             }
             const bonusPct = QUALITY_CONFIG[weaponData.quality]?.bonusPct || 0;
@@ -11131,9 +11143,64 @@ if (data.generatedWeapons) {
                 isDropped: true,
                 dropTimestamp: weaponData.dropTime || Date.now()
             };
+            console.log(`     ✅ Reconstructed weapon: ${WEAPONS[instanceId].name}`);
         }
     });
-    console.log(`✅ Restored ${Object.keys(data.generatedWeapons).length} generated weapons`);
+    console.log(`✅ STEP 3 Complete: Restored ${Object.keys(data.generatedWeapons).length} weapons to WEAPONS`);
+} else {
+    console.log('⚠️ No generatedWeapons found in save data');
+}
+
+// STEP 3.5: FORCE RESTORE WEAPONS FROM INVENTORY (CRITICAL FIX)
+console.log('🔄 STEP 3.5: Force restoring weapons from inventory...');
+let forceRestored = 0;
+p.inventory.forEach((item, idx) => {
+    if (typeof item === 'object' && item.instanceId) {
+        // Check if this weapon is already in WEAPONS
+        if (!WEAPONS[item.instanceId]) {
+            console.log(`  → Missing weapon in WEAPONS: ${item.instanceId}`);
+            
+            // Try to find weapon data in generatedWeapons
+            const weaponData = data.generatedWeapons?.[item.instanceId];
+            if (weaponData && weaponData.baseDamage !== undefined) {
+                WEAPONS[item.instanceId] = weaponData;
+                console.log(`     ✅ Force restored from generatedWeapons: ${weaponData.name}`);
+                forceRestored++;
+            } else if (item.weaponId || item.id) {
+                // Reconstruct from base weapon
+                const baseWeaponId = item.weaponId || item.id;
+                const baseWeapon = WEAPONS[baseWeaponId];
+                if (baseWeapon) {
+                    const bonusPct = QUALITY_CONFIG[item.quality]?.bonusPct || 0;
+                    WEAPONS[item.instanceId] = {
+                        id: baseWeaponId,
+                        instanceId: item.instanceId,
+                        name: `${item.quality.charAt(0).toUpperCase() + item.quality.slice(1)} ${baseWeapon.name}`,
+                        baseName: baseWeapon.name,
+                        type: baseWeapon.type || baseWeapon.weaponSubtype,
+                        weaponSubtype: baseWeapon.weaponSubtype || baseWeapon.type,
+                        baseDamage: baseWeapon.baseDamage + Math.floor(baseWeapon.baseDamage * bonusPct),
+                        maxDamage: baseWeapon.maxDamage ? baseWeapon.maxDamage + Math.floor(baseWeapon.maxDamage * bonusPct) : baseWeapon.baseDamage + Math.floor(baseWeapon.baseDamage * bonusPct),
+                        baseMagicDamage: baseWeapon.baseMagicDamage ? baseWeapon.baseMagicDamage + Math.floor(baseWeapon.baseMagicDamage * bonusPct) : 0,
+                        level: item.dropLevel || baseWeapon.level,
+                        quality: item.quality,
+                        qualityBonus: bonusPct,
+                        modifiers: item.modifiers || [],
+                        gemSlots: item.gemSlots || 0,
+                        gems: item.gems || [],
+                        isDropped: true
+                    };
+                    console.log(`     ✅ Force reconstructed: ${WEAPONS[item.instanceId].name}`);
+                    forceRestored++;
+                } else {
+                    console.warn(`     ❌ Cannot reconstruct: base weapon ${baseWeaponId} not found`);
+                }
+            }
+        }
+    }
+});
+if (forceRestored > 0) {
+    console.log(`✅ STEP 3.5 Complete: Force restored ${forceRestored} weapons to WEAPONS`);
 }
 
 
@@ -11330,10 +11397,10 @@ weapon.maxMagicDamage = baseWeapon.maxMagicDamage ?
             }
         })(p);
 
-        // ======================================================
+// ======================================================
 // STEP 8: ENSURE NO ONE IS LEFT WITH BARE_HANDS
 // ======================================================
-(function ensurePlayerHasGear(playerData) {
+/* (function ensurePlayerHasGear(playerData) {
     let added = false;
 
     if (!playerData.weapon || playerData.weapon === 'bare_fists') {
@@ -11387,7 +11454,7 @@ weapon.maxMagicDamage = baseWeapon.maxMagicDamage ?
     if (added) {
         legacyMigrationPerformed = true;
     }
-})(p);
+})(p);  */
 
         // ======================================================
         // STEP 9: EQUIPMENT VALIDATION
@@ -11415,7 +11482,7 @@ weapon.maxMagicDamage = baseWeapon.maxMagicDamage ?
 
         // Rogue dagger check
         const baseClassCheck = p.baseClass || p.class;
-        if (baseClassCheck === 'rogue' && p.weapon && WEAPONS[p.weapon]) {
+        /* if (baseClassCheck === 'rogue' && p.weapon && WEAPONS[p.weapon]) {
             const wpn = WEAPONS[p.weapon];
             const isDagger = wpn.classRestriction === 'rogue'
                 || (wpn.name && (wpn.name.toLowerCase().includes('dagger') || wpn.name.toLowerCase().includes('shiv')))
@@ -11433,6 +11500,7 @@ weapon.maxMagicDamage = baseWeapon.maxMagicDamage ?
                 }
             }
         }
+            */
 
         // XP migration
         (function migrateXp(p) {
@@ -11573,7 +11641,7 @@ weapon.maxMagicDamage = baseWeapon.maxMagicDamage ?
 // ======================================================
 // HELPER FUNCTIONS FOR LEGACY MIGRATION
 // ======================================================
-
+/*
 function generateLegacyWeaponInstance(weaponKey, playerLevel, quality = 'normal') {
     const baseWeapon = WEAPONS[weaponKey];
     if (!baseWeapon) return null;
@@ -11659,7 +11727,7 @@ function generateLegacyArmorInstance(armorKey, playerLevel, quality = 'normal') 
         isLegacy: true
     };
 }
-
+*/
 // ======================================================
 // AUTO-SAVE TRIGGERS
 // ======================================================
@@ -15241,7 +15309,27 @@ function _executeBuy(type, key, cost, itemName, disc) {
     const p = gameState.player;
     p.gold -= cost;
     haptic('buy');
-    p.inventory.push(key);
+    
+    // Instead of pushing the string key, create an instance
+    if (type === 'weapon') {
+        const instance = generateLegacyWeaponInstance(key, p.level, 'normal');
+        if (instance) {
+            p.inventory.push(instance);
+        } else {
+            p.inventory.push(key); // fallback
+        }
+    } else if (type === 'armor') {
+        const instance = generateLegacyArmorInstance(key, p.level, 'normal');
+        if (instance) {
+            p.inventory.push(instance);
+        } else {
+            p.inventory.push(key);
+        }
+    } else {
+        // Items (potions, etc.) stay as strings
+        p.inventory.push(key);
+    }
+    
     saveGame();
     if (typeof updateHud === 'function') updateHud();
     renderShop('buy', 'weapons', 'all', 'near');

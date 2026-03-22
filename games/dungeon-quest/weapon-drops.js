@@ -424,6 +424,7 @@ function generateWeaponDrop(player, enemyLevel, enemyRarity = 'common', skipRoll
     
     const weapon = {
         id: baseWeapon.id,
+        weaponId: baseWeapon.id,
         instanceId: instanceId,
         name: weaponName,
         baseName: baseWeapon.name,
@@ -548,6 +549,7 @@ function generateArmorDrop(player, enemyLevel, enemyRarity = 'common', skipRoll 
     
     const armorInstance = {
         id: baseArmor.id,
+        armorId: baseArmor.id,
         instanceId: instanceId,
         name: armorName,
         baseName: baseArmor.name,
