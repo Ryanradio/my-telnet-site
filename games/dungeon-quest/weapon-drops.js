@@ -1,6 +1,10 @@
 // ═══════════════════════════════════════════════════════════════
-// WEAPON DROP SYSTEM
-// Generates random weapon drops from enemies
+// WEAPON DROP SYSTEM - COMPLETE REVISION
+// Features:
+// - Predefined quality enforcement (Dragon Crown always godly, etc.)
+// - Enhanced naming (no quality prefix, primary modifier as suffix)
+// - Level-scaling modifiers (stronger at lvl 10, 20, 25)
+// - Full weapon pool (all weapons, not just basic types)
 // ═══════════════════════════════════════════════════════════════
 
 // ═══════════════════════════════════════════════════════════════
@@ -13,60 +17,328 @@ const WEAPON_DROP_CONFIG = {
     rarityMultipliers: {
         common: 1.0,
         uncommon: 1.5,
-        rare: 1.5,
-        epic: 2.5,
+        rare: 2.0,
+        epic: 3.0,
+        legendary: 4.0,
         boss: 5.0
     },
     
-    // Quality distribution (weights)
+    // Quality distribution for random rolls (when no predefined quality)
     qualityWeights: {
         poor: 5,      // 5% chance
-        normal: 40,   // 40% chance
+        normal: 35,   // 35% chance
         rare: 35,     // 35% chance
-        epic: 15,     // 15% chance
-        legendary: 4, // 4% chance
+        epic: 18,     // 18% chance
+        legendary: 6, // 6% chance
         godly: 1      // 1% chance
     }
 };
 
 // ═══════════════════════════════════════════════════════════════
-// CLASS WEAPON POOLS
-// What weapons each class can use/receive
+// MODIFIER TIERS - SCALING BY WEAPON LEVEL
 // ═══════════════════════════════════════════════════════════════
-const CLASS_WEAPON_POOLS = {
-    warrior: ['sword', 'axe', 'hammer', 'greatsword', 'battleaxe', 'warhammer'],
-    paladin: ['sword', 'mace', 'hammer', 'holy_mace', 'crusader_sword'],
-    rogue: ['dagger', 'short_sword', 'poison_dagger', 'assassin_blade'],
-    ranger: ['bow', 'longbow', 'crossbow', 'composite_bow'],
-    hunter: ['bow', 'longbow', 'crossbow', 'hunting_bow'],
-    archer: ['bow', 'longbow', 'crossbow', 'war_bow'],
-    mage: ['staff', 'wand', 'tome', 'orb'],
-    warlock: ['staff', 'wand', 'dark_staff', 'shadow_orb'],
-    cleric: ['mace', 'staff', 'holy_staff', 'blessed_mace'],
-    acolyte: ['mace', 'staff', 'holy_staff']
+const MODIFIER_TIERS = {
+    // Tier 1: Levels 1-9 (Basic)
+    tier1: {
+        name: 'Basic',
+        damage_range: [1, 4],
+        percent_range: [2, 6],
+        crit_range: [2, 5],
+        lifesteal_range: [2, 5],
+        pierce_range: [3, 8]
+    },
+    // Tier 2: Levels 10-19 (Advanced)
+    tier2: {
+        name: 'Advanced',
+        damage_range: [5, 12],
+        percent_range: [8, 15],
+        crit_range: [6, 12],
+        lifesteal_range: [6, 12],
+        pierce_range: [10, 20]
+    },
+    // Tier 3: Levels 20-24 (Master)
+    tier3: {
+        name: 'Master',
+        damage_range: [13, 25],
+        percent_range: [16, 25],
+        crit_range: [13, 20],
+        lifesteal_range: [13, 20],
+        pierce_range: [22, 35]
+    },
+    // Tier 4: Level 25+ (Legendary)
+    tier4: {
+        name: 'Legendary',
+        damage_range: [26, 40],
+        percent_range: [26, 35],
+        crit_range: [21, 30],
+        lifesteal_range: [21, 30],
+        pierce_range: [36, 50]
+    }
 };
 
 // ═══════════════════════════════════════════════════════════════
-// WEAPON GENERATION
-// Creates a random weapon drop
+// ENHANCED NAMING SYSTEM - No quality prefix, primary modifier as suffix
 // ═══════════════════════════════════════════════════════════════
 
-/**
- * Generate a random weapon drop for a player
- * @param {object} player - The player object
- * @param {number} enemyLevel - Level of defeated enemy
- * @param {string} enemyRarity - Rarity of defeated enemy
- * @returns {object|null} Generated weapon or null if no drop
- */
-/**
- * Generate a random weapon drop for a player
- * @param {object} player - The player object
- * @param {number} enemyLevel - Level of defeated enemy
- * @param {string} enemyRarity - Rarity of defeated enemy
- * @param {boolean} skipRoll - Skip drop chance roll (for sysop/migration)
- * @param {string} forcedQuality - Force a specific quality
- * @returns {object|null} Generated weapon or null if no drop
- */
+const MODIFIER_ADJECTIVES = {
+    // Elemental
+    fire_damage: ['Flaming', 'Burning', 'Scorching', 'Inferno', 'Blazing', 'Flame-Touched'],
+    ice_damage: ['Freezing', 'Icy', 'Frost', 'Glacial', 'Arctic', 'Winter\'s Bite'],
+    lightning_damage: ['Shocking', 'Storm', 'Thundering', 'Lightning', 'Tempest', 'Thunderstruck'],
+    poison_damage: ['Venomous', 'Toxic', 'Poison', 'Virulent', 'Plague', 'Cursed'],
+    shadow_damage: ['Shadow', 'Dark', 'Void', 'Umbral', 'Abyssal', 'Nightfall'],
+    
+    // Effects
+    lifesteal: ['Vampiric', 'Leeching', 'Soul-Stealing', 'Blood-Drinker', 'Life-Siphon', 'Crimson'],
+    bleed: ['Barbed', 'Serrated', 'Razor', 'Gut-Slashing', 'Bloodletter', 'Ripper'],
+    crit_bonus: ['Precise', 'Keen', 'Accurate', 'Deadly', 'Marksman', 'Lethal'],
+    damage_bonus: ['Mighty', 'Powerful', 'Devastating', 'Crushing', 'Overwhelming', 'Colossal'],
+    armor_pierce: ['Piercing', 'Penetrating', 'Armor-Shredding', 'Rending', 'Puncturing', 'Drill'],
+    
+    // Special
+    holy: ['Holy', 'Divine', 'Blessed', 'Sacred', 'Consecrated', 'Hallowed'],
+    curse: ['Cursed', 'Dark', 'Blighted', 'Corrupted', 'Damned', 'Haunted'],
+    speed: ['Swift', 'Quick', 'Fast', 'Agile', 'Lightning-Fast', 'Blurring'],
+    
+    // Combinations
+    fire_ice: ['Frostfire', 'Elemental', 'Prismatic', 'Dual-Element'],
+    fire_lightning: ['Stormfire', 'Plasma', 'Maelstrom', 'Thunderflame'],
+    ice_lightning: ['Frostshock', 'Blizzard', 'Tempest', 'Stormfrost'],
+    all_three: ['Prismatic', 'Chaotic', 'Elemental', 'Cosmic', 'Cataclysmic']
+};
+
+const MODIFIER_SUFFIXES = {
+    fire_damage: ['of Fire', 'of Flame', 'of the Inferno', 'of the Phoenix', 'of Embers'],
+    ice_damage: ['of Ice', 'of Frost', 'of the North Wind', 'of Winter', 'of the Glacier'],
+    lightning_damage: ['of Lightning', 'of Storms', 'of Thunder', 'of the Tempest', 'of the Sky'],
+    lifesteal: ['of the Vampire', 'of Blood', 'of Life', 'of the Leech', 'of the Crimson'],
+    holy: ['of the Divine', 'of Light', 'of the Gods', 'of the Heavens', 'of the Radiant'],
+    shadow_damage: ['of Shadows', 'of Darkness', 'of the Void', 'of Night', 'of the Abyss'],
+    poison_damage: ['of Venom', 'of Poison', 'of the Plague', 'of the Serpent', 'of Toxins'],
+    bleed: ['of Bleeding', 'of the Wound', 'of the Gore', 'of the Cut'],
+    crit_bonus: ['of Precision', 'of Accuracy', 'of the Marksman', 'of the Assassin'],
+    damage_bonus: ['of Might', 'of Power', 'of the Giant', 'of Destruction'],
+    armor_pierce: ['of Piercing', 'of Penetration', 'of the Drill', 'of the Needle']
+};
+
+
+
+// ═══════════════════════════════════════════════════════════════
+// HELPER FUNCTIONS
+// ═══════════════════════════════════════════════════════════════
+
+function randomChoice(arr) {
+    if (!arr || arr.length === 0) return '';
+    return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function rollQuality() {
+    const weights = WEAPON_DROP_CONFIG.qualityWeights;
+    const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
+    let roll = Math.random() * totalWeight;
+    
+    for (const [quality, weight] of Object.entries(weights)) {
+        roll -= weight;
+        if (roll <= 0) return quality;
+    }
+    return 'normal';
+}
+
+function getModifierTier(weaponLevel) {
+    if (weaponLevel >= 25) return MODIFIER_TIERS.tier4;
+    if (weaponLevel >= 20) return MODIFIER_TIERS.tier3;
+    if (weaponLevel >= 10) return MODIFIER_TIERS.tier2;
+    return MODIFIER_TIERS.tier1;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SCALED MODIFIER GENERATION
+// ═══════════════════════════════════════════════════════════════
+
+function generateScaledModifier(modKey, weaponLevel) {
+    const tier = getModifierTier(weaponLevel);
+    const mod = WEAPON_MODIFIERS[modKey];
+    if (!mod) return null;
+    
+    let value = 0;
+    let range = [];
+    
+    if (mod.minDamage !== undefined) {
+        range = tier.damage_range;
+        value = Math.floor(Math.random() * (range[1] - range[0] + 1)) + range[0];
+    } else if (mod.critBonus !== undefined) {
+        range = tier.crit_range;
+        value = Math.floor(Math.random() * (range[1] - range[0] + 1)) + range[0];
+    } else if (mod.lifestealPercent !== undefined) {
+        range = tier.lifesteal_range;
+        value = Math.floor(Math.random() * (range[1] - range[0] + 1)) + range[0];
+    } else if (mod.armorPierce !== undefined) {
+        range = tier.pierce_range;
+        value = Math.floor(Math.random() * (range[1] - range[0] + 1)) + range[0];
+    } else {
+        range = tier.percent_range;
+        value = Math.floor(Math.random() * (range[1] - range[0] + 1)) + range[0];
+    }
+    
+    return {
+        ...mod,
+        modKey: modKey,
+        minDamage: mod.minDamage !== undefined ? value : undefined,
+        maxDamage: mod.maxDamage !== undefined ? value + Math.floor(value * 0.5) : undefined,
+        critBonus: mod.critBonus !== undefined ? value : undefined,
+        lifestealPercent: mod.lifestealPercent !== undefined ? value : undefined,
+        armorPierce: mod.armorPierce !== undefined ? value / 100 : undefined,
+        damageBonus: mod.damageBonus !== undefined ? value / 100 : undefined,
+        scaledValue: value,
+        tier: tier.name
+    };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MODIFIER GENERATION
+// ═══════════════════════════════════════════════════════════════
+
+function generateModifiers(quality, weaponLevel) {
+    const pool = QUALITY_MODIFIER_POOLS[quality];
+    if (!pool || pool.modifierCount === 0) {
+        return [];
+    }
+    
+    const modifiers = [];
+    const available = [...pool.availableModifiers];
+    
+    let modifierCount = pool.modifierCount;
+    
+    // Bonus modifier at high levels
+    if (weaponLevel >= 20) {
+        const bonusChance = weaponLevel >= 25 ? 0.4 : 0.2;
+        if (Math.random() < bonusChance && modifierCount < 3) {
+            modifierCount++;
+        }
+    }
+    
+    for (let i = 0; i < modifierCount && available.length > 0; i++) {
+        const index = Math.floor(Math.random() * available.length);
+        const modKey = available.splice(index, 1)[0];
+        
+        const scaledMod = generateScaledModifier(modKey, weaponLevel);
+        if (scaledMod) {
+            modifiers.push(scaledMod);
+        }
+    }
+    
+    return modifiers;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ENHANCED WEAPON NAME GENERATION
+// ═══════════════════════════════════════════════════════════════
+
+function generateEnhancedWeaponName(baseWeapon, quality, modifiers) {
+    if (!modifiers || modifiers.length === 0) {
+        let name = baseWeapon.name;
+        
+        // Quality-specific flavor for items with no modifiers
+        if (quality === 'legendary') {
+            const legendaryPrefixes = ['Ancient', 'Mythic', 'Eternal', 'Dragonforged'];
+            name = `${randomChoice(legendaryPrefixes)} ${name}`;
+        } else if (quality === 'godly') {
+            const godlyPrefixes = ['Divine', 'Immortal', 'Primordial', 'Celestial'];
+            name = `${randomChoice(godlyPrefixes)} ${name}`;
+        } else if (quality === 'epic') {
+            const epicPrefixes = ['Mighty', 'Exquisite', 'Flawless', 'Masterwork'];
+            name = `${randomChoice(epicPrefixes)} ${name}`;
+        }
+        return name;
+    }
+    
+    // PRIMARY MODIFIER = first in list (goes to suffix)
+    // SECONDARY MODIFIERS = rest of the list (go to prefix)
+    const primaryMod = modifiers[0];
+    const secondaryMods = modifiers.slice(1);
+    
+    let nameParts = [];
+    
+    // Check for elemental combinations among secondary modifiers
+    let remainingMods = [...secondaryMods];
+    let comboAdjective = '';
+    
+    const hasFire = remainingMods.some(m => m.modKey === 'fire_damage' || m.modKey === 'flaming');
+    const hasIce = remainingMods.some(m => m.modKey === 'ice_damage' || m.modKey === 'freezing');
+    const hasLightning = remainingMods.some(m => m.modKey === 'lightning_damage' || m.modKey === 'shocking');
+    
+    if (hasFire && hasIce && hasLightning) {
+        comboAdjective = randomChoice(MODIFIER_ADJECTIVES.all_three);
+        remainingMods = remainingMods.filter(m => 
+            !['fire_damage', 'flaming', 'ice_damage', 'freezing', 'lightning_damage', 'shocking'].includes(m.modKey)
+        );
+    } else if (hasFire && hasIce) {
+        comboAdjective = randomChoice(MODIFIER_ADJECTIVES.fire_ice);
+        remainingMods = remainingMods.filter(m => 
+            !['fire_damage', 'flaming', 'ice_damage', 'freezing'].includes(m.modKey)
+        );
+    } else if (hasFire && hasLightning) {
+        comboAdjective = randomChoice(MODIFIER_ADJECTIVES.fire_lightning);
+        remainingMods = remainingMods.filter(m => 
+            !['fire_damage', 'flaming', 'lightning_damage', 'shocking'].includes(m.modKey)
+        );
+    } else if (hasIce && hasLightning) {
+        comboAdjective = randomChoice(MODIFIER_ADJECTIVES.ice_lightning);
+        remainingMods = remainingMods.filter(m => 
+            !['ice_damage', 'freezing', 'lightning_damage', 'shocking'].includes(m.modKey)
+        );
+    }
+    
+    if (comboAdjective) {
+        nameParts.push(comboAdjective);
+    }
+    
+    // Add adjectives for remaining secondary modifiers
+    const prefixes = [];
+    for (let i = 0; i < Math.min(remainingMods.length, 2); i++) {
+        const mod = remainingMods[i];
+        const adjPool = MODIFIER_ADJECTIVES[mod.modKey];
+        if (adjPool) {
+            prefixes.push(randomChoice(adjPool));
+        }
+    }
+    
+    // Add quality-specific flavor
+    if (quality === 'legendary' && prefixes.length < 2) {
+        const legendaryAdjs = ['Ancient', 'Mythic', 'Eternal', 'Dragonforged'];
+        prefixes.unshift(randomChoice(legendaryAdjs));
+    } else if (quality === 'godly' && prefixes.length < 2) {
+        const godlyAdjs = ['Divine', 'Immortal', 'Primordial', 'Celestial'];
+        prefixes.unshift(randomChoice(godlyAdjs));
+    } else if (quality === 'epic' && prefixes.length === 0) {
+        const epicAdjs = ['Mighty', 'Exquisite', 'Flawless', 'Masterwork'];
+        prefixes.push(randomChoice(epicAdjs));
+    }
+    
+    if (prefixes.length > 0) {
+        nameParts.push(prefixes.join(' '));
+    }
+    
+    // Add base weapon name
+    nameParts.push(baseWeapon.name);
+    
+    // Add primary modifier suffix
+    let suffix = '';
+    if (primaryMod && MODIFIER_SUFFIXES[primaryMod.modKey]) {
+        suffix = randomChoice(MODIFIER_SUFFIXES[primaryMod.modKey]);
+    }
+    
+    if (suffix) {
+        nameParts.push(suffix);
+    }
+    
+    return nameParts.join(' ');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MAIN WEAPON GENERATION FUNCTION
+// ═══════════════════════════════════════════════════════════════
+
 function generateWeaponDrop(player, enemyLevel, enemyRarity = 'common', skipRoll = false, forcedQuality = null) {
     // Calculate drop chance (skip if forced)
     if (!skipRoll) {
@@ -75,174 +347,81 @@ function generateWeaponDrop(player, enemyLevel, enemyRarity = 'common', skipRoll
         const dropChance = baseChance * rarityMult;
         
         if (Math.random() > dropChance) {
-            return null; // No drop
+            return null;
         }
     }
     
-    // Determine weapon level - CRITICAL FIX: use enemyLevel for real drops
+    // Determine weapon level
     let weaponLevel;
     if (skipRoll) {
-        // For sysop commands or migration, use player level as baseline
         weaponLevel = player.level;
     } else {
-        // For real drops: base on enemy level, with chance to be +1
-        weaponLevel = enemyLevel + (Math.random() < 0.3 ? 1 : 0);
-        // Cap at reasonable range (don't exceed max weapon levels)
-        weaponLevel = Math.min(30, Math.max(1, weaponLevel));
+        const minLevel = Math.max(1, enemyLevel - 2);
+        const maxLevel = Math.min(30, enemyLevel + 2);
+        weaponLevel = minLevel + Math.floor(Math.random() * (maxLevel - minLevel + 1));
     }
     
-    // Get player's class for weapon pool
     const playerClass = player.baseClass || player.class;
-    const weaponTypes = CLASS_WEAPON_POOLS[playerClass] || ['sword'];
     
-    // Get all weapons from WEAPONS database that match:
-    // 1. The weapon type
-    // 2. The exact weapon level (or close if none found)
-    let eligibleWeapons = [];
-    
-    // First try to find weapons of exact level
+    // Build candidate list from ALL weapons
+    const candidates = [];
     for (const [weaponId, weapon] of Object.entries(WEAPONS)) {
-        // Skip unarmed and non-weapons
         if (weapon.unarmed) continue;
+        if (weapon.instanceId) continue;
+        if (weapon.canDrop === false) continue;
+    
         
-        if (weapon.level === weaponLevel) {
-            const weaponType = weapon.weaponSubtype || weapon.type;
-            if (weaponTypes.includes(weaponType)) {
-                if (!weapon.allowedClasses || weapon.allowedClasses.includes(playerClass)) {
-                    eligibleWeapons.push({
-                        id: weaponId,
-                        ...weapon
-                    });
-                }
-            }
-        }
+        // Level check - only weapons within ±2 levels
+        if (weapon.level && (weapon.level < weaponLevel - 2 || weapon.level > weaponLevel + 2)) continue;
+        
+        // Class restriction check
+        if (weapon.allowedClasses && !weapon.allowedClasses.includes(playerClass)) continue;
+        
+        candidates.push({
+            id: weaponId,
+            ...weapon
+        });
     }
     
-    // If no weapons of exact level, try ±1 level
-    if (eligibleWeapons.length === 0) {
-        for (const [weaponId, weapon] of Object.entries(WEAPONS)) {
-            if (weapon.unarmed) continue;
-            
-            if (Math.abs(weapon.level - weaponLevel) <= 1) {
-                const weaponType = weapon.weaponSubtype || weapon.type;
-                if (weaponTypes.includes(weaponType)) {
-                    if (!weapon.allowedClasses || weapon.allowedClasses.includes(playerClass)) {
-                        eligibleWeapons.push({
-                            id: weaponId,
-                            ...weapon
-                        });
-                    }
-                }
-            }
-        }
+    if (candidates.length === 0) {
+        console.warn('No eligible weapons found for drop');
+        return null;
     }
     
-    // If still no weapons, try any level of correct type
-    if (eligibleWeapons.length === 0) {
-        for (const [weaponId, weapon] of Object.entries(WEAPONS)) {
-            if (weapon.unarmed) continue;
-            
-            const weaponType = weapon.weaponSubtype || weapon.type;
-            if (weaponTypes.includes(weaponType)) {
-                if (!weapon.allowedClasses || weapon.allowedClasses.includes(playerClass)) {
-                    eligibleWeapons.push({
-                        id: weaponId,
-                        ...weapon
-                    });
-                    break;
-                }
-            }
-        }
-    }
+    // Random selection - no sorting bias
+    const baseWeapon = candidates[Math.floor(Math.random() * candidates.length)];
     
-    // If STILL no weapons, create a basic fallback
-    if (eligibleWeapons.length === 0) {
-        console.log('⚠️ No eligible weapons found, using fallback');
-        const fallbackWeapon = {
-            name: "Simple Weapon",
-            baseDamage: 3 + weaponLevel,
-            maxDamage: 5 + (weaponLevel * 2),
-            baseMagicDamage: 0,
-            level: weaponLevel,
-            type: weaponTypes[0],
-            weaponSubtype: weaponTypes[0],
-            allowedClasses: [playerClass]
-        };
-        eligibleWeapons.push(fallbackWeapon);
-    }
-    
-    // Pick random base weapon from eligible list
-    const baseWeapon = eligibleWeapons[Math.floor(Math.random() * eligibleWeapons.length)];
-    console.log("Selected weapon:", baseWeapon.name, "from ID:", baseWeapon.id);
-    
-    // Determine quality
+    // Determine quality - Honor predefined quality
     let quality;
     if (forcedQuality) {
         quality = forcedQuality;
+    } else if (baseWeapon.quality && baseWeapon.quality !== 'normal') {
+        quality = baseWeapon.quality;
+        console.log(`🎯 Forcing quality '${quality}' for ${baseWeapon.name} (predefined)`);
     } else {
         quality = rollQuality();
     }
     
-    // Get quality bonus percentage from config
     const qualityData = QUALITY_CONFIG[quality] || QUALITY_CONFIG.normal;
     const bonusPct = qualityData.bonusPct;
     
-    // Apply quality bonus to ALL stats
     const baseDamageBonus = Math.floor(baseWeapon.baseDamage * bonusPct);
-    const maxDamageBonus = Math.floor(baseWeapon.maxDamage * bonusPct);
+    const maxDamageBonus = baseWeapon.maxDamage ? Math.floor(baseWeapon.maxDamage * bonusPct) : baseDamageBonus;
     const magicDamageBonus = baseWeapon.baseMagicDamage ? Math.floor(baseWeapon.baseMagicDamage * bonusPct) : 0;
     const healingBonus = baseWeapon.healingBonus ? Math.floor(baseWeapon.healingBonus * bonusPct) : 0;
     
-    // Generate modifiers based on quality
-    const modifiers = generateModifiers(quality);
+    const modifiers = generateModifiers(quality, weaponLevel);
     
-    // Generate gem slots based on quality
-    let gemSlots = 0;
-    if (quality === 'rare') gemSlots = 1;
-    if (quality === 'epic') gemSlots = 2;
-    if (quality === 'legendary') gemSlots = 3;
-    if (quality === 'godly') gemSlots = 4;
+    const gemSlots = {
+        rare: 1,
+        epic: 2,
+        legendary: 3,
+        godly: 4
+    }[quality] || 0;
     
-    // Generate weapon name
-    let weaponName = baseWeapon.name;
-    if (quality !== 'normal') {
-        const qualityDisplay = quality.charAt(0).toUpperCase() + quality.slice(1);
-        weaponName = `${qualityDisplay} ${baseWeapon.name}`;
-    }
+    const instanceId = `${baseWeapon.id}_${quality}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+    const weaponName = generateEnhancedWeaponName(baseWeapon, quality, modifiers);
     
-    // Add modifier suffix if exists (only for rare+)
-    if (modifiers && modifiers.length > 0 && quality !== 'normal' && quality !== 'poor') {
-        const modifierSuffixes = {
-            fire_damage: 'of Flames',
-            ice_damage: 'of Frost',
-            poison_damage: 'of Venom',
-            lightning_damage: 'of Lightning',
-            shadow_damage: 'of Shadows',
-            bleed: 'of Bleeding',
-            damage_bonus: 'of Might',
-            critical_bonus: 'of Precision',
-            flaming: 'of Flames',
-            freezing: 'of Frost',
-            shocking: 'of Lightning',
-            poisonous: 'of Venom',
-            vampiric: 'of the Vampire',
-            holy: 'of the Divine',
-            cursed: 'of Darkness',
-            keen: 'of Precision',
-            heavy: 'of Might',
-            swift: 'of Speed'
-        };
-        
-        const suffix = modifierSuffixes[modifiers[0]] || '';
-        if (suffix) {
-            weaponName = `${weaponName} ${suffix}`;
-        }
-    }
-    
-    // Create unique instance ID
-    const instanceId = `${baseWeapon.id}_${quality}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-    
-    // Create weapon object
     const weapon = {
         id: baseWeapon.id,
         instanceId: instanceId,
@@ -251,9 +430,8 @@ function generateWeaponDrop(player, enemyLevel, enemyRarity = 'common', skipRoll
         type: baseWeapon.type || baseWeapon.weaponSubtype,
         weaponSubtype: baseWeapon.weaponSubtype || baseWeapon.type,
         
-        // Base stats from weapons.js + quality bonus
         baseDamage: baseWeapon.baseDamage + baseDamageBonus,
-        maxDamage: baseWeapon.maxDamage + maxDamageBonus,
+        maxDamage: (baseWeapon.maxDamage || baseWeapon.baseDamage) + maxDamageBonus,
         baseMagicDamage: baseWeapon.baseMagicDamage ? baseWeapon.baseMagicDamage + magicDamageBonus : 0,
         healingBonus: baseWeapon.healingBonus ? baseWeapon.healingBonus + healingBonus : 0,
         
@@ -266,285 +444,135 @@ function generateWeaponDrop(player, enemyLevel, enemyRarity = 'common', skipRoll
         gemSlots: gemSlots,
         gems: [],
         
-        cost: calculateWeaponValue(weaponLevel, quality, modifiers),
+        cost: Math.floor((weaponLevel * 40) * (quality === 'godly' ? 10 : quality === 'legendary' ? 8 : quality === 'epic' ? 4 : quality === 'rare' ? 1.5 : 1)),
         description: baseWeapon.description || `A ${quality} quality ${baseWeapon.name}.`,
+        
+        allowedClasses: baseWeapon.allowedClasses,
+        classRestriction: baseWeapon.classRestriction,
+        
         isDropped: true,
         dropTimestamp: Date.now()
     };
     
-    // Store the weapon instance in WEAPONS using instanceId as key
     WEAPONS[instanceId] = weapon;
-    
-    // Return the weapon - caller is responsible for adding to inventory
     return weapon;
 }
 
-/**
- * Roll for weapon quality based on weights
- */
-function rollQuality() {
-    const weights = WEAPON_DROP_CONFIG.qualityWeights;
-    const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
-    let roll = Math.random() * totalWeight;
-    
-    for (const [quality, weight] of Object.entries(weights)) {
-        roll -= weight;
-        if (roll <= 0) {
-            return quality;
-        }
-    }
-    
-    return 'normal'; // Fallback
-}
-
-/**
- * Generate random modifiers for a weapon based on quality
- */
-function generateModifiers(quality) {
-    const pool = QUALITY_MODIFIER_POOLS[quality];
-    if (!pool || pool.modifierCount === 0) {
-        return [];
-    }
-    
-    const modifiers = [];
-    const available = [...pool.availableModifiers];
-    
-    for (let i = 0; i < pool.modifierCount && available.length > 0; i++) {
-        const index = Math.floor(Math.random() * available.length);
-        const modKey = available.splice(index, 1)[0];
-        modifiers.push(modKey);
-    }
-    
-    return modifiers;
-}
-
-/**
- * Generate a descriptive weapon name
- */
-/**
- * Generate a descriptive weapon name
- */
-function generateWeaponName(weaponType, quality, modifiers, baseWeapon) {
-    const qualityPrefixes = {
-        poor: 'Poor',
-        normal: '',
-        rare: 'Rare',
-        epic: 'Epic',
-        legendary: 'Legendary',
-        godly: 'Godly'
-    };
-    
-    const modifierSuffixes = {
-        fire_damage: 'of Flames',
-        ice_damage: 'of Frost',
-        poison_damage: 'of Venom',
-        lightning_damage: 'of Lightning',
-        shadow_damage: 'of Shadows',
-        bleed: 'of Bleeding',
-        damage_bonus: 'of Might',
-        critical_bonus: 'of Precision',
-        flaming: 'of Flames',
-        freezing: 'of Frost',
-        shocking: 'of Lightning',
-        poisonous: 'of Venom',
-        vampiric: 'of the Vampire',
-        holy: 'of the Divine',
-        cursed: 'of Darkness',
-        keen: 'of Precision',
-        heavy: 'of Might',
-        swift: 'of Speed'
-    };
-    
-    // Start with the base weapon name from weapons.js
-    let name = baseWeapon.name;
-    
-    // Add quality prefix only for non-normal qualities
-    if (quality !== 'normal') {
-        const qualityName = qualityPrefixes[quality] || quality;
-        // Capitalize Godly properly
-        const prefix = quality === 'godly' ? 'Godly' : qualityName;
-        name = `${prefix} ${baseWeapon.name}`;
-    }
-    
-    // Add modifier suffix if exists (only for rare+)
-    if (modifiers && modifiers.length > 0 && quality !== 'normal' && quality !== 'poor') {
-        const suffix = modifierSuffixes[modifiers[0]] || '';
-        if (suffix) {
-            name = `${name} ${suffix}`;
-        }
-    }
-    
-    return name;
-}
-
-/**
- * Generate weapon description showing modifiers
- */
-function generateWeaponDescription(weaponType, quality, modifiers) {
-    if (modifiers.length === 0) {
-        return `A ${quality} ${weaponType}`;
-    }
-    
-    const modDescs = modifiers.map(m => WEAPON_MODIFIERS[m]?.name || m).join(', ');
-    return `A ${quality} ${weaponType} with ${modDescs}`;
-}
-
-/**
- * Calculate weapon sell value based on stats
- */
-function calculateWeaponValue(level, quality, modifiers) {
-    let baseValue = level * 40;
-    
-    const qualityMults = {
-        poor: 0.5,
-        normal: 1.0,
-        rare: 1.5,
-        epic: 4.0,
-        legendary: 8.0,
-        godly: 10.0
-    };
-    
-    baseValue *= qualityMults[quality] || 1.0;
-    baseValue += modifiers.length * 100;
-    
-    return Math.floor(baseValue);
-}
-
 // ═══════════════════════════════════════════════════════════════
-// ARMOR DROP SYSTEM
-// Same base drop rate as weapons, class-appropriate armor
+// ARMOR DROP SYSTEM - EXPANDED TO INCLUDE ALL ARMOR
 // ═══════════════════════════════════════════════════════════════
 
 const ARMOR_DROP_CONFIG = {
-    baseDropChance: 0.04, // 4% base chance (same as weapons)
+    baseDropChance: 0.04,
     rarityMultipliers: {
-        common:   1.0,
+        common: 1.0,
         uncommon: 1.5,
-        rare:     1.5,
-        epic:     2.5,
-        boss:     5.0
+        rare: 2.0,
+        epic: 3.0,
+        legendary: 4.0,
+        boss: 5.0
     }
 };
 
-// Which armor types each class can receive as drops
-const CLASS_ARMOR_POOLS = {
-    warrior:  ['chain_mail', 'scale_mail', 'plate_armor', 'full_plate', 'iron_armor'],
-    paladin:  ['chain_mail', 'scale_mail', 'plate_armor', 'full_plate', 'iron_armor'],
-    rogue:    ['leather_armor', 'leather_vest', 'studded_leather'],
-    ranger:   ['leather_armor', 'studded_leather', 'hide_armor'],
-    hunter:   ['leather_armor', 'studded_leather', 'hide_armor'],
-    archer:   ['leather_armor', 'studded_leather', 'hide_armor'],
-    mage:     ['cloth_robe', 'mage_robes', 'silk_robe'],
-    warlock:  ['cloth_robe', 'dark_robes'],
-    cleric:   ['padded_armor', 'chain_mail', 'holy_vestments'],
-    acolyte:  ['cloth_robe', 'padded_armor']
-};
-
-/**
- * Generate a random armor drop appropriate to the player's class.
- * Returns an ARMOR key (string) or null if no drop.
- *
- * @param {object} player      - The player object
- * @param {number} enemyLevel  - Level of the defeated enemy
- * @param {string} enemyRarity - Rarity string of the enemy
- * @returns {string|null} ARMOR key or null if no drop
- */
 function generateArmorDrop(player, enemyLevel, enemyRarity = 'common', skipRoll = false, forcedQuality = null) {
-    // Roll drop chance (same structure as weapon drops)
-    const baseChance  = ARMOR_DROP_CONFIG.baseDropChance;
-    const rarityMult  = ARMOR_DROP_CONFIG.rarityMultipliers[enemyRarity] || 1.0;
-    if (!skipRoll && Math.random() > baseChance * rarityMult) return null;
-
+    // Roll drop chance
+    if (!skipRoll) {
+        const baseChance = ARMOR_DROP_CONFIG.baseDropChance;
+        const rarityMult = ARMOR_DROP_CONFIG.rarityMultipliers[enemyRarity] || 1.0;
+        if (Math.random() > baseChance * rarityMult) return null;
+    }
+    
     const playerClass = player.baseClass || player.class;
-    const maxLevel    = player.level + 2;
-
-    // Build candidate list from class pool
-    const poolKeys   = CLASS_ARMOR_POOLS[playerClass] || [];
-    let candidates   = poolKeys.filter(k => {
-        if (typeof ARMOR === 'undefined' || !ARMOR[k]) return false;
-        const a = ARMOR[k];
-        if (a.level && a.level > maxLevel) return false;
-        if (a.allowedClasses && !a.allowedClasses.includes(playerClass)) return false;
-        return true;
-    });
-
-    // Fallback: any armor the class can equip at this level
-    if (candidates.length === 0 && typeof ARMOR !== 'undefined') {
-        candidates = Object.keys(ARMOR).filter(k => {
-            const a = ARMOR[k];
-            if (a.level && a.level > maxLevel) return false;
-            if (a.allowedClasses && !a.allowedClasses.includes(playerClass)) return false;
-            return true;
+    
+    // Build candidate list from ALL armor
+    const candidates = [];
+    for (const [armorId, armor] of Object.entries(ARMOR)) {
+        if (armor.instanceId) continue;
+        if (armor.unarmored) continue;
+        
+        // Level check - only armor within ±3 levels
+        if (armor.level && (armor.level < player.level - 3 || armor.level > player.level + 2)) continue;
+        
+        // Class check
+        if (armor.allowedClasses && !armor.allowedClasses.includes(playerClass)) continue;
+        
+        candidates.push({
+            id: armorId,
+            ...armor
         });
     }
-
+    
     if (candidates.length === 0) return null;
     
-    // Pick random base armor from candidates
-    const baseArmorKey = candidates[Math.floor(Math.random() * candidates.length)];
-    const baseArmor = ARMOR[baseArmorKey];
+    // Random selection - no sorting bias
+    const baseArmor = candidates[Math.floor(Math.random() * candidates.length)];
     
-    // Determine quality
+    // Determine quality - Honor predefined quality
     let quality;
     if (forcedQuality) {
         quality = forcedQuality;
+    } else if (baseArmor.quality && baseArmor.quality !== 'normal') {
+        quality = baseArmor.quality;
+        console.log(`🎯 Forcing quality '${quality}' for ${baseArmor.name} (predefined)`);
     } else {
-        quality = rollQuality(); // Use the same quality rolling function as weapons
+        quality = rollQuality();
     }
     
-    // Get quality bonus percentage
     const qualityData = QUALITY_CONFIG[quality] || QUALITY_CONFIG.normal;
     const bonusPct = qualityData.bonusPct;
     
-    // Apply quality bonus to stats
     const defenseBonus = Math.floor(baseArmor.baseDefense * bonusPct);
     const magicBonus = baseArmor.baseMagicBonus ? Math.floor(baseArmor.baseMagicBonus * bonusPct) : 0;
+    const resistBonus = baseArmor.magicResist ? Math.floor(baseArmor.magicResist * bonusPct) : 0;
     
-    // Generate gem slots based on quality
-    let gemSlots = 0;
-    if (quality === 'rare') gemSlots = 1;
-    if (quality === 'epic') gemSlots = 2;
-    if (quality === 'legendary') gemSlots = 3;
-    if (quality === 'godly') gemSlots = 4;
+    const gemSlots = {
+        rare: 1,
+        epic: 2,
+        legendary: 3,
+        godly: 4
+    }[quality] || 0;
     
-    // Create unique instance ID
-    const instanceId = `${baseArmorKey}_${quality}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    const instanceId = `${baseArmor.id}_${quality}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
     
-    // Generate armor name with quality prefix
     let armorName = baseArmor.name;
-    if (quality !== 'normal') {
-        const qualityDisplay = quality.charAt(0).toUpperCase() + quality.slice(1);
-        armorName = `${qualityDisplay} ${baseArmor.name}`;
+    if (quality === 'legendary') {
+        const prefixes = ['Ancient', 'Mythic', 'Eternal', 'Dragonforged'];
+        armorName = `${prefixes[Math.floor(Math.random() * prefixes.length)]} ${baseArmor.name}`;
+    } else if (quality === 'godly') {
+        const prefixes = ['Divine', 'Immortal', 'Primordial', 'Celestial'];
+        armorName = `${prefixes[Math.floor(Math.random() * prefixes.length)]} ${baseArmor.name}`;
+    } else if (quality === 'epic') {
+        const prefixes = ['Mighty', 'Exquisite', 'Flawless', 'Masterwork'];
+        armorName = `${prefixes[Math.floor(Math.random() * prefixes.length)]} ${baseArmor.name}`;
     }
     
-    // Create armor instance in ARMOR object
     const armorInstance = {
-        id: baseArmorKey,
+        id: baseArmor.id,
         instanceId: instanceId,
         name: armorName,
         baseName: baseArmor.name,
         type: baseArmor.type || baseArmor.armorSubtype || baseArmor.slot || 'armor',
-armorSubtype: baseArmor.armorSubtype || baseArmor.type || baseArmor.slot || 'armor',
+        armorSubtype: baseArmor.armorSubtype || baseArmor.type || baseArmor.slot || 'armor',
         baseDefense: baseArmor.baseDefense + defenseBonus,
         baseMagicBonus: (baseArmor.baseMagicBonus || 0) + magicBonus,
+        magicResist: (baseArmor.magicResist || 0) + resistBonus,
         level: baseArmor.level || 1,
         originalLevel: baseArmor.level || 1,
         quality: quality,
         qualityBonus: bonusPct,
         gems: [],
         gemSlots: gemSlots,
-        cost: baseArmor.cost || 100,
+        cost: baseArmor.cost ? Math.floor(baseArmor.cost * (1 + bonusPct)) : 100,
         description: baseArmor.description || `A ${quality} quality ${baseArmor.name}.`,
+        allowedClasses: baseArmor.allowedClasses,
         isDropped: true,
         dropTimestamp: Date.now()
     };
     
-    // Store in ARMOR object using instanceId as key
     ARMOR[instanceId] = armorInstance;
     
-    // Create inventory reference object
     const inventoryItem = {
-        armorId: baseArmorKey,
+        armorId: baseArmor.id,
         instanceId: instanceId,
         quality: quality,
         gems: [],
@@ -553,11 +581,15 @@ armorSubtype: baseArmor.armorSubtype || baseArmor.type || baseArmor.slot || 'arm
         dropTime: Date.now()
     };
     
-    // Add to player's inventory
     if (gameState && gameState.player && gameState.player.inventory) {
         gameState.player.inventory.push(inventoryItem);
-        console.log(`📦 Added armor to inventory:`, inventoryItem);
     }
     
     return armorInstance;
 }
+
+console.log('✅ Weapon drop system loaded with enhanced features:');
+console.log('   - Predefined quality enforcement');
+console.log('   - Level-scaling modifiers (10, 20, 25)');
+console.log('   - Enhanced naming (primary modifier as suffix)');
+console.log('   - Full weapon/armor pools (all items available)');

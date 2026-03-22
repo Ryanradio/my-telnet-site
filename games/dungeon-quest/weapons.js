@@ -22,7 +22,7 @@ const WEAPONS = {
         "maxDamage": 0,
         "baseMagicDamage": 0,
         "level": 1,
-        "quality": "poor",
+        "quality": "",
         "type": "unarmed",
         "slot": "weapon",
         "weaponSubtype": "unarmed",
@@ -43,7 +43,7 @@ const WEAPONS = {
         "baseMagicDamage": 5,
         "cost": 20,
         "level": 1,
-        "quality": "poor",
+        "quality": "",
         "slot": "weapon",
         "allowedClasses": ["mage", "warlock", "sorceror", "necrolyte"],
         "weaponSubtype": "wand",
@@ -56,7 +56,7 @@ const WEAPONS = {
         "baseMagicDamage": 8,
         "cost": 80,
         "level": 2,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "allowedClasses": ["mage", "warlock", "sorceror", "necrolyte"],
         "weaponSubtype": "wand"
@@ -68,7 +68,7 @@ const WEAPONS = {
         "baseMagicDamage": 11,
         "cost": 200,
         "level": 3,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "allowedClasses": ["mage", "warlock", "sorceror", "necrolyte"],
         "weaponSubtype": "wand"
@@ -80,7 +80,7 @@ const WEAPONS = {
         "baseMagicDamage": 14,
         "cost": 320,
         "level": 4,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "allowedClasses": ["mage", "warlock", "sorceror", "necrolyte"],
         "weaponSubtype": "wand"
@@ -92,7 +92,7 @@ const WEAPONS = {
         "baseMagicDamage": 17,
         "cost": 800,
         "level": 5,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "allowedClasses": ["mage", "warlock", "sorceror", "necrolyte"],
         "weaponSubtype": "wand"
@@ -104,7 +104,7 @@ const WEAPONS = {
         "baseMagicDamage": 20,
         "cost": 1100,
         "level": 6,
-        "quality": "rare",
+        "quality": "",
         "slot": "weapon",
         "allowedClasses": ["mage", "warlock", "sorceror", "necrolyte"],
         "weaponSubtype": "wand"
@@ -116,7 +116,7 @@ const WEAPONS = {
         "baseMagicDamage": 24,
         "cost": 2200,
         "level": 8,
-        "quality": "rare",
+        "quality": "",
         "slot": "weapon",
         "allowedClasses": ["mage", "warlock", "sorceror", "necrolyte"],
         "weaponSubtype": "wand"
@@ -128,7 +128,7 @@ const WEAPONS = {
         "baseMagicDamage": 28,
         "cost": 3200,
         "level": 10,
-        "quality": "epic",
+        "quality": "",
         "slot": "weapon",
         "allowedClasses": ["mage", "warlock", "sorceror", "necrolyte"],
         "weaponSubtype": "wand"
@@ -140,7 +140,7 @@ const WEAPONS = {
         "baseMagicDamage": 32,
         "cost": 5500,
         "level": 12,
-        "quality": "epic",
+        "quality": "",
         "slot": "weapon",
         "allowedClasses": ["mage", "warlock", "sorceror", "necrolyte"],
         "weaponSubtype": "wand"
@@ -152,7 +152,7 @@ const WEAPONS = {
         "baseMagicDamage": 36,
         "cost": 8000,
         "level": 14,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "allowedClasses": ["mage", "warlock", "sorceror", "necrolyte"],
         "weaponSubtype": "wand"
@@ -164,7 +164,7 @@ const WEAPONS = {
         "baseMagicDamage": 40,
         "cost": 18000,
         "level": 16,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "allowedClasses": ["mage", "warlock", "sorceror", "necrolyte"],
         "weaponSubtype": "wand"
@@ -176,7 +176,7 @@ const WEAPONS = {
         "baseMagicDamage": 45,
         "cost": 16000,
         "level": 18,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "allowedClasses": ["mage", "warlock", "sorceror", "necrolyte"],
         "weaponSubtype": "wand"
@@ -194,7 +194,7 @@ const WEAPONS = {
         "healingBonus": 2,
         "cost": 20,
         "level": 1,
-        "quality": "poor",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "tome",
         "allowedClasses": ["cleric", "acolyte", "high_priest"],
@@ -208,7 +208,7 @@ const WEAPONS = {
         "healingBonus": 5,
         "cost": 60,
         "level": 2,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "tome",
         "allowedClasses": ["cleric", "acolyte"],
@@ -222,7 +222,7 @@ const WEAPONS = {
         "healingBonus": 5,
         "cost": 120,
         "level": 3,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "tome",
         "allowedClasses": ["cleric", "acolyte"],
@@ -236,7 +236,7 @@ const WEAPONS = {
         "healingBonus": 6,
         "cost": 180,
         "level": 4,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "tome",
         "allowedClasses": ["cleric", "acolyte"],
@@ -250,7 +250,7 @@ const WEAPONS = {
         "healingBonus": 6,
         "cost": 250,
         "level": 5,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "tome",
         "allowedClasses": ["cleric", "acolyte"],
@@ -264,7 +264,7 @@ const WEAPONS = {
         "healingBonus": 7,
         "cost": 350,
         "level": 6,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "tome",
         "allowedClasses": ["cleric", "acolyte"],
@@ -278,7 +278,7 @@ const WEAPONS = {
         "healingBonus": 7,
         "cost": 500,
         "level": 7,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "tome",
         "allowedClasses": ["cleric"],
@@ -292,7 +292,7 @@ const WEAPONS = {
         "healingBonus": 8,
         "cost": 700,
         "level": 8,
-        "quality": "rare",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "tome",
         "allowedClasses": ["cleric"],
@@ -306,7 +306,7 @@ const WEAPONS = {
         "healingBonus": 8,
         "cost": 950,
         "level": 9,
-        "quality": "rare",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "tome",
         "allowedClasses": ["cleric"],
@@ -320,7 +320,7 @@ const WEAPONS = {
         "healingBonus": 9,
         "cost": 1250,
         "level": 10,
-        "quality": "rare",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "tome",
         "allowedClasses": ["cleric"],
@@ -334,7 +334,7 @@ const WEAPONS = {
         "healingBonus": 9,
         "cost": 1600,
         "level": 11,
-        "quality": "rare",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "tome",
         "allowedClasses": ["cleric"],
@@ -348,7 +348,7 @@ const WEAPONS = {
         "healingBonus": 10,
         "cost": 2100,
         "level": 12,
-        "quality": "epic",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "tome",
         "allowedClasses": ["cleric"],
@@ -362,7 +362,7 @@ const WEAPONS = {
         "healingBonus": 10,
         "cost": 2700,
         "level": 13,
-        "quality": "epic",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "tome",
         "allowedClasses": ["cleric"],
@@ -376,7 +376,7 @@ const WEAPONS = {
         "healingBonus": 11,
         "cost": 3400,
         "level": 14,
-        "quality": "epic",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "tome",
         "allowedClasses": ["cleric"],
@@ -390,7 +390,7 @@ const WEAPONS = {
         "healingBonus": 11,
         "cost": 4200,
         "level": 15,
-        "quality": "epic",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "tome",
         "allowedClasses": ["cleric"],
@@ -404,7 +404,7 @@ const WEAPONS = {
         "healingBonus": 12,
         "cost": 5100,
         "level": 16,
-        "quality": "epic",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "tome",
         "allowedClasses": ["cleric"],
@@ -418,7 +418,7 @@ const WEAPONS = {
         "healingBonus": 12,
         "cost": 6200,
         "level": 17,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "tome",
         "allowedClasses": ["cleric"],
@@ -432,7 +432,7 @@ const WEAPONS = {
         "healingBonus": 13,
         "cost": 7500,
         "level": 18,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "tome",
         "allowedClasses": ["cleric"],
@@ -446,7 +446,7 @@ const WEAPONS = {
         "healingBonus": 13,
         "cost": 9000,
         "level": 19,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "tome",
         "allowedClasses": ["cleric"],
@@ -460,7 +460,7 @@ const WEAPONS = {
         "healingBonus": 14,
         "cost": 10800,
         "level": 20,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "tome",
         "allowedClasses": ["cleric"],
@@ -474,7 +474,7 @@ const WEAPONS = {
         "healingBonus": 14,
         "cost": 12800,
         "level": 21,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "tome",
         "allowedClasses": ["cleric"],
@@ -488,7 +488,7 @@ const WEAPONS = {
         "healingBonus": 15,
         "cost": 15200,
         "level": 22,
-        "quality": "godly",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "tome",
         "allowedClasses": ["high_priest"],
@@ -502,7 +502,7 @@ const WEAPONS = {
         "healingBonus": 15,
         "cost": 18000,
         "level": 23,
-        "quality": "godly",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "tome",
         "allowedClasses": ["high_priest"],
@@ -516,7 +516,7 @@ const WEAPONS = {
         "healingBonus": 16,
         "cost": 21200,
         "level": 24,
-        "quality": "godly",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "tome",
         "allowedClasses": ["high_priest"],
@@ -530,7 +530,7 @@ const WEAPONS = {
         "healingBonus": 16,
         "cost": 25000,
         "level": 25,
-        "quality": "godly",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "tome",
         "allowedClasses": ["high_priest"],
@@ -543,8 +543,8 @@ const WEAPONS = {
         "baseMagicDamage": 80,
         "healingBonus": 17,
         "cost": 30000,
-        "level": 26,
-        "quality": "godly",
+        "level": 25,
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "tome",
         "allowedClasses": ["high_priest"],
@@ -562,7 +562,7 @@ const WEAPONS = {
         "baseMagicDamage": 2,
         "cost": 15,
         "level": 1,
-        "quality": "poor",
+        "quality": "",
         "slot": "weapon",
         "allowedClasses": ["mage", "warlock", "cleric", "druid", "runesmith", "sorceror", "necrolyte"],
         "weaponSubtype": "staff",
@@ -575,7 +575,7 @@ const WEAPONS = {
         "baseMagicDamage": 4,
         "cost": 100,
         "level": 2,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "allowedClasses": ["mage", "warlock", "cleric", "druid", "runesmith"],
         "weaponSubtype": "staff"
@@ -587,7 +587,7 @@ const WEAPONS = {
         "baseMagicDamage": 6,
         "cost": 500,
         "level": 3,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "allowedClasses": ["mage", "warlock", "cleric", "druid", "runesmith"],
         "weaponSubtype": "staff"
@@ -599,9 +599,9 @@ const WEAPONS = {
         "baseMagicDamage": 8,
         "cost": 220,
         "level": 4,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["cleric", "paladin", "runesmith"],
+        "allowedClasses": ["cleric", "paladin"],
         "weaponSubtype": "staff"
     },
     dark_staff: {
@@ -611,9 +611,9 @@ const WEAPONS = {
         "baseMagicDamage": 10,
         "cost": 350,
         "level": 5,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["warlock", "necrolyte", "runesmith"],
+        "allowedClasses": ["warlock", "necrolyte"],
         "weaponSubtype": "staff"
     },
     flame_staff: {
@@ -623,9 +623,9 @@ const WEAPONS = {
         "baseMagicDamage": 12,
         "cost": 550,
         "level": 6,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["mage", "warlock", "sorceror", "runesmith"],
+        "allowedClasses": ["mage", "warlock", "sorceror"],
         "weaponSubtype": "staff"
     },
     sacred_staff: {
@@ -635,9 +635,9 @@ const WEAPONS = {
         "baseMagicDamage": 14,
         "cost": 550,
         "level": 7,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["cleric", "paladin", "runesmith"],
+        "allowedClasses": ["cleric", "paladin"],
         "weaponSubtype": "staff"
     },
     ice_staff: {
@@ -647,9 +647,9 @@ const WEAPONS = {
         "baseMagicDamage": 16,
         "cost": 1100,
         "level": 8,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["mage", "warlock", "sorceror", "runesmith"],
+        "allowedClasses": ["mage", "warlock", "sorceror"],
         "weaponSubtype": "staff"
     },
     cursed_staff: {
@@ -659,9 +659,9 @@ const WEAPONS = {
         "baseMagicDamage": 18,
         "cost": 1800,
         "level": 9,
-        "quality": "rare",
+        "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["warlock", "necrolyte", "runesmith"],
+        "allowedClasses": ["warlock", "necrolyte"],
         "weaponSubtype": "staff"
     },
     shadow_staff: {
@@ -671,9 +671,9 @@ const WEAPONS = {
         "baseMagicDamage": 20,
         "cost": 1100,
         "level": 10,
-        "quality": "rare",
+        "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["warlock", "necrolyte", "runesmith"],
+        "allowedClasses": ["warlock", "necrolyte"],
         "weaponSubtype": "staff"
     },
     lightning_staff: {
@@ -683,9 +683,9 @@ const WEAPONS = {
         "baseMagicDamage": 22,
         "cost": 1800,
         "level": 11,
-        "quality": "rare",
+        "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["mage", "warlock", "sorceror", "runesmith"],
+        "allowedClasses": ["mage", "warlock", "sorceror"],
         "weaponSubtype": "staff"
     },
     necromantic_staff: {
@@ -695,9 +695,9 @@ const WEAPONS = {
         "baseMagicDamage": 24,
         "cost": 2000,
         "level": 12,
-        "quality": "epic",
+        "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["necrolyte", "warlock", "runesmith"],
+        "allowedClasses": ["necrolyte", "warlock"],
         "weaponSubtype": "staff"
     },
     prophecy_staff: {
@@ -707,9 +707,9 @@ const WEAPONS = {
         "baseMagicDamage": 26,
         "cost": 2500,
         "level": 13,
-        "quality": "epic",
+        "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["cleric", "acolyte", "runesmith"],
+        "allowedClasses": ["cleric", "acolyte"],
         "weaponSubtype": "staff"
     },
     divine_staff: {
@@ -719,9 +719,9 @@ const WEAPONS = {
         "baseMagicDamage": 28,
         "cost": 2000,
         "level": 14,
-        "quality": "rare",
+        "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["cleric", "paladin", "runesmith"],
+        "allowedClasses": ["cleric", "paladin"],
         "weaponSubtype": "staff"
     },
     archmage_staff: {
@@ -731,9 +731,9 @@ const WEAPONS = {
         "baseMagicDamage": 30,
         "cost": 11000,
         "level": 15,
-        "quality": "rare",
+        "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["mage", "sorceror", "runesmith"],
+        "allowedClasses": ["mage", "sorceror"],
         "weaponSubtype": "staff"
     },
     void_staff: {
@@ -743,9 +743,9 @@ const WEAPONS = {
         "baseMagicDamage": 32,
         "cost": 5000,
         "level": 16,
-        "quality": "epic",
+        "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["warlock", "necrolyte", "runesmith"],
+        "allowedClasses": ["warlock", "necrolyte"],
         "weaponSubtype": "staff"
     },
     soul_staff: {
@@ -755,9 +755,9 @@ const WEAPONS = {
         "baseMagicDamage": 34,
         "cost": 5500,
         "level": 17,
-        "quality": "epic",
+        "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["warlock", "necrolyte", "runesmith"],
+        "allowedClasses": ["warlock", "necrolyte"],
         "weaponSubtype": "staff"
     },
     celestial_staff: {
@@ -767,9 +767,9 @@ const WEAPONS = {
         "baseMagicDamage": 36,
         "cost": 8000,
         "level": 18,
-        "quality": "epic",
+        "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["cleric", "acolyte", "runesmith"],
+        "allowedClasses": ["cleric", "acolyte"],
         "weaponSubtype": "staff"
     },
     celestial_rod: {
@@ -779,9 +779,9 @@ const WEAPONS = {
         "baseMagicDamage": 38,
         "cost": 8000,
         "level": 19,
-        "quality": "epic",
+        "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["cleric", "paladin", "runesmith"],
+        "allowedClasses": ["cleric", "paladin"],
         "weaponSubtype": "staff"
     },
     eternity_staff: {
@@ -791,9 +791,9 @@ const WEAPONS = {
         "baseMagicDamage": 40,
         "cost": 11000,
         "level": 20,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["mage", "warlock", "cleric", "runesmith"],
+        "allowedClasses": ["mage", "warlock", "cleric"],
         "weaponSubtype": "staff"
     },
     void_dark_staff: {
@@ -803,9 +803,9 @@ const WEAPONS = {
         "baseMagicDamage": 42,
         "cost": 19000,
         "level": 21,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["warlock", "necrolyte", "runesmith"],
+        "allowedClasses": ["warlock", "necrolyte"],
         "weaponSubtype": "staff"
     },
     apocalypse_staff: {
@@ -815,9 +815,9 @@ const WEAPONS = {
         "baseMagicDamage": 44,
         "cost": 50000,
         "level": 22,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["mage", "warlock", "sorceror", "runesmith"],
+        "allowedClasses": ["mage", "warlock", "sorceror"],
         "weaponSubtype": "staff"
     },
     cosmic_staff: {
@@ -827,9 +827,9 @@ const WEAPONS = {
         "baseMagicDamage": 46,
         "cost": 22000,
         "level": 23,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["mage", "sorceror", "runesmith"],
+        "allowedClasses": ["mage", "sorceror"],
         "weaponSubtype": "staff"
     },
     gods_scepter: {
@@ -839,9 +839,9 @@ const WEAPONS = {
         "baseMagicDamage": 50,
         "cost": 30000,
         "level": 24,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["cleric", "high_priest", "runesmith"],
+        "allowedClasses": ["cleric", "high_priest"],
         "weaponSubtype": "staff"
     },
 
@@ -856,10 +856,10 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 20,
         "level": 1,
-        "quality": "poor",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["warrior", "paladin", "cleric", "runesmith"],
+        "allowedClasses": ["warrior", "paladin", "cleric"],
         "description": "A stone mace head with visible cracks. One solid hit might break it, but it'll hurt."
     },
     wooden_club: {
@@ -869,10 +869,10 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 150,
         "level": 2,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["warrior", "paladin", "cleric", "runesmith"]
+        "allowedClasses": ["warrior", "paladin", "cleric"]
     },
     iron_mace: {
         "name": "Iron Mace",
@@ -881,10 +881,10 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 400,
         "level": 3,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["warrior", "paladin", "cleric", "runesmith"]
+        "allowedClasses": ["warrior", "paladin", "cleric"]
     },
     flanged_mace: {
         "name": "Flanged Mace",
@@ -893,10 +893,10 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 750,
         "level": 4,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["warrior", "paladin", "cleric", "runesmith"]
+        "allowedClasses": ["warrior", "paladin", "cleric"]
     },
     battlemace: {
         "name": "Battlemace",
@@ -905,9 +905,9 @@ const WEAPONS = {
         "baseMagicDamage": 2,
         "cost": 500,
         "level": 5,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["warrior", "paladin", "cleric", "runesmith"],
+        "allowedClasses": ["warrior", "paladin", "cleric"],
         "weaponSubtype": "mace"
     },
     holy_mace: {
@@ -917,10 +917,10 @@ const WEAPONS = {
         "baseMagicDamage": 5,
         "cost": 1930,
         "level": 6,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["cleric", "paladin", "runesmith"]
+        "allowedClasses": ["cleric", "paladin"]
     },
     war_mace: {
         "name": "War Mace",
@@ -929,10 +929,10 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 2400,
         "level": 7,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["warrior", "paladin", "cleric", "runesmith"]
+        "allowedClasses": ["warrior", "paladin", "cleric"]
     },
     blessed_mace: {
         "name": "Blessed Mace",
@@ -941,10 +941,10 @@ const WEAPONS = {
         "baseMagicDamage": 5,
         "cost": 3470,
         "level": 8,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["cleric", "paladin", "runesmith"]
+        "allowedClasses": ["cleric", "paladin"]
     },
     silver_mace: {
         "name": "Silver Mace",
@@ -953,10 +953,10 @@ const WEAPONS = {
         "baseMagicDamage": 6,
         "cost": 4400,
         "level": 9,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["cleric", "paladin", "runesmith"]
+        "allowedClasses": ["cleric", "paladin"]
     },
     crushmaster: {
         "name": "Crushmaster",
@@ -965,10 +965,10 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 4950,
         "level": 10,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["warrior", "paladin", "cleric", "runesmith"]
+        "allowedClasses": ["warrior", "paladin", "cleric"]
     },
     divine_mace: {
         "name": "Divine Mace",
@@ -977,10 +977,10 @@ const WEAPONS = {
         "baseMagicDamage": 7,
         "cost": 6600,
         "level": 11,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["cleric", "paladin", "runesmith"]
+        "allowedClasses": ["cleric", "paladin"]
     },
     soul_mace: {
         "name": "Soul Mace",
@@ -989,10 +989,10 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 7150,
         "level": 12,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["warrior", "paladin", "cleric", "runesmith"]
+        "allowedClasses": ["warrior", "paladin", "cleric"]
     },
     sanctified_mace: {
         "name": "Sanctified Mace",
@@ -1001,10 +1001,10 @@ const WEAPONS = {
         "baseMagicDamage": 8,
         "cost": 9240,
         "level": 13,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["cleric", "paladin", "runesmith"]
+        "allowedClasses": ["cleric", "paladin"]
     },
     judgment: {
         "name": "Judgment",
@@ -1013,10 +1013,10 @@ const WEAPONS = {
         "baseMagicDamage": 8,
         "cost": 10720,
         "level": 14,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["cleric", "paladin", "runesmith"]
+        "allowedClasses": ["cleric", "paladin"]
     },
     templar_mace: {
         "name": "Templar Mace",
@@ -1025,10 +1025,10 @@ const WEAPONS = {
         "baseMagicDamage": 9,
         "cost": 12320,
         "level": 15,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["cleric", "paladin", "runesmith"]
+        "allowedClasses": ["cleric", "paladin"]
     },
     thundermace: {
         "name": "Thundermace",
@@ -1037,10 +1037,10 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 12750,
         "level": 16,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["warrior", "paladin", "cleric", "runesmith"]
+        "allowedClasses": ["warrior", "paladin", "cleric"]
     },
     wrath_of_the_gods: {
         "name": "Wrath of the Gods",
@@ -1049,10 +1049,10 @@ const WEAPONS = {
         "baseMagicDamage": 10,
         "cost": 15840,
         "level": 17,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["cleric", "paladin", "runesmith"]
+        "allowedClasses": ["cleric", "paladin"]
     },
     celestial_crusher: {
         "name": "Celestial Crusher",
@@ -1061,10 +1061,10 @@ const WEAPONS = {
         "baseMagicDamage": 10,
         "cost": 17760,
         "level": 18,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["cleric", "paladin", "runesmith"]
+        "allowedClasses": ["cleric", "paladin"]
     },
     scepter_of_doom: {
         "name": "Scepter of Doom",
@@ -1073,10 +1073,10 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 18000,
         "level": 19,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["warrior", "paladin", "cleric", "runesmith"]
+        "allowedClasses": ["warrior", "paladin", "cleric"]
     },
     apocalypse_mace: {
         "name": "Apocalypse Mace",
@@ -1085,10 +1085,10 @@ const WEAPONS = {
         "baseMagicDamage": 11,
         "cost": 21940,
         "level": 20,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["cleric", "paladin", "runesmith"]
+        "allowedClasses": ["cleric", "paladin"]
     },
     world_mace: {
         "name": "World Mace",
@@ -1097,10 +1097,10 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 22000,
         "level": 21,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["warrior", "paladin", "cleric", "runesmith"]
+        "allowedClasses": ["warrior", "paladin", "cleric"]
     },
     eternity_crusher: {
         "name": "Eternity Crusher",
@@ -1109,10 +1109,10 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 26400,
         "level": 22,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["warrior", "paladin", "cleric", "runesmith"]
+        "allowedClasses": ["warrior", "paladin", "cleric"]
     },
     oblivion_scepter: {
         "name": "Oblivion Scepter",
@@ -1121,10 +1121,10 @@ const WEAPONS = {
         "baseMagicDamage": 14,
         "cost": 34320,
         "level": 23,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["cleric", "paladin", "runesmith"]
+        "allowedClasses": ["cleric", "paladin"]
     },
     genesis_mace: {
         "name": "Genesis Mace",
@@ -1133,10 +1133,10 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 33750,
         "level": 24,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["warrior", "paladin", "cleric", "runesmith"]
+        "allowedClasses": ["warrior", "paladin", "cleric"]
     },
 
     // ======================================================
@@ -1150,7 +1150,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 15,
         "level": 1,
-        "quality": "poor",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "sword",
         "allowedClasses": ["warrior", "paladin", "rogue", "crusader"],
@@ -1163,7 +1163,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 100,
         "level": 2,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "sword",
         "allowedClasses": ["warrior", "paladin"]
@@ -1175,7 +1175,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 110,
         "level": 3,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "sword",
         "allowedClasses": ["warrior", "paladin", "rogue"]
@@ -1187,7 +1187,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 1000,
         "level": 4,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "sword",
         "allowedClasses": ["warrior", "paladin"]
@@ -1199,7 +1199,7 @@ const WEAPONS = {
         "baseMagicDamage": 5,
         "cost": 500,
         "level": 5,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "sword",
         "allowedClasses": ["paladin", "crusader"]
@@ -1211,7 +1211,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 900,
         "level": 6,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "sword",
         "allowedClasses": ["warrior", "paladin"]
@@ -1223,7 +1223,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 1200,
         "level": 7,
-        "quality": "rare",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "sword",
         "allowedClasses": ["warrior", "paladin"]
@@ -1235,7 +1235,7 @@ const WEAPONS = {
         "baseMagicDamage": 5,
         "cost": 1500,
         "level": 8,
-        "quality": "rare",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "sword",
         "allowedClasses": ["warrior", "paladin"]
@@ -1247,7 +1247,7 @@ const WEAPONS = {
         "baseMagicDamage": 5,
         "cost": 1500,
         "level": 8,
-        "quality": "rare",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "sword",
         "allowedClasses": ["warrior", "paladin"]
@@ -1259,7 +1259,7 @@ const WEAPONS = {
         "baseMagicDamage": 4,
         "cost": 1800,
         "level": 9,
-        "quality": "rare",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "sword",
         "allowedClasses": ["warrior", "warlock"]
@@ -1271,7 +1271,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 5000,
         "level": 10,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "greatsword",
         "allowedClasses": ["warrior", "paladin"]
@@ -1283,7 +1283,7 @@ const WEAPONS = {
         "baseMagicDamage": 6,
         "cost": 2000,
         "level": 11,
-        "quality": "rare",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "sword",
         "allowedClasses": ["warrior", "rogue", "warlock"]
@@ -1295,7 +1295,7 @@ const WEAPONS = {
         "baseMagicDamage": 8,
         "cost": 2500,
         "level": 12,
-        "quality": "epic",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "sword",
         "allowedClasses": ["paladin", "cleric"]
@@ -1307,7 +1307,7 @@ const WEAPONS = {
         "baseMagicDamage": 8,
         "cost": 2800,
         "level": 12,
-        "quality": "epic",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "sword",
         "allowedClasses": ["warrior", "warlock"]
@@ -1319,7 +1319,7 @@ const WEAPONS = {
         "baseMagicDamage": 8,
         "cost": 2800,
         "level": 13,
-        "quality": "epic",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "sword",
         "allowedClasses": ["warrior", "paladin"]
@@ -1331,7 +1331,7 @@ const WEAPONS = {
         "baseMagicDamage": 8,
         "cost": 3000,
         "level": 14,
-        "quality": "epic",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "sword",
         "allowedClasses": ["warrior", "warlock"]
@@ -1343,7 +1343,7 @@ const WEAPONS = {
         "baseMagicDamage": 6,
         "cost": 3000,
         "level": 14,
-        "quality": "epic",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "sword",
         "allowedClasses": ["warrior", "warlock"]
@@ -1355,10 +1355,10 @@ const WEAPONS = {
         "baseMagicDamage": 8,
         "cost": 4500,
         "level": 15,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "sword",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     champion_sword: {
         "name": "Champion Sword",
@@ -1367,7 +1367,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 4000,
         "level": 15,
-        "quality": "epic",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "sword",
         "allowedClasses": ["warrior", "paladin"]
@@ -1379,7 +1379,7 @@ const WEAPONS = {
         "baseMagicDamage": 10,
         "cost": 5000,
         "level": 16,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "sword",
         "allowedClasses": ["warrior", "warlock"]
@@ -1391,7 +1391,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 5000,
         "level": 16,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "sword",
         "allowedClasses": ["warrior", "paladin"]
@@ -1403,7 +1403,7 @@ const WEAPONS = {
         "baseMagicDamage": 10,
         "cost": 7000,
         "level": 17,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "sword",
         "allowedClasses": ["warrior", "paladin"]
@@ -1415,7 +1415,7 @@ const WEAPONS = {
         "baseMagicDamage": 12,
         "cost": 8000,
         "level": 18,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "sword",
         "allowedClasses": ["warrior", "paladin"]
@@ -1427,7 +1427,7 @@ const WEAPONS = {
         "baseMagicDamage": 10,
         "cost": 7500,
         "level": 18,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "sword",
         "allowedClasses": ["warrior", "paladin"]
@@ -1439,7 +1439,7 @@ const WEAPONS = {
         "baseMagicDamage": 10,
         "cost": 8000,
         "level": 19,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "sword",
         "allowedClasses": ["warrior", "warlock"]
@@ -1451,7 +1451,7 @@ const WEAPONS = {
         "baseMagicDamage": 12,
         "cost": 35000,
         "level": 20,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "greatsword",
         "allowedClasses": ["warrior", "paladin"]
@@ -1463,7 +1463,7 @@ const WEAPONS = {
         "baseMagicDamage": 14,
         "cost": 10000,
         "level": 21,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "sword",
         "allowedClasses": ["warrior", "warlock"]
@@ -1475,7 +1475,7 @@ const WEAPONS = {
         "baseMagicDamage": 16,
         "cost": 15000,
         "level": 22,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "sword",
         "allowedClasses": ["warrior", "warlock"]
@@ -1487,7 +1487,7 @@ const WEAPONS = {
         "baseMagicDamage": 14,
         "cost": 14000,
         "level": 22,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "sword",
         "allowedClasses": ["warrior", "warlock"]
@@ -1499,7 +1499,7 @@ const WEAPONS = {
         "baseMagicDamage": 18,
         "cost": 16000,
         "level": 23,
-        "quality": "godly",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "sword",
         "allowedClasses": ["paladin", "crusader"]
@@ -1511,7 +1511,7 @@ const WEAPONS = {
         "baseMagicDamage": 22,
         "cost": 28000,
         "level": 24,
-        "quality": "godly",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "sword",
         "allowedClasses": ["paladin", "crusader"]
@@ -1523,7 +1523,7 @@ const WEAPONS = {
         "baseMagicDamage": 20,
         "cost": 50000,
         "level": 25,
-        "quality": "godly",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "greatsword",
         "allowedClasses": ["warrior", "paladin"]
@@ -1535,7 +1535,7 @@ const WEAPONS = {
         "baseMagicDamage": 18,
         "cost": 28000,
         "level": 25,
-        "quality": "godly",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "greatsword",
         "allowedClasses": ["warrior", "paladin"]
@@ -1546,8 +1546,8 @@ const WEAPONS = {
         "maxDamage": 145,
         "baseMagicDamage": 20,
         "cost": 35000,
-        "level": 26,
-        "quality": "godly",
+        "level": 25,
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "greatsword",
         "allowedClasses": ["warrior", "paladin"]
@@ -1558,8 +1558,8 @@ const WEAPONS = {
         "maxDamage": 150,
         "baseMagicDamage": 25,
         "cost": 50000,
-        "level": 27,
-        "quality": "godly",
+        "level": 25,
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "greatsword",
         "allowedClasses": ["warrior", "paladin"]
@@ -1576,7 +1576,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 20,
         "level": 1,
-        "quality": "poor",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "axe",
         "allowedClasses": ["warrior", "paladin"],
@@ -1589,7 +1589,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 150,
         "level": 2,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "axe",
         "allowedClasses": ["warrior", "paladin"]
@@ -1601,7 +1601,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 400,
         "level": 3,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "axe",
         "allowedClasses": ["warrior", "paladin"]
@@ -1613,7 +1613,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 400,
         "level": 3,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "axe",
         "allowedClasses": ["warrior", "paladin"]
@@ -1625,7 +1625,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 1200,
         "level": 4,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "axe",
         "allowedClasses": ["warrior", "paladin"]
@@ -1637,7 +1637,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 500,
         "level": 5,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "axe",
         "allowedClasses": ["warrior", "paladin"]
@@ -1649,7 +1649,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 1750,
         "level": 6,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "axe",
         "allowedClasses": ["warrior", "paladin"]
@@ -1661,7 +1661,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 2400,
         "level": 7,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "axe",
         "allowedClasses": ["warrior", "paladin"]
@@ -1673,7 +1673,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 3150,
         "level": 8,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "axe",
         "allowedClasses": ["warrior", "paladin"]
@@ -1685,7 +1685,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 4000,
         "level": 9,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "axe",
         "allowedClasses": ["warrior", "paladin"]
@@ -1697,7 +1697,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 4950,
         "level": 10,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "axe",
         "allowedClasses": ["warrior", "paladin"]
@@ -1709,7 +1709,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 6000,
         "level": 11,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "axe",
         "allowedClasses": ["warrior", "paladin"]
@@ -1721,7 +1721,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 7150,
         "level": 12,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "axe",
         "allowedClasses": ["warrior", "paladin"]
@@ -1733,7 +1733,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 8400,
         "level": 13,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "axe",
         "allowedClasses": ["warrior", "paladin"]
@@ -1745,7 +1745,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 9750,
         "level": 14,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "axe",
         "allowedClasses": ["warrior", "paladin"]
@@ -1757,7 +1757,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 11200,
         "level": 15,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "axe",
         "allowedClasses": ["warrior", "paladin"]
@@ -1769,7 +1769,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 12750,
         "level": 16,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "axe",
         "allowedClasses": ["warrior", "paladin"]
@@ -1781,7 +1781,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 14400,
         "level": 17,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "axe",
         "allowedClasses": ["warrior", "paladin"]
@@ -1793,7 +1793,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 16150,
         "level": 18,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "axe",
         "allowedClasses": ["warrior", "paladin"]
@@ -1805,7 +1805,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 18000,
         "level": 19,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "axe",
         "allowedClasses": ["warrior", "paladin"]
@@ -1817,7 +1817,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 19950,
         "level": 20,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "axe",
         "allowedClasses": ["warrior", "paladin"]
@@ -1829,7 +1829,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 22000,
         "level": 21,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "axe",
         "allowedClasses": ["warrior", "paladin"]
@@ -1841,7 +1841,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 26400,
         "level": 22,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "axe",
         "allowedClasses": ["warrior", "paladin"]
@@ -1853,7 +1853,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 31200,
         "level": 23,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "axe",
         "allowedClasses": ["warrior", "paladin"]
@@ -1865,7 +1865,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 33750,
         "level": 24,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "axe",
         "allowedClasses": ["warrior", "paladin"]
@@ -1882,10 +1882,10 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 20,
         "level": 1,
-        "quality": "poor",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin", "runesmith"],
+        "allowedClasses": ["warrior", "paladin"],
         "description": "A blacksmith's hammer repurposed for combat. The head is loose but it packs a punch."
     },
     iron_maul: {
@@ -1895,10 +1895,10 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 150,
         "level": 2,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin", "runesmith"]
+        "allowedClasses": ["warrior", "paladin"]
     },
     stone_hammer: {
         "name": "Stone Hammer",
@@ -1907,10 +1907,10 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 400,
         "level": 3,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin", "runesmith"]
+        "allowedClasses": ["warrior", "paladin"]
     },
     war_hammer: {
         "name": "War Hammer",
@@ -1919,10 +1919,10 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 750,
         "level": 4,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin", "runesmith"]
+        "allowedClasses": ["warrior", "paladin"]
     },
     flanged_hammer: {
         "name": "Flanged Hammer",
@@ -1931,10 +1931,10 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 1200,
         "level": 5,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin", "runesmith"]
+        "allowedClasses": ["warrior", "paladin"]
     },
     ironbane_hammer: {
         "name": "Ironbane Hammer",
@@ -1943,10 +1943,10 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 1750,
         "level": 6,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin", "runesmith"]
+        "allowedClasses": ["warrior", "paladin"]
     },
     runic_hammer: {
         "name": "Runic Hammer",
@@ -1955,7 +1955,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 2400,
         "level": 7,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
         "allowedClasses": ["warrior", "paladin", "runesmith"]
@@ -1967,10 +1967,10 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 3150,
         "level": 8,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin", "runesmith"]
+        "allowedClasses": ["warrior", "paladin"]
     },
     thunder_maul: {
         "name": "Thunder Maul",
@@ -1979,10 +1979,10 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 4000,
         "level": 9,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin", "runesmith"]
+        "allowedClasses": ["warrior", "paladin"]
     },
     skullcracker: {
         "name": "Skullcracker",
@@ -1991,10 +1991,10 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 4950,
         "level": 10,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin", "runesmith"]
+        "allowedClasses": ["warrior", "paladin"]
     },
     mjolnite_hammer: {
         "name": "Mjolnite Hammer",
@@ -2003,10 +2003,10 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 6000,
         "level": 11,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin", "runesmith"]
+        "allowedClasses": ["warrior", "paladin"]
     },
     earthshaker: {
         "name": "Earthshaker",
@@ -2015,10 +2015,10 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 7150,
         "level": 12,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin", "runesmith"]
+        "allowedClasses": ["warrior", "paladin"]
     },
     titans_fist: {
         "name": "Titan's Fist",
@@ -2027,10 +2027,10 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 8400,
         "level": 13,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin", "runesmith"]
+        "allowedClasses": ["warrior", "paladin"]
     },
     siegebreaker: {
         "name": "Siegebreaker",
@@ -2039,10 +2039,10 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 9750,
         "level": 14,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin", "runesmith"]
+        "allowedClasses": ["warrior", "paladin"]
     },
     devastator: {
         "name": "Devastator",
@@ -2051,10 +2051,10 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 11200,
         "level": 15,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin", "runesmith"]
+        "allowedClasses": ["warrior", "paladin"]
     },
     ragnarok_maul: {
         "name": "Ragnarok Maul",
@@ -2063,10 +2063,10 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 12750,
         "level": 16,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin", "runesmith"]
+        "allowedClasses": ["warrior", "paladin"]
     },
     colossus_hammer: {
         "name": "Colossus Hammer",
@@ -2075,10 +2075,10 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 14400,
         "level": 17,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin", "runesmith"]
+        "allowedClasses": ["warrior", "paladin"]
     },
     godbreaker: {
         "name": "Godbreaker",
@@ -2087,10 +2087,10 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 16150,
         "level": 18,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin", "runesmith"]
+        "allowedClasses": ["warrior", "paladin"]
     },
     voidhammer: {
         "name": "Voidhammer",
@@ -2099,7 +2099,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 18000,
         "level": 19,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
         "allowedClasses": ["warrior", "paladin", "runesmith"]
@@ -2111,10 +2111,10 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 19950,
         "level": 20,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin", "runesmith"]
+        "allowedClasses": ["warrior", "paladin"]
     },
     world_ender: {
         "name": "World Ender",
@@ -2123,10 +2123,10 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 22000,
         "level": 21,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin", "runesmith"]
+        "allowedClasses": ["warrior", "paladin"]
     },
     eternity_maul: {
         "name": "Eternity Maul",
@@ -2135,10 +2135,10 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 26400,
         "level": 22,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin", "runesmith"]
+        "allowedClasses": ["warrior", "paladin"]
     },
     oblivion_hammer: {
         "name": "Oblivion Hammer",
@@ -2147,10 +2147,10 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 31200,
         "level": 23,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin", "runesmith"]
+        "allowedClasses": ["warrior", "paladin"]
     },
     hammer_of_creation: {
         "name": "Hammer of Creation",
@@ -2159,10 +2159,10 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 33750,
         "level": 24,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin", "runesmith"]
+        "allowedClasses": ["warrior", "paladin"]
     },
 
     // ======================================================
@@ -2176,7 +2176,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 10,
         "level": 1,
-        "quality": "poor",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "description": "A small blade spotted with rust. Hardly intimidating, but it can still draw blood.",
@@ -2189,7 +2189,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 80,
         "level": 2,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "allowedClasses": ["rogue", "hunter"]
@@ -2201,7 +2201,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 150,
         "level": 3,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "allowedClasses": ["rogue"]
@@ -2213,7 +2213,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 280,
         "level": 4,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "allowedClasses": ["rogue"]
@@ -2225,7 +2225,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 150,
         "level": 4,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "poisonChance": 0.2,
@@ -2238,7 +2238,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 400,
         "level": 5,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "allowedClasses": ["rogue"]
@@ -2250,7 +2250,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 520,
         "level": 6,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "allowedClasses": ["rogue"]
@@ -2262,7 +2262,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 700,
         "level": 7,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "allowedClasses": ["rogue"]
@@ -2274,7 +2274,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 900,
         "level": 8,
-        "quality": "rare",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "allowedClasses": ["rogue"]
@@ -2286,7 +2286,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 1200,
         "level": 9,
-        "quality": "rare",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "poisonChance": 0.25,
@@ -2299,7 +2299,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 1500,
         "level": 10,
-        "quality": "rare",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "allowedClasses": ["rogue"]
@@ -2311,7 +2311,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 2000,
         "level": 11,
-        "quality": "rare",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "allowedClasses": ["rogue"]
@@ -2323,7 +2323,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 6000,
         "level": 12,
-        "quality": "epic",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "allowedClasses": ["rogue"]
@@ -2335,7 +2335,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 2600,
         "level": 13,
-        "quality": "epic",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "allowedClasses": ["rogue"]
@@ -2347,7 +2347,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 3400,
         "level": 14,
-        "quality": "epic",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "allowedClasses": ["rogue"]
@@ -2359,7 +2359,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 4200,
         "level": 15,
-        "quality": "epic",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "poisonChance": 0.35,
@@ -2372,7 +2372,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 8400,
         "level": 16,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "allowedClasses": ["rogue"]
@@ -2384,7 +2384,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 9750,
         "level": 17,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "allowedClasses": ["rogue"]
@@ -2396,7 +2396,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 5200,
         "level": 18,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "allowedClasses": ["rogue"]
@@ -2408,7 +2408,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 11200,
         "level": 19,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "allowedClasses": ["rogue"]
@@ -2420,7 +2420,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 6200,
         "level": 20,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "allowedClasses": ["rogue"]
@@ -2432,7 +2432,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 12750,
         "level": 21,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "allowedClasses": ["rogue"]
@@ -2444,7 +2444,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 7500,
         "level": 22,
-        "quality": "godly",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "allowedClasses": ["rogue"]
@@ -2456,7 +2456,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 9000,
         "level": 23,
-        "quality": "godly",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "allowedClasses": ["rogue"]
@@ -2468,7 +2468,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 11000,
         "level": 24,
-        "quality": "godly",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "allowedClasses": ["rogue"]
@@ -2480,7 +2480,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 13500,
         "level": 25,
-        "quality": "godly",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "allowedClasses": ["rogue"]
@@ -2491,8 +2491,8 @@ const WEAPONS = {
         "maxDamage": 34,
         "baseMagicDamage": 0,
         "cost": 16000,
-        "level": 26,
-        "quality": "godly",
+        "level": 25,
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "allowedClasses": ["rogue"]
@@ -2503,8 +2503,8 @@ const WEAPONS = {
         "maxDamage": 37,
         "baseMagicDamage": 0,
         "cost": 20000,
-        "level": 27,
-        "quality": "godly",
+        "level": 25,
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "poisonChance": 0.4,
@@ -2516,8 +2516,8 @@ const WEAPONS = {
         "maxDamage": 103,
         "baseMagicDamage": 0,
         "cost": 24150,
-        "level": 28,
-        "quality": "godly",
+        "level": 25,
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "allowedClasses": ["rogue"]
@@ -2528,8 +2528,8 @@ const WEAPONS = {
         "maxDamage": 40,
         "baseMagicDamage": 0,
         "cost": 25000,
-        "level": 29,
-        "quality": "godly",
+        "level": 25,
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "allowedClasses": ["rogue"]
@@ -2540,8 +2540,8 @@ const WEAPONS = {
         "maxDamage": 108,
         "baseMagicDamage": 0,
         "cost": 26400,
-        "level": 30,
-        "quality": "godly",
+        "level": 25,
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "allowedClasses": ["rogue"]
@@ -2559,7 +2559,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 15,
         "level": 1,
-        "quality": "poor",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
         "description": "A cracked bow held together with twine. The arrows fly unpredictably.",
@@ -2573,7 +2573,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 100,
         "level": 2,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
         "allowedClasses": ["hunter", "ranger", "archer"]
@@ -2586,7 +2586,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 400,
         "level": 3,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
         "allowedClasses": ["hunter", "ranger", "archer"]
@@ -2599,7 +2599,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 750,
         "level": 4,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
         "allowedClasses": ["hunter", "ranger", "archer"]
@@ -2612,7 +2612,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 450,
         "level": 5,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
         "allowedClasses": ["hunter", "ranger", "archer"]
@@ -2625,7 +2625,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 1750,
         "level": 6,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
         "allowedClasses": ["hunter", "ranger", "archer"]
@@ -2638,7 +2638,7 @@ const WEAPONS = {
         "baseMagicDamage": 2,
         "cost": 2800,
         "level": 7,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
         "allowedClasses": ["hunter", "ranger", "archer"]
@@ -2651,7 +2651,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 3150,
         "level": 8,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
         "allowedClasses": ["hunter", "ranger", "archer"]
@@ -2664,7 +2664,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 4000,
         "level": 9,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
         "allowedClasses": ["hunter", "ranger", "archer"]
@@ -2677,7 +2677,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 600,
         "level": 10,
-        "quality": "rare",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
         "allowedClasses": ["hunter", "ranger"]
@@ -2690,7 +2690,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 4950,
         "level": 11,
-        "quality": "rare",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
         "allowedClasses": ["hunter", "ranger", "archer"]
@@ -2703,7 +2703,7 @@ const WEAPONS = {
         "baseMagicDamage": 4,
         "cost": 35000,
         "level": 12,
-        "quality": "epic",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
         "allowedClasses": ["hunter", "ranger", "archer"]
@@ -2716,7 +2716,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 7150,
         "level": 13,
-        "quality": "epic",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
         "allowedClasses": ["hunter", "ranger", "archer"]
@@ -2729,7 +2729,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 8400,
         "level": 14,
-        "quality": "epic",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
         "allowedClasses": ["hunter", "ranger", "archer"]
@@ -2742,7 +2742,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 9750,
         "level": 15,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
         "allowedClasses": ["hunter", "ranger", "archer"]
@@ -2755,7 +2755,7 @@ const WEAPONS = {
         "baseMagicDamage": 6,
         "cost": 28000,
         "level": 16,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
         "allowedClasses": ["hunter", "ranger", "archer"]
@@ -2768,7 +2768,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 12750,
         "level": 17,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
         "allowedClasses": ["hunter", "ranger"]
@@ -2781,7 +2781,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 14400,
         "level": 18,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
         "allowedClasses": ["hunter", "ranger"]
@@ -2794,7 +2794,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 16150,
         "level": 19,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
         "allowedClasses": ["hunter", "ranger"]
@@ -2807,7 +2807,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 18000,
         "level": 20,
-        "quality": "godly",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
         "allowedClasses": ["ranger", "archer"]
@@ -2820,7 +2820,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 19950,
         "level": 21,
-        "quality": "godly",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
         "allowedClasses": ["hunter", "ranger"]
@@ -2833,7 +2833,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 22000,
         "level": 22,
-        "quality": "godly",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
         "allowedClasses": ["ranger", "archer"]
@@ -2846,7 +2846,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 24150,
         "level": 23,
-        "quality": "godly",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
         "allowedClasses": ["hunter", "ranger"]
@@ -2859,7 +2859,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 26400,
         "level": 24,
-        "quality": "godly",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
         "allowedClasses": ["hunter", "ranger"]
@@ -2872,7 +2872,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 28750,
         "level": 25,
-        "quality": "godly",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
         "allowedClasses": ["hunter", "ranger"]
@@ -2885,7 +2885,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 31200,
         "level": 25,
-        "quality": "godly",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
         "allowedClasses": ["hunter", "ranger"]
@@ -2898,7 +2898,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 33750,
         "level": 25,
-        "quality": "godly",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
         "allowedClasses": ["hunter", "ranger"]
@@ -2915,7 +2915,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 25,
         "level": 1,
-        "quality": "poor",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
         "description": "A crude crossbow made from scrap wood. Slow to reload but surprisingly powerful.",
@@ -2928,7 +2928,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 80,
         "level": 2,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
         "allowedClasses": ["hunter", "ranger", "archer", "rogue"]
@@ -2940,7 +2940,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 180,
         "level": 3,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
         "allowedClasses": ["hunter", "ranger", "archer"]
@@ -2952,7 +2952,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 420,
         "level": 4,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
         "allowedClasses": ["hunter", "ranger"]
@@ -2964,7 +2964,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 1200,
         "level": 5,
-        "quality": "rare",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
         "allowedClasses": ["hunter", "ranger"]
@@ -2976,7 +2976,7 @@ const WEAPONS = {
         "baseMagicDamage": 10,
         "cost": 6500,
         "level": 6,
-        "quality": "epic",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
         "allowedClasses": ["hunter", "ranger"]
@@ -2988,7 +2988,7 @@ const WEAPONS = {
         "baseMagicDamage": 20,
         "cost": 25000,
         "level": 8,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
         "allowedClasses": ["hunter", "ranger"]
@@ -3005,7 +3005,7 @@ const WEAPONS = {
         "baseMagicDamage": 7,
         "cost": 30,
         "level": 1,
-        "quality": "poor",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "orb",
         "description": "A glass orb filled with swirling smoke. Magic flickers weakly within.",
@@ -3018,7 +3018,7 @@ const WEAPONS = {
         "baseMagicDamage": 10,
         "cost": 100,
         "level": 2,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "orb",
         "allowedClasses": ["mage", "sorceror", "warlock"]
@@ -3030,7 +3030,7 @@ const WEAPONS = {
         "baseMagicDamage": 16,
         "cost": 400,
         "level": 3,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "orb",
         "allowedClasses": ["mage", "sorceror"]
@@ -3042,7 +3042,7 @@ const WEAPONS = {
         "baseMagicDamage": 18,
         "cost": 600,
         "level": 4,
-        "quality": "rare",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "orb",
         "allowedClasses": ["warlock", "necrolyte"]
@@ -3054,7 +3054,7 @@ const WEAPONS = {
         "baseMagicDamage": 28,
         "cost": 1800,
         "level": 5,
-        "quality": "rare",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "orb",
         "allowedClasses": ["mage", "sorceror", "warlock"]
@@ -3066,7 +3066,7 @@ const WEAPONS = {
         "baseMagicDamage": 36,
         "cost": 4200,
         "level": 6,
-        "quality": "epic",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "orb",
         "allowedClasses": ["warlock", "necrolyte"]
@@ -3078,7 +3078,7 @@ const WEAPONS = {
         "baseMagicDamage": 45,
         "cost": 9000,
         "level": 7,
-        "quality": "epic",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "orb",
         "allowedClasses": ["mage", "sorceror"]
@@ -3090,7 +3090,7 @@ const WEAPONS = {
         "baseMagicDamage": 70,
         "cost": 28000,
         "level": 8,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "orb",
         "allowedClasses": ["mage", "sorceror", "warlock"]
@@ -3102,7 +3102,7 @@ const WEAPONS = {
         "baseMagicDamage": 55,
         "cost": 18000,
         "level": 7,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "orb",
         "allowedClasses": ["warlock", "necrolyte"]
@@ -3118,7 +3118,7 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 0,
         "level": 2,
-        "quality": "poor",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "club",
         "allowedClasses": ["warrior", "paladin", "cleric"]
@@ -3135,7 +3135,7 @@ const WEAPONS = {
         "maxDamage": 26,
         "baseMagicDamage": 4,
         "level": 6,
-        "quality": "rare",
+        "quality": "",
         "description": "Forged from the tooth of a young dragon. Still warm to the touch.",
         "allowedClasses": ["warrior", "paladin"],
         "cost": 1100
@@ -3147,7 +3147,7 @@ const WEAPONS = {
         "baseDamage": 22,
         "maxDamage": 34,
         "level": 8,
-        "quality": "epic",
+        "quality": "",
         "description": "An axe designed to slip between dragon scales.",
         "allowedClasses": ["warrior", "paladin"],
         "cost": 1700
@@ -3160,7 +3160,7 @@ const WEAPONS = {
         "maxDamage": 30,
         "baseMagicDamage": 6,
         "level": 7,
-        "quality": "legendary",
+        "quality": "",
         "description": "Tempered in drake blood. Powerful but hungers for your life force.",
         "allowedClasses": ["warrior", "paladin"],
         "cost": 2100
@@ -3172,7 +3172,7 @@ const WEAPONS = {
         "baseDamage": 24,
         "maxDamage": 38,
         "level": 9,
-        "quality": "legendary",
+        "quality": "",
         "description": "Feeds on the souls of your enemies, returning vitality to you.",
         "allowedClasses": ["warrior", "paladin"],
         "cost": 2900
@@ -3184,7 +3184,7 @@ const WEAPONS = {
         "baseDamage": 24,
         "maxDamage": 36,
         "level": 8,
-        "quality": "epic",
+        "quality": "",
         "description": "Forged specifically to pierce dragon scales.",
         "allowedClasses": ["warrior", "paladin"],
         "cost": 1800
@@ -3197,7 +3197,7 @@ const WEAPONS = {
         "maxDamage": 30,
         "baseMagicDamage": 8,
         "level": 7,
-        "quality": "epic",
+        "quality": "",
         "description": "A holy blade purified of its curse. Radiates divine light.",
         "allowedClasses": ["paladin", "cleric"],
         "cost": 2000
@@ -3210,7 +3210,7 @@ const WEAPONS = {
         "maxDamage": 33,
         "baseMagicDamage": 5,
         "level": 7,
-        "quality": "epic",
+        "quality": "",
         "description": "A blade blessed against wyrms and lesser dragons.",
         "allowedClasses": ["paladin", "cleric"],
         "cost": 1900
@@ -3222,7 +3222,7 @@ const WEAPONS = {
         "baseDamage": 24,
         "maxDamage": 38,
         "level": 9,
-        "quality": "legendary",
+        "quality": "",
         "description": "Feeds on the souls of your enemies, returning vitality to you.",
         "allowedClasses": ["warrior", "warlock"],
         "cost": 2900
@@ -3235,7 +3235,7 @@ const WEAPONS = {
         "maxDamage": 92,
         "baseMagicDamage": 25,
         "level": 23,
-        "quality": "godly",
+        "quality": "",
         "description": "A legendary blade from the Dragon War. Every swing remembers the Calamity.",
         "allowedClasses": ["warrior", "paladin", "crusader"],
         "cost": 45000
@@ -3248,7 +3248,7 @@ const WEAPONS = {
         "maxDamage": 98,
         "baseMagicDamage": 20,
         "level": 24,
-        "quality": "godly",
+        "quality": "",
         "description": "Forged specifically to end the Calamity Dragon. It thirsts.",
         "allowedClasses": ["warrior", "paladin"],
         "cost": 52000
@@ -3261,7 +3261,7 @@ const WEAPONS = {
         "maxDamage": 76,
         "baseMagicDamage": 18,
         "level": 22,
-        "quality": "legendary",
+        "quality": "",
         "description": "Wrapped in the scales of an ancient dragon. It recognizes its own.",
         "allowedClasses": ["warrior", "paladin", "ranger"],
         "cost": 38000
@@ -3274,7 +3274,7 @@ const WEAPONS = {
         "maxDamage": 84,
         "baseMagicDamage": 30,
         "level": 23,
-        "quality": "legendary",
+        "quality": "",
         "description": "Forged around a still-beating dragon heart. It pulses with rage.",
         "allowedClasses": ["warrior", "warlock", "paladin"],
         "cost": 48000
@@ -3294,7 +3294,8 @@ const WEAPONS = {
         "baseMagicDamage": 10000,
         "description": "A Godly weapon that should only be used by the gods to spread butter on toast.",
         "allowedClasses": ["warrior", "paladin", "mage", "warlock", "cleric", "rogue", "hunter"],
-        "cost": 999999
+        "cost": 999999,
+        "canDrop": false
     },
     hunting_crossbow: {
         "name": "Hunting Crossbow",
@@ -3302,7 +3303,7 @@ const WEAPONS = {
         "maxDamage": 44,
         "cost": 900,
         "level": 7,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
         "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],
@@ -3314,7 +3315,7 @@ const WEAPONS = {
         "maxDamage": 55,
         "cost": 1800,
         "level": 9,
-        "quality": "normal",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
         "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],
@@ -3326,7 +3327,7 @@ const WEAPONS = {
         "maxDamage": 61,
         "cost": 2800,
         "level": 10,
-        "quality": "rare",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
         "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],
@@ -3338,7 +3339,7 @@ const WEAPONS = {
         "maxDamage": 67,
         "cost": 4000,
         "level": 11,
-        "quality": "rare",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
         "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],
@@ -3350,7 +3351,7 @@ const WEAPONS = {
         "maxDamage": 73,
         "cost": 5500,
         "level": 12,
-        "quality": "rare",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
         "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],
@@ -3362,7 +3363,7 @@ const WEAPONS = {
         "maxDamage": 79,
         "cost": 7000,
         "level": 13,
-        "quality": "rare",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
         "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],
@@ -3374,7 +3375,7 @@ const WEAPONS = {
         "maxDamage": 85,
         "cost": 9000,
         "level": 14,
-        "quality": "epic",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
         "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],
@@ -3386,7 +3387,7 @@ const WEAPONS = {
         "maxDamage": 91,
         "cost": 11500,
         "level": 15,
-        "quality": "epic",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
         "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],
@@ -3398,7 +3399,7 @@ const WEAPONS = {
         "maxDamage": 97,
         "cost": 14000,
         "level": 16,
-        "quality": "epic",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
         "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],
@@ -3410,7 +3411,7 @@ const WEAPONS = {
         "maxDamage": 103,
         "cost": 17000,
         "level": 17,
-        "quality": "epic",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
         "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],
@@ -3422,7 +3423,7 @@ const WEAPONS = {
         "maxDamage": 109,
         "cost": 21000,
         "level": 18,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
         "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],
@@ -3434,7 +3435,7 @@ const WEAPONS = {
         "maxDamage": 114,
         "cost": 25000,
         "level": 19,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
         "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],
@@ -3446,7 +3447,7 @@ const WEAPONS = {
         "maxDamage": 120,
         "cost": 30000,
         "level": 20,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
         "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],
@@ -3458,7 +3459,7 @@ const WEAPONS = {
         "maxDamage": 126,
         "cost": 36000,
         "level": 21,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
         "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],
@@ -3470,7 +3471,7 @@ const WEAPONS = {
         "maxDamage": 132,
         "cost": 43000,
         "level": 22,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
         "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],
@@ -3482,7 +3483,7 @@ const WEAPONS = {
         "maxDamage": 138,
         "cost": 51000,
         "level": 23,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
         "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],
@@ -3494,7 +3495,7 @@ const WEAPONS = {
         "maxDamage": 144,
         "cost": 60000,
         "level": 24,
-        "quality": "legendary",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
         "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],
@@ -3506,7 +3507,7 @@ const WEAPONS = {
         "maxDamage": 150,
         "cost": 75000,
         "level": 25,
-        "quality": "godly",
+        "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
         "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],

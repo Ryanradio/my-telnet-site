@@ -2424,214 +2424,7 @@ body.terminal-mode #menuContainer {
             100% { opacity: 0; transform: scale(0.92); }
         }
 
-        /* ═══════════════════════════════════════════════════════════════
-           POST-COMBAT CHRONICLE CINEMATIC
-           Reuses the welcome-overlay parchment but with its own header
-           ═══════════════════════════════════════════════════════════════ */
-        .chronicle-cinematic-header .welcome-title {
-            font-size: 10px;
-            letter-spacing: 5px;
-        }
-        .chronicle-cinematic-header .welcome-name {
-            font-size: 22px;
-        }
-
-        /* Portal Transition Effects */
-.portal-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 99999;
-    pointer-events: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.portal-swirl {
-    position: absolute;
-    width: 100vw;
-    height: 100vh;
-    background: radial-gradient(circle at center, 
-        rgba(0, 100, 255, 0.8) 0%,
-        rgba(0, 50, 150, 0.9) 30%,
-        rgba(0, 0, 0, 1) 70%);
-    animation: portalSwirl 1.5s ease-out forwards;
-}
-
-@keyframes portalSwirl {
-    0% {
-        transform: scale(0) rotate(0deg);
-        opacity: 0;
-    }
-    30% {
-        transform: scale(1.2) rotate(180deg);
-        opacity: 1;
-    }
-    70% {
-        transform: scale(2) rotate(360deg);
-        opacity: 0.8;
-        background: radial-gradient(circle at center,
-            rgba(0, 200, 255, 0.9) 0%,
-            rgba(0, 0, 150, 1) 50%,
-            rgba(0, 0, 0, 1) 90%);
-    }
-    100% {
-        transform: scale(3) rotate(540deg);
-        opacity: 0;
-    }
-}
-
-.portal-flash {
-    position: absolute;
-    width: 100vw;
-    height: 100vh;
-    background: white;
-    animation: flashFade 0.8s ease-out forwards;
-}
-
-@keyframes flashFade {
-    0% { opacity: 0; }
-    20% { opacity: 1; }
-    100% { opacity: 0; }
-}
-
-.portal-particles {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background: repeating-linear-gradient(
-        45deg,
-        rgba(0, 150, 255, 0.3) 0px,
-        rgba(0, 150, 255, 0.3) 2px,
-        transparent 2px,
-        transparent 10px
-    );
-    animation: particleDrift 2s linear infinite;
-}
-
-@keyframes particleDrift {
-    0% { transform: translateX(0) translateY(0); }
-    100% { transform: translateX(20px) translateY(20px); }
-}
-
-/* ======================================================
-   PORTAL TRANSITION EFFECTS - FADE TO BLACK + MESSAGES
-   ====================================================== */
-
-/* Fade to black overlay - first step */
-.fade-to-black {
-    position: fixed;
-    inset: 0;
-    z-index: 100000;
-    background: black;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 2s ease;
-}
-
-/* Portal message container - where text appears */
-.portal-message-container {
-    position: fixed;
-    inset: 0;
-    z-index: 100001;
-    background: black;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    opacity: 0;
-    transition: opacity 0.5s ease;
-    pointer-events: none;
-}
-
-.portal-message-container.visible {
-    opacity: 1;
-    pointer-events: auto;
-}
-
-/* The message text itself */
-.portal-message {
-    color: #00ff41;
-    font-family: 'VT323', monospace;
-    font-size: 24px;
-    text-align: center;
-    max-width: 600px;
-    line-height: 1.6;
-    text-shadow: 0 0 10px #00ff41;
-    margin-bottom: 40px;
-    white-space: pre-wrap;
-}
-
-/* Typing cursor effect */
-.portal-message-cursor {
-    display: inline-block;
-    width: 15px;
-    height: 30px;
-    background: #00ff41;
-    animation: blink 1s infinite;
-    margin-left: 5px;
-    vertical-align: middle;
-}
-
-/* Continue button */
-.portal-continue-btn {
-    background: transparent;
-    border: 2px solid #00ff41;
-    color: #00ff41;
-    font-family: 'VT323', monospace;
-    font-size: 28px;
-    padding: 15px 40px;
-    cursor: pointer;
-    opacity: 0;
-    transform: scale(0.9);
-    transition: opacity 0.3s ease, transform 0.2s ease;
-    animation: pulse 2s infinite;
-}
-
-.portal-continue-btn.visible {
-    opacity: 1;
-    transform: scale(1);
-}
-
-.portal-continue-btn:hover {
-    background: #00ff41;
-    color: black;
-}
-
-/* Pulse animation for the button */
-@keyframes pulse {
-    0%, 100% { box-shadow: 0 0 10px #00ff41; }
-    50% { box-shadow: 0 0 30px #00ff41; }
-}
-
-/* White flash overlay - 1 second long */
-.white-flash {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 100002;
-    background: white;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.1s ease;
-    /* iOS status bar fix */
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-}
-
-/* Fade from black overlay - 3 seconds long */
-.fade-from-black {
-    position: fixed;
-    inset: 0;
-    z-index: 100000;
-    background: black;
-    opacity: 1;
-    pointer-events: none;
-    transition: opacity 3s ease;
-}
+     
 
     </style>
 </head>
@@ -4305,117 +4098,243 @@ function applyGemBonuses(player, weapon) {
 // ── Recalculate player's gem-sourced bonuses ──────────────────
 // Called on equip/unequip. Stores the delta in player._gem* so that
 // player stats always reflect current socketed gem configuration.
-function recalcGemStats(player) {
-    const weapon   = player.weapon ? WEAPONS[player.weapon]  : null;
-    const armorObj = player.armor  ? ARMOR[player.armor]     : null;
-    const allGems  = [...(weapon?.gems || []), ...(armorObj?.gems || [])];
 
-    let hpBonus    = 0, mpBonus    = 0, defBonus   = 0;
-    let strBonus   = 0, dexBonus   = 0, conBonus   = 0;
-    let wisBonus   = 0, chaBonus   = 0, lckBonus   = 0;
-    let critBonus  = 0, pierceBonus = 0, spellBonus = 0;
+// ── GEM STAT RECALCULATION ───────────────────────────────────
+function recalcGemStats() {
+    const p = gameState.player;
     
-    for (const gem of allGems) {
-        if (!gem?.stats) continue;
-        hpBonus    += gem.stats.hpBonus      || 0;
-        mpBonus    += gem.stats.mpBonus      || 0;
-        defBonus   += gem.stats.defenseBonus || 0;
-        strBonus   += gem.stats.strBonus     || 0;
-        dexBonus   += gem.stats.dexBonus     || 0;
-        conBonus   += gem.stats.conBonus     || 0;
-        wisBonus   += gem.stats.wisBonus     || 0;
-        chaBonus   += gem.stats.chaBonus     || 0;
-        lckBonus   += gem.stats.lckBonus     || 0;
-        critBonus  += gem.stats.critBonus    || 0;
-        pierceBonus+= gem.stats.armorPierce  || 0;
-        spellBonus += gem.stats.spellPower   || 0;
+    // Calculate raw gem bonuses from equipment
+    let hpBonus = 0, mpBonus = 0, defBonus = 0;
+    let strBonus = 0, dexBonus = 0, conBonus = 0, wisBonus = 0, chaBonus = 0, lckBonus = 0;
+    let critBonus = 0, pierceBonus = 0, spellBonus = 0;
+    
+    // Get weapon and armor objects
+    const weapon = p.weapon ? WEAPONS[p.weapon] : null;
+    const armor = p.armor ? ARMOR[p.armor] : null;
+    
+    // Sum up bonuses from weapon gems
+    if (weapon && weapon.gems) {
+        weapon.gems.forEach(gem => {
+            if (!gem || !gem.stats) return;
+            hpBonus    += gem.stats.hpBonus      || 0;
+            mpBonus    += gem.stats.mpBonus      || 0;
+            defBonus   += gem.stats.defenseBonus || 0;
+            strBonus   += gem.stats.strBonus     || 0;
+            dexBonus   += gem.stats.dexBonus     || 0;
+            conBonus   += gem.stats.conBonus     || 0;
+            wisBonus   += gem.stats.wisBonus     || 0;
+            chaBonus   += gem.stats.chaBonus     || 0;
+            lckBonus   += gem.stats.lckBonus     || 0;
+            critBonus  += gem.stats.critBonus    || 0;
+            pierceBonus+= gem.stats.armorPierce  || 0;
+            spellBonus += gem.stats.spellPower   || 0;
+        });
     }
-
-    // ── INFLATION DETECTION & AUTO-FIX ───────────────────────────
-    // If _gem* trackers were never saved (old saves), the old bonus
-    // is stuck baked into the stat. Detect this and strip it out.
-    const gemStatTotal = strBonus + dexBonus + conBonus + wisBonus + chaBonus + lckBonus;
-    const oldGemStatTotal = (player._gemStrBonus||0) + (player._gemDexBonus||0) +
-                            (player._gemConBonus||0) + (player._gemWisBonus||0) +
-                            (player._gemChaBonus||0) + (player._gemLckBonus||0);
-    const expectedMaxBase = 20 + ((player.level||1) * 6); // generous ceiling
-    const currentBaseStats = (player.str||0) + (player.dex||0) + (player.con||0) +
-                             (player.wis||0) + (player.cha||0) + (player.lck||0);
-    const trueBases = currentBaseStats - oldGemStatTotal;
-
-    if (trueBases > expectedMaxBase && gemStatTotal > 0) {
-        // Stats are inflated — gem bonuses got baked in on previous loads
-        // Strip out ALL current gem bonuses from base stats before proceeding
-        console.warn(`⚠️ Gem inflation detected (base stats ${trueBases} > max ${expectedMaxBase}) — auto-fixing...`);
-        player.str = Math.max(0, (player.str||0) - oldGemStatTotal > 0 
-            ? (player.str||0) - (player._gemStrBonus||0) 
-            : (player.str||0));
-        player.dex = Math.max(0, (player.dex||0) - (player._gemDexBonus||0));
-        player.con = Math.max(0, (player.con||0) - (player._gemConBonus||0));
-        player.wis = Math.max(0, (player.wis||0) - (player._gemWisBonus||0));
-        player.cha = Math.max(0, (player.cha||0) - (player._gemChaBonus||0));
-        player.lck = Math.max(0, (player.lck||0) - (player._gemLckBonus||0));
-        // Also fix HP inflation from hpBonus compounding
-        const oldHpBaked = player._gemHpBonus || 0;
-        if (oldHpBaked > 0) {
-            player.maxHp = Math.max(1, player.maxHp - oldHpBaked);
-            player.hp = Math.min(player.hp, player.maxHp);
+    
+    // Sum up bonuses from armor gems
+    if (armor && armor.gems) {
+        armor.gems.forEach(gem => {
+            if (!gem || !gem.stats) return;
+            hpBonus    += gem.stats.hpBonus      || 0;
+            mpBonus    += gem.stats.mpBonus      || 0;
+            defBonus   += gem.stats.defenseBonus || 0;
+            strBonus   += gem.stats.strBonus     || 0;
+            dexBonus   += gem.stats.dexBonus     || 0;
+            conBonus   += gem.stats.conBonus     || 0;
+            wisBonus   += gem.stats.wisBonus     || 0;
+            chaBonus   += gem.stats.chaBonus     || 0;
+            lckBonus   += gem.stats.lckBonus     || 0;
+            critBonus  += gem.stats.critBonus    || 0;
+            pierceBonus+= gem.stats.armorPierce  || 0;
+            spellBonus += gem.stats.spellPower   || 0;
+        });
+    }
+    
+    // Calculate BASE stats (current stats minus stored gem bonuses)
+    const storedStrBonus = p._gemStrBonus || 0;
+    const storedDexBonus = p._gemDexBonus || 0;
+    const storedConBonus = p._gemConBonus || 0;
+    const storedWisBonus = p._gemWisBonus || 0;
+    const storedChaBonus = p._gemChaBonus || 0;
+    const storedLckBonus = p._gemLckBonus || 0;
+    
+    const baseStr = (p.str || 0) - storedStrBonus;
+    const baseDex = (p.dex || 0) - storedDexBonus;
+    const baseCon = (p.con || 0) - storedConBonus;
+    const baseWis = (p.wis || 0) - storedWisBonus;
+    const baseCha = (p.cha || 0) - storedChaBonus;
+    const baseLck = (p.lck || 0) - storedLckBonus;
+    
+    const baseTotal = baseStr + baseDex + baseCon + baseWis + baseCha + baseLck;
+    
+    // Calculate what base stats SHOULD be for this class/level
+    const baseClass = p.baseClass || p.class;
+    const preset = CLASS_STAT_PRESETS[baseClass] || CLASS_STAT_PRESETS.warrior;
+    const baseLevels = (p.level || 1) - 1;
+    const presetTotal = Object.values(preset).reduce((a, b) => a + b, 0);
+    const expectedBaseTotal = presetTotal + (baseLevels * 3);
+    
+    console.log(`🔧 RECALC: class=${baseClass}, level=${p.level}`);
+    console.log(`   Base total: ${baseTotal}, Expected total: ${expectedBaseTotal}`);
+    
+    // CHECK FOR INFLATED STATS - if base stats are way too high, reset them
+    if (baseTotal > expectedBaseTotal + 20) {
+        console.warn(`⚠️ STAT INFLATION detected! Resetting...`);
+        
+        // Calculate points to give back
+        const totalPointsToAllocate = baseLevels * 3;
+        
+        // Reset to class preset (level 1 values)
+        p.str = preset.str + storedStrBonus;
+        p.dex = preset.dex + storedDexBonus;
+        p.con = preset.con + storedConBonus;
+        p.wis = preset.wis + storedWisBonus;
+        p.cha = preset.cha + storedChaBonus;
+        p.lck = preset.lck + storedLckBonus;
+        
+        // Add the stat points for them to allocate
+        p.statPoints = totalPointsToAllocate;
+        
+        // Fix HP based on new base CON
+        const classHpBase = baseClass === 'warrior' ? 120 : 
+                           baseClass === 'paladin' ? 100 : 
+                           baseClass === 'rogue' ? 80 : 90;
+        const expectedHp = classHpBase + (baseLevels * 12) + (baseLevels * Math.max(0, (preset.con - 10)));
+        p.maxHp = Math.max(1, expectedHp + hpBonus);
+        p.hp = Math.min(p.hp, p.maxHp);
+        
+        // Fix MP
+        const classMpBase = baseClass === 'mage' ? 100 : 
+                           baseClass === 'warlock' ? 90 : 50;
+        const expectedMp = classMpBase + (baseLevels * 8);
+        p.maxMp = Math.max(0, expectedMp + mpBonus);
+        p.mp = Math.min(p.mp, p.maxMp);
+        
+        // Reset gem trackers
+        p._gemHpBonus = 0;
+        p._gemMpBonus = 0;
+        p._gemDefBonus = 0;
+        p._gemStrBonus = 0;
+        p._gemDexBonus = 0;
+        p._gemConBonus = 0;
+        p._gemWisBonus = 0;
+        p._gemChaBonus = 0;
+        p._gemLckBonus = 0;
+        p._gemCritBonus = 0;
+        p._gemPierceBonus = 0;
+        p._gemSpellBonus = 0;
+        
+        // Save immediately
+        if (typeof saveGame === 'function') {
+            saveGame();
         }
-        // Reset all trackers to zero so the apply below starts clean
-        player._gemHpBonus=0; player._gemMpBonus=0; player._gemDefBonus=0;
-        player._gemStrBonus=0; player._gemDexBonus=0; player._gemConBonus=0;
-        player._gemWisBonus=0; player._gemChaBonus=0; player._gemLckBonus=0;
-        player._gemCritBonus=0; player._gemPierceBonus=0; player._gemSpellBonus=0;
-        console.warn('✅ Gem inflation corrected');
+        
+        // SHOW POPUP WARNING
+        setTimeout(() => {
+            const popup = document.createElement('div');
+            popup.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: #1a120a;
+                border: 3px solid #FFD700;
+                box-shadow: 0 0 50px rgba(0,0,0,0.9), 0 0 0 100vmax rgba(0,0,0,0.7);
+                z-index: 100000;
+                padding: 24px 32px;
+                text-align: center;
+                font-family: 'VT323', monospace;
+                max-width: 400px;
+                width: 90%;
+                border-radius: 8px;
+            `;
+            popup.innerHTML = `
+                <div style="color: #FFD700; font-size: 28px; margin-bottom: 12px;">⚠️ STAT RESET ⚠️</div>
+                <div style="color: #ffffff; font-size: 18px; margin-bottom: 16px;">
+                    Your character stats were corrupted and have been reset!
+                </div>
+                <div style="color: #88ff88; font-size: 20px; margin-bottom: 8px;">
+                    You have <span style="color: #FFD700; font-size: 32px; font-weight: bold;">${totalPointsToAllocate}</span> stat points to spend!
+                </div>
+                <div style="color: #aaaaaa; font-size: 14px; margin-bottom: 20px;">
+                    Click OK to open Character Stats and allocate your points.
+                </div>
+                <button id="statResetOk" style="
+                    background: #2a2a1a;
+                    border: 2px solid #FFD700;
+                    color: #FFD700;
+                    font-size: 20px;
+                    padding: 10px 30px;
+                    font-family: 'VT323', monospace;
+                    cursor: pointer;
+                    border-radius: 4px;
+                ">▶ ALLOCATE STATS</button>
+            `;
+            document.body.appendChild(popup);
+            
+            document.getElementById('statResetOk').onclick = () => {
+                popup.remove();
+                // Close terminal mode and show character stats
+                if (document.body.classList.contains('terminal-mode')) {
+                    document.body.classList.remove('terminal-mode');
+                }
+                showCharacterStats();
+            };
+        }, 500);
     }
-
-    // Remove old gem bonuses before applying new totals
-    const oldHp  = player._gemHpBonus  || 0;
-    const oldMp  = player._gemMpBonus  || 0;
-    const oldStr = player._gemStrBonus || 0;
-    const oldDex = player._gemDexBonus || 0;
-    const oldCon = player._gemConBonus || 0;
-    const oldWis = player._gemWisBonus || 0;
-    const oldCha = player._gemChaBonus || 0;
-    const oldLck = player._gemLckBonus || 0;
-
-    // Apply HP/MP changes
-    player.maxHp = Math.max(1, player.maxHp - oldHp + hpBonus);
-    player.maxMp = Math.max(0, player.maxMp - oldMp + mpBonus);
-    player.hp    = Math.min(player.hp,  player.maxHp);
-    player.mp    = Math.min(player.mp,  player.maxMp);
-
-    // Apply stat changes
-    player.str = (player.str || 0) - oldStr + strBonus;
-    player.dex = (player.dex || 0) - oldDex + dexBonus;
-    player.con = (player.con || 0) - oldCon + conBonus;
-    player.wis = (player.wis || 0) - oldWis + wisBonus;
-    player.cha = (player.cha || 0) - oldCha + chaBonus;
-    player.lck = (player.lck || 0) - oldLck + lckBonus;
-
-    // Store new totals for next recalc
-    player._gemHpBonus    = hpBonus;
-    player._gemMpBonus    = mpBonus;
-    player._gemDefBonus   = defBonus;
-    player._gemStrBonus   = strBonus;
-    player._gemDexBonus   = dexBonus;
-    player._gemConBonus   = conBonus;
-    player._gemWisBonus   = wisBonus;
-    player._gemChaBonus   = chaBonus;
-    player._gemLckBonus   = lckBonus;
-    player._gemCritBonus  = critBonus;
-    player._gemPierceBonus = pierceBonus;
-    player._gemSpellBonus = spellBonus;
-
-    console.log(`💎 Gem stats applied: STR +${strBonus}, DEX +${dexBonus}, CON +${conBonus}, etc.`);
+    
+    // ── APPLY GEM BONUSES (remove old, add new) ─────────────────────
+    const oldHp  = p._gemHpBonus  || 0;
+    const oldMp  = p._gemMpBonus  || 0;
+    const oldDef = p._gemDefBonus || 0;
+    const oldStr = p._gemStrBonus || 0;
+    const oldDex = p._gemDexBonus || 0;
+    const oldCon = p._gemConBonus || 0;
+    const oldWis = p._gemWisBonus || 0;
+    const oldCha = p._gemChaBonus || 0;
+    const oldLck = p._gemLckBonus || 0;
+    
+    p.maxHp = Math.max(1, (p.maxHp || 0) - oldHp + hpBonus);
+    p.maxMp = Math.max(0, (p.maxMp || 0) - oldMp + mpBonus);
+    p.hp = Math.min(p.hp || 0, p.maxHp);
+    p.mp = Math.min(p.mp || 0, p.maxMp);
+    
+    p.str = Math.max(0, (p.str || 0) - oldStr + strBonus);
+    p.dex = Math.max(0, (p.dex || 0) - oldDex + dexBonus);
+    p.con = Math.max(0, (p.con || 0) - oldCon + conBonus);
+    p.wis = Math.max(0, (p.wis || 0) - oldWis + wisBonus);
+    p.cha = Math.max(0, (p.cha || 0) - oldCha + chaBonus);
+    p.lck = Math.max(0, (p.lck || 0) - oldLck + lckBonus);
+    
+    if (p.defense !== undefined) {
+        p.defense = Math.max(0, (p.defense || 0) - oldDef + defBonus);
+    }
+    
+    // Store new bonuses
+    p._gemHpBonus = hpBonus;
+    p._gemMpBonus = mpBonus;
+    p._gemDefBonus = defBonus;
+    p._gemStrBonus = strBonus;
+    p._gemDexBonus = dexBonus;
+    p._gemConBonus = conBonus;
+    p._gemWisBonus = wisBonus;
+    p._gemChaBonus = chaBonus;
+    p._gemLckBonus = lckBonus;
+    p._gemCritBonus = critBonus;
+    p._gemPierceBonus = pierceBonus;
+    p._gemSpellBonus = spellBonus;
+    
+    console.log(`💎 Gem stats applied: STR +${strBonus}, DEX +${dexBonus}, CON +${conBonus}, WIS +${wisBonus}, CHA +${chaBonus}, LCK +${lckBonus}`);
+    
+    if (typeof updateHud === 'function') updateHud();
+    
+    return {
+        hp: hpBonus, mp: mpBonus, def: defBonus,
+        str: strBonus, dex: dexBonus, con: conBonus,
+        wis: wisBonus, cha: chaBonus, lck: lckBonus,
+        crit: critBonus, pierce: pierceBonus, spell: spellBonus
+    };
 }
-
-
-function updateTerminalSafeArea() {
-    // No-op: layout handled by fixed-position flex column.
-    // Terminal fills remaining space; actionBar sits below it naturally.
-}
-
 
 
 // ─────────────────────────────────────────
@@ -8657,16 +8576,65 @@ window.addEventListener('beforeunload', () => {
         // ═══════════════════════════════════════════════════════════════
         // 📊 PRINT STATS TO TERMINAL
         // ═══════════════════════════════════════════════════════════════
-        function printStatsToTerminal() {
-            const p = gameState.player;
-            if (!p) { termAppend('No character loaded.', 'term-error'); return; }
-            termAppend('', 'term-separator');
-            termAppend(`📊 <span style="color:var(--highlight-color);">${p.name}${getRunestonePip(p)}</span> · Lv ${p.level} ${p.className}`, 'term-highlight');
-            termAppend(`❤️ HP: <span style="color:#ff6666;">${p.hp}/${p.maxHp}</span>  ✨ MP: <span style="color:#4488ff;">${p.mp}/${p.maxMp}</span>`);
-            termAppend(`⭐ XP: ${p.xp}/${p.xpToNext}  💰 Gold: ${p.gold}g`);
-            termAppend(`STR:${p.str} DEX:${p.dex} CON:${p.con} WIS:${p.wis} CHA:${p.cha} LCK:${p.lck}`, 'term-dim');
-            termAppend('', 'term-separator');
-        }
+// Updated printStatsToTerminal function - player stats + enemy names with level and condition
+function printStatsToTerminal() {
+    const p = gameState.player;
+    if (!p) { termAppend('No character loaded.', 'term-error'); return; }
+    
+    termAppend('', 'term-separator');
+    termAppend(`📊 <span style="color:var(--highlight-color);">${p.name}${getRunestonePip(p)}</span> · Lv ${p.level} ${p.className}`, 'term-highlight');
+    termAppend(`❤️ HP: <span style="color:#ff6666;">${p.hp}/${p.maxHp}</span>  ✨ MP: <span style="color:#4488ff;">${p.mp}/${p.maxMp}</span>`);
+    termAppend(`⭐ XP: ${p.xp}/${p.xpToNext}  💰 Gold: ${p.gold}g`);
+    termAppend(`STR:${p.str} DEX:${p.dex} CON:${p.con} WIS:${p.wis} CHA:${p.cha} LCK:${p.lck}`, 'term-dim');
+    
+    // Show enemies if in combat
+    const cs = gameState.combatState;
+    if (cs && cs.monsters && cs.monsters.length > 0) {
+        termAppend('', 'term-separator');
+        termAppend(`👹 ENEMIES (${cs.monsters.length})`, 'term-highlight');
+        
+        cs.monsters.forEach((enemy, idx) => {
+            // Calculate condition based on HP percentage
+            const hpPercent = (enemy.hp / enemy.maxHp) * 100;
+            let condition = '';
+            let conditionColor = '#8aaa8a';
+            
+            if (hpPercent < 10) {
+                condition = 'BARELY STANDING';
+                conditionColor = '#ff4444';
+            } else if (hpPercent < 25) {
+                condition = 'severely wounded';
+                conditionColor = '#ff6666';
+            } else if (hpPercent < 50) {
+                condition = 'wounded';
+                conditionColor = '#ffaa66';
+            } else if (hpPercent < 75) {
+                condition = 'injured';
+                conditionColor = '#ffcc88';
+            } else {
+                condition = 'healthy';
+                conditionColor = '#88ff88';
+            }
+            
+            // Level difference color (higher level enemy = red, lower = green)
+            const levelDiff = (enemy.level || 1) - (p.level || 1);
+            let levelColor = '#aaa';
+            if (levelDiff > 2) levelColor = '#ff4444';
+            else if (levelDiff > 0) levelColor = '#ffaa66';
+            else if (levelDiff < -2) levelColor = '#88ff88';
+            else if (levelDiff < 0) levelColor = '#aaffaa';
+            
+            termAppend(
+                `  ${idx + 1}. <span style="color:${enemy.rarityColor};">${enemy.name}</span> ` +
+                `<span style="color:${levelColor};">(Lv ${enemy.level || '?'})</span> ` +
+                `<span style="color:${conditionColor};">[${condition}]</span>`,
+                'term-dim'
+            );
+        });
+    }
+    
+    termAppend('', 'term-separator');
+}
 
         // ═══════════════════════════════════════════════════════════════
         // ── Quit to menu ─────────────────────────────────────────────
@@ -11078,6 +11046,7 @@ async function loadCharacter(characterId) {
         // STEP 2: MIGRATE LEGACY STRING ITEMS TO INSTANCES
         // Convert simple strings like "holy_mace" to proper instances
         // ======================================================
+        /*
         (function migrateLegacyStrings(playerData) {
             let migrated = 0;
             const newInventory = [];
@@ -11177,6 +11146,7 @@ console.log('⚠️ legacyMigrationPerformed set TRUE at:', new Error().stack.sp
                 console.log(`✅ Migrated ${migrated} legacy string items to instances via drop system`);
             }
         })(p);
+        */
 
         // STEP 3: RESTORE GENERATED WEAPONS FROM SAVE DATA
 if (data.generatedWeapons) {
@@ -11562,6 +11532,21 @@ weapon.maxMagicDamage = baseWeapon.maxMagicDamage ?
 
         // Apply gem stats
         recalcGemStats(gameState.player);
+
+                // Apply gem stats
+        const gemResult = recalcGemStats(gameState.player);
+        
+        // Check if stats were reset (detect by looking for a flag we set)
+        if (window._statsJustReset) {
+            window._statsJustReset = false;
+            // Already handled in recalcGemStats, but ensure we're in town view
+            setTimeout(() => {
+                if (document.body.classList.contains('terminal-mode')) {
+                    document.body.classList.remove('terminal-mode');
+                }
+                showCharacterStats();
+            }, 800);
+        }
 
         // Final gem check
         function fixAllGems() {
@@ -13273,47 +13258,35 @@ async function loadCloudCharacter(saveId) {
         }
 
         // ── Travel to another town via portal ──────────────────────────
-        function usePortal(destTownId) {
-            const p = gameState.player;
-            const fromTown = gameState.currentTown || 'town1';
+function usePortal(destTownId) {
+    const p = gameState.player;
+    const fromTown = gameState.currentTown || 'town1';
 
-            // Town2 → Town1: always allowed (you're already there).
-            // First time using this direction unlocks permanent bidirectional travel.
-            if (fromTown === 'town2' && destTownId === 'town1') {
-                if (!p.portalUnlocked) {
-                    p.portalUnlocked = true;
-                    saveGame();
-                    // Show unlock announcement
-                    const screen = document.getElementById('mainScreen');
-                    const flash = document.createElement('div');
-                    flash.style.cssText = 'position:fixed;top:15px;left:50%;transform:translateX(-50%);background:#0a0a0a;border:2px solid #AA88FF;padding:12px 24px;color:#AA88FF;font-size:16px;z-index:9999;text-align:center;';
-                    flash.innerHTML = '🌀 <strong>Portal Unlocked!</strong><br><span style="font-size:13px;color:#ccc;">You can now travel freely between Silverdale and Ashen Harbor.</span>';
-                    document.body.appendChild(flash);
-                    setTimeout(() => flash.remove(), 3500);
-                }
-            } else if (fromTown === 'town1' && destTownId === 'town2') {
-                // Town1 → Town2: requires runestone OR already unlocked
-                if (!p.portalUnlocked && !(p.runestones && p.runestones.includes('white_runestone'))) {
-                    alert('You need to have visited Ashen Harbor first to use this portal!');
-                    return;
-                }
-            }
-
-            const destDef = (typeof TOWNS !== 'undefined' && TOWNS[destTownId]) ? TOWNS[destTownId] : null;
-            const destName = destDef ? destDef.name : destTownId;
-            gameState.currentTown = destTownId;
+    // Town2 → Town1: always allowed
+    if (fromTown === 'town2' && destTownId === 'town1') {
+        if (!p.portalUnlocked) {
+            p.portalUnlocked = true;
             saveGame();
-            showTown(destTownId);
-            // Flash arrival message
-            setTimeout(() => {
-                const flash = document.createElement('div');
-                flash.style.cssText = 'position:fixed;top:15px;left:50%;transform:translateX(-50%);background:#0a0a0a;border:2px solid #AA88FF;padding:10px 20px;color:#AA88FF;font-size:16px;z-index:9999;';
-                flash.textContent = `🌀 Arrived in ${destName}`;
-                document.body.appendChild(flash);
-                setTimeout(() => flash.remove(), 2500);
-            }, 50);
+            const flash = document.createElement('div');
+            flash.style.cssText = 'position:fixed;top:15px;left:50%;transform:translateX(-50%);background:#0a0a0a;border:2px solid #AA88FF;padding:12px 24px;color:#AA88FF;font-size:16px;z-index:9999;text-align:center;';
+            flash.innerHTML = '🌀 <strong>Portal Unlocked!</strong><br><span style="font-size:13px;color:#ccc;">You can now travel freely between Silverdale and Ashen Harbor.</span>';
+            document.body.appendChild(flash);
+            setTimeout(() => flash.remove(), 3500);
         }
+    } else if (fromTown === 'town1' && destTownId === 'town2') {
+        // Town1 → Town2: requires runestone OR already unlocked
+        if (!p.portalUnlocked && !(p.runestones && p.runestones.includes('white_runestone'))) {
+            alert('You need to have visited Ashen Harbor first to use this portal!');
+            return;
+        }
+    }
 
+    gameState.currentTown = destTownId;
+    saveGame();
+
+    // Fire the portal animation — it calls showTown internally
+    portalTransition(destTownId);
+}
         // ── Enter the dungeon attached to the current town ─────────────
         function enterTownDungeon(townId) {
             const tid = townId || gameState.currentTown || 'town1';
@@ -14002,155 +13975,483 @@ async function loadCloudCharacter(saveId) {
     }
 }
 
-        function showShop() {
-            checkGameVersion();
-            const screen = document.getElementById('mainScreen');
-            
-            let shopHtml = `
-                <div class="location-header">MERCHANT SHOP</div>
-                <button onclick="showTown()" style="margin-bottom:10px;">LEAVE SHOP</button>
-                ${renderPlayerStats()}
-                <div class="message">
-                    <p>Welcome to my shop! What can I do for you?</p>
-                </div>
-                <div style="margin: 20px 0;">
-                    <button onclick="showShopBuy()" style="margin-right: 10px;">💰 BUY ITEMS</button>
-                    <button onclick="showShopSell()">💎 SELL ITEMS</button>
-                </div>
-                <div id="shopContent"></div>
-                <button onclick="showTown()">LEAVE SHOP</button>
-            `;
-            
-            screen.innerHTML = shopHtml;
-            showShopBuy(); // Default to buy tab
-        }
+// ═══════════════════════════════════════════════════════════════
+// SHOP SYSTEM — Featured items, filters, reroll
+// ═══════════════════════════════════════════════════════════════
 
-        function enterDungeons() {
-    checkGameVersion();
-    termClear();
-    testDungeon();
+const FEATURED_QUALITY_ROLLS = [
+    { quality: 'normal',    threshold: 61.9  },
+    { quality: 'rare',      threshold: 86.9  },
+    { quality: 'epic',      threshold: 98.9  },
+    { quality: 'legendary', threshold: 99.9  },
+    { quality: 'godly',     threshold: 100.0 },
+];
+
+const FEATURED_PRICE_MULTIPLIERS = {
+    normal: 2, rare: 3, epic: 4, legendary: 5, godly: 6,
+};
+
+const REROLL_COSTS = [
+    { maxLevel: 5,  cost: 50   },
+    { maxLevel: 10, cost: 250  },
+    { maxLevel: 15, cost: 750  },
+    { maxLevel: 20, cost: 2000 },
+    { maxLevel: 25, cost: 6000 },
+];
+
+function getRerollCost(level) {
+    for (const tier of REROLL_COSTS) {
+        if (level <= tier.maxLevel) return tier.cost;
+    }
+    return 6000;
 }
 
+function rollFeaturedQuality(seed) {
+    const rand = ((Math.sin(seed) * 43758.5453123) % 1 + 1) % 1 * 100;
+    for (const tier of FEATURED_QUALITY_ROLLS) {
+        if (rand <= tier.threshold) return tier.quality;
+    }
+    return 'normal';
+}
 
-        
+function getFeaturedItems(playerLevel, playerClass, rerollOffset) {
+    const cycleWindow = Math.floor(Date.now() / (4 * 60 * 60 * 1000));
+    const weaponSeed  = cycleWindow * 1000 + rerollOffset * 7 + 1;
+    const armorSeed   = cycleWindow * 1000 + rerollOffset * 7 + 2;
+    const weaponQuality = rollFeaturedQuality(weaponSeed);
+    const armorQuality  = rollFeaturedQuality(armorSeed);
 
-function showShopBuy() {
-    const p = gameState.player;
+    const minLv = Math.max(1, playerLevel - 2);
+    const maxLv = playerLevel + 2;
+
+    const allWeapons = Object.keys(WEAPONS).filter(k => {
+        const w = WEAPONS[k];
+        return !w.unarmed && !w.instanceId && w.level >= minLv && w.level <= maxLv && w.cost;
+    });
+    const allArmors = Object.keys(ARMOR).filter(k => {
+        const a = ARMOR[k];
+        return !a.unarmored && !a.isDropped && a.level >= minLv && a.level <= maxLv && a.cost;
+    });
+
+    if (!allWeapons.length || !allArmors.length) return { weapon: null, armor: null };
+
+    const wIdx = Math.abs(Math.floor(Math.sin(weaponSeed + 99) * 99999)) % allWeapons.length;
+    const aIdx = Math.abs(Math.floor(Math.sin(armorSeed  + 99) * 99999)) % allArmors.length;
+
+    return {
+        weapon: { key: allWeapons[wIdx], quality: weaponQuality },
+        armor:  { key: allArmors[aIdx],  quality: armorQuality  },
+    };
+}
+
+function getTimeUntilNextCycle() {
+    const cycleMs   = 4 * 60 * 60 * 1000;
+    const nextCycle = (Math.floor(Date.now() / cycleMs) + 1) * cycleMs;
+    const rem       = nextCycle - Date.now();
+    const h = Math.floor(rem / 3600000);
+    const m = Math.floor((rem % 3600000) / 60000);
+    const s = Math.floor((rem % 60000) / 1000);
+    return `${h}h ${m}m ${s}s`;
+}
+
+function getRerollState(p) {
+    const cycleWindow = Math.floor(Date.now() / (4 * 60 * 60 * 1000));
+    if (!p._shopReroll || p._shopReroll.cycle !== cycleWindow) {
+        p._shopReroll = { cycle: cycleWindow, count: 0, offset: 0 };
+    }
+    return p._shopReroll;
+}
+
+// ── Main entry ───────────────────────────────────────────────────
+function showShop() {
+    checkGameVersion();
+    const screen = document.getElementById('mainScreen');
+    screen.innerHTML = `<div id="shopRoot"></div>`;
+    renderShop('buy', 'weapons', 'all', 'near');
+}
+
+// section: 'weapons' | 'armor' | 'potions'
+// typeFilter: 'all' | 'sword' | 'hammer' etc
+// levelFilter: 'near' | 'all'
+function renderShop(tab, section, typeFilter, levelFilter) {
+    const p           = gameState.player;
     const playerClass = p.baseClass || p.class;
-    
-    let shopHtml = `
-        <div style="margin: 20px 0;">
-            <h3 style="color: var(--highlight-color);">WEAPONS</h3>
-            <div class="inventory-grid">
-    `;
+    const screen      = document.getElementById('shopRoot');
+    if (!screen) return;
 
-    Object.keys(WEAPONS).forEach(key => {
-        const weapon = WEAPONS[key];
-        
-        if (!weapon.unarmed && weapon.quality === 'normal' && weapon.level <= p.level + 2 && canUseWeapon(playerClass, weapon)) {
-            const owned = p.inventory.includes(key);
-            const equipped = p.weapon === key;
-            const qualityColor = QUALITY_CONFIG[weapon.quality].color;
-            
-            shopHtml += `
-                <div class="item-card ${equipped ? 'equipped' : ''}">
-                    <div style="color: ${qualityColor};">${weapon.name}</div>
-                    <div style="font-size:12px;">${buildWeaponDmgLine(weapon, null, p)}</div>
-                    <div>Level: ${weapon.level}</div>
-                    ${owned ? '<div style="color: var(--border-color);">OWNED</div>' : 
-                      `<button onclick="buyItem('weapon', '${key}', ${weapon.cost})">Buy ${weapon.cost}G</button>`}
-                    ${p.cha ? '<div style="color:#8aaa8a;font-size:15px;">CHA disc: ' + calcChaDiscount(p.cha) + '%</div>' : ''}
+    clearInterval(window._shopTimerInterval);
+
+    const rerollState = getRerollState(p);
+    const featured    = getFeaturedItems(p.level, playerClass, rerollState.offset);
+    const rerollCost  = getRerollCost(p.level);
+    const rerollsLeft = 3 - rerollState.count;
+
+    // ── Featured banner ──────────────────────────────────────────
+    function buildFeaturedHtml() {
+        let html = `
+        <div style="border:1px solid #2a1a05;border-radius:3px;overflow:hidden;margin-bottom:14px;background:#080800;">
+            <div style="background:linear-gradient(90deg,#0a0a0a,#1a1005,#0a0a0a);border-bottom:1px solid #2a1a05;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+                <span style="color:#c8a000;font-size:12px;letter-spacing:2px;font-family:'Courier New',monospace;">✦ FEATURED ✦</span>
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <span style="color:#444;font-size:10px;font-family:'Courier New',monospace;">⏱ <span id="shopTimer">${getTimeUntilNextCycle()}</span></span>
+                    ${rerollsLeft > 0
+                        ? `<button onclick="doShopReroll()" style="background:#0a0800;border:1px solid #c8a000;color:#c8a000;font-size:10px;padding:3px 8px;cursor:pointer;font-family:'Courier New',monospace;">⚄ ${rerollCost}g · ${rerollsLeft} left</button>`
+                        : `<span style="color:#2a2000;font-size:10px;font-family:'Courier New',monospace;">No rerolls left</span>`
+                    }
                 </div>
-            `;
-        }
-    });
-
-    shopHtml += `
             </div>
-            <h3 style="color: var(--highlight-color); margin-top: 20px;">ARMOR</h3>
-            <div class="inventory-grid">
-    `;
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#1a1005;">`;
 
-    Object.keys(ARMOR).forEach(key => {
-        const armor = ARMOR[key];
-        
-        if (!armor.unarmored && !armor.isDropped && armor.quality === 'normal' && armor.level <= p.level + 2 && canUseArmor(playerClass, armor)) {
-            const owned = p.inventory.includes(key);
-            const equipped = p.armor === key;
-            const qualityColor = QUALITY_CONFIG[armor.quality].color;
-            
-            shopHtml += `
-                <div class="item-card ${equipped ? 'equipped' : ''}">
-                    <div style="color: ${qualityColor};">${armor.name}</div>
-                    <div style="font-size:12px;">${buildArmorDefLine(armor, p)}</div>
-                    <div>Level: ${armor.level}</div>
-                    ${owned ? '<div style="color: var(--border-color);">OWNED</div>' : 
-                      `<button onclick="buyItem('armor', '${key}', ${armor.cost})">Buy ${armor.cost}G</button>`}
-                    ${p.cha ? '<div style="color:#8aaa8a;font-size:15px;">CHA disc: ' + calcChaDiscount(p.cha) + '%</div>' : ''}
+        [{ type:'weapon', data:featured.weapon }, { type:'armor', data:featured.armor }].forEach(({ type, data }) => {
+            if (!data) { html += `<div style="background:#080800;padding:16px;text-align:center;color:#222;">–</div>`; return; }
+            const item = type === 'weapon' ? WEAPONS[data.key] : ARMOR[data.key];
+            if (!item) { html += `<div style="background:#080800;padding:16px;"></div>`; return; }
+            const qc       = QUALITY_CONFIG[data.quality];
+            const color    = qc?.color || '#00ff00';
+            const multi    = FEATURED_PRICE_MULTIPLIERS[data.quality] || 2;
+            const price    = Math.floor((item.cost || 100) * multi);
+            const canBuy   = type === 'weapon' ? canUseWeapon(playerClass, item) : canUseArmor(playerClass, item);
+            const canAfford = p.gold >= price;
+            const isSpecial = ['legendary','godly'].includes(data.quality);
+            const statLine  = type === 'weapon'
+                ? buildWeaponDmgLine({...item, quality:data.quality}, data.quality, p)
+                : buildArmorDefLine({...item, quality:data.quality}, p);
+
+            html += `
+            <div style="background:#080800;padding:10px 12px;position:relative;overflow:hidden;${isSpecial?`box-shadow:inset 0 0 20px ${color}08;`:''}">
+                ${isSpecial ? `<div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,${color}66,transparent);"></div>` : ''}
+                <div style="display:flex;align-items:center;gap:5px;margin-bottom:4px;flex-wrap:wrap;">
+                    <span style="color:${color};font-size:12px;font-weight:bold;">${type==='weapon'?'⚔️':'🛡️'} ${item.name}</span>
                 </div>
-            `;
-        }
-    });
+                <div style="display:inline-block;background:${color}18;border:1px solid ${color}33;color:${color};font-size:9px;letter-spacing:1px;padding:1px 5px;margin-bottom:4px;font-family:'Courier New',monospace;">${data.quality.toUpperCase()}</div>
+                <div style="font-size:10px;margin-bottom:6px;">${statLine}</div>
+                <div style="color:#555;font-size:9px;margin-bottom:6px;font-family:'Courier New',monospace;">LV${item.level||1}</div>
+                <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid #151505;padding-top:6px;">
+                    <span style="color:#c8a000;font-size:12px;font-family:'Courier New',monospace;">${price.toLocaleString()}g</span>
+                    ${canBuy
+                        ? (canAfford
+                            ? `<button onclick="buyFeaturedItem('${type}','${data.key}','${data.quality}',${price})" style="background:#080800;border:1px solid ${color};color:${color};font-size:10px;padding:3px 8px;cursor:pointer;font-family:'Courier New',monospace;">BUY</button>`
+                            : `<span style="color:#2a2a2a;font-size:10px;font-family:'Courier New',monospace;">+${(price-p.gold).toLocaleString()}g</span>`)
+                        : `<span style="color:#222;font-size:10px;font-family:'Courier New',monospace;">Can't use</span>`
+                    }
+                </div>
+            </div>`;
+        });
+        html += `</div></div>`;
+        return html;
+    }
 
-    shopHtml += `
-            </div>
-            <h3 style="color: var(--highlight-color); margin-top: 20px;">POTIONS</h3>
-            <div class="inventory-grid">
-    `;
+    // ── Filter bar ───────────────────────────────────────────────
+    // Dynamically build subtypes from what this class can actually use
+const weaponSubtypes = ['all', ...new Set(
+    Object.values(WEAPONS)
+        .filter(w => !w.unarmed && !w.instanceId && w.weaponSubtype && canUseWeapon(playerClass, w))
+        .map(w => w.weaponSubtype)
+        .filter(Boolean)
+        .sort()
+)];
 
-    const potionsForSale = ['health_potion', 'greater_health_potion', 'superior_health_potion',
-                           'mana_potion', 'greater_mana_potion', 'superior_mana_potion', 'elixir',
-                           'recall_potion'];
-    
-    potionsForSale.forEach(key => {
-        if (ITEMS[key]) {
-            const item = ITEMS[key];
-            
-            if (key === 'recall_potion') {
-                const alreadyOwned = p.inventory.includes('recall_potion');
-                shopHtml += `
-                    <div class="item-card" style="border-color:#AA88FF;">
-                        <div style="color:#AA88FF;font-size:17px;">🌀 ${item.name}</div>
-                        <div style="color:#888;font-size:13px;font-style:italic;">${item.lore}</div>
-                        <div style="color:#ffcc00;margin-top:4px;">${item.description}</div>
-                        <div style="color:#ff8800;font-size:13px;">⚠ Dungeon use only · 1 per adventure</div>
-                        ${alreadyOwned
-                            ? '<div style="color:#AA88FF;font-size:14px;margin-top:4px;">ALREADY OWNED</div>'
-                            : `<button onclick="buyItem('item', 'recall_potion', 1000)"
-                                style="border-color:#AA88FF;color:#AA88FF;margin-top:6px;">Buy 1000G</button>`
-                        }
+const armorSubtypes = ['all', ...new Set(
+    Object.values(ARMOR)
+        .filter(a => !a.unarmored && !a.isDropped && canUseArmor(playerClass, a))
+        .map(a => (a.name||'').toLowerCase().split(' ').find(word =>
+            ['plate','chain','leather','robe','hide','cloth','scale','padded','mail'].includes(word)
+        ))
+        .filter(Boolean)
+        .sort()
+)];
+
+const subtypes = section === 'armor' ? armorSubtypes : weaponSubtypes;
+const typeOptions = subtypes.map(t =>
+    `<option value="${t}" ${t===typeFilter?'selected':''}>${t==='all'?'All Types':t.charAt(0).toUpperCase()+t.slice(1)+'s'}</option>`
+).join('');
+
+    const filterBar = tab === 'buy' ? `
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center;">
+            <select onchange="renderShop('buy','${section}','${typeFilter}',this.value)" style="flex:0;background:#0d0d0d;border:1px solid #2a2a2a;color:#aaa;padding:5px 6px;font-size:12px;font-family:'Courier New',monospace;">
+                <option value="near" ${levelFilter==='near'?'selected':''}>Near Me (±2)</option>
+                <option value="all"  ${levelFilter==='all' ?'selected':''}>All · Low→High</option>
+                <option value="all_desc" ${levelFilter==='all_desc'?'selected':''}>All · High→Low</option>
+            </select>
+            <select onchange="renderShop('buy','${section}',this.value,'${levelFilter}')" style="flex:1;background:#0d0d0d;border:1px solid #2a2a2a;color:#aaa;padding:5px 6px;font-size:12px;font-family:'Courier New',monospace;">
+                ${typeOptions}
+            </select>
+        </div>` : '';
+
+    // ── Section tabs ─────────────────────────────────────────────
+    const sectionBar = tab === 'buy' ? `
+        <div style="display:flex;gap:2px;margin-bottom:10px;">
+            ${[['weapons','⚔️ Weapons'],['armor','🛡️ Armor'],['potions','🧪 Potions']].map(([s,label]) => `
+            <button onclick="renderShop('buy','${s}','all','${levelFilter}')" style="
+                flex:1;background:${section===s?'#0f1a0f':'#080808'};
+                border:1px solid ${section===s?'#3a5a3a':'#1a1a1a'};
+                color:${section===s?'#8aaa8a':'#444'};
+                font-size:11px;padding:6px 2px;cursor:pointer;
+                font-family:'Courier New',monospace;
+            ">${label}</button>`).join('')}
+        </div>` : '';
+
+    // ── Build weapon list ────────────────────────────────────────
+    function buildWeaponList() {
+        const minLv = levelFilter === 'near' ? Math.max(1, p.level - 2) : 1;
+        const maxLv = levelFilter === 'near' ? p.level + 2 : 999;
+
+        let items = Object.keys(WEAPONS).filter(key => {
+            const w = WEAPONS[key];
+            if (w.unarmed || w.instanceId || !w.cost) return false;
+            if (!canUseWeapon(playerClass, w)) return false;
+            const lv = w.level || 1;
+            if (lv < minLv || lv > maxLv) return false;
+            if (typeFilter !== 'all' && w.weaponSubtype !== typeFilter) return false;
+            return true;
+        }).map(key => ({ key, item: WEAPONS[key] }))
+          .sort((a, b) => levelFilter === 'all_desc'
+    ? (b.item.level||1) - (a.item.level||1)
+    : (a.item.level||1) - (b.item.level||1));
+
+        if (!items.length) return `<div style="color:#333;text-align:center;padding:20px;font-size:12px;font-family:'Courier New',monospace;">No weapons found.</div>`;
+
+        return items.map(({ key, item }) => {
+            const isOwned   = p.inventory.some(i => (typeof i === 'object' ? i.weaponId === key : i === key));
+            const isEquipped = p.weapon === key;
+            const isFuture  = (item.level||1) > p.level;
+            const disc      = calcChaDiscount(p.cha);
+            const price     = Math.max(1, Math.floor((item.cost||0) * (1 - disc/100)));
+            const canAfford = p.gold >= price;
+
+            return `
+            <div style="border:1px solid ${isEquipped?'#3a3000':'#0f0f0f'};background:${isEquipped?'#0a0800':'#060606'};padding:9px 10px;margin-bottom:3px;opacity:${isFuture?'0.55':'1'};">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;">
+                    <div style="flex:1;min-width:0;">
+                        <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px;flex-wrap:wrap;">
+                            <span style="color:#555;font-size:9px;border:1px solid #1a1a1a;padding:1px 4px;font-family:'Courier New',monospace;">LV${item.level||1}</span>
+                            <span style="color:${isFuture?'#444':'#ccc'};font-size:12px;">${item.name}</span>
+                            ${item.weaponSubtype?`<span style="color:#2a2a2a;font-size:9px;font-family:'Courier New',monospace;">${item.weaponSubtype}</span>`:''}
+                        </div>
+                        <div style="font-size:10px;">${buildWeaponDmgLine(item, null, p)}</div>
                     </div>
-                `;
-            } else {
-                const _held = item.maxStack ? p.inventory.filter(k => k === key).length : 0;
-                const _capped = item.maxStack && _held >= item.maxStack;
-                const _stackLabel = item.maxStack
-                    ? `<span style="color:${_capped ? '#ff6666' : '#888'};font-size:12px;"> ${_held}/${item.maxStack}</span>`
-                    : '';
-                shopHtml += `
-                    <div class="item-card">
-                        <div style="color: var(--highlight-color);">${item.name}${_stackLabel}</div>
-                        <div>${item.description}</div>
-                        <div>Power: ${item.power || 'Full'}</div>
-                        ${_capped
-                            ? `<div style="color:#ff6666;font-size:13px;margin-top:4px;">BAG FULL (${item.maxStack}/${item.maxStack})</div>`
-                            : `<button onclick="buyItem('item', '${key}', ${item.cost})">Buy ${item.cost}G</button>`
+                    <div style="text-align:right;flex-shrink:0;min-width:60px;">
+                        ${isEquipped
+                            ? `<div style="color:#c8a000;font-size:10px;font-family:'Courier New',monospace;">EQUIPPED</div>`
+                            : isOwned
+                                ? `<div style="color:#2a4a2a;font-size:10px;font-family:'Courier New',monospace;">OWNED</div>`
+                                : `<button onclick="buyItem('weapon','${key}',${item.cost})" ${canAfford&&!isFuture?'':'disabled'} style="background:#060606;border:1px solid ${canAfford&&!isFuture?'#3a5a3a':'#1a1a1a'};color:${canAfford&&!isFuture?'#8aaa8a':'#2a2a2a'};font-size:10px;padding:3px 8px;cursor:${canAfford&&!isFuture?'pointer':'default'};font-family:'Courier New',monospace;width:100%;">${price.toLocaleString()}g</button>`
                         }
-                        ${p.cha && !_capped ? '<div style="color:#8aaa8a;font-size:15px;">CHA disc: ' + calcChaDiscount(p.cha) + '%</div>' : ''}
+                        ${disc>0&&!isOwned&&!isEquipped?`<div style="color:#2a4a2a;font-size:9px;margin-top:2px;">-${disc}% CHA</div>`:''}
                     </div>
-                `;
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // ── Build armor list ─────────────────────────────────────────
+    function buildArmorList() {
+        const minLv = levelFilter === 'near' ? Math.max(1, p.level - 2) : 1;
+        const maxLv = levelFilter === 'near' ? p.level + 2 : 999;
+
+        let items = Object.keys(ARMOR).filter(key => {
+            const a = ARMOR[key];
+            if (a.unarmored || a.isDropped || !a.cost) return false;
+            if (!canUseArmor(playerClass, a)) return false;
+            const lv = a.level || 1;
+            if (lv < minLv || lv > maxLv) return false;
+            if (typeFilter !== 'all') {
+                const name = (a.name||'').toLowerCase();
+                if (!name.includes(typeFilter)) return false;
             }
-        }
-    });
+            return true;
+        }).map(key => ({ key, item: ARMOR[key] }))
+          .sort((a, b) => levelFilter === 'all_desc'
+    ? (b.item.level||1) - (a.item.level||1)
+    : (a.item.level||1) - (b.item.level||1));
 
-    shopHtml += `
+        if (!items.length) return `<div style="color:#333;text-align:center;padding:20px;font-size:12px;font-family:'Courier New',monospace;">No armor found.</div>`;
+
+        return items.map(({ key, item }) => {
+            const isOwned   = p.inventory.some(i => (typeof i === 'object' ? i.armorId === key : i === key));
+            const isEquipped = p.armor === key;
+            const isFuture  = (item.level||1) > p.level;
+            const disc      = calcChaDiscount(p.cha);
+            const price     = Math.max(1, Math.floor((item.cost||0) * (1 - disc/100)));
+            const canAfford = p.gold >= price;
+
+            return `
+            <div style="border:1px solid ${isEquipped?'#3a3000':'#0f0f0f'};background:${isEquipped?'#0a0800':'#060606'};padding:9px 10px;margin-bottom:3px;opacity:${isFuture?'0.55':'1'};">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;">
+                    <div style="flex:1;min-width:0;">
+                        <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px;flex-wrap:wrap;">
+                            <span style="color:#555;font-size:9px;border:1px solid #1a1a1a;padding:1px 4px;font-family:'Courier New',monospace;">LV${item.level||1}</span>
+                            <span style="color:${isFuture?'#444':'#ccc'};font-size:12px;">${item.name}</span>
+                        </div>
+                        <div style="font-size:10px;">${buildArmorDefLine(item, p)}</div>
+                    </div>
+                    <div style="text-align:right;flex-shrink:0;min-width:60px;">
+                        ${isEquipped
+                            ? `<div style="color:#c8a000;font-size:10px;font-family:'Courier New',monospace;">EQUIPPED</div>`
+                            : isOwned
+                                ? `<div style="color:#2a4a2a;font-size:10px;font-family:'Courier New',monospace;">OWNED</div>`
+                                : `<button onclick="buyItem('armor','${key}',${item.cost})" ${canAfford&&!isFuture?'':'disabled'} style="background:#060606;border:1px solid ${canAfford&&!isFuture?'#3a5a3a':'#1a1a1a'};color:${canAfford&&!isFuture?'#8aaa8a':'#2a2a2a'};font-size:10px;padding:3px 8px;cursor:${canAfford&&!isFuture?'pointer':'default'};font-family:'Courier New',monospace;width:100%;">${price.toLocaleString()}g</button>`
+                        }
+                        ${disc>0&&!isOwned&&!isEquipped?`<div style="color:#2a4a2a;font-size:9px;margin-top:2px;">-${disc}% CHA</div>`:''}
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // ── Build potions list ───────────────────────────────────────
+    function buildPotionList() {
+        const potions = ['health_potion','greater_health_potion','superior_health_potion',
+                         'mana_potion','greater_mana_potion','superior_mana_potion','elixir','recall_potion'];
+        return potions.map(key => {
+            if (!ITEMS[key]) return '';
+            const item = ITEMS[key];
+            if (key === 'recall_potion') {
+                const owned = p.inventory.includes('recall_potion');
+                return `
+                <div style="border:1px solid #1a0a3a;background:#06060f;padding:9px 10px;margin-bottom:3px;">
+                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;">
+                        <div style="flex:1;">
+                            <div style="color:#AA88FF;font-size:12px;margin-bottom:2px;">🌀 ${item.name}</div>
+                            <div style="color:#555;font-size:10px;">${item.description}</div>
+                            <div style="color:#3a2266;font-size:9px;margin-top:2px;">Dungeon only · 1 max</div>
+                        </div>
+                        <div style="flex-shrink:0;min-width:60px;text-align:right;">
+                            ${owned
+                                ? `<div style="color:#2a1a5c;font-size:10px;font-family:'Courier New',monospace;">OWNED</div>`
+                                : p.gold>=1000
+                                    ? `<button onclick="buyItem('item','recall_potion',1000)" style="background:#06060f;border:1px solid #AA88FF;color:#AA88FF;font-size:10px;padding:3px 8px;cursor:pointer;font-family:'Courier New',monospace;width:100%;">1000g</button>`
+                                    : `<button disabled style="background:#06060f;border:1px solid #1a1a1a;color:#222;font-size:10px;padding:3px 8px;font-family:'Courier New',monospace;width:100%;">1000g</button>`
+                            }
+                        </div>
+                    </div>
+                </div>`;
+            }
+            const held    = item.maxStack ? p.inventory.filter(k=>k===key).length : 0;
+            const capped  = item.maxStack && held >= item.maxStack;
+            const disc    = calcChaDiscount(p.cha);
+            const price   = Math.max(1, Math.floor((item.cost||0) * (1 - disc/100)));
+            return `
+            <div style="border:1px solid #0f0f0f;background:#060606;padding:9px 10px;margin-bottom:3px;">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;">
+                    <div style="flex:1;">
+                        <div style="color:#ccc;font-size:12px;margin-bottom:2px;">${item.name}${item.maxStack?` <span style="color:${capped?'#ff4444':'#333'};font-size:9px;">${held}/${item.maxStack}</span>`:''}</div>
+                        <div style="color:#555;font-size:10px;">${item.description}</div>
+                    </div>
+                    <div style="flex-shrink:0;min-width:60px;text-align:right;">
+                        ${capped
+                            ? `<div style="color:#ff4444;font-size:10px;font-family:'Courier New',monospace;">FULL</div>`
+                            : p.gold>=price
+                                ? `<button onclick="buyItem('item','${key}',${item.cost})" style="background:#060606;border:1px solid #3a5a3a;color:#8aaa8a;font-size:10px;padding:3px 8px;cursor:pointer;font-family:'Courier New',monospace;width:100%;">${price}g</button>`
+                                : `<button disabled style="background:#060606;border:1px solid #1a1a1a;color:#2a2a2a;font-size:10px;padding:3px 8px;font-family:'Courier New',monospace;width:100%;">${price}g</button>`
+                        }
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // ── Section content ──────────────────────────────────────────
+    let sectionContent = '';
+    if (tab === 'buy') {
+        if      (section === 'weapons') sectionContent = buildWeaponList();
+        else if (section === 'armor')   sectionContent = buildArmorList();
+        else if (section === 'potions') sectionContent = buildPotionList();
+    } else {
+        sectionContent = `<div id="shopContent"></div>`;
+    }
+
+    // ── Full render ──────────────────────────────────────────────
+    screen.innerHTML = `
+        <style>#shopRoot button:not([disabled]):hover{filter:brightness(1.3);}</style>
+
+        <!-- Top bar -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #1a1a0a;">
+            <div>
+                <div style="color:#c8a000;font-size:15px;letter-spacing:2px;font-family:'Courier New',monospace;">⚔ MERCHANT</div>
+                <div style="color:#2a2a1a;font-size:9px;letter-spacing:2px;font-family:'Courier New',monospace;">CALAMITY TRADING CO.</div>
+            </div>
+            <div style="text-align:right;">
+                <div style="color:#c8a000;font-size:15px;font-family:'Courier New',monospace;">${p.gold.toLocaleString()}g</div>
+                <div style="color:#2a2a1a;font-size:9px;font-family:'Courier New',monospace;">YOUR GOLD</div>
             </div>
         </div>
+
+        <!-- Featured -->
+        ${buildFeaturedHtml()}
+
+        <!-- LEAVE SHOP -->
+        <button onclick="showTown()" style="
+            display:block;width:100%;background:#0a0500;
+            border:2px solid #5a3a00;color:#c8a000;
+            font-size:14px;font-weight:bold;padding:10px;cursor:pointer;
+            font-family:'Courier New',monospace;letter-spacing:2px;
+            margin-bottom:10px;
+        ">← LEAVE SHOP</button>
+
+        <!-- Buy / Sell tabs -->
+        <div style="display:flex;gap:2px;margin-bottom:12px;">
+            <button onclick="renderShop('buy','${section}','${typeFilter}','${levelFilter}')" style="flex:1;background:${tab==='buy'?'#0f1a0f':'#080808'};border:1px solid ${tab==='buy'?'#3a5a3a':'#1a1a1a'};color:${tab==='buy'?'#8aaa8a':'#333'};font-size:12px;padding:8px;cursor:pointer;font-family:'Courier New',monospace;">💰 BUY</button>
+            <button onclick="renderShop('sell','weapons','all','near');setTimeout(showShopSell,50)" style="flex:1;background:${tab==='sell'?'#1a0f0f':'#080808'};border:1px solid ${tab==='sell'?'#5a3a3a':'#1a1a1a'};color:${tab==='sell'?'#aa8a8a':'#333'};font-size:12px;padding:8px;cursor:pointer;font-family:'Courier New',monospace;">💎 SELL</button>
+        </div>
+
+        <!-- Section tabs + filters (buy only) -->
+        ${sectionBar}
+        ${filterBar}
+
+        <!-- Content -->
+        <div style="padding-bottom:24px;">${sectionContent}</div>
+
+        <!-- Bottom leave -->
+        <button onclick="showTown()" style="display:block;width:100%;background:#080808;border:1px solid #1a1a1a;color:#333;font-size:11px;padding:8px;cursor:pointer;font-family:'Courier New',monospace;letter-spacing:2px;">← LEAVE SHOP</button>
     `;
-    
-    document.getElementById('shopContent').innerHTML = shopHtml;
+
+    // Timer tick
+    window._shopTimerInterval = setInterval(() => {
+        const el = document.getElementById('shopTimer');
+        if (el) el.textContent = getTimeUntilNextCycle();
+        else clearInterval(window._shopTimerInterval);
+    }, 1000);
+
+    if (tab === 'sell') setTimeout(showShopSell, 50);
 }
 
+// ── Reroll ───────────────────────────────────────────────────────
+function doShopReroll() {
+    const p     = gameState.player;
+    const state = getRerollState(p);
+    const cost  = getRerollCost(p.level);
+    if (state.count >= 3)   { alert('No rerolls left this cycle.'); return; }
+    if (p.gold < cost)      { alert(`Need ${cost}g to reroll.`); return; }
+    if (!confirm(`Spend ${cost}g to reroll featured items?`)) return;
+    p.gold -= cost;
+    state.count++;
+    state.offset = (state.offset + 1) * 13 + state.count * 7;
+    saveGame();
+    renderShop('buy', 'weapons', 'all', 'near');
+}
+
+// ── Buy featured ─────────────────────────────────────────────────
+function buyFeaturedItem(type, key, quality, price) {
+    const p           = gameState.player;
+    const playerClass = p.baseClass || p.class;
+    const item        = type === 'weapon' ? WEAPONS[key] : ARMOR[key];
+    if (!item) return;
+    const canUse = type === 'weapon' ? canUseWeapon(playerClass, item) : canUseArmor(playerClass, item);
+    if (!canUse)      { alert(`Your class cannot use this item.`); return; }
+    if (p.gold < price) { alert('Not enough gold!'); return; }
+    if (!confirm(`Buy ${item.name} [${quality}] for ${price.toLocaleString()}g?`)) return;
+    p.gold -= price;
+    if (type === 'weapon') {
+        const inst = generateLegacyWeaponInstance(key, p.level, quality);
+        if (inst) p.inventory.push(inst);
+    } else {
+        const inst = generateLegacyArmorInstance(key, p.level, quality);
+        if (inst) p.inventory.push(inst);
+    }
+    saveGame();
+    renderShop('buy', 'weapons', 'all', 'near');
+}
 function showShopSell() {
     const p = gameState.player;
     const QUALITY_ORDER = ['poor','normal','rare','epic','legendary','godly'];
@@ -14622,114 +14923,197 @@ function sellGem(index) {
 
 
         // Returns sell value for a weapon or armor (10% of cost)
-        function getSellValue(itemKey, type) {
-            if (type === 'item') return ITEMS[itemKey]?.sellValue || 0;
-            if (type === 'weapon') return Math.max(1, Math.floor((WEAPONS[itemKey]?.cost || 0) * 0.10));
-            if (type === 'armor')  return Math.max(1, Math.floor((ARMOR[itemKey]?.cost  || 0) * 0.10));
-            return 0;
+function getSellValue(itemKey, type) {
+    if (type === 'item') return ITEMS[itemKey]?.sellValue || 0;
+    if (type === 'weapon') return Math.max(1, Math.floor((WEAPONS[itemKey]?.cost || 0) * 0.10));
+    if (type === 'armor')  return Math.max(1, Math.floor((ARMOR[itemKey]?.cost  || 0) * 0.10));
+    return 0;
+}
+
+// Get sell value for an instance object
+function getInstanceSellValue(item) {
+    const bonus = calcChaSellBonus(gameState.player.cha);
+    let baseCost = 0;
+    if (item.weaponId) {
+        const base = WEAPONS[item.weaponId];
+        baseCost = base?.cost || 100;
+    } else if (item.armorId) {
+        const base = ARMOR[item.armorId] || ARMOR[item.instanceId];
+        baseCost = base?.cost || 100;
+    }
+    const gemValue = (item.gems?.length || 0) * 75;
+    const baseValue = Math.max(1, Math.floor(baseCost * 0.10));
+    return Math.floor((baseValue + gemValue) * (1 + bonus / 100));
+}
+
+function sellAllBelowThreshold() {
+    const p = gameState.player;
+    const QUALITY_ORDER = ['poor','normal','rare','epic','legendary','godly'];
+    const thresholdEl  = document.getElementById('sellQualityThreshold');
+    const threshold    = thresholdEl ? thresholdEl.value : 'poor';
+    const thresholdIdx = QUALITY_ORDER.indexOf(threshold);
+    const bonus        = calcChaSellBonus(p.cha);
+
+    const toRemove = []; // { item, index, name, value }
+
+    p.inventory.forEach((item, index) => {
+        // ── Instance weapons ──────────────────────────────────
+        if (item && typeof item === 'object' && item.weaponId) {
+            if (item.instanceId === p.weapon) return; // equipped
+            const qIdx = QUALITY_ORDER.indexOf(item.quality || 'normal');
+            if (qIdx <= thresholdIdx) {
+                const base = WEAPONS[item.weaponId];
+                const name = base ? `${item.quality} ${base.name}` : item.instanceId;
+                toRemove.push({ item, index, name, value: getInstanceSellValue(item), isInstance: true });
+            }
         }
-
-        function sellAllBelowThreshold() {
-            const p = gameState.player;
-            const QUALITY_ORDER = ['poor','normal','rare','epic','legendary','godly'];
-            const thresholdEl  = document.getElementById('sellQualityThreshold');
-            const threshold    = thresholdEl ? thresholdEl.value : 'poor';
-            const thresholdIdx = QUALITY_ORDER.indexOf(threshold);
-            const bonus        = calcChaSellBonus(p.cha);
-
-            const toRemove = [];
-
-            p.inventory.forEach(itemKey => {
-                if (ITEMS[itemKey] && ITEMS[itemKey].sellValue > 0 && !ITEMS[itemKey].maxStack) {
-                    toRemove.push({ key: itemKey, value: ITEMS[itemKey].sellValue, type: 'item' });
-                } else if (WEAPONS[itemKey] && itemKey !== p.weapon && !WEAPONS[itemKey].unarmed) {
-                    const qIdx = QUALITY_ORDER.indexOf(WEAPONS[itemKey]?.quality || 'poor');
-                    if (qIdx <= thresholdIdx) toRemove.push({ key: itemKey, value: getSellValue(itemKey, 'weapon'), type: 'weapon', quality: WEAPONS[itemKey].quality });
-                } else if (ARMOR[itemKey] && itemKey !== p.armor && !ARMOR[itemKey].unarmored) {
-                    const qIdx = QUALITY_ORDER.indexOf(ARMOR[itemKey]?.quality || 'poor');
-                    if (qIdx <= thresholdIdx) toRemove.push({ key: itemKey, value: getSellValue(itemKey, 'armor'), type: 'armor', quality: ARMOR[itemKey].quality });
-                }
-            });
-
-            if (toRemove.length === 0) { showShopSell(); return; }
-
-            // Aggregate into display rows grouped by key+quality
-            const grouped = {};
-            toRemove.forEach(({ key, value, quality }) => {
-                const gk = quality ? `${key}__${quality}` : key;
-                if (!grouped[gk]) {
-                    const qLabel = quality && QUALITY_CONFIG[quality] ? ` [${QUALITY_CONFIG[quality].name}]` : '';
-                    grouped[gk] = { name: getItemName(key) + qLabel, count: 0, each: Math.floor(value * (1 + bonus/100)), total: 0 };
-                }
-                grouped[gk].count++;
-                grouped[gk].total += Math.floor(value * (1 + bonus/100));
-            });
-
-            const lines     = Object.values(grouped);
-            const totalGold = lines.reduce((s, l) => s + l.total, 0);
-
-            _showSellConfirm(lines, totalGold, () => {
-                let totalPaid = 0, totalItems = 0;
-                toRemove.forEach(({ key, value }) => {
-                    const idx = p.inventory.indexOf(key);
-                    if (idx !== -1) {
-                        p.inventory.splice(idx, 1);
-                        totalPaid += Math.floor(value * (1 + bonus/100));
-                        totalItems++;
-                    }
-                });
-                p.gold += totalPaid;
-                const bonusText = bonus > 0 ? ` (+${bonus}% CHA)` : '';
-                saveGame();
-                showShopSell();
-                const content = document.getElementById('shopContent');
-                if (content) {
-                    const msg = document.createElement('div');
-                    msg.style.cssText = 'background:#111;border:1px solid #ff8c00;color:#ff8c00;padding:6px 12px;font-size:15px;margin-bottom:10px;';
-                    msg.textContent = `Sold ${totalItems} item${totalItems!==1?'s':''} for ${totalPaid}g${bonusText}.`;
-                    content.prepend(msg);
-                    setTimeout(() => msg.remove(), 3000);
-                }
-            });
+        // ── Instance armor ────────────────────────────────────
+        else if (item && typeof item === 'object' && item.armorId) {
+            if (item.instanceId === p.armor) return; // equipped
+            const qIdx = QUALITY_ORDER.indexOf(item.quality || 'normal');
+            if (qIdx <= thresholdIdx) {
+                const base = ARMOR[item.armorId] || ARMOR[item.instanceId];
+                const name = base ? `${item.quality} ${base.name}` : item.instanceId;
+                toRemove.push({ item, index, name, value: getInstanceSellValue(item), isInstance: true });
+            }
         }
+        // ── String items (potions etc) ────────────────────────
+        else if (typeof item === 'string') {
+            if (ITEMS[item] && ITEMS[item].sellValue > 0 && !ITEMS[item].maxStack) {
+                toRemove.push({ item, index, name: ITEMS[item].name, value: ITEMS[item].sellValue, isInstance: false });
+            } else if (WEAPONS[item] && item !== p.weapon && !WEAPONS[item].unarmed) {
+                const qIdx = QUALITY_ORDER.indexOf(WEAPONS[item]?.quality || 'poor');
+                if (qIdx <= thresholdIdx) {
+                    toRemove.push({ item, index, name: WEAPONS[item].name, value: getSellValue(item, 'weapon'), isInstance: false });
+                }
+            } else if (ARMOR[item] && item !== p.armor && !ARMOR[item].unarmored) {
+                const qIdx = QUALITY_ORDER.indexOf(ARMOR[item]?.quality || 'poor');
+                if (qIdx <= thresholdIdx) {
+                    toRemove.push({ item, index, name: ARMOR[item].name, value: getSellValue(item, 'armor'), isInstance: false });
+                }
+            }
+        }
+    });
 
-        function sellItemGroup(key, value, count, type) {
+    if (toRemove.length === 0) { showShopSell(); return; }
+
+    // Build display lines
+    const lines = toRemove.map(r => ({
+        name: r.name,
+        count: 1,
+        each: Math.floor(r.value * (1 + bonus/100)),
+        total: Math.floor(r.value * (1 + bonus/100))
+    }));
+    const totalGold = lines.reduce((s, l) => s + l.total, 0);
+
+    _showSellConfirm(lines, totalGold, () => {
+        // Remove in reverse index order so splicing doesn't shift indices
+        const sortedByIndex = [...toRemove].sort((a, b) => b.index - a.index);
+        let totalPaid = 0;
+        sortedByIndex.forEach(r => {
+            const val = Math.floor(r.value * (1 + bonus/100));
+            // Verify item is still at that index
+            if (p.inventory[r.index] === r.item ||
+                (typeof r.item === 'object' && p.inventory[r.index]?.instanceId === r.item.instanceId)) {
+                p.inventory.splice(r.index, 1);
+                // Also remove from WEAPONS/ARMOR if instance
+                if (r.item && r.item.weaponId && r.item.instanceId) delete WEAPONS[r.item.instanceId];
+                if (r.item && r.item.armorId  && r.item.instanceId) delete ARMOR[r.item.instanceId];
+                totalPaid += val;
+            }
+        });
+        p.gold += totalPaid;
+        const bonusText = bonus > 0 ? ` (+${bonus}% CHA)` : '';
+        saveGame();
+        showShopSell();
+        const content = document.getElementById('shopContent');
+        if (content) {
+            const msg = document.createElement('div');
+            msg.style.cssText = 'background:#111;border:1px solid #ff8c00;color:#ff8c00;padding:6px 12px;font-size:15px;margin-bottom:10px;';
+            msg.textContent = `Sold ${toRemove.length} item${toRemove.length!==1?'s':''} for ${totalPaid}g${bonusText}.`;
+            content.prepend(msg);
+            setTimeout(() => msg.remove(), 3000);
+        }
+    });
+}
+
+function sellWeaponInstance(index) {
+    const p = gameState.player;
+    const item = p.inventory[index];
+    if (!item || typeof item !== 'object' || !item.weaponId) return;
+    const value = getInstanceSellValue(item);
+    p.inventory.splice(index, 1);
+    if (item.instanceId) delete WEAPONS[item.instanceId];
+    p.gold += value;
+    saveGame();
+    showShopSell();
+}
+
+function sellArmorInstance(index) {
+    const p = gameState.player;
+    const item = p.inventory[index];
+    if (!item || typeof item !== 'object' || !item.armorId) return;
+    const value = getInstanceSellValue(item);
+    p.inventory.splice(index, 1);
+    if (item.instanceId) delete ARMOR[item.instanceId];
+    p.gold += value;
+    saveGame();
+    showShopSell();
+}
+
+function confirmSellWeaponInstance(index, name, value) {
+    if (confirm(`Sell ${name} for ${value}g?`)) {
+        sellWeaponInstance(index);
+    }
+}
+
+function confirmSellArmorInstance(index, name, value) {
+    if (confirm(`Sell ${name} for ${value}g?`)) {
+        sellArmorInstance(index);
+    }
+}
+
+function sellGem(index) {
+    const p = gameState.player;
+    const item = p.inventory[index];
+    if (!item || typeof item !== 'object' || !item.cut) return;
+    p.inventory.splice(index, 1);
+    p.gold += 100;
+    saveGame();
+    showShopSell();
+}
+
+function confirmSellGem(index, name, value) {
+    if (confirm(`Sell ${name} for ${value}g?`)) {
+        sellGem(index);
+    }
+}
+
+function sellItemGroup(key, value, count, type) {
     const p = gameState.player;
     const bonus = calcChaSellBonus(p.cha);
     const unitValue = Math.floor(value * (1 + bonus/100));
-    const total = unitValue * count;
-    
     let name = '';
-    if (type === 'item') {
-        name = ITEMS[key]?.name || key;
-    } else if (type === 'weapon') {
-        name = WEAPONS[key]?.name || key;
-    } else if (type === 'armor') {
-        name = ARMOR[key]?.name || key;
-    }
-    
+    if (type === 'item')   name = ITEMS[key]?.name  || key;
+    if (type === 'weapon') name = WEAPONS[key]?.name || key;
+    if (type === 'armor')  name = ARMOR[key]?.name   || key;
+
     let removed = 0;
     for (let i = p.inventory.length - 1; i >= 0 && removed < count; i--) {
-        if (type === 'item' && p.inventory[i] === key) {
-            p.inventory.splice(i, 1);
-            removed++;
-        } else if (type === 'weapon' && p.inventory[i] === key) {
-            p.inventory.splice(i, 1);
-            removed++;
-        } else if (type === 'armor' && p.inventory[i] === key) {
+        if (p.inventory[i] === key) {
             p.inventory.splice(i, 1);
             removed++;
         }
     }
-    
     if (removed === 0) return;
-    
+
     const totalValue = unitValue * removed;
     p.gold += totalValue;
-    
     const bonusText = bonus > 0 ? ` (+${bonus}% CHA)` : '';
-    
-    // Show success message
+
+    saveGame();
+    showShopSell();
+
     const content = document.getElementById('shopContent');
     if (content) {
         const msg = document.createElement('div');
@@ -14738,225 +15122,188 @@ function sellGem(index) {
         content.prepend(msg);
         setTimeout(() => msg.remove(), 2500);
     }
-    
-    saveGame();
-    showShopSell();
 }
-        function showSellQuantityPrompt(itemKey, unitPrice, totalCount) {
-            // Legacy path — routes through sell confirmation
-            sellItem(itemKey, unitPrice, totalCount);
-        }
 
-        function sellItem(itemKey, baseValue, quantity = 1) {
-            const p = gameState.player;
-            const bonus     = calcChaSellBonus(p.cha);
-            const unitValue = Math.floor(baseValue * (1 + bonus/100));
-            const total     = unitValue * quantity;
-            const name      = getItemName(itemKey);
-
-            _showSellConfirm(
-                [{ name, count: quantity, each: unitValue, total }],
-                total,
-                () => {
-                    let removed = 0;
-                    for (let i = p.inventory.length - 1; i >= 0 && removed < quantity; i--) {
-                        if (p.inventory[i] === itemKey) { p.inventory.splice(i, 1); removed++; }
-                    }
-                    if (removed === 0) return;
-                    const totalValue = unitValue * removed;
-                    p.gold += totalValue;
-                    saveGame();
-                    showShopSell();
-                    const content = document.getElementById('shopContent');
-                    if (content) {
-                        const msg = document.createElement('div');
-                        msg.style.cssText = 'background:#111;border:1px solid #4a9a4a;color:#4a9a4a;padding:6px 12px;font-size:15px;margin-bottom:10px;';
-                        msg.textContent = `Sold ${removed > 1 ? removed+'x ' : ''}${name} for ${totalValue}g.`;
-                        content.prepend(msg);
-                        setTimeout(() => msg.remove(), 2500);
-                    }
-                }
-            );
-        }
-
-        // ── Sell confirmation modal ──────────────────────────────────────────
-        // Reuses #shopConfirmModal with its existing ids: scmItemName, scmItemCost
-        // lines: [{ name, count, each, total }, ...]
-        function _showSellConfirm(lines, totalGold, onConfirm) {
-            const modal = document.getElementById('shopConfirmModal');
-            if (!modal) { onConfirm(); return; }
-
-            const bonus = calcChaSellBonus(gameState.player.cha);
-            const bonusText = bonus > 0 ? ` <span style="color:#aaa;font-size:14px;">(+${bonus}% CHA)</span>` : '';
-
-            // Build itemized list HTML
-            const rowsHtml = lines.map(l =>
-                `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #1a1a1a;font-size:17px;">
-                    <span style="color:#ccc;">${l.count > 1 ? l.count+'x ' : ''}${l.name}</span>
-                    <span style="color:#ff8c00;">${l.total}g${l.count > 1 ? '<span style="color:#555;font-size:13px;"> ('+l.each+'ea)</span>' : ''}</span>
-                </div>`
-            ).join('');
-
-            // Populate the modal's existing elements
-            document.getElementById('scmItemName').innerHTML = rowsHtml;
-            document.getElementById('scmItemCost').innerHTML =
-                'Total: <span>' + totalGold + 'g</span>' + bonusText;
-
-            // Switch modal to sell mode
-            const titleEl = modal.querySelector('.scm-title');
-            if (titleEl) titleEl.innerHTML = '💰 CONFIRM SALE';
-            const confirmBtn = modal.querySelector('.scm-btn-confirm');
-            if (confirmBtn) confirmBtn.innerHTML = '✔ SELL IT';
-
-            // Store callback and open
-            window._pendingSell = onConfirm;
-            modal.classList.add('open');
-        }
-
-
-function confirmSellWeaponInstance(index, name, value) {
-    if (confirm(`Sell ${name} for ${value}g?`)) {
-        sellWeaponInstance(index);
+function confirmSellItemGroup(key, value, count, type) {
+    const p = gameState.player;
+    const bonus = calcChaSellBonus(p.cha);
+    const unitValue = Math.floor(value * (1 + bonus/100));
+    const total = unitValue * count;
+    let name = '';
+    if (type === 'item')   name = ITEMS[key]?.name  || key;
+    if (type === 'weapon') name = WEAPONS[key]?.name || key;
+    if (type === 'armor')  name = ARMOR[key]?.name   || key;
+    const message = count > 1 ? `Sell ${count}x ${name} for ${total}g?` : `Sell ${name} for ${value}g?`;
+    if (confirm(message)) {
+        sellItemGroup(key, value, count, type);
     }
 }
 
-// Add this with your other confirmation functions
-function confirmSellArmorInstance(index, name, value) {
-    if (confirm(`Sell ${name} for ${value}g?`)) {
-        sellArmorInstance(index);
-    }
+function showSellQuantityPrompt(itemKey, unitPrice, totalCount) {
+    sellItem(itemKey, unitPrice, totalCount);
 }
 
+function sellItem(itemKey, baseValue, quantity = 1) {
+    const p = gameState.player;
+    const bonus     = calcChaSellBonus(p.cha);
+    const unitValue = Math.floor(baseValue * (1 + bonus/100));
+    const total     = unitValue * quantity;
+    const name      = getItemName(itemKey);
 
-        // ── Shop confirmation modal helpers ──────────────────────────────────
-        function closeShopConfirm() {
-            const modal = document.getElementById('shopConfirmModal');
-            if (modal) {
-                modal.classList.remove('open');
-                // Reset back to buy mode for next open
-                const titleEl = modal.querySelector('.scm-title');
-                if (titleEl) titleEl.innerHTML = '⚔️ CONFIRM PURCHASE';
-                const confirmBtn = modal.querySelector('.scm-btn-confirm');
-                if (confirmBtn) confirmBtn.innerHTML = '✔ BUY IT';
+    _showSellConfirm(
+        [{ name, count: quantity, each: unitValue, total }],
+        total,
+        () => {
+            let removed = 0;
+            for (let i = p.inventory.length - 1; i >= 0 && removed < quantity; i--) {
+                if (p.inventory[i] === itemKey) { p.inventory.splice(i, 1); removed++; }
             }
-            window._pendingPurchase = null;
-            window._pendingSell     = null;
-        }
-
-        function _confirmPurchase() {
-            // Handles both buy and sell confirmations via _pendingSell / _pendingPurchase
-            if (window._pendingSell) {
-                const fn = window._pendingSell;
-                window._pendingSell = null;
-                closeShopConfirm();
-                fn();
-                return;
-            }
-            const p = window._pendingPurchase;
-            if (!p) return;
-            closeShopConfirm();
-            _executeBuy(p.type, p.key, p.cost, p.itemName, p.disc);
-        }
-
-
-        function buyItem(type, key, baseCost) {
-            const p = gameState.player;
-            const playerClass = p.baseClass || p.class;
-
-            // Recall potion: only one allowed at a time
-            if (key === 'recall_potion' && p.inventory.includes('recall_potion')) {
-                alert('You already carry a Recall Potion.\nYou can only hold one at a time.');
-                return;
-            }
-
-            // Enforce maxStack limit (potions: 10 each)
-            const _itemDef = ITEMS[key];
-            if (_itemDef && _itemDef.maxStack) {
-                const _held = p.inventory.filter(k => k === key).length;
-                if (_held >= _itemDef.maxStack) {
-                    alert(`You are already carrying the maximum (${_itemDef.maxStack}) of ${_itemDef.name}.`);
-                    return;
-                }
-            }
-
-            // Validate class restrictions
-            if (type === 'weapon') {
-                const weapon = WEAPONS[key];
-                if (!canUseWeapon(playerClass, weapon)) {
-                    alert(`Your class (${playerClass}) cannot use ${weapon.name}!`);
-                    return;
-                }
-                if (weapon.level > p.level) {
-                    alert(`You must be level ${weapon.level} to buy ${weapon.name}!`);
-                    return;
-                }
-            } else if (type === 'armor') {
-                const armor = ARMOR[key];
-                if (!canUseArmor(playerClass, armor)) {
-                    alert(`Your class (${playerClass}) cannot use ${armor.name}!`);
-                    return;
-                }
-                if (armor.level > p.level) {
-                    alert(`You must be level ${armor.level} to buy ${armor.name}!`);
-                    return;
-                }
-            }
-
-            const disc = calcChaDiscount(p.cha);
-            const cost = Math.max(1, Math.floor(baseCost * (1 - disc/100)));
-
-            if (p.gold < cost) {
-                alert('Not enough gold!');
-                return;
-            }
-
-            // Resolve item name
-            let itemName;
-            if (type === 'weapon') itemName = WEAPONS[key].name;
-            else if (type === 'armor') itemName = ARMOR[key].name;
-            else if (type === 'item') itemName = ITEMS[key] ? ITEMS[key].name : key;
-
-            // Stash purchase data for _confirmPurchase() to retrieve
-            window._pendingPurchase = { type, key, cost, itemName, disc };
-
-            const modal  = document.getElementById('shopConfirmModal');
-            const nameEl = document.getElementById('scmItemName');
-            const costEl = document.getElementById('scmItemCost');
-            if (!modal) { _executeBuy(type, key, cost, itemName, disc); return; }
-
-            nameEl.textContent = itemName;
-            costEl.innerHTML = 'Cost: <span>' + cost.toLocaleString() + 'g</span>'
-                + (disc > 0 ? ' <span style="color:#88ff88;font-size:13px;">(' + disc + '% discount)</span>' : '')
-                + '<br><span style="font-size:13px;color:#888;">You have: ' + p.gold.toLocaleString() + 'g</span>';
-
-            modal.classList.add('open');
-            localSave();
-        }
-
-        function _executeBuy(type, key, cost, itemName, disc) {
-            const p = gameState.player;
-            p.gold -= cost;
-            haptic('buy');
-            p.inventory.push(key);
+            if (removed === 0) return;
+            const totalValue = unitValue * removed;
+            p.gold += totalValue;
             saveGame();
-            if (typeof updateHud === 'function') updateHud();
-            showShopBuy();
-        }
-
-        function restAtInn() {
-            const cost = calcInnCost(gameState.player.cha);
-            if (gameState.player.gold < cost) {
-                alert('Not enough gold!');
-                return;
+            showShopSell();
+            const content = document.getElementById('shopContent');
+            if (content) {
+                const msg = document.createElement('div');
+                msg.style.cssText = 'background:#111;border:1px solid #4a9a4a;color:#4a9a4a;padding:6px 12px;font-size:15px;margin-bottom:10px;';
+                msg.textContent = `Sold ${removed > 1 ? removed+'x ' : ''}${name} for ${totalValue}g.`;
+                content.prepend(msg);
+                setTimeout(() => msg.remove(), 2500);
             }
-            gameState.player.gold -= cost;
-            haptic('buy');
-            gameState.player.hp = gameState.player.maxHp;
-            gameState.player.mp = gameState.player.maxMp;
-            alert('You rest at the inn and recover fully!');
-            showTown();
         }
+    );
+}
 
+function _showSellConfirm(lines, totalGold, onConfirm) {
+    const modal = document.getElementById('shopConfirmModal');
+    if (!modal) { onConfirm(); return; }
+
+    const bonus = calcChaSellBonus(gameState.player.cha);
+    const bonusText = bonus > 0 ? ` <span style="color:#aaa;font-size:14px;">(+${bonus}% CHA)</span>` : '';
+
+    const rowsHtml = lines.map(l =>
+        `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #1a1a1a;font-size:17px;">
+            <span style="color:#ccc;">${l.count > 1 ? l.count+'x ' : ''}${l.name}</span>
+            <span style="color:#ff8c00;">${l.total}g${l.count > 1 ? '<span style="color:#555;font-size:13px;"> ('+l.each+'ea)</span>' : ''}</span>
+        </div>`
+    ).join('');
+
+    document.getElementById('scmItemName').innerHTML = rowsHtml;
+    document.getElementById('scmItemCost').innerHTML =
+        'Total: <span>' + totalGold + 'g</span>' + bonusText;
+
+    const titleEl = modal.querySelector('.scm-title');
+    if (titleEl) titleEl.innerHTML = '💰 CONFIRM SALE';
+    const confirmBtn = modal.querySelector('.scm-btn-confirm');
+    if (confirmBtn) confirmBtn.innerHTML = '✔ SELL IT';
+
+    window._pendingSell = onConfirm;
+    modal.classList.add('open');
+}
+
+function closeShopConfirm() {
+    const modal = document.getElementById('shopConfirmModal');
+    if (modal) {
+        modal.classList.remove('open');
+        const titleEl = modal.querySelector('.scm-title');
+        if (titleEl) titleEl.innerHTML = '⚔️ CONFIRM PURCHASE';
+        const confirmBtn = modal.querySelector('.scm-btn-confirm');
+        if (confirmBtn) confirmBtn.innerHTML = '✔ BUY IT';
+    }
+    window._pendingPurchase = null;
+    window._pendingSell     = null;
+}
+
+function _confirmPurchase() {
+    if (window._pendingSell) {
+        const fn = window._pendingSell;
+        window._pendingSell = null;
+        closeShopConfirm();
+        fn();
+        return;
+    }
+    const p = window._pendingPurchase;
+    if (!p) return;
+    closeShopConfirm();
+    _executeBuy(p.type, p.key, p.cost, p.itemName, p.disc);
+}
+
+function buyItem(type, key, baseCost) {
+    const p = gameState.player;
+    const playerClass = p.baseClass || p.class;
+
+    if (key === 'recall_potion' && p.inventory.includes('recall_potion')) {
+        alert('You already carry a Recall Potion.\nYou can only hold one at a time.');
+        return;
+    }
+
+    const _itemDef = ITEMS[key];
+    if (_itemDef && _itemDef.maxStack) {
+        const _held = p.inventory.filter(k => k === key).length;
+        if (_held >= _itemDef.maxStack) {
+            alert(`You are already carrying the maximum (${_itemDef.maxStack}) of ${_itemDef.name}.`);
+            return;
+        }
+    }
+
+    if (type === 'weapon') {
+        const weapon = WEAPONS[key];
+        if (!canUseWeapon(playerClass, weapon)) {
+            alert(`Your class (${playerClass}) cannot use ${weapon.name}!`);
+            return;
+        }
+        if (weapon.level > p.level) {
+            alert(`You must be level ${weapon.level} to buy ${weapon.name}!`);
+            return;
+        }
+    } else if (type === 'armor') {
+        const armor = ARMOR[key];
+        if (!canUseArmor(playerClass, armor)) {
+            alert(`Your class (${playerClass}) cannot use ${armor.name}!`);
+            return;
+        }
+        if (armor.level > p.level) {
+            alert(`You must be level ${armor.level} to buy ${armor.name}!`);
+            return;
+        }
+    }
+
+    const disc = calcChaDiscount(p.cha);
+    const cost = Math.max(1, Math.floor(baseCost * (1 - disc/100)));
+
+    if (p.gold < cost) { alert('Not enough gold!'); return; }
+
+    let itemName;
+    if (type === 'weapon') itemName = WEAPONS[key].name;
+    else if (type === 'armor') itemName = ARMOR[key].name;
+    else if (type === 'item') itemName = ITEMS[key] ? ITEMS[key].name : key;
+
+    window._pendingPurchase = { type, key, cost, itemName, disc };
+
+    const modal  = document.getElementById('shopConfirmModal');
+    const nameEl = document.getElementById('scmItemName');
+    const costEl = document.getElementById('scmItemCost');
+    if (!modal) { _executeBuy(type, key, cost, itemName, disc); return; }
+
+    nameEl.textContent = itemName;
+    costEl.innerHTML = 'Cost: <span>' + cost.toLocaleString() + 'g</span>'
+        + (disc > 0 ? ' <span style="color:#88ff88;font-size:13px;">(' + disc + '% discount)</span>' : '')
+        + '<br><span style="font-size:13px;color:#888;">You have: ' + p.gold.toLocaleString() + 'g</span>';
+
+    modal.classList.add('open');
+    localSave();
+}
+
+function _executeBuy(type, key, cost, itemName, disc) {
+    const p = gameState.player;
+    p.gold -= cost;
+    haptic('buy');
+    p.inventory.push(key);
+    saveGame();
+    if (typeof updateHud === 'function') updateHud();
+    renderShop('buy', 'weapons', 'all', 'near');
+}
         function showInventory() {
     checkGameVersion();
     const p = gameState.player;
@@ -17930,6 +18277,7 @@ function showInventoryOverlay() {
 
     const existing = document.getElementById('dungeonInvOverlay');
     if (existing) existing.remove();
+    
     const overlay = document.createElement('div');
     overlay.id = 'dungeonInvOverlay';
     overlay.innerHTML = html;
@@ -23639,45 +23987,43 @@ function showBlacksmith(subview, subview_target) {
                 </div>`;
         }
 
-        function armorSocketCard() {
-            if (!armorData) {
-                return `<div style="color:#555;font-size:13px;padding:8px;border:1px solid #333;background:#0a0a0a;">
-                    No armor equipped.
+function armorSocketCard() {
+    if (!armorData) {
+        return `<div style="color:#555;font-size:13px;padding:8px;border:1px solid #333;background:#0a0a0a;">
+            No armor equipped.
+        </div>`;
+    }
+    const slots = getGemSlots(armorDisplayQuality);
+    const usedSlots = (armorData.gems || []).length;
+    let slotsHtml = '';
+    if (slots === 0) {
+        slotsHtml = `<span style="color:#555;font-size:11px;">No gem slots</span>`;
+    } else {
+        for (let i = 0; i < slots; i++) {
+            const gem = (armorData.gems || [])[i];
+            if (gem) {
+                slotsHtml += `<div style="margin:4px 0; padding:2px 0; border-bottom:1px solid #222;">
+                    <span style="color:${gem.color};">⬤ ${gem.emoji} ${gem.name}</span><br>
+                    <span style="color:#888;font-size:11px; margin-left:15px;">${gem.description}</span>
                 </div>`;
-            }
-            const slots = getGemSlots(armorDisplayQuality);
-            const usedSlots = (armorData.gems || []).length;
-            const active = socketTarget === 'armor';
-            let slotsHtml = '';
-            if (slots === 0) {
-                slotsHtml = `<span style="color:#555;font-size:11px;">No gem slots (need rare+ quality drop)</span>`;
             } else {
-                for (let i = 0; i < slots; i++) {
-                    const gem = (armorData.gems || [])[i];
-                    if (gem) {
-                        slotsHtml += `<div style="margin:4px 0; padding:2px 0; border-bottom:1px solid #222;">
-                            <span style="color:${gem.color};">⬤ ${gem.emoji} ${gem.name}</span><br>
-                            <span style="color:#888;font-size:11px; margin-left:15px;">${gem.description}</span>
-                        </div>`;
-                    } else {
-                        slotsHtml += `<div style="margin:4px 0; color:#666; padding:2px 0;">⬤ EMPTY SLOT ${i+1}</div>`;
-                    }
-                }
+                slotsHtml += `<div style="margin:4px 0; color:#333; padding:2px 0;">⬤ EMPTY SLOT ${i+1}</div>`;
             }
-            return `<div style="padding:10px 16px;border:2px solid ${active ? armorQualityColor : '#333'};margin:6px 0;cursor:pointer;background:#0a0a0a;"
-                        onclick="showBlacksmith('socket','armor')">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <span style="color:${armorQualityColor}; font-size:15px; font-weight:bold;">🛡️</span>
-                            <span style="color:${armorQualityColor};"> ${armorName}</span>
-                            <span style="color:#888; font-size:11px; margin-left:8px;">[${armorDisplayQuality}]</span>
-                        </div>
-                        ${active ? '<span style="color:#c8a000; font-size:12px;">▼ SELECTED</span>' : ''}
-                    </div>
-                    <div style="font-size:12px; color:#aaa; margin-top:6px;">Slots: ${usedSlots}/${slots} used</div>
-                    <div style="margin-top:8px; font-size:12px;">${slotsHtml}</div>
-                </div>`;
         }
+    }
+    return `<div style="padding:10px 16px;border:2px solid #1a1a1a;margin:6px 0;background:#0a0a0a;opacity:0.55;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <span style="color:#444; font-size:15px; font-weight:bold;">🛡️</span>
+                <span style="color:#444;"> ${armorName}</span>
+                <span style="color:#333; font-size:11px; margin-left:8px;">[${armorDisplayQuality}]</span>
+            </div>
+            <span style="color:#333;font-size:10px;font-family:'Courier New',monospace;">COMING SOON</span>
+        </div>
+        <div style="font-size:12px; color:#333; margin-top:6px;">Slots: ${usedSlots}/${slots} used</div>
+        <div style="margin-top:8px; font-size:12px;">${slotsHtml}</div>
+    </div>`;
+}
 
         const activeItem = socketTarget === 'armor' ? armorData : weaponData;
         const activeQuality = socketTarget === 'armor' ? armorDisplayQuality : weaponDisplayQuality;
@@ -23984,116 +24330,174 @@ function doSocketGem(cutGemInventoryIndex, target) {
         // ═══════════════════════════════════════════════════════════════
         
         function showSpellShop() {
-            const p = gameState.player;
-            const screen = document.getElementById('mainScreen');
-            
-            // Get class spell tree
-            const classKey = p.baseClass || p.class;
-            const spellTree = CLASS_SPELL_TREES[classKey];
-            
-            if (!spellTree) {
-                screen.innerHTML = `
-                    <div class="location-header">📖 SPELL TRAINING</div>
-                    ${renderPlayerStats()}
-                    <div class="message" style="border-color:var(--error-color);">
-                        <p>Your class (${classKey}) does not have spell training available.</p>
-                    </div>
-                    <button onclick="showTemple()">← BACK TO TEMPLE</button>
-                `;
-                return;
-            }
-            
-            // Build spell lists
-            const availableSpells = [];   // can learn now
-            const upcomingSpells  = [];   // locked by level (but prereq met or no prereq)
-            const currentSpells   = [];   // already known
+    const p = gameState.player;
+    const screen = document.getElementById('mainScreen');
+    
+    const classKey = p.baseClass || p.class;
+    const spellTree = CLASS_SPELL_TREES[classKey];
+    
+    if (!spellTree) {
+        screen.innerHTML = `
+            <div class="location-header">📖 SPELL TRAINING</div>
+            ${renderPlayerStats()}
+            <div class="message" style="border-color:var(--error-color);">
+                <p>Your class (${classKey}) does not have spell training available.</p>
+            </div>
+            <button onclick="showTemple()">← BACK TO TEMPLE</button>
+        `;
+        return;
+    }
+    
+    // Build spell lists
+    const availableSpells = [];   // can learn now
+    const upcomingSpells  = [];   // locked by level
+    const currentSpells   = [];   // already known
 
-            Object.entries(spellTree.spellTree).forEach(([key, spell]) => {
-                const hasSpell       = p.knownSpells.includes(key);
-                const levelReq       = p.level >= spell.level;
-                const meetsReq       = !spell.requires || p.knownSpells.includes(spell.requires);
-                const canAfford      = p.gold >= spell.cost;
-
-                // Check if this spell has already been superseded — i.e. the player knows
-                // a spell that lists this one as its 'requires' (meaning they skipped past it).
-                const alreadySuperseded = Object.values(spellTree.spellTree).some(
-                    s => s.requires === key && p.knownSpells.includes(s.requires === key ? s.requires : null)
-                ) || p.knownSpells.some(known => {
-                    const knownSpell = spellTree.spellTree[known];
-                    return knownSpell && knownSpell.requires === key;
-                });
-
-                if (hasSpell) {
-                    currentSpells.push({ key, spell });
-                } else if (!alreadySuperseded && levelReq && meetsReq) {
-                    availableSpells.push({ key, spell, canAfford });
-                } else if (!hasSpell && !levelReq && meetsReq && !alreadySuperseded) {
-                    // Coming soon — player hasn't reached the level yet
-                    upcomingSpells.push({ key, spell });
-                }
-            });
-            
-            let html = `
-                <div class="location-header">📖 SPELL TRAINING</div>
-                <button onclick="showTemple()" style="margin-bottom:10px;">← BACK</button>
-                ${renderPlayerStats()}
-                
-                <div class="message">
-                    <p style="color:var(--highlight-color);"><strong>The priests offer to teach you the sacred arts</strong></p>
-                    <p style="color:#8aaa8a;">Learn new spells or upgrade existing ones</p>
-                </div>
-            `;
-            
-            // Show current spells
-            if (currentSpells.length > 0) {
-                html += `<div class="message" style="border-color:#00FF00;"><h3 style="color:#00FF00;">Your Known Spells</h3>`;
-                currentSpells.forEach(({ key, spell }) => {
-                    const typeColor = spell.type === 'heal' || spell.type === 'lifesteal' ? '#00FF00' : '#FF6666';
-                    const typeIcon = spell.type === 'heal' ? '💚' : spell.type === 'lifesteal' ? '🩸' : spell.type === 'aoe_damage' ? '🔥' : '💥';
-                    const lifestealInfo = spell.lifestealPercent ? ` (${spell.lifestealPercent}%)` : '';
-                    const aoeTag = spell.type === 'aoe_damage' ? ' <span style="color:#FF8800;">[AOE]</span>' : '';
-                    const powerDisplay = spell.minPower !== undefined ? `${spell.minPower}–${spell.maxPower}` : '?';
-                    html += `<p>${typeIcon} <strong>${spell.name}${aoeTag}</strong> - <span style="color:${typeColor};">${powerDisplay} ${spell.type === 'heal' ? 'HP' : 'DMG'}${lifestealInfo}</span> (${spell.mpCost} MP)${spell.upgradesTo ? `<br><span style="color:#FFD700;font-size:12px;">→ Upgrade available</span>` : ''}</p>`;
-                });
-                html += `</div>`;
-            }
-            
-            // Show available spells
-            if (availableSpells.length > 0) {
-                html += `<div class="message" style="border-color:#FFD700;"><h3 style="color:#FFD700;">Available Training</h3>`;
-                availableSpells.forEach(({ key, spell, canAfford }) => {
-                    const typeColor = spell.type === 'heal' || spell.type === 'lifesteal' ? '#00FF00' : '#FF6666';
-                    const typeIcon = spell.type === 'heal' ? '💚' : spell.type === 'lifesteal' ? '🩸' : spell.type === 'aoe_damage' ? '🔥' : '💥';
-                    const lifestealInfo = spell.lifestealPercent ? ` (${spell.lifestealPercent}% lifesteal)` : '';
-                    const aoeTag = spell.type === 'aoe_damage' ? ' <span style="color:#FF8800;">[AOE]</span>' : '';
-                    const isUpgrade = spell.requires && p.knownSpells.includes(spell.requires);
-                    
-                    const powerDisplay2 = spell.minPower !== undefined ? `${spell.minPower}–${spell.maxPower}` : '?';
-                    html += `<div style="margin:10px 0;padding:10px;border:1px solid ${canAfford ? '#FFD700' : '#666'};"><p>${typeIcon} <strong style="color:${typeColor};">${spell.name}${aoeTag}</strong> ${isUpgrade ? '(Upgrade)' : '(New)'}<br><span style="font-size:12px;">${spell.description}</span><br><span style="color:${typeColor};">${powerDisplay2} ${spell.type === 'heal' ? 'HP' : 'DMG'}${lifestealInfo}</span> | ${spell.mpCost} MP | Level ${spell.level}<br><span style="color:#FFD700;">Cost: ${spell.cost}g</span></p>${canAfford ? `<button onclick="learnSpell('${key}')" style="border-color:#FFD700;">💰 Learn (${spell.cost}g)</button>` : `<button disabled style="opacity:0.5;">Need ${spell.cost - p.gold}g more</button>`}</div>`;
-                });
-                html += `</div>`;
-            } else {
-                html += `<div class="message"><p style="color:#888;">No new spells available at your level.</p></div>`;
-            }
-
-            // Show upcoming locked spells
-            if (upcomingSpells.length > 0) {
-                html += `<div class="message" style="border-color:#444;"><h3 style="color:#888;">Coming Soon</h3>`;
-                upcomingSpells.forEach(({ key, spell }) => {
-                    const typeIcon = spell.type === 'heal' ? '💚' : spell.type === 'lifesteal' ? '🩸' : spell.type === 'aoe_damage' ? '🔥' : '💥';
-                    const aoeTag = spell.type === 'aoe_damage' ? ' <span style="color:#664400;">[AOE]</span>' : '';
-                    html += `<div style="margin:8px 0;padding:8px;border:1px solid #333;opacity:0.6;">
-                        <p>${typeIcon} <strong style="color:#666;">${spell.name}${aoeTag}</strong> — Unlocks at <span style="color:#888;">Level ${spell.level}</span><br>
-                        <span style="font-size:12px;color:#555;">${spell.description}</span><br>
-                        <span style="color:#666;">${spell.mpCost} MP | Cost: ${spell.cost}g</span></p>
-                    </div>`;
-                });
-                html += `</div>`;
-            }
-            
-            html += `<button onclick="showTemple()">← BACK</button>`;
-            screen.innerHTML = html;
+    // For each spell in the tree, determine if it's available as an UPGRADE
+    Object.entries(spellTree.spellTree).forEach(([key, spell]) => {
+        const hasSpell = p.knownSpells.includes(key);
+        
+        if (hasSpell) {
+            // Player already has this spell
+            currentSpells.push({ key, spell });
+            return;
         }
+        
+        // Check if this spell can be learned (it's the NEXT spell in the chain)
+        let canLearn = false;
+        let requiredSpell = null;
+        
+        // If this spell has a requirement
+        if (spell.requires) {
+            // Check if player has the required spell AND no higher version yet
+            if (p.knownSpells.includes(spell.requires)) {
+                // They have the required spell - this is the NEXT upgrade
+                canLearn = true;
+                requiredSpell = spell.requires;
+            }
+        } else {
+            // No requirement - it's a starting spell. Only show if they don't have ANY spells?
+            // Actually, starting spells should only be available if they have no spells yet
+            if (p.knownSpells.length === 0) {
+                canLearn = true;
+            }
+        }
+        
+        // Also check if they already have a HIGHER version (skip if they do)
+        let hasHigherVersion = false;
+        for (const known of p.knownSpells) {
+            const knownSpell = spellTree.spellTree[known];
+            if (knownSpell && knownSpell.requires === key) {
+                hasHigherVersion = true;
+                break;
+            }
+        }
+        
+        if (hasHigherVersion) {
+            return; // Skip - they already upgraded past this
+        }
+        
+        if (canLearn && !hasHigherVersion) {
+            const levelReq = p.level >= spell.level;
+            const canAfford = p.gold >= spell.cost;
+            
+            if (levelReq) {
+                availableSpells.push({ key, spell, canAfford, requiredSpell });
+            } else {
+                upcomingSpells.push({ key, spell, requiredSpell });
+            }
+        }
+    });
+    
+    let html = `
+        <div class="location-header">📖 SPELL TRAINING</div>
+        <button onclick="showTemple()" style="margin-bottom:10px;">← BACK</button>
+        ${renderPlayerStats()}
+        
+        <div class="message">
+            <p style="color:var(--highlight-color);"><strong>The priests offer to teach you the sacred arts</strong></p>
+            <p style="color:#8aaa8a;">Learn new spells or upgrade existing ones</p>
+        </div>
+    `;
+    
+    // Show current spells
+    if (currentSpells.length > 0) {
+        html += `<div class="message" style="border-color:#00FF00;"><h3 style="color:#00FF00;">Your Known Spells</h3>`;
+        currentSpells.forEach(({ key, spell }) => {
+            const typeColor = spell.type === 'heal' || spell.type === 'lifesteal' ? '#00FF00' : '#FF6666';
+            const typeIcon = spell.type === 'heal' ? '💚' : spell.type === 'lifesteal' ? '🩸' : spell.type === 'aoe_damage' ? '🔥' : '💥';
+            const lifestealInfo = spell.lifestealPercent ? ` (${spell.lifestealPercent}%)` : '';
+            const aoeTag = spell.type === 'aoe_damage' ? ' <span style="color:#FF8800;">[AOE]</span>' : '';
+            const powerDisplay = spell.minPower !== undefined ? `${spell.minPower}–${spell.maxPower}` : '?';
+            
+            // Check if there's an upgrade available
+            let upgradeInfo = '';
+            if (spell.upgradesTo) {
+                const upgradeSpell = spellTree.spellTree[spell.upgradesTo];
+                if (upgradeSpell) {
+                    if (p.level >= upgradeSpell.level) {
+                        upgradeInfo = `<br><span style="color:#FFD700;font-size:12px;">→ Upgrade available at Temple!</span>`;
+                    } else {
+                        upgradeInfo = `<br><span style="color:#555;font-size:12px;">→ Upgrade unlocks at Lv ${upgradeSpell.level}</span>`;
+                    }
+                }
+            }
+            
+            html += `<p>${typeIcon} <strong>${spell.name}${aoeTag}</strong> - <span style="color:${typeColor};">${powerDisplay} ${spell.type === 'heal' ? 'HP' : 'DMG'}${lifestealInfo}</span> (${spell.mpCost} MP)${upgradeInfo}</p>`;
+        });
+        html += `</div>`;
+    }
+    
+    // Show available spells (UPGRADES)
+    if (availableSpells.length > 0) {
+        html += `<div class="message" style="border-color:#FFD700;"><h3 style="color:#FFD700;">Available Upgrades</h3>`;
+        availableSpells.forEach(({ key, spell, canAfford, requiredSpell }) => {
+            const typeColor = spell.type === 'heal' || spell.type === 'lifesteal' ? '#00FF00' : '#FF6666';
+            const typeIcon = spell.type === 'heal' ? '💚' : spell.type === 'lifesteal' ? '🩸' : spell.type === 'aoe_damage' ? '🔥' : '💥';
+            const lifestealInfo = spell.lifestealPercent ? ` (${spell.lifestealPercent}% lifesteal)` : '';
+            const aoeTag = spell.type === 'aoe_damage' ? ' <span style="color:#FF8800;">[AOE]</span>' : '';
+            const powerDisplay = spell.minPower !== undefined ? `${spell.minPower}–${spell.maxPower}` : '?';
+            
+            // Get the name of the spell this upgrades from
+            const oldSpell = spellTree.spellTree[requiredSpell];
+            const upgradeText = oldSpell ? `Upgrade: ${oldSpell.name} → ${spell.name}` : 'New Spell';
+            
+            html += `<div style="margin:10px 0;padding:10px;border:1px solid ${canAfford ? '#FFD700' : '#666'};">
+                <p>${typeIcon} <strong style="color:${typeColor};">${spell.name}${aoeTag}</strong><br>
+                <span style="font-size:12px;">${upgradeText}</span><br>
+                <span style="font-size:12px;">${spell.description}</span><br>
+                <span style="color:${typeColor};">${powerDisplay} ${spell.type === 'heal' ? 'HP' : 'DMG'}${lifestealInfo}</span> | ${spell.mpCost} MP | Requires Level ${spell.level}<br>
+                <span style="color:#FFD700;">Cost: ${spell.cost}g</span></p>
+                ${canAfford ? `<button onclick="learnSpell('${key}')" style="border-color:#FFD700;">💰 Upgrade (${spell.cost}g)</button>` : `<button disabled style="opacity:0.5;">Need ${spell.cost - p.gold}g more</button>`}
+            </div>`;
+        });
+        html += `</div>`;
+    } else {
+        html += `<div class="message"><p style="color:#888;">No upgrades available at your level.</p></div>`;
+    }
+
+    // Show upcoming locked upgrades
+    if (upcomingSpells.length > 0) {
+        html += `<div class="message" style="border-color:#444;"><h3 style="color:#888;">Coming Soon</h3>`;
+        upcomingSpells.forEach(({ key, spell, requiredSpell }) => {
+            const typeIcon = spell.type === 'heal' ? '💚' : spell.type === 'lifesteal' ? '🩸' : spell.type === 'aoe_damage' ? '🔥' : '💥';
+            const aoeTag = spell.type === 'aoe_damage' ? ' <span style="color:#664400;">[AOE]</span>' : '';
+            const oldSpell = spellTree.spellTree[requiredSpell];
+            const upgradeText = oldSpell ? `Upgrade: ${oldSpell.name} → ${spell.name}` : 'New Spell';
+            
+            html += `<div style="margin:8px 0;padding:8px;border:1px solid #333;opacity:0.6;">
+                <p>${typeIcon} <strong style="color:#666;">${spell.name}${aoeTag}</strong><br>
+                <span style="font-size:12px;color:#777;">${upgradeText}</span><br>
+                <span style="font-size:12px;color:#555;">${spell.description}</span><br>
+                <span style="color:#666;">Unlocks at Level ${spell.level} | ${spell.mpCost} MP | Cost: ${spell.cost}g</span></p>
+            </div>`;
+        });
+        html += `</div>`;
+    }
+    
+    html += `<button onclick="showTemple()">← BACK</button>`;
+    screen.innerHTML = html;
+}
         
         function learnSpell(spellKey) {
             const p = gameState.player;
@@ -24904,129 +25308,210 @@ if (typeof window.loadGame === 'function') {
 window.fixMyGems = validateAndRepairGems;
 
 
-// Portal transition effect
-// ======================================================
-// PORTAL TRANSITION - Fade to black, funny message, flash, fade in
-// ======================================================
 function portalTransition(targetTown) {
     return new Promise((resolve) => {
-        
-        // ===== STEP 1: FADE TO BLACK (2 seconds) =====
-        const fadeToBlack = document.createElement('div');
-        fadeToBlack.className = 'fade-to-black';
-        document.body.appendChild(fadeToBlack);
-        
-        // Start fade to black
-        setTimeout(() => {
-            fadeToBlack.style.opacity = '1';
-        }, 10);
-        
-        // ===== STEP 2: SHOW MESSAGES (after black) =====
-        setTimeout(() => {
-            // Remove fade overlay
-            fadeToBlack.remove();
-            
-            // Create message container
-            const msgContainer = document.createElement('div');
-            msgContainer.className = 'portal-message-container';
-            msgContainer.id = 'portalMessageContainer';
-            document.body.appendChild(msgContainer);
-            
-            // Make it visible
-            setTimeout(() => {
-                msgContainer.classList.add('visible');
-            }, 10);
-            
-            // Pick a random message
-            const randomIndex = Math.floor(Math.random() * PORTAL_MESSAGES.length);
-            const fullMessage = PORTAL_MESSAGES[randomIndex];
-            
-            // Create message div
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'portal-message';
-            msgContainer.appendChild(messageDiv);
-            
-            // Add cursor
-            const cursor = document.createElement('span');
-            cursor.className = 'portal-message-cursor';
-            messageDiv.appendChild(cursor);
-            
-            // Typewriter effect variables
-            let charIndex = 0;
-            
-            // Typewriter effect
-            const typeInterval = setInterval(() => {
-                if (charIndex < fullMessage.length) {
-                    // Insert character before cursor
-                    cursor.insertAdjacentHTML('beforebegin', fullMessage[charIndex]);
-                    charIndex++;
-                } else {
-                    clearInterval(typeInterval);
-                    
-                    // Create continue button after typing finishes
-                    setTimeout(() => {
-                        const continueBtn = document.createElement('button');
-                        continueBtn.className = 'portal-continue-btn';
-                        continueBtn.textContent = '▶ CONTINUE';
-                        
-                        // Continue button click handler
-                        continueBtn.onclick = () => {
-                            
-                            // Remove message container
-                            msgContainer.remove();
-                            
-                            // ===== STEP 3: WHITE FLASH (1 second) =====
-                            const whiteFlash = document.createElement('div');
-                            whiteFlash.className = 'white-flash';
-                            document.body.appendChild(whiteFlash);
-                            
-                            // Fade in flash
-                            setTimeout(() => {
-                                whiteFlash.style.opacity = '1';
-                            }, 10);
-                            
-                            // CHANGE TOWN DURING THE FLASH (happens in background)
-                            showTown(targetTown);
-                            
-                            // Keep flash for 1 second
-                            setTimeout(() => {
-                                // Remove flash
-                                whiteFlash.remove();
-                                
-                                // ===== STEP 4: FADE FROM BLACK (3 seconds) =====
-                                const fadeFromBlack = document.createElement('div');
-                                fadeFromBlack.className = 'fade-from-black';
-                                document.body.appendChild(fadeFromBlack);
-                                
-                                // Start fade from black (town is already loaded underneath)
-                                setTimeout(() => {
-                                    fadeFromBlack.style.opacity = '0';
-                                }, 10);
-                                
-                                // Clean up after fade completes
-                                setTimeout(() => {
-                                    fadeFromBlack.remove();
-                                    resolve();
-                                }, 3000); // 3 second fade
-                                
-                            }, 1000); // 1 second white flash
-                        };
-                        
-                        msgContainer.appendChild(continueBtn);
-                        
-                        // Show button with animation
-                        setTimeout(() => {
-                            continueBtn.classList.add('visible');
-                        }, 50);
-                        
-                    }, 500); // Pause after typing
+
+        const portalThemes = {
+            town1: { c1: '#88ff88', c2: '#226622', c3: '#aaffaa', name: 'Silverdale' },
+            town2: { c1: '#aaddff', c2: '#4488cc', c3: '#ffffff', name: 'Ashen Harbor' },
+            town3: { c1: '#ffaa44', c2: '#cc6600', c3: '#ffdd88', name: 'The Ember Wastes' },
+        };
+        const portalTheme = portalThemes[targetTown] || portalThemes.town2;
+
+        // ── Build overlay ────────────────────────────────────────
+        const portalOverlay = document.createElement('div');
+        portalOverlay.style.position = 'fixed';
+        portalOverlay.style.inset = '0';
+        portalOverlay.style.zIndex = '99999';
+        portalOverlay.style.display = 'flex';
+        portalOverlay.style.alignItems = 'center';
+        portalOverlay.style.justifyContent = 'center';
+        portalOverlay.style.background = '#000';
+        portalOverlay.style.opacity = '0';
+        portalOverlay.style.transition = 'opacity 0.4s ease';
+        portalOverlay.style.pointerEvents = 'all';
+
+        // Inject keyframes once
+        if (!document.getElementById('portalKeyframes')) {
+            const portalKf = document.createElement('style');
+            portalKf.id = 'portalKeyframes';
+            portalKf.textContent = `
+                @keyframes _portalSpin {
+                    from { transform: rotate(0deg); }
+                    to   { transform: rotate(360deg); }
                 }
-            }, 50); // Typing speed (50ms per character = 20 chars per second)
-            
-        }, 2000); // 2 second fade to black
+                @keyframes _portalPulse {
+                    from { transform: scale(0.8); opacity:0.6; }
+                    to   { transform: scale(1.2); opacity:1.0; }
+                }
+                @keyframes _particleFly {
+                    0%   { transform: translate(-50%,-50%) translate(0,0); opacity:1; }
+                    100% { transform: translate(-50%,-50%) translate(var(--px),var(--py)); opacity:0; }
+                }
+                @keyframes _portalDestReveal {
+                    from { opacity:0; letter-spacing:20px; }
+                    to   { opacity:1; letter-spacing:6px; }
+                }
+                @keyframes _portalTextFade {
+                    from { opacity:0; transform:translateY(8px); }
+                    to   { opacity:0.8; transform:translateY(0); }
+                }
+            `;
+            document.head.appendChild(portalKf);
+        }
+
+        // ── Vortex container ─────────────────────────────────────
+        const portalVortex = document.createElement('div');
+        portalVortex.style.cssText = `
+            position:absolute;
+            width:min(80vw,80vh);
+            height:min(80vw,80vh);
+            border-radius:50%;
+        `;
+
+        // Rings
+        const portalRingConfigs = [
+            [0,  '1.2s', '',        1.0, `border-top-color:${portalTheme.c1};border-right-color:${portalTheme.c1};`],
+            [8,  '0.9s', 'reverse', 0.8, `border-bottom-color:${portalTheme.c2};border-left-color:${portalTheme.c2};`],
+            [16, '0.7s', '',        0.6, `border-top-color:${portalTheme.c3};border-right-color:${portalTheme.c3};`],
+            [24, '0.5s', 'reverse', 0.5, `border-bottom-color:${portalTheme.c1};`],
+            [32, '0.4s', '',        0.4, `border-top-color:${portalTheme.c2};`],
+        ];
+
+        portalRingConfigs.forEach(([insetPct, dur, dir, opacity, borderStyle]) => {
+            const portalRing = document.createElement('div');
+            portalRing.style.cssText = `
+                position:absolute;
+                inset:${insetPct}%;
+                border-radius:50%;
+                border:3px solid transparent;
+                ${borderStyle}
+                opacity:${opacity};
+                animation: _portalSpin ${dur} linear infinite ${dir};
+            `;
+            portalVortex.appendChild(portalRing);
+        });
+
+        // Core glow
+        const portalCore = document.createElement('div');
+        portalCore.style.cssText = `
+            position:absolute;
+            inset:38%;
+            border-radius:50%;
+            background:radial-gradient(circle, ${portalTheme.c1} 0%, ${portalTheme.c2} 50%, transparent 100%);
+            animation: _portalPulse 0.8s ease-in-out infinite alternate;
+            filter:blur(4px);
+        `;
+        portalVortex.appendChild(portalCore);
+        portalOverlay.appendChild(portalVortex);
+
+        // ── Particles ────────────────────────────────────────────
+        for (let pi = 0; pi < 20; pi++) {
+            const portalParticle = document.createElement('div');
+            const portalAngle = (pi / 20) * Math.PI * 2;
+            const portalDist  = 30 + Math.random() * 45;
+            const portalPx    = Math.cos(portalAngle) * portalDist * (window.innerWidth  / 100) + 'px';
+            const portalPy    = Math.sin(portalAngle) * portalDist * (window.innerHeight / 100) + 'px';
+            const portalDelay = Math.random() * 0.8;
+            const portalDur   = 0.6 + Math.random() * 0.8;
+            const portalSize  = (1 + Math.random() * 3) + 'px';
+            portalParticle.style.setProperty('--px', portalPx);
+            portalParticle.style.setProperty('--py', portalPy);
+            portalParticle.style.cssText += `
+                position:absolute;
+                width:${portalSize};
+                height:${portalSize};
+                border-radius:50%;
+                background:${Math.random() > 0.5 ? portalTheme.c1 : portalTheme.c2};
+                top:50%;
+                left:50%;
+                opacity:0;
+                animation: _particleFly ${portalDur}s linear ${portalDelay}s forwards;
+            `;
+            portalOverlay.appendChild(portalParticle);
+        }
+
+        // ── Destination name ─────────────────────────────────────
+        const portalDestEl = document.createElement('div');
+        portalDestEl.style.cssText = `
+            position:absolute;
+            top:15%;left:0;right:0;
+            text-align:center;
+            color:#fff;
+            font-family:'VT323',monospace;
+            font-size:clamp(20px,5vw,32px);
+            letter-spacing:6px;
+            text-transform:uppercase;
+            animation: _portalDestReveal 0.6s ease 0.4s forwards;
+            opacity:0;
+        `;
+        portalDestEl.textContent = portalTheme.name;
+        portalOverlay.appendChild(portalDestEl);
+
+        // ── Flavor text ──────────────────────────────────────────
+        const portalFlavorList = [
+            'Reality bends around you...',
+            'The void swallows you whole.',
+            'You feel yourself pulled apart and reassembled.',
+            'Time stops. Then starts again, somewhere else.',
+            'The seal hums as you pass through.',
+            'Something watches you cross.',
+            'The world tears open.',
+        ];
+        const portalFlavorEl = document.createElement('div');
+        portalFlavorEl.style.cssText = `
+            position:absolute;
+            bottom:15%;left:0;right:0;
+            text-align:center;
+            color:${portalTheme.c1};
+            font-family:'VT323',monospace;
+            font-size:clamp(14px,3vw,20px);
+            letter-spacing:3px;
+            text-shadow:0 0 12px ${portalTheme.c1};
+            animation: _portalTextFade 0.5s ease 0.6s forwards;
+            opacity:0;
+            padding:0 20px;
+        `;
+        portalFlavorEl.textContent = portalFlavorList[Math.floor(Math.random() * portalFlavorList.length)];
+        portalOverlay.appendChild(portalFlavorEl);
+
+        document.body.appendChild(portalOverlay);
+
+        // ── Sequence ─────────────────────────────────────────────
+        setTimeout(() => { portalOverlay.style.opacity = '1'; }, 20);
+
+        setTimeout(() => {
+            const portalFlash = document.createElement('div');
+            portalFlash.style.cssText = `
+                position:fixed;inset:0;z-index:100000;
+                background:#fff;opacity:0;
+                transition:opacity 0.15s ease;
+                pointer-events:none;
+            `;
+            document.body.appendChild(portalFlash);
+
+            setTimeout(() => { portalFlash.style.opacity = '1'; }, 20);
+
+            setTimeout(() => {
+                gameState.currentTown = targetTown;
+                showTown(targetTown);
+
+                portalFlash.style.transition = 'opacity 0.5s ease';
+                portalFlash.style.opacity = '0';
+                portalOverlay.style.transition = 'opacity 0.6s ease';
+                portalOverlay.style.opacity = '0';
+
+                setTimeout(() => {
+                    portalOverlay.remove();
+                    portalFlash.remove();
+                    resolve();
+                }, 600);
+
+            }, 150);
+
+        }, 1800);
     });
 }
-
 
 </script>
 
