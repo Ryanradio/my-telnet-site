@@ -11118,6 +11118,58 @@ async function loadCharacter(characterId) {
             }
         })(p);
 
+
+                // ======================================================
+        // CLEANUP 2: Remove all string weapons and armor
+        // TODO: Remove this cleanup code after all players have migrated
+        // ======================================================
+        (function cleanupStringItems(playerData) {
+            let removedCount = 0;
+            const newInventory = [];
+            
+            playerData.inventory.forEach(item => {
+                // If it's a string and is a weapon OR armor, remove it
+                if (typeof item === 'string') {
+                    if (WEAPONS[item] && !WEAPONS[item].unarmed) {
+                        removedCount++;
+                        console.log(`🗑️ Removed weapon string: ${item}`);
+                        return; // Don't add to new inventory
+                    }
+                    if (ARMOR[item] && !ARMOR[item].unarmored) {
+                        removedCount++;
+                        console.log(`🗑️ Removed armor string: ${item}`);
+                        return; // Don't add to new inventory
+                    }
+                }
+                // Keep everything else (objects, potions, keys, etc.)
+                newInventory.push(item);
+            });
+            
+            playerData.inventory = newInventory;
+            
+            // Also check equipped weapons/armor
+            if (playerData.weapon && typeof playerData.weapon === 'string') {
+                if (WEAPONS[playerData.weapon] && !WEAPONS[playerData.weapon].unarmed) {
+                    console.log(`🗑️ Unequipped weapon string: ${playerData.weapon}`);
+                    playerData.weapon = 'bare_fists';
+                    removedCount++;
+                }
+            }
+            
+            if (playerData.armor && typeof playerData.armor === 'string') {
+                if (ARMOR[playerData.armor] && !ARMOR[playerData.armor].unarmored) {
+                    console.log(`🗑️ Unequipped armor string: ${playerData.armor}`);
+                    playerData.armor = 'no_armor';
+                    removedCount++;
+                }
+            }
+            
+            if (removedCount > 0) {
+                console.log(`🧹 Removed ${removedCount} corrupted string weapon/armor items`);
+            }
+        })(p);
+
+
         // Cleric MP migration
         if (playerClass === 'cleric') {
             const expectedMaxMp = 100 + (p.level - 1) * 10;
@@ -15378,7 +15430,12 @@ function _showSellConfirm(lines, totalGold, onConfirm) {
         </div>`
     ).join('');
 
-    document.getElementById('scmItemName').innerHTML = rowsHtml;
+    // Wrap the items in a scrollable container
+    document.getElementById('scmItemName').innerHTML = `
+        <div style="max-height: 300px; overflow-y: auto; margin-bottom: 10px;">
+            ${rowsHtml}
+        </div>
+    `;
     document.getElementById('scmItemCost').innerHTML =
         'Total: <span>' + totalGold + 'g</span>' + bonusText;
 
