@@ -9533,57 +9533,27 @@ function bannerHoldCancel() {
                 case 'weapon':
     if (WEAPONS[id]) {
         if (quality && QUALITY_CONFIG[quality]) {
-            // Generate a weapon drop with the specified quality
-            const dropped = generateWeaponDrop(
-                gameState.player,
-                gameState.player.level,
-                'common',
-                true,        // skipRoll = true
-                quality      // forcedQuality = 'legendary'
-            );
-            
-            // Get the base weapon we're trying to create
             const baseWeapon = WEAPONS[id];
             
-            // Preserve the weapon's identity
-            dropped.type = baseWeapon.type || dropped.type;
-            dropped.weaponSubtype = baseWeapon.weaponSubtype || dropped.weaponSubtype;
-            dropped.classRestriction = baseWeapon.classRestriction || null;
-            dropped.allowedClasses = baseWeapon.allowedClasses ? [...baseWeapon.allowedClasses] : null;
-            dropped.poisonChance = baseWeapon.poisonChance || null;
+            // Create instance using the correct helper
+            const instance = generateLegacyWeaponInstance(id, gameState.player.level, quality);
             
-            // Set the name with quality prefix
-            dropped.name = `${QUALITY_CONFIG[quality].name} ${baseWeapon.name}`;
-            
-            // FORCE the quality to be what we asked for (extra safety)
-            dropped.quality = quality;
-            
-            // Add to WEAPONS and inventory
-            WEAPONS[dropped.id] = dropped;
-            gameState.player.inventory.push(dropped.id);
-            
-            const slots = getGemSlots(quality);
-            
-            // Show modifiers in the success message
-            let modifierText = '';
-            if (dropped.modifiers && dropped.modifiers.length > 0) {
-                modifierText = ` with ${dropped.modifiers.length} modifier${dropped.modifiers.length > 1 ? 's' : ''}`;
-            }
-            
-            terminalPrint(`SUCCESS: Gave ${quality} ${baseWeapon.name} (${dropped.baseDamage}-${dropped.maxDamage} dmg${modifierText}, ${slots} gem slot${slots!==1?'s':''})`, 'success');
-            
-            // Show the modifiers if any
-            if (dropped.modifiers && dropped.modifiers.length > 0) {
-                terminalPrint(`  Modifiers:`, 'info');
-                dropped.modifiers.forEach(modKey => {
-                    const mod = WEAPON_MODIFIERS[modKey];
-                    if (mod) {
-                        terminalPrint(`    → ${mod.name}`, 'info');
-                    }
-                });
+            if (instance) {
+                // Push proper inventory reference object
+                gameState.player.inventory.push(instance);
+                
+                const liveWeapon = WEAPONS[instance.instanceId];
+                const slots = getGemSlots(quality);
+                let modText = '';
+                if (instance.modifiers && instance.modifiers.length > 0) {
+                    modText = ` with ${instance.modifiers.length} modifier(s)`;
+                }
+                terminalPrint(`SUCCESS: Gave ${quality} ${baseWeapon.name} (DMG:${liveWeapon?.baseDamage}-${liveWeapon?.maxDamage}${modText}, ${slots} gem slot${slots!==1?'s':''})`, 'success');
+            } else {
+                terminalPrint(`ERROR: Could not generate ${quality} ${baseWeapon.name}`, 'error');
             }
         } else {
-            // No quality specified - just give the base weapon
+            // No quality — give base string key
             if (!gameState.player.inventory.includes(id)) {
                 gameState.player.inventory.push(id);
             }
@@ -9595,55 +9565,27 @@ function bannerHoldCancel() {
     }
     break;
                 case 'armor':
-                    if (ARMOR[id]) {
-                        // Check if quality was specified and is valid
-                        if (quality && QUALITY_CONFIG[quality]) {
-                            // Generate armor with specified quality
-                            const baseArmor = ARMOR[id];
-                            const armorLevel = baseArmor.level || gameState.player.level;
-                            
-                            // Create unique armor ID with quality
-                            const armorId = `${id}_${quality}_sysop_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-                            
-                            // Apply quality bonus (percentage-based)
-                            const bonusPct = QUALITY_CONFIG[quality].bonusPct || 0;
-                            const bonusDef = Math.floor(baseArmor.baseDefense * bonusPct);
-                            const bonusMag = Math.floor((baseArmor.baseMagicBonus || 0) * bonusPct);
-                            
-                            // Create the quality armor
-                            const qualityArmor = {
-                                id: armorId,
-                                name: `${QUALITY_CONFIG[quality].name} ${baseArmor.name}`,
-                                baseDefense: baseArmor.baseDefense + bonusDef,
-                                baseMagicBonus: (baseArmor.baseMagicBonus || 0) + bonusMag,
-                                level: armorLevel,
-                                quality: quality,
-                                cost: baseArmor.cost * (QUALITY_CONFIG[quality].bonusPct + 1),
-                                description: `A ${quality} quality ${baseArmor.name}`,
-                                slot: 'armor',
-                                isDropped: true, // Mark as generated
-                                classRestriction: baseArmor.classRestriction
-                            };
-                            
-                            // Register in ARMOR
-                            ARMOR[armorId] = qualityArmor;
-                            
-                            // Add to inventory
-                            gameState.player.inventory.push(armorId);
-                            
-                            terminalPrint(`SUCCESS: Gave ${quality} ${baseArmor.name} (${qualityArmor.baseDefense} DEF${qualityArmor.baseMagicBonus > 0 ? `, +${qualityArmor.baseMagicBonus} MAG` : ''})`, 'success');
-                        } else {
-                            // Give base armor without quality
-                            if (!gameState.player.inventory.includes(id)) {
-                                gameState.player.inventory.push(id);
-                            }
-                            terminalPrint(`SUCCESS: Gave armor '${ARMOR[id].name}' to player`, 'success');
-                        }
-                    } else {
-                        terminalPrint(`ERROR: Armor '${id}' not found`, 'error');
-                        terminalPrint('Use /listarmor to see available armor', 'error');
-                    }
-                    break;
+    if (ARMOR[id]) {
+        if (quality && QUALITY_CONFIG[quality]) {
+            const instance = generateLegacyArmorInstance(id, gameState.player.level, quality);
+            if (instance) {
+                gameState.player.inventory.push(instance);
+                const liveArmor = ARMOR[instance.instanceId];
+                terminalPrint(`SUCCESS: Gave ${quality} ${ARMOR[id].name} (DEF:${liveArmor?.baseDefense}${liveArmor?.baseMagicBonus > 0 ? ` MAG:+${liveArmor.baseMagicBonus}` : ''})`, 'success');
+            } else {
+                terminalPrint(`ERROR: Could not generate ${quality} ${ARMOR[id].name}`, 'error');
+            }
+        } else {
+            if (!gameState.player.inventory.includes(id)) {
+                gameState.player.inventory.push(id);
+            }
+            terminalPrint(`SUCCESS: Gave armor '${ARMOR[id].name}' to player`, 'success');
+        }
+    } else {
+        terminalPrint(`ERROR: Armor '${id}' not found`, 'error');
+        terminalPrint('Use /listarmor to see available armor', 'error');
+    }
+    break;
                 case 'item':
                     if (ITEMS[id]) {
                         gameState.player.inventory.push(id); // Items can stack, so always push
@@ -16541,6 +16483,8 @@ if (armor.level && armor.level > p.level) {
 }
 
 
+
+
         // ═══════════════════════════════════════════════════════════════
         // TERMINAL VIEW helpers
         // ═══════════════════════════════════════════════════════════════
@@ -16566,8 +16510,13 @@ function openTerminalView(locKey) {
         }
     }
 
-    updateTerminalSafeArea();
+    const _termOut = document.getElementById('terminalOutput');
+    if (_termOut) {
+        const _bar = document.getElementById('actionBar');
+        _termOut.style.paddingBottom = ((_bar ? _bar.offsetHeight : 0) + 10) + 'px';
+    }
 }
+
 
 
 function stabilizeTerminalLayout() {
@@ -17548,9 +17497,7 @@ ${mapAscii}
        function renderDungeonActionBar() {
     const ab = document.getElementById('actionBar');
 
-    function updateTerminalSafeArea() {
-        // No-op with fixed flex layout
-    }
+    
 
     // Clear action bar
     ab.innerHTML = '';
