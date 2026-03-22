@@ -833,7 +833,7 @@ const WEAPONS = {
         "weaponSubtype": "staff"
     },
     gods_scepter: {
-        "name": "God's Scepter",
+        "name": "Gods Scepter",
         "baseDamage": 24,
         "maxDamage": 38,
         "baseMagicDamage": 50,
@@ -1655,7 +1655,7 @@ const WEAPONS = {
         "allowedClasses": ["warrior", "paladin"]
     },
     raiders_axe: {
-        "name": "Raider's Axe",
+        "name": "Raiders Axe",
         "baseDamage": 27,
         "maxDamage": 45,
         "baseMagicDamage": 0,
@@ -1886,7 +1886,7 @@ const WEAPONS = {
         "slot": "weapon",
         "weaponSubtype": "hammer",
         "allowedClasses": ["warrior", "paladin"],
-        "description": "A blacksmith's hammer repurposed for combat. The head is loose but it packs a punch."
+        "description": "A blacksmiths hammer repurposed for combat. The head is loose but it packs a punch."
     },
     iron_maul: {
         "name": "Iron Maul",
@@ -2021,7 +2021,7 @@ const WEAPONS = {
         "allowedClasses": ["warrior", "paladin"]
     },
     titans_fist: {
-        "name": "Titan's Fist",
+        "name": "Titans Fist",
         "baseDamage": 52,
         "maxDamage": 78,
         "baseMagicDamage": 0,
@@ -2256,7 +2256,7 @@ const WEAPONS = {
         "allowedClasses": ["rogue"]
     },
     assassin_blade: {
-        "name": "Assassin's Blade",
+        "name": "Assassins Blade",
         "baseDamage": 8,
         "maxDamage": 13,
         "baseMagicDamage": 0,
@@ -2353,7 +2353,7 @@ const WEAPONS = {
         "allowedClasses": ["rogue"]
     },
     serpent_tooth: {
-        "name": "Serpent's Tooth",
+        "name": "Serpents Tooth",
         "baseDamage": 12,
         "maxDamage": 20,
         "baseMagicDamage": 0,
@@ -2462,7 +2462,7 @@ const WEAPONS = {
         "allowedClasses": ["rogue"]
     },
     death_whisper: {
-        "name": "Death's Whisper",
+        "name": "Deaths Whisper",
         "baseDamage": 18,
         "maxDamage": 30,
         "baseMagicDamage": 0,
@@ -2486,7 +2486,7 @@ const WEAPONS = {
         "allowedClasses": ["rogue"]
     },
     reaper_kiss: {
-        "name": "Reaper's Kiss",
+        "name": "Reapers Kiss",
         "baseDamage": 21,
         "maxDamage": 34,
         "baseMagicDamage": 0,
@@ -2535,7 +2535,7 @@ const WEAPONS = {
         "allowedClasses": ["rogue"]
     },
     nights_edge: {
-        "name": "Night's Edge",
+        "name": "Nights Edge",
         "baseDamage": 51,
         "maxDamage": 108,
         "baseMagicDamage": 0,
@@ -3502,7 +3502,7 @@ const WEAPONS = {
         "description": "An arbalest forged at the start of creation."
     },
     gods_crossbow: {
-        "name": "God's Crossbow",
+        "name": "Gods Crossbow",
         "baseDamage": 50,
         "maxDamage": 150,
         "cost": 75000,

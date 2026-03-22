@@ -23309,77 +23309,80 @@ function playerIsExhausted() {
         // LOOT DROP SYSTEM (Phase 1)
         // ═══════════════════════════════════════════════════════════════
 
-        function rollLoot(monster) {
-            const loot = [];
-            const debugMode = gameState.sysop && gameState.sysop.authenticated;
+function rollLoot(monster) {
+    const loot = [];
+    const debugMode = gameState.sysop && gameState.sysop.authenticated;
 
-            // ── GEM DROP: 4% chance, EVERY enemy, runs before any early return ──
-const gemRoll = Math.random();
-const gemChance = 0.04;
-if (debugMode) termAppend(`<span style="color:#336633;">🎲 [LOOT] ${monster.name} — gem roll: ${(gemRoll*100).toFixed(1)}% (need ≤${(gemChance*100).toFixed(0)}%) → ${gemRoll < gemChance ? '✅ HIT' : '❌ miss'}</span>`, 'term-dim');
-if (gemRoll < gemChance) {
-    const tier = getGemTier(monster.level || 1);
-    const gemTypeKey = GEM_KEYS[Math.floor(Math.random() * GEM_KEYS.length)];
-    const rawGemKey = `raw_${gemTypeKey}_t${tier}`;
-    
-    // Verify the gem exists in ITEMS before adding
-    if (ITEMS[rawGemKey]) {
-        loot.push(rawGemKey);
-        if (debugMode) termAppend(`<span style="color:#336633;">  → 💎 Gem: ${ITEMS[rawGemKey].name}</span>`, 'term-dim');
-    } else {
-        console.warn(`Gem definition not found: ${rawGemKey}`);
-        if (debugMode) termAppend(`<span style="color:#ff4444;">  → ❌ Gem definition missing: ${rawGemKey}</span>`, 'term-error');
-    }
-}
-
-            const rarityBonus = (RARITY_CONFIG[monster.rarity] || RARITY_CONFIG['common']).dropBonus || 0;
-            
-            if (!monster.possibleDrops || monster.possibleDrops.length === 0) {
-                if (debugMode) termAppend(`<span style="color:#336633;">  → No possibleDrops defined for ${monster.name}</span>`, 'term-dim');
-                return loot;
-            }
-            
-            monster.possibleDrops.forEach(itemKey => {
-                let dropChance = 0;
-                let dropType = 'unknown';
-                
-                // Determine base drop chance
-                if (ITEMS[itemKey]) {
-                    dropChance = monster.dropRates.common || 0.3;
-                    dropType = 'item';
-                } else if (WEAPONS[itemKey] || ARMOR[itemKey]) {
-                    const quality = getItemQuality(itemKey);
-                    dropChance = monster.dropRates[quality] || 0.05;
-                    dropType = WEAPONS[itemKey] ? 'weapon' : 'armor';
-                }
-                
-                const lckBonus = gameState.player ? calcLootBonus(gameState.player.lck || 0) / 100 : 0;
-                const adjustedChance = Math.min(0.95, dropChance * (1 + rarityBonus * 0.1 + lckBonus));
-                const roll = Math.random();
-                const hit  = roll < adjustedChance;
-                
-                if (debugMode) {
-                    const itemLabel = getItemName(itemKey) || itemKey;
-                    const lckStr = lckBonus > 0 ? ` lck+${(lckBonus*100).toFixed(1)}%` : '';
-                    const rarStr = rarityBonus > 0 ? ` rar+${(rarityBonus*0.1*100).toFixed(1)}%` : '';
-                    termAppend(`<span style="color:#336633;">  [${dropType}] ${itemLabel}: roll ${(roll*100).toFixed(1)}% / ${(adjustedChance*100).toFixed(1)}% (base ${(dropChance*100).toFixed(1)}%${rarStr}${lckStr}) → ${hit ? '✅ DROP' : '❌ miss'}</span>`, 'term-dim');
-                }
-
-                if (hit) {
-                    loot.push(itemKey);
-                }
-            });
-            
-            // SPECIAL: Magical Butterknife (Red Dragons only!)
-            if (monster.key === 'red_dragon' && Math.random() < 0.000001) {
-                loot.push('magical_butterknife');
-                if (gameState.sysop && gameState.sysop.authenticated) {
-                    terminalPrint('⚠️⚠️⚠️ ULTRA RARE DROP: MAGICAL BUTTERKNIFE! ⚠️⚠️⚠️', 'success');
-                }
-            }
-
-            return loot;
+    // ── GEM DROP ──
+    const gemRoll = Math.random();
+    const gemChance = 0.04;
+    if (gemRoll < gemChance) {
+        const tier = getGemTier(monster.level || 1);
+        const gemTypeKey = GEM_KEYS[Math.floor(Math.random() * GEM_KEYS.length)];
+        const rawGemKey = `raw_${gemTypeKey}_t${tier}`;
+        if (ITEMS[rawGemKey]) {
+            loot.push(rawGemKey);
         }
+    }
+
+    if (!monster.possibleDrops || monster.possibleDrops.length === 0) {
+        return loot;
+    }
+    
+    monster.possibleDrops.forEach(itemKey => {
+        let dropChance = 0;
+        
+        // Determine base drop chance
+        if (ITEMS[itemKey]) {
+            dropChance = monster.dropRates.common || 0.3;
+        } else if (WEAPONS[itemKey] || ARMOR[itemKey]) {
+            const quality = getItemQuality(itemKey);
+            dropChance = monster.dropRates[quality] || 0.05;
+        }
+        
+        const lckBonus = gameState.player ? calcLootBonus(gameState.player.lck || 0) / 100 : 0;
+        const adjustedChance = Math.min(0.95, dropChance * (1 + lckBonus));
+        const roll = Math.random();
+        
+        if (roll < adjustedChance) {
+            // ── WEAPON DROP: Generate INSTANCE (skip roll, we already know it dropped) ──
+            if (WEAPONS[itemKey] && !WEAPONS[itemKey].unarmed) {
+                const weaponDrop = generateWeaponDrop(
+                    gameState.player,
+                    monster.level,
+                    monster.rarity || 'common',
+                    true,  // skipRoll = true
+                    null
+                );
+                if (weaponDrop) {
+                    loot.push(weaponDrop);
+                    if (debugMode) console.log(`  → Weapon drop: ${weaponDrop.name}`);
+                }
+            } 
+            // ── ARMOR DROP: Generate INSTANCE (skip roll, we already know it dropped) ──
+            else if (ARMOR[itemKey] && !ARMOR[itemKey].unarmored) {
+                const armorDrop = generateArmorDrop(
+                    gameState.player,
+                    monster.level,
+                    monster.rarity || 'common',
+                    true,  // skipRoll = true
+                    null
+                );
+                if (armorDrop) {
+                    loot.push(armorDrop);
+                    if (debugMode) console.log(`  → Armor drop: ${armorDrop.name}`);
+                }
+            }
+            // ── ITEMS (potions, keys, etc.) stay as strings ──
+            else {
+                loot.push(itemKey);
+                if (debugMode) console.log(`  → Item drop: ${itemKey}`);
+            }
+        }
+    });
+    
+    return loot;
+}
 
         function getItemName(itemKey) {
             if (WEAPONS[itemKey]) return WEAPONS[itemKey].name;

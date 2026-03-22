@@ -352,14 +352,15 @@ function generateWeaponDrop(player, enemyLevel, enemyRarity = 'common', skipRoll
     }
     
     // Determine weapon level
-    let weaponLevel;
-    if (skipRoll) {
-        weaponLevel = player.level;
-    } else {
-        const minLevel = Math.max(1, enemyLevel - 2);
-        const maxLevel = Math.min(30, enemyLevel + 2);
-        weaponLevel = minLevel + Math.floor(Math.random() * (maxLevel - minLevel + 1));
-    }
+let weaponLevel;
+if (skipRoll) {
+    // For forced drops, use enemy level (so it's appropriate for the enemy)
+    weaponLevel = enemyLevel;
+} else {
+    const minLevel = Math.max(1, enemyLevel - 2);
+    const maxLevel = Math.min(30, enemyLevel + 2);
+    weaponLevel = minLevel + Math.floor(Math.random() * (maxLevel - minLevel + 1));
+}
     
     const playerClass = player.baseClass || player.class;
     
@@ -485,14 +486,25 @@ function generateArmorDrop(player, enemyLevel, enemyRarity = 'common', skipRoll 
     
     const playerClass = player.baseClass || player.class;
     
+    // Determine armor level (use enemy level for forced drops)
+    let armorLevel;
+    if (skipRoll) {
+        armorLevel = enemyLevel;
+    } else {
+        // For random drops, use enemy level with ±2 range
+        const minLevel = Math.max(1, enemyLevel - 2);
+        const maxLevel = Math.min(30, enemyLevel + 2);
+        armorLevel = minLevel + Math.floor(Math.random() * (maxLevel - minLevel + 1));
+    }
+    
     // Build candidate list from ALL armor
     const candidates = [];
     for (const [armorId, armor] of Object.entries(ARMOR)) {
         if (armor.instanceId) continue;
         if (armor.unarmored) continue;
         
-        // Level check - only armor within ±3 levels
-        if (armor.level && (armor.level < player.level - 3 || armor.level > player.level + 2)) continue;
+        // Level check - only armor within ±2 levels of the target armor level
+        if (armor.level && (armor.level < armorLevel - 2 || armor.level > armorLevel + 2)) continue;
         
         // Class check
         if (armor.allowedClasses && !armor.allowedClasses.includes(playerClass)) continue;
@@ -505,10 +517,10 @@ function generateArmorDrop(player, enemyLevel, enemyRarity = 'common', skipRoll 
     
     if (candidates.length === 0) return null;
     
-    // Random selection - no sorting bias
+    // Random selection
     const baseArmor = candidates[Math.floor(Math.random() * candidates.length)];
     
-    // Determine quality - Honor predefined quality
+    // Determine quality
     let quality;
     if (forcedQuality) {
         quality = forcedQuality;
@@ -558,7 +570,7 @@ function generateArmorDrop(player, enemyLevel, enemyRarity = 'common', skipRoll 
         baseDefense: baseArmor.baseDefense + defenseBonus,
         baseMagicBonus: (baseArmor.baseMagicBonus || 0) + magicBonus,
         magicResist: (baseArmor.magicResist || 0) + resistBonus,
-        level: baseArmor.level || 1,
+        level: armorLevel,  // ← Use armorLevel, not baseArmor.level
         originalLevel: baseArmor.level || 1,
         quality: quality,
         qualityBonus: bonusPct,

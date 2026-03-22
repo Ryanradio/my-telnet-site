@@ -39,7 +39,7 @@ const ARMOR = {
     },
 
     initiate_robe: {
-        name: "Initiate's Robe",
+        name: "Initiates Robe",
         baseDefense: 3,
         magicResist: 18,
         baseMagicBonus: 5,
@@ -393,7 +393,7 @@ const ARMOR = {
     },
 
     assassin_garb: {
-        name: "Assassin's Garb",
+        name: "Assassins Garb",
         baseDefense: 20,
         magicResist: 5,
         baseMagicBonus: 0,
