@@ -5986,10 +5986,6 @@ generatedWeapons: (() => {
     const generated = {};
 
     function buildFullWeapon(item) {
-    // Try to get it from WEAPONS[] first (exists if not yet reloaded)
-    const live = WEAPONS[item.instanceId];
-    if (live && live.baseDamage !== undefined) return live;
-
     // Get the base weapon ID - it could be in item.weaponId OR item.id
     const baseWeaponId = item.weaponId || item.id;
     if (!baseWeaponId) return null;
@@ -6002,12 +5998,21 @@ generatedWeapons: (() => {
     const bonusPct = qualityData.bonusPct;
     const qualityDisplay = item.quality.charAt(0).toUpperCase() + item.quality.slice(1);
 
+    // CRITICAL: Use the inventory item's name if it has one (preserves modifiers)
+    let weaponName;
+    if (item.name && item.name !== baseWeapon.name) {
+        // The inventory item has a custom/enhanced name - use it!
+        weaponName = item.name;
+    } else if (item.quality !== 'normal') {
+        weaponName = `${qualityDisplay} ${baseWeapon.name}`;
+    } else {
+        weaponName = baseWeapon.name;
+    }
+
     return {
         id: baseWeaponId,
         instanceId: item.instanceId,
-        name: item.quality !== 'normal'
-            ? `${qualityDisplay} ${baseWeapon.name}`
-            : baseWeapon.name,
+        name: weaponName,
         baseName: baseWeapon.name,
         type: baseWeapon.type || baseWeapon.weaponSubtype,
         weaponSubtype: baseWeapon.weaponSubtype || baseWeapon.type,
@@ -6025,8 +6030,8 @@ generatedWeapons: (() => {
         originalLevel: baseWeapon.level || 1,
         quality: item.quality,
         qualityBonus: bonusPct,
-        modifiers: item.modifiers || [],
-        gems: item.gems || [],
+        modifiers: item.modifiers || [],     // <- Always use inventory's modifiers
+        gems: item.gems || [],               // <- Always use inventory's gems
         gemSlots: item.gemSlots || 0,
         cost: baseWeapon.cost || 100,
         allowedClasses: baseWeapon.allowedClasses || null,
@@ -6036,7 +6041,6 @@ generatedWeapons: (() => {
         dropTimestamp: item.dropTime || Date.now()
     };
 }
-
     // Scan inventory for weapon instances
     (p.inventory || []).forEach(item => {
         if (item && typeof item === 'object' && item.weaponId && item.instanceId) {
@@ -18034,7 +18038,9 @@ ${mapAscii}
 
        function renderDungeonActionBar() {
     const ab = document.getElementById('actionBar');
-
+    const BASE_PIP_COOLDOWN = 10;
+    const MIN_PIP_COOLDOWN = 5;
+    const POT_HOLD_MS = 3000;
     
 
     // Clear action bar
@@ -18300,6 +18306,7 @@ if (cs) {
     if (room.contents?.ladder) {
         const ladderDir = room.contents.ladder.direction;
         const ladderBtn = document.createElement('button');
+    
         ladderBtn.textContent = ladderDir === 'up' ? '⬆ Up' : '⬇ Down';
         ladderBtn.title = ladderDir === 'up'
             ? `Floor ${room.contents.ladder.leadsTo.floor}`
@@ -18327,7 +18334,7 @@ if (cs) {
     invBtn.style.cssText = 'padding:4px 6px;font-size:12px;border-color:#8aaa8a;line-height:1.3;';
     // Long-press (3s) → sysop; short tap → inventory
     let _invHoldTimer = null, _invFired = false;
-    const _invDown = (e) => { e.preventDefault(); _invFired = false; _invHoldTimer = setTimeout(() => { _invHoldTimer = null; _invFired = true; openSysopOverlay(); }, POT_HOLD_MS); };
+    const _invDown = (e) => { e.preventDefault(); _invFired = false; _invHoldTimer = setTimeout(() => { _invHoldTimer = null; _invFired = true; openSysopOverlay(); }, 3000); };
     const _invUp   = ()  => { if (_invHoldTimer) { clearTimeout(_invHoldTimer); _invHoldTimer = null; } if (!_invFired) showDungeonInventory(); _invFired = false; };
     const _invCancel = () => { if (_invHoldTimer) { clearTimeout(_invHoldTimer); _invHoldTimer = null; } _invFired = false; };
     invBtn.addEventListener('mousedown',  _invDown);
@@ -18366,6 +18373,30 @@ function showInventoryOverlay() {
     const inDungeon = !!gameState.dungeon;
     const playerClass = p.baseClass || p.class;
     const hasStatPoints = (p.statPoints || 0) > 0;
+
+    // ── Key metadata for display ─────────────────────────────────────
+    const KEY_META = {
+        bronze_key:   { color: '#cd7f32', glow: '#7a3a00', label: 'BRONZE',   ascii: '&lt;=-[O' },
+        copper_key:   { color: '#b87333', glow: '#5a2800', label: 'COPPER',   ascii: '&lt;=-{O' },
+        iron_key:     { color: '#8a8a8a', glow: '#333333', label: 'IRON',     ascii: '&lt;==|O' },
+        brass_key:    { color: '#d4a017', glow: '#6b4c00', label: 'BRASS',    ascii: '&lt;=-&lt;O' },
+        silver_key:   { color: '#c0c0c0', glow: '#555577', label: 'SILVER',   ascii: '&lt;==*O' },
+        electrum_key: { color: '#88d4c0', glow: '#005544', label: 'ELECTRUM', ascii: '&lt;=~(O' },
+        ruby_key:     { color: '#e0115f', glow: '#800030', label: 'RUBY',     ascii: '&lt;=-@O' },
+        topaz_key:    { color: '#ffa500', glow: '#804000', label: 'TOPAZ',    ascii: '&lt;=-&Diamond;O' },
+        diamond_key:  { color: '#b9f2ff', glow: '#005080', label: 'DIAMOND',  ascii: '&lt;==&lt;&gt;' },
+        obsidian_key: { color: '#4a0080', glow: '#200040', label: 'OBSIDIAN', ascii: '&lt;==%O' },
+        bone_key:     { color: '#e8dcc8', glow: '#5a4a2a', label: 'BONE',     ascii: '&lt;=-#O' },
+    };
+
+    // Collect dungeon keys from inventory
+    const heldKeys = {};
+    (p.inventory || []).forEach(itemKey => {
+        if (typeof itemKey === 'string' && ITEMS[itemKey] && ITEMS[itemKey].subtype === 'dungeon_key') {
+            heldKeys[itemKey] = (heldKeys[itemKey] || 0) + 1;
+        }
+    });
+    const hasAnyKey = Object.keys(heldKeys).length > 0;
 
     function closeOverlay() {
         const ov = document.getElementById('dungeonInvOverlay');
@@ -18458,6 +18489,50 @@ function showInventoryOverlay() {
                 ⬆ ${p.statPoints} STAT POINT${p.statPoints>1?'S':''} TO SPEND — Tap to Allocate
             </button>
         </div>`;
+    }
+
+    // ── KEY RING SECTION (NEW!) ──────────────────────────────────────
+    html += `<div style="color:var(--highlight-color);font-size:15px;letter-spacing:2px;margin-bottom:6px;">— KEY RING —</div>`;
+    if (!hasAnyKey) {
+        html += `<div style="color:#555;font-size:13px;margin-bottom:14px;padding:8px;border:1px solid #1a1a1a;text-align:center;">[ NO KEYS COLLECTED ]</div>`;
+    } else {
+        html += `<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;">`;
+        Object.entries(heldKeys).forEach(([keyId, count]) => {
+            const meta  = KEY_META[keyId] || { color:'#aaa', glow:'#333', label: keyId.replace('_key','').toUpperCase(), ascii:'&lt;=-[O' };
+            const item  = ITEMS[keyId];
+            const desc  = item ? item.description : '';
+            const cnt   = count > 1 ? ` ×${count}` : '';
+            html += `
+                <div title="${desc}" style="
+                    font-family:'VT323',monospace;
+                    background:#050505;
+                    border:1px solid ${meta.color};
+                    box-shadow:0 0 8px ${meta.glow},inset 0 0 6px #000;
+                    padding:8px 14px;
+                    display:inline-flex;
+                    flex-direction:column;
+                    align-items:center;
+                    gap:4px;
+                    min-width:90px;
+                    cursor:default;
+                ">
+                    <div style="
+                        font-size:22px;
+                        letter-spacing:-2px;
+                        color:${meta.color};
+                        text-shadow:0 0 10px ${meta.color},0 0 4px ${meta.glow};
+                        line-height:1;
+                    ">${meta.ascii}</div>
+                    <div style="
+                        font-size:13px;
+                        color:${meta.color};
+                        letter-spacing:2px;
+                        text-shadow:0 0 6px ${meta.color};
+                        line-height:1;
+                    ">${meta.label}${cnt}</div>
+                </div>`;
+        });
+        html += `</div>`;
     }
 
     // ── POTIONS SECTION ──────────────────────────────────────────────
