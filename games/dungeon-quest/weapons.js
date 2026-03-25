@@ -3294,7 +3294,7 @@ const WEAPONS = {
         "maxDamage": 10000,
         "baseMagicDamage": 10000,
         "description": "A Godly weapon that should only be used by the gods to spread butter on toast.",
-        "allowedClasses": ["warrior", "paladin", "mage", "warlock", "cleric", "rogue", "hunter"],
+        "allowedClasses": ["warrior", "paladin", "mage", "warlock", "cleric", "rogue", "crusader", "archmage", "demonlord", "high_priest", "shadowmaster", "beastlord", "warlord", "hunter"],
         "cost": 999999,
         "canDrop": false
     },
