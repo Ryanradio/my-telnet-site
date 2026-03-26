@@ -5129,7 +5129,7 @@ if (typeof ADVENTURE_ENEMIES !== 'undefined') {
             fleeFailure: 'ios-flash-enemyhit',
             levelUp:     'ios-flash-levelup',
         };
-
+/*
         function haptic(type) {
             if (localStorage.getItem('dq_haptic') === 'off') return;
 
@@ -5166,7 +5166,16 @@ if (typeof ADVENTURE_ENEMIES !== 'undefined') {
 
         let isStreaming = false;
         let streamCancelled = false;
-        
+  */      
+
+
+  // Placeholder haptic function (does nothing, prevents console errors)
+function haptic(type) {
+    // All haptic feedback removed
+    return;
+}
+
+
         function streamText(element, html, callback) {
            if (currentModemSpeed === 'instant') {
     line.innerHTML = html;
