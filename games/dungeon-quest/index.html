@@ -17682,26 +17682,68 @@ function stabilizeTerminalLayout() {
                 }
             }
 
-            // ═══════════════════════════════════════════════════════════════
+                        // ═══════════════════════════════════════════════════════════════
             // NORMAL COMBAT ENCOUNTER
             // ═══════════════════════════════════════════════════════════════
             if (Math.random() < 0.7) {
-                const numMonsters = rollMonsterCount();
+                const zoneLevelRange = location.enemyLevelRange;
+                const playerLevel = p.level;
+                
+                let numMonsters;
+                let scalingMessage = '';
+                
+                if (zoneLevelRange && playerLevel > zoneLevelRange[1]) {
+                    const levelDiff = playerLevel - zoneLevelRange[1];
+                    const r = Math.random() * 100;
+                    let baseCount = r < 70 ? 1 : (r < 95 ? 2 : 3);
+                    
+                    // Apply scaling based on how many levels above the zone
+                    if (levelDiff >= 4) {
+                        // +4 or more: ALWAYS 4 enemies
+                        numMonsters = 4;
+                        scalingMessage = `<span style="color:#ff8844;">⚡ The ${location.name} boils with fury — 4 enemies surge forth!</span>`;
+                    } 
+                    else if (levelDiff >= 3) {
+                        // +3: 3-4 enemies
+                        numMonsters = Math.min(4, baseCount + 1);
+                        if (numMonsters < 3) numMonsters = 3;
+                        scalingMessage = `<span style="color:#ffaa44;">⚠ The creatures sense your power — ${numMonsters} enemies appear!</span>`;
+                    } 
+                    else if (levelDiff >= 2) {
+                        // +2: 2-4 enemies
+                        numMonsters = Math.min(4, baseCount + 1);
+                        if (numMonsters < 2) numMonsters = 2;
+                        scalingMessage = `<span style="color:#ffaa66;">⚠ The ${location.name} responds to your presence — more enemies gather...</span>`;
+                    } 
+                    else if (levelDiff >= 1) {
+                        // +1: 2-3 enemies (auto scaling)
+                        numMonsters = baseCount < 2 ? 2 : Math.min(3, baseCount);
+                        scalingMessage = `<span style="color:#ffcc88;">⚠ The ${location.name} stirs with activity — ${numMonsters} enemies approach...</span>`;
+                    } 
+                    else {
+                        numMonsters = baseCount;
+                    }
+                    
+                    if (scalingMessage) {
+                        termAppend(scalingMessage, 'term-warning');
+                    }
+                    
+                } else {
+                    // Normal encounter: 1-3 enemies
+                    const r = Math.random() * 100;
+                    numMonsters = r < 70 ? 1 : (r < 95 ? 2 : 3);
+                }
+                
                 const enemyKeys = [];
                 for (let i = 0; i < numMonsters; i++) {
                     enemyKeys.push(location.encounters[Math.floor(Math.random() * location.encounters.length)]);
                 }
-// 🔴 ADD THIS DEBUG CODE 🔴
-    console.log('📍 Current location:', gameState.currentLocation);
-    console.log('🎲 Enemies spawned:', enemyKeys);
-    console.log('📋 Available enemies:', location.encounters);
-
+                
                 startCombat(enemyKeys);
             } else {
                 termAppend(`You explore the area… but find nothing.`, 'term-dim');
-                renderActionBar();   // show "Continue / Town" buttons
-            }
-        }
+                renderActionBar();
+            }}
 
         // ═══════════════════════════════════════════════════════════════
         // COMBAT – start / spawn / rarity
@@ -18065,7 +18107,6 @@ function spawnMonsterWithRarity(enemyKey, zoneLevel = null, forcedRarity = null)
             template = zoneMonster;
         }
     }
-
     
     // ── Phase II: enemy MP calculation (do this once for both paths) ──
     const _abils = template.abilities || [];
@@ -18114,11 +18155,11 @@ function spawnMonsterWithRarity(enemyKey, zoneLevel = null, forcedRarity = null)
         };
     }
     
-    // ORIGINAL CODE for exploration enemies (random rarity, zone scaling) continues below...
+    // ORIGINAL CODE for exploration enemies (random rarity, NO level scaling!)
     const rarity = rollRarity();
     const mult = RARITY_CONFIG[rarity].multiplier;
     
-    // Determine monster level (zone scaling for exploration)
+    // Determine monster level from zone (for display only, NOT for scaling)
     let monsterLevel = template.level;
     if (zoneLevel !== null && zoneLevel !== false) {
         const location = LOCATIONS[gameState.currentLocation];
@@ -18128,18 +18169,16 @@ function spawnMonsterWithRarity(enemyKey, zoneLevel = null, forcedRarity = null)
         }
     }
     
-    // Apply level scaling for exploration
-    const levelMult = 1 + (monsterLevel - 1) * 0.10;
-    
-    // Damage calculation with scaling...
+    // ⭐ NO LEVEL SCALING - only rarity multiplier!
+    // Calculate stats with rarity ONLY
     let scaledMin, scaledMax, scaledAvg;
     
     if (template.minDamage !== undefined && template.maxDamage !== undefined) {
-        scaledMin = Math.max(1, Math.floor(template.minDamage * mult * levelMult));
-        scaledMax = Math.max(scaledMin + 1, Math.floor(template.maxDamage * mult * levelMult));
+        scaledMin = Math.max(1, Math.floor(template.minDamage * mult));
+        scaledMax = Math.max(scaledMin + 1, Math.floor(template.maxDamage * mult));
         scaledAvg = Math.floor((scaledMin + scaledMax) / 2);
     } else {
-        scaledAvg = Math.floor(template.baseDamage * mult * levelMult);
+        scaledAvg = Math.floor(template.baseDamage * mult);
         scaledMin = Math.max(1, Math.round(scaledAvg * 0.67));
         scaledMax = Math.max(scaledMin + 1, Math.round(scaledAvg * 1.33));
     }
@@ -18149,15 +18188,15 @@ function spawnMonsterWithRarity(enemyKey, zoneLevel = null, forcedRarity = null)
         name: template.name, 
         rarity, 
         rarityColor: RARITY_CONFIG[rarity].color,
-        hp: Math.floor(template.baseHp * mult * levelMult), 
-        maxHp: Math.floor(template.baseHp * mult * levelMult),
+        hp: Math.floor(template.baseHp * mult),           // ← NO level scaling!
+        maxHp: Math.floor(template.baseHp * mult),
         damage: scaledAvg,
         minDamage: scaledMin,
         maxDamage: scaledMax,
-        defense: Math.floor(template.baseDefense * mult * levelMult),
-        xp: Math.floor(template.baseXp * mult * levelMult),
-        gold: Math.floor(template.baseGold * mult * levelMult),
-        level: monsterLevel, 
+        defense: Math.floor(template.baseDefense * mult), // ← NO level scaling!
+        xp: Math.floor(template.baseXp * mult),           // ← NO level scaling!
+        gold: Math.floor(template.baseGold * mult),       // ← NO level scaling!
+        level: monsterLevel,  // ← Just for display, doesn't affect stats
         possibleDrops: template.possibleDrops, 
         dropRates: template.dropRates,
         abilities: template.abilities || [],
