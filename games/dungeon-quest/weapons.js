@@ -3288,7 +3288,7 @@ const WEAPONS = {
         "name": "Magical Butterknife",
         "slot": "weapon",
         "quality": "godly",
-        "weaponSubtype": "dagger",
+        "weaponSubtype": "universal",
         "level": 25,
         "baseDamage": 10000,
         "maxDamage": 10000,
