@@ -6040,7 +6040,7 @@ generatedWeapons: (() => {
             
             // Metadata
             isDropped: true,
-            isEquipped: weaponObj.isEquipped || false,  // ⭐ ADD THIS LINE
+            isEquipped: weaponObj.isEquipped || false,
             dropTimestamp: weaponObj.dropTimestamp || Date.now()
         };
     }
@@ -6064,26 +6064,37 @@ generatedWeapons: (() => {
             if (instance) {
                 const fullSnapshot = buildFullWeaponSnapshot(instance);
                 if (fullSnapshot) {
-                    // Ensure equipped weapon is marked as equipped
-                    fullSnapshot.isEquipped = true;  // ⭐ ADD THIS LINE
+                    fullSnapshot.isEquipped = true;
                     generated[p.weapon] = fullSnapshot;
                 }
             } else {
-                // Weapon is equipped but not in inventory (shouldn't happen, but handle it)
+                // Weapon is equipped but not in inventory - save it directly
                 const weaponObj = WEAPONS[p.weapon];
                 if (weaponObj) {
                     generated[p.weapon] = {
                         ...weaponObj,
-                        isEquipped: true,  // ⭐ ADD THIS LINE
+                        isEquipped: true,
+                        instanceId: p.weapon,
                     };
                 }
             }
         }
     }
     
+    // ⭐ CRITICAL: Ensure the equipped weapon is always saved (catch any that were missed)
+    if (p.weapon && p.weapon !== 'bare_fists') {
+        const equippedWeapon = WEAPONS[p.weapon];
+        if (equippedWeapon && !generated[p.weapon]) {
+            generated[p.weapon] = {
+                ...equippedWeapon,
+                isEquipped: true,
+                instanceId: p.weapon,
+            };
+        }
+    }
+    
     return generated;
 })(),
-
 
 // ═══════════════════════════════════════════════════════════════
 // GENERATED ARMOR - Save all dynamically created armor drops
@@ -6129,7 +6140,7 @@ generatedArmor: (() => {
             
             // Metadata
             isDropped: true,
-            isEquipped: armorObj.isEquipped || false,  // ⭐ ADD THIS LINE
+            isEquipped: armorObj.isEquipped || false,
             dropTimestamp: armorObj.dropTimestamp || Date.now()
         };
     }
@@ -6153,26 +6164,37 @@ generatedArmor: (() => {
             if (instance) {
                 const fullSnapshot = buildFullArmorSnapshot(instance);
                 if (fullSnapshot) {
-                    // Ensure equipped armor is marked as equipped
-                    fullSnapshot.isEquipped = true;  // ⭐ ADD THIS LINE
+                    fullSnapshot.isEquipped = true;
                     generated[p.armor] = fullSnapshot;
                 }
             } else {
-                // Armor is equipped but not in inventory (shouldn't happen, but handle it)
+                // Armor is equipped but not in inventory - save it directly
                 const armorObj = ARMOR[p.armor];
                 if (armorObj) {
                     generated[p.armor] = {
                         ...armorObj,
-                        isEquipped: true,  // ⭐ ADD THIS LINE
+                        isEquipped: true,
+                        instanceId: p.armor,
                     };
                 }
             }
         }
     }
     
+    // ⭐ CRITICAL: Ensure the equipped armor is always saved (catch any that were missed)
+    if (p.armor && p.armor !== 'no_armor') {
+        const equippedArmor = ARMOR[p.armor];
+        if (equippedArmor && !generated[p.armor]) {
+            generated[p.armor] = {
+                ...equippedArmor,
+                isEquipped: true,
+                instanceId: p.armor,
+            };
+        }
+    }
+    
     return generated;
 })(),
-
 
 // ═══════════════════════════════════════════════════════════════
 // STATIC ITEM GEMS - Save gems socketed into weapons/armor
@@ -6305,18 +6327,6 @@ staticArmorGems: (() => {
     };
 
 
-// ⭐ CRITICAL: Ensure the equipped weapon is always saved
-if (p.weapon && p.weapon !== 'bare_fists') {
-    const equippedWeapon = WEAPONS[p.weapon];
-    if (equippedWeapon && !generated[p.weapon]) {
-        // Save the equipped weapon if not already saved
-        generated[p.weapon] = {
-            ...equippedWeapon,
-            isEquipped: true,
-            instanceId: p.weapon,
-        };
-    }
-}
 
 
     return snapshot;
@@ -16997,11 +17007,22 @@ function equipItem(type, key) {
             return;
         }
         
-        // UNEQUIP CURRENT WEAPON FIRST (remove its flag)
+                // UNEQUIP CURRENT WEAPON - ADD IT BACK TO INVENTORY AS AN OBJECT
         if (p.weapon && p.weapon !== 'bare_fists') {
             const currentWeapon = WEAPONS[p.weapon];
             if (currentWeapon) {
                 currentWeapon.isEquipped = false;
+                
+                // Add current weapon back to inventory as an OBJECT
+                const inventoryItem = {
+                    weaponId: currentWeapon.id,
+                    instanceId: p.weapon,
+                    name: currentWeapon.name,
+                    quality: currentWeapon.quality,
+                    modifiers: currentWeapon.modifiers || [],
+                    gems: currentWeapon.gems || []
+                };
+                p.inventory.push(inventoryItem);
             }
         }
         
@@ -17018,7 +17039,7 @@ function equipItem(type, key) {
         });
         if (index !== -1) p.inventory.splice(index, 1);
         
-        // Add old weapon back to inventory
+        /*/ Add old weapon back to inventory
         if (p.oldWeapon && p.oldWeapon !== 'bare_fists') {
             const oldWeapon = WEAPONS[p.oldWeapon];
             if (oldWeapon) {
@@ -17026,7 +17047,7 @@ function equipItem(type, key) {
             }
             p.inventory.push(p.oldWeapon);
         }
-        p.oldWeapon = key;
+        p.oldWeapon = key; */
         
         recalcGemStats(p);
         saveGame();
