@@ -11727,6 +11727,167 @@ console.log('⚠️ legacyMigrationPerformed set TRUE at:', new Error().stack.sp
         })(p);
         */
 
+        // ======================================================
+        // FIX WEAPONS WITH UNDEFINED MODIFIERS
+        // Creates weapons by ID (not random) with correct level
+        // ======================================================
+        function fixUndefinedModifiers(playerData) {
+
+console.log('🔥🔥🔥 fixUndefinedModifiers IS RUNNING! 🔥🔥🔥');
+
+            let fixedCount = 0;
+            const weaponsToFix = [];
+            
+            // Helper to create a weapon by specific ID
+            function createSpecificWeapon(weaponId, quality) {
+                const baseWeapon = WEAPONS[weaponId];
+                if (!baseWeapon) return null;
+                
+                const bonusPct = QUALITY_CONFIG[quality]?.bonusPct || 0;
+                const instanceId = `${weaponId}_${quality}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+                const qualityDisplay = quality.charAt(0).toUpperCase() + quality.slice(1);
+                
+                // Generate modifiers based on quality and weapon level
+                let modifiers = [];
+                if (typeof generateModifiers === 'function') {
+                    modifiers = generateModifiers(quality, baseWeapon.level);
+                }
+                
+                // Generate name with modifiers
+                let weaponName;
+                if (typeof generateEnhancedWeaponName === 'function' && modifiers.length > 0) {
+                    weaponName = generateEnhancedWeaponName(baseWeapon, quality, modifiers);
+                } else {
+                    weaponName = `${qualityDisplay} ${baseWeapon.name}`;
+                }
+                
+                const weapon = {
+                    id: weaponId,
+                    weaponId: weaponId,
+                    instanceId: instanceId,
+                    name: weaponName,
+                    baseName: baseWeapon.name,
+                    type: baseWeapon.type || baseWeapon.weaponSubtype,
+                    weaponSubtype: baseWeapon.weaponSubtype || baseWeapon.type,
+                    baseDamage: baseWeapon.baseDamage + Math.floor(baseWeapon.baseDamage * bonusPct),
+                    maxDamage: (baseWeapon.maxDamage || baseWeapon.baseDamage) + Math.floor((baseWeapon.maxDamage || baseWeapon.baseDamage) * bonusPct),
+                    baseMagicDamage: baseWeapon.baseMagicDamage ? baseWeapon.baseMagicDamage + Math.floor(baseWeapon.baseMagicDamage * bonusPct) : 0,
+                    level: baseWeapon.level,
+                    quality: quality,
+                    qualityBonus: bonusPct,
+                    modifiers: modifiers,
+                    gemSlots: { rare: 1, epic: 2, legendary: 3, godly: 4 }[quality] || 0,
+                    gems: [],
+                    cost: baseWeapon.cost,
+                    description: baseWeapon.description || `A ${quality} quality ${baseWeapon.name}.`,
+                    allowedClasses: baseWeapon.allowedClasses,
+                    isDropped: true,
+                    dropTimestamp: Date.now(),
+                    isEquipped: false
+                };
+                
+                WEAPONS[instanceId] = weapon;
+                return weapon;
+            }
+            
+            // ========== STEP 1: Identify corrupted weapons ==========
+            console.log('🔍 Scanning for weapons with undefined modifiers...');
+            
+            for (const [id, weapon] of Object.entries(WEAPONS)) {
+                if (!weapon || !weapon.weaponId) continue;
+                
+                let isCorrupted = false;
+                
+                if (weapon.modifiers && weapon.modifiers.length > 0) {
+                    const hasUndefined = weapon.modifiers.some(mod => 
+                        !mod || 
+                        mod.name === 'undefined' || 
+                        mod.modKey === 'undefined'
+                    );
+                    if (hasUndefined) {
+                        isCorrupted = true;
+                        console.log(`   ⚠️ Found corrupted weapon: ${weapon.name || weapon.id}`);
+                    }
+                }
+                
+                if (isCorrupted) {
+                    weaponsToFix.push({
+                        id: id,
+                        weaponId: weapon.weaponId,
+                        quality: weapon.quality || 'normal',
+                        isEquipped: (playerData.weapon === id),
+                        isInInventory: playerData.inventory.some(item => 
+                            item && typeof item === 'object' && item.instanceId === id
+                        ),
+                        gems: weapon.gems ? [...weapon.gems] : []
+                    });
+                }
+            }
+            
+            if (weaponsToFix.length === 0) {
+                console.log('✅ No weapons with undefined modifiers found');
+                return;
+            }
+            
+            console.log(`\n📋 Found ${weaponsToFix.length} weapon(s) to fix:`);
+            weaponsToFix.forEach(w => {
+                console.log(`   - ${w.weaponId} [${w.quality}] ${w.isEquipped ? '(equipped)' : '(in inventory)'} - ${w.gems.length} gem(s)`);
+            });
+            
+            // ========== STEP 2: Delete corrupted weapons ==========
+            console.log('\n🗑️ Removing corrupted weapons...');
+            for (const oldWeapon of weaponsToFix) {
+                delete WEAPONS[oldWeapon.id];
+                
+                const invIndex = playerData.inventory.findIndex(item => 
+                    item && typeof item === 'object' && item.instanceId === oldWeapon.id
+                );
+                if (invIndex !== -1) {
+                    playerData.inventory.splice(invIndex, 1);
+                }
+                
+                if (oldWeapon.isEquipped) {
+                    playerData.weapon = 'bare_fists';
+                }
+                console.log(`   ✅ Removed: ${oldWeapon.weaponId}`);
+            }
+            
+            // ========== STEP 3: Create fresh weapons ==========
+            console.log('\n🔨 Creating fresh weapons...');
+            
+            for (const oldWeapon of weaponsToFix) {
+                console.log(`   Creating new ${oldWeapon.quality} ${oldWeapon.weaponId}...`);
+                
+                const newWeapon = createSpecificWeapon(oldWeapon.weaponId, oldWeapon.quality);
+                
+                if (newWeapon) {
+                    if (oldWeapon.gems && oldWeapon.gems.length > 0) {
+                        console.log(`      💎 Re-socketing ${oldWeapon.gems.length} gem(s)...`);
+                        newWeapon.gems = [...oldWeapon.gems];
+                    }
+                    
+                    if (oldWeapon.isEquipped) {
+                        newWeapon.isEquipped = true;
+                        playerData.weapon = newWeapon.instanceId;
+                        console.log(`   ✅ Re-equipped: ${newWeapon.name}`);
+                    } else {
+                        newWeapon.isEquipped = false;
+                        playerData.inventory.push(newWeapon);
+                        console.log(`   ✅ Added to inventory: ${newWeapon.name}`);
+                    }
+                    fixedCount++;
+                }
+            }
+            
+            console.log(`\n✅ Fixed ${fixedCount} weapon(s) with undefined modifiers`);
+            
+            if (fixedCount > 0) {
+                console.log('💾 Saving changes...');
+                saveGame();
+            }
+        };
+
+
 
 // ======================================================
 // REPAIR ORPHANED WEAPON REFERENCES
@@ -12029,167 +12190,8 @@ if (data.generatedArmor) {
     }
 }
 
-
-        // ======================================================
-        // FIX WEAPONS WITH UNDEFINED MODIFIERS
-        // Creates weapons by ID (not random) with correct level
-        // ======================================================
-        (function fixUndefinedModifiers(playerData) {
-
-console.log('🔥🔥🔥 fixUndefinedModifiers IS RUNNING! 🔥🔥🔥');
-
-            let fixedCount = 0;
-            const weaponsToFix = [];
-            
-            // Helper to create a weapon by specific ID
-            function createSpecificWeapon(weaponId, quality) {
-                const baseWeapon = WEAPONS[weaponId];
-                if (!baseWeapon) return null;
-                
-                const bonusPct = QUALITY_CONFIG[quality]?.bonusPct || 0;
-                const instanceId = `${weaponId}_${quality}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
-                const qualityDisplay = quality.charAt(0).toUpperCase() + quality.slice(1);
-                
-                // Generate modifiers based on quality and weapon level
-                let modifiers = [];
-                if (typeof generateModifiers === 'function') {
-                    modifiers = generateModifiers(quality, baseWeapon.level);
-                }
-                
-                // Generate name with modifiers
-                let weaponName;
-                if (typeof generateEnhancedWeaponName === 'function' && modifiers.length > 0) {
-                    weaponName = generateEnhancedWeaponName(baseWeapon, quality, modifiers);
-                } else {
-                    weaponName = `${qualityDisplay} ${baseWeapon.name}`;
-                }
-                
-                const weapon = {
-                    id: weaponId,
-                    weaponId: weaponId,
-                    instanceId: instanceId,
-                    name: weaponName,
-                    baseName: baseWeapon.name,
-                    type: baseWeapon.type || baseWeapon.weaponSubtype,
-                    weaponSubtype: baseWeapon.weaponSubtype || baseWeapon.type,
-                    baseDamage: baseWeapon.baseDamage + Math.floor(baseWeapon.baseDamage * bonusPct),
-                    maxDamage: (baseWeapon.maxDamage || baseWeapon.baseDamage) + Math.floor((baseWeapon.maxDamage || baseWeapon.baseDamage) * bonusPct),
-                    baseMagicDamage: baseWeapon.baseMagicDamage ? baseWeapon.baseMagicDamage + Math.floor(baseWeapon.baseMagicDamage * bonusPct) : 0,
-                    level: baseWeapon.level,
-                    quality: quality,
-                    qualityBonus: bonusPct,
-                    modifiers: modifiers,
-                    gemSlots: { rare: 1, epic: 2, legendary: 3, godly: 4 }[quality] || 0,
-                    gems: [],
-                    cost: baseWeapon.cost,
-                    description: baseWeapon.description || `A ${quality} quality ${baseWeapon.name}.`,
-                    allowedClasses: baseWeapon.allowedClasses,
-                    isDropped: true,
-                    dropTimestamp: Date.now(),
-                    isEquipped: false
-                };
-                
-                WEAPONS[instanceId] = weapon;
-                return weapon;
-            }
-            
-            // ========== STEP 1: Identify corrupted weapons ==========
-            console.log('🔍 Scanning for weapons with undefined modifiers...');
-            
-            for (const [id, weapon] of Object.entries(WEAPONS)) {
-                if (!weapon || !weapon.weaponId) continue;
-                
-                let isCorrupted = false;
-                
-                if (weapon.modifiers && weapon.modifiers.length > 0) {
-                    const hasUndefined = weapon.modifiers.some(mod => 
-                        !mod || 
-                        mod.name === 'undefined' || 
-                        mod.modKey === 'undefined'
-                    );
-                    if (hasUndefined) {
-                        isCorrupted = true;
-                        console.log(`   ⚠️ Found corrupted weapon: ${weapon.name || weapon.id}`);
-                    }
-                }
-                
-                if (isCorrupted) {
-                    weaponsToFix.push({
-                        id: id,
-                        weaponId: weapon.weaponId,
-                        quality: weapon.quality || 'normal',
-                        isEquipped: (playerData.weapon === id),
-                        isInInventory: playerData.inventory.some(item => 
-                            item && typeof item === 'object' && item.instanceId === id
-                        ),
-                        gems: weapon.gems ? [...weapon.gems] : []
-                    });
-                }
-            }
-            
-            if (weaponsToFix.length === 0) {
-                console.log('✅ No weapons with undefined modifiers found');
-                return;
-            }
-            
-            console.log(`\n📋 Found ${weaponsToFix.length} weapon(s) to fix:`);
-            weaponsToFix.forEach(w => {
-                console.log(`   - ${w.weaponId} [${w.quality}] ${w.isEquipped ? '(equipped)' : '(in inventory)'} - ${w.gems.length} gem(s)`);
-            });
-            
-            // ========== STEP 2: Delete corrupted weapons ==========
-            console.log('\n🗑️ Removing corrupted weapons...');
-            for (const oldWeapon of weaponsToFix) {
-                delete WEAPONS[oldWeapon.id];
-                
-                const invIndex = playerData.inventory.findIndex(item => 
-                    item && typeof item === 'object' && item.instanceId === oldWeapon.id
-                );
-                if (invIndex !== -1) {
-                    playerData.inventory.splice(invIndex, 1);
-                }
-                
-                if (oldWeapon.isEquipped) {
-                    playerData.weapon = 'bare_fists';
-                }
-                console.log(`   ✅ Removed: ${oldWeapon.weaponId}`);
-            }
-            
-            // ========== STEP 3: Create fresh weapons ==========
-            console.log('\n🔨 Creating fresh weapons...');
-            
-            for (const oldWeapon of weaponsToFix) {
-                console.log(`   Creating new ${oldWeapon.quality} ${oldWeapon.weaponId}...`);
-                
-                const newWeapon = createSpecificWeapon(oldWeapon.weaponId, oldWeapon.quality);
-                
-                if (newWeapon) {
-                    if (oldWeapon.gems && oldWeapon.gems.length > 0) {
-                        console.log(`      💎 Re-socketing ${oldWeapon.gems.length} gem(s)...`);
-                        newWeapon.gems = [...oldWeapon.gems];
-                    }
-                    
-                    if (oldWeapon.isEquipped) {
-                        newWeapon.isEquipped = true;
-                        playerData.weapon = newWeapon.instanceId;
-                        console.log(`   ✅ Re-equipped: ${newWeapon.name}`);
-                    } else {
-                        newWeapon.isEquipped = false;
-                        playerData.inventory.push(newWeapon);
-                        console.log(`   ✅ Added to inventory: ${newWeapon.name}`);
-                    }
-                    fixedCount++;
-                }
-            }
-            
-            console.log(`\n✅ Fixed ${fixedCount} weapon(s) with undefined modifiers`);
-            
-            if (fixedCount > 0) {
-                console.log('💾 Saving changes...');
-                saveGame();
-            }
-        })(p);
-
+fixUndefinedModifiers(p);
+        
 
 
 // ======================================================
