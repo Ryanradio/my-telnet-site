@@ -11798,17 +11798,34 @@ console.log('🔥🔥🔥 fixUndefinedModifiers IS RUNNING! 🔥🔥🔥');
                 
                 let isCorrupted = false;
                 
-                if (weapon.modifiers && weapon.modifiers.length > 0) {
-                    const hasUndefined = weapon.modifiers.some(mod => 
-                        !mod || 
-                        mod.name === 'undefined' || 
-                        mod.modKey === 'undefined'
-                    );
-                    if (hasUndefined) {
-                        isCorrupted = true;
-                        console.log(`   ⚠️ Found corrupted weapon: ${weapon.name || weapon.id}`);
-                    }
-                }
+                // Check for any corruption (undefined modifiers OR undefined in name)
+if (weapon.name && weapon.name.includes('undefined')) {
+    isCorrupted = true;
+    console.log(`   ⚠️ Found weapon with "undefined" in name: ${weapon.name}`);
+}
+
+// Check for undefined modifiers
+if (weapon.modifiers && weapon.modifiers.length > 0) {
+    const hasUndefinedMod = weapon.modifiers.some(mod => 
+        !mod || 
+        mod.name === 'undefined' || 
+        mod.modKey === 'undefined'
+    );
+    if (hasUndefinedMod) {
+        isCorrupted = true;
+        console.log(`   ⚠️ Found weapon with undefined modifiers: ${weapon.name || weapon.id}`);
+    }
+}
+
+// Check for epic+ weapons that should have modifiers but don't
+const quality = weapon.quality || 'normal';
+const shouldHaveModifiers = ['epic', 'legendary', 'godly', 'rare'].includes(quality);
+const hasModifiers = weapon.modifiers && weapon.modifiers.length > 0;
+
+if (shouldHaveModifiers && !hasModifiers) {
+    isCorrupted = true;
+    console.log(`   ⚠️ Found ${quality} weapon with no modifiers: ${weapon.name || weapon.id}`);
+}
                 
                 if (isCorrupted) {
                     weaponsToFix.push({
