@@ -15873,7 +15873,7 @@ if (modifiers.length > 0) {
     modifierHtml += '</div>';
 }    
 
-    // Build gem slot display - FIXED to show actual gems
+   /* // Build gem slot display - FIXED to show actual gems
     let gemSlotHtml = '';
     const slots = item.gemSlots || weapon.gemSlots || 0;
     if (slots > 0) {
@@ -15894,7 +15894,8 @@ if (modifiers.length > 0) {
         }
         gemSlotHtml += '</div>';
     }
-    
+    */
+
     // Show value breakdown if gems are present
     let valueBreakdown = `<div>Sell Value: ${sellValue}g</div>`;
     if (gemCount > 0) {
@@ -15908,13 +15909,18 @@ if (modifiers.length > 0) {
     
     sellHtml += `
         <div class="item-card" style="${withinThreshold ? '' : 'opacity:0.4;'}">
-            <div style="color: ${qualityColor};">⚔️ ${weapon.name} [${displayQuality}]</div>
+            <div style="color: ${qualityColor};">⚔️ ${item.name} [${displayQuality}]</div>
             <div style="font-size:12px;">${buildWeaponDmgLine(weapon, null, p)}</div>
             <div style="color:#888; font-size:11px;">Level ${weapon.level}</div>
             ${modifierHtml}
-            ${gemSlotHtml}
+            
+                    ${buildGemSlotHtml({
+            ...weapon,
+            quality: displayQuality,
+            gems: item.gems || []
+        })}
             ${valueBreakdown}
-            ${withinThreshold ? `<button onclick="confirmSellWeaponInstance(${index}, '${weapon.name}', ${sellValue})">SELL</button>` : '<div style="font-size:11px;color:#555;">Above threshold</div>'}
+            ${withinThreshold ? `<button onclick="confirmSellWeaponInstance(${index}, '${item.name}', ${sellValue})">SELL</button>` : '<div style="font-size:11px;color:#555;">Above threshold</div>'}
         </div>
     `;
 });
@@ -15945,7 +15951,7 @@ armorInstances.forEach(({ item, index }) => {
     const totalDef = armor.baseDefense + qb;
     const totalMag = (armor.baseMagicBonus || 0) + getQualityBonus(displayQuality, armor.baseMagicBonus || 0);
     
-    // Build gem slot display
+    /* // Build gem slot display
     let gemSlotHtml = '';
     const slots = item.gemSlots || armor.gemSlots || 0;
     if (slots > 0) {
@@ -15964,7 +15970,8 @@ armorInstances.forEach(({ item, index }) => {
         }
         gemSlotHtml += '</div>';
     }
-    
+    */
+
     // Show value breakdown if gems are present
     let valueBreakdown = `<div>Sell Value: ${sellValue}g</div>`;
     if (gemCount > 0) {
@@ -15981,7 +15988,7 @@ armorInstances.forEach(({ item, index }) => {
             <div style="color: ${qualityColor};">🛡️ ${armor.name} [${displayQuality}]</div>
             <div style="font-size:12px;">DEF: ${totalDef}${totalMag > 0 ? ` | MAG: +${totalMag}` : ''}</div>
             <div style="color:#888; font-size:11px;">Level ${armor.level || 1}</div>
-            ${gemSlotHtml}
+            
             ${valueBreakdown}
             ${withinThreshold ? `<button onclick="confirmSellArmorInstance(${index}, '${armor.name}', ${sellValue})">SELL</button>` : '<div style="font-size:11px;color:#555;">Above threshold</div>'}
         </div>
