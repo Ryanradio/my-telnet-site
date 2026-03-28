@@ -21794,6 +21794,47 @@ function consumePips(cs, amount, cooldown) {
             };
         }
         
+
+// Add these right before the calculateDamage function
+const ARMOR_TYPE_MULTIPLIERS = {
+    cloth: 0.4,   // Mages, Warlocks (very squishy)
+    leather: 0.7, // Rogues, Hunters, Clerics (medium)
+    chain: 1.0,   // Paladins, Warriors (good defense)
+    plate: 1.3    // Warriors (maximum defense)
+};
+
+function getArmorType(armor) {
+    if (!armor) return 'cloth';
+    
+    const name = (armor.name || '').toLowerCase();
+    
+    // Plate armor detection
+    if (name.includes('plate') || name.includes('full_plate') || name.includes('god_plate') || 
+        name.includes('genesis_plate') || name.includes('primordial_plate') || name.includes('titan_plate') ||
+        name.includes('eternal_plate') || name.includes('void_plate') || name.includes('divine_plate') ||
+        name.includes('darksteel_plate') || name.includes('dread_plate')) {
+        return 'plate';
+    }
+    
+    // Chain armor detection
+    if (name.includes('chain') || name.includes('mail') || name.includes('hauberk') || 
+        name.includes('scale_armor') || name.includes('darksteel_chain') || name.includes('runescarred_chain') ||
+        name.includes('mithril_chain') || name.includes('dragonscale_chain') || name.includes('void_chain')) {
+        return 'chain';
+    }
+    
+    // Leather armor detection
+    if (name.includes('leather') || name.includes('hide') || name.includes('studded') || 
+        name.includes('shadow') || name.includes('phantom') || name.includes('night') || 
+        name.includes('vest') || name.includes('garb') || name.includes('gear')) {
+        return 'leather';
+    }
+    
+    // Cloth armor detection (default)
+    return 'cloth';
+}
+
+
         function calculateDamage({
   attacker,
   defender,
@@ -21819,16 +21860,45 @@ function consumePips(cs, amount, cooldown) {
   // low-roll damage while leaving high-roll damage almost untouched.
   // DR is consistent regardless of the hit size — cloth feels like cloth,
   // plate feels like plate, at every level of the game.
-  let rawDefense =
-    type === 'magic'
-      ? (defender.magicDefense || 0)
-      : (defender.defense || 0);
+    // Get defender's armor info
+  const defenderArmor = defender.armor ? ARMOR[defender.armor] : null;
 
-  const DR_PER_POINT = 0.028;
-  const DR_CAP       = 0.75;
-  const effectiveDR  = Math.min(DR_CAP, rawDefense * DR_PER_POINT) * (1 - armorPiercing);
+  if (type === 'magic') {
+    // Magic damage uses magic defense directly
+    let rawDefense = defender.magicDefense || 0;
+    const DR_PER_POINT = 0.028;
+    const DR_CAP = 0.75;
+    const effectiveDR = Math.min(DR_CAP, rawDefense * DR_PER_POINT) * (1 - armorPiercing);
+    damage = Math.max(1, Math.floor(damage * (1 - effectiveDR)));
+  } else {
+    // Physical damage with armor type multiplier
+    // Calculate total defense from armor, CON, and gems
+    const armorDef = defenderArmor ? defenderArmor.baseDefense + (getQualityBonus(defenderArmor.quality, defenderArmor.baseDefense)) : 0;
+    const conBonus = defender.con || 0;
+    const gemBonus = defender._gemDefBonus || 0;
+    const totalDefense = armorDef + conBonus + gemBonus;
+    
+    // Apply armor type multiplier (cloth = 0.4, leather = 0.7, chain = 1.0, plate = 1.3)
+    const armorType = getArmorType(defenderArmor);
+    const armorMult = ARMOR_TYPE_MULTIPLIERS[armorType] || 0.5;
+    const effectiveDefense = totalDefense * armorMult;
+    
+    // Level-scaling formula: DR% = Effective DEF / (Effective DEF + 40 + (Level × 2))
+    const level = defender.level || 1;
+    const denominator = effectiveDefense + 40 + (level * 2);
+    let damageReduction = effectiveDefense / denominator;
+    
+    // Apply armor piercing (reduces the effectiveness of armor)
+    damageReduction = damageReduction * (1 - armorPiercing);
+    
+    // Cap at 75% max reduction
+    damageReduction = Math.min(0.75, damageReduction);
+    
+    // Apply damage reduction
+    damage = Math.max(1, Math.floor(damage * (1 - damageReduction)));
+  }
 
-  damage = Math.max(1, Math.floor(damage * (1 - effectiveDR)));
+  
   // Apply magic resistance if this is a magic attack
 if (type === 'magic' && defender.magicResist) {
     damage = Math.floor(damage * (1 - defender.magicResist / 100));
