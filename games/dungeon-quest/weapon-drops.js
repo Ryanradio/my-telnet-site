@@ -104,7 +104,15 @@ const MODIFIER_ADJECTIVES = {
     fire_ice: ['Frostfire', 'Elemental', 'Prismatic', 'Dual-Element'],
     fire_lightning: ['Stormfire', 'Plasma', 'Maelstrom', 'Thunderflame'],
     ice_lightning: ['Frostshock', 'Blizzard', 'Tempest', 'Stormfrost'],
-    all_three: ['Prismatic', 'Chaotic', 'Elemental', 'Cosmic', 'Cataclysmic']
+    all_three: ['Prismatic', 'Chaotic', 'Elemental', 'Cosmic', 'Cataclysmic'],
+        // NEW modifiers from your weapons
+    chaos: ['Chaotic', 'Unstable', 'Raging', 'Wild', 'Destructive', 'Erratic'],
+    confuse: ['Confusing', 'Disorienting', 'Bewildering', 'Mind-Bending', 'Maddening', 'Psychedelic'],
+    critical_bonus: ['Precise', 'Keen', 'Accurate', 'Deadly', 'Marksman', 'Lethal'],
+    dragon_bane: ['Dragon-Slaying', 'Wyrm-Bane', 'Scale-Piercing', 'Draconic', 'Dragonforged', 'Wyrmkiller'],
+    giant_slayer: ['Giant-Slaying', 'Colossal', 'Titan', 'Mountain-Crusher', 'Jotun-Bane', 'Frost-Giant'],
+    thunderous: ['Thundering', 'Storm', 'Lightning', 'Tempest', 'Thunderstruck', 'Storm-Bringer'],
+    vorpal: ['Vorpal', 'Decapitating', 'Severing', 'Beheading', 'Neck-Slicing', 'Guillotine']
 };
 
 const MODIFIER_SUFFIXES = {
@@ -118,7 +126,15 @@ const MODIFIER_SUFFIXES = {
     bleed: ['of Bleeding', 'of the Wound', 'of the Gore', 'of the Cut'],
     crit_bonus: ['of Precision', 'of Accuracy', 'of the Marksman', 'of the Assassin'],
     damage_bonus: ['of Might', 'of Power', 'of the Giant', 'of Destruction'],
-    armor_pierce: ['of Piercing', 'of Penetration', 'of the Drill', 'of the Needle']
+    armor_pierce: ['of Piercing', 'of Penetration', 'of the Drill', 'of the Needle'],
+        // NEW modifiers from your weapons
+    chaos: ['of Chaos', 'of Mayhem', 'of Destruction', 'of Anarchy', 'of Pandemonium'],
+    confuse: ['of Confusion', 'of Madness', 'of Delirium', 'of the Lost Mind', 'of Dementia'],
+    critical_bonus: ['of Precision', 'of Accuracy', 'of the Marksman', 'of the Assassin'],
+    dragon_bane: ['of Dragons', 'of the Wyrm', 'of Scale', 'of the Drake', 'of the Serpent'],
+    giant_slayer: ['of Giants', 'of the Colossus', 'of Titans', 'of the Jotun', 'of the Mountain'],
+    thunderous: ['of Thunder', 'of Storms', 'of Lightning', 'of the Tempest', 'of the Sky'],
+    vorpal: ['of Vorpal', 'of Severing', 'of the Guillotine', 'of Beheading', 'of the Headsman']
 };
 
 
@@ -230,111 +246,7 @@ function generateModifiers(quality, weaponLevel) {
     return modifiers;
 }
 
-// ═══════════════════════════════════════════════════════════════
-// ENHANCED WEAPON NAME GENERATION
-// ═══════════════════════════════════════════════════════════════
-
-function generateEnhancedWeaponName(baseWeapon, quality, modifiers) {
-    if (!modifiers || modifiers.length === 0) {
-        let name = baseWeapon.name;
-        
-        // Quality-specific flavor for items with no modifiers
-        if (quality === 'legendary') {
-            const legendaryPrefixes = ['Ancient', 'Mythic', 'Eternal', 'Dragonforged'];
-            name = `${randomChoice(legendaryPrefixes)} ${name}`;
-        } else if (quality === 'godly') {
-            const godlyPrefixes = ['Divine', 'Immortal', 'Primordial', 'Celestial'];
-            name = `${randomChoice(godlyPrefixes)} ${name}`;
-        } else if (quality === 'epic') {
-            const epicPrefixes = ['Mighty', 'Exquisite', 'Flawless', 'Masterwork'];
-            name = `${randomChoice(epicPrefixes)} ${name}`;
-        }
-        return name;
-    }
-    
-    // PRIMARY MODIFIER = first in list (goes to suffix)
-    // SECONDARY MODIFIERS = rest of the list (go to prefix)
-    const primaryMod = modifiers[0];
-    const secondaryMods = modifiers.slice(1);
-    
-    let nameParts = [];
-    
-    // Check for elemental combinations among secondary modifiers
-    let remainingMods = [...secondaryMods];
-    let comboAdjective = '';
-    
-    const hasFire = remainingMods.some(m => m.modKey === 'fire_damage' || m.modKey === 'flaming');
-    const hasIce = remainingMods.some(m => m.modKey === 'ice_damage' || m.modKey === 'freezing');
-    const hasLightning = remainingMods.some(m => m.modKey === 'lightning_damage' || m.modKey === 'shocking');
-    
-    if (hasFire && hasIce && hasLightning) {
-        comboAdjective = randomChoice(MODIFIER_ADJECTIVES.all_three);
-        remainingMods = remainingMods.filter(m => 
-            !['fire_damage', 'flaming', 'ice_damage', 'freezing', 'lightning_damage', 'shocking'].includes(m.modKey)
-        );
-    } else if (hasFire && hasIce) {
-        comboAdjective = randomChoice(MODIFIER_ADJECTIVES.fire_ice);
-        remainingMods = remainingMods.filter(m => 
-            !['fire_damage', 'flaming', 'ice_damage', 'freezing'].includes(m.modKey)
-        );
-    } else if (hasFire && hasLightning) {
-        comboAdjective = randomChoice(MODIFIER_ADJECTIVES.fire_lightning);
-        remainingMods = remainingMods.filter(m => 
-            !['fire_damage', 'flaming', 'lightning_damage', 'shocking'].includes(m.modKey)
-        );
-    } else if (hasIce && hasLightning) {
-        comboAdjective = randomChoice(MODIFIER_ADJECTIVES.ice_lightning);
-        remainingMods = remainingMods.filter(m => 
-            !['ice_damage', 'freezing', 'lightning_damage', 'shocking'].includes(m.modKey)
-        );
-    }
-    
-    if (comboAdjective) {
-        nameParts.push(comboAdjective);
-    }
-    
-    // Add adjectives for remaining secondary modifiers
-    const prefixes = [];
-    for (let i = 0; i < Math.min(remainingMods.length, 2); i++) {
-        const mod = remainingMods[i];
-        const adjPool = MODIFIER_ADJECTIVES[mod.modKey];
-        if (adjPool) {
-            prefixes.push(randomChoice(adjPool));
-        }
-    }
-    
-    // Add quality-specific flavor
-    if (quality === 'legendary' && prefixes.length < 2) {
-        const legendaryAdjs = ['Ancient', 'Mythic', 'Eternal', 'Dragonforged'];
-        prefixes.unshift(randomChoice(legendaryAdjs));
-    } else if (quality === 'godly' && prefixes.length < 2) {
-        const godlyAdjs = ['Divine', 'Immortal', 'Primordial', 'Celestial'];
-        prefixes.unshift(randomChoice(godlyAdjs));
-    } else if (quality === 'epic' && prefixes.length === 0) {
-        const epicAdjs = ['Mighty', 'Exquisite', 'Flawless', 'Masterwork'];
-        prefixes.push(randomChoice(epicAdjs));
-    }
-    
-    if (prefixes.length > 0) {
-        nameParts.push(prefixes.join(' '));
-    }
-    
-    // Add base weapon name
-    nameParts.push(baseWeapon.name);
-    
-    // Add primary modifier suffix
-    let suffix = '';
-    if (primaryMod && MODIFIER_SUFFIXES[primaryMod.modKey]) {
-        suffix = randomChoice(MODIFIER_SUFFIXES[primaryMod.modKey]);
-    }
-    
-    if (suffix) {
-        nameParts.push(suffix);
-    }
-    
-    return nameParts.join(' ');
-}
-
+/*
 // ═══════════════════════════════════════════════════════════════
 // MAIN WEAPON GENERATION FUNCTION
 // ═══════════════════════════════════════════════════════════════
@@ -460,6 +372,262 @@ if (skipRoll) {
     WEAPONS[instanceId] = weapon;
     return weapon;
 }
+*/
+
+
+// NEW CODE to replace the above commented code:
+
+// ═══════════════════════════════════════════════════════════════
+// ENHANCED WEAPON NAME GENERATION - SMART SYSTEM
+// ═══════════════════════════════════════════════════════════════
+
+function generateEnhancedWeaponName(baseWeapon, quality, modifiers) {
+    if (!modifiers || modifiers.length === 0) {
+        return baseWeapon.name;
+    }
+    
+    // Priority order for deterministic output
+    const priorityOrder = [
+        'dragon_bane', 'giant_slayer', 'vorpal', 'lifesteal', 'thunderous',
+        'damage_bonus', 'critical_bonus', 'bleed', 'weaken', 'confuse',
+        'fire_damage', 'ice_damage', 'lightning_damage', 'poison_damage', 'shadow_damage'
+    ];
+    
+    // Sort modifiers by priority
+    const sortedMods = [...modifiers].sort((a, b) => {
+        return priorityOrder.indexOf(a.modKey) - priorityOrder.indexOf(b.modKey);
+    });
+    
+    const modKeys = sortedMods.map(m => m.modKey);
+    const modNames = sortedMods.map(m => m.name);
+    
+    // Helper to get a deterministic choice from an array
+    function deterministicChoice(arr, seed) {
+        if (!arr || arr.length === 0) return '';
+        let hash = 0;
+        const seedStr = JSON.stringify(seed);
+        for (let i = 0; i < seedStr.length; i++) {
+            hash = ((hash << 5) - hash) + seedStr.charCodeAt(i);
+            hash = hash & hash;
+        }
+        const index = Math.abs(hash) % arr.length;
+        return arr[index];
+    }
+    
+    // Generate seed from modifiers for deterministic output
+    const seed = modKeys.sort().join('+');
+    
+    // ========== 1 MODIFIER (Rare) ==========
+    if (modifiers.length === 1) {
+        const mod = sortedMods[0];
+        const singleNames = {
+            fire_damage: 'Flaming',
+            ice_damage: 'Freezing',
+            lightning_damage: 'Shocking',
+            poison_damage: 'Venomous',
+            shadow_damage: 'Shadow',
+            damage_bonus: 'Mighty',
+            critical_bonus: 'Precise',
+            lifesteal: 'Vampiric',
+            bleed: 'Barbed',
+            weaken: 'Weakening',
+            confuse: 'Confusing',
+            dragon_bane: 'Dragon-Slaying',
+            giant_slayer: 'Giant-Slaying',
+            vorpal: 'Vorpal',
+            thunderous: 'Thundering'
+        };
+        const prefix = singleNames[mod.modKey] || mod.name;
+        return `${prefix} ${baseWeapon.name}`;
+    }
+    
+    // ========== 2 MODIFIERS (Epic) ==========
+    if (modifiers.length === 2) {
+        const a = sortedMods[0];
+        const b = sortedMods[1];
+        
+        // Elemental + Elemental combinations
+        const elementalPairs = {
+            'fire_damage+ice_damage': 'Frostfire',
+            'fire_damage+lightning_damage': 'Stormfire',
+            'ice_damage+lightning_damage': 'Frostshock',
+            'fire_damage+poison_damage': 'Venomfire',
+            'ice_damage+poison_damage': 'Frostvenom',
+            'lightning_damage+poison_damage': 'Venom Storm',
+            'fire_damage+shadow_damage': 'Shadowflame',
+            'ice_damage+shadow_damage': 'Shadowfrost',
+            'lightning_damage+shadow_damage': 'Shadow Storm',
+            'poison_damage+shadow_damage': 'Venom Shadow'
+        };
+        
+        const key = [a.modKey, b.modKey].sort().join('+');
+        if (elementalPairs[key]) {
+            return `${elementalPairs[key]} ${baseWeapon.name}`;
+        }
+        
+        // Bane combinations
+        if (a.modKey === 'dragon_bane' && b.modKey === 'giant_slayer') {
+            return `Titanbane ${baseWeapon.name}`;
+        }
+        
+        // Special combinations
+        const specialPairs = {
+            'lifesteal+damage_bonus': 'Bloodfist',
+            'lifesteal+critical_bonus': 'Bloodthirst',
+            'lifesteal+lightning_damage': 'Stormblood',
+            'lifesteal+vorpal': 'Bloodreaver',
+            'lifesteal+thunderous': 'Bloodstorm',
+            'vorpal+thunderous': 'Thunderstrike',
+            'vorpal+damage_bonus': 'Headsman',
+            'thunderous+damage_bonus': 'Thunderfist',
+            'critical_bonus+damage_bonus': 'Mighty Blow',
+            'critical_bonus+lightning_damage': 'Thunderstrike',
+            'bleed+damage_bonus': 'Rending'
+        };
+        
+        if (specialPairs[key]) {
+            return `${specialPairs[key]} ${baseWeapon.name}`;
+        }
+        
+        // Default: combine modifier names
+        return `${a.name} ${b.name} ${baseWeapon.name}`;
+    }
+    
+    // ========== 3-4 MODIFIERS (Legendary/Godly) ==========
+    
+    // Categorize modifiers
+    const categories = {
+        elemental: [],
+        bane: [],
+        special: [],
+        damage: []
+    };
+    
+    for (const mod of sortedMods) {
+        if (['fire_damage', 'ice_damage', 'lightning_damage', 'poison_damage', 'shadow_damage'].includes(mod.modKey)) {
+            categories.elemental.push(mod);
+        } else if (['dragon_bane', 'giant_slayer'].includes(mod.modKey)) {
+            categories.bane.push(mod);
+        } else if (['lifesteal', 'vorpal', 'thunderous', 'confuse'].includes(mod.modKey)) {
+            categories.special.push(mod);
+        } else {
+            categories.damage.push(mod);
+        }
+    }
+    
+    let nameParts = [];
+    
+    // Handle elemental combos
+    if (categories.elemental.length >= 3) {
+        const hasFire = categories.elemental.some(m => m.modKey === 'fire_damage');
+        const hasIce = categories.elemental.some(m => m.modKey === 'ice_damage');
+        const hasLightning = categories.elemental.some(m => m.modKey === 'lightning_damage');
+        const hasPoison = categories.elemental.some(m => m.modKey === 'poison_damage');
+        const hasShadow = categories.elemental.some(m => m.modKey === 'shadow_damage');
+        
+        if (hasFire && hasIce && hasLightning) {
+            if (hasPoison) nameParts.push('Prismatic Venom');
+            else if (hasShadow) nameParts.push('Prismatic Void');
+            else nameParts.push('Prismatic');
+        } else if (hasFire && hasIce) nameParts.push('Frostfire');
+        else if (hasFire && hasLightning) nameParts.push('Stormfire');
+        else if (hasIce && hasLightning) nameParts.push('Frostshock');
+        else if (hasFire && hasPoison) nameParts.push('Venomfire');
+        else if (hasIce && hasPoison) nameParts.push('Frostvenom');
+        else if (hasLightning && hasPoison) nameParts.push('Venom Storm');
+        else if (hasFire && hasShadow) nameParts.push('Shadowflame');
+        else if (hasIce && hasShadow) nameParts.push('Shadowfrost');
+        else if (hasLightning && hasShadow) nameParts.push('Shadow Storm');
+        else if (hasPoison && hasShadow) nameParts.push('Venom Shadow');
+        else if (categories.elemental.length === 1) {
+            const elem = categories.elemental[0];
+            const elemNames = { fire_damage: 'Flame', ice_damage: 'Frost', lightning_damage: 'Storm', poison_damage: 'Venom', shadow_damage: 'Shadow' };
+            nameParts.push(elemNames[elem.modKey]);
+        }
+    } else if (categories.elemental.length === 2) {
+        const a = categories.elemental[0];
+        const b = categories.elemental[1];
+        const elementalPairs = {
+            'fire_damage+ice_damage': 'Frostfire',
+            'fire_damage+lightning_damage': 'Stormfire',
+            'ice_damage+lightning_damage': 'Frostshock',
+            'fire_damage+poison_damage': 'Venomfire',
+            'ice_damage+poison_damage': 'Frostvenom',
+            'lightning_damage+poison_damage': 'Venom Storm',
+            'fire_damage+shadow_damage': 'Shadowflame',
+            'ice_damage+shadow_damage': 'Shadowfrost',
+            'lightning_damage+shadow_damage': 'Shadow Storm',
+            'poison_damage+shadow_damage': 'Venom Shadow'
+        };
+        const key = [a.modKey, b.modKey].sort().join('+');
+        if (elementalPairs[key]) nameParts.push(elementalPairs[key]);
+    } else if (categories.elemental.length === 1) {
+        const elem = categories.elemental[0];
+        const elemNames = { fire_damage: 'Flame', ice_damage: 'Frost', lightning_damage: 'Storm', poison_damage: 'Venom', shadow_damage: 'Shadow' };
+        nameParts.push(elemNames[elem.modKey]);
+    }
+    
+    // Handle bane combos
+    if (categories.bane.length === 2) {
+        nameParts.push('Titanbane');
+    } else if (categories.bane.length === 1) {
+        const bane = categories.bane[0];
+        if (bane.modKey === 'dragon_bane') nameParts.push('Wyrmbane');
+        if (bane.modKey === 'giant_slayer') nameParts.push('Titanfall');
+    }
+    
+    // Handle special combos
+    const hasVamp = categories.special.some(m => m.modKey === 'lifesteal');
+    const hasVorpal = categories.special.some(m => m.modKey === 'vorpal');
+    const hasThunder = categories.special.some(m => m.modKey === 'thunderous');
+    const hasConfuse = categories.special.some(m => m.modKey === 'confuse');
+    
+    if (hasVamp && hasVorpal && hasThunder) {
+        nameParts.push('Bloodstorm');
+    } else if (hasVamp && hasVorpal) {
+        nameParts.push('Bloodreaver');
+    } else if (hasVamp && hasThunder) {
+        nameParts.push('Stormblood');
+    } else if (hasVorpal && hasThunder) {
+        nameParts.push('Thunderstrike');
+    } else if (hasVamp) {
+        nameParts.push('Vampiric');
+    } else if (hasVorpal) {
+        nameParts.push('Vorpal');
+    } else if (hasThunder) {
+        nameParts.push('Thundering');
+    } else if (hasConfuse) {
+        nameParts.push('Maddening');
+    }
+    
+    // Handle damage modifiers as fallback
+    if (nameParts.length === 0 && categories.damage.length > 0) {
+        const hasPower = categories.damage.some(m => m.modKey === 'damage_bonus');
+        const hasCrit = categories.damage.some(m => m.modKey === 'critical_bonus');
+        const hasBleed = categories.damage.some(m => m.modKey === 'bleed');
+        const hasWeaken = categories.damage.some(m => m.modKey === 'weaken');
+        
+        if (hasPower && hasCrit) nameParts.push('Mighty');
+        else if (hasPower && hasBleed) nameParts.push('Rending');
+        else if (hasPower) nameParts.push('Powerful');
+        else if (hasCrit) nameParts.push('Precise');
+        else if (hasBleed) nameParts.push('Barbed');
+        else if (hasWeaken) nameParts.push('Weakening');
+        else nameParts.push(categories.damage[0].name);
+    }
+    
+    // Ultimate fallback
+    if (nameParts.length === 0) {
+        nameParts.push(sortedMods[0].name);
+    }
+    
+    // Build final name
+    let finalName = nameParts.join(' ');
+    finalName = `${finalName} ${baseWeapon.name}`;
+    
+    return finalName.trim();
+}
+
 
 // ═══════════════════════════════════════════════════════════════
 // ARMOR DROP SYSTEM - EXPANDED TO INCLUDE ALL ARMOR
@@ -540,12 +708,8 @@ function generateArmorDrop(player, enemyLevel, enemyRarity = 'common', skipRoll 
     const magicBonus = baseArmor.baseMagicBonus ? Math.floor(baseArmor.baseMagicBonus * bonusPct) : 0;
     const resistBonus = baseArmor.magicResist ? Math.floor(baseArmor.magicResist * bonusPct) : 0;
     
-    const gemSlots = {
-        rare: 1,
-        epic: 2,
-        legendary: 3,
-        godly: 4
-    }[quality] || 0;
+    // ← FIX: Armor does NOT have gem slots (set to 0)
+    const gemSlots = 0;  // ← CHANGED: was using quality mapping, now always 0
     
     const instanceId = `${baseArmorId}_${quality}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
     
@@ -577,7 +741,7 @@ function generateArmorDrop(player, enemyLevel, enemyRarity = 'common', skipRoll 
         quality: quality,
         qualityBonus: bonusPct,
         gems: [],
-        gemSlots: gemSlots,
+        gemSlots: gemSlots,  // ← FIXED: always 0
         cost: baseArmor.cost ? Math.floor(baseArmor.cost * (1 + bonusPct)) : 100,
         description: baseArmor.description || `A ${quality} quality ${baseArmor.name}.`,
         allowedClasses: baseArmor.allowedClasses,
@@ -592,7 +756,7 @@ function generateArmorDrop(player, enemyLevel, enemyRarity = 'common', skipRoll 
         instanceId: instanceId,
         quality: quality,
         gems: [],
-        gemSlots: gemSlots,
+        gemSlots: gemSlots,  // ← FIXED: always 0
         dropLevel: enemyLevel,
         dropTime: Date.now()
     };
