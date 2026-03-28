@@ -19658,17 +19658,25 @@ function showInventoryOverlay() {
         const closeFn = inDungeon ? 'renderDungeonActionBar()' : 'renderActionBar()';
         
         let modHtml = '';
-        const modifiers = instanceData?.modifiers || weapon.modifiers || [];
-        if (modifiers.length > 0) {
-            modHtml = '<div style="margin-top:4px;">';
-            modifiers.forEach(modKey => {
-                const mod = typeof WEAPON_MODIFIERS !== 'undefined' ? WEAPON_MODIFIERS[modKey] : null;
-                if (mod) {
-                    modHtml += `<div style="color:${mod.color};font-size:12px;">• ${mod.name}${mod.minDamage ? ` (${mod.minDamage}-${mod.maxDamage})` : ''}</div>`;
-                }
-            });
-            modHtml += '</div>';
-        }
+const modifiers = instanceData?.modifiers || weapon.modifiers || [];
+if (modifiers && modifiers.length > 0) {
+    modHtml = `<div style="margin-top: 6px; font-size: 12px; border-top: 1px solid #1a3a1a; padding-top: 4px;">
+        <div style="color:#8aaa8a; font-size:10px; margin-bottom:2px;">✦ Modifiers:</div>`;
+    
+    modifiers.forEach(mod => {
+        // mod is already an object with name, modKey, minDamage, etc.
+        const modColor = mod.color || '#FFD700';
+        let modText = `<span style="color:${modColor};">✨ ${mod.name}`;
+        if (mod.minDamage) modText += ` (+${mod.minDamage}-${mod.maxDamage})`;
+        if (mod.poisonChance) modText += ` (${mod.poisonChance}% poison)`;
+        if (mod.lifestealPercent) modText += ` (${mod.lifestealPercent}% lifesteal)`;
+        if (mod.critBonus) modText += ` (+${mod.critBonus}% crit)`;
+        modText += `</span>`;
+        modHtml += `<div style="margin: 2px 0;">${modText}</div>`;
+    });
+    
+    modHtml += `</div>`;
+}
         
         const canEquip = canUseWeapon(playerClass, weapon);
         const equipKey = instanceData ? instanceData.instanceId : weaponItem.key;
