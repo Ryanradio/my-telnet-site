@@ -18589,20 +18589,43 @@ function stabilizeTerminalLayout() {
         
 // Add Vorpal modifier
 if (mod.modKey === 'vorpal') {
-    // Vorpal: chance to instantly kill non-boss enemies
     const vorpalChance = 0.01; // 1% chance
     
     if (!target.isBoss && Math.random() < vorpalChance) {
         const remainingHP = target.hp;
         target.hp = 0;
-        messages.push(`<span style="color:#FF4444;font-weight:bold;font-size:16px;">⚔️ VORPAL STRIKE! Your blade severs the ${target.name}'s head! Instant kill! ⚔️</span>`);
-        // Return immediately with the killing blow
-        return { totalDamage: remainingHP, messages };
+        
+        // Random epic death messages
+        const deathMessages = [
+            `⚔️⚔️⚔️ VORPAL STRIKE! Your blade severs the ${target.name}'s head! Instant kill! ⚔️⚔️⚔️`,
+            `⚔️⚔️⚔️ VORPAL STRIKE! With a whisper of steel, the ${target.name}'s head tumbles to the ground! ⚔️⚔️⚔️`,
+            `⚔️⚔️⚔️ VORPAL STRIKE! The ancient enchantment awakens — ${target.name} is decapitated in a flash! ⚔️⚔️⚔️`,
+            `⚔️⚔️⚔️ VORPAL STRIKE! A clean cut! The ${target.name} collapses, its head rolling away! ⚔️⚔️⚔️`,
+            `⚔️⚔️⚔️ VORPAL STRIKE! The blade sings as it decapitates the ${target.name} in a single stroke! ⚔️⚔️⚔️`
+        ];
+        const randomMessage = deathMessages[Math.floor(Math.random() * deathMessages.length)];
+        
+        // Send directly to terminal
+        if (typeof termAppend === 'function') {
+            termAppend(randomMessage, 'term-victory');
+        }
+        
+        return { totalDamage: remainingHP, messages: [randomMessage] };
+        
     } else if (target.isBoss && Math.random() < vorpalChance) {
-        // Bosses take bonus damage instead of instant death
         const bonusDamage = Math.floor(totalDamage * 0.5);
         totalDamage += bonusDamage;
-        messages.push(`<span style="color:#FF8844;">⚔️ VORPAL STRIKE! The ${target.name} is too powerful to behead, but takes ${bonusDamage} bonus damage! ⚔️</span>`);
+        
+        const bossMessages = [
+            `⚔️ VORPAL STRIKE! The ${target.name} staggers as your blade finds a chink in its armor! +${bonusDamage} bonus damage! ⚔️`,
+            `⚔️ VORPAL STRIKE! Even a ${target.name} cannot ignore a blow aimed at its neck! +${bonusDamage} bonus damage! ⚔️`,
+            `⚔️ VORPAL STRIKE! The ancient magic flares — the ${target.name} reels from the precision strike! +${bonusDamage} bonus damage! ⚔️`
+        ];
+        const randomMessage = bossMessages[Math.floor(Math.random() * bossMessages.length)];
+        
+        if (typeof termAppend === 'function') {
+            termAppend(randomMessage, 'term-highlight');
+        }
     }
 }
 
