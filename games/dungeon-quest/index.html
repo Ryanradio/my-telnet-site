@@ -12945,6 +12945,101 @@ console.log(`⚔️ Final equipped weapon: ${gameState.player.weapon}`);
 console.log(`🛡️ Final equipped armor: ${gameState.player.armor}`);
 
 
+
+// Add this inside loadCharacter() function, after the player data is restored
+// Look for: gameState.player = { ...data.player, ... }
+// Then add this code right after:
+
+// ═══════════════════════════════════════════════════════════════
+// CLASS-BASED HP MIGRATION - Retroactive CON scaling
+// ═══════════════════════════════════════════════════════════════
+
+(function migrateToClassBasedHP(p) {
+    if (!p) return;
+    
+    // Skip if already migrated
+    if (p._hpMigratedToClassBased) {
+        console.log('✅ HP already migrated to class-based system');
+        return;
+    }
+    
+    const playerClass = p.baseClass || p.class;
+    const level = p.level || 1;
+    const con = p.con || 0;
+    
+    // Class HP Multipliers (how much CON affects HP per level)
+    const conMultipliers = {
+        warrior: 1.5,
+        paladin: 1.3,
+        cleric: 1.0,
+        runesmith: 1.1,
+        hunter: 0.9,
+        rogue: 0.8,
+        warlock: 0.7,
+        mage: 0.6,
+        default: 0.8
+    };
+    
+    // Base HP at level 1 by class
+    const baseHP = {
+        warrior: 120,
+        paladin: 100,
+        cleric: 85,
+        runesmith: 90,
+        hunter: 80,
+        rogue: 75,
+        warlock: 65,
+        mage: 55,
+        default: 80
+    };
+    
+    const multiplier = conMultipliers[playerClass] || conMultipliers.default;
+    const base = baseHP[playerClass] || baseHP.default;
+    
+    // New formula: BaseHP + (Level-1) × 15 + (CON × multiplier × (Level-1))
+    const levelBonus = (level - 1) * 15;
+    const conBonus = Math.floor(con * multiplier * (level - 1));
+    const newMaxHP = base + levelBonus + conBonus;
+    
+    console.log('═══════════════════════════════════════');
+    console.log('❤️ CLASS-BASED HP MIGRATION');
+    console.log('═══════════════════════════════════════');
+    console.log(`   Character: ${p.name}`);
+    console.log(`   Class: ${playerClass}`);
+    console.log(`   CON Multiplier: ${multiplier}x`);
+    console.log(`   Level: ${level}`);
+    console.log(`   CON: ${con}`);
+    console.log(`   Old HP: ${p.maxHp}`);
+    console.log(`   New HP: ${newMaxHP}`);
+    console.log(`   Change: ${newMaxHP - p.maxHp}`);
+    
+    if (newMaxHP !== p.maxHp) {
+        p.maxHp = newMaxHP;
+        p.hp = Math.min(p.hp, p.maxHp);
+        p._hpMigratedToClassBased = true;
+        console.log(`\n✅ HP updated! ${p.name} now has ${p.maxHp} HP`);
+        
+        // Show a message in the terminal if in game
+        if (typeof termAppend === 'function') {
+            termAppend('', 'term-separator');
+            termAppend(`<span style="color:#88FF88;">❤️ Class-based HP system applied!</span>`, 'term-victory');
+            termAppend(`<span style="color:#FFD700;">Your HP has been recalculated: ${p.maxHp} total</span>`, 'term-loot');
+            if (newMaxHP > p.maxHp) {
+                termAppend(`<span style="color:#88FF88;">You gained ${newMaxHP - p.maxHp} HP from the new system!</span>`, 'term-loot');
+            }
+        }
+    } else {
+        console.log(`\n✅ HP already correct for class-based system`);
+    }
+    
+    // Recalculate stats after HP change
+    if (typeof recalcGemStats === 'function') recalcGemStats(p);
+    if (typeof updateHud === 'function') updateHud();
+    if (typeof saveGame === 'function') saveGame();
+    
+})(gameState.player);
+
+
         showTown();
 
     } catch (e) {
@@ -25539,20 +25634,7 @@ function rollLoot(monster) {
             }
         };
 
-        window._saveStatChanges = function(backFn) {
-            const p = gameState.player;
-            // Apply pending to actual stats
-            STAT_NAMES.forEach(s => {
-                const gained = window._statPending[s] || 0;
-                if (gained > 0) {
-                    p[s] = (p[s] || 0) + gained;
-                    if (s === 'con') { p.maxHp += gained; p.hp = Math.min(p.hp, p.maxHp); }
-                }
-            });
-            window._statPending = {};
-            saveGame();
-            if (backFn) backFn();
-        };
+        
 
         function buildCombatRecordHtml(p) {
     const kills      = p.kills || {};
@@ -25629,7 +25711,72 @@ function showCharacterStats() {
                 </button>
             `;
         }
+
         
+function _statPend(stat) {
+    const p = gameState.player;
+    if (p.statPoints <= 0) return;
+    window._statPending[stat] = (window._statPending[stat] || 0) + 1;
+    p.statPoints--;
+    // Re-render the stats screen
+    if (document.getElementById('levelUpModal')) {
+        _renderLevelUpModal();
+    } else {
+        showCharacterStats();
+    }
+}
+
+
+function _saveStatChanges(backFn) {
+    const p = gameState.player;
+    let conChanged = false;
+    let oldCon = p.con || 0;
+    
+    // Apply pending to actual stats
+    STAT_NAMES.forEach(s => {
+        const gained = window._statPending[s] || 0;
+        if (gained > 0) {
+            p[s] = (p[s] || 0) + gained;
+            if (s === 'con') conChanged = true;
+        }
+    });
+    
+    // If CON changed, recalculate HP using class-based formula (retroactive!)
+    if (conChanged) {
+        const playerClass = p.baseClass || p.class;
+        const level = p.level || 1;
+        const con = p.con || 0;
+        
+        // Class HP Multipliers
+        const conMultipliers = {
+            warrior: 1.5, paladin: 1.3, cleric: 1.0, runesmith: 1.1,
+            hunter: 0.9, rogue: 0.8, warlock: 0.7, mage: 0.6, default: 0.8
+        };
+        
+        // Base HP at level 1 by class
+        const baseHP = {
+            warrior: 120, paladin: 100, cleric: 85, runesmith: 90,
+            hunter: 80, rogue: 75, warlock: 65, mage: 55, default: 80
+        };
+        
+        const multiplier = conMultipliers[playerClass] || conMultipliers.default;
+        const base = baseHP[playerClass] || baseHP.default;
+        const levelBonus = (level - 1) * 15;
+        const conBonus = Math.floor(con * multiplier * (level - 1));
+        const newMaxHP = base + levelBonus + conBonus;
+        
+        p.maxHp = newMaxHP;
+        p.hp = Math.min(p.hp, p.maxHp);
+        
+        console.log(`❤️ CON changed from ${oldCon} to ${con}. HP recalculated to ${p.maxHp}`);
+    }
+    
+    window._statPending = {};
+    saveGame();
+    if (backFn) backFn();
+}
+
+
         function calculatePhysicalDamage() {
             const p = gameState.player;
             const weapon = WEAPONS[p.weapon] || { baseDamage: 1, quality: 'poor' };
