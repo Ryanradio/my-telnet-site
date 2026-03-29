@@ -18774,7 +18774,7 @@ if (mod.modKey === 'vorpal') {
             if (!Array.isArray(enemyKeys)) enemyKeys = [enemyKeys];
             const monsters = enemyKeys.map((k, index) => {
                 const fr = forcedRarities ? (forcedRarities[index] || null) : null;
-                const monster = enemyKeys.map(key => spawnMonsterWithRarity(key)).filter(Boolean);
+                const monster = spawnMonsterWithRarity(k, useZoneLevel, fr);
                 monster.index = index; // Add index for status effect tracking
                 return monster;
             });
