@@ -3401,7 +3401,7 @@ wandering_merchant: {
                     {
                         weight: 25,
                         text: 'A cursed weapon! When you touch it, an undead warrior rises to reclaim it!',
-                        combat: ['undead_warrior']
+                        combat: ['skeleton_warrior']
                     }
                 ]
             },
@@ -3421,7 +3421,7 @@ wandering_merchant: {
                     {
                         weight: 20,
                         text: 'Your respect awakens the field! ALL the dead rise! "Join us in eternal battle!"',
-                        combat: ['undead_legion_small']
+                        combat: ['zombie', 'skeleton']
                     }
                 ]
             },
