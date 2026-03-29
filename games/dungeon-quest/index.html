@@ -4523,6 +4523,28 @@ const OPPOSITE_DIR = {
             return cfg.bonus || 0;
         }
 
+
+        // Add this near your other helper functions (around line 4000-6000 in your file)
+
+function getScaledEnemyHP(baseHP, level) {
+    // Scale HP based on level to make higher level enemies more durable
+    let multiplier = 1.0;
+    
+    if (level >= 20) {
+        multiplier = 4.0;
+    } else if (level >= 15) {
+        multiplier = 3.0;
+    } else if (level >= 10) {
+        multiplier = 2.0;
+    } else if (level >= 5) {
+        multiplier = 1.5;
+    }
+    // level 1-4: multiplier stays 1.0
+    
+    return Math.floor(baseHP * multiplier);
+}
+
+
                 function calcPlayerHits(p) {
             const baseClass = p.baseClass || p.class;
             
@@ -4681,24 +4703,25 @@ line += `<br><span style="color:#ffcc88;">YOUR DMG: ${yourMin}${yourMax > yourMi
 }
         function calcChaSellBonus(cha){ return Math.min(15, (cha||0) * 1); }   // sell %  bonus
         function calcInnCost(cha)     { return Math.max(20, 50 - (cha||0)); }
-        function calcCritChance(lck, player)  { 
-            // Base: 3% + 0.5% per LCK (not 1%) — prevents LCK-dumping giving 30%+ at level 1
-            let baseCrit = 3 + Math.floor((lck || 0) * 0.5);
-            
-            if (player) {
-                const baseClass = player.baseClass || player.class;
-                const lvl = player.level || 1;
-                if (baseClass === 'rogue') {
-                    // Rogue: 5% base + 0.75% per LCK + 1% per 2 levels
-                    // This gives ~15% at level 3 with 17 LCK (fun but not broken)
-                    // and scales to ~50% at level 20 (exciting endgame)
-                    baseCrit = 5 + Math.floor((lck || 0) * 0.75) + Math.floor(lvl / 2);
-                }
-            }
-            
-            const cap = (player && (player.baseClass || player.class) === 'rogue') ? 75 : 30;
-            return Math.min(cap, baseCrit);
-        }  // %
+        function calcCritChance(lck, player) { 
+    // Base: 3% + 0.5% per LCK (rounded normally, not floored)
+    let baseCrit = 3 + ((lck || 0) * 0.5);
+    
+    if (player) {
+        const baseClass = player.baseClass || player.class;
+        const lvl = player.level || 1;
+        if (baseClass === 'rogue') {
+            // Rogue: 5% base + 0.75% per LCK + 1% per 2 levels
+            baseCrit = 5 + ((lck || 0) * 0.75) + Math.floor(lvl / 2);
+        }
+    }
+    
+    // Cap at 75% for rogues, 30% for others
+    const cap = (player && (player.baseClass || player.class) === 'rogue') ? 75 : 30;
+    return Math.min(cap, Math.floor(baseCrit)); // Still floor final for integer display
+}  
+
+// %
         function calcDodgeChance(dex) { return Math.min(40, (dex||0) * 2); }   // %
         function calcLootBonus(lck)   { return Math.min(25, (lck||0) * 2); }   // extra %
 
@@ -18564,6 +18587,25 @@ function stabilizeTerminalLayout() {
             messages.push(`<span style="color:#FF4488;">🩸 +${heal} HP (${mod.name} lifesteal)</span>`);
         }
         
+// Add Vorpal modifier
+if (mod.modKey === 'vorpal') {
+    // Vorpal: chance to instantly kill non-boss enemies
+    const vorpalChance = 0.01; // 1% chance
+    
+    if (!target.isBoss && Math.random() < vorpalChance) {
+        const remainingHP = target.hp;
+        target.hp = 0;
+        messages.push(`<span style="color:#FF4444;font-weight:bold;font-size:16px;">⚔️ VORPAL STRIKE! Your blade severs the ${target.name}'s head! Instant kill! ⚔️</span>`);
+        // Return immediately with the killing blow
+        return { totalDamage: remainingHP, messages };
+    } else if (target.isBoss && Math.random() < vorpalChance) {
+        // Bosses take bonus damage instead of instant death
+        const bonusDamage = Math.floor(totalDamage * 0.5);
+        totalDamage += bonusDamage;
+        messages.push(`<span style="color:#FF8844;">⚔️ VORPAL STRIKE! The ${target.name} is too powerful to behead, but takes ${bonusDamage} bonus damage! ⚔️</span>`);
+    }
+}
+
         // Dragon/Giant Slayer multipliers
         if (mod.vsDragonBonus) {
             dragonMultiplier = Math.max(dragonMultiplier, mod.vsDragonBonus);
@@ -18763,8 +18805,8 @@ function spawnMonsterWithRarity(enemyKey, zoneLevel = null, forcedRarity = null)
         name: template.name, 
         rarity, 
         rarityColor: RARITY_CONFIG[rarity].color,
-        hp: Math.floor(template.baseHp * mult),           // ← NO level scaling!
-        maxHp: Math.floor(template.baseHp * mult),
+        hp: getScaledEnemyHP(Math.floor(template.baseHp * mult), monsterLevel),
+maxHp: getScaledEnemyHP(Math.floor(template.baseHp * mult), monsterLevel),
         damage: scaledAvg,
         minDamage: scaledMin,
         maxDamage: scaledMax,
@@ -21898,7 +21940,7 @@ function getArmorType(armor) {
     damage = Math.max(1, Math.floor(damage * (1 - damageReduction)));
   }
 
-  
+
   // Apply magic resistance if this is a magic attack
 if (type === 'magic' && defender.magicResist) {
     damage = Math.floor(damage * (1 - defender.magicResist / 100));
@@ -22052,9 +22094,15 @@ if (type === 'magic' && defender.magicResist) {
         gemDefBonus     += gem.stats.defenseBonus || 0;
     }
 
-    const physicalBase =
-        weaponDamage + Math.floor((p.str || 0) * 1.5) + gemMeleeDmg;
+// Get class-based STR multiplier
+const playerClass = p.baseClass || p.class;
+let strMult = 1.0;
+if (playerClass === 'warrior' || playerClass === 'paladin') strMult = 1.5;
+else if (playerClass === 'mage' || playerClass === 'warlock') strMult = 0.5;
+else strMult = 1.0;
 
+const strBonus = Math.floor((p.str || 0) * strMult);
+const physicalBase = weaponDamage + strBonus + gemMeleeDmg;
     const magicRolled = weapon.baseMagicDamage
         ? Math.floor(Math.random() * ((weapon.maxMagicDamage || weapon.baseMagicDamage) - weapon.baseMagicDamage + 1)) + weapon.baseMagicDamage
         : 0;
@@ -22248,7 +22296,7 @@ if (baseClass === 'rogue' && isDaggerWeapon && enemy.hp > 0) {
     const maxDmg2 = (weapon.maxDamage || weapon.baseDamage) + qBonus;
     let weaponDamage2 = Math.floor(Math.random() * (maxDmg2 - minDmg2 + 1)) + minDmg2;
     
-    const physBase2  = weaponDamage2 + Math.floor((p.str || 0) * 1.5) + gemMeleeDmg;
+    const physBase2  = weaponDamage2 + strBonus + gemMeleeDmg;
     const magicBase2 = (weapon.baseMagicDamage || 0) + Math.floor((p.wis || 0) * 1.5) + gemMagicDmg;
     
     let totalBase2 = Math.floor(Math.max(physBase2, magicBase2) * 1.0);
@@ -24496,25 +24544,23 @@ if (cs.isBountyFight) {
                 termAppend(`<span style="color:#333;font-size:13px;">${slotCircles}</span> <span style="color:#555;font-size:11px;">${dropSlots} gem slot${dropSlots>1?'s':''} — visit the Blacksmith to socket gems</span>`);
             }
             
-            // Show modifiers
-            if (weaponDrop.modifiers && weaponDrop.modifiers.length > 0) {
-                termAppend('<span style="color:#00FFFF;">Special Properties:</span>');
-                weaponDrop.modifiers.forEach(modKey => {
-                    const mod = WEAPON_MODIFIERS[modKey];
-                    if (mod) {
-                        let modText = `  • <span style="color:${mod.color};">${mod.name}`;
-                        if (mod.minDamage) {
-                            modText += ` (${mod.minDamage}-${mod.maxDamage} dmg)`;
-                        }
-                        if (mod.statusEffect) {
-                            const status = STATUS_EFFECTS[mod.statusEffect];
-                            modText += ` - ${Math.floor(mod.statusChance * 100)}% ${status.icon} ${status.name}`;
-                        }
-                        modText += `</span>`;
-                        termAppend(modText, 'term-loot');
-                    }
-                });
-            }
+// Show modifiers
+if (weaponDrop.modifiers && weaponDrop.modifiers.length > 0) {
+    termAppend('<span style="color:#00FFFF;">Special Properties:</span>');
+    weaponDrop.modifiers.forEach(mod => {
+        // mod is already an object, not a key
+        let modText = `  • <span style="color:${mod.color || '#FFD700'};">${mod.name}`;
+        if (mod.minDamage) {
+            modText += ` (${mod.minDamage}-${mod.maxDamage} dmg)`;
+        }
+        if (mod.statusEffect) {
+            const status = STATUS_EFFECTS[mod.statusEffect];
+            modText += ` - ${Math.floor(mod.statusChance * 100)}% ${status.icon} ${status.name}`;
+        }
+        modText += `</span>`;
+        termAppend(modText, 'term-loot');
+    });
+}
             termAppend('', 'term-separator');
         }
 
@@ -25868,21 +25914,40 @@ function armorSocketCard() {
 
 function doCutGem(rawGemKey) {
     const p = gameState.player;
-    if (p.gold < 200) { alert("You need 200 gold to cut a gem."); return; }
+    
+    // Calculate discount from CHA
+    const discount = Math.min(30, (p.cha || 0) * 2);
+    const cost = Math.max(1, Math.floor(200 * (1 - discount / 100)));
+    
+    if (p.gold < cost) { 
+        alert(`You need ${cost} gold to cut a gem.`); 
+        return; 
+    }
+    
     const idx = p.inventory.indexOf(rawGemKey);
-    if (idx < 0) { alert("Gem not found in inventory."); return; }
-    p.gold -= 200;
+    if (idx < 0) { 
+        alert("Gem not found in inventory."); 
+        return; 
+    }
+    
+    p.gold -= cost;
     p.inventory.splice(idx, 1);
     const cut = cutGem(rawGemKey);
-    if (!cut) { alert("Could not cut gem — unknown type."); p.gold += 200; return; }
+    if (!cut) { 
+        alert("Could not cut gem — unknown type."); 
+        p.gold += cost; 
+        return; 
+    }
     p.inventory.push(cut);
     saveGame();
+    
     const parts = rawGemKey.split('_');
     const typeKey = parts[1];
     const gem = GEM_TYPES[typeKey];
+    const discountText = discount > 0 ? ` (${discount}% CHA discount)` : '';
     const flash = document.createElement('div');
     flash.style.cssText = `position:fixed;top:15px;left:50%;transform:translateX(-50%);background:#0a0a0a;border:2px solid ${gem?gem.color:'#FF7722'};padding:14px 24px;color:${gem?gem.color:'#FF7722'};font-size:15px;z-index:9999;text-align:center;max-width:340px;`;
-    flash.innerHTML = `⚒️ <strong>Gem Cut!</strong><br><span style="font-size:12px;color:#ccc;">${cut.name}<br>${cut.description}</span>`;
+    flash.innerHTML = `⚒️ <strong>Gem Cut!</strong><br><span style="font-size:12px;color:#ccc;">${cut.name}<br>${cut.description}<br>Paid: ${cost}g${discountText}</span>`;
     document.body.appendChild(flash);
     setTimeout(() => flash.remove(), 3500);
     showBlacksmith('cut');
@@ -25891,8 +25956,13 @@ function doCutGem(rawGemKey) {
 // Fix the doSocketGem function
 function doSocketGem(cutGemInventoryIndex, target) {
     const p = gameState.player;
-    if (p.gold < 100) { 
-        alert("You need 100 gold to socket a gem."); 
+    
+    // Calculate discount from CHA
+    const discount = Math.min(30, (p.cha || 0) * 2);
+    const cost = Math.max(1, Math.floor(100 * (1 - discount / 100)));
+    
+    if (p.gold < cost) { 
+        alert(`You need ${cost} gold to socket a gem.`); 
         return; 
     }
     
@@ -25946,14 +26016,15 @@ function doSocketGem(cutGemInventoryIndex, target) {
     }
     
     // Confirm before socketing
-    if (!confirm(`Socket ${gem.name} into ${item.name}? This is permanent and cannot be undone.`)) {
+    const discountText = discount > 0 ? ` (${discount}% CHA discount)` : '';
+    if (!confirm(`Socket ${gem.name} into ${item.name} for ${cost}g${discountText}? This is permanent and cannot be undone.`)) {
         return;
     }
     
     // Deduct gold
-    p.gold -= 100;
+    p.gold -= cost;
     
-    // Remove the gem from inventory (exactly ONE gem)
+    // Remove the gem from inventory
     p.inventory.splice(invIdx, 1);
     
     // Push gem onto the live WEAPONS/ARMOR instance
@@ -25975,7 +26046,7 @@ function doSocketGem(cutGemInventoryIndex, target) {
     // Show success message
     const flash = document.createElement('div');
     flash.style.cssText = `position:fixed;top:15px;left:50%;transform:translateX(-50%);background:#0a0a0a;border:2px solid ${gem.color};padding:14px 24px;color:${gem.color};font-size:15px;z-index:9999;text-align:center;max-width:340px;`;
-    flash.innerHTML = `⚙️ <strong>Gem Socketed!</strong><br><span style="font-size:12px;color:#ccc;">${gem.name} fused into ${item.name} permanently.<br>Slot ${usedSlots + 1}/${slots}</span>`;
+    flash.innerHTML = `⚙️ <strong>Gem Socketed!</strong><br><span style="font-size:12px;color:#ccc;">${gem.name} fused into ${item.name} permanently.<br>Slot ${usedSlots + 1}/${slots}<br>Paid: ${cost}g${discountText}</span>`;
     document.body.appendChild(flash);
     setTimeout(() => flash.remove(), 3500);
     
