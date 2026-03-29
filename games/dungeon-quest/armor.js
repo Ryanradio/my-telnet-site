@@ -401,7 +401,7 @@ const ARMOR = {
         level: 6,
         quality: 'rare',
         slot: 'armor',
-        allowedClasses: ['rogue', 'ranger', 'hunter', 'archer', 'warlock'],
+        allowedClasses: ['rogue', 'ranger', 'hunter', 'clerc', 'archer', 'warlock'],
         description: "Light armor that allows swift movement."
     },
 
