@@ -24150,7 +24150,7 @@ const result = _didDodge
             return;
         }
 
-        const finalDmg = result.damage;
+        let finalDmg = result.damage;
 
         if (_debugCombat) {
             const _critStr = result.crit ? ' | 💀 CRIT!' : '';
@@ -24187,7 +24187,7 @@ if (gameState.combatState.confusedEnemy === enemy && Math.random() < 0.3) {
 
 // Then the original damage line:
 
-p.hp -= finalDmg;
+
 
 
         p.hp -= finalDmg;
