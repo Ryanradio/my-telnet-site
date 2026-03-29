@@ -18587,6 +18587,15 @@ function stabilizeTerminalLayout() {
             messages.push(`<span style="color:#FF4488;">🩸 +${heal} HP (${mod.name} lifesteal)</span>`);
         }
         
+if (mod.modKey === 'thunderous') {
+    // Add stun chance (20% to stun for 1 turn)
+    const stunChance = mod.stunChance || 0.20;
+    if (Math.random() < stunChance) {
+        applyStatusEffect(target, 'stunned', false);
+        messages.push(`<span style="color:#FFAA44;font-weight:bold;">⚡ THUNDEROUS STUN! The ${target.name} is stunned! ⚡</span>`);
+    }
+}
+
 // Add Vorpal modifier
 if (mod.modKey === 'vorpal') {
     const vorpalChance = 0.01; // 1% chance
@@ -18714,7 +18723,10 @@ if (mod.modKey === 'vorpal') {
                 // ═══════════════════════════════════════════════════════════
                 playerStatusEffects: [], // Active status effects on player
                 monsterStatusEffects: {}, // Active status effects per monster (by index)
-                dotTimers: {} // DOT tick interval IDs
+                dotTimers: {}, // DOT tick interval IDs
+                weakenedEnemy: null,
+                blindedEnemy: null,
+                confusedEnemy: null
             };
 
              console.log('🔴 COMBAT STARTED - Current combat state:', 
@@ -22117,6 +22129,8 @@ if (type === 'magic' && defender.magicResist) {
         gemDefBonus     += gem.stats.defenseBonus || 0;
     }
 
+
+
 // Get class-based STR multiplier
 const playerClass = p.baseClass || p.class;
 let strMult = 1.0;
@@ -22199,7 +22213,16 @@ let totalBase = Math.floor(physicalBase * damageMultiplier);
     totalBase += gemLightningDmg + gemFireDmg + gemFrostDmg;
 
     // Apply gem armor pierce (stacks additively)
-    const effectiveArmorPierce = Math.min(1.0, armorPiercing + (gemPierceBonus / 100));
+// Calculate armor pierce from weapon modifiers
+let weaponArmorPierce = 0;
+if (weapon && weapon.modifiers) {
+    weapon.modifiers.forEach(mod => {
+        if (mod.armorPierce) {
+            weaponArmorPierce += mod.armorPierce;
+        }
+    });
+}
+const effectiveArmorPierce = Math.min(1.0, armorPiercing + (gemPierceBonus / 100) + weaponArmorPierce);
 
     // ── SYSOP DEBUG: pre-roll crit and dodge so we can show the numbers ──
     const _dbgAtk = gameState.sysop && gameState.sysop.authenticated;
@@ -24034,6 +24057,39 @@ const result = _didDodge
             const _critStr = result.crit ? ' | 💀 CRIT!' : '';
             termAppend(`<span style="color:#553300;">  → final: <b>${finalDmg} dmg</b>${_critStr} | player HP: ${p.hp} → ${p.hp - finalDmg}</span>`, 'term-dim');
         }
+
+
+        // ========== DEBUFF CHECKS - Add BEFORE p.hp -= finalDmg ==========
+
+// Check if enemy is weakened (30% less damage)
+if (gameState.combatState.weakenedEnemy === enemy) {
+    const originalDamage = finalDmg;
+    finalDmg = Math.floor(finalDmg * 0.7); // 30% less damage
+    termAppend(`<span style="color:#AA00AA;">💔 ${enemy.name} is weakened! Damage reduced from ${originalDamage} to ${finalDmg}! 💔</span>`, 'term-dim');
+}
+
+// Check if enemy is blinded (40% chance to miss)
+if (gameState.combatState.blindedEnemy === enemy && Math.random() < 0.4) {
+    termAppend(`<span style="color:#FFFF00;">💫 ${enemy.name} is blinded and misses its attack! 💫</span>`, 'term-warning');
+    return; // Enemy misses, skip damage
+}
+
+// Check if enemy is confused (30% chance to hit itself)
+if (gameState.combatState.confusedEnemy === enemy && Math.random() < 0.3) {
+    const selfDamage = Math.max(1, Math.floor(finalDmg * 0.5));
+    enemy.hp -= selfDamage;
+    termAppend(`<span style="color:#FF00FF;">😵 ${enemy.name} is confused and hits itself for ${selfDamage} damage! 😵</span>`, 'term-warning');
+    updateEnemyCards();
+    checkCombatEnd();
+    return; // No player damage
+}
+
+// ========== END DEBUFF CHECKS ==========
+
+// Then the original damage line:
+
+p.hp -= finalDmg;
+
 
         p.hp -= finalDmg;
         cs.lastEnemyDamageDealt = finalDmg;
