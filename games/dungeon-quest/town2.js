@@ -503,6 +503,18 @@ if (hasVisitedTown3) {
 
                 <div class="t2-row" onclick="showCharacterStats()">► 📊 &nbsp;CHARACTER STATS</div>
                 <div class="t2-row" onclick="showInventory()">► 🎒 &nbsp;INVENTORY</div>
+
+<!-- ASHEN DEPTHS DUNGEON -->
+${p.level >= 10 ? 
+    `<div class="t2-row" onclick="enterAshenDepths()" style="border-color:#cc66ff;">
+        ► 🏰 &nbsp;ASHEN DEPTHS DUNGEON
+        <span style="font-size:10px;color:#cc66ff;margin-left:8px;">level 10+</span>
+    </div>` : 
+    `<div class="t2-row" style="opacity:0.45;cursor:default;border-color:#3a1800;">
+        ► 🔒 &nbsp;ASHEN DEPTHS DUNGEON
+        <span style="font-size:10px;color:#aa5500;margin-left:8px;">requires level 10</span>
+    </div>`
+}
                 <div class="t2-row" onclick="showExplore()">► 🗺 &nbsp;EXPLORE WORLD</div>
             </div>
 

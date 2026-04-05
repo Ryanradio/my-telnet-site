@@ -2552,6 +2552,7 @@ body.terminal-mode #menuContainer {
     <script src="gameversion.js"></script>
     <script src="dungeon-data.js"></script>
     <script src="Dungeon1.js"></script>
+    <script src="AshenDepths.js"></script>
     <script src="town1.js"></script>
     <script src="town2.js"></script>
     <script src="town3.js"></script>
@@ -6323,15 +6324,17 @@ staticArmorGems: (() => {
             discoveredRooms: [...gameState.dungeon.discoveredRooms],
             spawnedRooms: [...(gameState.dungeon.spawnedRooms || [])],
             activeEnemies: gameState.dungeon.activeEnemies.map(e => ({
-                id: e.id,
-                monsterId: e.monsterId,
-                name: e.name,
-                hp: e.hp,
-                maxHp: e.maxHp,
-                currentRoom: e.currentRoom,
-                leash: e.leash,
-                drop: e.drop || null
-            })),
+    id: e.id,
+    monsterId: e.monsterId,
+    name: e.name,
+    hp: e.hp,
+    maxHp: e.maxHp,
+    currentRoom: e.currentRoom,
+    leash: e.leash,
+    drop: e.drop || null,
+    isChasing: e.isChasing || false,
+    roomsFollowed: e.roomsFollowed || 0
+})),
             defeatedEnemies: (gameState.dungeon.defeatedEnemies || []).map(e => ({
                 id: e.id,
                 monsterId: e.monsterId,
@@ -8387,6 +8390,15 @@ function showTownArrivalCinematic(lore, p) {
 // Call this after EVERY action (combat, movement, etc.)
 // ======================================================
 function autoSave() {
+    if (gameState.combatState && gameState.dungeon && gameState.dungeon.activeEnemies) {
+        gameState.combatState.monsters.forEach((monster, idx) => {
+            const dungeonEnemy = gameState.dungeon.activeEnemies[idx];
+            if (dungeonEnemy) {
+                dungeonEnemy.hp = monster.hp;
+                dungeonEnemy.maxHp = monster.maxHp;
+            }
+        });
+    }
     const p = gameState?.player;
     if (!p) return;
     
@@ -10877,7 +10889,6 @@ function initGame() {
                         }
                     } catch (e) {
                         console.error(`Corrupted save for ${char.id}:`, e);
-                        // Delete corrupted save
                         localStorage.removeItem(`dq_save_${char.id}`);
                     }
                     return false;
@@ -10886,18 +10897,10 @@ function initGame() {
                 console.error('Error checking for active characters:', e);
             }
             
-            if (activeChar) {
-                // Auto-load character that was in dungeon OR combat
-                console.log('🎮 Auto-restoring active session:', activeChar.name);
-                try {
-                    loadCharacter(activeChar.id);
-                    return;
-                } catch (e) {
-                    console.error('Failed to load character:', e);
-                    alert('⚠️ Your save was corrupted. Returning to main menu.');
-                    // Delete corrupted save and continue to main menu
-                    deleteCharacter(activeChar.id);
-                }
+                        if (activeChar) {
+                console.log('🎮 Found active dungeon session. Taking you back to main menu.');
+                showMainMenu();
+                return;
             }
             
             // If single character and not active, auto-load for convenience
@@ -10909,14 +10912,12 @@ function initGame() {
                 } catch (e) {
                     console.error('Failed to load character:', e);
                     alert('⚠️ Your save was corrupted. Returning to main menu.');
-                    // Delete corrupted save and continue to main menu
                     deleteCharacter(characters[0].id);
                 }
             }
         }
     } catch (e) {
         console.error('Critical error in initGame:', e);
-        // Clear potentially corrupted data
         try {
             localStorage.removeItem('dq_character_list');
         } catch (clearError) {
@@ -10924,20 +10925,19 @@ function initGame() {
         }
     }
     
-    // Always fall back to main menu if anything goes wrong
     showMainMenu();
     
-    // Warn before leaving page without saving
     window.addEventListener('beforeunload', function(e) {
-        // Only warn if player exists and has made progress
         if (gameState.player && gameState.player.level >= 1) {
             const message = 'You have unsaved progress! Are you sure you want to leave?';
             e.preventDefault();
-            e.returnValue = message;  // Chrome requires returnValue
-            return message;           // Some browsers use return value
+            e.returnValue = message;
+            return message;
         }
     });
 }
+
+
 
 // ═══════════════════════════════════════════════════════════════
 // SYSOP MODE - Press and hold About & Contact for 3 seconds
@@ -11170,9 +11170,77 @@ async function loadCharacter(characterId) {
         
 
 
-        gameState.currentTown = data.currentTown || 'town1';
+            gameState.currentTown = data.currentTown || 'town1';
         gameState.guildQuests = gameState.player.guildQuests;
+        
+        // ═══════════════════════════════════════════════════════════════
+        // ADD THE DUNGEON RESTORATION CODE RIGHT HERE
+        // ═══════════════════════════════════════════════════════════════
+        
+        gameState.dungeon = data.dungeon ? {
+            dungeonKey: data.dungeon.dungeonKey,
+            floor: data.dungeon.floor,
+            currentRoom: data.dungeon.currentRoom,
+            discoveredRooms: data.dungeon.discoveredRooms ? new Set(data.dungeon.discoveredRooms) : new Set(),
+            spawnedRooms: data.dungeon.spawnedRooms ? new Set(data.dungeon.spawnedRooms) : new Set(),
+            activeEnemies: data.dungeon.activeEnemies ? data.dungeon.activeEnemies.map(e => ({
+    id: e.id,
+    monsterId: e.monsterId,
+    name: e.name,
+    hp: e.hp,
+    maxHp: e.maxHp,
+    currentRoom: e.currentRoom,
+    leash: e.leash,
+    drop: e.drop || null,
+    isChasing: e.isChasing || false,
+    roomsFollowed: e.roomsFollowed || 0
+})) : [],
+            defeatedEnemies: data.dungeon.defeatedEnemies || []
+        } : null;
+        
+        gameState.combatState = data.activeCombat || null;
+        
+// Start combat with active enemies in current room
+if (gameState.dungeon && gameState.dungeon.activeEnemies && gameState.dungeon.activeEnemies.length > 0) {
+    setTimeout(() => {
+        const currentRoomEnemies = gameState.dungeon.activeEnemies.filter(
+            e => e.currentRoom === gameState.dungeon.currentRoom
+        );
+        
+        if (currentRoomEnemies.length > 0 && !gameState.combatState) {
+            console.log('⚔️ Starting combat with saved enemies:', currentRoomEnemies.map(e => e.name));
+            startDungeonCombat(currentRoomEnemies);
+            
+            setTimeout(() => {
+                if (typeof renderDungeonActionBar === 'function') {
+                    renderDungeonActionBar();
+                }
+                if (typeof renderEnemyCards === 'function') {
+                    renderEnemyCards();
+                }
+            }, 200);
+        }
+    }, 500);
+}
 
+        
+        // If in a dungeon, re-enter terminal mode
+if (gameState.dungeon) {
+    document.body.classList.add("terminal-mode");
+    setTimeout(() => {
+        if (typeof renderDungeonActionBar === 'function') renderDungeonActionBar();
+    }, 100);
+    
+    // Force enemy movement check to show chase messages
+    setTimeout(() => {
+        if (typeof updateDungeonEnemies === 'function') {
+            updateDungeonEnemies();
+        }
+    }, 300);
+}
+        
+        // ═══════════════════════════════════════════════════════════════
+        
         const p = gameState.player;
         const playerClass = p.baseClass || p.class;
 
@@ -13039,8 +13107,35 @@ console.log(`🛡️ Final equipped armor: ${gameState.player.armor}`);
     
 })(gameState.player);
 
+        // Refresh dungeon terminal if we're in a dungeon
+        if (gameState.dungeon) {
+            const dungeon = DUNGEONS[gameState.dungeon.dungeonKey];
+            if (dungeon) {
+                const floor = dungeon.floors[gameState.dungeon.floor];
+                const room = floor.rooms[gameState.dungeon.currentRoom];
+                if (typeof termClear === 'function') termClear();
+                if (typeof termAppend === 'function') {
+                    termAppend('', 'term-separator');
+                    termAppend(`<strong>${room.name || gameState.dungeon.currentRoom}</strong>`);
+                    termAppend(room.description || '', 'term-dim');
+                    const exits = Object.keys(room.exits || {}).map(d => d.toUpperCase()).join(', ');
+                    termAppend(`You see exits: ${exits}.`, 'term-dim');
+                }
+            }
+            if (typeof startResting === 'function') startResting(false);
+            if (typeof startMpRegen === 'function') startMpRegen(false);
+        }
 
-        showTown();
+        // Only show town if not in a dungeon
+if (!gameState.dungeon) {
+    showTown();
+} else {
+    // We're in a dungeon, make sure terminal mode is active
+    document.body.classList.add("terminal-mode");
+    if (typeof renderDungeonActionBar === 'function') {
+        renderDungeonActionBar();
+    }
+}
 
     } catch (e) {
         console.error('Error loading character:', e);
@@ -14817,6 +14912,95 @@ function usePortal(destTownId) {
             modal.appendChild(card);
             document.body.appendChild(modal);
         }
+
+
+        function enterAshenDepths() {
+    const p = gameState.player;
+    const requiredLevel = 10;
+    const dungeonKey = 'AshenDepths';
+    const dungeonName = 'ASHEN DEPTHS DUNGEON';
+    
+    if (p.level < requiredLevel) {
+        alert(`You must be at least level ${requiredLevel} to enter the ${dungeonName}!`);
+        return;
+    }
+    
+    // Show warning modal
+    const hasRecall = p.inventory.includes('recall_potion');
+    const recallNote = hasRecall
+        ? `<div style="color:#00ff88;margin-top:8px;">✅ You carry a <strong>Recall Potion</strong> — you can use it to escape at any time.</div>`
+        : `<div style="color:#ff4444;margin-top:8px;">❌ You do NOT have a Recall Potion!<br>
+           Visit the <strong>Shop → Potions</strong> to buy one for <span style="color:#FFD700;">5,000 gold</span> before you go.</div>`;
+    
+    const modal = document.createElement('div');
+    modal.id = 'dungeonWarningModal';
+    Object.assign(modal.style, {
+        position: 'fixed', inset: '0', zIndex: '9999',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'rgba(0,0,0,0.88)', fontFamily: "'VT323',monospace",
+        padding: '16px'
+    });
+    
+    const card = document.createElement('div');
+    Object.assign(card.style, {
+        width: '100%', maxWidth: '480px',
+        background: '#000',
+        border: '3px double #ff4444',
+        boxShadow: '0 0 40px rgba(255,0,0,0.4)',
+        color: '#00ff00',
+        boxSizing: 'border-box'
+    });
+    
+    const hdr = document.createElement('div');
+    Object.assign(hdr.style, { padding: '14px 20px 10px', textAlign: 'center', borderBottom: '1px solid #330000' });
+    hdr.innerHTML = `<div style="font-size:24px;color:#ff4444;letter-spacing:2px;">⚠️ DUNGEON WARNING ⚠️</div>
+                     <div style="font-size:18px;color:#ffff00;margin-top:4px;">${dungeonName}</div>`;
+    card.appendChild(hdr);
+    
+    const body = document.createElement('div');
+    Object.assign(body.style, { padding: '12px 20px', fontSize: '15px', lineHeight: '1.6', borderBottom: '1px solid #330000' });
+    body.innerHTML = `
+        <div style="color:#ff8800;margin-bottom:8px;font-size:16px;">
+            ⚠️ You <strong>cannot shop or bank</strong> once inside. Prepare first!
+        </div>
+        <div style="color:#aaa;font-size:14px;margin-bottom:8px;">
+            Leave via: &nbsp;🌀 Recall Potion &nbsp;|&nbsp; 🚪 Walk back out &nbsp;|&nbsp; 🏙️ Portal room
+        </div>`;
+    const rn = document.createElement('div');
+    rn.innerHTML = recallNote;
+    body.appendChild(rn);
+    card.appendChild(body);
+    
+    const btnRow = document.createElement('div');
+    Object.assign(btnRow.style, { display: 'flex', gap: '10px', padding: '12px 20px' });
+    
+    const btnEnter = document.createElement('button');
+    Object.assign(btnEnter.style, {
+        flex: '1', fontFamily: "'VT323',monospace", fontSize: '22px',
+        padding: '12px 8px', cursor: 'pointer',
+        background: 'linear-gradient(180deg,#1a0000,#0a0000)',
+        color: '#ff4444', border: '2px solid #ff4444'
+    });
+    btnEnter.textContent = '⚔️ ENTER';
+    btnEnter.onclick = () => { modal.remove(); startDungeon(dungeonKey); };
+    
+    const btnBack = document.createElement('button');
+    Object.assign(btnBack.style, {
+        flex: '1', fontFamily: "'VT323',monospace", fontSize: '22px',
+        padding: '12px 8px', cursor: 'pointer',
+        background: 'linear-gradient(180deg,#001a00,#000a00)',
+        color: '#00ff88', border: '2px solid #00ff88'
+    });
+    btnBack.textContent = '← BACK';
+    btnBack.onclick = () => modal.remove();
+    
+    btnRow.appendChild(btnEnter);
+    btnRow.appendChild(btnBack);
+    card.appendChild(btnRow);
+    modal.appendChild(card);
+    document.body.appendChild(modal);
+}
+
 
         // ── Generic dungeon start (replaces testDungeon) ──────────────
         function startDungeon(dungeonKey) {
@@ -21270,6 +21454,7 @@ function startDungeonCombat(dungeonEnemies) {
 
     // Restore saved HP for each monster (matched by index)
     dungeonEnemies.forEach((de, idx) => {
+        console.log(`Restoring HP for ${de.name}: saved HP ${de.hp}/${de.maxHp}`);
         if (de.hp !== undefined && de.hp < de.maxHp) {
             const monster = gameState.combatState.monsters[idx];
             if (monster) {
@@ -24814,42 +24999,42 @@ if (weaponDrop.modifiers && weaponDrop.modifiers.length > 0) {
     const ab = document.getElementById('actionBar');
     
     if (gameState.dungeon) {
-        if (victory) {
-            setTimeout(() => {
-                const ds = gameState.dungeon;
-                if (!ds) return;
-                const remaining = ds.activeEnemies.filter(e => e.currentRoom === ds.currentRoom);
-                if (remaining.length > 0) {
-                    checkEnemiesInRoom(ds.currentRoom);
-                } else {
-                    renderDungeonActionBar();
-                    if (window._pendingChronicleEntries && window._pendingChronicleEntries.length > 0) {
-                        setTimeout(playPendingChronicleEntries, 800);
-                    }
+    if (victory) {
+        setTimeout(() => {
+            const ds = gameState.dungeon;
+            if (!ds) return;
+            const remaining = ds.activeEnemies.filter(e => e.currentRoom === ds.currentRoom);
+            if (remaining.length > 0) {
+                checkEnemiesInRoom(ds.currentRoom);
+            } else {
+                renderDungeonActionBar();
+                if (window._pendingChronicleEntries && window._pendingChronicleEntries.length > 0) {
+                    setTimeout(playPendingChronicleEntries, 800);
                 }
-            }, 400);
-        } else {
-            renderDungeonActionBar();
-        }
-    } else if (isMaster) {
-        ab.innerHTML = `
-            <button onclick="tryViewWorldMap()">🗺️ VIEW WORLD MAP</button>
-            <button onclick="tryGoBackToTown()">🏘️ RETURN TO TOWN</button>`;
-        renderActionBar();
+            }
+        }, 400);
     } else {
-        ab.innerHTML = `
-            <button onclick="tryExploreLocation('${gameState.currentLocation}')">🔍 CONTINUE EXPLORING</button>
-            <button onclick="tryGoBackToTown()">🏘️ RETURN TO TOWN</button>`;
-        renderActionBar();
-        stabilizeTerminalLayout();
-        if (window._pendingChronicleEntries && window._pendingChronicleEntries.length > 0) {
-            setTimeout(playPendingChronicleEntries, 800);
-        }
+        renderDungeonActionBar();
     }
+} else if (isMaster) {
+    ab.innerHTML = `
+        <button onclick="tryViewWorldMap()">🗺️ VIEW WORLD MAP</button>
+        <button onclick="tryGoBackToTown()">🏘️ RETURN TO TOWN</button>`;
+    renderActionBar();
+} else {
+    ab.innerHTML = `
+        <button onclick="tryExploreLocation('${gameState.currentLocation}')">🔍 CONTINUE EXPLORING</button>
+        <button onclick="tryGoBackToTown()">🏘️ RETURN TO TOWN</button>`;
+    renderActionBar();
+    stabilizeTerminalLayout();
+    if (window._pendingChronicleEntries && window._pendingChronicleEntries.length > 0) {
+        setTimeout(playPendingChronicleEntries, 800);
+    }
+}
 
-    if (!gameState.combatTimer) {
-        startCombatTimer();
-    }
+if (!gameState.combatTimer) {
+    startCombatTimer();
+}
     
     // ═══════════════════════════════════════════════════════════════
     // ROGUE: SHADOW STRIKE - Activate stealth after combat
