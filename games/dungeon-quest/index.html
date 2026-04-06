@@ -20852,6 +20852,7 @@ function checkRoomEncounter(room) {
                 rarity,
                 name:          enemyDef.name,
                 currentRoom:   ds.currentRoom,
+                orignialRoom: ds.currentRoom,
                 leash:         enemyDef.isBoss ? 6 : 3,
                 roomsFollowed: 0,
                 drop
@@ -20874,6 +20875,7 @@ function checkRoomEncounter(room) {
         monsterId:     room.encounter.monsterId,
         name:          enemyDef.name,
         currentRoom:   ds.currentRoom,
+        origninalRoom: ds.currentRoom,
         leash:         enemyDef.isBoss ? 6 : 3,
         roomsFollowed: 0,
         drop:          room.encounter.drop || null
@@ -20959,10 +20961,29 @@ function updateDungeonEnemies() {
         // Already in player's room → nothing to move
         if (enemy.currentRoom === ds.currentRoom) return;
 
-        // Leash exhausted → stop
+        // Leash exhausted → stop chasing and return to original room
         if (enemy.roomsFollowed >= enemy.leash) {
             enemy.isChasing = false;
-            termAppend(`🛑 <strong>${enemy.name}</strong> stops the chase.`, 'term-dim');
+            enemy.roomsFollowed = 0;
+            
+            // Return to original spawn room
+            const originalRoom = enemy.originalRoom || enemy.currentRoom;
+            enemy.currentRoom = originalRoom;
+            
+            termAppend(`🛑 <strong>${enemy.name}</strong> stops chasing and returns to its lair.`, 'term-dim');
+            
+            // Remove from combat if they were fighting
+            if (gameState.combatState) {
+                gameState.combatState.monsters = gameState.combatState.monsters.filter(m => m.name !== enemy.name);
+                if (gameState.combatState.monsters.length === 0) {
+                    gameState.combatState = null;
+                    if (gameState.combatTimer) {
+                        clearInterval(gameState.combatTimer);
+                        gameState.combatTimer = null;
+                    }
+                    renderDungeonActionBar();
+                }
+            }
             return;
         }
 
@@ -21068,8 +21089,101 @@ function moveInDungeon(direction) {
         checkTownExit(destRoom);
         triggerRoomTrap(destRoom);
         checkRunestone(destRoom);
+            // 📦 Auto-pickup loot from ground
+    if (nextRoom.contents && nextRoom.contents.lootTable && nextRoom.contents.lootTable.length > 0) {
+        const loot = nextRoom.contents.lootTable;
+        loot.forEach(item => {
+            if (!gameState.player.inventory.includes(item.key)) {
+                gameState.player.inventory.push(item.key);
+                termAppend(`✨ You found <span style="color:#a855f7;">${item.label || item.key}</span> on the ground!`, 'term-loot');
+            }
+        });
+        // Remove loot so it doesn't get picked up again
+        delete nextRoom.contents.lootTable;
+    }
         checkRoomEncounter(destRoom);
         checkEnemiesInRoom(targetRoom);
+            // 📢 Show message if there are enemies already in this room
+    const enemiesHere = ds.activeEnemies.filter(e => e.currentRoom === nextRoomId);
+    if (enemiesHere.length > 0 && !gameState.combatState) {
+        if (enemiesHere.length === 1) {
+            termAppend(`⚠️ <strong>${enemiesHere[0].name}</strong> is already in this room, waiting for you!`, 'term-warning');
+        } else {
+            const names = enemiesHere.map(e => e.name).join(', ');
+            termAppend(`⚠️ ${names} are already in this room, waiting for you!`, 'term-warning');
+        }
+    }
+        
+        // 🌀 TELEPORT TRIGGER (ladder version)
+        if (destRoom.contents && destRoom.contents.staffTrigger && 
+            destRoom.contents.staffTrigger.enabled && 
+            destRoom.contents.staffTrigger.triggerType === 'enter_room') {
+            
+            const tpTrigger = destRoom.contents.staffTrigger;
+            const tpTargetFloor = tpTrigger.targetFloor;
+            const tpTargetRoom = tpTrigger.targetRoom;
+            
+            const tpFlash = document.createElement('div');
+            tpFlash.style.cssText = 'position:fixed;inset:0;z-index:99999;background:white;opacity:0;pointer-events:none;transition:opacity 0.2s;';
+            document.body.appendChild(tpFlash);
+            setTimeout(() => tpFlash.style.opacity = '1', 10);
+            setTimeout(() => {
+                tpFlash.style.opacity = '0';
+                setTimeout(() => tpFlash.remove(), 500);
+            }, 300);
+            
+
+        // Clear combat state when teleporting
+        if (gameState.combatState) {
+            gameState.combatState = null;
+            if (gameState.combatTimer) {
+                clearInterval(gameState.combatTimer);
+                gameState.combatTimer = null;
+            }
+            termAppend(`🌀 The teleportation breaks the enemy's pursuit!`, 'term-highlight');
+        }
+        
+        // Reset enemy chase states
+        if (ds.activeEnemies) {
+            ds.activeEnemies.forEach(enemy => {
+                enemy.isChasing = false;
+                enemy.roomsFollowed = 0;
+            });
+        }
+
+            ds.floor = tpTargetFloor;
+            ds.currentRoom = tpTargetRoom;
+            
+            const tpScopedKey = `${tpTargetFloor}:${tpTargetRoom}`;
+            ds.discoveredRooms.add(tpScopedKey);
+            saveRoomDiscovery(gameState.player, ds.dungeonKey, tpTargetFloor, tpTargetRoom);
+            
+            const tpNewFloorData = dungeonData.floors[tpTargetFloor];
+            const tpNewRoom = tpNewFloorData.rooms[tpTargetRoom];
+            tpNewRoom.flags = tpNewRoom.flags || {};
+            tpNewRoom.flags.discovered = true;
+            
+            termClear();
+            termAppend('', 'term-separator');
+            termAppend(`<span style="color:#a855f7;">🌀 A magical force pulls you through space! 🌀</span>`, 'term-highlight');
+            termAppend(`<strong>${tpNewRoom.name || tpTargetRoom}</strong>`);
+            termAppend(tpNewRoom.description || '', 'term-dim');
+            const tpExitList = buildExitList(tpNewRoom);
+            termAppend(`You see exits: ${tpExitList}.`, 'term-dim');
+            
+            // Check for enemies in the new room and start combat
+            if (ds.activeEnemies) {
+                const enemiesInNewRoom = ds.activeEnemies.filter(e => e.currentRoom === tpTargetRoom);
+                if (enemiesInNewRoom.length > 0 && !gameState.combatState) {
+                    startDungeonCombat(enemiesInNewRoom);
+                }
+            }
+            
+            saveGame();
+            renderDungeonActionBar();
+            return;
+        }
+        
         saveGame();
         renderDungeonActionBar();
         return;
@@ -21088,15 +21202,13 @@ function moveInDungeon(direction) {
     }
 
     // ── DOOR LOCK CHECK ──────────────────────────────────────────────
-    // If a locked door exists on this exit, player must have the matching key.
     const door = currentRoom.contents?.doors?.[direction];
     if (door && door.locked) {
-        const keyItem = door.type + '_key';   // e.g. 'copper' → 'copper_key'
+        const keyItem = door.type + '_key';
         const inv = gameState.player.inventory || [];
         const hasKey = inv.includes(keyItem);
 
         if (!hasKey) {
-            // Door color names for flavour text
             const COLOR_NAMES = {
                 bronze:'Bronze', copper:'Copper', iron:'Iron', brass:'Brass',
                 silver:'Silver', electrum:'Electrum', ruby:'Ruby', topaz:'Topaz',
@@ -21110,7 +21222,6 @@ function moveInDungeon(direction) {
             return;
         }
 
-        // Player has the key — keys are permanent collectibles, door unlocks for session
         const COLOR_NAMES2 = {
             bronze:'Bronze', copper:'Copper', iron:'Iron', brass:'Brass',
             silver:'Silver', electrum:'Electrum', ruby:'Ruby', topaz:'Topaz',
@@ -21120,7 +21231,7 @@ function moveInDungeon(direction) {
             `🔓 Your <span style="color:${getDoorColor(door.type)}">${COLOR_NAMES2[door.type] || door.type} key</span> unlocks the door.`,
             'term-highlight'
         );
-        door.locked = false; // door stays unlocked for rest of session
+        door.locked = false;
     }
 
     const nextRoom = floor.rooms[nextRoomId];
@@ -21128,8 +21239,8 @@ function moveInDungeon(direction) {
     ds.currentRoom = nextRoomId;
     if (!ds.discoveredRooms) ds.discoveredRooms = new Set();
     const scopedKey = `${ds.floor}:${nextRoomId}`;
-    ds.discoveredRooms.add(scopedKey); // Active session
-    saveRoomDiscovery(gameState.player, ds.dungeonKey, ds.floor, nextRoomId); // Persistent map
+    ds.discoveredRooms.add(scopedKey);
+    saveRoomDiscovery(gameState.player, ds.dungeonKey, ds.floor, nextRoomId);
     nextRoom.flags = nextRoom.flags || {};
     nextRoom.flags.discovered = true;
 
@@ -21137,35 +21248,112 @@ function moveInDungeon(direction) {
     termAppend(`<strong>${nextRoom.name || nextRoomId}</strong>`);
     termAppend(nextRoom.description || '', 'term-dim');
 
-    // ♻️ Check for enemy respawns (30min timer)
     checkDungeonRespawns();
-
-    // 🔥 Spawn encounter (once)
     checkRoomEncounter(nextRoom);
-
-    // ✦ Runestone pickup (once, triggers flash cutscene)
     checkRunestone(nextRoom);
-
-    // 👣 Move any active enemies that can follow; get list of who just arrived
+        // 📦 Auto-pickup loot from ground
+    if (nextRoom.contents && nextRoom.contents.lootTable && nextRoom.contents.lootTable.length > 0) {
+        const loot = nextRoom.contents.lootTable;
+        loot.forEach(item => {
+            if (!gameState.player.inventory.includes(item.key)) {
+                gameState.player.inventory.push(item.key);
+                termAppend(`✨ You found <span style="color:#a855f7;">${item.label || item.key}</span> on the ground!`, 'term-loot');
+            }
+        });
+        // Remove loot so it doesn't get picked up again
+        delete nextRoom.contents.lootTable;
+    }
     const arrivals = updateDungeonEnemies();
 
-    // ⚔️ Unified enemy check — handles both pre-existing enemies AND followers
-    //    Pass arrivals so followers can JOIN an active combat instead of waiting
+        // 📢 Show message if there are enemies already in this room
+    const enemiesHere = ds.activeEnemies.filter(e => e.currentRoom === nextRoomId);
+    if (enemiesHere.length > 0 && !gameState.combatState) {
+        if (enemiesHere.length === 1) {
+            termAppend(`⚠️ <strong>${enemiesHere[0].name}</strong> is already in this room, waiting for you!`, 'term-warning');
+        } else {
+            const names = enemiesHere.map(e => e.name).join(', ');
+            termAppend(`⚠️ ${names} are already in this room, waiting for you!`, 'term-warning');
+        }
+    }
     checkEnemiesInRoom(nextRoomId, arrivals);
 
     const exitList = buildExitList(nextRoom);
     termAppend(`You see exits: ${exitList}.`, 'term-dim');
 
-    // 🌀 Check for town portal exit in this room
     checkTownExit(nextRoom);
-
-    // 🪤 Check for traps
     triggerRoomTrap(nextRoom);
 
-    // 💾 AUTO-SAVE after moving in dungeon
-    saveGame();
+    // 🌀 TELEPORT TRIGGER (normal movement version)
+    if (nextRoom.contents && nextRoom.contents.staffTrigger && 
+        nextRoom.contents.staffTrigger.enabled && 
+        nextRoom.contents.staffTrigger.triggerType === 'enter_room') {
+        
+        const tpTrigger = nextRoom.contents.staffTrigger;
+        const tpTargetFloor = tpTrigger.targetFloor;
+        const tpTargetRoom = tpTrigger.targetRoom;
+        
+        const tpFlash = document.createElement('div');
+        tpFlash.style.cssText = 'position:fixed;inset:0;z-index:99999;background:white;opacity:0;pointer-events:none;transition:opacity 0.2s;';
+        document.body.appendChild(tpFlash);
+        setTimeout(() => tpFlash.style.opacity = '1', 10);
+        setTimeout(() => {
+            tpFlash.style.opacity = '0';
+            setTimeout(() => tpFlash.remove(), 500);
+        }, 300);
+        
 
-    // 🔑 update buttons for new room
+        // Clear combat state when teleporting
+        if (gameState.combatState) {
+            gameState.combatState = null;
+            if (gameState.combatTimer) {
+                clearInterval(gameState.combatTimer);
+                gameState.combatTimer = null;
+            }
+            termAppend(`🌀 The teleportation breaks the enemy's pursuit!`, 'term-highlight');
+        }
+        
+        // Reset enemy chase states
+        if (ds.activeEnemies) {
+            ds.activeEnemies.forEach(enemy => {
+                enemy.isChasing = false;
+                enemy.roomsFollowed = 0;
+            });
+        }
+
+        ds.floor = tpTargetFloor;
+        ds.currentRoom = tpTargetRoom;
+        
+        const tpScopedKey = `${tpTargetFloor}:${tpTargetRoom}`;
+        ds.discoveredRooms.add(tpScopedKey);
+        saveRoomDiscovery(gameState.player, ds.dungeonKey, tpTargetFloor, tpTargetRoom);
+        
+        const tpNewFloorData = dungeonData.floors[tpTargetFloor];
+        const tpNewRoom = tpNewFloorData.rooms[tpTargetRoom];
+        tpNewRoom.flags = tpNewRoom.flags || {};
+        tpNewRoom.flags.discovered = true;
+        
+                    termClear();
+            termAppend('', 'term-separator');
+            termAppend(`<span style="color:#a855f7;">🌀 A magical force pulls you through space! 🌀</span>`, 'term-highlight');
+            termAppend(`<strong>${tpNewRoom.name || tpTargetRoom}</strong>`);
+            termAppend(tpNewRoom.description || '', 'term-dim');
+            const tpExitList = buildExitList(tpNewRoom);
+            termAppend(`You see exits: ${tpExitList}.`, 'term-dim');
+            
+            // Check for enemies in the new room and start combat
+            if (ds.activeEnemies) {
+                const enemiesInNewRoom = ds.activeEnemies.filter(e => e.currentRoom === tpTargetRoom);
+                if (enemiesInNewRoom.length > 0 && !gameState.combatState) {
+                    startDungeonCombat(enemiesInNewRoom);
+                }
+            }
+            
+            saveGame();
+            renderDungeonActionBar();
+            return;
+    }
+
+    saveGame();
     renderDungeonActionBar();
 }
 
@@ -21451,6 +21639,20 @@ function startDungeonCombat(dungeonEnemies) {
     gameState.combatState.dungeonEnemyIds = dungeonEnemies.map(e => e.id);
     // Legacy single-enemy field (keeps drops working for first enemy)
     gameState.combatState.dungeonEnemyId = dungeonEnemies[0].id;
+
+        // Mark enemies as chasing when combat starts
+    dungeonEnemies.forEach(enemy => {
+        enemy.isChasing = true;
+        enemy.roomsFollowed = 0;
+    });
+
+// Restore saved HP for each monster (matched by index)
+        dungeonEnemies.forEach(enemy => {
+        enemy.isChasing = true;
+        enemy.roomsFollowed = 0;
+        console.log(`👹 ${enemy.name} is now chasing you!`);
+    });
+
 
     // Restore saved HP for each monster (matched by index)
     dungeonEnemies.forEach((de, idx) => {
