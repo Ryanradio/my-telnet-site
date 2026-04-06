@@ -7379,7 +7379,15 @@ window.DUNGEONS.AshenDepths = {
           "exits": {
             "s": "R262"
           },
-          "contents": {}
+          "contents": {
+            "staffTrigger": {
+              "enabled": true,
+              "triggerType": "enter_room",
+              "targetFloor": 3,
+              "targetRoom": "R353",
+              "flashColor": "white"
+            }
+          }
         },
         "R347": {
           "name": "The Far Chamber",
@@ -7489,7 +7497,11 @@ window.DUNGEONS.AshenDepths = {
             "s": "R352",
             "n": "R354"
           },
-          "contents": {}
+          "contents": {
+            "staffTrigger": {
+              "isDestination": true
+            }
+          }
         },
         "R354": {
           "name": "The long road",
