@@ -5490,7 +5490,7 @@ window.DUNGEONS.AshenDepths = {
         },
         "R262": {
           "name": "The Exit Shaft",
-          "description": "A vertical shaft rising upward. Cool air falls from above, the first cool air you have felt in some time. The ladder here leads up and out.",
+          "description": "A vertical shaft rising upward. Cool air falls from above, the first cool air you have felt in some time. You cannot see what is ahead.",
           "map": {
             "x": 12,
             "y": 2
@@ -7371,7 +7371,7 @@ window.DUNGEONS.AshenDepths = {
         },
         "R346": {
           "name": "The Surface Shaft",
-          "description": "A shaft leading upward toward the surface world. Cool fresh air falls from above. The exit from the dungeon, if you have what you need to pass.",
+          "description": "Cool fresh air falls from above. ",
           "map": {
             "x": 12,
             "y": 1
