@@ -1,6 +1,6 @@
 window.DUNGEONS = window.DUNGEONS || {};
 window.DUNGEONS.AshenDepths = {
-  "name": "Ashen Depth",
+  "name": "Ashen Depths",
   "description": "A vast network of natural caverns stretching deep beneath Ashen Harbor, filled with winding passages, hidden chambers, and ancient secrets.",
   "floors": {
     "1": {
@@ -5499,9 +5499,8 @@ window.DUNGEONS.AshenDepths = {
             "s": "R263",
             "n": "R346"
           },
-          "contents": {},
-          "flags": {
-            "discovered": false
+          "contents": {
+            "runestone": "yellow_runestone"
           }
         },
         "R263": {
@@ -5528,13 +5527,7 @@ window.DUNGEONS.AshenDepths = {
                 "type": "bone",
                 "locked": true
               }
-            },
-            "staffTrigger": {
-              "isDestination": true
             }
-          },
-          "flags": {
-            "discovered": false
           }
         },
         "R264": {

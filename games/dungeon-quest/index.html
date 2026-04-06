@@ -19417,7 +19417,7 @@ ${mapAscii}
            return result;
        }
 
-       function renderDungeonActionBar() {
+function renderDungeonActionBar() {
     const ab = document.getElementById('actionBar');
     const BASE_PIP_COOLDOWN = 10;
     const MIN_PIP_COOLDOWN = 5;
@@ -19725,6 +19725,18 @@ if (cs) {
     invBtn.addEventListener('touchend',   _invUp);
     invBtn.addEventListener('touchcancel',_invCancel);
     utilCol.appendChild(invBtn);
+
+
+        // ── STAFF COLLECTION button (only for AshenDepths dungeon)
+    if (ds.dungeonKey === 'AshenDepths') {
+        const staffBtn = document.createElement('button');
+        const staffCount = (gameState.player.inventory || []).filter(i => i && typeof i === 'string' && i.startsWith('staff_piece_')).length;
+        staffBtn.innerHTML = `🪄 Staff<br><span style="font-size:9px;">${staffCount}/8</span>`;
+        staffBtn.title = 'View collected staff pieces';
+        staffBtn.style.cssText = 'padding:4px 6px;font-size:12px;border-color:#a855f7;color:#a855f7;line-height:1.3;';
+        staffBtn.onclick = () => showStaffCollection();
+        utilCol.appendChild(staffBtn);
+    }
 
     // STAT POINTS button — only when points available
     const _sp = gameState.player.statPoints || 0;
@@ -20259,6 +20271,169 @@ if (modifiers && modifiers.length > 0) {
         document.body.appendChild(overlay);
     }
 }
+
+
+function showStaffCollection() {
+    const p = gameState.player;
+    const staffPieces = [
+        { id: 'staff_piece_1', name: 'The Base', icon: '🪄', description: 'The foundation of the ancient staff, carved from obsidian.' },
+        { id: 'staff_piece_2', name: 'The Shaft', icon: '📏', description: 'A length of petrified wood, unbreakable.' },
+        { id: 'staff_piece_3', name: 'The Binding', icon: '⛓️', description: 'Silver wire etched with runes of binding.' },
+        { id: 'staff_piece_4', name: 'The Rune Ring', icon: '💍', description: 'A ring of ancient bronze, covered in symbols.' },
+        { id: 'staff_piece_5', name: 'The Conduit', icon: '✨', description: 'A crystal that channels arcane energy.' },
+        { id: 'staff_piece_6', name: 'The Focus Lens', icon: '🔍', description: 'A lens that sharpens magical intent.' },
+        { id: 'staff_piece_7', name: 'The Collar', icon: '🏺', description: 'A decorative collar that holds the pieces together.' },
+        { id: 'staff_piece_8', name: 'The Crown Gem', icon: '💎', description: 'The final piece, a gem of pure potential.' }
+    ];
+    
+    const collected = p.inventory || [];
+    const collectedIds = new Set(collected.filter(i => i && typeof i === 'string' && i.startsWith('staff_piece_')));
+    
+    const collectedCount = collectedIds.size;
+    const totalPieces = staffPieces.length;
+    
+    const overlay = document.createElement('div');
+    overlay.id = 'staffCollectionOverlay';
+    overlay.style.cssText = `
+        position: fixed; inset: 0; z-index: 10000;
+        display: flex; align-items: center; justify-content: center;
+        background: rgba(0, 0, 0, 0.88);
+        backdrop-filter: blur(6px);
+        font-family: 'VT323', monospace;
+    `;
+    
+    let staffVisual = '';
+    if (collectedCount === totalPieces) {
+        staffVisual = `
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="font-size: 80px; filter: drop-shadow(0 0 20px #a855f7);">🪄✨</div>
+                <div style="color: #FFD700; font-size: 18px; letter-spacing: 3px;">✦ THE STAFF IS COMPLETE! ✦</div>
+                <div style="color: #a855f7; font-size: 12px;">Return to the Staff Gate to claim your reward...</div>
+            </div>
+        `;
+    } else {
+        staffVisual = `
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="font-size: 60px; filter: grayscale(0.3);">🪄</div>
+                <div style="color: #a855f7; font-size: 14px;">${collectedCount} / ${totalPieces} pieces collected</div>
+                <div style="background: #1a0f2a; height: 4px; width: 200px; margin: 8px auto; border-radius: 2px; overflow: hidden;">
+                    <div style="background: #a855f7; width: ${(collectedCount / totalPieces) * 100}%; height: 100%; transition: width 0.3s;"></div>
+                </div>
+            </div>
+        `;
+    }
+    
+    const piecesHtml = staffPieces.map(piece => {
+        const isCollected = collectedIds.has(piece.id);
+        const pieceStyle = isCollected
+            ? 'border-color: #a855f7; background: rgba(168, 85, 247, 0.15); color: #e8d8ff;'
+            : 'border-color: #3a2a4a; background: rgba(30, 20, 40, 0.5); color: #5a4a6a; filter: grayscale(0.6);';
+        
+        return `
+            <div style="
+                border: 2px solid ${isCollected ? '#a855f7' : '#3a2a4a'};
+                border-radius: 8px;
+                padding: 12px;
+                text-align: center;
+                background: ${isCollected ? 'rgba(168, 85, 247, 0.08)' : 'rgba(30, 20, 40, 0.3)'};
+                transition: all 0.2s;
+            ">
+                <div style="font-size: 32px; margin-bottom: 6px; ${isCollected ? '' : 'opacity: 0.3;'}">${piece.icon}</div>
+                <div style="font-size: 14px; font-weight: bold; color: ${isCollected ? '#d4b8ff' : '#6a5a8a'};">${piece.name}</div>
+                <div style="font-size: 10px; color: ${isCollected ? '#aa88cc' : '#4a3a5a'}; margin-top: 4px;">${piece.description}</div>
+                ${isCollected ? '<div style="font-size: 10px; color: #a855f7; margin-top: 6px;">✓ Collected</div>' : '<div style="font-size: 10px; color: #4a3a5a; margin-top: 6px;">❓ Missing</div>'}
+            </div>
+        `;
+    }).join('');
+    
+    overlay.innerHTML = `
+        <div style="
+            background: #0d0a12;
+            border: 2px solid #a855f7;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 0 60px rgba(168, 85, 247, 0.3);
+        ">
+            <div style="
+                background: linear-gradient(135deg, #1a0f2a 0%, #0d0a12 100%);
+                border-bottom: 1px solid #a855f7;
+                padding: 12px 16px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            ">
+                <div>
+                    <div style="color: #a855f7; font-size: 20px; letter-spacing: 3px;">✦ THE ASHEN STAFF ✦</div>
+                    <div style="color: #6a5a8a; font-size: 11px;">A relic of the Age of Fire</div>
+                </div>
+                <button onclick="document.getElementById('staffCollectionOverlay').remove()" style="
+                    background: none;
+                    border: 1px solid #a855f7;
+                    color: #a855f7;
+                    font-family: 'VT323', monospace;
+                    font-size: 16px;
+                    padding: 4px 12px;
+                    cursor: pointer;
+                    border-radius: 4px;
+                ">✕ CLOSE</button>
+            </div>
+            
+            <div style="padding: 16px 20px 0 20px;">
+                ${staffVisual}
+            </div>
+            
+            <div style="
+                flex: 1;
+                overflow-y: auto;
+                padding: 16px 20px;
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 12px;
+            ">
+                ${piecesHtml}
+            </div>
+            
+            <div style="
+                border-top: 1px solid #2a1a3a;
+                padding: 12px 16px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                background: #0a0710;
+            ">
+                <div style="color: #6a5a8a; font-size: 11px;">
+                    ${collectedCount === totalPieces 
+                        ? '<span style="color: #FFD700;">★ All pieces collected! Return to the Staff Gate. ★</span>'
+                        : `Seek the remaining ${totalPieces - collectedCount} pieces scattered through the depths...`
+                    }
+                </div>
+                <button onclick="document.getElementById('staffCollectionOverlay').remove()" style="
+                    background: #1a0f2a;
+                    border: 1px solid #6a5a8a;
+                    color: #aa88cc;
+                    font-family: 'VT323', monospace;
+                    font-size: 14px;
+                    padding: 6px 16px;
+                    cursor: pointer;
+                    border-radius: 4px;
+                ">RETURN TO DUNGEON</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+    
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) overlay.remove();
+    });
+}
+
+
 // ── Central dungeon navigation handler (buttons + keyboard) ──────────
 function dungeonNav(input) {
     // Normalise aliases
@@ -21032,66 +21207,67 @@ function moveInDungeon(direction) {
     const ds = gameState.dungeon;
     const dungeonData = DUNGEONS[ds.dungeonKey];
 
-    // ═══════════════════════════════════════════════════════════════
-    // LADDER MOVEMENT — "up" or "down"
-    // ═══════════════════════════════════════════════════════════════
-    if (direction === 'up' || direction === 'down') {
-        const currentFloor = dungeonData.floors[ds.floor];
-        const currentRoom = currentFloor.rooms[ds.currentRoom];
+// ═══════════════════════════════════════════════════════════════
+// LADDER MOVEMENT — "up" or "down"
+// ═══════════════════════════════════════════════════════════════
+if (direction === 'up' || direction === 'down') {
+    const currentFloor = dungeonData.floors[ds.floor];
+    const currentRoom = currentFloor.rooms[ds.currentRoom];
 
-        if (!currentRoom.contents || !currentRoom.contents.ladder) {
-            termAppend(`There is no ladder here.`, 'term-dim');
-            return;
-        }
-        const ladder = currentRoom.contents.ladder;
-        if (ladder.direction !== direction) {
-            termAppend(`The ladder only goes ${ladder.direction}.`, 'term-dim');
-            return;
-        }
+    if (!currentRoom.contents || !currentRoom.contents.ladder) {
+        termAppend(`There is no ladder here.`, 'term-dim');
+        return;
+    }
+    const ladder = currentRoom.contents.ladder;
+    if (ladder.direction !== direction) {
+        termAppend(`The ladder only goes ${ladder.direction}.`, 'term-dim');
+        return;
+    }
 
-        const targetFloor = ladder.leadsTo.floor;
-        const targetRoom  = ladder.leadsTo.room;
+    const targetFloor = ladder.leadsTo.floor;
+    const targetRoom  = ladder.leadsTo.room;
 
-        if (!dungeonData.floors[targetFloor] || !dungeonData.floors[targetFloor].rooms[targetRoom]) {
-            termAppend(`⚠️ Ladder leads nowhere (floor ${targetFloor} / ${targetRoom} not found).`, 'term-error');
-            return;
-        }
+    if (!dungeonData.floors[targetFloor] || !dungeonData.floors[targetFloor].rooms[targetRoom]) {
+        termAppend(`⚠️ Ladder leads nowhere (floor ${targetFloor} / ${targetRoom} not found).`, 'term-error');
+        return;
+    }
 
-        // ── Transition ───────────────────────────────────────────
-        ds.floor      = targetFloor;
-        ds.currentRoom = targetRoom;
-        
-        // Load persistent map for the new floor and merge with current session
-        const persistentMap = loadDungeonMap(gameState.player, ds.dungeonKey, targetFloor);
-        const scopedKey = `${targetFloor}:${targetRoom}`;
-        persistentMap.add(scopedKey); // Add current room
-        saveRoomDiscovery(gameState.player, ds.dungeonKey, targetFloor, targetRoom); // Save to persistent
-        
-        ds.discoveredRooms = persistentMap; // Use persistent map for active session
+    // ── Transition ───────────────────────────────────────────
+    ds.floor      = targetFloor;
+    ds.currentRoom = targetRoom;
+    
+    // Load persistent map for the new floor and merge with current session
+    const persistentMap = loadDungeonMap(gameState.player, ds.dungeonKey, targetFloor);
+    const scopedKey = `${targetFloor}:${targetRoom}`;
+    persistentMap.add(scopedKey); // Add current room
+    saveRoomDiscovery(gameState.player, ds.dungeonKey, targetFloor, targetRoom); // Save to persistent
+    
+    ds.discoveredRooms = persistentMap; // Use persistent map for active session
 
-        const destFloorData = dungeonData.floors[targetFloor];
-        const destRoom = destFloorData.rooms[targetRoom];
-        destRoom.flags = destRoom.flags || {};
-        destRoom.flags.discovered = true;
+    const destFloorData = dungeonData.floors[targetFloor];
+    const destRoom = destFloorData.rooms[targetRoom];
+    destRoom.flags = destRoom.flags || {};
+    destRoom.flags.discovered = true;
 
-        termAppend('', 'term-separator');
-        termAppend(`🪜 You ${direction === 'up' ? 'climb up' : 'descend'} the ladder to <strong>Floor ${targetFloor}</strong>.`, 'term-highlight');
-        termAppend(`<strong>${destRoom.name || targetRoom}</strong>`);
-        termAppend(destRoom.description || '', 'term-dim');
+    termAppend('', 'term-separator');
+    termAppend(`🪜 You ${direction === 'up' ? 'climb up' : 'descend'} the ladder to <strong>Floor ${targetFloor}</strong>.`, 'term-highlight');
+    termAppend(`<strong>${destRoom.name || targetRoom}</strong>`);
+    termAppend(destRoom.description || '', 'term-dim');
 
-        // List exits including any ladder in the destination room
-        const exitList = buildExitList(destRoom);
-        termAppend(`You see exits: ${exitList}.`, 'term-dim');
+    // List exits including any ladder in the destination room
+    const exitList = buildExitList(destRoom);
+    termAppend(`You see exits: ${exitList}.`, 'term-dim');
 
-        // ♻️ Check for enemy respawns (30min timer)
-        checkDungeonRespawns();
+    // ♻️ Check for enemy respawns (30min timer)
+    checkDungeonRespawns();
 
-        checkTownExit(destRoom);
-        triggerRoomTrap(destRoom);
-        checkRunestone(destRoom);
-            // 📦 Auto-pickup loot from ground
-    if (nextRoom.contents && nextRoom.contents.lootTable && nextRoom.contents.lootTable.length > 0) {
-        const loot = nextRoom.contents.lootTable;
+    checkTownExit(destRoom);
+    triggerRoomTrap(destRoom);
+    checkRunestone(destRoom);
+    
+    // 📦 Auto-pickup loot from ground - FIXED: Use destRoom instead of nextRoom
+    if (destRoom.contents && destRoom.contents.lootTable && destRoom.contents.lootTable.length > 0) {
+        const loot = destRoom.contents.lootTable;
         loot.forEach(item => {
             if (!gameState.player.inventory.includes(item.key)) {
                 gameState.player.inventory.push(item.key);
@@ -21099,12 +21275,14 @@ function moveInDungeon(direction) {
             }
         });
         // Remove loot so it doesn't get picked up again
-        delete nextRoom.contents.lootTable;
+        delete destRoom.contents.lootTable;
     }
-        checkRoomEncounter(destRoom);
-        checkEnemiesInRoom(targetRoom);
-            // 📢 Show message if there are enemies already in this room
-    const enemiesHere = ds.activeEnemies.filter(e => e.currentRoom === nextRoomId);
+    
+    checkRoomEncounter(destRoom);
+    checkEnemiesInRoom(targetRoom);
+    
+    // 📢 Show message if there are enemies already in this room
+    const enemiesHere = ds.activeEnemies.filter(e => e.currentRoom === targetRoom);
     if (enemiesHere.length > 0 && !gameState.combatState) {
         if (enemiesHere.length === 1) {
             termAppend(`⚠️ <strong>${enemiesHere[0].name}</strong> is already in this room, waiting for you!`, 'term-warning');
@@ -21113,13 +21291,32 @@ function moveInDungeon(direction) {
             termAppend(`⚠️ ${names} are already in this room, waiting for you!`, 'term-warning');
         }
     }
+    
+    // 🌀 TELEPORT TRIGGER (ladder version)
+    if (destRoom.contents && destRoom.contents.staffTrigger && 
+        destRoom.contents.staffTrigger.enabled) {
         
-        // 🌀 TELEPORT TRIGGER (ladder version)
-        if (destRoom.contents && destRoom.contents.staffTrigger && 
-            destRoom.contents.staffTrigger.enabled && 
-            destRoom.contents.staffTrigger.triggerType === 'enter_room') {
-            
-            const tpTrigger = destRoom.contents.staffTrigger;
+        const tpTrigger = destRoom.contents.staffTrigger;
+        const triggerType = tpTrigger.triggerType;
+        let shouldTeleport = false;
+        
+        if (triggerType === 'enter_room') {
+            shouldTeleport = true;
+        } else if (triggerType === 'staff_pieces') {
+            const staffCount = (gameState.player.inventory || []).filter(i => i && typeof i === 'string' && i.startsWith('staff_piece_')).length;
+            if (staffCount >= 8) {
+                shouldTeleport = true;
+                termAppend(`🪄 The staff pieces resonate with the ancient gate!`, 'term-highlight');
+                
+                // Consume staff pieces
+                gameState.player.inventory = gameState.player.inventory.filter(i => !(i && typeof i === 'string' && i.startsWith('staff_piece_')));
+                termAppend(`🪄 The staff pieces dissolve into the gate, consumed by the teleportation!`, 'term-warning');
+            } else {
+                termAppend(`🪄 The gate requires all 8 staff pieces to activate. (${staffCount}/8 collected)`, 'term-dim');
+            }
+        }
+        
+        if (shouldTeleport) {
             const tpTargetFloor = tpTrigger.targetFloor;
             const tpTargetRoom = tpTrigger.targetRoom;
             
@@ -21132,25 +21329,24 @@ function moveInDungeon(direction) {
                 setTimeout(() => tpFlash.remove(), 500);
             }, 300);
             
-
-        // Clear combat state when teleporting
-        if (gameState.combatState) {
-            gameState.combatState = null;
-            if (gameState.combatTimer) {
-                clearInterval(gameState.combatTimer);
-                gameState.combatTimer = null;
+            // Clear combat state when teleporting
+            if (gameState.combatState) {
+                gameState.combatState = null;
+                if (gameState.combatTimer) {
+                    clearInterval(gameState.combatTimer);
+                    gameState.combatTimer = null;
+                }
+                termAppend(`🌀 The teleportation breaks the enemy's pursuit!`, 'term-highlight');
             }
-            termAppend(`🌀 The teleportation breaks the enemy's pursuit!`, 'term-highlight');
-        }
-        
-        // Reset enemy chase states
-        if (ds.activeEnemies) {
-            ds.activeEnemies.forEach(enemy => {
-                enemy.isChasing = false;
-                enemy.roomsFollowed = 0;
-            });
-        }
-
+            
+            // Reset enemy chase states
+            if (ds.activeEnemies) {
+                ds.activeEnemies.forEach(enemy => {
+                    enemy.isChasing = false;
+                    enemy.roomsFollowed = 0;
+                });
+            }
+            
             ds.floor = tpTargetFloor;
             ds.currentRoom = tpTargetRoom;
             
@@ -21171,7 +21367,7 @@ function moveInDungeon(direction) {
             const tpExitList = buildExitList(tpNewRoom);
             termAppend(`You see exits: ${tpExitList}.`, 'term-dim');
             
-            // Check for enemies in the new room and start combat
+            // Check for enemies in the new room
             if (ds.activeEnemies) {
                 const enemiesInNewRoom = ds.activeEnemies.filter(e => e.currentRoom === tpTargetRoom);
                 if (enemiesInNewRoom.length > 0 && !gameState.combatState) {
@@ -21183,12 +21379,11 @@ function moveInDungeon(direction) {
             renderDungeonActionBar();
             return;
         }
-        
-        saveGame();
-        renderDungeonActionBar();
-        return;
-    }
-
+    }        
+    saveGame();
+    renderDungeonActionBar();
+    return;
+}
     // ═══════════════════════════════════════════════════════════════
     // NORMAL DIRECTION MOVEMENT
     // ═══════════════════════════════════════════════════════════════
@@ -21285,54 +21480,72 @@ function moveInDungeon(direction) {
 
     // 🌀 TELEPORT TRIGGER (normal movement version)
     if (nextRoom.contents && nextRoom.contents.staffTrigger && 
-        nextRoom.contents.staffTrigger.enabled && 
-        nextRoom.contents.staffTrigger.triggerType === 'enter_room') {
+        nextRoom.contents.staffTrigger.enabled) {
         
         const tpTrigger = nextRoom.contents.staffTrigger;
-        const tpTargetFloor = tpTrigger.targetFloor;
-        const tpTargetRoom = tpTrigger.targetRoom;
+        const triggerType = tpTrigger.triggerType;
+        let shouldTeleport = false;
         
-        const tpFlash = document.createElement('div');
-        tpFlash.style.cssText = 'position:fixed;inset:0;z-index:99999;background:white;opacity:0;pointer-events:none;transition:opacity 0.2s;';
-        document.body.appendChild(tpFlash);
-        setTimeout(() => tpFlash.style.opacity = '1', 10);
-        setTimeout(() => {
-            tpFlash.style.opacity = '0';
-            setTimeout(() => tpFlash.remove(), 500);
-        }, 300);
-        
+        if (triggerType === 'enter_room') {
+            shouldTeleport = true;
+        } else if (triggerType === 'staff_pieces') {
+            const staffCount = (gameState.player.inventory || []).filter(i => i && typeof i === 'string' && i.startsWith('staff_piece_')).length;
+            if (staffCount >= 8) {
+                shouldTeleport = true;
+                termAppend(`🪄 The staff pieces resonate with the ancient gate!`, 'term-highlight');
 
-        // Clear combat state when teleporting
-        if (gameState.combatState) {
-            gameState.combatState = null;
-            if (gameState.combatTimer) {
-                clearInterval(gameState.combatTimer);
-                gameState.combatTimer = null;
+                 // CONSUME ALL STAFF PIECES
+                gameState.player.inventory = gameState.player.inventory.filter(i => !(i && typeof i === 'string' && i.startsWith('staff_piece_')));
+                termAppend(`🪄 The staff pieces dissolve into the gate, consumed by the teleportation!`, 'term-warning');
+            } else {
+                termAppend(`🪄 The gate requires all 8 staff pieces to activate. (${staffCount}/8 collected)`, 'term-dim');
             }
-            termAppend(`🌀 The teleportation breaks the enemy's pursuit!`, 'term-highlight');
         }
         
-        // Reset enemy chase states
-        if (ds.activeEnemies) {
-            ds.activeEnemies.forEach(enemy => {
-                enemy.isChasing = false;
-                enemy.roomsFollowed = 0;
-            });
-        }
-
-        ds.floor = tpTargetFloor;
-        ds.currentRoom = tpTargetRoom;
-        
-        const tpScopedKey = `${tpTargetFloor}:${tpTargetRoom}`;
-        ds.discoveredRooms.add(tpScopedKey);
-        saveRoomDiscovery(gameState.player, ds.dungeonKey, tpTargetFloor, tpTargetRoom);
-        
-        const tpNewFloorData = dungeonData.floors[tpTargetFloor];
-        const tpNewRoom = tpNewFloorData.rooms[tpTargetRoom];
-        tpNewRoom.flags = tpNewRoom.flags || {};
-        tpNewRoom.flags.discovered = true;
-        
-                    termClear();
+        if (shouldTeleport) {
+            const tpTargetFloor = tpTrigger.targetFloor;
+            const tpTargetRoom = tpTrigger.targetRoom;
+            
+            const tpFlash = document.createElement('div');
+            tpFlash.style.cssText = 'position:fixed;inset:0;z-index:99999;background:white;opacity:0;pointer-events:none;transition:opacity 0.2s;';
+            document.body.appendChild(tpFlash);
+            setTimeout(() => tpFlash.style.opacity = '1', 10);
+            setTimeout(() => {
+                tpFlash.style.opacity = '0';
+                setTimeout(() => tpFlash.remove(), 500);
+            }, 300);
+            
+            // Clear combat state when teleporting
+            if (gameState.combatState) {
+                gameState.combatState = null;
+                if (gameState.combatTimer) {
+                    clearInterval(gameState.combatTimer);
+                    gameState.combatTimer = null;
+                }
+                termAppend(`🌀 The teleportation breaks the enemy's pursuit!`, 'term-highlight');
+            }
+            
+            // Reset enemy chase states
+            if (ds.activeEnemies) {
+                ds.activeEnemies.forEach(enemy => {
+                    enemy.isChasing = false;
+                    enemy.roomsFollowed = 0;
+                });
+            }
+            
+            ds.floor = tpTargetFloor;
+            ds.currentRoom = tpTargetRoom;
+            
+            const tpScopedKey = `${tpTargetFloor}:${tpTargetRoom}`;
+            ds.discoveredRooms.add(tpScopedKey);
+            saveRoomDiscovery(gameState.player, ds.dungeonKey, tpTargetFloor, tpTargetRoom);
+            
+            const tpNewFloorData = dungeonData.floors[tpTargetFloor];
+            const tpNewRoom = tpNewFloorData.rooms[tpTargetRoom];
+            tpNewRoom.flags = tpNewRoom.flags || {};
+            tpNewRoom.flags.discovered = true;
+            
+            termClear();
             termAppend('', 'term-separator');
             termAppend(`<span style="color:#a855f7;">🌀 A magical force pulls you through space! 🌀</span>`, 'term-highlight');
             termAppend(`<strong>${tpNewRoom.name || tpTargetRoom}</strong>`);
@@ -21351,6 +21564,7 @@ function moveInDungeon(direction) {
             saveGame();
             renderDungeonActionBar();
             return;
+        }
     }
 
     saveGame();
