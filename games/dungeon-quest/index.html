@@ -2560,6 +2560,7 @@ body.terminal-mode #menuContainer {
     <script src="guild.js"></script>
     <script src="weapons.js"></script>
     <script src="armor.js"></script>
+    <script src="armor-modifiers.js"></script>
     <script src="items.js"></script>
 
     <script src="class-masters.js"></script>
@@ -4132,6 +4133,12 @@ function recalcGemStats() {
         });
     }
     
+    // Add base HP/MP bonuses from armor (not from gems)
+    if (armor && !armor.unarmored) {
+        hpBonus += armor.bonusHp || 0;
+        mpBonus += armor.bonusMp || 0;
+    }
+
     // Sum up bonuses from armor gems
     if (armor && armor.gems) {
         armor.gems.forEach(gem => {
@@ -4558,6 +4565,25 @@ function getScaledEnemyHP(baseHP, level) {
         }
         function calcChaDiscount(cha) { return Math.min(30, (cha||0) * 2); }   // buy %  off
         
+
+                // Get total bonus from all equipped armor modifiers for a specific stat
+        function getArmorModifierBonus(statKey) {
+            const p = gameState.player;
+            if (!p || !p.armor) return 0;
+            
+            const armor = ARMOR[p.armor];
+            if (!armor || !armor.modifiers) return 0;
+            
+            let total = 0;
+            armor.modifiers.forEach(mod => {
+                if (mod.stat === statKey) {
+                    total += mod.value;
+                }
+            });
+            return total;
+        }
+
+
         // ═══════════════════════════════════════════════════════════════
         // CLASS EQUIPMENT RESTRICTIONS
         // ═══════════════════════════════════════════════════════════════
@@ -6147,7 +6173,10 @@ generatedArmor: (() => {
             // Stats
             baseDefense: armorObj.baseDefense,
             baseMagicBonus: armorObj.baseMagicBonus || 0,
-            
+            bonusHp: armorObj.bonusHp || 0,
+            bonusMp: armorObj.bonusMp || 0,
+
+
             // Quality
             quality: armorObj.quality,
             qualityBonus: armorObj.qualityBonus || 0,
@@ -6157,6 +6186,7 @@ generatedArmor: (() => {
             // Gems
             gems: armorObj.gems ? [...armorObj.gems] : [],
             gemSlots: armorObj.gemSlots || 0,
+            modifiers: armorObj.modifiers || [],
             
             // Cost and description
             cost: armorObj.cost,
@@ -11198,7 +11228,43 @@ async function loadCharacter(characterId) {
             defeatedEnemies: data.dungeon.defeatedEnemies || []
         } : null;
         
-        gameState.combatState = data.activeCombat || null;
+       gameState.combatState = data.activeCombat || null;
+
+
+         
+    // Restore combat state monsters to full monster objects
+        if (gameState.combatState && gameState.combatState.monsters) {
+            const restoredMonsters = [];
+            for (const savedMonster of gameState.combatState.monsters) {
+                // Find the monster template from ENEMIES
+                const template = ENEMIES[savedMonster.key];
+                if (template) {
+                    // Recreate the monster with saved HP and other stats
+                    const monster = {
+                        ...template,
+                        ...savedMonster,
+                        // Ensure these critical properties exist
+                        hp: savedMonster.hp,
+                        maxHp: savedMonster.maxHp,
+                        currentHp: savedMonster.hp,
+                        index: restoredMonsters.length
+                    };
+                    restoredMonsters.push(monster);
+                    console.log(`🔧 Restored monster: ${monster.name} (HP: ${monster.hp}/${monster.maxHp})`);
+                } else {
+                    console.warn(`⚠️ Could not restore monster: ${savedMonster.key} not found in ENEMIES`);
+                }
+            }
+            gameState.combatState.monsters = restoredMonsters;
+            
+            // Ensure pipAvailable exists
+            if (!gameState.combatState.pipAvailable && gameState.combatState.pipCount) {
+                gameState.combatState.pipAvailable = new Array(gameState.combatState.pipCount).fill(true);
+                gameState.combatState.pipTimers = new Array(gameState.combatState.pipCount).fill(10);
+            }
+            
+            console.log(`⚔️ Restored combat with ${restoredMonsters.length} enemies`);
+        }
         
 // Start combat with active enemies in current room
 if (gameState.dungeon && gameState.dungeon.activeEnemies && gameState.dungeon.activeEnemies.length > 0) {
@@ -11436,12 +11502,17 @@ if (gameState.dungeon) {
             if (isInstanceId(item)) {
                 console.log(`🔧 Found instance ID as string: ${item}`);
                 
-                // Try to find the actual weapon object in WEAPONS
+                                // Try to find in WEAPONS first
                 if (WEAPONS[item]) {
-                    // It's a valid weapon instance, convert to object reference
                     console.log(`   ✅ Found in WEAPONS, converting to object`);
                     newInventory.push(WEAPONS[item]);
-                } else {
+                }
+                // Then try ARMOR
+                else if (ARMOR[item]) {
+                    console.log(`   ✅ Found in ARMOR, converting to object`);
+                    newInventory.push(ARMOR[item]);
+                }
+                else {
                     // Weapon object is missing - RECREATE IT!
                     console.log(`   ⚠️ Weapon object missing, recreating...`);
                     const recreatedWeapon = recreateWeaponFromInstanceId(item);
@@ -12200,6 +12271,11 @@ console.log('🔄 STEP 3.5: Force restoring weapons from inventory...');
 let forceRestored = 0;
 p.inventory.forEach((item, idx) => {
     if (typeof item === 'object' && item.instanceId) {
+        // SKIP ARMOR ITEMS - they are handled in STEP 4
+        if (item.armorId) {
+            return; // Skip armor, don't log anything
+        }
+        
         // Check if this weapon is already in WEAPONS
         if (!WEAPONS[item.instanceId]) {
             console.log(`  → Missing weapon in WEAPONS: ${item.instanceId}`);
@@ -13014,10 +13090,9 @@ console.log(`🛡️ Final equipped armor: ${gameState.player.armor}`);
 
 
 
-// Add this inside loadCharacter() function, after the player data is restored
-// Look for: gameState.player = { ...data.player, ... }
-// Then add this code right after:
 
+
+/*
 // ═══════════════════════════════════════════════════════════════
 // CLASS-BASED HP MIGRATION - Retroactive CON scaling
 // ═══════════════════════════════════════════════════════════════
@@ -13107,6 +13182,8 @@ console.log(`🛡️ Final equipped armor: ${gameState.player.armor}`);
     
 })(gameState.player);
 
+*/
+
         // Refresh dungeon terminal if we're in a dungeon
         if (gameState.dungeon) {
             const dungeon = DUNGEONS[gameState.dungeon.dungeonKey];
@@ -13126,11 +13203,52 @@ console.log(`🛡️ Final equipped armor: ${gameState.player.armor}`);
             if (typeof startMpRegen === 'function') startMpRegen(false);
         }
 
-        // Only show town if not in a dungeon
+                // Only show town if not in a dungeon
 if (!gameState.dungeon) {
-    showTown();
+    // Check if we're in exploration combat
+    if (gameState.combatState && gameState.combatState.monsters && gameState.combatState.monsters.length > 0) {
+        console.log('⚔️ Combat state detected with', gameState.combatState.monsters.length, 'enemies');
+        console.log('Enemies:', gameState.combatState.monsters.map(m => m.name));
+        
+        document.body.classList.add("terminal-mode");
+        openTerminalView(gameState.currentLocation);
+        
+        // Force display of enemies in terminal
+        termAppend('', 'term-separator');
+        termAppend('<span style="color:#ff4444;">⚔️ COMBAT RESUMED! ⚔️</span>', 'term-victory');
+        gameState.combatState.monsters.forEach((m, i) => {
+            termAppend(`<span style="color:${m.rarityColor};">${m.name}</span> - HP: ${m.hp}/${m.maxHp}`, 'term-enemy');
+        });
+        
+                setTimeout(() => {
+            renderEnemyCards();
+            renderActionBar();
+            
+            // Force start combat timer
+            if (gameState.combatTimer) {
+                clearInterval(gameState.combatTimer);
+                gameState.combatTimer = null;
+            }
+            startCombatTimer();
+            
+            // Force enemy attack if timer is zero or negative
+            if (gameState.combatState.enemyTimer <= 0) {
+                // Reset timer and attack immediately
+                gameState.combatState.enemyTimer = 1;
+                setTimeout(() => {
+                    if (gameState.combatState && !gameState.combatState.combatOver) {
+                        enemyAttackSingle();
+                    }
+                }, 100);
+            } else {
+                console.log('Enemy will attack in', gameState.combatState.enemyTimer, 'seconds');
+            }
+        }, 200);
+
+    } else {
+        showTown();
+    }
 } else {
-    // We're in a dungeon, make sure terminal mode is active
     document.body.classList.add("terminal-mode");
     if (typeof renderDungeonActionBar === 'function') {
         renderDungeonActionBar();
@@ -13148,7 +13266,14 @@ if (!gameState.dungeon) {
     }
 
     setupAutoSaveTriggers();
+
+     // Fix enemy timer on loaded combat
+    if (gameState.combatState && !gameState.combatState.enemyTimer) {
+        gameState.combatState.enemyTimer = 10;
+    }
 }
+
+
 
 
 // ======================================================
@@ -16985,7 +17110,7 @@ function _executeBuy(type, key, cost, itemName, disc) {
     if (typeof updateHud === 'function') updateHud();
     renderShop('buy', 'weapons', 'all', 'near');
 }
-        function showInventory() {
+function showInventory() {
     checkGameVersion();
     const p = gameState.player;
     const playerClass = p.baseClass || p.class;
@@ -17004,9 +17129,7 @@ function _executeBuy(type, key, cost, itemName, disc) {
     const eqWeapon = (() => {
         if (!p.weapon || p.weapon === 'bare_fists') return null;
         
-        // Check if equipped weapon is an instanceId
         if (typeof p.weapon === 'string' && p.weapon.includes('_')) {
-            // Find the weapon instance in inventory
             const instance = p.inventory.find(item => 
                 item && typeof item === 'object' && item.instanceId === p.weapon
             );
@@ -17014,8 +17137,6 @@ function _executeBuy(type, key, cost, itemName, disc) {
                 return WEAPONS[instance.weaponId];
             }
         }
-        
-        // Fallback to treating as direct weapon key
         return WEAPONS[p.weapon];
     })();
     
@@ -17029,7 +17150,6 @@ function _executeBuy(type, key, cost, itemName, disc) {
             </div>
         `;
     } else {
-        // Find the equipped instance to get quality and modifiers
         const equippedInstance = p.inventory.find(item => 
             item && typeof item === 'object' && item.instanceId === p.weapon
         );
@@ -17038,21 +17158,19 @@ function _executeBuy(type, key, cost, itemName, disc) {
         const qc = QUALITY_CONFIG[displayQuality];
         const qualityColor = qc?.color || '#0f0';
         
-        // Build modifier display
-let eqModifierHtml = '';
-const modifiers = equippedInstance?.modifiers || eqWeapon.modifiers || [];
-if (modifiers.length > 0) {
-    eqModifierHtml = '<div style="margin-top:5px;font-size:12px;">';
-    modifiers.forEach(mod => {
-        // mod is already an object with name, color, etc.
-        const modColor = mod.color || '#FFD700';
-        eqModifierHtml += `<div style="color:${modColor};">✨ ${mod.name}`;
-        if (mod.minDamage) eqModifierHtml += ` (${mod.minDamage}-${mod.maxDamage})`;
-        if (mod.statusEffect) eqModifierHtml += ` — ${mod.statusEffect}`;
-        eqModifierHtml += `</div>`;
-    });
-    eqModifierHtml += '</div>';
-}
+        let eqModifierHtml = '';
+        const modifiers = equippedInstance?.modifiers || eqWeapon.modifiers || [];
+        if (modifiers.length > 0) {
+            eqModifierHtml = '<div style="margin-top:5px;font-size:12px;">';
+            modifiers.forEach(mod => {
+                const modColor = mod.color || '#FFD700';
+                eqModifierHtml += `<div style="color:${modColor};">✨ ${mod.name}`;
+                if (mod.minDamage) eqModifierHtml += ` (${mod.minDamage}-${mod.maxDamage})`;
+                if (mod.statusEffect) eqModifierHtml += ` — ${mod.statusEffect}`;
+                eqModifierHtml += `</div>`;
+            });
+            eqModifierHtml += '</div>';
+        }
         
         invHtml += `
             <div class="item-card equipped">
@@ -17072,11 +17190,9 @@ if (modifiers.length > 0) {
     }
 
     // ── Other weapons in inventory ────────────────────────────────
-    // Collect all weapon items
     const weaponItems = [];
     
     p.inventory.forEach((item, index) => {
-        // Handle weapon instances (objects)
         if (typeof item === 'object' && item !== null && item.weaponId) {
             const weaponData = WEAPONS[item.instanceId];
             if (weaponData && !weaponData.unarmed) {
@@ -17089,7 +17205,6 @@ if (modifiers.length > 0) {
                 });
             }
         }
-        // Handle weapon strings
         else if (typeof item === 'string' && WEAPONS[item] && !WEAPONS[item].unarmed) {
             const weaponData = WEAPONS[item];
             weaponItems.push({
@@ -17102,12 +17217,9 @@ if (modifiers.length > 0) {
         }
     });
 
-
-    // Add the equipped weapon to the beginning of the list
     if (p.weapon && p.weapon !== 'bare_fists') {
         const equippedWeaponData = WEAPONS[p.weapon];
         if (equippedWeaponData && !equippedWeaponData.unarmed) {
-            // Check if it's already in the list (shouldn't be, but just in case)
             const alreadyExists = weaponItems.some(item => item.key === p.weapon);
             if (!alreadyExists) {
                 weaponItems.unshift({
@@ -17121,9 +17233,7 @@ if (modifiers.length > 0) {
             }
         }
     }
-
     
-    // Display each weapon
     weaponItems.forEach(weaponItem => {
         if (weaponItem.key === p.weapon) return;
         
@@ -17133,21 +17243,19 @@ if (modifiers.length > 0) {
         const qualityColor = qc?.color || '#00FF00';
         const weaponKey = instanceData ? instanceData.instanceId : weaponItem.key;
         
-        // Build modifier display
-let modHtml = '';
-const modifiers = instanceData?.modifiers || weapon.modifiers || [];
-if (modifiers.length > 0) {
-    modHtml = '<div style="margin-top:5px;font-size:12px;">';
-    modifiers.forEach(mod => {
-        // mod is already an object with name, color, etc.
-        const modColor = mod.color || '#FFD700';
-        modHtml += `<div style="color:${modColor};">✨ ${mod.name}`;
-        if (mod.minDamage) modHtml += ` (${mod.minDamage}-${mod.maxDamage})`;
-        if (mod.statusEffect) modHtml += ` — ${mod.statusEffect}`;
-        modHtml += `</div>`;
-    });
-    modHtml += '</div>';
-}
+        let modHtml = '';
+        const modifiers = instanceData?.modifiers || weapon.modifiers || [];
+        if (modifiers.length > 0) {
+            modHtml = '<div style="margin-top:5px;font-size:12px;">';
+            modifiers.forEach(mod => {
+                const modColor = mod.color || '#FFD700';
+                modHtml += `<div style="color:${modColor};">✨ ${mod.name}`;
+                if (mod.minDamage) modHtml += ` (${mod.minDamage}-${mod.maxDamage})`;
+                if (mod.statusEffect) modHtml += ` — ${mod.statusEffect}`;
+                modHtml += `</div>`;
+            });
+            modHtml += '</div>';
+        }
         
         const canEquip = canUseWeapon(playerClass, weapon);
         
@@ -17180,9 +17288,7 @@ if (modifiers.length > 0) {
     const eqArmor = (() => {
         if (!p.armor || p.armor === 'no_armor') return null;
         
-        // Check if equipped armor is an instanceId
         if (typeof p.armor === 'string' && p.armor.includes('_')) {
-            // Find the armor instance in inventory
             const instance = p.inventory.find(item => 
                 item && typeof item === 'object' && item.instanceId === p.armor
             );
@@ -17190,8 +17296,6 @@ if (modifiers.length > 0) {
                 return ARMOR[instance.armorId] || ARMOR[instance.instanceId];
             }
         }
-        
-        // Fallback to treating as direct armor key
         return ARMOR[p.armor];
     })();
     
@@ -17205,7 +17309,6 @@ if (modifiers.length > 0) {
             </div>
         `;
     } else {
-        // Find the equipped instance to get quality
         const equippedInstance = p.inventory.find(item => 
             item && typeof item === 'object' && item.instanceId === p.armor
         );
@@ -17214,16 +17317,39 @@ if (modifiers.length > 0) {
         const aqc = QUALITY_CONFIG[displayQuality];
         const qualityColor = aqc?.color || '#0f0';
         
-        // Calculate defense with quality bonus
         const aqb = getQualityBonus(displayQuality, eqArmor.baseDefense);
         const tDef = eqArmor.baseDefense + aqb;
         const tMag = (eqArmor.baseMagicBonus || 0) + getQualityBonus(displayQuality, eqArmor.baseMagicBonus || 0);
+        
+                // Build HP/MP display for equipped armor (use equippedInstance, not eqArmor)
+        let eqHpMpDisplay = '';
+        if (equippedInstance) {
+            if ((equippedInstance.bonusHp && equippedInstance.bonusHp > 0) || (equippedInstance.bonusMp && equippedInstance.bonusMp > 0)) {
+                eqHpMpDisplay = '<div style="margin-top:3px;font-size:10px;color:#88ff88;">';
+                if (equippedInstance.bonusHp && equippedInstance.bonusHp > 0) eqHpMpDisplay += `❤️ +${equippedInstance.bonusHp} HP `;
+                if (equippedInstance.bonusMp && equippedInstance.bonusMp > 0) eqHpMpDisplay += `✨ +${equippedInstance.bonusMp} MP`;
+                eqHpMpDisplay += '</div>';
+            }
+        }
+        
+        // Build modifiers display for equipped armor (use equippedInstance)
+        let eqModifierDisplay = '';
+        if (equippedInstance && equippedInstance.modifiers && equippedInstance.modifiers.length > 0) {
+            eqModifierDisplay = '<div style="margin-top:5px;font-size:11px;">';
+            equippedInstance.modifiers.forEach(mod => {
+                const valueStr = mod.statType === 'percent' ? `${mod.value}%` : `+${mod.value}`;
+                eqModifierDisplay += `<div style="color:${mod.color};">${mod.icon} ${mod.name}: ${valueStr}</div>`;
+            });
+            eqModifierDisplay += '</div>';
+        }
         
         invHtml += `
             <div class="item-card equipped">
                 <div style="color:${qualityColor};">🛡️ ${eqArmor.name}${displayQuality !== eqArmor.quality ? ` [${displayQuality}]` : ''}</div>
                 <div style="font-size:12px;">${buildArmorDefLine({...eqArmor, quality: displayQuality}, p)}</div>
                 <div style="color:#888; font-size:11px; margin-top:2px;">Level ${eqArmor.level || 1}</div>
+                ${eqHpMpDisplay}
+                ${eqModifierDisplay}
                 <div style="color:var(--border-color);">EQUIPPED</div>
                 <button onclick="unequipItem('armor')" style="border-color:#ff4444;color:#ff4444;margin-top:4px;">UNEQUIP</button>
             </div>
@@ -17231,11 +17357,9 @@ if (modifiers.length > 0) {
     }
 
     // ── Other armors in inventory ─────────────────────────────────
-    // Collect all armor items
     const armorItems = [];
     
     p.inventory.forEach((item, index) => {
-        // Handle armor instances (objects)
         if (typeof item === 'object' && item !== null && item.armorId) {
             const armorData = ARMOR[item.armorId] || ARMOR[item.instanceId];
             if (armorData && !armorData.unarmored) {
@@ -17248,7 +17372,6 @@ if (modifiers.length > 0) {
                 });
             }
         }
-        // Handle armor strings
         else if (typeof item === 'string' && ARMOR[item] && !ARMOR[item].unarmored) {
             const armorData = ARMOR[item];
             armorItems.push({
@@ -17261,7 +17384,6 @@ if (modifiers.length > 0) {
         }
     });
     
-    // Display each armor item
     armorItems.forEach(armorItem => {
         if (armorItem.key === p.armor) return;
         
@@ -17271,18 +17393,41 @@ if (modifiers.length > 0) {
         const qualityColor = aqc?.color || '#00FF00';
         const armorKey = instanceData ? instanceData.instanceId : armorItem.key;
         
-        // Calculate defense with quality bonus
         const aqb = getQualityBonus(displayQuality, armor.baseDefense);
         const tDef = armor.baseDefense + aqb;
         const tMag = (armor.baseMagicBonus || 0) + getQualityBonus(displayQuality, armor.baseMagicBonus || 0);
         
         const canEquip = canUseArmor(playerClass, armor);
         
+                // Build HP/MP display for unequipped armor (use instanceData, not armor)
+        let hpMpDisplay = '';
+        if (instanceData) {
+            if ((instanceData.bonusHp && instanceData.bonusHp > 0) || (instanceData.bonusMp && instanceData.bonusMp > 0)) {
+                hpMpDisplay = '<div style="margin-top:3px;font-size:10px;color:#88ff88;">';
+                if (instanceData.bonusHp && instanceData.bonusHp > 0) hpMpDisplay += `❤️ +${instanceData.bonusHp} HP `;
+                if (instanceData.bonusMp && instanceData.bonusMp > 0) hpMpDisplay += `✨ +${instanceData.bonusMp} MP`;
+                hpMpDisplay += '</div>';
+            }
+        }
+        
+        // Build modifiers display for unequipped armor (use instanceData)
+        let modifierDisplay = '';
+        if (instanceData && instanceData.modifiers && instanceData.modifiers.length > 0) {
+            modifierDisplay = '<div style="margin-top:5px;font-size:11px;">';
+            instanceData.modifiers.forEach(mod => {
+                const valueStr = mod.statType === 'percent' ? `${mod.value}%` : `+${mod.value}`;
+                modifierDisplay += `<div style="color:${mod.color};">${mod.icon} ${mod.name}: ${valueStr}</div>`;
+            });
+            modifierDisplay += '</div>';
+        }
+        
         invHtml += `
             <div class="item-card${canEquip ? '' : ' unusable'}" style="${canEquip ? '' : 'opacity:0.5;border-color:#555;'}">
                 <div style="color: ${qualityColor};">🛡️ ${armor.name}${displayQuality !== armor.quality ? ` [${displayQuality}]` : ''}</div>
                 <div style="font-size:12px;">DEF: ${tDef}${tMag > 0 ? ` | MAG: +${tMag}` : ''}</div>
                 <div style="color:#888; font-size:11px; margin-top:2px;">Level ${armor.level || 1}</div>
+                ${hpMpDisplay}
+                ${modifierDisplay}
                 ${canEquip
                     ? `<button onclick="equipItem('armor', '${armorKey}')">EQUIP</button>`
                     : `<button disabled style="opacity:0.4;">CANNOT EQUIP</button>`
@@ -17320,7 +17465,6 @@ if (modifiers.length > 0) {
             <div class="inventory-grid">
     `;
 
-    // Count and display items
     const itemCounts = {};
     p.inventory.filter(item => {
         if (typeof item === 'string') {
@@ -17338,29 +17482,21 @@ if (modifiers.length > 0) {
             const item = ITEMS[itemKey];
             const count = itemCounts[itemKey];
             
-            // Choose icon based on item type
             let icon = '🧪';
-            if (itemKey.startsWith('raw_')) {
-                icon = '💎';
-            } else if (itemKey.includes('potion')) {
-                icon = '🧪';
-            } else if (itemKey.includes('elixir')) {
-                icon = '⚗️';
-            } else if (itemKey.includes('seal_fragment')) {
-                icon = '📜';
-            }
+            if (itemKey.startsWith('raw_')) icon = '💎';
+            else if (itemKey.includes('potion')) icon = '🧪';
+            else if (itemKey.includes('elixir')) icon = '⚗️';
+            else if (itemKey.includes('seal_fragment')) icon = '📜';
             
             const color = item.type === 'sellable' ? '#FFD700' : 
                          item.subtype === 'heal_hp' ? '#FF0000' :
                          item.subtype === 'heal_mp' ? '#0000FF' : '#00FF00';
             
-            // Check if it's a usable potion
             const isPotion = item.subtype === 'heal_hp' || 
                             item.subtype === 'heal_mp' || 
                             item.subtype === 'full_restore' ||
                             item.subtype?.startsWith('buff_');
             
-            // Check if at full HP/MP for healing potions
             let canUse = true;
             let disabledReason = '';
             if (item.subtype === 'heal_hp' && p.hp >= p.maxHp) {
@@ -17374,7 +17510,6 @@ if (modifiers.length > 0) {
                 disabledReason = '(Already fully restored)';
             }
             
-            // Show total value if sellable and multiple
             let valueDisplay = '';
             if (item.sellValue) {
                 if (count > 1) {
@@ -17384,7 +17519,6 @@ if (modifiers.length > 0) {
                 }
             }
             
-            // Add USE button for potions
             let buttonHtml = '';
             if (isPotion) {
                 buttonHtml = canUse ? 
@@ -20156,7 +20290,7 @@ if (modifiers && modifiers.length > 0) {
         return (a.armor.name || '').localeCompare(b.armor.name || '');
     });
 
-    // Display all armor in sorted order
+        // Display all armor in sorted order
     armorItems.forEach(armorItem => {
         const { armor, instanceData, quality: itemQuality, isEquipped } = armorItem;
         const displayQuality = instanceData?.quality || itemQuality || armor.quality;
@@ -20178,12 +20312,36 @@ if (modifiers && modifiers.length > 0) {
         
         const canEquip = canUseArmor(playerClass, armor);
         const equipKey = instanceData ? instanceData.instanceId : armorItem.key;
+        
+        // Build HP/MP display (use instanceData for bonuses)
+        let hpMpDisplay = '';
+        if (instanceData) {
+            if ((instanceData.bonusHp && instanceData.bonusHp > 0) || (instanceData.bonusMp && instanceData.bonusMp > 0)) {
+                hpMpDisplay = '<div style="margin-top:3px;font-size:10px;color:#88ff88;">';
+                if (instanceData.bonusHp && instanceData.bonusHp > 0) hpMpDisplay += `❤️ +${instanceData.bonusHp} HP `;
+                if (instanceData.bonusMp && instanceData.bonusMp > 0) hpMpDisplay += `✨ +${instanceData.bonusMp} MP`;
+                hpMpDisplay += '</div>';
+            }
+        }
+        
+        // Build modifiers display (use instanceData)
+        let modifierDisplay = '';
+        if (instanceData && instanceData.modifiers && instanceData.modifiers.length > 0) {
+            modifierDisplay = '<div style="margin-top:5px;font-size:11px;">';
+            instanceData.modifiers.forEach(mod => {
+                const valueStr = mod.statType === 'percent' ? `${mod.value}%` : `+${mod.value}`;
+                modifierDisplay += `<div style="color:${mod.color};">${mod.icon} ${mod.name}: ${valueStr}</div>`;
+            });
+            modifierDisplay += '</div>';
+        }
 
         if (isEquipped) {
             html += `<div style="min-width:130px;padding:10px;border:2px solid ${qualityColor};background:#0a1a0a;font-size:14px; box-shadow:0 0 10px ${qualityColor};">
                 <div style="color:${qualityColor};">🛡️ ${armor.name}${displayQuality !== armor.quality ? ` [${displayQuality}]` : ''}</div>
                 <div style="color:#aaa;font-size:12px;">DEF: ${tDef}${tMag > 0 ? ` | MAG: +${tMag}` : ''}</div>
                 <div style="color:#888; font-size:11px; margin-top:2px;">Level ${armor.level || 1}</div>
+                ${hpMpDisplay}
+                ${modifierDisplay}
                 ${aGemHtml}
                 <div style="color:var(--highlight-color);font-size:12px;">★ EQUIPPED</div>
             </div>`;
@@ -20195,6 +20353,8 @@ if (modifiers && modifiers.length > 0) {
                 <div style="color:${canEquip ? qualityColor : '#888'};">🛡️ ${armor.name}${displayQuality !== armor.quality ? ` [${displayQuality}]` : ''}</div>
                 <div style="color:#aaa;font-size:12px;">DEF: ${tDef}${tMag > 0 ? ` | MAG: +${tMag}` : ''}</div>
                 <div style="color:#888; font-size:11px; margin-top:2px;">Level ${armor.level || 1}</div>
+                ${hpMpDisplay}
+                ${modifierDisplay}
                 ${aGemHtml}
                 <div style="color:${canEquip ? '#FFD700' : '#555'};font-size:12px;">${canEquip ? '▶ EQUIP' : 'CANNOT EQUIP'}</div>
             </button>`;
@@ -20863,6 +21023,7 @@ const result = calculateDamage({
         }
         // Always update pip sweep animation each tick
         updatePipButtons();
+        
 
         // ── GEM REGEN: bloodstone (HP) and moonstone (MP) tick every second ──
         const _p = gameState.player;
@@ -20883,6 +21044,24 @@ const result = calculateDamage({
                 updateHud();
             }
         }
+
+        // ── ARMOR MODIFIER: HP Regen from Regenerating (every 10 seconds) ──
+        const hpRegenBonus = getArmorModifierBonus('hpRegen');
+        if (hpRegenBonus > 0 && _p.hp < _p.maxHp && !cs.combatOver) {
+            // Track last regen time
+            if (!cs.lastHpRegenTime) cs.lastHpRegenTime = Date.now();
+            const now = Date.now();
+            if (now - cs.lastHpRegenTime >= 10000) { // 10 seconds
+                const regenAmount = Math.min(hpRegenBonus, _p.maxHp - _p.hp);
+                if (regenAmount > 0) {
+                    _p.hp += regenAmount;
+                    updateHud();
+                    termAppend(`💚 [Armor: Regenerating] +${regenAmount} HP`, 'term-loot');
+                    cs.lastHpRegenTime = now;
+                }
+            }
+        }
+
 
         // ─────────────────────────────────────────
         // POST-COMBAT RECOVERY CLEANUP
@@ -22637,8 +22816,14 @@ function getArmorType(armor) {
   armorPiercing = 0,
   isSpecial = false
 }) {
-  // Dodge check
-  if (Math.random() < dodgeChance) {
+    // Dodge check - add Windstep armor modifier bonus
+  let totalDodgeChance = dodgeChance;
+  const windstepBonus = getArmorModifierBonus('dodgeBonus');
+  if (windstepBonus > 0) {
+      totalDodgeChance += (windstepBonus / 100);
+      totalDodgeChance = Math.min(0.75, totalDodgeChance); // Cap at 75%
+  }
+  if (Math.random() < totalDodgeChance) {
     return { damage: 0, dodged: true, crit: false };
   }
 
@@ -25133,7 +25318,15 @@ function endCombat(victory) {
 
     // ── victory ──
     const defeated   = gameState.combatState.defeatedMonsters || [];
+
+ // SAGE BONUS - Force show message
+    const xpBonus = getArmorModifierBonus('xpBonus');
+    if (xpBonus > 0 && defeated.length > 0) {
+        termAppend(`📖 [Armor: Sage] +${xpBonus}% XP bonus active!`, 'term-loot');
+    }
+
     const cs = gameState.combatState;
+
 
 // ── Process bounty victory if this was a bounty fight ──
 if (cs.isBountyFight) {
@@ -25184,12 +25377,23 @@ if (cs.isBountyFight) {
     // Check if rewards were already given during combat (multi-enemy)
     const rewardsAlreadyGiven = cs.rewardsAlreadyGiven;
     
-    let totalXp = 0, totalGold = 0, allLoot = [];
+        let totalXp = 0, totalGold = 0, allLoot = [];
+    
+    // Get XP bonus from Sage armor modifier
+    const xpBonusPercent = getArmorModifierBonus('xpBonus');
     
     // Only calculate if NOT already given
     if (!rewardsAlreadyGiven) {
         defeated.forEach(e => {
-            const xpReward = calculateXpReward(e, gameState.player.level);
+            let xpReward = calculateXpReward(e, gameState.player.level);
+            
+            // Apply Sage XP bonus
+            if (xpBonusPercent > 0) {
+                const bonusXp = Math.floor(xpReward * (xpBonusPercent / 100));
+                xpReward += bonusXp;
+                termAppend(`📖 [Armor: Sage] +${bonusXp} bonus XP!`, 'term-loot');
+            }
+            
             totalXp   += xpReward;
             totalGold += e.gold;
             allLoot    = allLoot.concat(rollLoot(e));
@@ -25278,29 +25482,33 @@ if (cs.isBountyFight) {
     }
 
     if (allLoot.length > 0) {
-        haptic('loot');
-        termAppend('⚡ LOOT:', 'term-loot');
-        allLoot.forEach(ik => {
-            const _def = ITEMS[ik];
+    haptic('loot');
+    termAppend('⚡ LOOT:', 'term-loot');
+    allLoot.forEach(item => {
+        // Handle object items (weapons, armor instances)
+        if (typeof item === 'object' && item !== null) {
+            // Already a full object - add to inventory as-is
+            gameState.player.inventory.push(item);
+            const qualityColor = QUALITY_CONFIG[item.quality]?.color || '#00FF00';
+            termAppend(`  + <span style="color:${qualityColor};">${item.name}</span>`, 'term-loot');
+        } 
+        // Handle string items (potions, keys, etc.)
+        else if (typeof item === 'string') {
+            const _def = ITEMS[item];
             const _cap = _def?.maxStack;
             if (_cap) {
-                const _held = gameState.player.inventory.filter(k => k === ik).length;
+                const _held = gameState.player.inventory.filter(k => k === item).length;
                 if (_held >= _cap) {
-                    termAppend(
-                        `  + <span style="color:#888;">${getItemName(ik)} (bag full — sold for ${_def.sellValue}g)</span>`,
-                        'term-loot'
-                    );
+                    termAppend(`  + <span style="color:#888;">${getItemName(item)} (bag full — sold for ${_def.sellValue}g)</span>`, 'term-loot');
                     gameState.player.gold += _def.sellValue;
                     return;
                 }
             }
-            gameState.player.inventory.push(ik);
-            termAppend(
-                `  + <span style="color:${getItemColor(ik)};">${getItemName(ik)}</span>`,
-                'term-loot'
-            );
-        });
-    } else {
+            gameState.player.inventory.push(item);
+            termAppend(`  + <span style="color:${getItemColor(item)};">${getItemName(item)}</span>`, 'term-loot');
+        }
+    });
+} else {
         termAppend('No items dropped…', 'term-dim');
     }
     
@@ -25943,25 +26151,41 @@ function rollLoot(monster) {
     return loot;
 }
 
-        function getItemName(itemKey) {
-            if (WEAPONS[itemKey]) return WEAPONS[itemKey].name;
-            if (ARMOR[itemKey]) return ARMOR[itemKey].name;
-            if (ITEMS[itemKey]) return ITEMS[itemKey].name;
-            if (SPELLS[itemKey]) return SPELLS[itemKey].name;
-            // Cut gems stored as objects in inventory
-            if (typeof itemKey === 'object' && itemKey && itemKey.cut) {
-                return `${itemKey.name} [${itemKey.description}]`;
-            }
-            // Fallback for any unrecognized raw gem keys
-            if (typeof itemKey === 'string' && itemKey.startsWith('raw_')) {
-                const parts = itemKey.split('_');
-                const typeKey = parts[1];
-                const tier = parts[2] ? parts[2].replace('t','') : '1';
-                const gem = GEM_TYPES[typeKey];
-                return gem ? `T${tier} Raw ${gem.name}` : itemKey;
-            }
-            return itemKey;
+function getItemName(item) {
+    // If it's an object (weapon or armor instance)
+    if (typeof item === 'object' && item !== null) {
+        // Weapon instance
+        if (item.weaponId || item.instanceId && WEAPONS[item.instanceId]) {
+            return item.name || WEAPONS[item.instanceId]?.name || 'Unknown Weapon';
         }
+        // Armor instance
+        if (item.armorId || item.instanceId && ARMOR[item.instanceId]) {
+            return item.name || ARMOR[item.instanceId]?.name || 'Unknown Armor';
+        }
+        // Cut gem
+        if (item.cut) {
+            return `${item.name} [${item.description}]`;
+        }
+        return 'Unknown Item';
+    }
+    
+    // String keys
+    if (WEAPONS[item]) return WEAPONS[item].name;
+    if (ARMOR[item]) return ARMOR[item].name;
+    if (ITEMS[item]) return ITEMS[item].name;
+    if (SPELLS[item]) return SPELLS[item].name;
+    
+    // Raw gem keys
+    if (typeof item === 'string' && item.startsWith('raw_')) {
+        const parts = item.split('_');
+        const typeKey = parts[1];
+        const tier = parts[2] ? parts[2].replace('t','') : '1';
+        const gem = GEM_TYPES[typeKey];
+        return gem ? `T${tier} Raw ${gem.name}` : item;
+    }
+    
+    return item;
+}
 
         function getItemColor(itemKey) {
             if (WEAPONS[itemKey]) {
@@ -26274,63 +26498,85 @@ function rollLoot(monster) {
 }
 
 function showCharacterStats() {
-            checkGameVersion();
-            const p = gameState.player;
-            const screen = document.getElementById('mainScreen');
-            if (p.statPoints === undefined) p.statPoints = 0;
-            // Reset pending when page first loads (not on re-render from +)
-            if (!window._statsPageOpen) {
-                window._statPending = {};
-                window._statsPageOpen = true;
-            }
-            const pointsLeft   = p.statPoints;
-            const pointsQueued = STAT_NAMES.reduce((a,s) => a + (window._statPending[s]||0), 0);
-            const hasChanges   = pointsQueued > 0;
+    checkGameVersion();
+    const p = gameState.player;
+    const screen = document.getElementById('mainScreen');
+    if (p.statPoints === undefined) p.statPoints = 0;
+    // Reset pending when page first loads (not on re-render from +)
+    if (!window._statsPageOpen) {
+        window._statPending = {};
+        window._statsPageOpen = true;
+    }
+    const pointsLeft   = p.statPoints;
+    const pointsQueued = STAT_NAMES.reduce((a,s) => a + (window._statPending[s]||0), 0);
+    const hasChanges   = pointsQueued > 0;
 
-            screen.innerHTML = `
-                <div class="location-header">📊 CHARACTER STATS</div>
-                <button onclick="window._statsPageOpen=false;showTown();" style="margin-bottom:10px;">← BACK TO TOWN</button>
+    // Get equipped armor instance for bonuses
+    const equippedInstance = p.inventory.find(item => 
+        item && typeof item === 'object' && item.instanceId === p.armor
+    );
 
-                <div class="message" style="border-color:${pointsLeft>0||hasChanges?'#FFD700':'var(--border-color)'};">
-                    <span style="color:${pointsLeft>0?'#FFD700':'var(--highlight-color)'};">Points to spend: </span>
-                    <span style="color:${pointsLeft>0?'var(--text-color)':'#888'};font-size:22px;">${pointsLeft}</span>
-                    ${pointsLeft>0 ? '<span style="color:#00FF00;font-size:14px;"> — click + to allocate</span>' : ''}
-                    <span style="color:#8aaa8a;font-size:13px;"> (★ = class affinity)</span>
-                </div>
-
-                <div style="max-width:520px;margin:0 auto;">
-                    ${renderLiveStatRows(p, window._statPending, pointsLeft)}
-                </div>
-
-                <div class="message" style="border-color:#005500;margin-top:12px;font-size:15px;">
-                    <span style="color:#8aaa8a;">DERIVED STATS</span><br>
-                    <span style="color:var(--highlight-color);">Lv ${p.level}</span>
-                    <span style="color:#8aaa8a;"> | </span>
-                    <span style="color:#ff6666;">HP ${p.hp}/${p.maxHp}</span>
-                    <span style="color:#8aaa8a;"> | </span>
-                    <span style="color:#6688ff;">MP ${p.mp}/${p.maxMp}</span><br>
-                    <span style="color:#aaa;">XP: ${p.xp.toLocaleString()}/${p.xpToNext.toLocaleString()} | Crit: ${calcCritChance(p.lck,p)}% | Dodge: ${calcDodgeChance(p.dex||0)}%</span><br>
-                    <span style="color:#ffcc88;">Melee: ${calculatePhysicalDamage()} | Magic: ${calculateMagicDamage()} | Def: ${calculateTotalDefense()}</span>
-                </div>
-
-                ${buildCombatRecordHtml(p)}
-
-                ${hasChanges ? `
-                    <button onclick="_saveStatChanges(()=>{window._statsPageOpen=false;showCharacterStats();})"
-                        style="margin-top:12px;font-size:18px;border-color:#00FF00;color:#00FF00;width:100%;">
-                        💾 SAVE CHANGES
-                    </button>
-                ` : ''}
-                <button onclick="window._statsPageOpen=false;showTown();" style="margin-top:8px;">← BACK TO TOWN</button>
-
-                <!-- Chronicle & Bestiary launcher -->
-                <button class="chronicle-open-btn" onclick="openChronicle()" id="chronicle-launch-btn">
-                    📖 The Chronicle &amp; Bestiary
-                    <span class="btn-badge" id="chronicle-launch-badge"></span>
-                </button>
-            `;
+    // Build armor bonus display string
+    let armorBonusHtml = '';
+    if (equippedInstance && !equippedInstance.unarmored) {
+        const armorHp = equippedInstance.bonusHp || 0;
+        const armorMp = equippedInstance.bonusMp || 0;
+        if (armorHp > 0 || armorMp > 0) {
+            armorBonusHtml += `<br><span style="color:#88ff88;">🛡️ Armor Bonuses:</span> +${armorHp} HP, +${armorMp} MP`;
         }
+        if (equippedInstance.modifiers && equippedInstance.modifiers.length > 0) {
+            armorBonusHtml += `<br><span style="color:#FFD700;">✨ Armor Modifiers:</span>`;
+            equippedInstance.modifiers.forEach(mod => {
+                const valueStr = mod.statType === 'percent' ? `${mod.value}%` : `+${mod.value}`;
+                armorBonusHtml += `<br><span style="color:${mod.color};">  ${mod.icon} ${mod.name}: ${valueStr}</span>`;
+            });
+        }
+    }
 
+    screen.innerHTML = `
+        <div class="location-header">📊 CHARACTER STATS</div>
+        <button onclick="window._statsPageOpen=false;showTown();" style="margin-bottom:10px;">← BACK TO TOWN</button>
+
+        <div class="message" style="border-color:${pointsLeft>0||hasChanges?'#FFD700':'var(--border-color)'};">
+            <span style="color:${pointsLeft>0?'#FFD700':'var(--highlight-color)'};">Points to spend: </span>
+            <span style="color:${pointsLeft>0?'var(--text-color)':'#888'};font-size:22px;">${pointsLeft}</span>
+            ${pointsLeft>0 ? '<span style="color:#00FF00;font-size:14px;"> — click + to allocate</span>' : ''}
+            <span style="color:#8aaa8a;font-size:13px;"> (★ = class affinity)</span>
+        </div>
+
+        <div style="max-width:520px;margin:0 auto;">
+            ${renderLiveStatRows(p, window._statPending, pointsLeft)}
+        </div>
+
+        <div class="message" style="border-color:#005500;margin-top:12px;font-size:15px;">
+            <span style="color:#8aaa8a;">DERIVED STATS</span><br>
+            <span style="color:var(--highlight-color);">Lv ${p.level}</span>
+            <span style="color:#8aaa8a;"> | </span>
+            <span style="color:#ff6666;">HP ${p.hp}/${p.maxHp}</span>
+            <span style="color:#8aaa8a;"> | </span>
+            <span style="color:#6688ff;">MP ${p.mp}/${p.maxMp}</span><br>
+            <span style="color:#aaa;">XP: ${p.xp.toLocaleString()}/${p.xpToNext.toLocaleString()} | Crit: ${calcCritChance(p.lck,p)}% | Dodge: ${calcDodgeChance(p.dex||0)}%</span><br>
+            <span style="color:#ffcc88;">Melee: ${calculatePhysicalDamage()} | Magic: ${calculateMagicDamage()} | Def: ${calculateTotalDefense()}</span>
+            ${armorBonusHtml}
+        </div>
+
+        ${buildCombatRecordHtml(p)}
+
+        ${hasChanges ? `
+            <button onclick="_saveStatChanges(()=>{window._statsPageOpen=false;showCharacterStats();})"
+                style="margin-top:12px;font-size:18px;border-color:#00FF00;color:#00FF00;width:100%;">
+                💾 SAVE CHANGES
+            </button>
+        ` : ''}
+        <button onclick="window._statsPageOpen=false;showTown();" style="margin-top:8px;">← BACK TO TOWN</button>
+
+        <!-- Chronicle & Bestiary launcher -->
+        <button class="chronicle-open-btn" onclick="openChronicle()" id="chronicle-launch-btn">
+            📖 The Chronicle &amp; Bestiary
+            <span class="btn-badge" id="chronicle-launch-badge"></span>
+        </button>
+    `;
+}
         
 function _statPend(stat) {
     const p = gameState.player;

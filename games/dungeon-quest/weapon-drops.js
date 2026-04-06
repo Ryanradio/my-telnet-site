@@ -763,127 +763,247 @@ const ARMOR_DROP_CONFIG = {
     }
 };
 
-function generateArmorDrop(player, enemyLevel, enemyRarity = 'common', skipRoll = false, forcedQuality = null) {
-    // Roll drop chance
-    if (!skipRoll) {
-        const baseChance = ARMOR_DROP_CONFIG.baseDropChance;
-        const rarityMult = ARMOR_DROP_CONFIG.rarityMultipliers[enemyRarity] || 1.0;
-        if (Math.random() > baseChance * rarityMult) return null;
-    }
+
+// ═══════════════════════════════════════════════════════════════
+// HELPER: Roll quality based on source level and enemy rarity
+// ═══════════════════════════════════════════════════════════════
+function rollQualityForDrop(sourceLevel, enemyRarity) {
+    // Base quality distribution
+    const weights = {
+        poor: 5,
+        normal: 40,
+        rare: 35,
+        epic: 15,
+        legendary: 4,
+        godly: 1
+    };
     
-    const playerClass = player.baseClass || player.class;
+    // Adjust based on enemy rarity
+    const rarityBonus = {
+        'uncommon': { rare: 5, epic: 2 },
+        'rare': { rare: 10, epic: 5, legendary: 2 },
+        'epic': { rare: 15, epic: 10, legendary: 5, godly: 1 },
+        'legendary': { rare: 20, epic: 15, legendary: 10, godly: 3 }
+    }[enemyRarity];
     
-    // Determine armor level (use enemy level for forced drops)
-    let armorLevel;
-    if (skipRoll) {
-        armorLevel = enemyLevel;
-    } else {
-        // For random drops, use enemy level with ±2 range
-        const minLevel = Math.max(1, enemyLevel - 2);
-        const maxLevel = Math.min(30, enemyLevel + 2);
-        armorLevel = minLevel + Math.floor(Math.random() * (maxLevel - minLevel + 1));
-    }
-    
-    // Build candidate list from ALL armor
-    const candidates = [];
-    for (const [armorId, armor] of Object.entries(ARMOR)) {
-        if (armor.instanceId) continue;
-        if (armor.unarmored) continue;
-        
-        // Level check - only armor within ±2 levels of the target armor level
-        if (armor.level && (armor.level < armorLevel - 2 || armor.level > armorLevel + 2)) continue;
-        
-        // Class check
-        if (armor.allowedClasses && !armor.allowedClasses.includes(playerClass)) continue;
-        
-        candidates.push({
-            id: armorId,
-            ...armor
+    if (rarityBonus) {
+        Object.entries(rarityBonus).forEach(([quality, bonus]) => {
+            if (weights[quality] !== undefined) {
+                weights[quality] += bonus;
+            }
         });
     }
     
-    if (candidates.length === 0) return null;
+    // Adjust based on source level (higher levels = better quality)
+    if (sourceLevel >= 20) {
+        weights.legendary += 5;
+        weights.godly += 2;
+    } else if (sourceLevel >= 15) {
+        weights.legendary += 3;
+        weights.godly += 1;
+    } else if (sourceLevel >= 10) {
+        weights.legendary += 1;
+    }
     
-    // Random selection
-    const baseArmor = candidates[Math.floor(Math.random() * candidates.length)];
-    const baseArmorId = baseArmor.id;
+    // Roll based on weights
+    const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
+    let roll = Math.random() * totalWeight;
     
-    // Determine quality
-    let quality;
+    for (const [quality, weight] of Object.entries(weights)) {
+        roll -= weight;
+        if (roll <= 0) return quality;
+    }
+    return 'normal';
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// GENERATE ARMOR DROP - WITH HP/MP BONUSES AND MODIFIERS
+// ═══════════════════════════════════════════════════════════════
+function generateArmorDrop(player, sourceLevel, enemyRarity, skipRoll = false, forcedQuality = null) {
+    if (!skipRoll) {
+        const dropRoll = Math.random() * 100;
+        let dropChance = 0.12; // 12% base drop chance
+        
+        // Higher rarity enemies drop armor more often
+        const rarityBonus = {
+            'uncommon': 0.05,
+            'rare': 0.10,
+            'epic': 0.15,
+            'legendary': 0.25,
+            'mythic': 0.35
+        }[enemyRarity] || 0;
+        
+        dropChance += rarityBonus;
+        
+        if (dropRoll > dropChance * 100) return null;
+    }
+    
+    // Determine armor quality based on enemy rarity and source level
+    let armorQuality;
     if (forcedQuality) {
-        quality = forcedQuality;
-    } else if (baseArmor.quality && baseArmor.quality !== 'normal') {
-        quality = baseArmor.quality;
-        console.log(`🎯 Forcing quality '${quality}' for ${baseArmor.name} (predefined)`);
+        armorQuality = forcedQuality;
     } else {
-        quality = rollQuality();
+        armorQuality = rollQualityForDrop(sourceLevel, enemyRarity);
     }
     
-    const qualityData = QUALITY_CONFIG[quality] || QUALITY_CONFIG.normal;
-    const bonusPct = qualityData.bonusPct;
+    // Get player class for armor type selection
+    const playerClass = player.baseClass || player.class;
     
-    const defenseBonus = Math.floor(baseArmor.baseDefense * bonusPct);
-    const magicBonus = baseArmor.baseMagicBonus ? Math.floor(baseArmor.baseMagicBonus * bonusPct) : 0;
-    const resistBonus = baseArmor.magicResist ? Math.floor(baseArmor.magicResist * bonusPct) : 0;
+    // Determine which armor type to drop
+    const armorType = selectArmorTypeForClass(playerClass);
     
-    // ← FIX: Armor does NOT have gem slots (set to 0)
-    const gemSlots = 0;  // ← CHANGED: was using quality mapping, now always 0
+    // Find all armors of this type that are level-appropriate
+    let candidateArmors = Object.keys(ARMOR).filter(key => {
+        const armor = ARMOR[key];
+        // Must be the right type, not unarmored, not an instance
+        if (armor.armorSubtype !== armorType && armor.type !== armorType) return false;
+        if (armor.unarmored) return false;
+        if (armor.instanceId) return false; // Skip existing instances
+        
+        // Level range: -2 to +2 of source level
+        const armorLevel = armor.level || 1;
+        return armorLevel >= sourceLevel - 2 && armorLevel <= sourceLevel + 2;
+    });
     
-    const instanceId = `${baseArmorId}_${quality}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+    if (candidateArmors.length === 0) {
+        // Fallback to any armor around this level
+        candidateArmors = Object.keys(ARMOR).filter(key => {
+            const armor = ARMOR[key];
+            if (armor.unarmored || armor.instanceId) return false;
+            const armorLevel = armor.level || 1;
+            return armorLevel >= sourceLevel - 2 && armorLevel <= sourceLevel + 2;
+        });
+    }
     
+    if (candidateArmors.length === 0) return null;
+    
+    // Pick random armor from candidates
+    const selectedKey = candidateArmors[Math.floor(Math.random() * candidateArmors.length)];
+    const baseArmor = ARMOR[selectedKey];
+    
+    // Generate instance ID
+    const instanceId = `${selectedKey}_${armorQuality}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+    
+    // Calculate quality bonus percentage
+    const qualityBonusPct = QUALITY_CONFIG[armorQuality]?.bonusPct || 0;
+    
+    // Calculate final defense with quality bonus
+    const finalDefense = baseArmor.baseDefense + Math.floor(baseArmor.baseDefense * qualityBonusPct);
+    
+    // ═══════════════════════════════════════════════════════════════
+    // CALCULATE HP AND MP BONUSES BASED ON LEVEL AND QUALITY
+    // ═══════════════════════════════════════════════════════════════
+    const armorLevel = baseArmor.level || sourceLevel;
+    
+    // Get base HP from the armor's baseHp field
+    let baseHp = baseArmor.baseHp || 0;
+    let baseMp = baseArmor.baseMp || 0;
+    
+    // Apply quality multiplier to HP/MP
+    const qualityHpMult = {
+        poor: 0.5, normal: 1.0, rare: 1.5, epic: 2.2, legendary: 3.0, godly: 4.0
+    }[armorQuality] || 1.0;
+    
+    const finalHp = Math.floor(baseHp * qualityHpMult);
+    const finalMp = Math.floor(baseMp * qualityHpMult);
+    
+    // ═══════════════════════════════════════════════════════════════
+    // ROLL ARMOR MODIFIERS
+    // ═══════════════════════════════════════════════════════════════
+    let modifiers = [];
+    if (typeof rollArmorModifiers === 'function') {
+        modifiers = rollArmorModifiers(armorQuality, sourceLevel);
+    }
+    
+    // Generate enhanced name with modifiers
     let armorName = baseArmor.name;
-    if (quality === 'legendary') {
-        const prefixes = ['Ancient', 'Mythic', 'Eternal', 'Dragonforged'];
-        armorName = `${prefixes[Math.floor(Math.random() * prefixes.length)]} ${baseArmor.name}`;
-    } else if (quality === 'godly') {
-        const prefixes = ['Divine', 'Immortal', 'Primordial', 'Celestial'];
-        armorName = `${prefixes[Math.floor(Math.random() * prefixes.length)]} ${baseArmor.name}`;
-    } else if (quality === 'epic') {
-        const prefixes = ['Mighty', 'Exquisite', 'Flawless', 'Masterwork'];
-        armorName = `${prefixes[Math.floor(Math.random() * prefixes.length)]} ${baseArmor.name}`;
+    if (modifiers.length > 0) {
+        const modifierNames = modifiers.map(m => m.name).join(' ');
+        armorName = `${modifierNames} ${baseArmor.name}`;
+    } else if (armorQuality !== 'normal' && armorQuality !== 'poor') {
+        const qualityDisplay = armorQuality.charAt(0).toUpperCase() + armorQuality.slice(1);
+        armorName = `${qualityDisplay} ${baseArmor.name}`;
     }
     
+    // Create the armor instance
     const armorInstance = {
-        id: baseArmorId,
-        armorId: baseArmorId,
+        id: selectedKey,
+        armorId: selectedKey,
         instanceId: instanceId,
         name: armorName,
         baseName: baseArmor.name,
-        type: baseArmor.type || baseArmor.armorSubtype || baseArmor.slot || 'armor',
-        armorSubtype: baseArmor.armorSubtype || baseArmor.type || baseArmor.slot || 'armor',
-        baseDefense: baseArmor.baseDefense + defenseBonus,
-        baseMagicBonus: (baseArmor.baseMagicBonus || 0) + magicBonus,
-        magicResist: (baseArmor.magicResist || 0) + resistBonus,
-        level: armorLevel,  // ← Use armorLevel, not baseArmor.level
-        originalLevel: baseArmor.level || 1,
-        quality: quality,
-        qualityBonus: bonusPct,
+        type: baseArmor.type || baseArmor.armorSubtype || 'armor',
+        armorSubtype: baseArmor.armorSubtype || baseArmor.type || 'armor',
+        baseDefense: finalDefense,
+        baseMagicBonus: baseArmor.baseMagicBonus || 0,
+        bonusHp: finalHp,
+        bonusMp: finalMp,
+        level: armorLevel,
+        quality: armorQuality,
+        qualityBonus: qualityBonusPct,
+        modifiers: modifiers,
         gems: [],
-        gemSlots: gemSlots,  // ← FIXED: always 0
-        cost: baseArmor.cost ? Math.floor(baseArmor.cost * (1 + bonusPct)) : 100,
-        description: baseArmor.description || `A ${quality} quality ${baseArmor.name}.`,
+        gemSlots: 0, // No gem slots for armor (for now)
+        cost: baseArmor.cost,
+        description: buildArmorDescription(baseArmor, modifiers, finalHp, finalMp),
         allowedClasses: baseArmor.allowedClasses,
         isDropped: true,
-        dropTimestamp: Date.now()
+        dropTimestamp: Date.now(),
+        isEquipped: false
     };
     
+    // Store in ARMOR object for lookup
     ARMOR[instanceId] = armorInstance;
     
-    const inventoryItem = {
-        armorId: baseArmor.id,
-        instanceId: instanceId,
-        quality: quality,
-        gems: [],
-        gemSlots: gemSlots,  // ← FIXED: always 0
-        dropLevel: enemyLevel,
-        dropTime: Date.now()
-    };
-    
-    if (gameState && gameState.player && gameState.player.inventory) {
-        gameState.player.inventory.push(inventoryItem);
-    }
+    // Add to player inventory
+    player.inventory.push(armorInstance);
     
     return armorInstance;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HELPER: Build armor description with modifiers
+// ═══════════════════════════════════════════════════════════════
+function buildArmorDescription(baseArmor, modifiers, bonusHp, bonusMp) {
+    let desc = baseArmor.description || `${baseArmor.name} provides solid protection.`;
+    
+    if (bonusHp > 0 || bonusMp > 0) {
+        desc += ` Grants `;
+        if (bonusHp > 0) desc += `+${bonusHp} HP`;
+        if (bonusHp > 0 && bonusMp > 0) desc += ` and `;
+        if (bonusMp > 0) desc += `+${bonusMp} MP`;
+        desc += `.`;
+    }
+    
+    if (modifiers.length > 0) {
+        modifiers.forEach(mod => {
+            const valueStr = mod.statType === 'percent' ? `${mod.value}%` : `+${mod.value}`;
+            desc += ` ${mod.icon || '✨'} ${mod.name}: ${valueStr}.`;
+        });
+    }
+    
+    return desc;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HELPER: Select armor type based on class
+// ═══════════════════════════════════════════════════════════════
+function selectArmorTypeForClass(playerClass) {
+    const armorMap = {
+        'mage': 'cloth',
+        'warlock': 'cloth',
+        'cleric': 'cloth',
+        'rogue': 'leather',
+        'ranger': 'leather',
+        'hunter': 'leather',
+        'archer': 'leather',
+        'warrior': 'plate',
+        'paladin': 'plate',
+        'runesmith': 'chain'
+    };
+    
+    return armorMap[playerClass] || 'leather';
 }
 
 console.log('✅ Weapon drop system loaded with enhanced features:');
