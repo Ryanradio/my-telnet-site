@@ -7379,11 +7379,7 @@ window.DUNGEONS.AshenDepths = {
           "exits": {
             "s": "R262"
           },
-          "contents": {},
-          "flags": {
-            "discovered": false,
-            "townExit": "town3"
-          }
+          "contents": {}
         },
         "R347": {
           "name": "The Far Chamber",
@@ -7438,18 +7434,13 @@ window.DUNGEONS.AshenDepths = {
                 "locked": true
               }
             },
-            "lootTable": [
+            "enemies": [
               {
-                "key": "bone_key",
-                "type": "item",
-                "quality": "common",
-                "label": "Bone Key",
-                "icon": "🗝"
+                "key": "doom_knight",
+                "drop": "bone_key",
+                "rarity": "epic"
               }
             ]
-          },
-          "flags": {
-            "discovered": false
           }
         },
         "R350": {
@@ -7473,6 +7464,112 @@ window.DUNGEONS.AshenDepths = {
           },
           "flags": {
             "discovered": false
+          }
+        },
+        "R352": {
+          "name": "The long road",
+          "description": "You are teleported into a forest with only one path leading north.",
+          "map": {
+            "x": 22,
+            "y": 7
+          },
+          "exits": {
+            "n": "R353"
+          },
+          "contents": {}
+        },
+        "R353": {
+          "name": "The long road",
+          "description": "The forest path looks like it goes on for miles with no end in sight.",
+          "map": {
+            "x": 22,
+            "y": 6
+          },
+          "exits": {
+            "s": "R352",
+            "n": "R354"
+          },
+          "contents": {}
+        },
+        "R354": {
+          "name": "The long road",
+          "description": "As you travel through the forest, the path seems less travelled.  You notice a part of a skeleton in the trees.  You decide to stay on the path.",
+          "map": {
+            "x": 22,
+            "y": 5
+          },
+          "exits": {
+            "s": "R353",
+            "n": "R355"
+          },
+          "contents": {}
+        },
+        "R355": {
+          "name": "The long road",
+          "description": "The forest is so thick here, you cannot see the sky!  There has to be an end to it some day!",
+          "map": {
+            "x": 22,
+            "y": 4
+          },
+          "exits": {
+            "s": "R354",
+            "n": "R356"
+          },
+          "contents": {}
+        },
+        "R356": {
+          "name": "The long road",
+          "description": "You have been traveling for miles in this dense forest with no end in sight.  You've been told this is the way to the mythical city of Crossroads.  You can press on to the North or retreat to the south.",
+          "map": {
+            "x": 22,
+            "y": 3
+          },
+          "exits": {
+            "s": "R355",
+            "n": "R357"
+          },
+          "contents": {}
+        },
+        "R357": {
+          "name": "The long road",
+          "description": "You have been traveling this long road for more miles than you can remember.  There must be an end coming soon!",
+          "map": {
+            "x": 22,
+            "y": 2
+          },
+          "exits": {
+            "s": "R356",
+            "n": "R358"
+          },
+          "contents": {}
+        },
+        "R358": {
+          "name": "The long road's clearing.",
+          "description": "You come across a clearing from the woods!  You see a large castle with the gates open in the distance!",
+          "map": {
+            "x": 22,
+            "y": 1
+          },
+          "exits": {
+            "s": "R357",
+            "n": "R359"
+          },
+          "contents": {}
+        },
+        "R359": {
+          "name": "The long road's end!",
+          "description": "You arrived at the entrance of the town of Crossroads!  ",
+          "map": {
+            "x": 22,
+            "y": 0
+          },
+          "exits": {
+            "s": "R358"
+          },
+          "contents": {},
+          "flags": {
+            "discovered": false,
+            "townExit": "town3"
           }
         }
       }

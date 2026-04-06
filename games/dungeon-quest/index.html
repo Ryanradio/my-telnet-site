@@ -20681,15 +20681,29 @@ const magicBleed = isWand ? 0 : Math.floor(magicRolled * 0.2);
             totalDamage = Math.floor(totalDamage * classMult);
             
             // Calculate final damage with enemy defense
-            const result = calculateDamage({
-                attacker: p,
-                defender: enemy,
-                base: totalDamage,
-                type: 'physical',
-                critChance: Math.min(0.75, (calcCritChance(p.lck || 0, p) / 100) + ((weapon && weapon.critBonus) ? weapon.critBonus / 100 : 0)),
-                dodgeChance: enemy.dodge || 0,
-                armorPiercing: 0
-            });
+            // ═══════════════════════════════════════════════════════════════
+// CRITICAL HIT CALCULATION - FIXED FOR DOUBLE DAMAGE
+// ═══════════════════════════════════════════════════════════════
+let finalCritChance;
+let finalCritMultiplier = 2.0;  // DOUBLE DAMAGE for ALL crits
+
+if (shadowStrike) {
+    finalCritChance = 1.0;  // 100% chance
+    termAppend('<span style="color:#FFD700;">⚡ SHADOW STRIKE! Guaranteed critical hit! ⚡</span>', 'term-highlight');
+} else {
+    finalCritChance = Math.min(0.75, (calcCritChance(p.lck || 0, p) / 100) + (gemCritBonus / 100) + _weaponCritBonus);
+}
+
+const result = calculateDamage({
+    attacker: p,
+    defender: enemy,
+    base: totalBase,
+    type: 'physical',
+    critChance: finalCritChance,
+    critMult: finalCritMultiplier,  // ← ADD THIS LINE - passes 2.0 multiplier
+    dodgeChance: enemyDodgeChance,
+    armorPiercing: effectiveArmorPierce
+});
             
             const tName = cs.monsters.length > 1
                 ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${targetIndex+1}</span>`
@@ -22618,7 +22632,7 @@ function getArmorType(armor) {
   base,
   type = 'physical', // 'physical' | 'magic'
   critChance = 0,
-  critMult = 1.5,
+  critMult = 2.0,
   dodgeChance = 0,
   armorPiercing = 0,
   isSpecial = false
