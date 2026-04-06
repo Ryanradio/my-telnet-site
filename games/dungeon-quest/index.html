@@ -22985,7 +22985,7 @@ const effectiveArmorPierce = Math.min(1.0, armorPiercing + (gemPierceBonus / 100
             const _eDef2 = _attackDmgType === 'magic' ? (enemy.magicDefense || enemy.defense || 0) : (enemy.defense || 0);
             const _eDR2  = Math.min(0.75, _eDef2 * 0.028) * (1 - effectiveArmorPierce);
             dmg = Math.max(1, Math.floor(dmg * (1 - _eDR2)));
-            if (_didCrit) dmg = Math.floor(dmg * 1.5);
+            if (_didCrit) dmg = Math.floor(dmg * 2.0);
             return { damage: dmg, dodged: false, crit: _didCrit };
           })();
 
