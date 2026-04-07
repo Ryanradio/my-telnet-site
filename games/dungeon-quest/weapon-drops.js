@@ -397,6 +397,14 @@ function rollQuality() {
 // ═══════════════════════════════════════════════════════════════
 
 function generateWeaponDrop(player, enemyLevel, enemyRarity = 'common', skipRoll = false, forcedQuality = null) {
+   
+    // ⭐ Prevent recursive/duplicate calls
+if (window._generatingWeapon) {
+    console.warn('⚠️ Skipping duplicate weapon generation');
+    return null;
+}
+window._generatingWeapon = true;
+
     // Calculate drop chance (skip if forced)
     if (!skipRoll) {
         const baseChance = WEAPON_DROP_CONFIG.baseDropChance;
@@ -448,7 +456,7 @@ function generateWeaponDrop(player, enemyLevel, enemyRarity = 'common', skipRoll
     const baseWeapon = candidates[Math.floor(Math.random() * candidates.length)];
     const baseWeaponId = baseWeapon.id;
     
-    // Determine quality
+       // Determine quality
     let quality;
     if (forcedQuality) {
         quality = forcedQuality;
@@ -458,8 +466,23 @@ function generateWeaponDrop(player, enemyLevel, enemyRarity = 'common', skipRoll
         quality = rollQuality();
     }
     
+    // ⭐ Check if identical weapon already exists in inventory
+    const existingWeapon = player.inventory.find(item => {
+        if (typeof item === 'object' && item.weaponId === baseWeaponId && item.quality === quality) {
+            return true;
+        }
+        return false;
+    });
+
+    if (existingWeapon && !forcedQuality) {
+        console.warn(`⚠️ Prevented duplicate: ${baseWeapon.name} (${quality}) already in inventory`);
+        window._generatingWeapon = false;
+        return null;
+    }
+    
     const qualityData = QUALITY_CONFIG[quality] || QUALITY_CONFIG.normal;
     const bonusPct = qualityData.bonusPct;
+    
     
     const baseDamageBonus = Math.floor(baseWeapon.baseDamage * bonusPct);
     const maxDamageBonus = baseWeapon.maxDamage ? Math.floor(baseWeapon.maxDamage * bonusPct) : baseDamageBonus;
@@ -513,6 +536,7 @@ function generateWeaponDrop(player, enemyLevel, enemyRarity = 'common', skipRoll
     };
     
     WEAPONS[instanceId] = weapon;
+    window._generatingWeapon = false;
     return weapon;
 }
 
