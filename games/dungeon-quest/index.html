@@ -12998,6 +12998,9 @@ fixMissingInstanceIds(p);
         }
         fixAllGems();
 
+// Clean up any corrupted items in inventory
+validateAndRepairInventory();
+
         console.log(`✅ Character loaded: ${data.characterName}`);
         console.log(`   Weapon: ${gameState.player.weapon} | Armor: ${gameState.player.armor}`);
 
@@ -17647,153 +17650,125 @@ function equipItem(type, key) {
     const playerClass = p.baseClass || p.class;
     
     if (type === 'weapon') {
-        const weapon = WEAPONS[key];
-        if (!weapon) { 
-            alert('Invalid weapon!'); 
-            return; 
-        }
-        
-        // ⭐ NEW: Check if weapon is universal (no class restrictions)
-        const isUniversal = weapon.weaponSubtype === 'universal' || 
-                           weapon.type === 'universal' ||
-                           weapon.allowedClasses === null ||
-                           (weapon.allowedClasses && weapon.allowedClasses.length === 0);
-        
-        if (!isUniversal) {
-            // ===== CLASS WEAPON RESTRICTIONS (only apply if not universal) =====
-            const CLASS_WEAPON_RESTRICTIONS = {
-                warrior: { swords: true, axes: true, maces: true, hammers: true, staves: false, wands: false, bows: false, daggers: false, unarmed: true },
-                paladin: { swords: true, axes: true, maces: true, hammers: true, staves: false, wands: false, bows: false, daggers: false, unarmed: true },
-                cleric:  { swords: false, axes: false, maces: true, hammers: false, staves: true, wands: true, bows: false, daggers: false, unarmed: true },
-                mage:    { swords: false, axes: false, maces: false, hammers: false, staves: true, wands: true, bows: false, daggers: false, unarmed: true },
-                warlock: { swords: false, axes: false, maces: false, hammers: false, staves: true, wands: true, bows: false, daggers: false, unarmed: true },
-                archer:  { swords: false, axes: false, maces: false, hammers: false, staves: false, wands: false, bows: true, daggers: false, unarmed: true },
-                hunter:  { swords: false, axes: false, maces: false, hammers: false, staves: false, wands: false, bows: true, daggers: false, unarmed: true },
-                rogue:   { swords: false, axes: false, maces: false, hammers: false, staves: false, wands: false, bows: false, daggers: true, unarmed: true }
-            };
-
-            const restrictions = CLASS_WEAPON_RESTRICTIONS[playerClass];
-            if (restrictions) {
-                let weaponType = weapon.weaponSubtype || weapon.type || '';
-                weaponType = weaponType.toLowerCase();
-                
-                let canEquip = true;
-                let restrictionMessage = '';
-                
-                if (weapon.unarmed) {
-                    canEquip = restrictions.unarmed;
-                    restrictionMessage = 'unarmed';
-                }
-                else if (weaponType.includes('sword')) {
-                    canEquip = restrictions.swords;
-                    restrictionMessage = 'swords';
-                }
-                else if (weaponType.includes('axe')) {
-                    canEquip = restrictions.axes;
-                    restrictionMessage = 'axes';
-                }
-                else if (weaponType.includes('mace')) {
-                    canEquip = restrictions.maces;
-                    restrictionMessage = 'maces';
-                }
-                else if (weaponType.includes('hammer') || weaponType.includes('maul')) {
-                    canEquip = restrictions.hammers;
-                    restrictionMessage = 'hammers';
-                }
-                else if (weaponType.includes('staff')) {
-                    canEquip = restrictions.staves;
-                    restrictionMessage = 'staves';
-                }
-                else if (weaponType.includes('wand')) {
-                    canEquip = restrictions.wands;
-                    restrictionMessage = 'wands';
-                }
-                else if (weaponType.includes('bow')) {
-                    canEquip = restrictions.bows;
-                    restrictionMessage = 'bows';
-                }
-                else if (weaponType.includes('dagger') || weaponType.includes('shiv') || weaponType.includes('knife')) {
-                    canEquip = restrictions.daggers;
-                    restrictionMessage = 'daggers';
-                }
-                
-                if (!canEquip) {
-                    const className = playerClass.charAt(0).toUpperCase() + playerClass.slice(1);
-                    alert(`${className}s cannot equip ${restrictionMessage}!`);
-                    return;
-                }
-            }
-        }
-        
-        // Check classRestriction if present
-        if (weapon.classRestriction && weapon.classRestriction !== playerClass && !isUniversal) {
-            alert(`This weapon can only be used by ${weapon.classRestriction}s!`);
-            return;
-        }
-        
-        // Check allowedClasses if present
-        if (weapon.allowedClasses && weapon.allowedClasses.length > 0 && !weapon.allowedClasses.includes(playerClass) && !isUniversal) {
-            alert(`This weapon cannot be used by your class!`);
-            return;
-        }
-        
-        if (weapon.level && weapon.level > p.level) {
-            alert(`You need to be level ${weapon.level} to equip this weapon! (You are level ${p.level})`);
-            return;
-        }
-        
-                // UNEQUIP CURRENT WEAPON - ADD IT BACK TO INVENTORY AS AN OBJECT
-        if (p.weapon && p.weapon !== 'bare_fists') {
-            const currentWeapon = WEAPONS[p.weapon];
-            if (currentWeapon) {
-                currentWeapon.isEquipped = false;
-                
-                // Add current weapon back to inventory as an OBJECT
-                const inventoryItem = {
-                    weaponId: currentWeapon.id,
-                    instanceId: p.weapon,
-                    name: currentWeapon.name,
-                    quality: currentWeapon.quality,
-                    modifiers: currentWeapon.modifiers || [],
-                    gems: currentWeapon.gems || []
-                };
-                p.inventory.push(inventoryItem);
-            }
-        }
-        
-        // Set new weapon
-        p.weapon = key;
-        weapon.isEquipped = true;
-        
-        // Remove from inventory
-        const index = p.inventory.findIndex(item => {
-            if (typeof item === 'object' && item !== null) {
-                return item.instanceId === key;
-            }
-            return item === key;
-        });
-        if (index !== -1) p.inventory.splice(index, 1);
-        
-        /*/ Add old weapon back to inventory
-        if (p.oldWeapon && p.oldWeapon !== 'bare_fists') {
-            const oldWeapon = WEAPONS[p.oldWeapon];
-            if (oldWeapon) {
-                oldWeapon.isEquipped = false;
-            }
-            p.inventory.push(p.oldWeapon);
-        }
-        p.oldWeapon = key; */
-        
-        recalcGemStats(p);
-        saveGame();
-        updateHud();
-        
-        if (typeof termAppend === 'function') {
-            termAppend(`✅ Equipped ${weapon.name}`, 'term-success');
-        }
-        
-        if (typeof showInventory === 'function') showInventory();
+    const weapon = WEAPONS[key];
+    if (!weapon) { 
+        alert('Invalid weapon!'); 
+        return; 
     }
+    
+    // ⭐ NEW: Check if weapon is universal (no class restrictions)
+    const isUniversal = weapon.weaponSubtype === 'universal' || 
+                       weapon.type === 'universal' ||
+                       weapon.allowedClasses === null ||
+                       (weapon.allowedClasses && weapon.allowedClasses.length === 0);
+    
+    if (!isUniversal) {
+        // ===== CLASS WEAPON RESTRICTIONS =====
+        const CLASS_WEAPON_RESTRICTIONS = {
+            warrior: { swords: true, axes: true, maces: true, hammers: true, staves: false, wands: false, bows: false, daggers: false, unarmed: true },
+            paladin: { swords: true, axes: true, maces: true, hammers: true, staves: false, wands: false, bows: false, daggers: false, unarmed: true },
+            cleric:  { swords: false, axes: false, maces: true, hammers: false, staves: true, wands: true, bows: false, daggers: false, unarmed: true },
+            mage:    { swords: false, axes: false, maces: false, hammers: false, staves: true, wands: true, bows: false, daggers: false, unarmed: true },
+            warlock: { swords: false, axes: false, maces: false, hammers: false, staves: true, wands: true, bows: false, daggers: false, unarmed: true },
+            archer:  { swords: false, axes: false, maces: false, hammers: false, staves: false, wands: false, bows: true, daggers: false, unarmed: true },
+            hunter:  { swords: false, axes: false, maces: false, hammers: false, staves: false, wands: false, bows: true, daggers: false, unarmed: true },
+            rogue:   { swords: false, axes: false, maces: false, hammers: false, staves: false, wands: false, bows: false, daggers: true, unarmed: true }
+        };
+
+        const restrictions = CLASS_WEAPON_RESTRICTIONS[playerClass];
+        if (restrictions) {
+            let weaponType = weapon.weaponSubtype || weapon.type || '';
+            weaponType = weaponType.toLowerCase();
+            
+            let canEquip = true;
+            let restrictionMessage = '';
+            
+            if (weapon.unarmed) {
+                canEquip = restrictions.unarmed;
+                restrictionMessage = 'unarmed';
+            }
+            else if (weaponType.includes('sword')) {
+                canEquip = restrictions.swords;
+                restrictionMessage = 'swords';
+            }
+            else if (weaponType.includes('axe')) {
+                canEquip = restrictions.axes;
+                restrictionMessage = 'axes';
+            }
+            else if (weaponType.includes('mace')) {
+                canEquip = restrictions.maces;
+                restrictionMessage = 'maces';
+            }
+            else if (weaponType.includes('hammer') || weaponType.includes('maul')) {
+                canEquip = restrictions.hammers;
+                restrictionMessage = 'hammers';
+            }
+            else if (weaponType.includes('staff')) {
+                canEquip = restrictions.staves;
+                restrictionMessage = 'staves';
+            }
+            else if (weaponType.includes('wand')) {
+                canEquip = restrictions.wands;
+                restrictionMessage = 'wands';
+            }
+            else if (weaponType.includes('bow')) {
+                canEquip = restrictions.bows;
+                restrictionMessage = 'bows';
+            }
+            else if (weaponType.includes('dagger') || weaponType.includes('shiv') || weaponType.includes('knife')) {
+                canEquip = restrictions.daggers;
+                restrictionMessage = 'daggers';
+            }
+            
+            if (!canEquip) {
+                const className = playerClass.charAt(0).toUpperCase() + playerClass.slice(1);
+                alert(`${className}s cannot equip ${restrictionMessage}!`);
+                return;
+            }
+        }
+    }
+    
+    // Check classRestriction if present
+    if (weapon.classRestriction && weapon.classRestriction !== playerClass && !isUniversal) {
+        alert(`This weapon can only be used by ${weapon.classRestriction}s!`);
+        return;
+    }
+    
+    // Check allowedClasses if present
+    if (weapon.allowedClasses && weapon.allowedClasses.length > 0 && !weapon.allowedClasses.includes(playerClass) && !isUniversal) {
+        alert(`This weapon cannot be used by your class!`);
+        return;
+    }
+    
+    if (weapon.level && weapon.level > p.level) {
+        alert(`You need to be level ${weapon.level} to equip this weapon! (You are level ${p.level})`);
+        return;
+    }
+    
+    // Mark current weapon as not equipped (but leave it in inventory)
+    if (p.weapon && p.weapon !== 'bare_fists') {
+        const currentWeapon = WEAPONS[p.weapon];
+        if (currentWeapon) {
+            currentWeapon.isEquipped = false;
+        }
+    }
+    
+    // Set new weapon
+    p.weapon = key;
+    weapon.isEquipped = true;
+    
+    // REMOVED: The block that was adding the old weapon back to inventory
+    
+    recalcGemStats(p);
+    saveGame();
+    updateHud();
+    
+    if (typeof termAppend === 'function') {
+        termAppend(`✅ Equipped ${weapon.name}`, 'term-success');
+    }
+    
+    if (typeof showInventory === 'function') showInventory();
+}
     else if (type === 'armor') {
         const armor = ARMOR[key];
         if (!armor) { alert('Invalid armor!'); return; }
@@ -28132,6 +28107,86 @@ function sysoFilterList(searchValue) {
      GEM VALIDATION & REPAIR SYSTEM - AT THE VERY END
      ═══════════════════════════════════════════════════════════════ -->
 <script>
+
+
+// ═══════════════════════════════════════════════════════════════
+// INVENTORY VALIDATION & REPAIR SYSTEM
+// ═══════════════════════════════════════════════════════════════
+
+function validateAndRepairInventory() {
+    const p = gameState.player;
+    if (!p || !p.inventory) return false;
+    
+    console.log('🔧 Running inventory validation...');
+    let repairs = 0;
+    let removals = 0;
+    
+    const validatedInventory = [];
+    const seenInstanceIds = new Set();
+    
+    for (const item of p.inventory) {
+        // ── WEAPON OBJECTS ─────────────────────────────────────────
+        if (typeof item === 'object' && item !== null && item.weaponId && item.instanceId) {
+            if (seenInstanceIds.has(item.instanceId)) {
+                console.warn(`🗑️ Removed duplicate weapon: ${item.name}`);
+                removals++;
+                continue;
+            }
+            seenInstanceIds.add(item.instanceId);
+            
+            const masterCopy = WEAPONS[item.instanceId];
+            if (!masterCopy) {
+                console.warn(`⚠️ Orphaned weapon: ${item.name} - removing`);
+                removals++;
+                continue;
+            }
+            
+            if (masterCopy !== item) repairs++;
+            validatedInventory.push(masterCopy);
+        }
+        // ── ARMOR OBJECTS ──────────────────────────────────────────
+        else if (typeof item === 'object' && item !== null && item.armorId && item.instanceId) {
+            if (seenInstanceIds.has(item.instanceId)) {
+                console.warn(`🗑️ Removed duplicate armor: ${item.name}`);
+                removals++;
+                continue;
+            }
+            seenInstanceIds.add(item.instanceId);
+            
+            const masterCopy = ARMOR[item.instanceId];
+            if (!masterCopy) {
+                console.warn(`⚠️ Orphaned armor: ${item.name} - removing`);
+                removals++;
+                continue;
+            }
+            
+            if (masterCopy !== item) repairs++;
+            validatedInventory.push(masterCopy);
+        }
+        else {
+            validatedInventory.push(item);
+        }
+    }
+    
+    p.inventory = validatedInventory;
+    
+    // Fix equipped references
+    if (p.weapon && p.weapon !== 'bare_fists' && !WEAPONS[p.weapon]) {
+        console.warn(`⚠️ Equipped weapon missing - unequipping`);
+        p.weapon = 'bare_fists';
+        repairs++;
+    }
+    if (p.armor && p.armor !== 'no_armor' && !ARMOR[p.armor]) {
+        console.warn(`⚠️ Equipped armor missing - unequipping`);
+        p.armor = 'no_armor';
+        repairs++;
+    }
+    
+    console.log(`✅ Inventory validation: ${repairs} repaired, ${removals} removed`);
+    return repairs > 0 || removals > 0;
+}
+
+
 // ═══════════════════════════════════════════════════════════════
 // GEM VALIDATION & REPAIR SYSTEM - Event Driven
 // ═══════════════════════════════════════════════════════════════
