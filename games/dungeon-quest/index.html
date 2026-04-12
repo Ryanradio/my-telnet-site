@@ -12,6 +12,17 @@
    <meta name="mobile-web-app-capable" content="yes">
    <meta name="theme-color" content="#000000">
 
+<!-- iOS / iPhone icon -->
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+<!-- Android / Chrome icons -->
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+
+<!-- Fallback favicon (browser tab) -->
+<link rel="icon" type="image/x-icon" href="icon-192.png">
+
+
     <title>⚔️ CALAMITY DUNGEON ⚔️</title>
    
    
@@ -26669,14 +26680,85 @@ function _saveStatChanges(backFn) {
         
 
         
+// ═══════════════════════════════════════════════════════════════
+// CROSSROADS FORGE - Unique styling for the 3rd town
+// ═══════════════════════════════════════════════════════════════
+
+function showCrossroadsForge() {
+    const p = gameState.player;
+    const screen = document.getElementById('mainScreen');
+    
+    // Crossroads theme colors (golden/mystical)
+    const theme = {
+        primary: '#FFD700',
+        secondary: '#c8a000',
+        bg: '#1a1408',
+        border: '#d4a840',
+        accent: '#ffcc44',
+        glow: '0 0 20px rgba(255,215,0,0.3)'
+    };
+    
+    screen.innerHTML = `
+        <div class="location-header" style="border-color: ${theme.border}; color: ${theme.primary}; text-shadow: 0 0 10px ${theme.primary};">✨ FORGE OF THE CROSSROADS ✨</div>
+        
+        <div style="
+            background: ${theme.bg};
+            border: 2px solid ${theme.border};
+            border-radius: 8px;
+            padding: 16px;
+            margin: 10px 0;
+            box-shadow: ${theme.glow};
+            text-align: center;
+        ">
+            <div style="font-size: 14px; color: ${theme.primary}; letter-spacing: 3px; margin-bottom: 8px;">
+                ⚔️ WHERE WORLDS COLLIDE ⚔️
+            </div>
+            <div style="font-size: 11px; color: #8a7a40; font-style: italic;">
+                "The ley lines converge here — your weapons will never be the same."
+            </div>
+        </div>
+        
+        <div style="margin: 20px 0;">
+            <div class="menu-option" onclick="showBlacksmith('cut', null, 'crossroads')" style="border-color: ${theme.border}; color: ${theme.primary};">
+                ► 💎 CUT GEMS <span style="color:#888;font-size:12px;">(200g — Raw gems in bag)</span>
+            </div>
+            <div class="menu-option" onclick="showBlacksmith('socket', 'weapon', 'crossroads')" style="border-color: ${theme.border}; color: ${theme.primary};">
+                ► ⚙️ SOCKET GEM <span style="color:#888;font-size:12px;">(100g — Cut gems available)</span>
+            </div>
+            <div class="menu-option" onclick="showBlacksmith('info', null, 'crossroads')" style="border-color: ${theme.border}; color: ${theme.primary};">
+                ► 📖 HOW GEMS WORK
+            </div>
+            <div class="menu-option" onclick="showTown()" style="border-color: #4a3a1a; color: #8a7a40;">
+                ← BACK TO CROSSROADS
+            </div>
+        </div>
+        
+        <div style="
+            background: rgba(0,0,0,0.3);
+            border: 1px solid ${theme.border};
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 15px;
+            font-size: 11px;
+            color: #6a5a30;
+            text-align: center;
+        ">
+            <span style="color: ${theme.primary};">✦ THE CROSSROADS FORGE ✦</span><br>
+            Infused with elemental energy from the convergence of worlds.
+        </div>
+    `;
+}
+
+
 
 // ═══════════════════════════════════════════════════════════════
 // BLACKSMITH — Cut gems (200g) and Socket gems (100g)
 // ═══════════════════════════════════════════════════════════════
-function showBlacksmith(subview, subview_target) {
+function showBlacksmith(subview, subview_target = 'weapon', returnTo = 'town') {
     const p = gameState.player;
     const screen = document.getElementById('mainScreen');
     subview = subview || 'main';
+    const _returnTo = returnTo;
 
     // ── Helper: find raw gems in inventory ──
     function getRawGems() {
@@ -26688,7 +26770,33 @@ function showBlacksmith(subview, subview_target) {
         return (p.inventory || []).filter(k => typeof k === 'object' && k && k.cut);
     }
 
-    const anvil = `<pre style="color:#cc5500;font-size:9.5px;line-height:1.18;text-align:center;font-family:'Courier New',monospace;">
+
+const anvil = `<div style="
+    background: linear-gradient(135deg, #1a0a00 0%, #0d0500 100%);
+    border: 3px double #ff7722;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin: 10px 0;
+    text-align: center;
+    box-shadow: 0 0 20px rgba(255, 119, 34, 0.3);
+">
+    <div style="font-size: 28px; letter-spacing: 6px; color: #ff7722; text-shadow: 0 0 8px #ff7722;">
+        ⚒️ 🔥 ⚔️
+    </div>
+    <div style="font-size: 14px; color: #ff9955; font-weight: bold; letter-spacing: 4px; margin-top: 8px;">
+        V A L D R A K ' S   F O R G E
+    </div>
+    <div style="font-size: 11px; color: #aa6633; letter-spacing: 2px; margin: 8px 0;">
+        ✦  M A S T E R   S M I T H  ✦
+    </div>
+    <div style="height: 1px; background: linear-gradient(90deg, transparent, #ff7722, transparent); margin: 12px 0;"></div>
+    <div style="font-size: 11px; color: #886633; font-style: italic;">
+        "Bring me your rough stones and I'll make them sing."
+    </div>
+</div>`;
+
+
+  /*  const anvil = `<pre style="color:#cc5500;font-size:9.5px;line-height:1.18;text-align:center;font-family:'Courier New',monospace;">
             ___________________
       _____/                   \_____
      /    /   V A L D R A K ' S \    \
@@ -26701,30 +26809,47 @@ function showBlacksmith(subview, subview_target) {
    | |   🔥   🔥   🔥   🔥   🔥  | |
    |_|_________________________________|_|
      |        ⚒️  SMITH  ⚒️           |
-     |___________________________________|</pre>`;
+     |___________________________________|
+     
+     </pre>`; */
 
-    if (subview === 'main') {
+        if (subview === 'main') {
         const rawCount = getRawGems().length;
         const cutCount = getCutGems().length;
-        screen.innerHTML = `
-            <div class="location-header">⚒️ VALDRAK'S FORGE</div>
-            ${anvil}
-            <div class="message" style="color:#cc7733;font-style:italic;text-align:center;margin-bottom:12px;">
-                "Bring me your rough stones and I'll make them sing."<br>
-                <span style="font-size:11px;color:#664422;">— Valdrak, Master Smith</span>
-            </div>
-            <div style="margin:16px 0;">
-                <div class="menu-option" onclick="showBlacksmith('cut')" style="border-color:#FF7722;">
-                    ► 💎 CUT GEMS <span style="color:#888;font-size:12px;">(200g each — ${rawCount} raw gem${rawCount!==1?'s':''} in bag)</span>
+        
+        // Choose which forge to show based on returnTo
+        if (returnTo === 'crossroads') {
+            // Render Crossroads Forge style
+            screen.innerHTML = `
+                <div class="location-header" style="border-color: #d4a840; color: #FFD700; text-shadow: 0 0 10px #FFD700;">✨ FORGE OF THE CROSSROADS ✨</div>
+                <div style="background: #1a1408; border: 2px solid #d4a840; border-radius: 8px; padding: 16px; margin: 10px 0; box-shadow: 0 0 20px rgba(255,215,0,0.3); text-align: center;">
+                    <div style="font-size: 14px; color: #FFD700; letter-spacing: 3px;">⚔️ WHERE WORLDS COLLIDE ⚔️</div>
+                    <div style="font-size: 11px; color: #8a7a40; font-style: italic;">"The ley lines converge here — your weapons will never be the same."</div>
                 </div>
-                <div class="menu-option" onclick="showBlacksmith('socket')" style="border-color:#c8a000;">
-                    ► ⚙️ SOCKET GEM INTO WEAPON <span style="color:#888;font-size:12px;">(100g — ${cutCount} cut gem${cutCount!==1?'s':''} available)</span>
+                <div style="margin: 20px 0;">
+                    <div class="menu-option" onclick="showBlacksmith('cut', null, 'crossroads')" style="border-color: #d4a840; color: #FFD700;">► 💎 CUT GEMS <span style="color:#888;font-size:12px;">(${rawCount} raw gems)</span></div>
+                    <div class="menu-option" onclick="showBlacksmith('socket', 'weapon', 'crossroads')" style="border-color: #d4a840; color: #FFD700;">► ⚙️ SOCKET GEM <span style="color:#888;font-size:12px;">(${cutCount} cut gems)</span></div>
+                    <div class="menu-option" onclick="showBlacksmith('info', null, 'crossroads')" style="border-color: #d4a840; color: #FFD700;">► 📖 HOW GEMS WORK</div>
+                    <div class="menu-option" onclick="showTown()" style="border-color: #4a3a1a; color: #8a7a40;">← BACK TO CROSSROADS</div>
                 </div>
-                <div class="menu-option" onclick="showBlacksmith('info')" style="border-color:#444;">
-                    ► 📖 HOW GEMS WORK
+            `;
+        } else {
+            // Render Valdrak's Forge (original)
+            screen.innerHTML = `
+                <div class="location-header">⚒️ VALDRAK'S FORGE</div>
+                ${anvil}
+                <div class="message" style="color:#cc7733;font-style:italic;text-align:center;margin-bottom:12px;">
+                    "Bring me your rough stones and I'll make them sing."<br>
+                    <span style="font-size:11px;color:#664422;">— Valdrak, Master Smith</span>
                 </div>
-                <div class="menu-option" onclick="showTown()">← BACK TO TOWN</div>
-            </div>`;
+                <div style="margin:16px 0;">
+                    <div class="menu-option" onclick="showBlacksmith('cut')" style="border-color:#FF7722;">► 💎 CUT GEMS <span style="color:#888;font-size:12px;">(200g each — ${rawCount} raw gem${rawCount!==1?'s':''} in bag)</span></div>
+                    <div class="menu-option" onclick="showBlacksmith('socket')" style="border-color:#c8a000;">► ⚙️ SOCKET GEM INTO WEAPON <span style="color:#888;font-size:12px;">(100g — ${cutCount} cut gem${cutCount!==1?'s':''} available)</span></div>
+                    <div class="menu-option" onclick="showBlacksmith('info')" style="border-color:#444;">► 📖 HOW GEMS WORK</div>
+                    <div class="menu-option" onclick="showTown()">← BACK TO TOWN</div>
+                </div>
+            `;
+        }
     }
 
     else if (subview === 'cut') {
@@ -26737,7 +26862,7 @@ function showBlacksmith(subview, subview_target) {
                     You have no raw gems to cut.<br>
                     <span style="font-size:12px;color:#555;">Gems drop from any enemy (4% chance). Keep adventuring!</span>
                 </div>
-                <button onclick="showBlacksmith()" style="margin-top:10px;">← BACK</button>`;
+                <button onclick="showBlacksmith('main', null, '${returnTo}')" style="margin-top:8px; padding:8px 16px;">← BACK</button>`;
             return;
         }
         let gemListHtml = rawGems.map(gk => {
@@ -26759,7 +26884,7 @@ function showBlacksmith(subview, subview_target) {
                 Cutting reveals a gem's permanent stats at random. Stats cannot be rerolled.
             </div>
             <div style="margin:10px 0;">${gemListHtml}</div>
-            <button onclick="showBlacksmith()" style="margin-top:8px;">← BACK</button>`;
+            <button onclick="showBlacksmith('main', null, '${returnTo}')" style="margin-top:8px; padding:8px 16px;">← BACK</button>`;
     }
 
     else if (subview === 'socket') {
@@ -26908,7 +27033,7 @@ function armorSocketCard() {
                     You have no cut gems to socket.<br>
                     <span style="font-size:12px;">Cut a raw gem first at the forge.</span>
                 </div>
-                <button onclick="showBlacksmith()">← BACK</button>`;
+                <button onclick="showBlacksmith('main', null, '${returnTo}')">← BACK</button>`;
             return;
         }
 
@@ -26937,10 +27062,10 @@ function armorSocketCard() {
             ${anvil}
             <div style="color:#aaa;font-size:12px;margin:4px 0 2px;">Click on an item to select it for socketing:</div>
             ${weaponSocketCard()}
-            ${armorSocketCard()}
+
             <div style="margin-top:15px;color:#aaa;font-size:12px;text-align:center;">⚠️ Socketed gems are permanent and cannot be removed.</div>
             <div style="margin:10px 0; max-height:300px; overflow-y:auto;">${gemButtons}</div>
-            <button onclick="showBlacksmith()" style="margin-top:8px; padding:8px 16px;">← BACK</button>`;
+            <button onclick="showBlacksmith('main', null, '${returnTo}')" style="margin-top:8px; padding:8px 16px;">← BACK</button>`;
     }
 
     else if (subview === 'info') {
@@ -26974,7 +27099,7 @@ function armorSocketCard() {
                 Weapon DMG (Ruby) is melee only. Spell Power (Sapphire) is spells only.<br>
                 Lifesteal (Ruby) works on both melee and spells.</p>
             </div>
-            <button onclick="showBlacksmith()">← BACK</button>`;
+            <button onclick="showBlacksmith('main', null, '${returnTo}')" style="margin-top:8px; padding:8px 16px;">← BACK</button>`;
     }
 }
 
