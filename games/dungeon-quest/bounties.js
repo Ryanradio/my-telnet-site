@@ -637,6 +637,9 @@ function collectBounty(bountyId) {
     setTimeout(() => flash.remove(), 3000);
 
     showBountyBoard();
+
+    const detailOverlay = document.getElementById('bounty-detail-overlay');
+    if (detailOverlay) detailOverlay.remove();
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -763,9 +766,9 @@ window.showBountyDetail = function(bountyId) {
 
     overlay.innerHTML = `
         <div style="background:#060305;border:2px solid #4a1a7a;border-radius:12px;
-                    padding:26px 24px;max-width:380px;width:92%;
-                    box-shadow:0 0 60px rgba(204,102,255,0.25);
-                    font-family:'Courier New',monospace;position:relative;overflow:hidden;">
+            padding:26px 24px;max-width:380px;width:92%;max-height:90vh;overflow-y:auto;
+            box-shadow:0 0 60px rgba(204,102,255,0.25);
+            font-family:'Courier New',monospace;position:relative;">
 
             <!-- top accent -->
             <div style="position:absolute;top:0;left:0;right:0;height:3px;

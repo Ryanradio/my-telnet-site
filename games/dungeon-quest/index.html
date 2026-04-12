@@ -26920,7 +26920,7 @@ function armorSocketCard() {
                         <span style="color:${g.color};">⬤ ${g.emoji} ${g.name}</span>
                         <div style="color:#888;font-size:11px;margin-top:2px;">${g.description}</div>
                     </div>
-                    <button onclick="doSocketGem(${idx},'${socketTarget}')" ${canAfford?'':'disabled title="Need 100g"'}
+                    <button onclick="event.stopPropagation(); this.disabled=true; doSocketGem(${idx},'${socketTarget}')" ${canAfford?'':'disabled title="Need 100g"'}
                         style="border-color:#c8a000;color:#c8a000;font-size:12px;padding:6px 12px;min-width:80px;border-radius:4px;">SOCKET (100g)</button>
                 </div>`;
             }).join('')
@@ -27019,106 +27019,186 @@ function doCutGem(rawGemKey) {
     showBlacksmith('cut');
 }
 
-// Fix the doSocketGem function
-function doSocketGem(cutGemInventoryIndex, target) {
+// Store reference to original blacksmith function to re-render
+const originalShowBlacksmith = showBlacksmith;
+
+// Create a completely new socket function with button disabling
+window.doSocketGem = function(cutGemInventoryIndex, target) {
+    console.log(`🔧 Socket called with index ${cutGemInventoryIndex}, target ${target}`);
+    
+    // Disable all socket buttons to prevent double-clicks
+    const allButtons = document.querySelectorAll('#shopContent button');
+    allButtons.forEach(btn => {
+        if (btn.textContent.includes('SOCKET')) {
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            btn.style.cursor = 'not-allowed';
+        }
+    });
+    
     const p = gameState.player;
     
-    // Calculate discount from CHA
     const discount = Math.min(30, (p.cha || 0) * 2);
     const cost = Math.max(1, Math.floor(100 * (1 - discount / 100)));
     
     if (p.gold < cost) { 
         alert(`You need ${cost} gold to socket a gem.`); 
+        // Re-enable buttons
+        showBlacksmith('socket', target);
         return; 
     }
     
     const isArmor = target === 'armor';
-    
-    // Get the live instance from WEAPONS/ARMOR using the instanceId
     const instanceId = isArmor ? p.armor : p.weapon;
-    const item = isArmor
-        ? (instanceId ? ARMOR[instanceId] : null)
-        : (instanceId ? WEAPONS[instanceId] : null);
+    const item = isArmor ? (instanceId ? ARMOR[instanceId] : null) : (instanceId ? WEAPONS[instanceId] : null);
     const itemLabel = isArmor ? 'armor' : 'weapon';
     
     if (!item) { 
         alert(`No ${itemLabel} equipped.`); 
+        showBlacksmith('socket', target);
         return; 
     }
     if (!item.gems) item.gems = [];
     
-    const itemQuality = item.quality || 'normal';
-    const slots = getGemSlots(itemQuality);
+    const slots = getGemSlots(item.quality || 'normal');
     const usedSlots = item.gems.length;
     const openSlots = slots - usedSlots;
     
     if (openSlots <= 0) {
         alert(`No open slots on this ${itemLabel}. (${usedSlots}/${slots} slots used)`);
+        showBlacksmith('socket', target);
         return;
     }
     
-    // Get all cut gems in inventory (objects)
     const cutGems = p.inventory.filter(k => typeof k === 'object' && k && k.cut === true);
     
     if (cutGemInventoryIndex < 0 || cutGemInventoryIndex >= cutGems.length) {
         alert("Gem not found.");
+        showBlacksmith('socket', target);
         return;
     }
     
     const gem = cutGems[cutGemInventoryIndex];
     if (!gem) { 
         alert("Gem not found."); 
+        showBlacksmith('socket', target);
         return; 
     }
     
-    // Find the actual index in the inventory array
-    const invIdx = p.inventory.findIndex(item => 
-        item && typeof item === 'object' && item.id === gem.id && item.name === gem.name
-    );
+    // ⭐ CRITICAL: Check if gem is already in the weapon (by checking its unique ID)
+    const alreadyInWeapon = item.gems.some(g => g.id === gem.id);
+    if (alreadyInWeapon) {
+        alert(`⚠️ ${gem.name} is already socketed!`);
+        showBlacksmith('socket', target);
+        return;
+    }
     
+    const invIdx = p.inventory.findIndex(invItem => invItem && typeof invItem === 'object' && invItem.id === gem.id);
     if (invIdx === -1) { 
         alert("Gem not in inventory."); 
+        showBlacksmith('socket', target);
         return; 
     }
     
-    // Confirm before socketing
     const discountText = discount > 0 ? ` (${discount}% CHA discount)` : '';
     if (!confirm(`Socket ${gem.name} into ${item.name} for ${cost}g${discountText}? This is permanent and cannot be undone.`)) {
+        showBlacksmith('socket', target);
         return;
     }
     
     // Deduct gold
     p.gold -= cost;
     
-    // Remove the gem from inventory
+    // Remove gem from inventory
     p.inventory.splice(invIdx, 1);
     
-    // Push gem onto the live WEAPONS/ARMOR instance
+        // Add to weapon
     item.gems.push(gem);
     
-    // Also update the inventory reference object so gems survive save/load
-    const invRef = p.inventory.find(i =>
-        i && typeof i === 'object' && i.instanceId === instanceId
-    );
-    if (invRef) {
-        if (!invRef.gems) invRef.gems = [];
-        invRef.gems.push(gem);
+    // The inventory reference is the same object, no need to push again
+    // Just make sure invRef.gems points to the same array
+    const invRef = p.inventory.find(i => i && typeof i === 'object' && i.instanceId === instanceId);
+    if (invRef && !invRef.gems) {
+        invRef.gems = item.gems;
     }
     
-    // Recalculate stats
     recalcGemStats(p);
     saveGame();
     
-    // Show success message
+    // Show success
     const flash = document.createElement('div');
     flash.style.cssText = `position:fixed;top:15px;left:50%;transform:translateX(-50%);background:#0a0a0a;border:2px solid ${gem.color};padding:14px 24px;color:${gem.color};font-size:15px;z-index:9999;text-align:center;max-width:340px;`;
-    flash.innerHTML = `⚙️ <strong>Gem Socketed!</strong><br><span style="font-size:12px;color:#ccc;">${gem.name} fused into ${item.name} permanently.<br>Slot ${usedSlots + 1}/${slots}<br>Paid: ${cost}g${discountText}</span>`;
+    flash.innerHTML = `⚙️ <strong>Gem Socketed!</strong><br><span style="font-size:12px;color:#ccc;">${gem.name} fused into ${item.name}<br>Slot ${usedSlots + 1}/${slots}<br>Paid: ${cost}g${discountText}</span>`;
     document.body.appendChild(flash);
     setTimeout(() => flash.remove(), 3500);
     
-    // Refresh the blacksmith view
+    // Refresh the blacksmith view (re-enables buttons)
     showBlacksmith('socket', target);
+    
+    console.log(`✅ Socketed ${gem.name}. Now ${item.gems.length}/${slots} slots filled`);
+};
+
+console.log('✅ New socket function installed with button disabling and duplicate ID check');
+
+
+// ═══════════════════════════════════════════════════════════════
+// GEM SOCKETING DUPLICATE PREVENTION & CLEANUP
+// ═══════════════════════════════════════════════════════════════
+
+// Function to remove duplicate gems from equipped weapon (silent)
+function removeDuplicateGemsFromWeapon() {
+    const weapon = WEAPONS[gameState.player.weapon];
+    if (!weapon || !weapon.gems) return false;
+    
+    const uniqueGems = [];
+    const seenIds = new Set();
+    let removedCount = 0;
+    
+    for (const gem of weapon.gems) {
+        if (seenIds.has(gem.id)) {
+            removedCount++;
+            console.log(`🗑️ Removed duplicate gem: ${gem.name}`);
+        } else {
+            seenIds.add(gem.id);
+            uniqueGems.push(gem);
+        }
+    }
+    
+    if (removedCount > 0) {
+        weapon.gems = uniqueGems;
+        
+        // Also update inventory reference
+        const invRef = gameState.player.inventory.find(i => i && typeof i === 'object' && i.instanceId === gameState.player.weapon);
+        if (invRef) invRef.gems = [...uniqueGems];
+        
+        recalcGemStats(gameState.player);
+        saveGame();
+        console.log(`✅ Removed ${removedCount} duplicate gem(s) from weapon`);
+        return true;
+    }
+    return false;
 }
+
+// Store original function
+const _originalDoSocketGem = doSocketGem;
+
+// Override doSocketGem with cleanup
+window.doSocketGem = function(idx, target) {
+    // Call original function
+    const result = _originalDoSocketGem(idx, target);
+    
+    // After socketing, clean up duplicates silently and refresh
+    setTimeout(() => {
+        removeDuplicateGemsFromWeapon();
+        showBlacksmith('socket', target);
+    }, 50);
+    
+    return result;
+};
+
+console.log('✅ Socket duplication prevention active - duplicates will be cleaned up automatically');
+
+
         // ═══════════════════════════════════════════════════════════════
         // TEMPLE OF REBIRTH (Stat Reset)
         // ═══════════════════════════════════════════════════════════════
