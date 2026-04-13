@@ -51,9 +51,72 @@
         }
         /* ── END FONT SIZE SETTINGS ─────────────────────────────────── */
 
+/* --- STARTUP SCREEN STYLES --- */
+        #splash-screen {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: #050505; /* Matches your game's dark theme */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100000; /* Stays above your portal overlays */
+            transition: opacity 1.2s ease-out, visibility 1.2s;
+        }
+        .splash-icon {
+            width: 160px;
+            height: 160px;
+            border-radius: 24px;
+            box-shadow: 0 0 40px rgba(255, 0, 0, 0.4);
+            margin-bottom: 30px;
+            animation: splashPulse 2.5s infinite ease-in-out;
+            border: 2px solid #333;
+        }
+        .splash-title {
+            color: #e0e0e0;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-align: center;
+            animation: splashFlicker 4s infinite;
+        }
+        @keyframes splashPulse {
+            0%, 100% { transform: scale(1); filter: brightness(1) drop-shadow(0 0 10px red); }
+            50% { transform: scale(1.08); filter: brightness(1.4) drop-shadow(0 0 25px red); }
+        }
+        @keyframes splashFlicker {
+            0%, 18%, 22%, 25%, 53%, 57%, 100% { opacity: 1; }
+            20%, 24%, 55% { opacity: 0.3; }
+        }
+        .splash-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
 
+/* --- Loading Bar Styles --- */
+.loading-container {
+    width: 250px;
+    height: 8px;
+    background-color: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 4px;
+    margin-top: 20px;
+    overflow: hidden;
+}
 
+.loading-bar {
+    width: 0%;
+    height: 100%;
+    background-color: #ff0000; /* Red to match your theme */
+    box-shadow: 0 0 10px #ff0000;
+    /* The speed is controlled by the JavaScript variable below */
+    animation: fillBar linear forwards;
+}
 
+@keyframes fillBar {
+    from { width: 0%; }
+    to { width: 100%; }
+}
 
     /* ───────── GLOBAL LAYOUT FIX (PUT THIS FIRST) ───────── */
 *,
@@ -2424,9 +2487,31 @@ body.terminal-mode #menuContainer {
 
      
 
+
+
+
+
     </style>
 </head>
+
+
+<div id="splash-screen">
+    <img src="icon-original.png" alt="Calamity Icon" class="splash-icon">
+    <div class="splash-title">Welcome to the<br>Calamity Dungeon</div>
+    <div style="margin-top: 40px; color: #444; font-size: 14px; font-family: 'VT323', monospace; letter-spacing: 4px;">
+        LOADING Caliamity Dungeon...
+    </div>
+    
+    <div class="loading-container">
+        <div id="loader" class="loading-bar"></div>
+    </div>
+</div>
+
 <body>
+
+
+
+
     <div class="scanline"></div>
 
     <!-- Fullscreen toggle (mobile only) -->
@@ -2577,6 +2662,9 @@ body.terminal-mode #menuContainer {
     console.log('✅ Monster data locked - dungeon enemies will use exact stats');
 
 </script>
+
+
+
 
 
 <!-- Add Supabase for cloud saves -->
@@ -3837,9 +3925,14 @@ Object.assign(CHRONICLE_CONTENT, {
 
     </script>
 
+
+
+
+
     <script>
 
-        // ═══════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════
 // GOOGLE SHEETS INTEGRATION - Save player data
 // ═══════════════════════════════════════════════════════════════
 
@@ -28752,10 +28845,35 @@ function portalTransition(targetTown) {
     });
 }
 
-</script>
 
 
+/* ... your existing 28,000 lines of game code ... */
 
+    // --- STARTUP SCREEN LOGIC ---
+window.addEventListener('load', () => {
+    const splash = document.getElementById('splash-screen');
+    const loader = document.getElementById('loader');
 
-</body>
+    // CONFIGURATION: 2500 = 2.5 seconds
+    const LOAD_TIME = 2500; 
+
+    if (splash && loader) {
+        // This makes the CSS animation duration match your LOAD_TIME exactly
+        loader.style.animationDuration = LOAD_TIME + "ms";
+
+        // Wait for the bar to finish filling, then fade the screen
+        setTimeout(() => {
+            splash.classList.add('splash-hidden');
+            
+            // Remove the element from the page after it fades out
+            setTimeout(() => {
+                splash.remove();
+            }, 1200);
+        }, LOAD_TIME);
+    }
+});
+
+</script> </body>
 </html>
+
+
