@@ -2499,7 +2499,7 @@ body.terminal-mode #menuContainer {
     <img src="android-chrome-512x512.png" alt="Calamity Icon" class="splash-icon">
     <div class="splash-title">Welcome to the<br>Calamity Dungeon</div>
     <div style="margin-top: 40px; color: #444; font-size: 14px; font-family: 'VT323', monospace; letter-spacing: 4px;">
-        LOADING Caliamity Dungeon...
+        
     </div>
     
     <div class="loading-container">
@@ -2509,6 +2509,7 @@ body.terminal-mode #menuContainer {
 
 <body>
 
+    
 
 
 
@@ -2630,6 +2631,42 @@ body.terminal-mode #menuContainer {
     <div class="modal-overlay" id="modalOverlay">
         <div class="modal-content" id="modalContent"></div>
     </div>
+
+<script>
+// --- STARTUP SCREEN LOGIC ---
+(function() {
+    console.log('🔴 1. SPLASH SCREEN SCRIPT STARTING - ' + new Date().toLocaleTimeString());
+    
+    const splash = document.getElementById('splash-screen');
+    const loader = document.getElementById('loader');
+    const LOAD_TIME = 2500;
+    
+    console.log('🔴 2. Looking for splash elements...');
+    
+    if (splash && loader) {
+        console.log('🔴 3. Splash elements FOUND - starting animation');
+        loader.style.animationDuration = LOAD_TIME + "ms";
+        
+        console.log('🔴 4. Timer started - will hide splash in ' + LOAD_TIME + 'ms');
+        
+        setTimeout(() => {
+            console.log('🔴 5. TIMER COMPLETE - hiding splash screen');
+            splash.classList.add('splash-hidden');
+            
+            setTimeout(() => {
+                console.log('🔴 6. Splash screen removed from DOM');
+                splash.remove();
+                console.log('🔴 7. GAME SHOULD NOW BE VISIBLE');
+            }, 1200);
+        }, LOAD_TIME);
+    } else {
+        console.log('❌ ERROR: Splash elements NOT found!');
+        console.log('splash element:', splash);
+        console.log('loader element:', loader);
+    }
+})();
+</script>
+
 
     <!-- External Game Data Files -->
     <script src="gameversion.js"></script>
@@ -2770,6 +2807,8 @@ const PORTAL_MESSAGES = [
     "The portal says 'thank you for traveling with us.' You didn't have a choice.",
     "You see light ahead. Or is it just hope? Probably just the next town.",
 ];
+
+
 
 
 // ☁️ CLOUD SAVE - Reads current game state and uploads to Supabase
@@ -28847,32 +28886,9 @@ function portalTransition(targetTown) {
 
 
 
-/* ... your existing 28,000 lines of game code ... */
 
-    // --- STARTUP SCREEN LOGIC ---
-window.addEventListener('load', () => {
-    const splash = document.getElementById('splash-screen');
-    const loader = document.getElementById('loader');
 
-    // CONFIGURATION: 2500 = 2.5 seconds
-    const LOAD_TIME = 2500; 
-
-    if (splash && loader) {
-        // This makes the CSS animation duration match your LOAD_TIME exactly
-        loader.style.animationDuration = LOAD_TIME + "ms";
-
-        // Wait for the bar to finish filling, then fade the screen
-        setTimeout(() => {
-            splash.classList.add('splash-hidden');
-            
-            // Remove the element from the page after it fades out
-            setTimeout(() => {
-                splash.remove();
-            }, 1200);
-        }, LOAD_TIME);
-    }
-});
-
+    
 </script> </body>
 </html>
 
