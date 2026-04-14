@@ -1,7 +1,6 @@
 {
-  "ip": "13.58.157.220",
-  "port": "17955",
-  "hostname": "8.tcp.ngrok.io",
-  "proxy_hostname": "childrens-directories-aerial-shipped.trycloudflare.com",
-  "last_updated": "2026-04-01 04:00:32 UTC"
+  "proxy_hostname": "bowl-fabric-complicated-operators.trycloudflare.com",
+  "last_updated": "2026-04-14 22:34:48 UTC",
+  "status": "active",
+  "type": "cloudflare_tunnel"
 }
