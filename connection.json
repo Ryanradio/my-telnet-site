@@ -1,6 +1,7 @@
 {
+  "ip": "3.142.167.54",
+  "port": "15538",
+  "hostname": "8.tcp.ngrok.io",
   "proxy_hostname": "bowl-fabric-complicated-operators.trycloudflare.com",
-  "last_updated": "2026-04-14 22:34:48 UTC",
-  "status": "active",
-  "type": "cloudflare_tunnel"
+  "last_updated": "2026-04-14 22:55:02 UTC"
 }
