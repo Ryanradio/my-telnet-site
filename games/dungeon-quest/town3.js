@@ -421,7 +421,7 @@ window.TOWNS.town3 = {
                 <div class="menu-option" onclick="showCrossroadsForge()" style="border-color: #FFD700; color: #FFD700;">► ⚒️ FORGE OF THE CROSSROADS</div>
 
                 <div class="t3-row" onclick="showCharacterStats()">► 📊 &nbsp;CHARACTER STATS</div>
-                <div class="t3-row" onclick="showInventory()">► 🎒 &nbsp;INVENTORY</div>
+               <div class="t3-row" onclick="showUnifiedInventory(() => showTown('town3'))">► 🎒 &nbsp;INVENTORY</div>
                 <div class="t3-row" onclick="showExplore()">► 🗺 &nbsp;EXPLORE WORLD</div>
             </div>
 

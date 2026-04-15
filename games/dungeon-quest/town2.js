@@ -502,8 +502,7 @@ if (hasVisitedTown3) {
                 </div>
 
                 <div class="t2-row" onclick="showCharacterStats()">► 📊 &nbsp;CHARACTER STATS</div>
-                <div class="t2-row" onclick="showInventory()">► 🎒 &nbsp;INVENTORY</div>
-
+                <div class="t2-row" onclick="showUnifiedInventory(() => showTown('town2'))">► 🎒 &nbsp;INVENTORY</div>
 <!-- ASHEN DEPTHS DUNGEON -->
 ${p.level >= 10 ? 
     `<div class="t2-row" onclick="enterAshenDepths()" style="border-color:#cc66ff;">

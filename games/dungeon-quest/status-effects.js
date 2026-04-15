@@ -273,6 +273,24 @@ const WEAPON_MODIFIERS = {
         color: '#FFD700'
     },
     
+    sharp: {
+        name: 'Sharp',
+        description: 'Adds bonus physical damage to your attacks',
+        minDamage: 1,
+        maxDamage: 10,
+        color: '#CCCCCC'
+    },
+
+
+    swift: {
+        name: 'Swift',
+        description: 'Increases your critical hit chance',
+        critBonus: 5,
+        color: '#88FF88'
+    },
+
+
+
     critical_bonus: {
         name: 'Precision',
         description: 'Increases critical hit chance',
