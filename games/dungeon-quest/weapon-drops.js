@@ -397,147 +397,134 @@ function rollQuality() {
 // ═══════════════════════════════════════════════════════════════
 
 function generateWeaponDrop(player, enemyLevel, enemyRarity = 'common', skipRoll = false, forcedQuality = null) {
-   
     // ⭐ Prevent recursive/duplicate calls
-if (window._generatingWeapon) {
-    console.warn('⚠️ Skipping duplicate weapon generation');
-    return null;
-}
-window._generatingWeapon = true;
-
-    // Calculate drop chance (skip if forced)
-    if (!skipRoll) {
-        const baseChance = WEAPON_DROP_CONFIG.baseDropChance;
-        const rarityMult = WEAPON_DROP_CONFIG.rarityMultipliers[enemyRarity] || 1.0;
-        const dropChance = baseChance * rarityMult;
+    if (window._generatingWeapon) {
+        return null;
+    }
+    window._generatingWeapon = true;
+    
+    try {
+        // Calculate drop chance (skip if forced)
+        if (!skipRoll) {
+            const baseChance = WEAPON_DROP_CONFIG.baseDropChance;
+            const rarityMult = WEAPON_DROP_CONFIG.rarityMultipliers[enemyRarity] || 1.0;
+            const dropChance = baseChance * rarityMult;
+            
+            if (Math.random() > dropChance) {
+                return null;
+            }
+        }
         
-        if (Math.random() > dropChance) {
+        // Determine weapon level
+        let weaponLevel;
+        if (skipRoll) {
+            weaponLevel = enemyLevel;
+        } else {
+            const minLevel = Math.max(1, enemyLevel - 2);
+            const maxLevel = Math.min(30, enemyLevel + 2);
+            weaponLevel = minLevel + Math.floor(Math.random() * (maxLevel - minLevel + 1));
+        }
+        
+        const playerClass = player.baseClass || player.class;
+        
+        // Build candidate list from ALL weapons
+        const candidates = [];
+        for (const [weaponId, weapon] of Object.entries(WEAPONS)) {
+            if (weapon.unarmed) continue;
+            if (weapon.instanceId) continue;
+            if (weapon.canDrop === false) continue;
+            
+            // Level check - only weapons within ±2 levels
+            if (weapon.level && (weapon.level < weaponLevel - 2 || weapon.level > weaponLevel + 2)) continue;
+            
+            // Class restriction check
+            if (weapon.allowedClasses && !weapon.allowedClasses.includes(playerClass)) continue;
+            
+            candidates.push({
+                id: weaponId,
+                ...weapon
+            });
+        }
+        
+        if (candidates.length === 0) {
+            console.warn('No eligible weapons found for drop');
             return null;
         }
-    }
-    
-    // Determine weapon level
-    let weaponLevel;
-    if (skipRoll) {
-        weaponLevel = enemyLevel;
-    } else {
-        const minLevel = Math.max(1, enemyLevel - 2);
-        const maxLevel = Math.min(30, enemyLevel + 2);
-        weaponLevel = minLevel + Math.floor(Math.random() * (maxLevel - minLevel + 1));
-    }
-    
-    const playerClass = player.baseClass || player.class;
-    
-    // Build candidate list from ALL weapons
-    const candidates = [];
-    for (const [weaponId, weapon] of Object.entries(WEAPONS)) {
-        if (weapon.unarmed) continue;
-        if (weapon.instanceId) continue;
-        if (weapon.canDrop === false) continue;
         
-        // Level check - only weapons within ±2 levels
-        if (weapon.level && (weapon.level < weaponLevel - 2 || weapon.level > weaponLevel + 2)) continue;
+        // Random selection
+        const baseWeapon = candidates[Math.floor(Math.random() * candidates.length)];
+        const baseWeaponId = baseWeapon.id;
         
-        // Class restriction check
-        if (weapon.allowedClasses && !weapon.allowedClasses.includes(playerClass)) continue;
-        
-        candidates.push({
-            id: weaponId,
-            ...weapon
-        });
-    }
-    
-    if (candidates.length === 0) {
-        console.warn('No eligible weapons found for drop');
-        return null;
-    }
-    
-    // Random selection
-    const baseWeapon = candidates[Math.floor(Math.random() * candidates.length)];
-    const baseWeaponId = baseWeapon.id;
-    
-       // Determine quality
-    let quality;
-    if (forcedQuality) {
-        quality = forcedQuality;
-    } else if (baseWeapon.quality && baseWeapon.quality !== 'normal') {
-        quality = baseWeapon.quality;
-    } else {
-        quality = rollQuality();
-    }
-    
-    // ⭐ Check if identical weapon already exists in inventory
-    const existingWeapon = player.inventory.find(item => {
-        if (typeof item === 'object' && item.weaponId === baseWeaponId && item.quality === quality) {
-            return true;
+        // Determine quality
+        let quality;
+        if (forcedQuality) {
+            quality = forcedQuality;
+        } else if (baseWeapon.quality && baseWeapon.quality !== 'normal') {
+            quality = baseWeapon.quality;
+        } else {
+            quality = rollQuality();
         }
-        return false;
-    });
-
-    if (existingWeapon && !forcedQuality) {
-        console.warn(`⚠️ Prevented duplicate: ${baseWeapon.name} (${quality}) already in inventory`);
+        // Apply Exalted armor quality upgrade
+        const originalQuality = quality;
+        quality = upgradeQualityByBonus(originalQuality);
+        if (quality !== originalQuality) {
+            console.log(`✨ Exalted armor upgraded weapon quality from ${originalQuality} to ${quality}`);
+        }
+        
+        const qualityData = QUALITY_CONFIG[quality] || QUALITY_CONFIG.normal;
+        const bonusPct = qualityData.bonusPct;
+        
+        const baseDamageBonus = Math.floor(baseWeapon.baseDamage * bonusPct);
+        const maxDamageBonus = baseWeapon.maxDamage ? Math.floor(baseWeapon.maxDamage * bonusPct) : baseDamageBonus;
+        const magicDamageBonus = baseWeapon.baseMagicDamage ? Math.floor(baseWeapon.baseMagicDamage * bonusPct) : 0;
+        const healingBonus = baseWeapon.healingBonus ? Math.floor(baseWeapon.healingBonus * bonusPct) : 0;
+        
+        // Generate modifiers
+        const modifiers = typeof generateModifiers === 'function' ? generateModifiers(quality, weaponLevel) : [];
+        
+        const gemSlots = {
+            rare: 1,
+            epic: 2,
+            legendary: 3,
+            godly: 4
+        }[quality] || 0;
+        
+        const instanceId = `${baseWeaponId}_${quality}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+        const weaponName = generateEnhancedWeaponName(baseWeapon, quality, modifiers);
+        
+        const weapon = {
+            id: baseWeaponId,
+            weaponId: baseWeaponId,
+            instanceId: instanceId,
+            name: weaponName,
+            baseName: baseWeapon.name,
+            type: baseWeapon.type || baseWeapon.weaponSubtype,
+            weaponSubtype: baseWeapon.weaponSubtype || baseWeapon.type,
+            baseDamage: baseWeapon.baseDamage + baseDamageBonus,
+            maxDamage: (baseWeapon.maxDamage || baseWeapon.baseDamage) + maxDamageBonus,
+            baseMagicDamage: baseWeapon.baseMagicDamage ? baseWeapon.baseMagicDamage + magicDamageBonus : 0,
+            healingBonus: baseWeapon.healingBonus ? baseWeapon.healingBonus + healingBonus : 0,
+            level: weaponLevel,
+            originalLevel: baseWeapon.level,
+            quality: quality,
+            qualityBonus: bonusPct,
+            modifiers: modifiers,
+            gemSlots: gemSlots,
+            gems: [],
+            cost: Math.floor((weaponLevel * 40) * (quality === 'godly' ? 10 : quality === 'legendary' ? 8 : quality === 'epic' ? 4 : quality === 'rare' ? 1.5 : 1)),
+            description: baseWeapon.description || `A ${quality} quality ${baseWeapon.name}.`,
+            allowedClasses: baseWeapon.allowedClasses,
+            classRestriction: baseWeapon.classRestriction,
+            isDropped: true,
+            dropTimestamp: Date.now()
+        };
+        
+        WEAPONS[instanceId] = weapon;
+        return weapon;
+        
+    } finally {
         window._generatingWeapon = false;
-        return null;
     }
-    
-    const qualityData = QUALITY_CONFIG[quality] || QUALITY_CONFIG.normal;
-    const bonusPct = qualityData.bonusPct;
-    
-    
-    const baseDamageBonus = Math.floor(baseWeapon.baseDamage * bonusPct);
-    const maxDamageBonus = baseWeapon.maxDamage ? Math.floor(baseWeapon.maxDamage * bonusPct) : baseDamageBonus;
-    const magicDamageBonus = baseWeapon.baseMagicDamage ? Math.floor(baseWeapon.baseMagicDamage * bonusPct) : 0;
-    const healingBonus = baseWeapon.healingBonus ? Math.floor(baseWeapon.healingBonus * bonusPct) : 0;
-    
-    // Generate modifiers (use the existing generateModifiers function)
-    const modifiers = typeof generateModifiers === 'function' ? generateModifiers(quality, weaponLevel) : [];
-    
-    const gemSlots = {
-        rare: 1,
-        epic: 2,
-        legendary: 3,
-        godly: 4
-    }[quality] || 0;
-    
-    const instanceId = `${baseWeaponId}_${quality}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
-    const weaponName = generateEnhancedWeaponName(baseWeapon, quality, modifiers);
-    
-    const weapon = {
-        id: baseWeaponId,
-        weaponId: baseWeaponId,
-        instanceId: instanceId,
-        name: weaponName,
-        baseName: baseWeapon.name,
-        type: baseWeapon.type || baseWeapon.weaponSubtype,
-        weaponSubtype: baseWeapon.weaponSubtype || baseWeapon.type,
-        
-        baseDamage: baseWeapon.baseDamage + baseDamageBonus,
-        maxDamage: (baseWeapon.maxDamage || baseWeapon.baseDamage) + maxDamageBonus,
-        baseMagicDamage: baseWeapon.baseMagicDamage ? baseWeapon.baseMagicDamage + magicDamageBonus : 0,
-        healingBonus: baseWeapon.healingBonus ? baseWeapon.healingBonus + healingBonus : 0,
-        
-        level: weaponLevel,
-        originalLevel: baseWeapon.level,
-        quality: quality,
-        qualityBonus: bonusPct,
-        
-        modifiers: modifiers,
-        gemSlots: gemSlots,
-        gems: [],
-        
-        cost: Math.floor((weaponLevel * 40) * (quality === 'godly' ? 10 : quality === 'legendary' ? 8 : quality === 'epic' ? 4 : quality === 'rare' ? 1.5 : 1)),
-        description: baseWeapon.description || `A ${quality} quality ${baseWeapon.name}.`,
-        
-        allowedClasses: baseWeapon.allowedClasses,
-        classRestriction: baseWeapon.classRestriction,
-        
-        isDropped: true,
-        dropTimestamp: Date.now()
-    };
-    
-    WEAPONS[instanceId] = weapon;
-    window._generatingWeapon = false;
-    return weapon;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -871,6 +858,8 @@ function generateArmorDrop(player, sourceLevel, enemyRarity, skipRoll = false, f
         armorQuality = rollQualityForDrop(sourceLevel, enemyRarity);
     }
     
+      
+
     // Get player class for armor type selection
     const playerClass = player.baseClass || player.class;
     

@@ -4662,7 +4662,24 @@ const OPPOSITE_DIR = {
         }
 
 
-        // Add this near your other helper functions (around line 4000-6000 in your file)
+        // Upgrade quality based on Exalted armor modifier
+function upgradeQualityByBonus(originalQuality) {
+    const qualityBonus = getArmorModifierBonus('qualityBonus');
+    if (qualityBonus <= 0) return originalQuality;
+    
+    const qualityOrder = ['poor', 'normal', 'rare', 'epic', 'legendary', 'godly'];
+    const currentIndex = qualityOrder.indexOf(originalQuality);
+    if (currentIndex === -1 || currentIndex >= qualityOrder.length - 1) return originalQuality;
+    
+    // Chance to upgrade to next quality level
+    const upgradeChance = qualityBonus / 100; // e.g., 15% = 0.15
+    if (Math.random() < upgradeChance) {
+        const newQuality = qualityOrder[currentIndex + 1];
+        console.log(`✨ Exalted armor upgraded quality: ${originalQuality} → ${newQuality}`);
+        return newQuality;
+    }
+    return originalQuality;
+}
 
 function getScaledEnemyHP(baseHP, level) {
     // Scale HP based on level to make higher level enemies more durable
@@ -4846,6 +4863,25 @@ line += `<br><span style="color:#ffcc88;">YOUR DMG: ${yourMin}${yourMax > yourMi
     return true;
 }
         
+
+// Helper function to get total bonus from armor modifiers
+function getArmorModifierBonus(statKey) {
+    const p = gameState.player;
+    if (!p || !p.armor) return 0;
+    
+    const armor = ARMOR[p.armor];
+    if (!armor || !armor.modifiers) return 0;
+    
+    let total = 0;
+    armor.modifiers.forEach(mod => {
+        if (mod.stat === statKey) {
+            total += mod.value;
+        }
+    });
+    return total;
+}
+
+
         function canUseArmor(playerClass, armor) {
     // No armor — always usable by everyone
     if (armor.unarmored) return true;
@@ -6467,7 +6503,7 @@ staticArmorGems: (() => {
                     index:       m.index
                 })),
                 currentTarget:   cs.currentTarget,
-                enemyDelay:      cs.enemyDelay,
+              //  enemyDelay:      cs.enemyDelay,
                 enemyHits:       cs.enemyHits,
                 enemyHitsLeft:   cs.enemyHitsLeft,
                 // Save pip state (how many pips are ready vs cooling down)
@@ -14764,7 +14800,7 @@ async function saveToCloud() {
             snapshot.activeCombat = {
                 monsters: combatState.monsters,
                 currentTarget: combatState.currentTarget,
-                enemyDelay: combatState.enemyDelay,
+             //   enemyDelay: combatState.enemyDelay,
                 enemyHits: combatState.enemyHits,
                 enemyHitsLeft: combatState.enemyHitsLeft,
                 pipsReady: combatState.pipAvailable,
@@ -18435,8 +18471,8 @@ function unequipItem(type) {
                 messages: [], defeatedMonsters: [],
                 pipTimers:     pipTimers,
                 pipAvailable:  pipTimers.map(() => true),
-                enemyTimer:    18,
-                enemyDelay:    18,
+             //   enemyTimer:    18,
+             //   enemyDelay:    18,
                 enemyHits:     3,
                 enemyHitsLeft: 3
             };
@@ -19202,6 +19238,12 @@ if (mod.modKey === 'vorpal') {
                 return monster;
             });
 
+// Give each enemy their own attack timer (random each time)
+monsters.forEach((monster, idx) => {
+    monster.timer = 10 + Math.floor(Math.random() * 9); // 10-18 seconds
+    monster.delay = monster.timer;
+});
+
             let msg;
             if (monsters.length === 1) {
                 const m0 = monsters[0];
@@ -19221,7 +19263,7 @@ if (mod.modKey === 'vorpal') {
             // All enemies attack once per cycle regardless of rarity
             const eHits = 1;
 
-            const enemyDelay = 12 + Math.floor(Math.random()*4);  // 12-15s, fixed for this combat
+            // const enemyDelay = 12 + Math.floor(Math.random()*4);  // 12-15s, fixed for this combat
             const maxHits    = calcPlayerHits(gameState.player);
             const pipTimers  = [];
             for (let i = 0; i < maxHits; i++) {
@@ -19232,8 +19274,8 @@ if (mod.modKey === 'vorpal') {
                 messages: [], defeatedMonsters: [],
                 pipTimers:     pipTimers,    // array of timers, one per pip
                 pipAvailable:  pipTimers.map(() => true),  // which pips are ready
-                enemyTimer:    enemyDelay,
-                enemyDelay:    enemyDelay,
+                // enemyTimer:    enemyDelay,
+                // enemyDelay:    enemyDelay,
                 enemyHits:     eHits,
                 enemyHitsLeft: eHits,
                 // ═══════════════════════════════════════════════════════════
@@ -21093,7 +21135,7 @@ const result = calculateDamage({
         }
 
 
-      function startCombatTimer() {
+function startCombatTimer() {
     if (gameState.combatTimer) clearInterval(gameState.combatTimer);
 
     gameState.combatTimer = setInterval(() => {
@@ -21126,11 +21168,42 @@ const result = calculateDamage({
         if (anyRestored) {
             renderActionBar();
         }
-        // Always update pip sweep animation each tick
         updatePipButtons();
-        
 
-        // ── GEM REGEN: bloodstone (HP) and moonstone (MP) tick every second ──
+ // ─────────────────────────────────────────
+        // DECREMENT ENEMY TIMERS (per enemy)
+        // ─────────────────────────────────────────
+        if (cs.monsters && !cs.combatOver) {
+            for (let i = 0; i < cs.monsters.length; i++) {
+                const enemy = cs.monsters[i];
+                if (enemy.timer !== undefined && enemy.timer > 0) {
+                    enemy.timer--;
+                }
+            }
+        }
+
+
+        // ─────────────────────────────────────────
+        // TELEGRAPH ENEMY ATTACKS (3 seconds before)
+        // ─────────────────────────────────────────
+        if (cs.monsters && !cs.combatOver) {
+            for (let i = 0; i < cs.monsters.length; i++) {
+                const enemy = cs.monsters[i];
+                // Check if enemy will attack in 3 seconds (timer === 3)
+                if (enemy.timer === 3 && !enemy._telegraphShown) {
+                    const intent = selectEnemyIntent(enemy);
+                    enemy._pendingIntent = intent;
+                    enemy._telegraphShown = true;
+                    termAppend(
+                        `<span style="color:${enemy.rarityColor};">${enemy.name}</span> ${intent.telegraph}`,
+                        'term-dim'
+                    );
+                }
+            }
+        }
+
+        
+        // ── GEM REGEN ──
         const _p = gameState.player;
         const _w = _p && _p.weapon ? WEAPONS[_p.weapon] : null;
         if (_p && _w && _w.gems && !cs.combatOver) {
@@ -21153,10 +21226,9 @@ const result = calculateDamage({
         // ── ARMOR MODIFIER: HP Regen from Regenerating (every 10 seconds) ──
         const hpRegenBonus = getArmorModifierBonus('hpRegen');
         if (hpRegenBonus > 0 && _p.hp < _p.maxHp && !cs.combatOver) {
-            // Track last regen time
             if (!cs.lastHpRegenTime) cs.lastHpRegenTime = Date.now();
             const now = Date.now();
-            if (now - cs.lastHpRegenTime >= 10000) { // 10 seconds
+            if (now - cs.lastHpRegenTime >= 10000) {
                 const regenAmount = Math.min(hpRegenBonus, _p.maxHp - _p.hp);
                 if (regenAmount > 0) {
                     _p.hp += regenAmount;
@@ -21167,43 +21239,35 @@ const result = calculateDamage({
             }
         }
 
-
         // ─────────────────────────────────────────
         // POST-COMBAT RECOVERY CLEANUP
         // ─────────────────────────────────────────
         if (cs.combatOver) {
-            // Once ALL pips are restored, exit recovery
             if (cs.pipAvailable.every(p => p)) {
                 gameState.postCombatRecovery = false;
                 gameState.combatState = null;
-
                 renderActionBar();
                 clearInterval(gameState.combatTimer);
                 gameState.combatTimer = null;
             }
-            return; // No enemy actions during recovery
+            return;
         }
 
         // ─────────────────────────────────────────
-        // ENEMY TIMER + INTENT TELEGRAPHING
-        // (only while combat is active)
+        // CHECK IF ANY ENEMY IS READY TO ATTACK
         // ─────────────────────────────────────────
-        if (cs.enemyTimer > 0) cs.enemyTimer--;
-
-        // Telegraph intent 2 second before attack
-        if (cs.enemyTimer === 2 && !cs.enemyIntent) {
-            const enemy = cs.monsters[cs.currentTarget];
-            if (enemy) {
-                cs.enemyIntent = selectEnemyIntent(enemy);
-                termAppend(
-                    `<span style="color:${enemy.rarityColor};">${enemy.name}</span> ${cs.enemyIntent.telegraph}`,
-                    'term-dim'
-                );
+        let anyEnemyReady = false;
+        if (cs.monsters) {
+            for (let i = 0; i < cs.monsters.length; i++) {
+                const enemy = cs.monsters[i];
+                if (enemy.timer !== undefined && enemy.timer <= 0) {
+                    anyEnemyReady = true;
+                    break;
+                }
             }
         }
 
-        // Execute enemy attack
-        if (cs.enemyTimer <= 0) {
+        if (anyEnemyReady) {
             clearInterval(gameState.combatTimer);
             gameState.combatTimer = null;
             enemyAttackSingle();
@@ -21211,7 +21275,6 @@ const result = calculateDamage({
 
     }, 1000);
 }
-
 
  // ═══════════════════════════════════════════════════════════════
 // PLAYER ACTIONS
@@ -24088,17 +24151,22 @@ if (baseClass === 'rogue' && isDaggerWeapon && enemy.hp > 0) {
                     if (failed) {
                         termAppend('<span style="color:#ff4444;">💨 The trap mechanism fails! The enemies avoid it!</span>', 'term-error');
                     } else {
-                        // Success! Apply 50% slow to enemy timer
-                        const slowMultiplier = 0.5; // 50% slow = add 50% to timer
-                        const originalDelay = cs.enemyDelay;
-                        const slowAmount = Math.floor(originalDelay * slowMultiplier);
-                        
-                        // Mark trap as active for this combat
-                        cs.trapActive = true;
-                        cs.trapSlowAmount = slowAmount;
-                        
-                        // Apply slow to current enemy timer
-                        cs.enemyTimer += slowAmount;
+    // Success! Apply 50% slow to ALL enemies
+    const slowMultiplier = 0.5;
+    const slowAmount = Math.floor(10 * slowMultiplier); // Base 10 seconds
+    
+    // Mark trap as active for this combat
+    cs.trapActive = true;
+    cs.trapSlowAmount = slowAmount;
+    
+    // Apply slow to ALL active enemies
+    if (cs.monsters) {
+        cs.monsters.forEach(enemy => {
+            if (enemy.timer !== undefined) {
+                enemy.timer += slowAmount;
+            }
+        });
+    }
                         
                         termAppend(`<span style="color:#00FF88;">⚙️ SNAP! The enemies are caught in the trap!</span>`, 'term-loot');
                         termAppend(`<span style="color:#FFD700;">🐌 Enemy attack speed slowed by 50%! (+${slowAmount}s to attack timer)</span>`, 'term-highlight');
@@ -24921,20 +24989,42 @@ if (baseClass === 'rogue' && isDaggerWeapon && enemy.hp > 0) {
     }
     if (shieldTriggered) totalDef = Math.floor(totalDef * 1.5);
 
-    // Pull intent (or fallback)
-    const intent = cs.enemyIntent || {
-        type: 'basic',
-        damageMult: 1,
-        armorPiercing: 0
-    };
-
     // Each monster in the pack gets ONE hit
     const hits = [];
 
     monsters.forEach((enemy, i) => {
+
+    // Decrement this enemy's timer
+    if (enemy.timer > 0) {
+        enemy.timer--;
+    }
+    
+    // Skip if not ready to attack
+    if (enemy.timer > 0) {
+        return;
+    }
+    
+    // Reset timer for next attack with NEW random value
+enemy.timer = 10 + Math.floor(Math.random() * 9); // New random 10-18 seconds
+enemy.delay = enemy.timer;
+
+        // Calculate intent for THIS enemy (each enemy gets its own)
+        const intent = selectEnemyIntent(enemy);
+        
         const eName = monsters.length > 1
             ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${i + 1}</span>`
             : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
+
+
+
+            
+        // Check if enemy is feared (from Dreadful armor modifier)
+        if (gameState.combatState?.fearedEnemies?.[enemy.index]) {
+            termAppend(`😨 ${enemy.name} is too terrified to attack!`, 'term-warning');
+            delete gameState.combatState.fearedEnemies[enemy.index];
+            hits.push({ eName, feared: true });
+            return;
+        }
 
         // God mode bypass
         if (p.godMode) {
@@ -25055,6 +25145,21 @@ const result = _didDodge
             return;
         }
 
+                // Check if enemy is blinded (from Radiance armor modifier)
+        if (gameState.combatState?.blindedEnemies?.[enemy.index]) {
+            if (Math.random() < 0.5) { // 50% chance to miss when blinded
+                termAppend(`✨ ${enemy.name} is blinded and misses its attack!`, 'term-warning');
+                // Clear blinded flag after use
+                delete gameState.combatState.blindedEnemies[enemy.index];
+                hits.push({ eName, dodged: true, blinded: true });
+                return; // Skip this enemy's attack
+            } else {
+                // Still blinded but hit anyway - clear flag
+                delete gameState.combatState.blindedEnemies[enemy.index];
+                termAppend(`✨ ${enemy.name} is blinded but still manages to attack!`, 'term-dim');
+            }
+        }
+
         let finalDmg = result.damage;
 
         if (_debugCombat) {
@@ -25095,7 +25200,105 @@ if (gameState.combatState.confusedEnemy === enemy && Math.random() < 0.3) {
 
 
 
+                // ── ARMOR MODIFIER: Reflective (chance to reflect damage back to attacker) ──
+        const reflectBonus = getArmorModifierBonus('reflectChance');
+        let reflectedDamage = 0;
+        if (reflectBonus > 0 && Math.random() < (reflectBonus / 100)) {
+            // Reflect a portion of the damage back to the enemy
+            reflectedDamage = Math.floor(finalDmg * 0.5); // Reflect 50% of the damage
+            termAppend(`🪞 Your Reflective armor reflects ${reflectedDamage} damage back to ${enemy.name}!`, 'term-loot');
+            haptic('ability');
+        }
+        
+
+        // ── ARMOR MODIFIER: Static Discharge (chance to shock/stun attacker) ──
+        const shockBonus = getArmorModifierBonus('shockChance');
+        if (shockBonus > 0 && Math.random() < (shockBonus / 100)) {
+            if (gameState.combatState && enemy) {
+                // Stun the enemy - they lose their next attack
+                if (!gameState.combatState.stunnedEnemies) gameState.combatState.stunnedEnemies = {};
+                gameState.combatState.stunnedEnemies[enemy.index] = true;
+                termAppend(`⚡ Your Static Discharge armor shocks ${enemy.name}! It is stunned and loses its next attack!`, 'term-loot');
+                haptic('ability');
+            }
+        }
+
+
         p.hp -= finalDmg;
+
+
+                p.hp -= finalDmg;
+        
+        // ── ARMOR MODIFIER: Leeching (chance to heal when hit) ──
+        const leechBonus = getArmorModifierBonus('leechChance');
+        if (leechBonus > 0 && Math.random() < (leechBonus / 100)) {
+            const healAmount = Math.floor(finalDmg * 0.3); // Heal 30% of damage taken
+            const actualHeal = Math.min(p.maxHp - p.hp, healAmount);
+            if (actualHeal > 0) {
+                p.hp += actualHeal;
+                termAppend(`🩸 Your Leeching armor absorbs ${actualHeal} HP from the attack!`, 'term-loot');
+                haptic('ability');
+                updateHud();
+            }
+        }
+        
+        // Apply reflected damage to enemy (after player takes damage)
+        if (reflectedDamage > 0) {
+            enemy.hp -= reflectedDamage;
+            if (enemy.hp <= 0) {
+                termAppend(`${enemy.name} dies from reflected damage!`, 'term-victory');
+                checkCombatEnd();
+            }
+            updateEnemyCards();
+        }
+
+ // Check if enemy is stunned (from Static Discharge armor modifier)
+        if (gameState.combatState?.stunnedEnemies?.[enemy.index]) {
+            termAppend(`⚡ ${enemy.name} is stunned and cannot attack!`, 'term-warning');
+            delete gameState.combatState.stunnedEnemies[enemy.index];
+            hits.push({ eName, stunned: true });
+            return;
+        }
+
+        cs.lastEnemyDamageDealt = finalDmg;
+        haptic(result.crit ? 'enemyCrit' : 'enemyHit');
+        
+        // ── ARMOR MODIFIER: Frostbite (chance to chill attacker) ──
+const frostbiteBonus = getArmorModifierBonus('chillChance');
+if (frostbiteBonus > 0 && Math.random() < (frostbiteBonus / 100)) {
+    if (gameState.combatState && enemy) {
+        enemy.timer += 3;  // Add delay to THIS enemy's timer
+        termAppend(`❄️ Your Frostbite armor chills ${enemy.name}! Their next attack is delayed!`, 'term-loot');
+        haptic('ability');
+    }
+}
+
+        // ── ARMOR MODIFIER: Radiance (chance to blind attacker) ──
+        const blindBonus = getArmorModifierBonus('blindChance');
+        if (blindBonus > 0 && Math.random() < (blindBonus / 100)) {
+            if (gameState.combatState && enemy) {
+                // Store blinded flag for this enemy
+                if (!gameState.combatState.blindedEnemies) gameState.combatState.blindedEnemies = {};
+                gameState.combatState.blindedEnemies[enemy.index] = true;
+                termAppend(`✨ Your Radiance armor blinds ${enemy.name}! Its next attack may miss!`, 'term-loot');
+                haptic('ability');
+            }
+        }
+
+        // ── ARMOR MODIFIER: Dreadful (chance to fear attacker) ──
+        const fearBonus = getArmorModifierBonus('fearChance');
+        if (fearBonus > 0 && Math.random() < (fearBonus / 100)) {
+            if (gameState.combatState && enemy) {
+                if (!gameState.combatState.fearedEnemies) gameState.combatState.fearedEnemies = {};
+                gameState.combatState.fearedEnemies[enemy.index] = true;
+                termAppend(`😱 Your Dreadful armor terrifies ${enemy.name}! It cowers in fear!`, 'term-loot');
+                haptic('ability');
+            }
+        }
+
+
+
+
         cs.lastEnemyDamageDealt = finalDmg;
         haptic(result.crit ? 'enemyCrit' : 'enemyHit');   // used by leech ability
 
@@ -25129,18 +25332,14 @@ if (gameState.combatState.confusedEnemy === enemy && Math.random() < 0.3) {
     updateHud();
 
     // After attack messages stream, reset enemy timer and resume
-    const afterAttack = () => {
-        cs.enemyIntent = null; // clear intent after execution
+        const afterAttack = () => {
+        // cs.enemyIntent = null; // clear intent after execution
 
         if (p.hp <= 0 && !p.godMode) {
             endCombat(false);
         } else {
-            cs.enemyTimer = cs.enemyDelay;
-            
-            // Apply trap slow if active
-            if (cs.trapActive && cs.trapSlowAmount) {
-                cs.enemyTimer += cs.trapSlowAmount;
-            }
+            // Timers are now per-enemy - no global timer to reset
+            // Trap slow is applied to each enemy individually in their attack loop
             
             renderActionBar();
             startCombatTimer();
@@ -25229,6 +25428,11 @@ function checkCombatEnd() {
     const cs = gameState.combatState;
     if (!cs || !cs.monsters || cs.monsters.length === 0) return;
 
+    let totalXp = 0;
+    let totalGold = 0;
+    let allLoot = [];
+
+
     let ti = cs.currentTarget;
 
     // Clamp target index (important after splicing)
@@ -25245,9 +25449,36 @@ function checkCombatEnd() {
     if (target.hp <= 0) {
         const dead = target;
 
+
+ // ── ARMOR MODIFIER: Gluttonous (heal when killing an enemy) ──
+    const gluttonousBonus = getArmorModifierBonus('killHeal');
+    if (gluttonousBonus > 0) {
+        const p = gameState.player;
+        const actualHeal = Math.min(p.maxHp - p.hp, gluttonousBonus);
+        if (actualHeal > 0) {
+            p.hp += actualHeal;
+            termAppend(`🍖 Your Gluttonous armor heals ${actualHeal} HP from defeating ${dead.name}!`, 'term-loot');
+            updateHud();
+        }
+    }
+
+
         // Calculate rewards for THIS enemy immediately
         const baseXp = dead.xp || (dead.level * 10);
         const baseGold = dead.gold || (dead.level * 5);
+
+        // ── ARMOR MODIFIER: Merchant's (gold bonus) ──
+const goldBonus = getArmorModifierBonus('goldBonus');
+let finalGold = baseGold;
+if (goldBonus > 0) {
+    const bonusAmount = Math.floor(baseGold * (goldBonus / 100));
+    finalGold = baseGold + bonusAmount;
+    termAppend(`💰 Your Merchant's armor adds +${bonusAmount} gold!`, 'term-loot');
+} else {
+    finalGold = baseGold;
+}
+
+totalGold += finalGold;
         
 
         
@@ -25690,12 +25921,15 @@ if (weaponDrop.modifiers && weaponDrop.modifiers.length > 0) {
             termAppend(`<span style="color:#8aaa8a;">Level ${armorDrop.level || 1} ${armorDrop.quality} armor</span>`, 'term-dim');
             termAppend(`<span style="color:#00AAFF;">DEF: ${armorDrop.baseDefense}${armorDrop.baseMagicBonus > 0 ? ` | MAG BONUS: +${armorDrop.baseMagicBonus}` : ''}</span>`);
             
-            const dropSlots = armorDrop.gemSlots || getGemSlots(armorDrop.quality);
+
+
+            // ADD BACK IN when armor has sockets for gems!
+       /*     const dropSlots = armorDrop.gemSlots || getGemSlots(armorDrop.quality);
             if (dropSlots > 0) {
                 const slotCircles = '⬤'.repeat(dropSlots);
                 termAppend(`<span style="color:#333;font-size:13px;">${slotCircles}</span> <span style="color:#555;font-size:11px;">${dropSlots} gem slot${dropSlots>1?'s':''} — visit the Blacksmith to socket gems</span>`);
             }
-            termAppend('', 'term-separator');
+            termAppend('', 'term-separator'); */
         }
     });
 
@@ -26213,7 +26447,18 @@ function rollLoot(monster) {
         }
         
         const lckBonus = gameState.player ? calcLootBonus(gameState.player.lck || 0) / 100 : 0;
-        const adjustedChance = Math.min(0.95, dropChance * (1 + lckBonus));
+
+// ── ARMOR MODIFIER: Fortunate (drop bonus) ──
+const dropBonus = getArmorModifierBonus('dropBonus');
+let dropMultiplier = 1 + lckBonus;
+if (dropBonus > 0) {
+    dropMultiplier += (dropBonus / 100);
+    if (gameState.sysop && gameState.sysop.authenticated) {
+        console.log(`🍀 Drop bonus: +${dropBonus}% from Fortunate armor`);
+    }
+}
+
+const adjustedChance = Math.min(0.95, dropChance * dropMultiplier);
         const roll = Math.random();
         
         if (roll < adjustedChance) {
