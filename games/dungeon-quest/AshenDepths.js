@@ -5701,12 +5701,9 @@ window.DUNGEONS.AshenDepths = {
               "enabled": true,
               "triggerType": "enter_room",
               "targetFloor": 3,
-              "targetRoom": "R265",
+              "targetRoom": "R284",
               "flashColor": "white"
             }
-          },
-          "flags": {
-            "discovered": false
           }
         },
         "R273": {
@@ -7446,7 +7443,7 @@ window.DUNGEONS.AshenDepths = {
               {
                 "key": "doom_knight",
                 "drop": "bone_key",
-                "rarity": "epic"
+                "rarity": "legendary"
               }
             ]
           }
