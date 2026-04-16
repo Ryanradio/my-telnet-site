@@ -20731,37 +20731,44 @@ function renderDungeonActionBar() {
     });
     navWrap.appendChild(compassGrid);
 
-    // ── Utility column: Map + Town/Exit + Ladder + keyboard input ────
+        // ── Utility buttons (2x2 grid for compact display) ────
     const utilCol = document.createElement('div');
-    utilCol.style.cssText = 'display:flex;flex-direction:column;gap:3px;align-items:stretch;min-width:60px;';
+    utilCol.style.cssText = 'display:grid;grid-template-columns:repeat(2, auto);gap:4px;';
 
     // MAP button
     const mapBtn = document.createElement('button');
-    mapBtn.textContent = '🗺️ Map';
+    mapBtn.textContent = '🗺️';
+    mapBtn.title = 'View Map';
     mapBtn.onclick = showDungeonMap;
-    mapBtn.style.cssText = 'padding:4px 6px;font-size:12px;border-color:var(--highlight-color);';
+    mapBtn.style.cssText = 'padding:4px 6px;font-size:14px;border-color:var(--highlight-color);';
     utilCol.appendChild(mapBtn);
 
     // Entrance/town-exit button
     if (ds.currentRoom === floor.startRoom && gameState.dungeon.floor === 1) {
         const startRoom = floor.rooms[floor.startRoom];
         const exitTown  = startRoom.flags?.townExit || null;
-        const exitLabel = startRoom.flags?.townExitLabel || '⬅ Town';
+        const exitLabel = startRoom.flags?.townExitLabel || '🏠';
         const exitBtn   = document.createElement('button');
         exitBtn.innerHTML = exitLabel;
+        exitBtn.title = 'Return to Town';
         exitBtn.onclick = () => returnToTown(exitTown || gameState.currentTown);
-        exitBtn.style.cssText = 'padding:4px 6px;font-size:12px;';
+        exitBtn.style.cssText = 'padding:4px 6px;font-size:14px;';
         utilCol.appendChild(exitBtn);
     } else {
         const curRoom = floor.rooms[ds.currentRoom];
         if (curRoom?.flags?.townExit) {
             const townId    = curRoom.flags.townExit;
-            const label     = curRoom.flags.townExitLabel || `Exit`;
+            const label     = curRoom.flags.townExitLabel || `🚪`;
             const portalBtn = document.createElement('button');
             portalBtn.innerHTML = label;
+            portalBtn.title = 'Exit to Town';
             portalBtn.onclick = () => townExitFromDungeon(townId);
-            portalBtn.style.cssText = 'padding:4px 6px;font-size:12px;border-color:#AA88FF;color:#AA88FF;';
+            portalBtn.style.cssText = 'padding:4px 6px;font-size:14px;border-color:#AA88FF;color:#AA88FF;';
             utilCol.appendChild(portalBtn);
+        } else {
+            // Placeholder to maintain grid
+            const placeholder = document.createElement('div');
+            utilCol.appendChild(placeholder);
         }
     }
 
@@ -20769,21 +20776,23 @@ function renderDungeonActionBar() {
     if (room.contents?.ladder) {
         const ladderDir = room.contents.ladder.direction;
         const ladderBtn = document.createElement('button');
-    
-        ladderBtn.textContent = ladderDir === 'up' ? '⬆ Up' : '⬇ Down';
+        ladderBtn.textContent = ladderDir === 'up' ? '⬆️' : '⬇️';
         ladderBtn.title = ladderDir === 'up'
-            ? `Floor ${room.contents.ladder.leadsTo.floor}`
-            : `Floor ${room.contents.ladder.leadsTo.floor}`;
+            ? `Up to Floor ${room.contents.ladder.leadsTo.floor}`
+            : `Down to Floor ${room.contents.ladder.leadsTo.floor}`;
         ladderBtn.onclick = () => dungeonNav(ladderDir);
         ladderBtn.disabled = !canMove;
-        ladderBtn.style.cssText = 'padding:4px 6px;font-size:12px;border-color:#FFD700;color:#FFD700;';
+        ladderBtn.style.cssText = 'padding:4px 6px;font-size:14px;border-color:#FFD700;color:#FFD700;';
         if (!canMove) ladderBtn.style.opacity = '0.4';
         utilCol.appendChild(ladderBtn);
+    } else {
+        // Placeholder to maintain grid
+        const placeholder = document.createElement('div');
+        utilCol.appendChild(placeholder);
     }
 
-    // ── INVENTORY button (replaces keyboard input) ───────────────────
+    // ── INVENTORY button ───────────────────────────────────
     const invBtn = document.createElement('button');
-    // Count HP and MP potions for the badge
     const invP = gameState.player;
     let hpPotCount = 0, mpPotCount = 0;
     (invP.inventory || []).forEach(ik => {
@@ -20792,10 +20801,9 @@ function renderDungeonActionBar() {
         if (it.subtype === 'heal_hp' || it.subtype === 'full_restore') hpPotCount++;
         if (it.subtype === 'heal_mp' || it.subtype === 'full_restore') mpPotCount++;
     });
-    invBtn.innerHTML = `🎒 Inv<br><span style="font-size:10px;color:#ff6666;">❤️${hpPotCount}</span> <span style="font-size:10px;color:#6688ff;">💙${mpPotCount}</span>`;
-    invBtn.title = '';
-    invBtn.style.cssText = 'padding:4px 6px;font-size:12px;border-color:#8aaa8a;line-height:1.3;';
-    // Long-press (3s) → sysop; short tap → inventory
+    invBtn.innerHTML = `🎒<span style="font-size:9px;margin-left:2px;">❤️${hpPotCount}</span>`;
+    invBtn.title = 'Inventory';
+    invBtn.style.cssText = 'padding:4px 6px;font-size:14px;border-color:#8aaa8a;';
     let _invHoldTimer = null, _invFired = false;
     const _invDown = (e) => { e.preventDefault(); _invFired = false; _invHoldTimer = setTimeout(() => { _invHoldTimer = null; _invFired = true; openSysopOverlay(); }, 3000); };
     const _invUp   = ()  => { if (_invHoldTimer) { clearTimeout(_invHoldTimer); _invHoldTimer = null; } if (!_invFired) showUnifiedInventory(() => { renderDungeonActionBar(); }); _invFired = false; };
@@ -20808,14 +20816,13 @@ function renderDungeonActionBar() {
     invBtn.addEventListener('touchcancel',_invCancel);
     utilCol.appendChild(invBtn);
 
-
-        // ── STAFF COLLECTION button (only for AshenDepths dungeon)
+    // ── STAFF COLLECTION button (only for AshenDepths dungeon)
     if (ds.dungeonKey === 'AshenDepths') {
         const staffBtn = document.createElement('button');
         const staffCount = (gameState.player.inventory || []).filter(i => i && typeof i === 'string' && i.startsWith('staff_piece_')).length;
-        staffBtn.innerHTML = `🪄 Staff<br><span style="font-size:9px;">${staffCount}/8</span>`;
+        staffBtn.innerHTML = `🪄<span style="font-size:9px;">${staffCount}/8</span>`;
         staffBtn.title = 'View collected staff pieces';
-        staffBtn.style.cssText = 'padding:4px 6px;font-size:12px;border-color:#a855f7;color:#a855f7;line-height:1.3;';
+        staffBtn.style.cssText = 'padding:4px 6px;font-size:14px;border-color:#a855f7;color:#a855f7;';
         staffBtn.onclick = () => showStaffCollection();
         utilCol.appendChild(staffBtn);
     }
@@ -20824,9 +20831,9 @@ function renderDungeonActionBar() {
     const _sp = gameState.player.statPoints || 0;
     if (_sp > 0) {
         const statBtn = document.createElement('button');
-        statBtn.innerHTML = `⬆ ${_sp} pts`;
+        statBtn.innerHTML = `⬆️`;
         statBtn.title = `${_sp} stat point${_sp>1?'s':''} to spend`;
-        statBtn.style.cssText = 'padding:4px 6px;font-size:12px;border-color:#FFD700;color:#FFD700;font-weight:bold;animation:hpLowPulse 1.2s ease-in-out infinite;';
+        statBtn.style.cssText = 'padding:4px 6px;font-size:14px;border-color:#FFD700;color:#FFD700;font-weight:bold;animation:hpLowPulse 1.2s ease-in-out infinite;';
         statBtn.onclick = () => { showLevelUpModal(); };
         utilCol.appendChild(statBtn);
     }
@@ -20834,7 +20841,6 @@ function renderDungeonActionBar() {
     navWrap.appendChild(utilCol);
     ab.appendChild(navWrap);
 }
-
 
 // ── Full-screen dungeon inventory (replaces old potion menu) ─────────
 function showDungeonInventory() { showInventoryOverlay(); }
