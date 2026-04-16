@@ -10155,8 +10155,16 @@ function handleGive(args) {
             
             // Update XP to next
             p.xpToNext = getXpToNextLevel(p.baseClass || p.class, p.level);
-            p.xp = getXpForLevel(p.baseClass || p.class, p.level); // Set to start of this level
+            // Lose 25% of current level's XP progress
+const currentLevelStartXP = getXpForLevel(p.baseClass || p.class, p.level);
+const nextLevelXP = getXpForNextLevel(p.baseClass || p.class, p.level);
+const xpGainedThisLevel = p.xp - currentLevelStartXP;
+const xpToLose = Math.floor(xpGainedThisLevel * 0.25); // 25% loss
+p.xp = Math.max(currentLevelStartXP, p.xp - xpToLose);
+terminalPrint(`💀 You died and lost 25% of your progress toward level ${p.level + 1}!`, 'term-error');
             
+
+
             // ═══════════════════════════════════════════════════════════════
             // AUTO-UNLOCK EXPLORE ZONES (same logic as showTown)
             // ═══════════════════════════════════════════════════════════════
@@ -15062,7 +15070,7 @@ async function loadCloudCharacter(saveId) {
                     <div class="menu-option" onclick="showGuild()">► ⚔️ ADVENTURERS GUILD</div>
                     ${dungeonOption}
                     <div class="menu-option" onclick="restAtInn()">► REST AT INN (${calcInnCost(p.cha)} Gold)</div>
-                    <div class="menu-option" onclick="showInventory()">► INVENTORY</div>
+                   <div class="menu-option" onclick="showUnifiedInventory(() => showTown())">► INVENTORY</div>
                     <div class="menu-option" onclick="showExplore()">► EXPLORE WORLD</div>
                     ${portalOption}
                     <div class="menu-option" onclick="showSettings()">► ⚙️ SETTINGS</div>
@@ -17716,7 +17724,760 @@ function showInventory() {
 
     screen.innerHTML = invHtml;
 }
-        function renderKeyRing(p) {
+
+
+// ═══════════════════════════════════════════════════════════════
+// UNIFIED INVENTORY SYSTEM - Works everywhere, returns correctly
+// ═══════════════════════════════════════════════════════════════
+
+// Store the callback for when inventory closes
+let _inventoryReturnCallback = null;
+
+function showUnifiedInventory(returnCallback = null) {
+    // DETECT ORIGIN - where is this being called from?
+    let origin = 'unknown';
+    
+    if (!document.body.classList.contains('terminal-mode')) {
+        origin = 'town';
+    } else if (gameState.dungeon) {
+        origin = 'dungeon';
+    } else if (gameState._currentExploreArea) {
+        origin = 'explore';
+    }
+    
+    // Store origin globally for other functions to use
+    window._currentInventoryOrigin = origin;
+    
+    // Check if we're in dungeon or explore (use special layout)
+    const isInDungeonOrExplore = (origin === 'dungeon' || origin === 'explore');
+    
+    // If we're in terminal mode (explore/dungeon), temporarily exit it to show inventory
+    const wasTerminalMode = document.body.classList.contains('terminal-mode');
+    window._wasInTerminalMode = wasTerminalMode;
+    if (wasTerminalMode) {
+        document.body.classList.remove('terminal-mode');
+    }
+    // Store the callback
+    _inventoryReturnCallback = returnCallback;
+    
+    const p = gameState.player;
+    const screen = document.getElementById('mainScreen');
+    
+    // Compact stats for dungeon/explore
+    let statsHtml = '';
+    if (isInDungeonOrExplore) {
+        statsHtml = `
+            <div style="display: flex; gap: 8px; justify-content: space-between; background: rgba(0,0,0,0.3); padding: 6px 10px; border-radius: 8px; margin-bottom: 10px; font-size: 12px; flex-wrap: wrap;">
+                <span>⭐ Lv${p.level}</span>
+                <span>❤️ ${p.hp}/${p.maxHp}</span>
+                <span>💙 ${p.mp}/${p.maxMp}</span>
+                <span>🛡️ ${Math.floor(p.defense || 0)}</span>
+                <span>⚔️ ${Math.floor(p.attack || 0)}</span>
+            </div>
+        `;
+    } else {
+        statsHtml = renderPlayerStats();
+    } 
+
+    let invHtml = `
+        <div class="location-header">🎒 INVENTORY</div>
+        <button onclick="closeUnifiedInventory()" style="margin-bottom:10px;">← BACK</button>
+        ${statsHtml}
+    `;
+    
+    if (isInDungeonOrExplore) {
+        // ========== DUNGEON/EXPLORE LAYOUT ==========
+        
+        // ── POTIONS SECTION (at the very top) ─────────────────────────────────────────
+        invHtml += `<h3 style="color: var(--highlight-color);">🧪 POTIONS</h3>
+                    <div class="inventory-grid">`;
+        
+        const potionItems = [];
+        p.inventory.forEach(item => {
+            if (typeof item === 'string' && ITEMS[item] && 
+                (ITEMS[item].subtype === 'heal_hp' || ITEMS[item].subtype === 'heal_mp' || ITEMS[item].subtype === 'full_restore')) {
+                potionItems.push(item);
+            }
+        });
+        
+        if (potionItems.length === 0) {
+            invHtml += `<div class="item-card" style="color:#888;">No potions</div>`;
+        } else {
+            const potionCounts = {};
+            potionItems.forEach(potion => { potionCounts[potion] = (potionCounts[potion] || 0) + 1; });
+            Object.keys(potionCounts).forEach(potionKey => {
+                const item = ITEMS[potionKey];
+                const count = potionCounts[potionKey];
+                invHtml += `<div class="item-card">
+                    <div style="color:#00aa88;">🧪 ${item.name} ${count > 1 ? `x${count}` : ''}</div>
+                    <div style="font-size: 16px;">${item.description}</div>
+                    <button onclick="useInventoryPotion('${potionKey}'); showUnifiedInventory(_inventoryReturnCallback);">USE</button>
+                </div>`;
+            });
+        }
+        invHtml += `</div>`;
+        
+        // ── EQUIPPED WEAPON & ARMOR (side by side) ────────────────────────────────
+        invHtml += `<div style="display: flex; gap: 20px; margin-top: 20px;">
+                        <div style="flex: 1;"><h3 style="color: var(--highlight-color);">⚔️ EQUIPPED WEAPON</h3>
+                        <div class="inventory-grid">`;
+        
+        // Get equipped weapon
+        const eqWeapon = (() => {
+            if (!p.weapon || p.weapon === 'bare_fists') return null;
+            if (typeof p.weapon === 'string' && p.weapon.includes('_')) {
+                const instance = p.inventory.find(item => 
+                    item && typeof item === 'object' && item.instanceId === p.weapon
+                );
+                if (instance && instance.weaponId) return instance;
+            }
+            return WEAPONS[p.weapon];
+        })();
+        
+        // Display equipped weapon
+        if (!eqWeapon || !!eqWeapon.unarmed) {
+            invHtml += `<div class="item-card equipped" style="border-color:#555;">
+                <div style="color:#888;">✊ Bare Fists</div>
+                <div style="color:#555;font-size:13px;">DMG: 0 (stats only)</div>
+                <div style="color:#555;font-size:12px;">No weapon equipped</div>
+            </div>`;
+        } else {
+            const equippedInstance = p.inventory.find(item => 
+                item && typeof item === 'object' && item.instanceId === p.weapon
+            );
+            const displayQuality = equippedInstance?.quality || eqWeapon.quality;
+            const qc = QUALITY_CONFIG[displayQuality];
+            const qualityColor = qc?.color || '#0f0';
+            
+            invHtml += `<div class="item-card equipped">
+                <div style="color:${qualityColor};">⚔️ ${equippedInstance?.name || eqWeapon.name}${displayQuality !== eqWeapon.quality ? ` [${displayQuality}]` : ''}</div>
+                <div style="font-size:10px; color:#aaa; margin-bottom:2px;">⚔️ ${eqWeapon.weaponSubtype || eqWeapon.type || 'Weapon'}</div>
+                <div style="font-size:12px;">${buildWeaponDmgLine({...eqWeapon, quality: displayQuality}, displayQuality, p)}</div>
+                <div style="color:#888; font-size:11px; margin-top:2px;">Level ${eqWeapon.level || 1}</div>`;
+            
+            if (eqWeapon.modifiers && eqWeapon.modifiers.length > 0) {
+                invHtml += `<div style="margin-top:5px; font-size:11px;">`;
+                eqWeapon.modifiers.forEach(mod => {
+                    const modColor = mod.color || '#FFD700';
+                    let modText = mod.name;
+                    if (mod.minDamage) modText += ` (+${mod.minDamage}-${mod.maxDamage})`;
+                    if (mod.critBonus) modText += ` (+${mod.critBonus}% crit)`;
+                    if (mod.lifestealPercent) modText += ` (${mod.lifestealPercent}% lifesteal)`;
+                    invHtml += `<div style="color:${modColor};">✨ ${modText}</div>`;
+                });
+                invHtml += `</div>`;
+            }
+            
+            if (eqWeapon.gems && eqWeapon.gems.length > 0) {
+                invHtml += `<div style="margin-top:5px; font-size:11px;">`;
+                eqWeapon.gems.forEach(gem => {
+                    invHtml += `<div style="color:${gem.color};">💎 ${gem.name}</div>`;
+                });
+                invHtml += `</div>`;
+            }
+            
+            const totalGemSlots = eqWeapon.gemSlots || 3;
+            const filledGems = eqWeapon.gems || [];
+            const emptySlots = totalGemSlots - filledGems.length;
+            invHtml += `<div style="margin-top:5px; font-size:10px; color:#888;">💎 Slots: ${filledGems.length}/${totalGemSlots}`;
+            if (emptySlots > 0) invHtml += ` (${emptySlots} empty)`;
+            invHtml += `</div>`;
+            
+            invHtml += `<div style="color:var(--border-color);">EQUIPPED</div>
+                <button onclick="unequipItem('weapon'); showUnifiedInventory(_inventoryReturnCallback);" style="border-color:#ff4444;color:#ff4444;margin-top:4px;">UNEQUIP</button>
+            </div>`;
+        }
+        invHtml += `</div></div>`;
+        
+        // ── EQUIPPED ARMOR (right side) ──────────────────────────────────────────
+        invHtml += `<div style="flex: 1;"><h3 style="color: var(--highlight-color);">🛡️ EQUIPPED ARMOR</h3>
+                    <div class="inventory-grid">`;
+        
+        const eqArmor = (() => {
+            if (!p.armor || p.armor === 'no_armor') return null;
+            if (typeof p.armor === 'string' && p.armor.includes('_')) {
+                const instance = p.inventory.find(item => 
+                    item && typeof item === 'object' && item.instanceId === p.armor
+                );
+                if (instance && instance.armorId) return instance;
+            }
+            return ARMOR[p.armor];
+        })();
+        
+        if (!eqArmor || !!eqArmor.unarmored) {
+            invHtml += `<div class="item-card equipped" style="border-color:#555;">
+                <div style="color:#888;">🫥 No Armor</div>
+                <div style="color:#555;font-size:13px;">DEF: 0</div>
+                <div style="color:#555;font-size:12px;">No armor equipped</div>
+            </div>`;
+        } else {
+            const equippedInstance = p.inventory.find(item => 
+                item && typeof item === 'object' && item.instanceId === p.armor
+            );
+            const displayQuality = equippedInstance?.quality || eqArmor.quality;
+            const aqc = QUALITY_CONFIG[displayQuality];
+            const qualityColor = aqc?.color || '#0f0';
+            
+            invHtml += `<div class="item-card equipped">
+                <div style="color:${qualityColor};">🛡️ ${eqArmor.name}${displayQuality !== eqArmor.quality ? ` [${displayQuality}]` : ''}</div>
+                <div style="font-size:10px; color:#aaa; margin-bottom:2px;">🛡️ ${eqArmor.armorSubtype || eqArmor.type || 'Armor'}</div>
+                <div style="font-size:12px;">${buildArmorDefLine({...eqArmor, quality: displayQuality}, p)}</div>
+                <div style="color:#888; font-size:11px; margin-top:2px;">Level ${eqArmor.level || 1}</div>`;
+            
+            const hpBonus = eqArmor.bonusHp || eqArmor.baseHp;
+            const mpBonus = eqArmor.bonusMp || eqArmor.baseMp;
+            if (hpBonus || mpBonus) {
+                invHtml += `<div style="color:#88ff88; font-size:12px; margin-top:4px;">`;
+                if (hpBonus) invHtml += `❤️ +${hpBonus} HP `;
+                if (mpBonus) invHtml += `✨ +${mpBonus} MP`;
+                invHtml += `</div>`;
+            }
+            
+            if (eqArmor.modifiers && eqArmor.modifiers.length > 0) {
+                invHtml += `<div style="margin-top:5px; font-size:11px;">`;
+                eqArmor.modifiers.forEach(mod => {
+                    const valueStr = mod.statType === 'percent' ? `${mod.value}%` : `+${mod.value}`;
+                    invHtml += `<div style="color:${mod.color};">${mod.icon || '✨'} ${mod.name}: ${valueStr}</div>`;
+                });
+                invHtml += `</div>`;
+            }
+            
+            invHtml += `<div style="color:var(--border-color);">EQUIPPED</div>
+                <button onclick="unequipItem('armor'); showUnifiedInventory(_inventoryReturnCallback);" style="border-color:#ff4444;color:#ff4444;margin-top:4px;">UNEQUIP</button>
+            </div>`;
+        }
+        invHtml += `</div></div></div>`;
+        
+        // ── UNEQUIPPED WEAPONS (below equipped weapon) ───────────────────────────
+        invHtml += `<div style="margin-top: 20px;"><h3 style="color: var(--highlight-color);">⚔️ WEAPONS</h3>
+                    <div class="inventory-grid">`;
+        
+        const weaponItems = [];
+        p.inventory.forEach(item => {
+            if (typeof item === 'object' && item !== null && item.weaponId && item.instanceId !== p.weapon) {
+                const weaponData = WEAPONS[item.instanceId];
+                if (weaponData && !weaponData.unarmed) {
+                    weaponItems.push({ item, weaponData });
+                }
+            }
+        });
+        
+        weaponItems.forEach(({ item, weaponData }) => {
+            const displayQuality = item.quality || weaponData.quality;
+            const qc = QUALITY_CONFIG[displayQuality];
+            const qualityColor = qc?.color || '#0f0';
+            const canEquip = canUseWeapon(p.baseClass || p.class, weaponData);
+            
+            invHtml += `<div class="item-card">
+                <div style="color:${qualityColor};">⚔️ ${item.name}</div>
+                <div style="font-size:10px; color:#aaa; margin-bottom:2px;">⚔️ ${weaponData.weaponSubtype || weaponData.type || 'Weapon'}</div>
+                <div style="font-size:12px;">${buildWeaponDmgLine({...weaponData, quality: displayQuality}, displayQuality, p)}</div>
+                <div style="color:#888; font-size:11px; margin-top:2px;">Level ${weaponData.level || 1}</div>`;
+            
+            if (item.modifiers && item.modifiers.length > 0) {
+                invHtml += `<div style="margin-top:5px; font-size:11px;">`;
+                item.modifiers.forEach(mod => {
+                    const modColor = mod.color || '#FFD700';
+                    let modText = mod.name;
+                    if (mod.minDamage) modText += ` (+${mod.minDamage}-${mod.maxDamage})`;
+                    if (mod.critBonus) modText += ` (+${mod.critBonus}% crit)`;
+                    if (mod.lifestealPercent) modText += ` (${mod.lifestealPercent}% lifesteal)`;
+                    invHtml += `<div style="color:${modColor};">✨ ${modText}</div>`;
+                });
+                invHtml += `</div>`;
+            }
+            
+            if (item.gems && item.gems.length > 0) {
+                invHtml += `<div style="margin-top:5px; font-size:11px;">`;
+                item.gems.forEach(gem => {
+                    invHtml += `<div style="color:${gem.color};">💎 ${gem.name}</div>`;
+                });
+                invHtml += `</div>`;
+            }
+            
+            const totalGemSlots = weaponData.gemSlots || 3;
+            const filledGems = item.gems || [];
+            const emptySlots = totalGemSlots - filledGems.length;
+            invHtml += `<div style="margin-top:5px; font-size:10px; color:#888;">💎 Slots: ${filledGems.length}/${totalGemSlots}`;
+            if (emptySlots > 0) invHtml += ` (${emptySlots} empty)`;
+            invHtml += `</div>`;
+            
+            invHtml += `${canEquip ? `<button onclick="equipItem('weapon', '${item.instanceId}'); showUnifiedInventory(_inventoryReturnCallback);">EQUIP</button>` : `<button disabled>CANNOT EQUIP</button>`}
+            </div>`;
+        });
+        
+        if (weaponItems.length === 0) {
+            invHtml += `<div class="item-card" style="color:#888;">No weapons in inventory</div>`;
+        }
+        invHtml += `</div></div>`;
+        
+        // ── UNEQUIPPED ARMOR (below equipped armor) ──────────────────────────────
+        invHtml += `<div style="margin-top: 20px;"><h3 style="color: var(--highlight-color);">🛡️ ARMOR</h3>
+                    <div class="inventory-grid">`;
+        
+        const armorItems = [];
+        p.inventory.forEach(item => {
+            if (typeof item === 'object' && item !== null && item.armorId && item.instanceId !== p.armor) {
+                const armorData = ARMOR[item.instanceId];
+                if (armorData && !armorData.unarmored) {
+                    armorItems.push({ item, armorData });
+                }
+            }
+        });
+        
+        armorItems.forEach(({ item, armorData }) => {
+            const displayQuality = item.quality || armorData.quality;
+            const aqc = QUALITY_CONFIG[displayQuality];
+            const qualityColor = aqc?.color || '#0f0';
+            const canEquip = canUseArmor(p.baseClass || p.class, armorData);
+            
+            invHtml += `<div class="item-card">
+                <div style="color:${qualityColor};">🛡️ ${item.name}</div>
+                <div style="font-size:10px; color:#aaa; margin-bottom:2px;">🛡️ ${armorData.armorSubtype || armorData.type || 'Armor'}</div>
+                <div style="font-size:12px;">DEF: ${armorData.baseDefense + getQualityBonus(displayQuality, armorData.baseDefense)}${armorData.baseMagicBonus ? ` | MAG: +${armorData.baseMagicBonus}` : ''}</div>
+                <div style="color:#888; font-size:11px; margin-top:2px;">Level ${armorData.level || 1}</div>`;
+            
+            if (item.bonusHp || item.bonusMp) {
+                invHtml += `<div style="color:#88ff88; font-size:12px; margin-top:4px;">`;
+                if (item.bonusHp) invHtml += `❤️ +${item.bonusHp} HP `;
+                if (item.bonusMp) invHtml += `✨ +${item.bonusMp} MP`;
+                invHtml += `</div>`;
+            }
+            
+            if (item.modifiers && item.modifiers.length > 0) {
+                invHtml += `<div style="margin-top:5px; font-size:11px;">`;
+                item.modifiers.forEach(mod => {
+                    const valueStr = mod.statType === 'percent' ? `${mod.value}%` : `+${mod.value}`;
+                    invHtml += `<div style="color:${mod.color};">${mod.icon || '✨'} ${mod.name}: ${valueStr}</div>`;
+                });
+                invHtml += `</div>`;
+            }
+            
+            invHtml += `${canEquip ? `<button onclick="equipItem('armor', '${item.instanceId}'); showUnifiedInventory(_inventoryReturnCallback);">EQUIP</button>` : `<button disabled>CANNOT EQUIP</button>`}
+            </div>`;
+        });
+        
+        if (armorItems.length === 0) {
+            invHtml += `<div class="item-card" style="color:#888;">No armor in inventory</div>`;
+        }
+        invHtml += `</div></div>`;
+        
+        // ── KEYS SECTION (below weapons/armor) ─────────────────────────────────────
+        invHtml += `<h3 style="color: var(--highlight-color); margin-top: 20px;">🔑 KEYS</h3>
+                    <div class="inventory-grid">`;
+        
+        const keyItems = [];
+        p.inventory.forEach(item => {
+            if (typeof item === 'string' && ITEMS[item] && ITEMS[item].name?.toLowerCase().includes('key')) {
+                keyItems.push(item);
+            }
+        });
+        
+        if (keyItems.length === 0) {
+            invHtml += `<div class="item-card" style="color:#888;">No keys</div>`;
+        } else {
+            const keyCounts = {};
+            keyItems.forEach(key => { keyCounts[key] = (keyCounts[key] || 0) + 1; });
+            Object.keys(keyCounts).forEach(keyKey => {
+                const item = ITEMS[keyKey];
+                const count = keyCounts[keyKey];
+                invHtml += `<div class="item-card">
+                    <div style="color:#FFD700;">🔑 ${item.name} ${count > 1 ? `x${count}` : ''}</div>
+                    <div style="font-size: 16px;">${item.description || 'A mysterious key.'}</div>
+                </div>`;
+            });
+        }
+        invHtml += `</div>`;
+        
+        // ── OTHER ITEMS (junk for cashing in) ────────────────────────────────────
+        invHtml += `<h3 style="color: var(--highlight-color); margin-top: 20px;">📦 OTHER ITEMS</h3>
+                    <div class="inventory-grid">`;
+        
+        const otherItems = [];
+        p.inventory.forEach(item => {
+            if (typeof item === 'string' && ITEMS[item]) {
+                const itemData = ITEMS[item];
+                // Exclude keys, potions, and items we already handled
+                if (!itemData.name?.toLowerCase().includes('key') &&
+                    itemData.subtype !== 'heal_hp' &&
+                    itemData.subtype !== 'heal_mp' &&
+                    itemData.subtype !== 'full_restore') {
+                    otherItems.push(item);
+                }
+            }
+        });
+        
+        if (otherItems.length === 0) {
+            invHtml += `<div class="item-card" style="color:#888;">No other items</div>`;
+        } else {
+            const otherCounts = {};
+            otherItems.forEach(item => { otherCounts[item] = (otherCounts[item] || 0) + 1; });
+            Object.keys(otherCounts).forEach(itemKey => {
+                const item = ITEMS[itemKey];
+                const count = otherCounts[itemKey];
+                invHtml += `<div class="item-card">
+                    <div style="color:#aaa;">📦 ${item.name} ${count > 1 ? `x${count}` : ''}</div>
+                    <div style="font-size: 16px;">${item.description || 'A miscellaneous item.'}</div>
+                    <div style="color: var(--border-color); margin-top:4px;">Sell: ${item.sellValue || 0}g</div>
+                </div>`;
+            });
+        }
+        invHtml += `</div>`;
+        
+    } else {
+        // ========== TOWN LAYOUT (original, unchanged) ==========
+        
+        // ── WEAPONS SECTION ─────────────────────────────────────────────
+        invHtml += `<h3 style="color: var(--highlight-color);">WEAPONS</h3>
+                    <div class="inventory-grid">`;
+        
+        // Get equipped weapon
+        const eqWeaponTown = (() => {
+            if (!p.weapon || p.weapon === 'bare_fists') return null;
+            if (typeof p.weapon === 'string' && p.weapon.includes('_')) {
+                const instance = p.inventory.find(item => 
+                    item && typeof item === 'object' && item.instanceId === p.weapon
+                );
+                if (instance && instance.weaponId) return instance;
+            }
+            return WEAPONS[p.weapon];
+        })();
+        
+        // Display equipped weapon
+        if (!eqWeaponTown || !!eqWeaponTown.unarmed) {
+            invHtml += `<div class="item-card equipped" style="border-color:#555;">
+                <div style="color:#888;">✊ Bare Fists</div>
+                <div style="color:#555;font-size:13px;">DMG: 0 (stats only)</div>
+                <div style="color:#555;font-size:12px;">No weapon equipped</div>
+            </div>`;
+        } else {
+            const equippedInstance = p.inventory.find(item => 
+                item && typeof item === 'object' && item.instanceId === p.weapon
+            );
+            const displayQuality = equippedInstance?.quality || eqWeaponTown.quality;
+            const qc = QUALITY_CONFIG[displayQuality];
+            const qualityColor = qc?.color || '#0f0';
+            
+            invHtml += `<div class="item-card equipped">
+                <div style="color:${qualityColor};">⚔️ ${equippedInstance?.name || eqWeaponTown.name}${displayQuality !== eqWeaponTown.quality ? ` [${displayQuality}]` : ''}</div>
+                <div style="font-size:10px; color:#aaa; margin-bottom:2px;">⚔️ ${eqWeaponTown.weaponSubtype || eqWeaponTown.type || 'Weapon'}</div>
+                <div style="font-size:12px;">${buildWeaponDmgLine({...eqWeaponTown, quality: displayQuality}, displayQuality, p)}</div>
+                <div style="color:#888; font-size:11px; margin-top:2px;">Level ${eqWeaponTown.level || 1}</div>`;
+            
+            if (eqWeaponTown.modifiers && eqWeaponTown.modifiers.length > 0) {
+                invHtml += `<div style="margin-top:5px; font-size:11px;">`;
+                eqWeaponTown.modifiers.forEach(mod => {
+                    const modColor = mod.color || '#FFD700';
+                    let modText = mod.name;
+                    if (mod.minDamage) modText += ` (+${mod.minDamage}-${mod.maxDamage})`;
+                    if (mod.critBonus) modText += ` (+${mod.critBonus}% crit)`;
+                    if (mod.lifestealPercent) modText += ` (${mod.lifestealPercent}% lifesteal)`;
+                    invHtml += `<div style="color:${modColor};">✨ ${modText}</div>`;
+                });
+                invHtml += `</div>`;
+            }
+            
+            if (eqWeaponTown.gems && eqWeaponTown.gems.length > 0) {
+                invHtml += `<div style="margin-top:5px; font-size:11px;">`;
+                eqWeaponTown.gems.forEach(gem => {
+                    invHtml += `<div style="color:${gem.color};">💎 ${gem.name}</div>`;
+                });
+                invHtml += `</div>`;
+            }
+            
+            const totalGemSlots = eqWeaponTown.gemSlots || 3;
+            const filledGems = eqWeaponTown.gems || [];
+            const emptySlots = totalGemSlots - filledGems.length;
+            invHtml += `<div style="margin-top:5px; font-size:10px; color:#888;">💎 Slots: ${filledGems.length}/${totalGemSlots}`;
+            if (emptySlots > 0) invHtml += ` (${emptySlots} empty)`;
+            invHtml += `</div>`;
+            
+            invHtml += `<div style="color:var(--border-color);">EQUIPPED</div>
+                <button onclick="unequipItem('weapon'); showUnifiedInventory(_inventoryReturnCallback);" style="border-color:#ff4444;color:#ff4444;margin-top:4px;">UNEQUIP</button>
+            </div>`;
+        }
+        
+        // Other weapons
+        const weaponItemsTown = [];
+        p.inventory.forEach(item => {
+            if (typeof item === 'object' && item !== null && item.weaponId && item.instanceId !== p.weapon) {
+                const weaponData = WEAPONS[item.instanceId];
+                if (weaponData && !weaponData.unarmed) {
+                    weaponItemsTown.push({ item, weaponData });
+                }
+            }
+        });
+        
+        weaponItemsTown.forEach(({ item, weaponData }) => {
+            const displayQuality = item.quality || weaponData.quality;
+            const qc = QUALITY_CONFIG[displayQuality];
+            const qualityColor = qc?.color || '#0f0';
+            const canEquip = canUseWeapon(p.baseClass || p.class, weaponData);
+            
+            invHtml += `<div class="item-card">
+                <div style="color:${qualityColor};">⚔️ ${item.name}</div>
+                <div style="font-size:10px; color:#aaa; margin-bottom:2px;">⚔️ ${weaponData.weaponSubtype || weaponData.type || 'Weapon'}</div>
+                <div style="font-size:12px;">${buildWeaponDmgLine({...weaponData, quality: displayQuality}, displayQuality, p)}</div>
+                <div style="color:#888; font-size:11px; margin-top:2px;">Level ${weaponData.level || 1}</div>`;
+            
+            if (item.modifiers && item.modifiers.length > 0) {
+                invHtml += `<div style="margin-top:5px; font-size:11px;">`;
+                item.modifiers.forEach(mod => {
+                    const modColor = mod.color || '#FFD700';
+                    let modText = mod.name;
+                    if (mod.minDamage) modText += ` (+${mod.minDamage}-${mod.maxDamage})`;
+                    if (mod.critBonus) modText += ` (+${mod.critBonus}% crit)`;
+                    if (mod.lifestealPercent) modText += ` (${mod.lifestealPercent}% lifesteal)`;
+                    invHtml += `<div style="color:${modColor};">✨ ${modText}</div>`;
+                });
+                invHtml += `</div>`;
+            }
+            
+            if (item.gems && item.gems.length > 0) {
+                invHtml += `<div style="margin-top:5px; font-size:11px;">`;
+                item.gems.forEach(gem => {
+                    invHtml += `<div style="color:${gem.color};">💎 ${gem.name}</div>`;
+                });
+                invHtml += `</div>`;
+            }
+            
+            const totalGemSlots = weaponData.gemSlots || 3;
+            const filledGems = item.gems || [];
+            const emptySlots = totalGemSlots - filledGems.length;
+            invHtml += `<div style="margin-top:5px; font-size:10px; color:#888;">💎 Slots: ${filledGems.length}/${totalGemSlots}`;
+            if (emptySlots > 0) invHtml += ` (${emptySlots} empty)`;
+            invHtml += `</div>`;
+            
+            invHtml += `${canEquip ? `<button onclick="equipItem('weapon', '${item.instanceId}'); showUnifiedInventory(_inventoryReturnCallback);">EQUIP</button>` : `<button disabled>CANNOT EQUIP</button>`}
+            </div>`;
+        });
+        
+        invHtml += `</div>`;
+        
+        // ── ARMOR SECTION ──────────────────────────────────────────────
+        invHtml += `<h3 style="color: var(--highlight-color); margin-top: 20px;">ARMOR</h3>
+                    <div class="inventory-grid">`;
+        
+        // Get equipped armor
+        const eqArmorTown = (() => {
+            if (!p.armor || p.armor === 'no_armor') return null;
+            if (typeof p.armor === 'string' && p.armor.includes('_')) {
+                const instance = p.inventory.find(item => 
+                    item && typeof item === 'object' && item.instanceId === p.armor
+                );
+                if (instance && instance.armorId) return instance;
+            }
+            return ARMOR[p.armor];
+        })();
+        
+        if (!eqArmorTown || !!eqArmorTown.unarmored) {
+            invHtml += `<div class="item-card equipped" style="border-color:#555;">
+                <div style="color:#888;">🫥 No Armor</div>
+                <div style="color:#555;font-size:13px;">DEF: 0</div>
+                <div style="color:#555;font-size:12px;">No armor equipped</div>
+            </div>`;
+        } else {
+            const equippedInstance = p.inventory.find(item => 
+                item && typeof item === 'object' && item.instanceId === p.armor
+            );
+            const displayQuality = equippedInstance?.quality || eqArmorTown.quality;
+            const aqc = QUALITY_CONFIG[displayQuality];
+            const qualityColor = aqc?.color || '#0f0';
+            
+            invHtml += `<div class="item-card equipped">
+                <div style="color:${qualityColor};">🛡️ ${eqArmorTown.name}${displayQuality !== eqArmorTown.quality ? ` [${displayQuality}]` : ''}</div>
+                <div style="font-size:10px; color:#aaa; margin-bottom:2px;">🛡️ ${eqArmorTown.armorSubtype || eqArmorTown.type || 'Armor'}</div>
+                <div style="font-size:12px;">${buildArmorDefLine({...eqArmorTown, quality: displayQuality}, p)}</div>
+                <div style="color:#888; font-size:11px; margin-top:2px;">Level ${eqArmorTown.level || 1}</div>`;
+            
+            const hpBonus = eqArmorTown.bonusHp || eqArmorTown.baseHp;
+            const mpBonus = eqArmorTown.bonusMp || eqArmorTown.baseMp;
+            if (hpBonus || mpBonus) {
+                invHtml += `<div style="color:#88ff88; font-size:12px; margin-top:4px;">`;
+                if (hpBonus) invHtml += `❤️ +${hpBonus} HP `;
+                if (mpBonus) invHtml += `✨ +${mpBonus} MP`;
+                invHtml += `</div>`;
+            }
+            
+            if (eqArmorTown.modifiers && eqArmorTown.modifiers.length > 0) {
+                invHtml += `<div style="margin-top:5px; font-size:11px;">`;
+                eqArmorTown.modifiers.forEach(mod => {
+                    const valueStr = mod.statType === 'percent' ? `${mod.value}%` : `+${mod.value}`;
+                    invHtml += `<div style="color:${mod.color};">${mod.icon || '✨'} ${mod.name}: ${valueStr}</div>`;
+                });
+                invHtml += `</div>`;
+            }
+            
+            invHtml += `<div style="color:var(--border-color);">EQUIPPED</div>
+                <button onclick="unequipItem('armor'); showUnifiedInventory(_inventoryReturnCallback);" style="border-color:#ff4444;color:#ff4444;margin-top:4px;">UNEQUIP</button>
+            </div>`;
+        }
+        
+        // Other armor
+        const armorItemsTown = [];
+        p.inventory.forEach(item => {
+            if (typeof item === 'object' && item !== null && item.armorId && item.instanceId !== p.armor) {
+                const armorData = ARMOR[item.instanceId];
+                if (armorData && !armorData.unarmored) {
+                    armorItemsTown.push({ item, armorData });
+                }
+            }
+        });
+        
+        armorItemsTown.forEach(({ item, armorData }) => {
+            const displayQuality = item.quality || armorData.quality;
+            const aqc = QUALITY_CONFIG[displayQuality];
+            const qualityColor = aqc?.color || '#0f0';
+            const canEquip = canUseArmor(p.baseClass || p.class, armorData);
+            
+            invHtml += `<div class="item-card">
+                <div style="color:${qualityColor};">🛡️ ${item.name}</div>
+                <div style="font-size:10px; color:#aaa; margin-bottom:2px;">🛡️ ${armorData.armorSubtype || armorData.type || 'Armor'}</div>
+                <div style="font-size:12px;">DEF: ${armorData.baseDefense + getQualityBonus(displayQuality, armorData.baseDefense)}${armorData.baseMagicBonus ? ` | MAG: +${armorData.baseMagicBonus}` : ''}</div>
+                <div style="color:#888; font-size:11px; margin-top:2px;">Level ${armorData.level || 1}</div>`;
+            
+            if (item.bonusHp || item.bonusMp) {
+                invHtml += `<div style="color:#88ff88; font-size:12px; margin-top:4px;">`;
+                if (item.bonusHp) invHtml += `❤️ +${item.bonusHp} HP `;
+                if (item.bonusMp) invHtml += `✨ +${item.bonusMp} MP`;
+                invHtml += `</div>`;
+            }
+            
+            if (item.modifiers && item.modifiers.length > 0) {
+                invHtml += `<div style="margin-top:5px; font-size:11px;">`;
+                item.modifiers.forEach(mod => {
+                    const valueStr = mod.statType === 'percent' ? `${mod.value}%` : `+${mod.value}`;
+                    invHtml += `<div style="color:${mod.color};">${mod.icon || '✨'} ${mod.name}: ${valueStr}</div>`;
+                });
+                invHtml += `</div>`;
+            }
+            
+            invHtml += `${canEquip ? `<button onclick="equipItem('armor', '${item.instanceId}'); showUnifiedInventory(_inventoryReturnCallback);">EQUIP</button>` : `<button disabled>CANNOT EQUIP</button>`}
+            </div>`;
+        });
+        
+        invHtml += `</div>`;
+        
+        // ── CONSUMABLES SECTION ────────────────────────────────────────
+        invHtml += `<h3 style="color: var(--highlight-color); margin-top: 20px;">CONSUMABLES & ITEMS</h3>
+                    <div class="inventory-grid">`;
+        
+        const itemCounts = {};
+        p.inventory.filter(item => typeof item === 'string' && ITEMS[item] && ITEMS[item].subtype !== 'dungeon_key')
+            .forEach(key => { itemCounts[key] = (itemCounts[key] || 0) + 1; });
+        
+        Object.keys(itemCounts).forEach(itemKey => {
+            const item = ITEMS[itemKey];
+            const count = itemCounts[itemKey];
+            const isPotion = item.subtype === 'heal_hp' || item.subtype === 'heal_mp' || item.subtype === 'full_restore';
+            
+            invHtml += `<div class="item-card">
+                <div style="color:#00aa88;">🧪 ${item.name} ${count > 1 ? `x${count}` : ''}</div>
+                <div style="font-size: 16px;">${item.description}</div>
+                ${isPotion ? `<button onclick="useInventoryPotion('${itemKey}'); showUnifiedInventory(_inventoryReturnCallback);">USE</button>` : ''}
+                <div style="color: var(--border-color); margin-top:4px;">Sell: ${item.sellValue || 0}g</div>
+            </div>`;
+        });
+        
+        invHtml += `</div>`;
+        
+        // ── KEY RING ───────────────────────────────────────────────────
+        invHtml += renderKeyRing(p);
+    }
+    
+    invHtml += `<button onclick="closeUnifiedInventory()" style="margin-top:20px; width:100%;">← BACK</button>`;
+    
+    screen.innerHTML = invHtml;
+}
+
+// Replace the old inventory overlay with unified inventory
+window.showInventoryOverlay = function() {
+    showUnifiedInventory(() => {
+        if (gameState.dungeon) {
+            renderDungeonActionBar();
+        } else {
+            renderActionBar();
+        }
+    });
+};
+
+// Also replace showDungeonInventory to be safe
+window.showDungeonInventory = function() {
+    showUnifiedInventory(() => {
+        if (gameState.dungeon) {
+            renderDungeonActionBar();
+        } else {
+            renderActionBar();
+        }
+    });
+};
+
+
+// Replace combat inventory with unified inventory
+window.showCombatInventory = function() {
+    console.log('🎒 showCombatInventory called - opening unified inventory');
+    showUnifiedInventory(() => {
+        if (gameState.dungeon) {
+            renderDungeonActionBar();
+        } else {
+            renderActionBar();
+        }
+    });
+};
+
+
+function closeUnifiedInventory() {
+ // Restore terminal mode if we were in it
+    if (window._wasInTerminalMode) {
+        document.body.classList.add('terminal-mode');
+        window._wasInTerminalMode = false;
+    }
+
+    // SCROLL TERMINAL TO BOTTOM after returning to dungeon
+    setTimeout(() => {
+        const terminal = document.getElementById('terminalWindow');
+        if (terminal) {
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+    }, 50);
+
+
+    if (_inventoryReturnCallback && typeof _inventoryReturnCallback === 'function') {
+        _inventoryReturnCallback();
+    } else {
+        showTown();
+    }
+    _inventoryReturnCallback = null;
+}
+
+
+// Fix: Preserve return callback when refreshing inventory after equip/unequip
+const originalShowUnifiedInventory = showUnifiedInventory;
+window.showUnifiedInventory = function(returnCallback = null) {
+    // Store the callback globally
+    window._inventoryReturnCallback = returnCallback;
+    
+    // Call original
+    originalShowUnifiedInventory(returnCallback);
+};
+
+// Also fix closeUnifiedInventory to properly restore dungeon state
+const originalCloseUnifiedInventory = closeUnifiedInventory;
+window.closeUnifiedInventory = function() {
+    // Call original
+    originalCloseUnifiedInventory();
+    
+    // Ensure dungeon state is restored if we were in a dungeon
+    if (gameState.dungeon && !document.body.classList.contains('terminal-mode')) {
+        document.body.classList.add('terminal-mode');
+        if (typeof renderActionBar === 'function') {
+            renderActionBar();
+        }
+    }
+};
+
+
+function renderKeyRing(p) {
             // ── Key metadata: ASCII art + color for each key type ──
             const KEY_META = {
                 bronze_key:   { color: '#cd7f32', glow: '#7a3a00', label: 'BRONZE',   ascii: '&lt;=-[O' },
@@ -18025,7 +18786,7 @@ function unequipItem(type) {
 }
 
 
-        // ═══════════════════════════════════════════════════════════════
+               // ═══════════════════════════════════════════════════════════════
         // USE POTION FROM INVENTORY
         // ═══════════════════════════════════════════════════════════════
         function useInventoryPotion(potionKey) {
@@ -18125,10 +18886,44 @@ function unequipItem(type) {
                 saveGame();
                 
                 // Show message and refresh inventory
-                alert(msg);
-                showInventory();
+                if (gameState.dungeon || document.body.classList.contains('terminal-mode')) {
+    termAppend(msg, 'term-info');
+} else {
+    // Only show alert in town
+    if (gameState.dungeon || gameState._currentExploreArea) {
+    if (typeof termAppend === 'function') {
+        termAppend(msg, 'term-info');
+    }
+} else {
+    alert(msg);
+}
+}
+showInventory();
             }
         }
+
+        // FIX: Override potion usage to stay in dungeon (prevents being kicked to town)
+        const originalUseInventoryPotion = useInventoryPotion;
+        window.useInventoryPotion = function(potionKey) {
+            // Store current mode before using potion
+            const wasInDungeon = !!gameState.dungeon;
+            
+            // Call original function
+            originalUseInventoryPotion(potionKey);
+            
+            // After potion use, restore dungeon state
+            if (wasInDungeon && !document.body.classList.contains('terminal-mode')) {
+                document.body.classList.add('terminal-mode');
+            }
+            
+            // Re-render dungeon UI
+            if (wasInDungeon && typeof renderActionBar === 'function') {
+                setTimeout(() => {
+                    renderActionBar();
+                }, 100);
+            }
+        };
+
 
         function showExplore() {
             checkGameVersion();
@@ -18695,9 +19490,12 @@ function stabilizeTerminalLayout() {
     tw.appendChild(line);
 
     // Inline scroll helper — fires after paint so scrollHeight is correct
+        // Inline scroll helper — fires after paint so scrollHeight is correct
     const doScroll = () => {
         if (shouldAutoScroll) {
-            requestAnimationFrame(() => { tw.scrollTop = tw.scrollHeight + 9999; });
+            setTimeout(() => {
+                tw.scrollTop = tw.scrollHeight;
+            }, 10);
         }
     };
 
@@ -19724,10 +20522,14 @@ function renderDungeonActionBar() {
     const floor = dungeon.floors[ds.floor];
     const room = floor.rooms[ds.currentRoom];
 
-    const cs = gameState.combatState;
+    // MODIFIED: Always show combat buttons even without enemies
+    const cs = gameState.combatState || { 
+        pipAvailable: [true], 
+        actionMode: 'main',
+        monsters: []
+    };
     
-    // ═══ COMBAT BUTTONS (if in combat) ═══
-if (cs) {
+    // ═══ COMBAT BUTTONS (always visible) ═══
     const maxHits  = cs.pipAvailable
         ? cs.pipAvailable.length
         : calcPlayerHits(gameState.player);
@@ -19850,8 +20652,6 @@ if (cs) {
     }
 
     actionBar.appendChild(combatDiv);
-}
-
 
     // ═══ NAVIGATION BUTTONS (always visible) ═══
     const canMove = !cs || !cs.pipAvailable || cs.pipAvailable.every(x => x);
@@ -19998,7 +20798,7 @@ if (cs) {
     // Long-press (3s) → sysop; short tap → inventory
     let _invHoldTimer = null, _invFired = false;
     const _invDown = (e) => { e.preventDefault(); _invFired = false; _invHoldTimer = setTimeout(() => { _invHoldTimer = null; _invFired = true; openSysopOverlay(); }, 3000); };
-    const _invUp   = ()  => { if (_invHoldTimer) { clearTimeout(_invHoldTimer); _invHoldTimer = null; } if (!_invFired) showDungeonInventory(); _invFired = false; };
+    const _invUp   = ()  => { if (_invHoldTimer) { clearTimeout(_invHoldTimer); _invHoldTimer = null; } if (!_invFired) showUnifiedInventory(() => { renderDungeonActionBar(); }); _invFired = false; };
     const _invCancel = () => { if (_invHoldTimer) { clearTimeout(_invHoldTimer); _invHoldTimer = null; } _invFired = false; };
     invBtn.addEventListener('mousedown',  _invDown);
     invBtn.addEventListener('mouseup',    _invUp);
@@ -21063,26 +21863,54 @@ const result = calculateDamage({
         }
         
         function selectSpell(spellKey) {
-            const cs = gameState.combatState;
-            if (!cs) return;
-            
-            const spell = SPELLS[spellKey];
-            cs.pendingSpell = spell;
-            cs.pendingSpellKey = spellKey;
-             
-            
-            // AOE spells and healing spells don't need target selection - cast immediately
-            if (spell && (spell.type === 'aoe_damage' || spell.type === 'heal')) {
-                castSpellOnTarget(spell);
-                cs.actionMode = 'main';
-                cs.pendingSpell = null;
-                cs.pendingSpellKey = null;
-            } else {
-                // Regular spells need target selection
-                cs.actionMode = 'target_spell';
-                renderActionBar();
-            }
-        }
+    const cs = gameState.combatState;
+    
+    // If no combat state OR in temporary out-of-combat casting (no enemies)
+    if (!cs || (cs.monsters && cs.monsters.length === 0)) {
+        // Out of combat - use pip-based casting
+        castSpellOutsideCombat(spellKey);
+        return;
+    }
+    
+    // Normal combat flow
+    const spell = SPELLS[spellKey];
+    cs.pendingSpell = spell;
+    cs.pendingSpellKey = spellKey;
+    
+    // AOE spells and healing spells don't need target selection - cast immediately
+    if (spell && (spell.type === 'aoe_damage' || spell.type === 'heal')) {
+        castSpellOnTarget(spell);
+        cs.actionMode = 'main';
+        cs.pendingSpell = null;
+        cs.pendingSpellKey = null;
+    } else {
+        // Regular spells need target selection
+        cs.actionMode = 'target_spell';
+        renderActionBar();
+    }
+}
+
+
+function cleanupOutOfCombatCasting() {
+    if (window._outOfCombatRegenInterval) {
+        clearInterval(window._outOfCombatRegenInterval);
+        window._outOfCombatRegenInterval = null;
+    }
+    if (gameState.combatState?.isOutOfCombatCasting) {
+        gameState.combatState = null;
+        renderActionBar();
+    }
+}
+
+// Override return to town to clean up
+if (typeof returnToTown === 'function') {
+    const originalReturnToTown = returnToTown;
+    window.returnToTown = function(...args) {
+        cleanupOutOfCombatCasting();
+        return originalReturnToTown.apply(this, args);
+    };
+}
+
         
         // Update showSpellMenu to use the new system
         function showSpellMenuOld() {
@@ -23604,22 +24432,181 @@ if (baseClass === 'rogue' && isDaggerWeapon && enemy.hp > 0) {
         
 
 
-            function showSpellMenu() {
-            const cs = gameState.combatState;
-            if (!cs) return;
-            const anyAvail = cs.pipAvailable && cs.pipAvailable.some(x => x);
-            if (!anyAvail) return;
-            const p = gameState.player;
-            if (p.knownSpells.length === 0) {
-                termAppend('You have no spells!', 'term-error');
-                renderActionBar();
+function showSpellMenu() {
+    const cs = gameState.combatState;
+    
+    // If in combat, use the original combat spell menu system
+    if (cs) {
+        const anyAvail = cs.pipAvailable && cs.pipAvailable.some(x => x);
+        if (!anyAvail) return;
+        const p = gameState.player;
+        if (p.knownSpells.length === 0) {
+            termAppend('You have no spells!', 'term-error');
+            renderActionBar();
+            return;
+        }
+        cs.actionMode = 'spell_list';
+        renderActionBar();
+        return;
+    }
+    
+    // Outside combat - show spells directly in the action bar
+    const ab = document.getElementById('actionBar');
+    if (!ab) return;
+    
+    const p = gameState.player;
+    const spells = p.knownSpells || [];
+    
+    if (spells.length === 0) {
+        termAppend('You have no spells!', 'term-error');
+        return;
+    }
+    
+    // Remove existing spell menu if any
+    const existingMenu = ab.querySelector('.spell-menu-outside');
+    if (existingMenu) existingMenu.remove();
+    
+    const spellDiv = document.createElement('div');
+    spellDiv.className = 'spell-menu-outside';
+    spellDiv.style.cssText = 'border-top:1px solid var(--border-color);margin-top:6px;padding-top:6px;';
+    
+    let spellButtons = '';
+    spells.forEach(spellKey => {
+        const spell = SPELLS[spellKey];
+        if (!spell) return;
+        
+        const canCast = p.mp >= spell.mpCost;
+        const isHeal = spell.type === 'heal';
+        
+        spellButtons += `
+            <button onclick="castSpellOutsideCombat('${spellKey}')" 
+                ${!canCast ? 'disabled' : ''}
+                style="margin:2px; padding:4px 8px; ${isHeal ? 'border-color:#44ff44;' : ''}">
+                ${spell.name} (${spell.mpCost} MP)
+                ${isHeal ? '💚' : ''}
+            </button>
+        `;
+    });
+    
+    spellDiv.innerHTML = `
+        <div style="color:var(--highlight-color);font-size:12px;margin-bottom:4px;">CAST SPELL</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;">
+            ${spellButtons}
+            <button onclick="cancelSpellMenu()">❌ Cancel</button>
+        </div>
+    `;
+    
+    ab.appendChild(spellDiv);
+}
+
+// Helper functions for outside combat spell casting
+function castSpellOutsideCombat(spellKey) {
+    const spell = SPELLS[spellKey];
+    const p = gameState.player;
+    
+    if (p.mp < spell.mpCost) {
+        termAppend(`Not enough MP! Need ${spell.mpCost} MP.`, 'term-error');
+        return;
+    }
+    
+    // Get or create combat state
+    let cs = gameState.combatState;
+    
+    if (!cs) {
+        // Create empty combat state
+        const maxHits = calcPlayerHits(p);
+        gameState.combatState = {
+            monsters: [],
+            pipAvailable: new Array(maxHits).fill(true),
+            pipTimers: new Array(maxHits).fill(0),
+            actionMode: 'main',
+            inCombat: false,
+            isOutOfCombatCasting: true
+        };
+        cs = gameState.combatState;
+        
+        // Start the tick timer for regeneration
+        if (window._outOfCombatRegenInterval) clearInterval(window._outOfCombatRegenInterval);
+        window._outOfCombatRegenInterval = setInterval(() => {
+            if (!gameState.combatState?.isOutOfCombatCasting) {
+                if (window._outOfCombatRegenInterval) clearInterval(window._outOfCombatRegenInterval);
                 return;
             }
             
-            cs.actionMode = 'spell_list';
-            renderActionBar();
-        }
+            const csState = gameState.combatState;
+            let anyChanged = false;
+            
+            for (let i = 0; i < csState.pipTimers.length; i++) {
+                if (csState.pipTimers[i] > 0) {
+                    csState.pipTimers[i]--;
+                    if (csState.pipTimers[i] === 0) {
+                        csState.pipAvailable[i] = true;
+                        anyChanged = true;
+                    }
+                }
+            }
+            
+            if (anyChanged) {
+                renderActionBar();
+                updatePipButtons();
+            }
+            
+            // Clean up when all pips are back
+            if (csState.pipAvailable.every(x => x === true)) {
+                gameState.combatState = null;
+                if (window._outOfCombatRegenInterval) clearInterval(window._outOfCombatRegenInterval);
+                renderActionBar();
+                termAppend("You've fully recovered.", 'term-info');
+            }
+        }, 1000);
+    }
+    
+    cs = gameState.combatState;
+    
+    // Check pips
+    const availablePips = cs.pipAvailable.filter(x => x).length;
+    const pipCost = spell.pipCost || 1;
+    
+    if (availablePips < pipCost) {
+        termAppend(`You need to recover before casting again!`, 'term-warning');
+        return;
+    }
+    
+    // Consume MP
+    p.mp -= spell.mpCost;
+    
+    // Consume pips
+    const cooldown = getPipCooldown(p);
+    consumePips(cs, pipCost, cooldown);
+    
+    // Cast the spell
+    if (spell.type === 'heal') {
+        const minHeal = spell.minPower || 10;
+        const maxHeal = spell.maxPower || minHeal;
+        const healRoll = Math.floor(Math.random() * (maxHeal - minHeal + 1)) + minHeal;
+        const healAmount = healRoll + Math.floor(p.magic * 1.5) + (p.wis || 0);
+        const actualHeal = Math.min(p.maxHp - p.hp, healAmount);
+        p.hp = Math.min(p.maxHp, p.hp + actualHeal);
+        termAppend(`✨ You cast ${spell.name} and restore ${actualHeal} HP! ✨`, 'term-heal');
+    } else {
+        termAppend(`You cast ${spell.name}.`, 'term-info');
+    }
+    
+    // Update UI
+    updateHud();
+    cancelSpellMenu();
+    renderActionBar();
+    updatePipButtons();
+    
+    const remainingPips = cs.pipAvailable.filter(x => x).length;
+    const totalPips = cs.pipAvailable.length;
+    termAppend(`You have ${remainingPips}/${totalPips} actions remaining. Recovery in ${cooldown} seconds.`, 'term-dim');
+}
 
+function cancelSpellMenu() {
+    const menu = document.querySelector('.spell-menu-outside');
+    if (menu) menu.remove();
+}
 
 
 
@@ -25228,7 +26215,6 @@ if (gameState.combatState.confusedEnemy === enemy && Math.random() < 0.3) {
         p.hp -= finalDmg;
 
 
-                p.hp -= finalDmg;
         
         // ── ARMOR MODIFIER: Leeching (chance to heal when hit) ──
         const leechBonus = getArmorModifierBonus('leechChance');
