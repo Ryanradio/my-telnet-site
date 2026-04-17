@@ -18953,249 +18953,143 @@ showInventory();
 
 
         function showExplore() {
-            checkGameVersion();
-            const screen = document.getElementById('mainScreen');
-            const p = gameState.player;
-            const tid = gameState.currentTown || 'town1';
-            const townDef = (typeof TOWNS !== 'undefined' && TOWNS[tid]) ? TOWNS[tid] : null;
+    checkGameVersion();
+    const screen = document.getElementById('mainScreen');
+    const p = gameState.player;
+    const tid = gameState.currentTown || 'town1';
+    const townDef = (typeof TOWNS !== 'undefined' && TOWNS[tid]) ? TOWNS[tid] : null;
 
-            // Determine which zone keys belong to this town
-            // A zone belongs here if: it has no 'town' field (legacy), OR its town matches current
-            const townZoneKeys = townDef ? (townDef.zones || []) : null;
+    // Determine which zone keys belong to this town
+    const townZoneKeys = townDef ? (townDef.zones || []) : null;
 
-            // Auto-unlock zones that are not locked (level-only requirement)
-            Object.keys(LOCATIONS).forEach(key => {
-                const loc = LOCATIONS[key];
-                if (key === 'town') return;
-                // Only auto-unlock zones that belong to this town
-                if (townZoneKeys) {
-                    if (!townZoneKeys.includes(key)) return;
-                } else if (loc.town) {
-                    if (loc.town !== tid) return;
-                }
-                
-                // ALWAYS unlock forest (starter zone) regardless of level
-                if (key === 'forest' && !p.unlockedAreas.includes(key)) {
+    // Town2 and Town3 zone keys (no masters, level only)
+    const town2Zones = ['riverside', 'haunted_graveyard', 'dark_swamp', 'cursed_ruins'];
+    const town3Zones = ['plains', 'volcano'];
+    const noMasterZones = [...town2Zones, ...town3Zones];
+
+    // Auto-unlock zones
+    Object.keys(LOCATIONS).forEach(key => {
+        const loc = LOCATIONS[key];
+        if (key === 'town') return;
+        // Only auto-unlock zones that belong to this town
+        if (townZoneKeys) {
+            if (!townZoneKeys.includes(key)) return;
+        } else if (loc.town) {
+            if (loc.town !== tid) return;
+        }
+        
+        // ALWAYS unlock forest (starter zone) regardless of level
+        if (key === 'forest' && !p.unlockedAreas.includes(key)) {
+            p.unlockedAreas.push(key);
+        }
+        
+        // Town2 and Town3 zones: unlock by level only (NO MASTERS)
+        if (noMasterZones.includes(key)) {
+            if (loc.requiredLevel && p.level >= loc.requiredLevel) {
+                if (!p.unlockedAreas.includes(key)) {
                     p.unlockedAreas.push(key);
                 }
-                
-                if (!loc.locked && loc.requiredLevel && p.level >= loc.requiredLevel) {
-                    if (!p.unlockedAreas.includes(key)) {
-                        p.unlockedAreas.push(key);
-                    }
-                }
-                // Safety: strip locks that shouldn't be held
-                if (loc.locked && loc.requiredLevel && p.level < loc.requiredLevel) {
-                    const idx = p.unlockedAreas.indexOf(key);
-                    if (idx !== -1) p.unlockedAreas.splice(idx, 1);
-                }
-            });
-
-            // ─────────────────────────────────────────────────────────────
-            // RETROACTIVE MASTER MIGRATION
-            // Repairs broken chains from old save data where zones were unlocked
-            // by buggy code that skipped intermediate zones/masters.
-            //
-            // Strategy: walk the chain in order. For each zone that's unlocked,
-            // mark its master as defeated and unlock the next zone if the player
-            // meets the level requirement. Repeat until stable (no new unlocks).
-            // This handles cascades like: graveyard unlocked → grant swamp →
-            // grant ruins → etc., all in one pass.
-            // ─────────────────────────────────────────────────────────────
-            if (typeof CLASS_MASTERS !== 'undefined') {
-                const playerClass = p.baseClass || p.class;
-
-                // Ordered main chain — each zone requires the master of the previous
-                const zoneChain = [
-                    'forest', 'riverside', 'haunted_graveyard', 'dark_swamp',
-                    'cursed_ruins', 'cave', 'crypt', 'demon_portal',
-                    'corrupted_temple', 'celestial_spire'
-                ];
-
-                // ── STEP 1: Find the highest zone index this player has ever unlocked.
-                // Old buggy saves may have unlocked cave/crypt/demon_portal while skipping
-                // dark_swamp/cursed_ruins. The player clearly progressed through all of them,
-                // so we fill in every zone up to their highest unlocked index.
-                let highestIdx = -1;
-                zoneChain.forEach((zone, idx) => {
-                    if (p.unlockedAreas.includes(zone)) highestIdx = idx;
-                });
-
-                if (highestIdx > 0) {
-                    // Grant all zones up to highestIdx — player cleared these
-                    for (let i = 0; i <= highestIdx; i++) {
-                        const zone = zoneChain[i];
-                        const loc  = LOCATIONS[zone];
-                        if (loc && p.level >= (loc.requiredLevel || 1)) {
-                            if (!p.unlockedAreas.includes(zone)) {
-                                p.unlockedAreas.push(zone);
-                                console.log('[Migration] Gap-fill unlocked:', zone);
-                            }
-                        }
-                        // Mark the master guarding entry to this zone as defeated
-                        // (master of previous zone = what the player beat to get here)
-                        if (i > 0) {
-                            const masterKey = `${playerClass}_master_${zoneChain[i - 1]}`;
-                            if (CLASS_MASTERS[masterKey] && !p.defeatedMasters.includes(masterKey)) {
-                                p.defeatedMasters.push(masterKey);
-                                console.log('[Migration] Gap-fill defeated master:', masterKey);
-                            }
-                        }
-                    }
-                }
-
-                // ── STEP 2: Also grant the master of the highest zone itself,
-                // IF the player has progressed to any LATER zone (meaning they beat it).
-                // This ensures demon_portal master is marked if corrupted_temple is unlocked, etc.
-                Object.keys(CLASS_MASTERS).forEach(masterKey => {
-                    if (!masterKey.startsWith(playerClass + '_master_')) return;
-                    const master = CLASS_MASTERS[masterKey];
-                    if (!master) return;
-                    if (master.unlocks && p.unlockedAreas.includes(master.unlocks) &&
-                        !p.defeatedMasters.includes(masterKey)) {
-                        p.defeatedMasters.push(masterKey);
-                        console.log('[Migration] Unlock-implies-defeat:', masterKey);
-                    }
-                });
-
-                // ── STEP 3: Now propagate forward from the highest unlocked zone.
-                // If the player defeated the master of their highest zone, unlock the next.
-                // (This handles the normal "new player" case where nothing is skipped.)
-                for (let i = 0; i < zoneChain.length - 1; i++) {
-                    const currentZone = zoneChain[i];
-                    const nextZone    = zoneChain[i + 1];
-                    const masterKey   = `${playerClass}_master_${currentZone}`;
-                    if (p.unlockedAreas.includes(currentZone) &&
-                        p.defeatedMasters.includes(masterKey) &&
-                        !p.unlockedAreas.includes(nextZone)) {
-                        const nextLoc = LOCATIONS[nextZone];
-                        if (nextLoc && p.level >= (nextLoc.requiredLevel || 1)) {
-                            p.unlockedAreas.push(nextZone);
-                            console.log('[Migration] Chained forward:', nextZone);
-                        }
-                    }
-                }
-
-                console.log('[Migration] Done. unlockedAreas:', p.unlockedAreas.join(', '));
             }
-
-            const townName = townDef ? townDef.name : 'World';
-            let exploreHtml = `
-                <div class="location-header">${townName} — EXPLORE</div>
-                ${renderPlayerStats()}
-                <div class="message">
-                    <p>Where would you like to explore?</p>
-                </div>
-                <div style="margin: 20px 0;">
-            `;
-
-            // Track which master keys have already been rendered to prevent duplicates
-            const renderedMasterKeys = new Set();
-
-            // Only show zones that belong to this town (or all zones if no town system)
-            Object.keys(LOCATIONS).forEach(key => {
-                const loc = LOCATIONS[key];
-                if (key === 'town') return;
-                // Filter by town — use townZoneKeys list, or fall back to loc.town field
-                if (townZoneKeys) {
-                    if (!townZoneKeys.includes(key)) return;
-                } else if (loc.town) {
-                    if (loc.town !== tid) return;
+            // Safety: strip if below level
+            if (loc.requiredLevel && p.level < loc.requiredLevel) {
+                const idx = p.unlockedAreas.indexOf(key);
+                if (idx !== -1) p.unlockedAreas.splice(idx, 1);
+            }
+        } else {
+            // Town1 zones: original logic (requires master defeats)
+            if (!loc.locked && loc.requiredLevel && p.level >= loc.requiredLevel) {
+                if (!p.unlockedAreas.includes(key)) {
+                    p.unlockedAreas.push(key);
                 }
-
-                const levelInfo = loc.enemyLevelRange ?
-                    ` (Lv ${loc.enemyLevelRange[0]}-${loc.enemyLevelRange[1]})` : '';
-
-                const isUnlocked = p.unlockedAreas.includes(key);
-                const meetsLevelReq = p.level >= (loc.requiredLevel || 1);
-
-                // Hide zones that don't meet level requirement and aren't unlocked
-                if (!isUnlocked && !meetsLevelReq) return;
-
-                if (isUnlocked) {
-                    exploreHtml += `
-                        <div class="menu-option" onclick="exploreLocation('${key}')">
-                            ► ${loc.name}${levelInfo} <span style="color: var(--border-color);">✓</span>
-                        </div>
-                    `;
-                    // Show master challenge if available and not yet rendered
-                    const masterKey = `${p.baseClass || p.class}_master_${key}`;
-                    if (typeof CLASS_MASTERS !== 'undefined' && CLASS_MASTERS[masterKey] &&
-                        !p.defeatedMasters.includes(masterKey) && !renderedMasterKeys.has(masterKey)) {
-                        const master = CLASS_MASTERS[masterKey];
-                        renderedMasterKeys.add(masterKey);
-                        if (p.level >= master.requiredLevel) {
-                            exploreHtml += `
-                                <div class="menu-option" onclick="challengeMaster('${masterKey}')"
-                                     style="border-color:var(--highlight-color);background:rgba(255,255,0,0.1);">
-                                    ⚔️ CHALLENGE MASTER: ${master.name} (Lv ${master.level})
-                                </div>
-                            `;
-                        } else {
-                            exploreHtml += `
-                                <div style="color:#666;font-size:12px;padding:4px 8px;">
-                                    ⚔️ Master available at level ${master.requiredLevel}: ${master.name}
-                                </div>
-                            `;
-                        }
-                    }
-                } else {
-                    // Locked zone — find which master unlocks it
-                    const masterKey = typeof getMasterKeyForArea !== 'undefined' ? getMasterKeyForArea(key) : null;
-                    const master = masterKey && typeof CLASS_MASTERS !== 'undefined' ? CLASS_MASTERS[masterKey] : null;
-
-                    if (master && p.defeatedMasters.includes(masterKey)) {
-                        // Master defeated but zone still locked? Unlock it now.
-                        if (!p.unlockedAreas.includes(key)) p.unlockedAreas.push(key);
-                        exploreHtml += `
-                            <div class="menu-option" onclick="exploreLocation('${key}')">
-                                ► ${loc.name}${levelInfo} <span style="color: var(--border-color);">✓</span>
-                            </div>
-                        `;
-                    } else if (master && !p.defeatedMasters.includes(masterKey) && !renderedMasterKeys.has(masterKey)) {
-                        // Master not yet defeated — show locked zone + challenge button
-                        renderedMasterKeys.add(masterKey);
-                        const canChallenge = p.level >= master.requiredLevel;
-                        exploreHtml += `
-                            <div class="menu-option" style="opacity:0.6;cursor:default;"
-                                 onclick="alert('${(loc.unlockMessage || 'Locked').replace(/'/g, "\'")}')">
-                                🔒 ${loc.name}${levelInfo} - LOCKED
-                            </div>
-                        `;
-                        if (canChallenge) {
-                            exploreHtml += `
-                                <div class="menu-option" onclick="challengeMaster('${masterKey}')"
-                                     style="border-color:var(--error-color);background:rgba(255,0,0,0.1);">
-                                    ⚔️ CHALLENGE MASTER: ${master.name} (Lv ${master.level}) TO UNLOCK
-                                </div>
-                            `;
-                        } else {
-                            exploreHtml += `
-                                <div style="color:#666;font-size:12px;padding:4px 8px;">
-                                    🔒 Reach level ${master.requiredLevel} to challenge ${master.name}
-                                </div>
-                            `;
-                        }
-                    } else if (!master) {
-                        // No master defined for this zone — show plain lock
-                        exploreHtml += `
-                            <div class="menu-option" style="opacity:0.6;cursor:default;"
-                                 onclick="alert('${(loc.unlockMessage || 'Complete previous areas to unlock!').replace(/'/g, "\'")}')">
-                                🔒 ${loc.name}${levelInfo} - LOCKED
-                            </div>
-                        `;
-                    }
-                    // If master already rendered above (duplicate) — skip silently
-                }
-            });
-
-            exploreHtml += `
-                </div>
-                <button onclick="showTown()">RETURN TO TOWN</button>
-            `;
-
-            screen.innerHTML = exploreHtml;
+            }
+            // Safety: strip locks that shouldn't be held
+            if (loc.locked && loc.requiredLevel && p.level < loc.requiredLevel) {
+                const idx = p.unlockedAreas.indexOf(key);
+                if (idx !== -1) p.unlockedAreas.splice(idx, 1);
+            }
         }
+    });
+
+    const townName = townDef ? townDef.name : 'World';
+    let exploreHtml = `
+        <div class="location-header">${townName} — EXPLORE</div>
+        ${renderPlayerStats()}
+        <div class="message">
+            <p>Where would you like to explore?</p>
+        </div>
+        <div style="margin: 20px 0;">
+    `;
+
+    // Track which master keys have been rendered to prevent duplicates (Town1 only)
+    const renderedMasterKeys = new Set();
+
+    // Show zones that belong to this town
+    Object.keys(LOCATIONS).forEach(key => {
+        const loc = LOCATIONS[key];
+        if (key === 'town') return;
+        // Filter by town
+        if (townZoneKeys) {
+            if (!townZoneKeys.includes(key)) return;
+        } else if (loc.town) {
+            if (loc.town !== tid) return;
+        }
+
+        const levelInfo = loc.enemyLevelRange ?
+            ` (Lv ${loc.enemyLevelRange[0]}-${loc.enemyLevelRange[1]})` : '';
+
+        const isUnlocked = p.unlockedAreas.includes(key);
+        const meetsLevelReq = p.level >= (loc.requiredLevel || 1);
+
+        // Hide zones that don't meet level requirement and aren't unlocked
+        if (!isUnlocked && !meetsLevelReq) return;
+
+        if (isUnlocked) {
+            exploreHtml += `
+                <div class="menu-option" onclick="exploreLocation('${key}')">
+                    ► ${loc.name}${levelInfo} <span style="color: var(--border-color);">✓</span>
+                </div>
+            `;
+            
+            // ONLY show master challenges for Town1 zones (not Town2/Town3)
+            if (!noMasterZones.includes(key)) {
+                const masterKey = `${p.baseClass || p.class}_master_${key}`;
+                if (typeof CLASS_MASTERS !== 'undefined' && CLASS_MASTERS[masterKey] &&
+                    !p.defeatedMasters.includes(masterKey) && !renderedMasterKeys.has(masterKey)) {
+                    const master = CLASS_MASTERS[masterKey];
+                    renderedMasterKeys.add(masterKey);
+                    if (p.level >= master.requiredLevel) {
+                        exploreHtml += `
+                            <div class="menu-option" onclick="challengeMaster('${masterKey}')"
+                                 style="border-color:var(--highlight-color);background:rgba(255,255,0,0.1);">
+                                ⚔️ CHALLENGE MASTER: ${master.name} (Lv ${master.level})
+                            </div>
+                        `;
+                    } else {
+                        exploreHtml += `
+                            <div style="color:#666;font-size:12px;padding:4px 8px;">
+                                ⚔️ Master available at level ${master.requiredLevel}: ${master.name}
+                            </div>
+                        `;
+                    }
+                }
+            }
+        } else {
+            // Locked zone - level requirement not met yet
+            exploreHtml += `
+                <div class="menu-option" style="opacity:0.6;cursor:default;">
+                    🔒 ${loc.name}${levelInfo} - Requires Level ${loc.requiredLevel}
+                </div>
+            `;
+        }
+    });
+
+    exploreHtml += `
+        </div>
+        <button onclick="showTown()">RETURN TO TOWN</button>
+    `;
+
+    screen.innerHTML = exploreHtml;
+}
 
         function getMasterKeyForArea(areaKey) {
             // Find which master unlocks this area.
