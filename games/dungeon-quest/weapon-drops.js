@@ -834,7 +834,7 @@ function rollQualityForDrop(sourceLevel, enemyRarity) {
 function generateArmorDrop(player, sourceLevel, enemyRarity, skipRoll = false, forcedQuality = null) {
     if (!skipRoll) {
         const dropRoll = Math.random() * 100;
-        let dropChance = 0.12; // 12% base drop chance
+        let dropChance = 0.04; // 4% base drop chance
         
         // Higher rarity enemies drop armor more often
         const rarityBonus = {

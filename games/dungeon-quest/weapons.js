@@ -1265,7 +1265,7 @@ const WEAPONS = {
         "allowedClasses": ["warrior", "warlock"]
     },
     greatsword: {
-        "name": "Greatsword",
+        "name": "sword",
         "baseDamage": 32,
         "maxDamage": 50,
         "baseMagicDamage": 0,
@@ -1273,7 +1273,7 @@ const WEAPONS = {
         "level": 10,
         "quality": "",
         "slot": "weapon",
-        "weaponSubtype": "greatsword",
+        "weaponSubtype": "sword",
         "allowedClasses": ["warrior", "paladin"]
     },
     shadowblade: {
@@ -1285,7 +1285,7 @@ const WEAPONS = {
         "level": 11,
         "quality": "",
         "slot": "weapon",
-        "weaponSubtype": "sword",
+        "weaponSubtype": "dagger",
         "allowedClasses": ["warrior", "rogue", "warlock"]
     },
     holy_blade: {
@@ -1453,7 +1453,7 @@ const WEAPONS = {
         "level": 20,
         "quality": "",
         "slot": "weapon",
-        "weaponSubtype": "greatsword",
+        "weaponSubtype": "sword",
         "allowedClasses": ["warrior", "paladin"]
     },
     abyssal_blade: {
@@ -1525,7 +1525,7 @@ const WEAPONS = {
         "level": 25,
         "quality": "",
         "slot": "weapon",
-        "weaponSubtype": "greatsword",
+        "weaponSubtype": "sword",
         "allowedClasses": ["warrior", "paladin"]
     },
     infinity_blade: {
@@ -1537,7 +1537,7 @@ const WEAPONS = {
         "level": 25,
         "quality": "",
         "slot": "weapon",
-        "weaponSubtype": "greatsword",
+        "weaponSubtype": "sword",
         "allowedClasses": ["warrior", "paladin"]
     },
     primordial_weapon: {
@@ -1549,7 +1549,7 @@ const WEAPONS = {
         "level": 25,
         "quality": "",
         "slot": "weapon",
-        "weaponSubtype": "greatsword",
+        "weaponSubtype": "sword",
         "allowedClasses": ["warrior", "paladin"]
     },
     genesis: {
@@ -1561,7 +1561,7 @@ const WEAPONS = {
         "level": 25,
         "quality": "",
         "slot": "weapon",
-        "weaponSubtype": "greatsword",
+        "weaponSubtype": "sword",
         "allowedClasses": ["warrior", "paladin"]
     },
 
@@ -1885,7 +1885,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"],
+        "allowedClasses": ["warrior", "paladin", "runesmith"],
         "description": "A blacksmiths hammer repurposed for combat. The head is loose but it packs a punch."
     },
     iron_maul: {
@@ -1898,7 +1898,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     stone_hammer: {
         "name": "Stone Hammer",
@@ -1910,7 +1910,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     war_hammer: {
         "name": "War Hammer",
@@ -1922,7 +1922,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     flanged_hammer: {
         "name": "Flanged Hammer",
@@ -1934,7 +1934,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     ironbane_hammer: {
         "name": "Ironbane Hammer",
@@ -1946,7 +1946,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     runic_hammer: {
         "name": "Runic Hammer",
@@ -1970,7 +1970,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     thunder_maul: {
         "name": "Thunder Maul",
@@ -1982,7 +1982,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     skullcracker: {
         "name": "Skullcracker",
@@ -1994,7 +1994,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     mjolnite_hammer: {
         "name": "Mjolnite Hammer",
@@ -2006,7 +2006,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     earthshaker: {
         "name": "Earthshaker",
@@ -2018,7 +2018,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     titans_fist: {
         "name": "Titans Fist",
@@ -2030,7 +2030,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     siegebreaker: {
         "name": "Siegebreaker",
@@ -2042,7 +2042,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     devastator: {
         "name": "Devastator",
@@ -2054,7 +2054,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     ragnarok_maul: {
         "name": "Ragnarok Maul",
@@ -2066,7 +2066,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     colossus_hammer: {
         "name": "Colossus Hammer",
@@ -2078,7 +2078,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     godbreaker: {
         "name": "Godbreaker",
@@ -2090,7 +2090,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     voidhammer: {
         "name": "Voidhammer",
@@ -2114,7 +2114,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     world_ender: {
         "name": "World Ender",
@@ -2126,7 +2126,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     eternity_maul: {
         "name": "Eternity Maul",
@@ -2138,7 +2138,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     oblivion_hammer: {
         "name": "Oblivion Hammer",
@@ -2150,7 +2150,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
     hammer_of_creation: {
         "name": "Hammer of Creation",
@@ -2162,7 +2162,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
-        "allowedClasses": ["warrior", "paladin"]
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
     },
 
     // ======================================================
@@ -2204,7 +2204,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue"]
+        "allowedClasses": ["rogue", "hunter"]
     },
     bone_pick: {
         "name": "Bone Pick",
@@ -2216,7 +2216,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue"]
+        "allowedClasses": ["rogue", "hunter"]
     },
     poison_dagger: {
         "name": "Poison Dagger",
@@ -2229,7 +2229,7 @@ const WEAPONS = {
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "poisonChance": 0.2,
-        "allowedClasses": ["rogue"]
+        "allowedClasses": ["rogue", "hunter"]
     },
     copper_stiletto: {
         "name": "Copper Stiletto",
@@ -2241,7 +2241,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue"]
+        "allowedClasses": ["rogue", "hunter"]
     },
     throwing_knife: {
         "name": "Throwing Knife",
@@ -2253,7 +2253,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue"]
+        "allowedClasses": ["rogue", "hunter"]
     },
     assassin_blade: {
         "name": "Assassins Blade",
@@ -2265,7 +2265,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue"]
+        "allowedClasses": ["rogue", "hunter"]
     },
     shadow_fang: {
         "name": "Shadow Fang",
@@ -2277,7 +2277,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue"]
+        "allowedClasses": ["rogue", "hunter"]
     },
     venom_spike: {
         "name": "Venom Spike",
@@ -2290,7 +2290,7 @@ const WEAPONS = {
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "poisonChance": 0.25,
-        "allowedClasses": ["rogue"]
+        "allowedClasses": ["rogue", "hunter"]
     },
     midnight_dirk: {
         "name": "Midnight Dirk",
@@ -2302,7 +2302,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue"]
+        "allowedClasses": ["rogue", "hunter"]
     },
     blacksteel_dagger: {
         "name": "Blacksteel Dagger",
@@ -2314,7 +2314,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue"]
+        "allowedClasses": ["rogue", "hunter"]
     },
     shadowstep_blade: {
         "name": "Shadowstep Blade",
@@ -2326,7 +2326,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue"]
+        "allowedClasses": ["rogue", "hunter"]
     },
     phantom_edge: {
         "name": "Phantom Edge",
@@ -2338,7 +2338,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue"]
+        "allowedClasses": ["rogue", "hunter"]
     },
     soul_piercer: {
         "name": "Soul Piercer",
@@ -2350,7 +2350,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue"]
+        "allowedClasses": ["rogue", "hunter"]
     },
     serpent_tooth: {
         "name": "Serpents Tooth",
@@ -2363,7 +2363,7 @@ const WEAPONS = {
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "poisonChance": 0.35,
-        "allowedClasses": ["rogue"]
+        "allowedClasses": ["rogue", "hunter"]
     },
     venomfang_dagger: {
         "name": "Venomfang Dagger",
@@ -2375,7 +2375,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue"]
+        "allowedClasses": ["rogue", "hunter"]
     },
     twilight_shard: {
         "name": "Twilight Shard",
@@ -2387,7 +2387,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue"]
+        "allowedClasses": ["rogue", "hunter"]
     },
     eclipse_blade: {
         "name": "Eclipse Blade",
@@ -2399,7 +2399,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue"]
+        "allowedClasses": ["rogue", "hunter"]
     },
     dusk_blade: {
         "name": "Dusk Blade",
@@ -2411,7 +2411,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue"]
+        "allowedClasses": ["rogue", "hunter"]
     },
     wraithblade: {
         "name": "Wraithblade",
@@ -2423,7 +2423,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue"]
+        "allowedClasses": ["rogue", "hunter"]
     },
     crimson_fang: {
         "name": "Crimson Fang",
@@ -2435,7 +2435,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue"]
+        "allowedClasses": ["rogue", "hunter"]
     },
     shadow_reaver: {
         "name": "Shadow Reaver",
@@ -2447,7 +2447,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue"]
+        "allowedClasses": ["rogue", "hunter"]
     },
     void_stiletto: {
         "name": "Void Stiletto",
@@ -2459,7 +2459,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue"]
+        "allowedClasses": ["rogue", "hunter"]
     },
     death_whisper: {
         "name": "Deaths Whisper",
@@ -2471,7 +2471,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue"]
+        "allowedClasses": ["rogue", "hunter"]
     },
     oblivion_shard: {
         "name": "Oblivion Shard",
@@ -2483,7 +2483,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue"]
+        "allowedClasses": ["rogue", "hunter"]
     },
     reaper_kiss: {
         "name": "Reapers Kiss",
@@ -2495,7 +2495,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue"]
+        "allowedClasses": ["rogue", "hunter"]
     },
     bloodmoon_fang: {
         "name": "Bloodmoon Fang",
@@ -2508,7 +2508,7 @@ const WEAPONS = {
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "poisonChance": 0.4,
-        "allowedClasses": ["rogue"]
+        "allowedClasses": ["rogue", "hunter"]
     },
     shade_piercer: {
         "name": "Shade Piercer",
@@ -2520,7 +2520,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue"]
+        "allowedClasses": ["rogue", "hunter"]
     },
     eternal_night: {
         "name": "Eternal Night",
@@ -2532,7 +2532,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue"]
+        "allowedClasses": ["rogue", "hunter"]
     },
     nights_edge: {
         "name": "Nights Edge",
@@ -2544,7 +2544,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue"]
+        "allowedClasses": ["rogue", "hunter"]
     },
 
     // ======================================================
@@ -2563,7 +2563,7 @@ const WEAPONS = {
         "slot": "weapon",
         "weaponSubtype": "bow",
         "description": "A cracked bow held together with twine. The arrows fly unpredictably.",
-        "allowedClasses": ["hunter", "ranger", "archer"]
+        "allowedClasses": [ "hunter", "beastlord"]
     },
     training_bow: {
         "name": "Training Bow",
@@ -2576,7 +2576,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
-        "allowedClasses": ["hunter", "ranger", "archer"]
+        "allowedClasses": [ "hunter", "beastlord"]
     },
     short_bow: {
         "name": "Short Bow",
@@ -2589,7 +2589,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
-        "allowedClasses": ["hunter", "ranger", "archer"]
+        "allowedClasses": [ "hunter", "beastlord"]
     },
     hunting_bow: {
         "name": "Hunting Bow",
@@ -2602,7 +2602,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
-        "allowedClasses": ["hunter", "ranger", "archer"]
+        "allowedClasses": [ "hunter", "beastlord"]
     },
     longbow: {
         "name": "Longbow",
@@ -2615,7 +2615,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
-        "allowedClasses": ["hunter", "ranger", "archer"]
+        "allowedClasses": [ "hunter", "beastlord"]
     },
     composite_bow: {
         "name": "Composite Bow",
@@ -2628,7 +2628,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
-        "allowedClasses": ["hunter", "ranger", "archer"]
+        "allowedClasses": [ "hunter", "beastlord"]
     },
     elven_bow: {
         "name": "Elven Bow",
@@ -2641,7 +2641,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
-        "allowedClasses": ["hunter", "ranger", "archer"]
+        "allowedClasses": [ "hunter", "beastlord"]
     },
     war_bow: {
         "name": "War Bow",
@@ -2654,7 +2654,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
-        "allowedClasses": ["hunter", "ranger", "archer"]
+        "allowedClasses": [ "hunter", "beastlord"]
     },
     recurve_bow: {
         "name": "Recurve Bow",
@@ -2667,7 +2667,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
-        "allowedClasses": ["hunter", "ranger", "archer"]
+        "allowedClasses": [ "hunter", "beastlord"]
     },
     cursed_bow: {
         "name": "Cursed Bow",
@@ -2680,7 +2680,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
-        "allowedClasses": ["hunter", "ranger"]
+        "allowedClasses": [ "hunter", "beastlord"]
     },
     elven_shortbow: {
         "name": "Elven Shortbow",
@@ -2693,7 +2693,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
-        "allowedClasses": ["hunter", "ranger", "archer"]
+        "allowedClasses": [ "hunter", "beastlord"]
     },
     dragonslayer_bow: {
         "name": "Dragonslayer Bow",
@@ -2706,7 +2706,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
-        "allowedClasses": ["hunter", "ranger", "archer"]
+        "allowedClasses": [ "hunter", "beastlord"]
     },
     darkwood_bow: {
         "name": "Darkwood Bow",
@@ -2719,7 +2719,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
-        "allowedClasses": ["hunter", "ranger", "archer"]
+        "allowedClasses": [ "hunter", "beastlord"]
     },
     storm_bow: {
         "name": "Storm Bow",
@@ -2732,7 +2732,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
-        "allowedClasses": ["hunter", "ranger", "archer"]
+        "allowedClasses": [ "hunter", "beastlord"]
     },
     ironwood_bow: {
         "name": "Ironwood Bow",
@@ -2745,7 +2745,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
-        "allowedClasses": ["hunter", "ranger", "archer"]
+        "allowedClasses": [ "hunter", "beastlord"]
     },
     phantom_bow: {
         "name": "Phantom Bow",
@@ -2758,7 +2758,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
-        "allowedClasses": ["hunter", "ranger", "archer"]
+        "allowedClasses": [ "hunter", "beastlord"]
     },
     siege_bow: {
         "name": "Siege Bow",
@@ -2771,7 +2771,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
-        "allowedClasses": ["hunter", "ranger"]
+        "allowedClasses": [ "hunter", "beastlord"]
     },
     shadow_bow: {
         "name": "Shadow Bow",
@@ -2784,7 +2784,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
-        "allowedClasses": ["hunter", "ranger"]
+        "allowedClasses": [ "hunter", "beastlord"]
     },
     voidbow: {
         "name": "Voidbow",
@@ -2797,7 +2797,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
-        "allowedClasses": ["hunter", "ranger"]
+        "allowedClasses": [ "hunter", "beastlord"]
     },
     celestial_bow: {
         "name": "Celestial Bow",
@@ -2823,7 +2823,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
-        "allowedClasses": ["hunter", "ranger"]
+        "allowedClasses": [ "hunter", "beastlord"]
     },
     world_bow: {
         "name": "World Bow",
@@ -2849,7 +2849,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
-        "allowedClasses": ["hunter", "ranger"]
+        "allowedClasses": [ "hunter", "beastlord"]
     },
     oblivion_bow: {
         "name": "Oblivion Bow",
@@ -2862,7 +2862,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
-        "allowedClasses": ["hunter", "ranger"]
+        "allowedClasses": [ "hunter", "beastlord"]
     },
     apex_bow: {
         "name": "Apex Bow",
@@ -2875,7 +2875,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
-        "allowedClasses": ["hunter", "ranger"]
+        "allowedClasses": [ "hunter", "beastlord"]
     },
     genesis_bow: {
         "name": "Genesis Bow",
@@ -2888,7 +2888,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
-        "allowedClasses": ["hunter", "ranger"]
+        "allowedClasses": [ "hunter", "beastlord"]
     },
     omega_bow: {
         "name": "Omega Bow",
@@ -2901,7 +2901,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "bow",
-        "allowedClasses": ["hunter", "ranger"]
+        "allowedClasses": [ "hunter", "beastlord"]
     },
 
     // ======================================================
@@ -2919,7 +2919,7 @@ const WEAPONS = {
         "slot": "weapon",
         "weaponSubtype": "crossbow",
         "description": "A crude crossbow made from scrap wood. Slow to reload but surprisingly powerful.",
-        "allowedClasses": ["hunter", "ranger", "archer", "rogue"]
+        "allowedClasses": [ "hunter", "beastlord"]
     },
     light_crossbow: {
         "name": "Light Crossbow",
@@ -2931,7 +2931,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
-        "allowedClasses": ["hunter", "ranger", "archer", "rogue"]
+        "allowedClasses": [ "hunter", "beastlord"]
     },
     crossbow: {
         "name": "Crossbow",
@@ -2943,7 +2943,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
-        "allowedClasses": ["hunter", "ranger", "archer"]
+        "allowedClasses": [ "hunter", "beastlord"]
     },
     heavy_crossbow: {
         "name": "Heavy Crossbow",
@@ -2955,7 +2955,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
-        "allowedClasses": ["hunter", "ranger"]
+        "allowedClasses": [ "hunter", "beastlord"]
     },
     arbalest: {
         "name": "Arbalest",
@@ -2967,7 +2967,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
-        "allowedClasses": ["hunter", "ranger"]
+        "allowedClasses": [ "hunter", "beastlord"]
     },
     void_crossbow: {
         "name": "Void Crossbow",
@@ -2979,7 +2979,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
-        "allowedClasses": ["hunter", "ranger"]
+        "allowedClasses": [ "hunter", "beastlord"]
     },
     genesis_crossbow: {
         "name": "Crossbow of Genesis",
@@ -2991,7 +2991,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
-        "allowedClasses": ["hunter", "ranger"]
+        "allowedClasses": [ "hunter", "beastlord"]
     },
 
     // ======================================================
@@ -3231,7 +3231,7 @@ const WEAPONS = {
     ancient_dragon_slayer: {
         "name": "Ancient Dragon-Slayer",
         "slot": "weapon",
-        "weaponSubtype": "greatsword",
+        "weaponSubtype": "sword",
         "baseDamage": 58,
         "maxDamage": 92,
         "baseMagicDamage": 25,
@@ -3244,7 +3244,7 @@ const WEAPONS = {
     calamity_breaker: {
         "name": "Calamity Breaker",
         "slot": "weapon",
-        "weaponSubtype": "greatsword",
+        "weaponSubtype": "sword",
         "baseDamage": 62,
         "maxDamage": 98,
         "baseMagicDamage": 20,
@@ -3307,7 +3307,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
-        "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],
+        "allowedClasses": [ "hunter", "beastlord"],
         "description": "A compact crossbow favored by scouts."
     },
     reinforced_crossbow: {
@@ -3319,7 +3319,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
-        "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],
+        "allowedClasses": [ "hunter", "beastlord"],
         "description": "A crossbow reinforced with iron bands."
     },
     shadow_crossbow: {
@@ -3331,7 +3331,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
-        "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],
+        "allowedClasses": [ "hunter", "beastlord"],
         "description": "Bolts fired from this crossbow are near silent."
     },
     siege_crossbow: {
@@ -3343,7 +3343,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
-        "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],
+        "allowedClasses": [ "hunter", "beastlord"],
         "description": "Built to crack armor from a distance."
     },
     venom_crossbow: {
@@ -3355,7 +3355,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
-        "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],
+        "allowedClasses": [ "hunter", "beastlord"],
         "description": "The groove channels poison into every bolt."
     },
     phantom_crossbow: {
@@ -3367,7 +3367,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
-        "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],
+        "allowedClasses": [ "hunter", "beastlord"],
         "description": "Bolts seem to appear from nowhere."
     },
     runic_crossbow: {
@@ -3379,7 +3379,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
-        "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],
+        "allowedClasses": [ "hunter", "beastlord"],
         "description": "Ancient runes guide each bolt true."
     },
     storm_crossbow: {
@@ -3391,7 +3391,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
-        "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],
+        "allowedClasses": [ "hunter", "beastlord"],
         "description": "Fires with the force of a thunderclap."
     },
     dread_crossbow: {
@@ -3403,7 +3403,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
-        "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],
+        "allowedClasses": [ "hunter", "beastlord"],
         "description": "Enemies freeze when they hear it cock."
     },
     soul_crossbow: {
@@ -3415,7 +3415,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
-        "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],
+        "allowedClasses": [ "hunter", "beastlord"],
         "description": "Each bolt carries a fragment of darkness."
     },
     celestial_crossbow: {
@@ -3427,7 +3427,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
-        "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],
+        "allowedClasses": [ "hunter", "beastlord"],
         "description": "Crafted from starfall iron."
     },
     oblivion_crossbow: {
@@ -3439,7 +3439,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
-        "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],
+        "allowedClasses": [ "hunter", "beastlord"],
         "description": "Bolts tear through reality itself."
     },
     world_crossbow: {
@@ -3451,7 +3451,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
-        "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],
+        "allowedClasses": [ "hunter", "beastlord"],
         "description": "A weapon of apocalyptic scale."
     },
     eternity_crossbow: {
@@ -3463,7 +3463,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
-        "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],
+        "allowedClasses": [ "hunter", "beastlord"],
         "description": "Has been firing bolts since time began."
     },
     void_arbalest: {
@@ -3475,7 +3475,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
-        "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],
+        "allowedClasses": [ "hunter", "beastlord"],
         "description": "The void itself loads each bolt."
     },
     omega_crossbow: {
@@ -3487,7 +3487,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
-        "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],
+        "allowedClasses": [ "hunter", "beastlord"],
         "description": "The final crossbow. There is no going back."
     },
     genesis_arbalest: {
@@ -3499,7 +3499,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
-        "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],
+        "allowedClasses": [ "hunter", "beastlord"],
         "description": "An arbalest forged at the start of creation."
     },
     gods_crossbow: {
@@ -3511,7 +3511,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "crossbow",
-        "allowedClasses": ["archer", "hunter", "ranger", "deadeye", "beastlord"],
+        "allowedClasses": [ "hunter", "beastlord"],
         "description": "Even the gods respect the range on this."
     },
 };
