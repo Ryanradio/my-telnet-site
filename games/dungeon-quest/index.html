@@ -18427,13 +18427,13 @@ window.showCombatInventory = function() {
 
 
 function closeUnifiedInventory() {
- // Restore terminal mode if we were in it
+    // Restore terminal mode if we were in it
     if (window._wasInTerminalMode) {
         document.body.classList.add('terminal-mode');
         window._wasInTerminalMode = false;
     }
 
-    // SCROLL TERMINAL TO BOTTOM after returning to dungeon
+    // SCROLL TERMINAL TO BOTTOM after returning
     setTimeout(() => {
         const terminal = document.getElementById('terminalWindow');
         if (terminal) {
@@ -18441,15 +18441,28 @@ function closeUnifiedInventory() {
         }
     }, 50);
 
-
     if (_inventoryReturnCallback && typeof _inventoryReturnCallback === 'function') {
         _inventoryReturnCallback();
     } else {
-        showTown();
+        // Check if we were in explore mode
+        if (gameState._currentExploreArea) {
+            document.body.classList.add('terminal-mode');
+            // Try to find the correct explore refresh function
+            if (typeof refreshExploreUI === 'function') {
+                refreshExploreUI();
+            } else if (typeof renderExploreUI === 'function') {
+                renderExploreUI();
+            } else if (typeof showExploreArea === 'function') {
+                showExploreArea(gameState._currentExploreArea);
+            } else if (typeof loadExploreArea === 'function') {
+                loadExploreArea(gameState._currentExploreArea);
+            }
+        } else {
+            showTown();
+        }
     }
     _inventoryReturnCallback = null;
 }
-
 
 // Fix: Preserve return callback when refreshing inventory after equip/unequip
 const originalShowUnifiedInventory = showUnifiedInventory;
@@ -18461,21 +18474,35 @@ window.showUnifiedInventory = function(returnCallback = null) {
     originalShowUnifiedInventory(returnCallback);
 };
 
-// Also fix closeUnifiedInventory to properly restore dungeon state
+// Fix closeUnifiedInventory to properly restore dungeon AND explore state
 const originalCloseUnifiedInventory = closeUnifiedInventory;
 window.closeUnifiedInventory = function() {
     // Call original
     originalCloseUnifiedInventory();
     
-    // Ensure dungeon state is restored if we were in a dungeon
+    // Restore dungeon state if we were in a dungeon
     if (gameState.dungeon && !document.body.classList.contains('terminal-mode')) {
         document.body.classList.add('terminal-mode');
         if (typeof renderActionBar === 'function') {
             renderActionBar();
         }
     }
+    
+    // Restore explore state if we were exploring
+    if (gameState._currentExploreArea && !document.body.classList.contains('terminal-mode')) {
+        document.body.classList.add('terminal-mode');
+        // Try to find the correct explore refresh function
+        if (typeof refreshExploreUI === 'function') {
+            refreshExploreUI();
+        } else if (typeof renderExploreUI === 'function') {
+            renderExploreUI();
+        } else if (typeof showExploreArea === 'function') {
+            showExploreArea(gameState._currentExploreArea);
+        } else if (typeof loadExploreArea === 'function') {
+            loadExploreArea(gameState._currentExploreArea);
+        }
+    }
 };
-
 
 function renderKeyRing(p) {
             // ── Key metadata: ASCII art + color for each key type ──
@@ -22403,183 +22430,197 @@ function moveInDungeon(direction) {
     const ds = gameState.dungeon;
     const dungeonData = DUNGEONS[ds.dungeonKey];
 
-// ═══════════════════════════════════════════════════════════════
-// LADDER MOVEMENT — "up" or "down"
-// ═══════════════════════════════════════════════════════════════
-if (direction === 'up' || direction === 'down') {
-    const currentFloor = dungeonData.floors[ds.floor];
-    const currentRoom = currentFloor.rooms[ds.currentRoom];
+    // ═══════════════════════════════════════════════════════════════
+    // LADDER MOVEMENT — "up" or "down"
+    // ═══════════════════════════════════════════════════════════════
+    if (direction === 'up' || direction === 'down') {
+        const currentFloor = dungeonData.floors[ds.floor];
+        const currentRoom = currentFloor.rooms[ds.currentRoom];
 
-    if (!currentRoom.contents || !currentRoom.contents.ladder) {
-        termAppend(`There is no ladder here.`, 'term-dim');
-        return;
-    }
-    const ladder = currentRoom.contents.ladder;
-    if (ladder.direction !== direction) {
-        termAppend(`The ladder only goes ${ladder.direction}.`, 'term-dim');
-        return;
-    }
-
-    const targetFloor = ladder.leadsTo.floor;
-    const targetRoom  = ladder.leadsTo.room;
-
-    if (!dungeonData.floors[targetFloor] || !dungeonData.floors[targetFloor].rooms[targetRoom]) {
-        termAppend(`⚠️ Ladder leads nowhere (floor ${targetFloor} / ${targetRoom} not found).`, 'term-error');
-        return;
-    }
-
-    // ── Transition ───────────────────────────────────────────
-    ds.floor      = targetFloor;
-    ds.currentRoom = targetRoom;
-    
-    // Load persistent map for the new floor and merge with current session
-    const persistentMap = loadDungeonMap(gameState.player, ds.dungeonKey, targetFloor);
-    const scopedKey = `${targetFloor}:${targetRoom}`;
-    persistentMap.add(scopedKey); // Add current room
-    saveRoomDiscovery(gameState.player, ds.dungeonKey, targetFloor, targetRoom); // Save to persistent
-    
-    ds.discoveredRooms = persistentMap; // Use persistent map for active session
-
-    const destFloorData = dungeonData.floors[targetFloor];
-    const destRoom = destFloorData.rooms[targetRoom];
-    destRoom.flags = destRoom.flags || {};
-    destRoom.flags.discovered = true;
-
-    termAppend('', 'term-separator');
-    termAppend(`🪜 You ${direction === 'up' ? 'climb up' : 'descend'} the ladder to <strong>Floor ${targetFloor}</strong>.`, 'term-highlight');
-    termAppend(`<strong>${destRoom.name || targetRoom}</strong>`);
-    termAppend(destRoom.description || '', 'term-dim');
-
-    // List exits including any ladder in the destination room
-    const exitList = buildExitList(destRoom);
-    termAppend(`You see exits: ${exitList}.`, 'term-dim');
-
-    // ♻️ Check for enemy respawns (30min timer)
-    checkDungeonRespawns();
-
-    checkTownExit(destRoom);
-    triggerRoomTrap(destRoom);
-    checkRunestone(destRoom);
-    
-    // 📦 Auto-pickup loot from ground - FIXED: Use destRoom instead of nextRoom
-    if (destRoom.contents && destRoom.contents.lootTable && destRoom.contents.lootTable.length > 0) {
-        const loot = destRoom.contents.lootTable;
-        loot.forEach(item => {
-            if (!gameState.player.inventory.includes(item.key)) {
-                gameState.player.inventory.push(item.key);
-                termAppend(`✨ You found <span style="color:#a855f7;">${item.label || item.key}</span> on the ground!`, 'term-loot');
-            }
-        });
-        // Remove loot so it doesn't get picked up again
-        delete destRoom.contents.lootTable;
-    }
-    
-    checkRoomEncounter(destRoom);
-    checkEnemiesInRoom(targetRoom);
-    
-    // 📢 Show message if there are enemies already in this room
-    const enemiesHere = ds.activeEnemies.filter(e => e.currentRoom === targetRoom);
-    if (enemiesHere.length > 0 && !gameState.combatState) {
-        if (enemiesHere.length === 1) {
-            termAppend(`⚠️ <strong>${enemiesHere[0].name}</strong> is already in this room, waiting for you!`, 'term-warning');
-        } else {
-            const names = enemiesHere.map(e => e.name).join(', ');
-            termAppend(`⚠️ ${names} are already in this room, waiting for you!`, 'term-warning');
-        }
-    }
-    
-    // 🌀 TELEPORT TRIGGER (ladder version)
-    if (destRoom.contents && destRoom.contents.staffTrigger && 
-        destRoom.contents.staffTrigger.enabled) {
-        
-        const tpTrigger = destRoom.contents.staffTrigger;
-        const triggerType = tpTrigger.triggerType;
-        let shouldTeleport = false;
-        
-        if (triggerType === 'enter_room') {
-            shouldTeleport = true;
-        } else if (triggerType === 'staff_pieces') {
-            const staffCount = (gameState.player.inventory || []).filter(i => i && typeof i === 'string' && i.startsWith('staff_piece_')).length;
-            if (staffCount >= 8) {
-                shouldTeleport = true;
-                termAppend(`🪄 The staff pieces resonate with the ancient gate!`, 'term-highlight');
-                
-                // Consume staff pieces
-                gameState.player.inventory = gameState.player.inventory.filter(i => !(i && typeof i === 'string' && i.startsWith('staff_piece_')));
-                termAppend(`🪄 The staff pieces dissolve into the gate, consumed by the teleportation!`, 'term-warning');
-            } else {
-                termAppend(`🪄 The gate requires all 8 staff pieces to activate. (${staffCount}/8 collected)`, 'term-dim');
-            }
-        }
-        
-        if (shouldTeleport) {
-            const tpTargetFloor = tpTrigger.targetFloor;
-            const tpTargetRoom = tpTrigger.targetRoom;
-            
-            const tpFlash = document.createElement('div');
-            tpFlash.style.cssText = 'position:fixed;inset:0;z-index:99999;background:white;opacity:0;pointer-events:none;transition:opacity 0.2s;';
-            document.body.appendChild(tpFlash);
-            setTimeout(() => tpFlash.style.opacity = '1', 10);
-            setTimeout(() => {
-                tpFlash.style.opacity = '0';
-                setTimeout(() => tpFlash.remove(), 500);
-            }, 300);
-            
-            // Clear combat state when teleporting
-            if (gameState.combatState) {
-                gameState.combatState = null;
-                if (gameState.combatTimer) {
-                    clearInterval(gameState.combatTimer);
-                    gameState.combatTimer = null;
-                }
-                termAppend(`🌀 The teleportation breaks the enemy's pursuit!`, 'term-highlight');
-            }
-            
-            // Reset enemy chase states
-            if (ds.activeEnemies) {
-                ds.activeEnemies.forEach(enemy => {
-                    enemy.isChasing = false;
-                    enemy.roomsFollowed = 0;
-                });
-            }
-            
-            ds.floor = tpTargetFloor;
-            ds.currentRoom = tpTargetRoom;
-            
-            const tpScopedKey = `${tpTargetFloor}:${tpTargetRoom}`;
-            ds.discoveredRooms.add(tpScopedKey);
-            saveRoomDiscovery(gameState.player, ds.dungeonKey, tpTargetFloor, tpTargetRoom);
-            
-            const tpNewFloorData = dungeonData.floors[tpTargetFloor];
-            const tpNewRoom = tpNewFloorData.rooms[tpTargetRoom];
-            tpNewRoom.flags = tpNewRoom.flags || {};
-            tpNewRoom.flags.discovered = true;
-            
-            termClear();
-            termAppend('', 'term-separator');
-            termAppend(`<span style="color:#a855f7;">🌀 A magical force pulls you through space! 🌀</span>`, 'term-highlight');
-            termAppend(`<strong>${tpNewRoom.name || tpTargetRoom}</strong>`);
-            termAppend(tpNewRoom.description || '', 'term-dim');
-            const tpExitList = buildExitList(tpNewRoom);
-            termAppend(`You see exits: ${tpExitList}.`, 'term-dim');
-            
-            // Check for enemies in the new room
-            if (ds.activeEnemies) {
-                const enemiesInNewRoom = ds.activeEnemies.filter(e => e.currentRoom === tpTargetRoom);
-                if (enemiesInNewRoom.length > 0 && !gameState.combatState) {
-                    startDungeonCombat(enemiesInNewRoom);
-                }
-            }
-            
-            saveGame();
-            renderDungeonActionBar();
+        if (!currentRoom.contents || !currentRoom.contents.ladder) {
+            termAppend(`There is no ladder here.`, 'term-dim');
             return;
         }
-    }        
-    saveGame();
-    renderDungeonActionBar();
-    return;
-}
+        const ladder = currentRoom.contents.ladder;
+        if (ladder.direction !== direction) {
+            termAppend(`The ladder only goes ${ladder.direction}.`, 'term-dim');
+            return;
+        }
+
+        const targetFloor = ladder.leadsTo.floor;
+        const targetRoom  = ladder.leadsTo.room;
+
+        if (!dungeonData.floors[targetFloor] || !dungeonData.floors[targetFloor].rooms[targetRoom]) {
+            termAppend(`⚠️ Ladder leads nowhere (floor ${targetFloor} / ${targetRoom} not found).`, 'term-error');
+            return;
+        }
+
+        // ── Transition ───────────────────────────────────────────
+        ds.floor      = targetFloor;
+        ds.currentRoom = targetRoom;
+        
+        // Load persistent map for the new floor and merge with current session
+        const persistentMap = loadDungeonMap(gameState.player, ds.dungeonKey, targetFloor);
+        const scopedKey = `${targetFloor}:${targetRoom}`;
+        persistentMap.add(scopedKey);
+        saveRoomDiscovery(gameState.player, ds.dungeonKey, targetFloor, targetRoom);
+        
+        ds.discoveredRooms = persistentMap;
+
+        const destFloorData = dungeonData.floors[targetFloor];
+        const destRoom = destFloorData.rooms[targetRoom];
+        destRoom.flags = destRoom.flags || {};
+        destRoom.flags.discovered = true;
+
+        termAppend('', 'term-separator');
+        termAppend(`🪜 You ${direction === 'up' ? 'climb up' : 'descend'} the ladder to <strong>Floor ${targetFloor}</strong>.`, 'term-highlight');
+        termAppend(`<strong>${destRoom.name || targetRoom}</strong>`);
+        termAppend(destRoom.description || '', 'term-dim');
+
+        const exitList = buildExitList(destRoom);
+        termAppend(`You see exits: ${exitList}.`, 'term-dim');
+
+        checkDungeonRespawns();
+        checkTownExit(destRoom);
+        triggerRoomTrap(destRoom);
+        checkRunestone(destRoom);
+        
+        // 📦 Auto-pickup loot from ground - FIXED FOR STAFF PIECES
+        if (destRoom.contents && destRoom.contents.lootTable && destRoom.contents.lootTable.length > 0) {
+            const loot = destRoom.contents.lootTable;
+            loot.forEach(item => {
+                const isStaffPiece = item.key && item.key.startsWith('staff_piece_');
+                let alreadyHas = false;
+                
+                if (isStaffPiece) {
+                    const staffNumber = ITEMS[item.key]?.staffPieceNumber;
+                    alreadyHas = gameState.player.inventory.some(invItem => {
+                        if (typeof invItem === 'object' && invItem !== null) {
+                            return invItem.staffPieceNumber === staffNumber;
+                        }
+                        return invItem === item.key;
+                    });
+                } else {
+                    alreadyHas = gameState.player.inventory.includes(item.key);
+                }
+                
+                if (!alreadyHas) {
+                    if (isStaffPiece) {
+                        gameState.player.inventory.push(ITEMS[item.key]);
+                        termAppend(`✨ You found <span style="color:#a855f7;">${item.label || ITEMS[item.key]?.name}</span> on the ground!`, 'term-loot');
+                    } else {
+                        gameState.player.inventory.push(item.key);
+                        termAppend(`✨ You found <span style="color:#a855f7;">${item.label || item.key}</span> on the ground!`, 'term-loot');
+                    }
+                } else if (isStaffPiece) {
+                    termAppend(`⚠️ You already have ${ITEMS[item.key]?.name}. You cannot carry another.`, 'term-warning');
+                }
+            });
+            delete destRoom.contents.lootTable;
+        }
+        
+        checkRoomEncounter(destRoom);
+        checkEnemiesInRoom(targetRoom);
+        
+        const enemiesHere = ds.activeEnemies.filter(e => e.currentRoom === targetRoom);
+        if (enemiesHere.length > 0 && !gameState.combatState) {
+            if (enemiesHere.length === 1) {
+                termAppend(`⚠️ <strong>${enemiesHere[0].name}</strong> is already in this room, waiting for you!`, 'term-warning');
+            } else {
+                const names = enemiesHere.map(e => e.name).join(', ');
+                termAppend(`⚠️ ${names} are already in this room, waiting for you!`, 'term-warning');
+            }
+        }
+        
+        // 🌀 TELEPORT TRIGGER (ladder version)
+        if (destRoom.contents && destRoom.contents.staffTrigger && 
+            destRoom.contents.staffTrigger.enabled) {
+            
+            const tpTrigger = destRoom.contents.staffTrigger;
+            const triggerType = tpTrigger.triggerType;
+            let shouldTeleport = false;
+            
+            if (triggerType === 'enter_room') {
+                shouldTeleport = true;
+            } else if (triggerType === 'staff_pieces') {
+                const staffCount = (gameState.player.inventory || []).filter(i => i && typeof i === 'string' && i.startsWith('staff_piece_')).length;
+                if (staffCount >= 8) {
+                    shouldTeleport = true;
+                    termAppend(`🪄 The staff pieces resonate with the ancient gate!`, 'term-highlight');
+                    
+                    gameState.player.inventory = gameState.player.inventory.filter(i => !(i && typeof i === 'string' && i.startsWith('staff_piece_')));
+                    termAppend(`🪄 The staff pieces dissolve into the gate, consumed by the teleportation!`, 'term-warning');
+                } else {
+                    termAppend(`🪄 The gate requires all 8 staff pieces to activate. (${staffCount}/8 collected)`, 'term-dim');
+                }
+            }
+            
+            if (shouldTeleport) {
+                const tpTargetFloor = tpTrigger.targetFloor;
+                const tpTargetRoom = tpTrigger.targetRoom;
+                
+                const tpFlash = document.createElement('div');
+                tpFlash.style.cssText = 'position:fixed;inset:0;z-index:99999;background:white;opacity:0;pointer-events:none;transition:opacity 0.2s;';
+                document.body.appendChild(tpFlash);
+                setTimeout(() => tpFlash.style.opacity = '1', 10);
+                setTimeout(() => {
+                    tpFlash.style.opacity = '0';
+                    setTimeout(() => tpFlash.remove(), 500);
+                }, 300);
+                
+                if (gameState.combatState) {
+                    gameState.combatState = null;
+                    if (gameState.combatTimer) {
+                        clearInterval(gameState.combatTimer);
+                        gameState.combatTimer = null;
+                    }
+                    termAppend(`🌀 The teleportation breaks the enemy's pursuit!`, 'term-highlight');
+                }
+                
+                if (ds.activeEnemies) {
+                    ds.activeEnemies.forEach(enemy => {
+                        enemy.isChasing = false;
+                        enemy.roomsFollowed = 0;
+                    });
+                }
+                
+                ds.floor = tpTargetFloor;
+                ds.currentRoom = tpTargetRoom;
+                
+                const tpScopedKey = `${tpTargetFloor}:${tpTargetRoom}`;
+                ds.discoveredRooms.add(tpScopedKey);
+                saveRoomDiscovery(gameState.player, ds.dungeonKey, tpTargetFloor, tpTargetRoom);
+                
+                const tpNewFloorData = dungeonData.floors[tpTargetFloor];
+                const tpNewRoom = tpNewFloorData.rooms[tpTargetRoom];
+                tpNewRoom.flags = tpNewRoom.flags || {};
+                tpNewRoom.flags.discovered = true;
+                
+                termClear();
+                termAppend('', 'term-separator');
+                termAppend(`<span style="color:#a855f7;">🌀 A magical force pulls you through space! 🌀</span>`, 'term-highlight');
+                termAppend(`<strong>${tpNewRoom.name || tpTargetRoom}</strong>`);
+                termAppend(tpNewRoom.description || '', 'term-dim');
+                const tpExitList = buildExitList(tpNewRoom);
+                termAppend(`You see exits: ${tpExitList}.`, 'term-dim');
+                
+                if (ds.activeEnemies) {
+                    const enemiesInNewRoom = ds.activeEnemies.filter(e => e.currentRoom === tpTargetRoom);
+                    if (enemiesInNewRoom.length > 0 && !gameState.combatState) {
+                        startDungeonCombat(enemiesInNewRoom);
+                    }
+                }
+                
+                saveGame();
+                renderDungeonActionBar();
+                return;
+            }
+        }        
+        saveGame();
+        renderDungeonActionBar();
+        return;
+    }
+    
     // ═══════════════════════════════════════════════════════════════
     // NORMAL DIRECTION MOVEMENT
     // ═══════════════════════════════════════════════════════════════
@@ -22642,21 +22683,43 @@ if (direction === 'up' || direction === 'down') {
     checkDungeonRespawns();
     checkRoomEncounter(nextRoom);
     checkRunestone(nextRoom);
-        // 📦 Auto-pickup loot from ground
+    
+    // 📦 Auto-pickup loot from ground - FIXED FOR STAFF PIECES
     if (nextRoom.contents && nextRoom.contents.lootTable && nextRoom.contents.lootTable.length > 0) {
         const loot = nextRoom.contents.lootTable;
         loot.forEach(item => {
-            if (!gameState.player.inventory.includes(item.key)) {
-                gameState.player.inventory.push(item.key);
-                termAppend(`✨ You found <span style="color:#a855f7;">${item.label || item.key}</span> on the ground!`, 'term-loot');
+            const isStaffPiece = item.key && item.key.startsWith('staff_piece_');
+            let alreadyHas = false;
+            
+            if (isStaffPiece) {
+                const staffNumber = ITEMS[item.key]?.staffPieceNumber;
+                alreadyHas = gameState.player.inventory.some(invItem => {
+                    if (typeof invItem === 'object' && invItem !== null) {
+                        return invItem.staffPieceNumber === staffNumber;
+                    }
+                    return invItem === item.key;
+                });
+            } else {
+                alreadyHas = gameState.player.inventory.includes(item.key);
+            }
+            
+            if (!alreadyHas) {
+                if (isStaffPiece) {
+                    gameState.player.inventory.push(ITEMS[item.key]);
+                    termAppend(`✨ You found <span style="color:#a855f7;">${item.label || ITEMS[item.key]?.name}</span> on the ground!`, 'term-loot');
+                } else {
+                    gameState.player.inventory.push(item.key);
+                    termAppend(`✨ You found <span style="color:#a855f7;">${item.label || item.key}</span> on the ground!`, 'term-loot');
+                }
+            } else if (isStaffPiece) {
+                termAppend(`⚠️ You already have ${ITEMS[item.key]?.name}. You cannot carry another.`, 'term-warning');
             }
         });
-        // Remove loot so it doesn't get picked up again
         delete nextRoom.contents.lootTable;
     }
+    
     const arrivals = updateDungeonEnemies();
 
-        // 📢 Show message if there are enemies already in this room
     const enemiesHere = ds.activeEnemies.filter(e => e.currentRoom === nextRoomId);
     if (enemiesHere.length > 0 && !gameState.combatState) {
         if (enemiesHere.length === 1) {
@@ -22689,8 +22752,7 @@ if (direction === 'up' || direction === 'down') {
             if (staffCount >= 8) {
                 shouldTeleport = true;
                 termAppend(`🪄 The staff pieces resonate with the ancient gate!`, 'term-highlight');
-
-                 // CONSUME ALL STAFF PIECES
+                
                 gameState.player.inventory = gameState.player.inventory.filter(i => !(i && typeof i === 'string' && i.startsWith('staff_piece_')));
                 termAppend(`🪄 The staff pieces dissolve into the gate, consumed by the teleportation!`, 'term-warning');
             } else {
@@ -22711,7 +22773,6 @@ if (direction === 'up' || direction === 'down') {
                 setTimeout(() => tpFlash.remove(), 500);
             }, 300);
             
-            // Clear combat state when teleporting
             if (gameState.combatState) {
                 gameState.combatState = null;
                 if (gameState.combatTimer) {
@@ -22721,7 +22782,6 @@ if (direction === 'up' || direction === 'down') {
                 termAppend(`🌀 The teleportation breaks the enemy's pursuit!`, 'term-highlight');
             }
             
-            // Reset enemy chase states
             if (ds.activeEnemies) {
                 ds.activeEnemies.forEach(enemy => {
                     enemy.isChasing = false;
@@ -22749,7 +22809,6 @@ if (direction === 'up' || direction === 'down') {
             const tpExitList = buildExitList(tpNewRoom);
             termAppend(`You see exits: ${tpExitList}.`, 'term-dim');
             
-            // Check for enemies in the new room and start combat
             if (ds.activeEnemies) {
                 const enemiesInNewRoom = ds.activeEnemies.filter(e => e.currentRoom === tpTargetRoom);
                 if (enemiesInNewRoom.length > 0 && !gameState.combatState) {
@@ -26857,7 +26916,7 @@ if (cs.isBountyFight) {
         
         if (weaponDrop) {
             // Add to player inventory - ONLY ONCE
-            gameState.player.inventory.push(weaponDrop.instanceId);
+            gameState.player.inventory.push(weaponDrop);
             
             // Show drop message with quality color
             const qualityColor = QUALITY_CONFIG[weaponDrop.quality].color;
