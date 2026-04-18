@@ -181,6 +181,90 @@ const WEAPONS = {
         "allowedClasses": ["mage", "warlock", "sorceror", "necrolyte"],
         "weaponSubtype": "wand"
     },
+    phantom_wand: {
+        "name": "Phantom Wand",
+        "baseDamage": 3,
+        "maxDamage": 7,
+        "baseMagicDamage": 49,
+        "cost": 20000,
+        "level": 19,
+        "quality": "",
+        "slot": "weapon",
+        "allowedClasses": ["mage", "warlock", "sorceror", "necrolyte"],
+        "weaponSubtype": "wand"
+    },
+    eclipse_wand: {
+        "name": "Eclipse Wand",
+        "baseDamage": 3,
+        "maxDamage": 7,
+        "baseMagicDamage": 53,
+        "cost": 24000,
+        "level": 20,
+        "quality": "",
+        "slot": "weapon",
+        "allowedClasses": ["mage", "warlock", "sorceror", "necrolyte"],
+        "weaponSubtype": "wand"
+    },
+    oblivion_wand: {
+        "name": "Oblivion Wand",
+        "baseDamage": 3,
+        "maxDamage": 8,
+        "baseMagicDamage": 57,
+        "cost": 28000,
+        "level": 21,
+        "quality": "",
+        "slot": "weapon",
+        "allowedClasses": ["mage", "warlock", "sorceror", "necrolyte"],
+        "weaponSubtype": "wand"
+    },
+    genesis_wand: {
+        "name": "Genesis Wand",
+        "baseDamage": 3,
+        "maxDamage": 8,
+        "baseMagicDamage": 61,
+        "cost": 33000,
+        "level": 22,
+        "quality": "",
+        "slot": "weapon",
+        "allowedClasses": ["mage", "warlock", "sorceror", "necrolyte"],
+        "weaponSubtype": "wand"
+    },
+    etherweave_wand: {
+        "name": "Etherweave Wand",
+        "baseDamage": 4,
+        "maxDamage": 8,
+        "baseMagicDamage": 65,
+        "cost": 38000,
+        "level": 23,
+        "quality": "",
+        "slot": "weapon",
+        "allowedClasses": ["mage", "warlock", "sorceror", "necrolyte"],
+        "weaponSubtype": "wand"
+    },
+    singularity_wand: {
+        "name": "Singularity Wand",
+        "baseDamage": 4,
+        "maxDamage": 9,
+        "baseMagicDamage": 69,
+        "cost": 44000,
+        "level": 24,
+        "quality": "",
+        "slot": "weapon",
+        "allowedClasses": ["mage", "warlock", "sorceror", "necrolyte"],
+        "weaponSubtype": "wand"
+    },
+    wand_of_annihilation: {
+        "name": "Wand of Annihilation",
+        "baseDamage": 4,
+        "maxDamage": 9,
+        "baseMagicDamage": 74,
+        "cost": 52000,
+        "level": 25,
+        "quality": "",
+        "slot": "weapon",
+        "allowedClasses": ["mage", "warlock", "sorceror", "necrolyte"],
+        "weaponSubtype": "wand"
+    },
 
     // ======================================================
     // TOMES - Cleric (Very Low Melee, High Magic + Healing)
@@ -844,6 +928,18 @@ const WEAPONS = {
         "allowedClasses": ["cleric", "high_priest"],
         "weaponSubtype": "staff"
     },
+    staff_of_annihilation: {
+        "name": "Staff of Annihilation",
+        "baseDamage": 26,
+        "maxDamage": 42,
+        "baseMagicDamage": 55,
+        "cost": 52000,
+        "level": 25,
+        "quality": "",
+        "slot": "weapon",
+        "allowedClasses": ["mage", "warlock", "sorceror", "cleric"],
+        "weaponSubtype": "staff"
+    },
 
     // ======================================================
     // MACES - Cleric/Paladin (High Melee, Low Magic)
@@ -1133,6 +1229,18 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 33750,
         "level": 24,
+        "quality": "",
+        "slot": "weapon",
+        "weaponSubtype": "mace",
+        "allowedClasses": ["warrior", "paladin", "cleric"]
+    },
+    mace_of_annihilation: {
+        "name": "Mace of Annihilation",
+        "baseDamage": 103,
+        "maxDamage": 157,
+        "baseMagicDamage": 0,
+        "cost": 52000,
+        "level": 25,
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "mace",
@@ -1870,6 +1978,18 @@ const WEAPONS = {
         "weaponSubtype": "axe",
         "allowedClasses": ["warrior", "paladin"]
     },
+    axe_of_annihilation: {
+        "name": "Axe of Annihilation",
+        "baseDamage": 102,
+        "maxDamage": 167,
+        "baseMagicDamage": 0,
+        "cost": 52000,
+        "level": 25,
+        "quality": "",
+        "slot": "weapon",
+        "weaponSubtype": "axe",
+        "allowedClasses": ["warrior", "paladin"]
+    },
 
     // ======================================================
     // HAMMERS - Warrior/Paladin
@@ -2159,6 +2279,18 @@ const WEAPONS = {
         "baseMagicDamage": 0,
         "cost": 33750,
         "level": 24,
+        "quality": "",
+        "slot": "weapon",
+        "weaponSubtype": "hammer",
+        "allowedClasses": ["warrior", "paladin", "runesmith"]
+    },
+    hammer_of_annihilation: {
+        "name": "Hammer of Annihilation",
+        "baseDamage": 106,
+        "maxDamage": 163,
+        "baseMagicDamage": 0,
+        "cost": 52000,
+        "level": 25,
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "hammer",
