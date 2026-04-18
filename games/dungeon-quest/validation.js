@@ -11,6 +11,7 @@ function validateAndRepairInventory() {
     console.log('🔧 Running inventory validation...');
     let repairs = 0;
     let removals = 0;
+    let levelFixes = 0;
     
     const validatedInventory = [];
     const seenInstanceIds = new Set();
@@ -32,6 +33,38 @@ function validateAndRepairInventory() {
                 continue;
             }
             
+            // ── FIX INCORRECT WEAPON LEVEL ─────────────────────────
+            if (masterCopy.id) {
+                const baseWeapon = WEAPONS[masterCopy.id];
+                if (baseWeapon && masterCopy.level !== baseWeapon.level) {
+                    console.log(`🔧 Fixing weapon level: ${masterCopy.name} was Lv${masterCopy.level}, should be Lv${baseWeapon.level}`);
+                    
+                    const originalQuality = masterCopy.quality;
+                    const originalModifiers = masterCopy.modifiers;
+                    const originalGems = masterCopy.gems;
+                    const originalName = masterCopy.name;
+                    
+                    const bonusPct = QUALITY_CONFIG[originalQuality]?.bonusPct || 0;
+                    const baseDamageBonus = Math.floor(baseWeapon.baseDamage * bonusPct);
+                    const maxDamageBonus = baseWeapon.maxDamage ? Math.floor(baseWeapon.maxDamage * bonusPct) : baseDamageBonus;
+                    const magicDamageBonus = baseWeapon.baseMagicDamage ? Math.floor(baseWeapon.baseMagicDamage * bonusPct) : 0;
+                    
+                    masterCopy.level = baseWeapon.level;
+                    masterCopy.baseDamage = baseWeapon.baseDamage + baseDamageBonus;
+                    masterCopy.maxDamage = (baseWeapon.maxDamage || baseWeapon.baseDamage) + maxDamageBonus;
+                    if (baseWeapon.baseMagicDamage) {
+                        masterCopy.baseMagicDamage = baseWeapon.baseMagicDamage + magicDamageBonus;
+                    }
+                    
+                    masterCopy.quality = originalQuality;
+                    masterCopy.modifiers = originalModifiers;
+                    masterCopy.gems = originalGems;
+                    masterCopy.name = originalName;
+                    
+                    levelFixes++;
+                }
+            }
+            
             if (masterCopy !== item) repairs++;
             validatedInventory.push(masterCopy);
         }
@@ -49,6 +82,34 @@ function validateAndRepairInventory() {
                 console.warn(`⚠️ Orphaned armor: ${item.name} - removing`);
                 removals++;
                 continue;
+            }
+            
+            // ── FIX INCORRECT ARMOR LEVEL ──────────────────────────
+            if (masterCopy.id) {
+                const baseArmor = ARMOR[masterCopy.id];
+                if (baseArmor && masterCopy.level !== baseArmor.level) {
+                    console.log(`🔧 Fixing armor level: ${masterCopy.name} was Lv${masterCopy.level}, should be Lv${baseArmor.level}`);
+                    
+                    const originalQuality = masterCopy.quality;
+                    const originalGems = masterCopy.gems;
+                    const originalName = masterCopy.name;
+                    
+                    const bonusPct = QUALITY_CONFIG[originalQuality]?.bonusPct || 0;
+                    const defenseBonus = Math.floor(baseArmor.baseDefense * bonusPct);
+                    const magicBonus = baseArmor.baseMagicBonus ? Math.floor(baseArmor.baseMagicBonus * bonusPct) : 0;
+                    
+                    masterCopy.level = baseArmor.level;
+                    masterCopy.baseDefense = baseArmor.baseDefense + defenseBonus;
+                    if (baseArmor.baseMagicBonus) {
+                        masterCopy.baseMagicBonus = baseArmor.baseMagicBonus + magicBonus;
+                    }
+                    
+                    masterCopy.quality = originalQuality;
+                    masterCopy.gems = originalGems;
+                    masterCopy.name = originalName;
+                    
+                    levelFixes++;
+                }
             }
             
             if (masterCopy !== item) repairs++;
@@ -73,8 +134,8 @@ function validateAndRepairInventory() {
         repairs++;
     }
     
-    console.log(`✅ Inventory validation: ${repairs} repaired, ${removals} removed`);
-    return repairs > 0 || removals > 0;
+    console.log(`✅ Inventory validation: ${repairs} repaired, ${removals} removed, ${levelFixes} level fixes`);
+    return repairs > 0 || removals > 0 || levelFixes > 0;
 }
 
 

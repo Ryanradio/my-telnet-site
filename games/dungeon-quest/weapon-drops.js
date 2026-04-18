@@ -415,15 +415,9 @@ function generateWeaponDrop(player, enemyLevel, enemyRarity = 'common', skipRoll
             }
         }
         
-        // Determine weapon level
-        let weaponLevel;
-        if (skipRoll) {
-            weaponLevel = enemyLevel;
-        } else {
-            const minLevel = Math.max(1, enemyLevel - 2);
-            const maxLevel = Math.min(30, enemyLevel + 2);
-            weaponLevel = minLevel + Math.floor(Math.random() * (maxLevel - minLevel + 1));
-        }
+                // Use enemy level to determine what level weapons to pull FROM (filtering only)
+        const targetMinLevel = Math.max(1, enemyLevel - 2);
+        const targetMaxLevel = Math.min(30, enemyLevel + 2);
         
         const playerClass = player.baseClass || player.class;
         
@@ -434,8 +428,8 @@ function generateWeaponDrop(player, enemyLevel, enemyRarity = 'common', skipRoll
             if (weapon.instanceId) continue;
             if (weapon.canDrop === false) continue;
             
-            // Level check - only weapons within ±2 levels
-            if (weapon.level && (weapon.level < weaponLevel - 2 || weapon.level > weaponLevel + 2)) continue;
+            // Level check - filter by the weapon's ACTUAL level from weapons.js
+            if (weapon.level && (weapon.level < targetMinLevel || weapon.level > targetMaxLevel)) continue;
             
             // Class restriction check
             if (weapon.allowedClasses && !weapon.allowedClasses.includes(playerClass)) continue;
@@ -504,7 +498,7 @@ function generateWeaponDrop(player, enemyLevel, enemyRarity = 'common', skipRoll
             maxDamage: (baseWeapon.maxDamage || baseWeapon.baseDamage) + maxDamageBonus,
             baseMagicDamage: baseWeapon.baseMagicDamage ? baseWeapon.baseMagicDamage + magicDamageBonus : 0,
             healingBonus: baseWeapon.healingBonus ? baseWeapon.healingBonus + healingBonus : 0,
-            level: weaponLevel,
+            level: baseWeapon.level,  // Use the weapon's actual level from weapons.js
             originalLevel: baseWeapon.level,
             quality: quality,
             qualityBonus: bonusPct,
