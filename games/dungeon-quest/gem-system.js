@@ -106,16 +106,25 @@ const GEM_KEYS = Object.keys(GEM_TYPES);
 
 // Cut a raw gem into a finished gem with permanent random stats
 function cutGem(gemKey) {
-    // Safely parse tier with validation
+    // Parse raw gem key format: raw_topaz_t3
     let tier = 1;
-    if (gemKey.includes('_t')) {
-        const parsed = parseInt(gemKey.split('_t')[1]);
-        tier = isNaN(parsed) ? 1 : parsed;
+    let typeKey = '';
+    
+    // Find tier using regex that looks for _t followed by 1-4
+    const tierMatch = gemKey.match(/_t([1-4])$/);
+    if (tierMatch) {
+        tier = parseInt(tierMatch[1]);
     }
     
-    const typeKey = gemKey.replace(/_t\d+$/, '').replace('raw_','');
+    // Extract type key: remove 'raw_' and remove the trailing _tX
+    typeKey = gemKey.replace(/^raw_/, '');
+    typeKey = typeKey.replace(/_t[1-4]$/, '');
+    
     const gemDef = GEM_TYPES[typeKey];
-    if (!gemDef) return null;
+    if (!gemDef) {
+        console.error(`Unknown gem type: ${typeKey} from key: ${gemKey}`);
+        return null;
+    }
     
     const mult = GEM_TIER_MULT[tier] || 1.0;
     
@@ -133,7 +142,7 @@ function cutGem(gemKey) {
         statValues[stat] = (statValues[stat] || 0) + val;
     }
     
-    // Generate tier prefix safely
+    // Generate tier prefix
     const tierPrefix = ['', 'T1 ', 'T2 ', 'T3 ', 'T4 '][tier] || `T${tier} `;
     
     return {
@@ -148,6 +157,7 @@ function cutGem(gemKey) {
         description: describeGemStats(statValues)
     };
 }
+
 function describeGemStats(stats) {
     const labels = {
         weaponDmg:    'Weapon DMG',   lifesteal:    'Lifesteal %',
