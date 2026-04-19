@@ -13736,7 +13736,7 @@ function stabilizeTerminalLayout() {
                 
                 // Calculate dynamic poison damage based on weapon level
 let damage = statusDef.damagePerTick;
-if (statusKey === 'poisoned') {
+if (statusKey === 'poisoned' || statusKey === 'burning' || statusKey === 'bleeding'){
     const p = gameState.player;
     const weapon = WEAPONS[p?.weapon];
     const weaponLevel = weapon?.level || 1;
