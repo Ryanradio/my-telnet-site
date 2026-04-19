@@ -9189,64 +9189,63 @@ function getItemName(item) {
             const adventure = gameState.currentAdventure;
             if (!adventure) return;
             
-            const choice = adventure.choices[choiceIndex];
-            
-            termAppend('', 'term-separator');
-            termAppend(`<span style="color:var(--text-color);">► You choose: ${choice.text}</span>`, 'term-highlight');
-            termAppend('', 'term-separator');
-            
-            // Roll for outcome
-            let totalWeight = 0;
-            choice.outcomes.forEach(o => totalWeight += o.weight);
-            
-            let roll = Math.random() * totalWeight;
-            let selectedOutcome = choice.outcomes[0];
-            
-            for (const outcome of choice.outcomes) {
-                roll -= outcome.weight;
-                if (roll <= 0) {
-                    selectedOutcome = outcome;
-                    break;
+            try {
+                const choice = adventure.choices[choiceIndex];
+                
+                termAppend('', 'term-separator');
+                termAppend(`<span style="color:var(--text-color);">► You choose: ${choice.text}</span>`, 'term-highlight');
+                termAppend('', 'term-separator');
+                
+                // Roll for outcome
+                let totalWeight = 0;
+                choice.outcomes.forEach(o => totalWeight += o.weight);
+                
+                let roll = Math.random() * totalWeight;
+                let selectedOutcome = choice.outcomes[0];
+                
+                for (const outcome of choice.outcomes) {
+                    roll -= outcome.weight;
+                    if (roll <= 0) {
+                        selectedOutcome = outcome;
+                        break;
+                    }
                 }
-            }
-            
-            // Show outcome
-            termAppend(selectedOutcome.text, 'term-highlight');
-            
-            // Apply rewards
-            if (selectedOutcome.rewards) {
-                applyAdventureRewards(selectedOutcome.rewards);
-            }
-            
-            // Start combat if needed
-            if (selectedOutcome.combat) {
-                termAppend('', 'term-separator');
-                gameState.currentAdventure = null;
-                startCombat(selectedOutcome.combat);
-                return;
-            }
-            
-            // Check if this outcome leads to another choice
-            if (selectedOutcome.nextChoices && selectedOutcome.nextChoices.length > 0) {
-                // Continue the adventure with new choices
-                termAppend('', 'term-separator');
-                termAppend('<span style="color:var(--highlight-color);">What do you do?</span>');
-                termAppend('', 'term-separator');
                 
-                // Update adventure choices
-                adventure.choices = selectedOutcome.nextChoices;
+                // Show outcome
+                termAppend(selectedOutcome.text, 'term-highlight');
                 
-                // Show new choices
-                adventure.choices.forEach((choice, index) => {
-                    termAppend(`<span style="color:var(--highlight-color);">${index + 1}.</span> ${choice.text}`, 'term-highlight');
-                });
+                // Apply rewards
+                if (selectedOutcome.rewards) {
+                    applyAdventureRewards(selectedOutcome.rewards);
+                }
                 
-                // Render new choice buttons
-                renderAdventureActionBar();
-                return;
+                // Start combat if needed
+                if (selectedOutcome.combat) {
+                    termAppend('', 'term-separator');
+                    gameState.currentAdventure = null;
+                    startCombat(selectedOutcome.combat);
+                    return;
+                }
+                
+                // Check if this outcome leads to another choice
+                if (selectedOutcome.nextChoices && selectedOutcome.nextChoices.length > 0) {
+                    termAppend('', 'term-separator');
+                    termAppend('<span style="color:var(--highlight-color);">What do you do?</span>');
+                    termAppend('', 'term-separator');
+                    adventure.choices = selectedOutcome.nextChoices;
+                    adventure.choices.forEach((c, index) => {
+                        termAppend(`<span style="color:var(--highlight-color);">${index + 1}.</span> ${c.text}`, 'term-highlight');
+                    });
+                    renderAdventureActionBar();
+                    return;
+                }
+
+            } catch (err) {
+                console.error('⚠️ Adventure path error:', err);
+                termAppend(`<span style="color:#FF8800;">⚠️ The adventure ended unexpectedly.</span>`, 'term-warning');
             }
-            
-            // Adventure over, return to exploration
+
+            // Adventure over (or error recovery) — always restore the action bar
             gameState.currentAdventure = null;
             termAppend('', 'term-separator');
             renderActionBar();
@@ -9255,6 +9254,8 @@ function getItemName(item) {
         function applyAdventureRewards(rewards) {
             const p = gameState.player;
             
+            try {
+
             if (rewards.gold) {
                 p.gold = Math.max(0, p.gold + rewards.gold);
                 if (rewards.gold > 0) {
@@ -9304,13 +9305,15 @@ function getItemName(item) {
             
             if (rewards.items) {
                 rewards.items.forEach(itemKey => {
-                    p.inventory.push(itemKey);
+                    // Validate the item exists before pushing to inventory
                     const item = ITEMS[itemKey] || WEAPONS[itemKey] || ARMOR[itemKey];
-                    if (item) {
-                        termAppend(`<span style="color:#00FFFF;">🎁 Received: ${item.name}!</span>`, 'term-loot');
-                    } else {
-                        termAppend(`<span style="color:#00FFFF;">🎁 Received: ${itemKey}!</span>`, 'term-loot');
+                    if (!item) {
+                        console.warn(`⚠️ Adventure reward item '${itemKey}' not found in ITEMS/WEAPONS/ARMOR — skipping.`);
+                        termAppend(`<span style="color:#888;">📦 (A reward item was unavailable and skipped)</span>`, 'term-dim');
+                        return; // skip this item, don't freeze the game
                     }
+                    p.inventory.push(itemKey);
+                    termAppend(`<span style="color:#00FFFF;">🎁 Received: ${item.name}!</span>`, 'term-loot');
                 });
             }
             
@@ -9323,6 +9326,14 @@ function getItemName(item) {
             
             updateHud();
             saveGame();
+
+            } catch (err) {
+                console.error('⚠️ applyAdventureRewards error:', err);
+                termAppend(`<span style="color:#FF8800;">⚠️ Something went wrong applying rewards — your gold and XP were saved.</span>`, 'term-warning');
+                // Still try to save whatever we managed to apply
+                try { updateHud(); } catch(e) {}
+                try { saveGame(); } catch(e) {}
+            }
         }
 
 
