@@ -474,7 +474,8 @@ function generateWeaponDrop(player, enemyLevel, enemyRarity = 'common', skipRoll
         const healingBonus = baseWeapon.healingBonus ? Math.floor(baseWeapon.healingBonus * bonusPct) : 0;
         
         // Generate modifiers
-        const modifiers = typeof generateModifiers === 'function' ? generateModifiers(quality, weaponLevel) : [];
+        // Generate modifiers using the weapon's actual level
+const modifiers = typeof generateModifiers === 'function' ? generateModifiers(quality, baseWeapon.level) : [];
         
         const gemSlots = {
             rare: 1,
@@ -505,7 +506,7 @@ function generateWeaponDrop(player, enemyLevel, enemyRarity = 'common', skipRoll
             modifiers: modifiers,
             gemSlots: gemSlots,
             gems: [],
-            cost: Math.floor((weaponLevel * 40) * (quality === 'godly' ? 10 : quality === 'legendary' ? 8 : quality === 'epic' ? 4 : quality === 'rare' ? 1.5 : 1)),
+            cost: Math.floor((baseWeapon.level * 40) * (quality === 'godly' ? 10 : quality === 'legendary' ? 8 : quality === 'epic' ? 4 : quality === 'rare' ? 1.5 : 1)),
             description: baseWeapon.description || `A ${quality} quality ${baseWeapon.name}.`,
             allowedClasses: baseWeapon.allowedClasses,
             classRestriction: baseWeapon.classRestriction,
