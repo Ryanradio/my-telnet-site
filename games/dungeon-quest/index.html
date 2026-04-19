@@ -30,7 +30,7 @@
         </div>
         <div id="splash-status">INITIALIZING...</div>
 
-        <button id="splash-enter" onclick="window._splashEnterGame()" style="font-family: 'VT323', monospace; font-style: normal; font-weight: bold; letter-spacing: 2px;">⚔ ENTER THE DUNGEON ⚔</button>
+        <button id="splash-enter" onclick="window._splashEnterGame()">⚔ ENTER THE DUNGEON ⚔</button>
     </div>
 </div>
 
@@ -13734,17 +13734,7 @@ function stabilizeTerminalLayout() {
                     }
                 }
                 
-                let damage = statusDef.damagePerTick;
-if (statusKey === 'poisoned') {
-    const weapon = WEAPONS[gameState.player?.weapon];
-    const weaponLevel = weapon?.level || 1;
-    
-    if (weaponLevel >= 20) damage = 40;
-    else if (weaponLevel >= 15) damage = 20;
-    else if (weaponLevel >= 10) damage = 10;
-    else if (weaponLevel >= 5) damage = 4;
-    else damage = 2;
-};
+                const damage = statusDef.damagePerTick;
                 target.hp -= damage;
                 if (isPlayer) haptic('dot');
                 
@@ -23641,12 +23631,12 @@ function sysoFilterList(searchValue) {
 
     <div class="welcome-header">
       <span class="welcome-dragon-icon">🐉</span>
-      <div class="welcome-title" style="font-family: 'VT323', monospace; font-style: normal; font-size: 24px; letter-spacing: 3px;">The Age of Calamity Begins</div>
-      <div class="welcome-name" id="welcome-char-name" style="font-family: 'VT323', monospace; font-style: normal;"></div>
-      <div class="welcome-class" id="welcome-char-class" style="font-family: 'VT323', monospace; font-style: normal;"></div>
+      <div class="welcome-title">The Age of Calamity Begins</div>
+      <div class="welcome-name" id="welcome-char-name"></div>
+      <div class="welcome-class" id="welcome-char-class"></div>
     </div>
 
-    <div class="welcome-body" id="welcome-body" style="font-family: 'VT323', monospace; font-style: normal;"></div>
+    <div class="welcome-body" id="welcome-body"></div>
 
     <div class="welcome-footer">
       <button class="welcome-skip" onclick="skipWelcome()">[ skip ]</button>
@@ -23657,6 +23647,7 @@ function sysoFilterList(searchValue) {
 
   </div>
 </div>
+
 
 <!-- ═══════════════════════════════════════════════════════════════════
      LEVEL-UP FLASH + ANNOUNCEMENT
