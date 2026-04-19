@@ -13734,7 +13734,17 @@ function stabilizeTerminalLayout() {
                     }
                 }
                 
-                const damage = statusDef.damagePerTick;
+                let damage = statusDef.damagePerTick;
+if (statusKey === 'poisoned') {
+    const weapon = WEAPONS[gameState.player?.weapon];
+    const weaponLevel = weapon?.level || 1;
+    
+    if (weaponLevel >= 20) damage = 40;
+    else if (weaponLevel >= 15) damage = 20;
+    else if (weaponLevel >= 10) damage = 10;
+    else if (weaponLevel >= 5) damage = 4;
+    else damage = 2;
+};
                 target.hp -= damage;
                 if (isPlayer) haptic('dot');
                 
