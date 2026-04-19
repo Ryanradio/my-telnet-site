@@ -26,19 +26,7 @@ const STATUS_EFFECTS = {
         icon: '☠️',
         color: '#00FF00',
         type: 'dot',
-        damagePerTick: (function() {
-    // Scale poison damage based on player's weapon level
-    const p = gameState?.player;
-    if (!p) return 2;
-    const weapon = WEAPONS[p.weapon];
-    const weaponLevel = weapon?.level || 1;
-    
-    if (weaponLevel >= 20) return 12;
-    if (weaponLevel >= 15) return 9;
-    if (weaponLevel >= 10) return 6;
-    if (weaponLevel >= 5) return 4;
-    return 2;
-})(),
+        damagePerTick: 2,
         tickInterval: 3000,
         duration: 12000, // 12 seconds (4 ticks)
         description: 'Poisoned - taking damage over time',
