@@ -875,14 +875,16 @@ function generateArmorDrop(player, sourceLevel, enemyRarity, skipRoll = false, f
     });
     
     if (candidateArmors.length === 0) {
-        // Fallback to any armor around this level
-        candidateArmors = Object.keys(ARMOR).filter(key => {
-            const armor = ARMOR[key];
-            if (armor.unarmored || armor.instanceId) return false;
-            const armorLevel = armor.level || 1;
-            return armorLevel >= sourceLevel - 2 && armorLevel <= sourceLevel + 2;
-        });
-    }
+    // Fallback - still respect armor type!
+    candidateArmors = Object.keys(ARMOR).filter(key => {
+        const armor = ARMOR[key];
+        if (armor.unarmored || armor.instanceId) return false;
+        // Still check armor type - don't give cloth to rogues
+        if (armor.armorSubtype !== armorType && armor.type !== armorType) return false;
+        const armorLevel = armor.level || 1;
+        return armorLevel >= sourceLevel - 2 && armorLevel <= sourceLevel + 2;
+    });
+}
     
     if (candidateArmors.length === 0) return null;
     
