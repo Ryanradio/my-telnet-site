@@ -902,7 +902,7 @@ function generateArmorDrop(player, sourceLevel, enemyRarity, skipRoll = false, f
     // ═══════════════════════════════════════════════════════════════
     // CALCULATE HP AND MP BONUSES BASED ON LEVEL AND QUALITY
     // ═══════════════════════════════════════════════════════════════
-    const armorLevel = baseArmor.level || sourceLevel;
+    const armorLevel = baseArmor.level || 1;
     
     // Get base HP from the armor's baseHp field
     let baseHp = baseArmor.baseHp || 0;

@@ -3924,7 +3924,7 @@ function handleGive(args) {
                     armorSubtype: baseArmor.armorSubtype || baseArmor.type || baseArmor.slot || 'armor',
                     baseDefense: baseArmor.baseDefense + defenseBonus,
                     baseMagicBonus: (baseArmor.baseMagicBonus || 0) + magicBonus,
-                    level: armorLevel,
+                    level: baseArmor.level,
                     quality: finalQuality,
                     qualityBonus: bonusPct,
                     gems: [],
