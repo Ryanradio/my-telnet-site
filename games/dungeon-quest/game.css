@@ -183,9 +183,9 @@
             display: none;
             margin-top: 36px;
             padding: 14px 40px;
-            font-family: 'Press Start 2P', cursive;
-            font-size: 0.65rem;
-            letter-spacing: 3px;
+            font-family: 'VT323', monospace;
+            font-size: 1.4rem;
+            letter-spacing: 4px;
             color: #ff2200;
             background: transparent;
             border: 1px solid #550000;

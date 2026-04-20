@@ -76,9 +76,10 @@ class LongPressTooltip {
         const itemCard = target.closest('.item-card');
         if (itemCard) return itemCard;
         
-        // Check for buttons in explore/dungeon inventory
+        // Check for buttons inside the dungeon/explore inventory overlay
+        // Use closest() so buttons nested at any depth inside the overlay are found
         const button = target.closest('button');
-        if (button && button.parentElement && button.parentElement.id === 'dungeonInvOverlay') {
+        if (button && button.closest('#dungeonInvOverlay')) {
             return button;
         }
         
@@ -90,8 +91,8 @@ class LongPressTooltip {
     }
     
     getItemData(element) {
-        // Handle explore inventory buttons (no item-card class)
-        if (element.tagName === 'BUTTON' && element.parentElement?.id === 'dungeonInvOverlay') {
+        // Handle inventory overlay buttons (dungeon AND explore — same overlay ID)
+        if (element.tagName === 'BUTTON' && element.closest('#dungeonInvOverlay')) {
             // Extract item name from button text (first line, remove icons)
             let itemName = element.innerText.split('\n')[0].replace(/[⚔️🛡️🧪💎🔴🟢🟡🔵🟣⬛🔷🟤🩸🌙☀️🔮🩶⛈️]/g, '').trim();
             // Remove quality brackets like [legendary], [epic], etc.
