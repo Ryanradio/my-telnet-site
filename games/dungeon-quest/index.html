@@ -356,6 +356,156 @@
     <script src="bounties.js"></script>
     <script src="hunter-pets.js"></script>
     <script src="presshold.js"></script>
+    <script>
+// ═══════════════════════════════════════════════════════════════
+// INVENTORY ITEM LONG-PRESS TOOLTIP SYSTEM
+// Shows detailed stats when holding on weapons/armor in inventory
+// ═══════════════════════════════════════════════════════════════
+
+function initInventoryTooltips() {
+    const overlay = document.getElementById('dungeonInvOverlay');
+    if (!overlay) return;
+    
+    const itemButtons = overlay.querySelectorAll('button');
+    itemButtons.forEach(btn => {
+        // Skip the CLOSE button
+        if (btn.innerText.includes('CLOSE INVENTORY')) return;
+        
+        let pressTimer;
+        
+        btn.addEventListener('touchstart', (e) => {
+            pressTimer = setTimeout(() => {
+                // Extract item info from button text
+                const btnText = btn.innerText;
+                
+                // Try to find weapon or armor data
+                let itemData = null;
+                let isWeapon = false;
+                
+                // Check if it's a weapon (starts with ⚔️)
+                if (btnText.startsWith('⚔️')) {
+                    isWeapon = true;
+                    // Extract weapon name (between ⚔️ and newline or BASE)
+                    const nameMatch = btnText.match(/⚔️ ([^\n]+)/);
+                    const weaponName = nameMatch ? nameMatch[1] : '';
+                    
+                    // Find in WEAPONS
+                    for (const [id, weapon] of Object.entries(WEAPONS)) {
+                        if (weapon.name === weaponName || weaponName.includes(weapon.name)) {
+                            itemData = weapon;
+                            break;
+                        }
+                    }
+                } 
+                // Check if it's armor (starts with 🛡️)
+                else if (btnText.startsWith('🛡️')) {
+                    isWeapon = false;
+                    const nameMatch = btnText.match(/🛡️ ([^\n]+)/);
+                    const armorName = nameMatch ? nameMatch[1] : '';
+                    
+                    for (const [id, armor] of Object.entries(ARMOR)) {
+                        if (armor.name === armorName || armorName.includes(armor.name)) {
+                            itemData = armor;
+                            break;
+                        }
+                    }
+                }
+                
+                if (itemData) {
+                    showItemTooltip(itemData, isWeapon, e.touches[0]);
+                }
+            }, 500);
+        });
+        
+        btn.addEventListener('touchend', () => {
+            clearTimeout(pressTimer);
+            removeTooltip();
+        });
+        
+        btn.addEventListener('touchmove', () => {
+            clearTimeout(pressTimer);
+            removeTooltip();
+        });
+        
+        btn.addEventListener('touchcancel', () => {
+            clearTimeout(pressTimer);
+            removeTooltip();
+        });
+    });
+}
+
+function showItemTooltip(item, isWeapon, touch) {
+    removeTooltip();
+    
+    const tooltip = document.createElement('div');
+    tooltip.id = 'item-tooltip';
+    tooltip.style.cssText = `
+        position: fixed;
+        background: #0a0a0a;
+        border: 2px solid ${item.quality ? (QUALITY_CONFIG[item.quality]?.color || '#FFD700') : '#FFD700'};
+        border-radius: 8px;
+        padding: 12px 16px;
+        max-width: 280px;
+        z-index: 10000;
+        font-family: 'VT323', monospace;
+        font-size: 14px;
+        color: #00FF00;
+        box-shadow: 0 0 30px rgba(0,0,0,0.9);
+        pointer-events: none;
+    `;
+    
+    let html = `<div style="color:${QUALITY_CONFIG[item.quality]?.color || '#FFD700'}; font-size: 16px; font-weight: bold; margin-bottom: 8px;">${item.name}</div>`;
+    
+    if (isWeapon) {
+        html += `<div>⚔️ Damage: ${item.baseDamage} - ${item.maxDamage || item.baseDamage}</div>`;
+        if (item.baseMagicDamage) html += `<div>✨ Magic: +${item.baseMagicDamage}</div>`;
+        html += `<div>⭐ Level: ${item.level || '?'}</div>`;
+        html += `<div>📦 Quality: ${item.quality || 'normal'}</div>`;
+        
+        if (item.modifiers && item.modifiers.length > 0) {
+            html += `<div style="margin-top: 6px;"><span style="color:#FFD700;">✦ Modifiers:</span></div>`;
+            item.modifiers.forEach(mod => {
+                html += `<div style="margin-left: 8px; color:${mod.color || '#aaa'};">${mod.name}</div>`;
+            });
+        }
+        
+        if (item.gems && item.gems.length > 0) {
+            html += `<div style="margin-top: 6px;"><span style="color:#FFD700;">💎 Socketed Gems:</span></div>`;
+            item.gems.forEach(gem => {
+                html += `<div style="margin-left: 8px; color:${gem.color};">${gem.name}</div>`;
+            });
+        }
+    } else {
+        html += `<div>🛡️ Defense: ${item.baseDefense}</div>`;
+        if (item.baseMagicBonus) html += `<div>✨ Magic Bonus: +${item.baseMagicBonus}</div>`;
+        if (item.bonusHp) html += `<div>❤️ +${item.bonusHp} HP</div>`;
+        if (item.bonusMp) html += `<div>💙 +${item.bonusMp} MP</div>`;
+        html += `<div>⭐ Level: ${item.level || '?'}</div>`;
+        html += `<div>📦 Quality: ${item.quality || 'normal'}</div>`;
+        
+        if (item.modifiers && item.modifiers.length > 0) {
+            html += `<div style="margin-top: 6px;"><span style="color:#FFD700;">✦ Modifiers:</span></div>`;
+            item.modifiers.forEach(mod => {
+                const valueStr = mod.statType === 'percent' ? `${mod.value}%` : `+${mod.value}`;
+                html += `<div style="margin-left: 8px; color:${mod.color || '#aaa'};">${mod.icon || '✨'} ${mod.name}: ${valueStr}</div>`;
+            });
+        }
+    }
+    
+    tooltip.innerHTML = html;
+    document.body.appendChild(tooltip);
+    
+    tooltip.style.left = Math.min(touch.clientX + 15, window.innerWidth - tooltip.offsetWidth - 10) + 'px';
+    tooltip.style.top = Math.max(10, touch.clientY - tooltip.offsetHeight - 10) + 'px';
+}
+
+function removeTooltip() {
+    const existing = document.getElementById('item-tooltip');
+    if (existing) existing.remove();
+}
+
+window.initInventoryTooltips = initInventoryTooltips;
+</script>
     <script src="shop-helpers.js"></script>
     <script src="save-load.js"></script>
     <script src="lore-data.js"></script>
@@ -8370,6 +8520,12 @@ if (modifiers && modifiers.length > 0) {
     } else {
         document.body.appendChild(overlay);
     }
+     // Initialize tooltips after inventory is rendered
+    setTimeout(() => {
+        if (typeof initInventoryTooltips === 'function') {
+            initInventoryTooltips();
+        }
+    }, 100);
 }
 
 
