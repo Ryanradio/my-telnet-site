@@ -75,62 +75,79 @@ class LongPressTooltip {
         // Always find the closest .item-card ancestor (town inventory)
         const itemCard = target.closest('.item-card');
         if (itemCard) return itemCard;
-        
-        // Check for buttons inside the dungeon/explore inventory overlay
-        // Use closest() so buttons nested at any depth inside the overlay are found
+
+        // Equipped weapon/armor divs (have data-equipped-key attribute)
+        const equippedDiv = target.closest('[data-equipped-key]');
+        if (equippedDiv) return equippedDiv;
+
+        // Buttons inside the dungeon/explore inventory overlay
         const button = target.closest('button');
         if (button && button.closest('#dungeonInvOverlay')) {
             return button;
         }
-        
-        // Also check for menu options
+
+        // Menu options
         const menuOption = target.closest('.menu-option');
         if (menuOption) return menuOption;
-        
+
         return null;
     }
-    
+
     getItemData(element) {
-        // Handle inventory overlay buttons (dungeon AND explore — same overlay ID)
+        const player = gameState?.player;
+        if (!player) return null;
+
+        // ── Equipped weapon/armor div ──────────────────────────────────
+        if (element.dataset.equippedKey) {
+            const key  = element.dataset.equippedKey;
+            const type = element.dataset.equippedType;
+            if (type === 'weapon') {
+                const w = WEAPONS[key];
+                return w ? { ...w, _equippedKey: key, _type: 'weapon' } : null;
+            }
+            if (type === 'armor') {
+                const a = ARMOR[key];
+                return a ? { ...a, _equippedKey: key, _type: 'armor' } : null;
+            }
+        }
+
+        // ── Inventory overlay buttons (dungeon AND explore) ────────────
         if (element.tagName === 'BUTTON' && element.closest('#dungeonInvOverlay')) {
-            // Extract item name from button text (first line, remove icons)
-            let itemName = element.innerText.split('\n')[0].replace(/[⚔️🛡️🧪💎🔴🟢🟡🔵🟣⬛🔷🟤🩸🌙☀️🔮🩶⛈️]/g, '').trim();
-            // Remove quality brackets like [legendary], [epic], etc.
+            let itemName = element.innerText.split('\n')[0]
+                .replace(/[⚔️🛡️🧪💎🔴🟢🟡🔵🟣⬛🔷🟤🩸🌙☀️🔮🩶⛈️]/g, '').trim();
             let qualityFromBracket = '';
             const bracketMatch = itemName.match(/\[(.*?)\]/);
             if (bracketMatch) {
                 qualityFromBracket = bracketMatch[1];
                 itemName = itemName.replace(/\[.*?\]/g, '').trim();
             }
-            
-            const player = gameState?.player;
-            if (!player || !player.inventory) return null;
-            
+
+            if (!player.inventory) return null;
+
             for (const item of player.inventory) {
                 if (typeof item === 'object') {
                     if (item.name === itemName) return item;
                     if (item.name && item.name.includes(itemName)) return item;
-                    if (qualityFromBracket && item.quality === qualityFromBracket && item.name.includes(itemName.split(' ').pop())) {
-                        return item;
-                    }
+                    if (qualityFromBracket && item.quality === qualityFromBracket &&
+                        item.name && item.name.includes(itemName.split(' ').pop())) return item;
                 }
             }
-            
-            if (player.weapon && WEAPONS[player.weapon]?.name === itemName) return WEAPONS[player.weapon];
-            if (player.weapon && WEAPONS[player.weapon]?.name.includes(itemName)) return WEAPONS[player.weapon];
-            if (player.armor && ARMOR[player.armor]?.name === itemName) return ARMOR[player.armor];
-            if (player.armor && ARMOR[player.armor]?.name.includes(itemName)) return ARMOR[player.armor];
-            
+
+            if (player.weapon && WEAPONS[player.weapon]?.name === itemName)
+                return { ...WEAPONS[player.weapon], _equippedKey: player.weapon, _type: 'weapon' };
+            if (player.armor && ARMOR[player.armor]?.name === itemName)
+                return { ...ARMOR[player.armor], _equippedKey: player.armor, _type: 'armor' };
+
             return null;
         }
-        
-        // Original logic for item-card elements (town inventory)
+
+        // ── Town inventory item-card ───────────────────────────────────
         const itemCard = element.closest('.item-card');
         if (!itemCard) return null;
-        
+
         const nameElement = itemCard.querySelector('[style*="color"]');
         if (!nameElement) return null;
-        
+
         let itemName = nameElement.innerText.replace(/[⚔️🛡️]/g, '').trim();
         let qualityFromBracket = '';
         const bracketMatch = itemName.match(/\[(.*?)\]/);
@@ -138,31 +155,29 @@ class LongPressTooltip {
             qualityFromBracket = bracketMatch[1];
             itemName = itemName.replace(/\[.*?\]/g, '').trim();
         }
-        
-        const player = gameState?.player;
-        if (!player || !player.inventory) return null;
-        
+
+        if (!player.inventory) return null;
+
         for (const item of player.inventory) {
             if (typeof item === 'object') {
                 if (item.name === itemName) return item;
                 if (item.name && item.name.includes(itemName) && (item.weaponId || item.armorId)) return item;
-                if (qualityFromBracket && item.quality === qualityFromBracket && item.name.includes(itemName.split(' ').pop())) {
-                    return item;
-                }
+                if (qualityFromBracket && item.quality === qualityFromBracket &&
+                    item.name && item.name.includes(itemName.split(' ').pop())) return item;
             }
         }
-        
-        if (player.weapon && WEAPONS[player.weapon]?.name === itemName) return WEAPONS[player.weapon];
-        if (player.weapon && WEAPONS[player.weapon]?.name.includes(itemName)) return WEAPONS[player.weapon];
-        if (player.armor && ARMOR[player.armor]?.name === itemName) return ARMOR[player.armor];
-        if (player.armor && ARMOR[player.armor]?.name.includes(itemName)) return ARMOR[player.armor];
-        
+
+        if (player.weapon && WEAPONS[player.weapon]?.name === itemName)
+            return { ...WEAPONS[player.weapon], _equippedKey: player.weapon, _type: 'weapon' };
+        if (player.armor && ARMOR[player.armor]?.name === itemName)
+            return { ...ARMOR[player.armor], _equippedKey: player.armor, _type: 'armor' };
+
         for (const item of player.inventory) {
             if (typeof item === 'string' && ITEMS[item]?.name === itemName) {
                 return { type: 'item', key: item, data: ITEMS[item] };
             }
         }
-        
+
         return null;
     }
     
@@ -196,166 +211,189 @@ class LongPressTooltip {
     }
     
     buildTooltipHtml(item) {
-        // Weapon
-        if (item.weaponId || WEAPONS[item.instanceId]) {
+        if (item.weaponId || item._type === 'weapon' || (item._equippedKey && WEAPONS[item._equippedKey])) {
             return this.buildWeaponTooltip(item);
         }
-        // Armor
-        if (item.armorId || ARMOR[item.instanceId]) {
+        if (item.armorId || item._type === 'armor' || (item._equippedKey && ARMOR[item._equippedKey])) {
             return this.buildArmorTooltip(item);
         }
-        // Potion/Item
         if (item.type === 'item' || ITEMS[item.key || item]) {
             return this.buildItemTooltip(item);
         }
-        // Gem
         if (item.cut) {
             return this.buildGemTooltip(item);
         }
         return null;
     }
-    
-    buildWeaponTooltip(weapon) {
-        const qualityColor = QUALITY_CONFIG[weapon.quality]?.color || '#00FF00';
-        const qualityName = QUALITY_CONFIG[weapon.quality]?.name || weapon.quality || 'Normal';
-        
-        let html = `
-            <div style="background:#0a0a0a; border:2px solid ${qualityColor}; border-radius:8px; padding:12px; max-width:260px; font-family:'VT323',monospace; box-shadow:0 0 20px rgba(0,0,0,0.8);">
-                <div style="color:${qualityColor}; font-size:16px; font-weight:bold; border-bottom:1px solid #333; padding-bottom:4px; margin-bottom:8px;">
-                    ⚔️ ${weapon.name}
-                </div>
-                <div style="color:#aaa; font-size:11px; margin-bottom:8px;">${qualityName} · Level ${weapon.level || '?'}</div>
-        `;
-        
-        // Damage
-        const minDmg = weapon.baseDamage;
-        const maxDmg = weapon.maxDamage || weapon.baseDamage;
-        html += `<div style="color:#ff8888; font-size:13px;">⚔️ Damage: ${minDmg}-${maxDmg}`;
-        if (weapon.baseMagicDamage) {
-            html += ` | ✨ Magic: +${weapon.baseMagicDamage}`;
+
+    buildWeaponTooltip(weaponInstance) {
+        const instanceData = (weaponInstance.weaponId || weaponInstance.instanceId) ? weaponInstance : null;
+        const baseKey = instanceData?.instanceId || instanceData?.weaponId || weaponInstance._equippedKey;
+        const weapon  = (baseKey && WEAPONS[baseKey]) ? WEAPONS[baseKey] : weaponInstance;
+        const quality = instanceData?.quality || weapon.quality || 'normal';
+        const p  = gameState?.player;
+        const qc = QUALITY_CONFIG?.[quality] || {};
+        const qualityColor = qc.color || '#00FF00';
+        const qualityName  = qc.name  || quality;
+
+        // Quality-adjusted damage — matches buildWeaponDmgLine exactly
+        const qb   = typeof getQualityBonus === 'function' ? getQualityBonus(quality, weapon.baseDamage) : 0;
+        const tMin = weapon.baseDamage + qb;
+        const tMax = weapon.maxDamage ? weapon.maxDamage + qb : tMin;
+        const tMagMin = (weapon.baseMagicDamage || 0) + Math.floor((weapon.baseMagicDamage || 0) * (qc.bonusPct || 0));
+        const tMagMax = weapon.maxMagicDamage
+            ? (weapon.maxMagicDamage || 0) + Math.floor((weapon.maxMagicDamage || 0) * (qc.bonusPct || 0))
+            : tMagMin;
+
+        let dmgLine = `BASE: ${tMin}${tMax > tMin ? '-'+tMax : ''}`;
+        if (tMagMin > 0) dmgLine += ` | MAG: ${tMagMin}${tMagMax > tMagMin ? '-'+tMagMax : ''}`;
+
+        // Your damage with player stats + gems
+        let yourLine = '';
+        if (p) {
+            const gems = WEAPONS[baseKey]?.gems || instanceData?.gems || weapon.gems || [];
+            let gemMelee = 0, gemMagic = 0, gemElem = 0;
+            for (const g of gems) {
+                if (!g?.stats) continue;
+                gemMelee += g.stats.weaponDmg    || 0;
+                gemMagic += g.stats.spellPower   || 0;
+                gemElem  += (g.stats.lightningDmg || 0) + (g.stats.fireDmg || 0) + (g.stats.frostDmg || 0);
+            }
+            const strBonus   = Math.floor((p.str || 0) * 1.5);
+            const wisBonus   = Math.floor((p.wis || 0) * 1.5);
+            const yourMin    = tMin + strBonus + gemMelee + gemElem;
+            const yourMax    = tMax + strBonus + gemMelee + gemElem;
+            const yourMagMin = tMagMin + wisBonus + gemMagic;
+            const yourMagMax = tMagMax + wisBonus + gemMagic;
+            yourLine = `YOUR DMG: ${yourMin}${yourMax > yourMin ? '-'+yourMax : ''}`;
+            if (yourMagMin > 0) yourLine += ` | MAG: ${yourMagMin}${yourMagMax > yourMagMin ? '-'+yourMagMax : ''}`;
         }
-        html += `</div>`;
-        
-        // Modifiers with descriptions
-        if (weapon.modifiers && weapon.modifiers.length > 0) {
-            html += `<div style="margin-top:8px; border-top:1px solid #222; padding-top:4px;">`;
-            weapon.modifiers.forEach(mod => {
+
+        let html = `<div style="background:#0a0a0a;border:2px solid ${qualityColor};border-radius:8px;padding:12px;max-width:260px;font-family:'VT323',monospace;box-shadow:0 0 20px rgba(0,0,0,0.8);">
+            <div style="color:${qualityColor};font-size:16px;font-weight:bold;border-bottom:1px solid #333;padding-bottom:4px;margin-bottom:8px;">⚔️ ${weapon.name}</div>
+            <div style="color:#aaa;font-size:12px;margin-bottom:6px;">${qualityName} · Level ${weapon.level || '?'}</div>
+            <div style="color:#888;font-size:12px;">${dmgLine}</div>
+            ${yourLine ? `<div style="color:#ffcc88;font-size:12px;">${yourLine}</div>` : ''}`;
+
+        // Modifiers — same format as inventory
+        const modifiers = instanceData?.modifiers || weapon.modifiers || [];
+        if (modifiers.length > 0) {
+            html += `<div style="margin-top:8px;border-top:1px solid #222;padding-top:4px;">`;
+            modifiers.forEach(mod => {
                 const modColor = mod.color || '#FFD700';
                 let modText = mod.name;
-                if (mod.minDamage) modText += ` (+${mod.minDamage}-${mod.maxDamage} dmg)`;
+                if (mod.minDamage)        modText += ` (+${mod.minDamage}-${mod.maxDamage})`;
+                if (mod.poisonChance)     modText += ` (${mod.poisonChance}% poison)`;
                 if (mod.lifestealPercent) modText += ` (${mod.lifestealPercent}% lifesteal)`;
-                if (mod.critBonus) modText += ` (+${mod.critBonus}% crit)`;
-                if (mod.armorPierce) modText += ` (${Math.floor(mod.armorPierce*100)}% armor pierce)`;
-                
-                // Get description - try modKey first, then try matching by name
-                let description = '';
-                if (mod.modKey && typeof WEAPON_MODIFIERS !== 'undefined' && WEAPON_MODIFIERS[mod.modKey]) {
-                    description = WEAPON_MODIFIERS[mod.modKey].description || '';
+                if (mod.critBonus)        modText += ` (+${mod.critBonus}% crit)`;
+                if (mod.armorPierce)      modText += ` (${Math.floor(mod.armorPierce*100)}% pierce)`;
+                let desc = '';
+                if (typeof WEAPON_MODIFIERS !== 'undefined') {
+                    const key = mod.modKey || Object.keys(WEAPON_MODIFIERS).find(k =>
+                        WEAPON_MODIFIERS[k].name?.toLowerCase() === mod.name?.toLowerCase());
+                    if (key) desc = WEAPON_MODIFIERS[key]?.description || '';
                 }
-                if (!description && mod.name && typeof WEAPON_MODIFIERS !== 'undefined') {
-                    const lowerName = mod.name.toLowerCase();
-                    for (const [key, value] of Object.entries(WEAPON_MODIFIERS)) {
-                        if (value.name && value.name.toLowerCase() === lowerName) {
-                            description = value.description || '';
-                            break;
-                        }
-                    }
-                }
-                // Hardcoded fallbacks
-                if (!description) {
-                    if (mod.name === 'Sharp') description = 'Adds bonus physical damage to your attacks';
-                    else if (mod.name === 'Swift') description = 'Increases your critical hit chance';
-                    else if (mod.name === 'Precision') description = 'Increases critical hit chance and accuracy';
-                    else if (mod.name === 'Flame') description = 'Adds fire damage that can burn enemies';
-                }
-                
-                html += `<div style="color:${modColor}; font-size:11px; margin-bottom:4px;">✨ ${modText}`;
-                if (description) {
-                    html += `<br><span style="color:#888; font-size:10px; margin-left:18px;">${description}</span>`;
-                }
+                html += `<div style="color:${modColor};font-size:12px;margin-bottom:3px;">✨ ${modText}`;
+                if (desc) html += `<br><span style="color:#888;font-size:11px;margin-left:16px;">${desc}</span>`;
                 html += `</div>`;
             });
             html += `</div>`;
         }
-        
+
         // Gems
-        if (weapon.gems && weapon.gems.length > 0) {
-            html += `<div style="margin-top:8px; border-top:1px solid #222; padding-top:4px;">`;
-            weapon.gems.forEach(gem => {
-                html += `<div style="color:${gem.color}; font-size:11px;">💎 ${gem.name}: ${gem.description}</div>`;
+        const gems = WEAPONS[baseKey]?.gems || instanceData?.gems || weapon.gems || [];
+        if (gems.length > 0) {
+            html += `<div style="margin-top:8px;border-top:1px solid #222;padding-top:4px;">`;
+            gems.forEach(gem => {
+                html += `<div style="color:${gem.color};font-size:12px;">💎 ${gem.name}: ${gem.description}</div>`;
             });
             html += `</div>`;
         }
-        
-        // Gem slots
-        const slots = getGemSlots(weapon.quality);
+
+        const slots = typeof getGemSlots === 'function' ? getGemSlots(quality) : 0;
         if (slots > 0) {
-            const filled = weapon.gems?.length || 0;
-            html += `<div style="color:#555; font-size:10px; margin-top:6px;">⚙️ ${filled}/${slots} gem slots used</div>`;
+            html += `<div style="color:#555;font-size:11px;margin-top:6px;">⚙️ ${gems.length}/${slots} gem slots used</div>`;
         }
-        
+
         html += `</div>`;
         return html;
     }
-    
-    buildArmorTooltip(armor) {
-        const qualityColor = QUALITY_CONFIG[armor.quality]?.color || '#00FF00';
-        const qualityName = QUALITY_CONFIG[armor.quality]?.name || armor.quality || 'Normal';
-        
-        let html = `
-            <div style="background:#0a0a0a; border:2px solid ${qualityColor}; border-radius:8px; padding:12px; max-width:260px; font-family:'VT323',monospace; box-shadow:0 0 20px rgba(0,0,0,0.8);">
-                <div style="color:${qualityColor}; font-size:16px; font-weight:bold; border-bottom:1px solid #333; padding-bottom:4px; margin-bottom:8px;">
-                    🛡️ ${armor.name}
-                </div>
-                <div style="color:#aaa; font-size:11px; margin-bottom:8px;">${qualityName} · Level ${armor.level || '?'}</div>
-        `;
-        
-        // Defense
-        html += `<div style="color:#88ccff; font-size:13px;">🛡️ Defense: ${armor.baseDefense}`;
-        if (armor.baseMagicBonus) {
-            html += ` | ✨ Magic: +${armor.baseMagicBonus}`;
+
+    buildArmorTooltip(armorInstance) {
+        const instanceData = (armorInstance.armorId || armorInstance.instanceId) ? armorInstance : null;
+        const baseKey = instanceData?.armorId || instanceData?.instanceId || armorInstance._equippedKey;
+        const armor   = (baseKey && ARMOR[baseKey]) ? ARMOR[baseKey] : armorInstance;
+        const quality = instanceData?.quality || armor.quality || 'normal';
+        const p  = gameState?.player;
+        const qc = QUALITY_CONFIG?.[quality] || {};
+        const qualityColor = qc.color || '#00FF00';
+        const qualityName  = qc.name  || quality;
+
+        // Quality-adjusted defense — matches buildArmorDefLine exactly
+        const aqb  = typeof getQualityBonus === 'function' ? getQualityBonus(quality, armor.baseDefense) : 0;
+        const tDef = armor.baseDefense + aqb;
+        const tMag = (armor.baseMagicBonus || 0) + Math.floor((armor.baseMagicBonus || 0) * (qc.bonusPct || 0));
+
+        let yourDef = tDef;
+        if (p) {
+            const gems = ARMOR[baseKey]?.gems || instanceData?.gems || armor.gems || [];
+            let gemDef = 0;
+            for (const g of gems) gemDef += g?.stats?.defenseBonus || 0;
+            yourDef = tDef + (p.con || 0) + gemDef;
         }
-        html += `</div>`;
-        
-        // HP/MP bonuses
-        if (armor.bonusHp || armor.bonusMp) {
-            html += `<div style="color:#88ff88; font-size:12px; margin-top:4px;">`;
-            if (armor.bonusHp) html += `❤️ +${armor.bonusHp} HP `;
-            if (armor.bonusMp) html += `✨ +${armor.bonusMp} MP`;
+
+        let html = `<div style="background:#0a0a0a;border:2px solid ${qualityColor};border-radius:8px;padding:12px;max-width:260px;font-family:'VT323',monospace;box-shadow:0 0 20px rgba(0,0,0,0.8);">
+            <div style="color:${qualityColor};font-size:16px;font-weight:bold;border-bottom:1px solid #333;padding-bottom:4px;margin-bottom:8px;">🛡️ ${armor.name}</div>
+            <div style="color:#aaa;font-size:12px;margin-bottom:6px;">${qualityName} · Level ${armor.level || '?'}</div>
+            <div style="color:#888;font-size:12px;">BASE DEF: ${tDef}${tMag > 0 ? ` | MAG+: ${tMag}` : ''}</div>
+            ${p ? `<div style="color:#88ccff;font-size:12px;">YOUR DEF: ${yourDef}${tMag > 0 ? ` | MAG+: ${tMag}` : ''}</div>` : ''}`;
+
+        const bonusHp = instanceData?.bonusHp || armor.bonusHp;
+        const bonusMp = instanceData?.bonusMp || armor.bonusMp;
+        if (bonusHp || bonusMp) {
+            html += `<div style="color:#88ff88;font-size:12px;margin-top:4px;">`;
+            if (bonusHp) html += `❤️ +${bonusHp} HP `;
+            if (bonusMp) html += `✨ +${bonusMp} MP`;
             html += `</div>`;
         }
-        
-        // Modifiers with descriptions from ARMOR_MODIFIERS
-        if (armor.modifiers && armor.modifiers.length > 0) {
-            html += `<div style="margin-top:8px; border-top:1px solid #222; padding-top:4px;">`;
-            armor.modifiers.forEach(mod => {
+
+        const modifiers = instanceData?.modifiers || armor.modifiers || [];
+        if (modifiers.length > 0) {
+            html += `<div style="margin-top:8px;border-top:1px solid #222;padding-top:4px;">`;
+            modifiers.forEach(mod => {
                 const valueStr = mod.statType === 'percent' ? `${mod.value}%` : `+${mod.value}`;
-                
-                let description = '';
+                let desc = '';
                 if (typeof ARMOR_MODIFIERS !== 'undefined') {
-                    const modKey = Object.keys(ARMOR_MODIFIERS).find(key => 
-                        ARMOR_MODIFIERS[key].name.toLowerCase() === mod.name.toLowerCase()
-                    );
-                    if (modKey && ARMOR_MODIFIERS[modKey]) {
-                        description = ARMOR_MODIFIERS[modKey].description || '';
-                    }
+                    const key = Object.keys(ARMOR_MODIFIERS).find(k =>
+                        ARMOR_MODIFIERS[k].name?.toLowerCase() === mod.name?.toLowerCase());
+                    if (key) desc = ARMOR_MODIFIERS[key]?.description || '';
                 }
-                
-                html += `<div style="color:${mod.color}; font-size:11px; margin-bottom:4px;">`;
-                html += `${mod.icon || '✨'} <strong>${mod.name}</strong>: ${valueStr}`;
-                if (description) {
-                    html += `<br><span style="color:#888; font-size:10px; margin-left:18px;">${description}</span>`;
-                }
+                html += `<div style="color:${mod.color};font-size:12px;margin-bottom:3px;">${mod.icon || '✨'} ${mod.name}: ${valueStr}`;
+                if (desc) html += `<br><span style="color:#888;font-size:11px;margin-left:16px;">${desc}</span>`;
                 html += `</div>`;
             });
             html += `</div>`;
         }
-        
+
+        const gems = ARMOR[baseKey]?.gems || instanceData?.gems || armor.gems || [];
+        if (gems.length > 0) {
+            html += `<div style="margin-top:8px;border-top:1px solid #222;padding-top:4px;">`;
+            gems.forEach(gem => {
+                html += `<div style="color:${gem.color};font-size:12px;">💎 ${gem.name}: ${gem.description}</div>`;
+            });
+            html += `</div>`;
+        }
+
+        const slots = typeof getGemSlots === 'function' ? getGemSlots(quality) : 0;
+        if (slots > 0) {
+            html += `<div style="color:#555;font-size:11px;margin-top:6px;">⚙️ ${gems.length}/${slots} gem slots used</div>`;
+        }
+
         html += `</div>`;
         return html;
     }
-    
-    buildItemTooltip(itemData) {
+
+        buildItemTooltip(itemData) {
         const actualItem = itemData.data || ITEMS[itemData.key || itemData];
         if (!actualItem) return null;
         

@@ -363,86 +363,64 @@
 // ═══════════════════════════════════════════════════════════════
 
 function initInventoryTooltips() {
-    const overlay = document.getElementById('dungeonInvOverlay');
-    if (!overlay) return;
+    // Check both town inventory (mainScreen) and dungeon inventory (dungeonInvOverlay)
+    const containers = [
+        document.getElementById('mainScreen'),
+        document.getElementById('dungeonInvOverlay')
+    ];
     
-    const itemButtons = overlay.querySelectorAll('button');
-    itemButtons.forEach(btn => {
-        // Skip the CLOSE button
-        if (btn.innerText.includes('CLOSE INVENTORY')) return;
+    containers.forEach(container => {
+        if (!container) return;
         
-        let pressTimer;
+        // Find all elements that contain item data (⚔️ or 🛡️)
+        const itemElements = container.querySelectorAll('.item-card, button');
         
-        btn.addEventListener('touchstart', (e) => {
-            pressTimer = setTimeout(() => {
-                // Extract item info from button text
-                const btnText = btn.innerText;
-                
-                // Try to find weapon or armor data
-                let itemData = null;
-                let isWeapon = false;
-                
-                // Check if it's a weapon (starts with ⚔️)
-                if (btnText.startsWith('⚔️')) {
-                    isWeapon = true;
-                    // Extract weapon name (between ⚔️ and newline or BASE)
-                    const nameMatch = btnText.match(/⚔️ ([^\n]+)/);
-                    const weaponName = nameMatch ? nameMatch[1] : '';
-                    
-                    // Find in WEAPONS
-                    for (const [id, weapon] of Object.entries(WEAPONS)) {
-                        if (weapon.name === weaponName || weaponName.includes(weapon.name)) {
-                            itemData = weapon;
-                            break;
-                        }
-                    }
-                } 
-                // Check if it's armor (starts with 🛡️)
-                else if (btnText.startsWith('🛡️')) {
-                    isWeapon = false;
-                    const nameMatch = btnText.match(/🛡️ ([^\n]+)/);
-                    const armorName = nameMatch ? nameMatch[1] : '';
-                    
-                    for (const [id, armor] of Object.entries(ARMOR)) {
-                        if (armor.name === armorName || armorName.includes(armor.name)) {
-                            itemData = armor;
-                            break;
-                        }
-                    }
-                }
-                
-                if (itemData) {
-                    showItemTooltip(itemData, isWeapon, e.touches[0]);
-                }
-            }, 500);
-        });
-        
-        btn.addEventListener('touchend', () => {
-            clearTimeout(pressTimer);
-            removeTooltip();
-        });
-        
-        btn.addEventListener('touchmove', () => {
-            clearTimeout(pressTimer);
-            removeTooltip();
-        });
-        
-        btn.addEventListener('touchcancel', () => {
-            clearTimeout(pressTimer);
-            removeTooltip();
+        itemElements.forEach(el => {
+            const text = el.innerText;
+            // Only attach to elements that look like items
+            if (!text.includes('⚔️') && !text.includes('🛡️')) return;
+            // Skip equip/unequip and close buttons
+            if (text === 'EQUIP' || text === 'UNEQUIP' || text === 'CANNOT EQUIP') return;
+            if (text.includes('CLOSE INVENTORY')) return;
+            
+            let pressTimer;
+            
+            el.addEventListener('touchstart', (e) => {
+                pressTimer = setTimeout(() => {
+                    showItemTooltip(el, e.touches[0]);
+                }, 500);
+            });
+            
+            el.addEventListener('touchend', () => {
+                clearTimeout(pressTimer);
+                removeTooltip();
+            });
+            
+            el.addEventListener('touchmove', () => {
+                clearTimeout(pressTimer);
+                removeTooltip();
+            });
+            
+            el.addEventListener('touchcancel', () => {
+                clearTimeout(pressTimer);
+                removeTooltip();
+            });
         });
     });
 }
 
-function showItemTooltip(item, isWeapon, touch) {
+function showItemTooltip(btnElement, touch) {
     removeTooltip();
+    
+    // Get the button's existing text (already has correct stats)
+    const btnText = btnElement.innerText;
     
     const tooltip = document.createElement('div');
     tooltip.id = 'item-tooltip';
     tooltip.style.cssText = `
         position: fixed;
         background: #0a0a0a;
-        border: 2px solid ${item.quality ? (QUALITY_CONFIG[item.quality]?.color || '#FFD700') : '#FFD700'};
+        border: 2px solid #FFD700;
         border-radius: 8px;
         padding: 12px 16px;
         max-width: 280px;
@@ -452,52 +430,17 @@ function showItemTooltip(item, isWeapon, touch) {
         color: #00FF00;
         box-shadow: 0 0 30px rgba(0,0,0,0.9);
         pointer-events: none;
+        white-space: pre-wrap;
     `;
     
-    let html = `<div style="color:${QUALITY_CONFIG[item.quality]?.color || '#FFD700'}; font-size: 16px; font-weight: bold; margin-bottom: 8px;">${item.name}</div>`;
-    
-    if (isWeapon) {
-        html += `<div>⚔️ Damage: ${item.baseDamage} - ${item.maxDamage || item.baseDamage}</div>`;
-        if (item.baseMagicDamage) html += `<div>✨ Magic: +${item.baseMagicDamage}</div>`;
-        html += `<div>⭐ Level: ${item.level || '?'}</div>`;
-        html += `<div>📦 Quality: ${item.quality || 'normal'}</div>`;
-        
-        if (item.modifiers && item.modifiers.length > 0) {
-            html += `<div style="margin-top: 6px;"><span style="color:#FFD700;">✦ Modifiers:</span></div>`;
-            item.modifiers.forEach(mod => {
-                html += `<div style="margin-left: 8px; color:${mod.color || '#aaa'};">${mod.name}</div>`;
-            });
-        }
-        
-        if (item.gems && item.gems.length > 0) {
-            html += `<div style="margin-top: 6px;"><span style="color:#FFD700;">💎 Socketed Gems:</span></div>`;
-            item.gems.forEach(gem => {
-                html += `<div style="margin-left: 8px; color:${gem.color};">${gem.name}</div>`;
-            });
-        }
-    } else {
-        html += `<div>🛡️ Defense: ${item.baseDefense}</div>`;
-        if (item.baseMagicBonus) html += `<div>✨ Magic Bonus: +${item.baseMagicBonus}</div>`;
-        if (item.bonusHp) html += `<div>❤️ +${item.bonusHp} HP</div>`;
-        if (item.bonusMp) html += `<div>💙 +${item.bonusMp} MP</div>`;
-        html += `<div>⭐ Level: ${item.level || '?'}</div>`;
-        html += `<div>📦 Quality: ${item.quality || 'normal'}</div>`;
-        
-        if (item.modifiers && item.modifiers.length > 0) {
-            html += `<div style="margin-top: 6px;"><span style="color:#FFD700;">✦ Modifiers:</span></div>`;
-            item.modifiers.forEach(mod => {
-                const valueStr = mod.statType === 'percent' ? `${mod.value}%` : `+${mod.value}`;
-                html += `<div style="margin-left: 8px; color:${mod.color || '#aaa'};">${mod.icon || '✨'} ${mod.name}: ${valueStr}</div>`;
-            });
-        }
-    }
-    
-    tooltip.innerHTML = html;
+    // Display the button's text exactly as it appears
+    tooltip.innerHTML = btnText;
     document.body.appendChild(tooltip);
     
     tooltip.style.left = Math.min(touch.clientX + 15, window.innerWidth - tooltip.offsetWidth - 10) + 'px';
     tooltip.style.top = Math.max(10, touch.clientY - tooltip.offsetHeight - 10) + 'px';
 }
+
 
 function removeTooltip() {
     const existing = document.getElementById('item-tooltip');
@@ -8295,7 +8238,7 @@ if (modifiers && modifiers.length > 0) {
         const equipKey = instanceData ? instanceData.instanceId : weaponItem.key;
 
         if (isEquipped) {
-            html += `<div style="min-width:130px;padding:10px;border:2px solid ${qualityColor};background:#0a1a0a;font-size:14px; box-shadow:0 0 10px ${qualityColor};">
+            html += `<div data-equipped-key="${equipKey}" data-equipped-type="weapon" style="min-width:130px;padding:10px;border:2px solid ${qualityColor};background:#0a1a0a;font-size:14px; box-shadow:0 0 10px ${qualityColor}; cursor:default;">
                 <div style="color:${qualityColor};">⚔️ ${weapon.name}${displayQuality !== weapon.quality ? ` [${displayQuality}]` : ''}</div>
                 <div style="color:#aaa;font-size:12px;">${buildWeaponDmgLine({...weapon, quality: displayQuality}, displayQuality, p)}</div>
                 <div style="color:#888; font-size:11px; margin-top:2px;">Level ${weapon.level || 1}</div>
@@ -8426,7 +8369,7 @@ if (modifiers && modifiers.length > 0) {
         }
 
         if (isEquipped) {
-            html += `<div style="min-width:130px;padding:10px;border:2px solid ${qualityColor};background:#0a1a0a;font-size:14px; box-shadow:0 0 10px ${qualityColor};">
+            html += `<div data-equipped-key="${equipKey}" data-equipped-type="armor" style="min-width:130px;padding:10px;border:2px solid ${qualityColor};background:#0a1a0a;font-size:14px; box-shadow:0 0 10px ${qualityColor}; cursor:default;">
                 <div style="color:${qualityColor};">🛡️ ${armor.name}${displayQuality !== armor.quality ? ` [${displayQuality}]` : ''}</div>
                 <div style="color:#aaa;font-size:12px;">DEF: ${tDef}${tMag > 0 ? ` | MAG: +${tMag}` : ''}</div>
                 <div style="color:#888; font-size:11px; margin-top:2px;">Level ${armor.level || 1}</div>

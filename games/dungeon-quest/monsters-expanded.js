@@ -3916,7 +3916,7 @@ stone_golem: {
     minDamage: 18,
     maxDamage: 35,
     baseDefense: 25,
-    baseXp: 125,
+    baseXp: 400,
     baseGold: 70,
     level: 13,
     description: 'An animated construct of living stone',
