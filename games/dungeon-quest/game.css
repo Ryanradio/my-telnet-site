@@ -182,10 +182,10 @@
         #splash-enter {
             display: none;
             margin-top: 36px;
-            padding: 14px 40px;
+            padding: 12px 24px;
             font-family: 'VT323', monospace;
-            font-size: 1.4rem;
-            letter-spacing: 4px;
+            font-size: 1.2rem;
+            letter-spacing: 2px;
             color: #ff2200;
             background: transparent;
             border: 1px solid #550000;
@@ -193,6 +193,7 @@
             position: relative;
             overflow: hidden;
             text-transform: uppercase;
+            white-space: nowrap;
             animation: enterFlicker 2.5s infinite, enterGlow 2.5s infinite ease-in-out;
             transition: background 0.2s, color 0.2s, border-color 0.2s;
         }
