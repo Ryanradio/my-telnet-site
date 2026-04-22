@@ -1882,6 +1882,23 @@ async function loadCharacter(characterId) {
             throw new Error('Invalid save data: missing player data');
         }
         
+        // ── Clear all session state before loading so nothing bleeds from
+        // a previous character or an interrupted combat/dungeon session ──
+        if (gameState.combatTimer) {
+            clearInterval(gameState.combatTimer);
+            gameState.combatTimer = null;
+        }
+        if (gameState.restState) {
+            if (gameState.restState.hpRegenTimer) clearInterval(gameState.restState.hpRegenTimer);
+            if (gameState.restState.mpRegenTimer) clearInterval(gameState.restState.mpRegenTimer);
+        }
+        gameState.combatState      = null;
+        gameState.dungeon          = null;
+        gameState.currentAdventure = null;
+        gameState.postCombatRecovery = false;
+        gameState.lastAction       = null;
+        gameState.restState        = { hpRegenTimer: null, mpRegenTimer: null, mpLastAction: 0 };
+
         // Restore complete player state
         gameState.player = {
             ...data.player,
@@ -4570,6 +4587,22 @@ exploreLocation = function(locKey) {
             // Generate unique character ID
             const charId = 'char_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 
+            // ── CRITICAL: fully wipe all gameState fields that could bleed
+            // from a previous character's session before building the new one ──
+            gameState.currentTown      = 'town1';   // always start in town1
+            gameState.currentLocation  = 'town';
+            gameState.dungeon          = null;       // never inherit previous dungeon
+            gameState.combatState      = null;
+            gameState.combatTimer      = null;
+            gameState.currentAdventure = null;
+            gameState.postCombatRecovery = false;
+            if (gameState.restState) {
+                if (gameState.restState.hpRegenTimer) clearInterval(gameState.restState.hpRegenTimer);
+                if (gameState.restState.mpRegenTimer) clearInterval(gameState.restState.mpRegenTimer);
+            }
+            gameState.restState = { hpRegenTimer: null, mpRegenTimer: null, mpLastAction: 0 };
+            gameState.guildQuests = { active: [], completed: [], progress: {} };
+
             gameState.player = {
                 id: charId,  // Unique character ID
                 name: window._pendingName,
@@ -4603,14 +4636,6 @@ exploreLocation = function(locKey) {
                 
             };
 
-            // Initialize guild quests for new character
-            gameState.guildQuests = {
-                active: [],      // No active quests at start
-                completed: [],   // No completed quests at start
-                progress: {}     // No progress at start
-            };
-            gameState.currentLocation = 'town';
-            
            // Auto-save new character
 saveGame();
 

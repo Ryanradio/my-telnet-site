@@ -1160,31 +1160,43 @@ async function reconcileSaves(characterId, characterName) {
     
     const cloudSave = cloudSaves[0].character_data;
     
-    // Compare timestamps
-    const localTime = localSave.timestamp || 0;
-    const cloudTime = cloudSave.timestamp || 0;
-    const timeDiff = Math.abs(localTime - cloudTime);
-    
-    console.log(`Local save: ${new Date(localTime).toLocaleString()}`);
-    console.log(`Cloud save: ${new Date(cloudTime).toLocaleString()}`);
-    console.log(`Time difference: ${timeDiff / 1000} seconds`);
-    
-    // If saves are very close (within 5 minutes), trust local
-    const CLOSE_THRESHOLD = 5 * 60 * 1000; // 5 minutes
-    
-    if (timeDiff < CLOSE_THRESHOLD) {
-        console.log('✅ Saves are close - using local (most recent actions)');
+    // Compare timestamps AND level — higher level always wins a tie
+    const localTime  = localSave.timestamp || 0;
+    const cloudTime  = cloudSave.timestamp || 0;
+    const localLevel = localSave.player?.level || 0;
+    const cloudLevel = cloudSave.player?.level || 0;
+    const timeDiff   = Math.abs(localTime - cloudTime);
+
+    console.log(`Local save: Lv${localLevel} @ ${new Date(localTime).toLocaleString()}`);
+    console.log(`Cloud save: Lv${cloudLevel} @ ${new Date(cloudTime).toLocaleString()}`);
+    console.log(`Time difference: ${timeDiff / 1000}s`);
+
+    // If one has a higher level, always prefer it regardless of timestamp
+    if (cloudLevel > localLevel) {
+        console.log('📥 Cloud has higher level — downloading to local');
+        localStorage.setItem(localKey, JSON.stringify(cloudSave));
+        return cloudSave;
+    }
+    if (localLevel > cloudLevel) {
+        console.log('📤 Local has higher level — uploading to cloud');
+        await syncToCloud();
         return localSave;
     }
-    
-    // One is significantly fresher
+
+    // Same level — use timestamp (60 second window to tolerate clock skew)
+    const CLOSE_THRESHOLD = 60 * 1000;
+
+    if (timeDiff < CLOSE_THRESHOLD) {
+        console.log('✅ Saves are equal — using local');
+        return localSave;
+    }
+
     if (localTime > cloudTime) {
-        console.log('📤 Local is fresher - uploading to cloud');
+        console.log('📤 Local is fresher — uploading to cloud');
         await syncToCloud();
         return localSave;
     } else {
-        console.log('📥 Cloud is fresher - downloading to local');
-        // Save cloud version locally
+        console.log('📥 Cloud is fresher — downloading to local');
         localStorage.setItem(localKey, JSON.stringify(cloudSave));
         return cloudSave;
     }
