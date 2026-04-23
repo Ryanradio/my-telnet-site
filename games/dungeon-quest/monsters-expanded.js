@@ -10066,6 +10066,76 @@ grave_knight: {
 },
 
 // ── LEVEL 8 ── (Plains/Graveyard additions)
+young_ogre: {
+    name: 'Young Ogre',
+    baseHp: 350,
+    baseDamage: 29,
+    minDamage: 20,
+    maxDamage: 37,
+    baseDefense: 14,
+    baseXp: 118,
+    baseGold: 90,
+    level: 12,
+    description: 'A dim-witted giant with a massive club',
+    possibleDrops: ['greater_health_potion', 'large_gem'],
+    abilities: [
+        {
+            id: 'club_slam',
+            name: 'Club Slam',
+            chance: 0.30,
+            mpCost: 16,
+            hpThreshold: 0.60,
+            telegraph: 'lifts its massive club with both hands and grunts...',
+            type: 'heavy_hit',
+            damageMult: 2.0,
+            armorPiercing: 0,
+            applyMessage: (enemyName, playerClass) => `🪵 The ${enemyName} SLAMS its club! Pure brute force sends the ${playerClass} reeling!`
+        },
+        {
+            id: 'armor_break',
+            name: 'Armor Break',
+            chance: 0.25,
+            mpCost: 12,
+            lowHpThreshold: 0.45,
+            telegraph: 'swings in a wild arc, aiming at your equipment...',
+            type: 'rend',
+            defReduction: 0.30,
+            rendDuration: 9000,
+            damageMult: 1.2,
+            armorPiercing: 0,
+            applyMessage: (enemyName, playerClass) => `💥 The ${enemyName}'s wild blow SMASHES the ${playerClass}'s armor! <span style="color:#ffaa44;">⚠️ Defense reduced for 9 seconds!</span>`
+        },
+        {
+            id: 'ogre_rage',
+            name: 'Ogre Rage',
+            chance: 0.20,
+            mpCost: 18,
+            lowHpThreshold: 0.30,
+            telegraph: 'roars and goes berserk...',
+            type: 'heavy_hit',
+            damageMult: 2.3,
+            armorPiercing: 0.15,
+            applyMessage: (enemyName, playerClass) => `😤 The ${enemyName} goes berserk! Its attacks become wild and devastating!`
+        },
+        {
+            id: 'headbutt',
+            name: 'Headbutt',
+            chance: 0.20,
+            mpCost: 10,
+            telegraph: 'lowers its thick skull and rams you...',
+            type: 'stun',
+            stunPips: 1,
+            stunDuration: 4,
+            damageMult: 1.1,
+            armorPiercing: 0,
+            applyMessage: (enemyName, playerClass) => `👊 The ogre headbutts you! Stars explode before your eyes!`
+        }
+    ],
+    dropRates: { common: 0.3488, uncommon: 0.2907, rare: 0.2093, epic: 0.1163, legendary: 0.0349 }
+},
+
+
+
 orc_berserker: {
     name: 'Orc Berserker',
     baseHp: 190,

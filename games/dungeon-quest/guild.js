@@ -396,7 +396,7 @@ const GUILD_QUESTS = {
                flavorItem:'Goblin Ears', zone:'the Whispering Forest', emoji:'👺', nextQuest:'guild_2' },
     guild_2: { id:'guild_2', level:2, type:'elite', target:'goblin_shaman', targetName:'Goblin Shaman',
                flavorItem:'Shaman Totems', zone:'the Whispering Forest', emoji:'🔮', nextQuest:'guild_3' },
-    guild_3: { id:'guild_3', level:3, type:'boss', target:'ogre', targetName:'Ogre',
+    guild_3: { id:'guild_3', level:3, type:'boss', target:'young_ogre', targetName:'Young Ogre',
                flavorItem:'Ogre Hide', zone:'the Whispering Forest', emoji:'👹', nextQuest:null },
     
     // LEVEL 4-6 - Misty Riverside
@@ -460,7 +460,7 @@ const GUILD_QUESTS = {
 // BOSS ENEMY MAPPING - Maps guild quests to actual boss enemies
 // ═══════════════════════════════════════════════════════════════
 const BOSS_ENEMIES = {
-    guild_3: 'ogre',
+    guild_3: 'young_ogre',
     guild_6: 'flesh_golem',
     guild_9: 'werewolf',
     guild_12: 'troll',
