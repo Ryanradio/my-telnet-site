@@ -2324,7 +2324,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue", "hunter"]
+        "allowedClasses": ["rogue"]
     },
     iron_dagger: {
         "name": "Iron Dagger",
@@ -2336,7 +2336,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue", "hunter"]
+        "allowedClasses": ["rogue"]
     },
     bone_pick: {
         "name": "Bone Pick",
@@ -2348,7 +2348,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue", "hunter"]
+        "allowedClasses": ["rogue"]
     },
     poison_dagger: {
         "name": "Poison Dagger",
@@ -2361,7 +2361,7 @@ const WEAPONS = {
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "poisonChance": 0.2,
-        "allowedClasses": ["rogue", "hunter"]
+        "allowedClasses": ["rogue"]
     },
     copper_stiletto: {
         "name": "Copper Stiletto",
@@ -2373,7 +2373,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue", "hunter"]
+        "allowedClasses": ["rogue"]
     },
     throwing_knife: {
         "name": "Throwing Knife",
@@ -2385,7 +2385,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue", "hunter"]
+        "allowedClasses": ["rogue"]
     },
     assassin_blade: {
         "name": "Assassins Blade",
@@ -2397,7 +2397,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue", "hunter"]
+        "allowedClasses": ["rogue"]
     },
     shadow_fang: {
         "name": "Shadow Fang",
@@ -2409,7 +2409,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue", "hunter"]
+        "allowedClasses": ["rogue"]
     },
     venom_spike: {
         "name": "Venom Spike",
@@ -2422,7 +2422,7 @@ const WEAPONS = {
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "poisonChance": 0.25,
-        "allowedClasses": ["rogue", "hunter"]
+        "allowedClasses": ["rogue"]
     },
     midnight_dirk: {
         "name": "Midnight Dirk",
@@ -2434,7 +2434,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue", "hunter"]
+        "allowedClasses": ["rogue"]
     },
     blacksteel_dagger: {
         "name": "Blacksteel Dagger",
@@ -2446,7 +2446,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue", "hunter"]
+        "allowedClasses": ["rogue"]
     },
     shadowstep_blade: {
         "name": "Shadowstep Blade",
@@ -2458,7 +2458,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue", "hunter"]
+        "allowedClasses": ["rogue"]
     },
     phantom_edge: {
         "name": "Phantom Edge",
@@ -2470,7 +2470,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue", "hunter"]
+        "allowedClasses": ["rogue"]
     },
     soul_piercer: {
         "name": "Soul Piercer",
@@ -2482,7 +2482,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue", "hunter"]
+        "allowedClasses": ["rogue"]
     },
     serpent_tooth: {
         "name": "Serpents Tooth",
@@ -2495,7 +2495,7 @@ const WEAPONS = {
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "poisonChance": 0.35,
-        "allowedClasses": ["rogue", "hunter"]
+        "allowedClasses": ["rogue"]
     },
     venomfang_dagger: {
         "name": "Venomfang Dagger",
@@ -2507,7 +2507,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue", "hunter"]
+        "allowedClasses": ["rogue"]
     },
     twilight_shard: {
         "name": "Twilight Shard",
@@ -2519,7 +2519,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue", "hunter"]
+        "allowedClasses": ["rogue"]
     },
     eclipse_blade: {
         "name": "Eclipse Blade",
@@ -2531,7 +2531,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue", "hunter"]
+        "allowedClasses": ["rogue"]
     },
     dusk_blade: {
         "name": "Dusk Blade",
@@ -2543,7 +2543,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue", "hunter"]
+        "allowedClasses": ["rogue"]
     },
     wraithblade: {
         "name": "Wraithblade",
@@ -2555,7 +2555,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue", "hunter"]
+        "allowedClasses": ["rogue"]
     },
     crimson_fang: {
         "name": "Crimson Fang",
@@ -2567,7 +2567,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue", "hunter"]
+        "allowedClasses": ["rogue"]
     },
     shadow_reaver: {
         "name": "Shadow Reaver",
@@ -2579,7 +2579,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue", "hunter"]
+        "allowedClasses": ["rogue"]
     },
     void_stiletto: {
         "name": "Void Stiletto",
@@ -2591,7 +2591,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue", "hunter"]
+        "allowedClasses": ["rogue"]
     },
     death_whisper: {
         "name": "Deaths Whisper",
@@ -2603,7 +2603,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue", "hunter"]
+        "allowedClasses": ["rogue"]
     },
     oblivion_shard: {
         "name": "Oblivion Shard",
@@ -2615,7 +2615,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue", "hunter"]
+        "allowedClasses": ["rogue"]
     },
     reaper_kiss: {
         "name": "Reapers Kiss",
@@ -2627,7 +2627,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue", "hunter"]
+        "allowedClasses": ["rogue"]
     },
     bloodmoon_fang: {
         "name": "Bloodmoon Fang",
@@ -2640,7 +2640,7 @@ const WEAPONS = {
         "slot": "weapon",
         "weaponSubtype": "dagger",
         "poisonChance": 0.4,
-        "allowedClasses": ["rogue", "hunter"]
+        "allowedClasses": ["rogue"]
     },
     shade_piercer: {
         "name": "Shade Piercer",
@@ -2652,7 +2652,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue", "hunter"]
+        "allowedClasses": ["rogue"]
     },
     eternal_night: {
         "name": "Eternal Night",
@@ -2664,7 +2664,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue", "hunter"]
+        "allowedClasses": ["rogue"]
     },
     nights_edge: {
         "name": "Nights Edge",
@@ -2676,7 +2676,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "dagger",
-        "allowedClasses": ["rogue", "hunter"]
+        "allowedClasses": ["rogue"]
     },
 
     // ======================================================
