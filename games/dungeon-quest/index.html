@@ -1402,6 +1402,16 @@ if (typeof ADVENTURE_ENEMIES !== 'undefined') {
   */      
 
 
+// ── setScreen: set mainScreen content and always scroll to top ──
+// Use this instead of screen.innerHTML = ... everywhere so screens
+// always open at the top, never mid-scroll from a previous visit.
+function setScreen(html) {
+    const s = document.getElementById('mainScreen');
+    if (!s) return;
+    s.innerHTML = html;
+    s.scrollTop = 0;
+}
+
   // Placeholder haptic function (does nothing, prevents console errors)
 function haptic(type) {
     // All haptic feedback removed
@@ -1761,7 +1771,7 @@ function showMainMenu() {
                 <span style="font-size:13px;color:#336633;"> — play fullscreen</span>
             </div>`;
 
-    screen.innerHTML = `
+    setScreen(`
         <div class="location-header">MAIN MENU</div>
         <div style="text-align:center; margin: 30px 0;">
             <div style="display:inline-block; border:2px solid var(--highlight-color); padding:10px 28px; color:var(--highlight-color); font-family:'VT323',monospace; font-size:22px; letter-spacing:2px; box-shadow:0 0 12px rgba(255,200,0,0.3);">
@@ -1785,7 +1795,7 @@ function showMainMenu() {
         <div style="position:fixed;bottom:6px;right:10px;font-family:'VT323',monospace;font-size:13px;color:#1a3a1a;pointer-events:none;user-select:none;">
             v${GAME_VERSION}
         </div>
-    `;
+    `);
     
     // Check cloud login status
     checkMainMenuCloud();
@@ -1800,13 +1810,13 @@ function showMainMenu() {
             }
             
             const screen = document.getElementById('mainScreen');
-            screen.innerHTML = `
+            setScreen(`
                 <div class="location-header">SELECT CHARACTER</div>
                 <div id="characterList" style="max-width: 600px; margin: 20px auto; padding: 0 10px;"></div>
                 <div style="padding: 0 10px 20px;">
                     <button onclick="showMainMenu()" style="width:100%;max-width:600px;display:block;margin:0 auto;">← BACK TO MENU</button>
                 </div>
-            `;
+            `);
             
             const charList = document.getElementById('characterList');
             
@@ -4233,7 +4243,7 @@ exploreLocation = function(locKey) {
 
         function showAbout() {
             const screen = document.getElementById('mainScreen');
-            screen.innerHTML = `
+            setScreen(`
                 <div style="
                     background: #1a120a;
                     border: 2px solid #7a5a2a;
@@ -4351,14 +4361,14 @@ exploreLocation = function(locKey) {
                         ← BACK TO MENU
                     </button>
                 </div>
-            `;
+            `);
             screen.scrollTop = 0;
             window.scrollTo(0, 0);
         }
 
         function showInstructions() {
             const screen = document.getElementById('mainScreen');
-            screen.innerHTML = `
+            setScreen(`
                 <div class="location-header">INSTRUCTIONS</div>
                 <button onclick="showMainMenu()" style="margin-bottom:10px;">BACK TO MENU</button>
 
@@ -4423,7 +4433,7 @@ exploreLocation = function(locKey) {
                 </div>
 
                 <button onclick="showMainMenu()">BACK TO MENU</button>
-            `;
+            `);
         }
 
         function showRevisionHistory() {
@@ -4456,12 +4466,12 @@ exploreLocation = function(locKey) {
             }
 
             html += `<button onclick="showMainMenu()">BACK TO MENU</button>`;
-            screen.innerHTML = html;
+            setScreen(html);
         }
 
         function newGame() {
             const screen = document.getElementById('mainScreen');
-            screen.innerHTML = `
+            setScreen(`
                 <div class="location-header">CHARACTER CREATION</div>
                 <div class="message">
                     <p>Enter your character name:</p>
@@ -4473,7 +4483,7 @@ exploreLocation = function(locKey) {
                 <div class="character-select" id="classSelect"></div>
                 <button onclick="goToStatAlloc()" id="createBtn" disabled>ALLOCATE STATS →</button>
                 <button onclick="showMainMenu()">CANCEL</button>
-            `;
+            `);
 
             const classSelect = document.getElementById('classSelect');
             window._selectedClass = null;
@@ -4544,7 +4554,7 @@ exploreLocation = function(locKey) {
                 </div>`;
             });
 
-            screen.innerHTML = `
+            setScreen(`
                 <div class="location-header">ALLOCATE STATS – ${classData.name}</div>
                 <div class="message" style="border-color:var(--highlight-color);">
                     <span style="color:var(--highlight-color);">Points remaining: </span>
@@ -4567,7 +4577,7 @@ exploreLocation = function(locKey) {
                     <button onclick="finaliseCharacter()" ${remaining===0?'':'disabled'} style="font-size:20px;">⚔️ BEGIN ADVENTURE ⚔️</button>
                     <button onclick="newGame()">← BACK</button>
                 </div>
-            `;
+            `);
         }
 
         window.statAdj = function(stat, dir) {
@@ -4681,7 +4691,7 @@ showWelcomeScreen();
 function showCloudMenu() {
     const screen = document.getElementById('mainScreen');
     
-    screen.innerHTML = `
+    setScreen(`
         <div class="location-header">☁️ CLOUD SAVES</div>
         <button onclick="showTown()" style="margin-bottom:10px;">← BACK TO TOWN</button>
         
@@ -4694,7 +4704,7 @@ function showCloudMenu() {
             <div id="cloudAuthForms"></div>
             <div id="cloudCharacterList"></div>
         </div>
-    `;
+    `);
     
     checkCloudLogin();
 }
@@ -4781,7 +4791,7 @@ async function logoutFromCloud() {
 async function showCloudLoadScreen() {
     const screen = document.getElementById('mainScreen');
     
-    screen.innerHTML = `
+    setScreen(`
         <div class="location-header">☁️ LOAD FROM CLOUD</div>
         <button onclick="showMainMenu()" style="margin-bottom:10px;">← BACK TO MAIN MENU</button>
         
@@ -4789,7 +4799,7 @@ async function showCloudLoadScreen() {
             <div id="cloudLoadStatus"></div>
             <div id="cloudLoadContent"></div>
         </div>
-    `;
+    `);
     
     // Check login status
     const { data: { user } } = await calamitySupabase.auth.getUser();
@@ -5640,7 +5650,7 @@ async function loadCloudCharacter(saveId) {
                 return;
             }
 
-            screen.innerHTML = `
+            setScreen(`
                 <div class="location-header" id="townBanner"
      onmousedown="bannerHoldDown(event)" onmouseup="bannerHoldUp()" onmouseleave="bannerHoldCancel()"
      ontouchstart="bannerHoldDown(event)" ontouchend="bannerHoldUp()" ontouchcancel="bannerHoldCancel()">${townName}</div>
@@ -5668,7 +5678,7 @@ async function loadCloudCharacter(saveId) {
                     <div class="menu-option" onclick="manualCloudSync()" style="border-color: #AA88FF;">► ☁️ SYNC TO CLOUD</div>
                     <div class="menu-option" onclick="confirmQuitToMenu()">► ⏏ QUIT TO MENU</div>
                 </div>
-            `;
+            `);
         }
 
         // ── Travel to another town via portal ──────────────────────────
@@ -5970,7 +5980,7 @@ function usePortal(destTownId) {
             checkGameVersion();
             const screen = document.getElementById('mainScreen');
             const p = gameState.player;
-            screen.innerHTML = `
+            setScreen(`
                 <div class="location-header">🏦 TOWN BANK</div>
                 <button onclick="showTown()" style="margin-bottom:10px;">← BACK TO TOWN</button>
                 ${renderPlayerStats()}
@@ -5997,7 +6007,7 @@ function usePortal(destTownId) {
                     </div>
                 </div>
                 <button onclick="showTown()">← BACK TO TOWN</button>
-            `;
+            `);
         }
 
         function depositGold() {
@@ -6086,7 +6096,7 @@ function usePortal(destTownId) {
             const termSz = parseFloat(localStorage.getItem('dq_font_terminal') || '15');
             const townSz = parseFloat(localStorage.getItem('dq_font_town')     || '16');
 
-            screen.innerHTML = `
+            setScreen(`
                 <div class="location-header">⚙️ SETTINGS</div>
 
                 <!-- ── FONT SIZE: TERMINAL ─────────────────────────────── -->
@@ -6223,7 +6233,7 @@ function usePortal(destTownId) {
                 </div>
 
                 <button onclick="showTown()" style="width:100%;max-width:400px;display:block;margin:0 auto 20px;">← BACK TO TOWN</button>
-            `;
+            `);
             // Scroll to the top of the screen container every time settings opens
             screen.scrollTop = 0;
             const _scroller = screen.closest('.terminal-container') || screen.parentElement;
@@ -6233,7 +6243,7 @@ function usePortal(destTownId) {
 
         function showModemSettings() {
             const screen = document.getElementById('mainScreen');
-            screen.innerHTML = `
+            setScreen(`
                 <div class="location-header">📞 MODEM SETTINGS 📞</div>
                 ${renderPlayerStats()}
                 <div class="message">
@@ -6267,7 +6277,7 @@ function usePortal(destTownId) {
                     <p style="font-size: 14px;">Combat timer won't start until screen finishes loading.</p>
                 </div>
                 <button onclick="showTown()">BACK TO TOWN</button>
-            `;
+            `);
         }
 
         function setModemSpeed(speed) {
@@ -6331,7 +6341,7 @@ function usePortal(destTownId) {
 function showCloudMenu() {
     const screen = document.getElementById('mainScreen');
     
-    screen.innerHTML = `
+    setScreen(`
         <div class="location-header">☁️ CLOUD SAVES</div>
         <button onclick="showTown()" style="margin-bottom:10px;">← BACK TO TOWN</button>
         
@@ -6344,7 +6354,7 @@ function showCloudMenu() {
             <div id="cloudAuthForms"></div>
             <div id="cloudCharacterList"></div>
         </div>
-    `;
+    `);
     
     checkCloudLogin();
 }
@@ -8485,6 +8495,9 @@ if (modifiers && modifiers.length > 0) {
         innerEl.id = 'dungeonInvOverlay';
         overlay.id = '';
         document.body.appendChild(innerEl);
+        // Scroll the inner scrollable body to top
+        const scrollBody = innerEl.querySelector('[style*="overflow-y"]') || innerEl;
+        if (scrollBody) scrollBody.scrollTop = 0;
     } else {
         document.body.appendChild(overlay);
     }

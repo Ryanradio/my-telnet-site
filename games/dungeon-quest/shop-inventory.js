@@ -114,7 +114,7 @@ function getRerollState(p) {
 function showShop() {
     checkGameVersion();
     const screen = document.getElementById('mainScreen');
-    screen.innerHTML = `<div id="shopRoot"></div>`;
+    setScreen(`<div id="shopRoot"></div>`);
     renderShop('buy', 'weapons', 'all', 'near');
 }
 
@@ -422,7 +422,7 @@ const typeOptions = subtypes.map(t =>
     }
 
     // ── Full render ──────────────────────────────────────────────
-    screen.innerHTML = `
+    setScreen(`
         <style>#shopRoot button:not([disabled]):hover{filter:brightness(1.3);}</style>
 
         <!-- Top bar -->
@@ -464,7 +464,7 @@ const typeOptions = subtypes.map(t =>
 
         <!-- Bottom leave -->
         <button onclick="showTown()" style="display:block;width:100%;background:#080808;border:1px solid #1a1a1a;color:#333;font-size:11px;padding:8px;cursor:pointer;font-family:'Courier New',monospace;letter-spacing:2px;">← LEAVE SHOP</button>
-    `;
+    `);
 
     // Timer tick
     window._shopTimerInterval = setInterval(() => {
@@ -1832,7 +1832,7 @@ function showInventory() {
         <button onclick="showTown()">BACK</button>
     `;
 
-    screen.innerHTML = invHtml;
+    setScreen(invHtml);
 }
 
 
@@ -2498,7 +2498,7 @@ function showUnifiedInventory(returnCallback = null) {
     
     invHtml += `<button onclick="closeUnifiedInventory()" style="margin-top:20px; width:100%;">← BACK</button>`;
     
-    screen.innerHTML = invHtml;
+    setScreen(invHtml);
 }
 
 // Replace the old inventory overlay with unified inventory
@@ -3202,7 +3202,7 @@ showInventory();
         <button onclick="showTown()">RETURN TO TOWN</button>
     `;
 
-    screen.innerHTML = exploreHtml;
+    setScreen(exploreHtml);
 }
 
         function getMasterKeyForArea(areaKey) {
@@ -3258,7 +3258,7 @@ showInventory();
             
             // Show master challenge screen
             const screen = document.getElementById('mainScreen');
-            screen.innerHTML = `
+            setScreen(`
                 <div class="location-header">⚔️ MASTER CHALLENGE ⚔️</div>
                 ${renderPlayerStats()}
                 <div class="message" style="border-color: var(--error-color); background: rgba(255, 0, 0, 0.1);">
@@ -3277,7 +3277,7 @@ showInventory();
                     <button onclick="startMasterBattle('${masterKey}')" style="background: var(--error-color); font-size: 22px;">⚔️ BEGIN BATTLE ⚔️</button>
                     <button onclick="showExplore()">RETREAT</button>
                 </div>
-            `;
+            `);
         }
 
         function startMasterBattle(masterKey) {

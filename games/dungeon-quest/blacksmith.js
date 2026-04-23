@@ -18,7 +18,7 @@ function showCrossroadsForge() {
         glow: '0 0 20px rgba(255,215,0,0.3)'
     };
     
-    screen.innerHTML = `
+    setScreen(`
         <div class="location-header" style="border-color: ${theme.border}; color: ${theme.primary}; text-shadow: 0 0 10px ${theme.primary};">✨ FORGE OF THE CROSSROADS ✨</div>
         
         <div style="
@@ -66,7 +66,7 @@ function showCrossroadsForge() {
             <span style="color: ${theme.primary};">✦ THE CROSSROADS FORGE ✦</span><br>
             Infused with elemental energy from the convergence of worlds.
         </div>
-    `;
+    `);
 }
 
 
@@ -140,7 +140,7 @@ const anvil = `<div style="
         // Choose which forge to show based on returnTo
         if (returnTo === 'crossroads') {
             // Render Crossroads Forge style
-            screen.innerHTML = `
+            setScreen(`
                 <div class="location-header" style="border-color: #d4a840; color: #FFD700; text-shadow: 0 0 10px #FFD700;">✨ FORGE OF THE CROSSROADS ✨</div>
                 <div style="background: #1a1408; border: 2px solid #d4a840; border-radius: 8px; padding: 16px; margin: 10px 0; box-shadow: 0 0 20px rgba(255,215,0,0.3); text-align: center;">
                     <div style="font-size: 14px; color: #FFD700; letter-spacing: 3px;">⚔️ WHERE WORLDS COLLIDE ⚔️</div>
@@ -152,10 +152,10 @@ const anvil = `<div style="
                     <div class="menu-option" onclick="showBlacksmith('info', null, 'crossroads')" style="border-color: #d4a840; color: #FFD700;">► 📖 HOW GEMS WORK</div>
                     <div class="menu-option" onclick="showTown()" style="border-color: #4a3a1a; color: #8a7a40;">← BACK TO CROSSROADS</div>
                 </div>
-            `;
+            `);
         } else {
             // Render Valdrak's Forge (original)
-            screen.innerHTML = `
+            setScreen(`
                 <div class="location-header">⚒️ VALDRAK'S FORGE</div>
                 ${anvil}
                 <div class="message" style="color:#cc7733;font-style:italic;text-align:center;margin-bottom:12px;">
@@ -168,21 +168,21 @@ const anvil = `<div style="
                     <div class="menu-option" onclick="showBlacksmith('info')" style="border-color:#444;">► 📖 HOW GEMS WORK</div>
                     <div class="menu-option" onclick="showTown()">← BACK TO TOWN</div>
                 </div>
-            `;
+            `);
         }
     }
 
     else if (subview === 'cut') {
         const rawGems = getRawGems();
         if (rawGems.length === 0) {
-            screen.innerHTML = `
+            setScreen(`
                 <div class="location-header">⚒️ CUT GEMS</div>
                 ${anvil}
                 <div class="message" style="color:#888;text-align:center;padding:20px;">
                     You have no raw gems to cut.<br>
                     <span style="font-size:12px;color:#555;">Gems drop from any enemy (4% chance). Keep adventuring!</span>
                 </div>
-                <button onclick="showBlacksmith('main', null, '${returnTo}')" style="margin-top:8px; padding:8px 16px;">← BACK</button>`;
+                <button onclick="showBlacksmith('main', null, '${returnTo}')" style="margin-top:8px; padding:8px 16px;">← BACK</button>`);
             return;
         }
         let gemListHtml = rawGems.map(gk => {
@@ -197,14 +197,14 @@ const anvil = `<div style="
                     style="border-color:#FF7722;color:#FF7722;font-size:12px;padding:4px 10px;">CUT (200g)</button>
             </div>`;
         }).join('');
-        screen.innerHTML = `
+        setScreen(`
             <div class="location-header">⚒️ CUT GEMS — ${p.gold}g</div>
             ${anvil}
             <div class="message" style="color:#888;font-size:12px;text-align:center;">
                 Cutting reveals a gem's permanent stats at random. Stats cannot be rerolled.
             </div>
             <div style="margin:10px 0;">${gemListHtml}</div>
-            <button onclick="showBlacksmith('main', null, '${returnTo}')" style="margin-top:8px; padding:8px 16px;">← BACK</button>`;
+            <button onclick="showBlacksmith('main', null, '${returnTo}')" style="margin-top:8px; padding:8px 16px;">← BACK</button>`);
     }
 
     else if (subview === 'socket') {
@@ -348,12 +348,12 @@ function armorSocketCard() {
         const openSlots = activeSlots - activeUsed;
 
         if (cutGems.length === 0) {
-            screen.innerHTML = `<div class="location-header">⚒️ SOCKET GEM</div>${anvil}
+            setScreen(`<div class="location-header">⚒️ SOCKET GEM</div>${anvil}
                 <div class="message" style="color:#888;text-align:center;padding:20px;">
                     You have no cut gems to socket.<br>
                     <span style="font-size:12px;">Cut a raw gem first at the forge.</span>
                 </div>
-                <button onclick="showBlacksmith('main', null, '${returnTo}')">← BACK</button>`;
+                <button onclick="showBlacksmith('main', null, '${returnTo}')">← BACK</button>`);
             return;
         }
 
@@ -377,7 +377,7 @@ function armorSocketCard() {
                     : '👆 Select a weapon or armor above to socket gems.'
               }</div>`;
 
-        screen.innerHTML = `
+        setScreen(`
             <div class="location-header">⚒️ SOCKET GEM — ${p.gold}g</div>
             ${anvil}
             <div style="color:#aaa;font-size:12px;margin:4px 0 2px;">Click on an item to select it for socketing:</div>
@@ -385,11 +385,11 @@ function armorSocketCard() {
 
             <div style="margin-top:15px;color:#aaa;font-size:12px;text-align:center;">⚠️ Socketed gems are permanent and cannot be removed.</div>
             <div style="margin:10px 0; max-height:300px; overflow-y:auto;">${gemButtons}</div>
-            <button onclick="showBlacksmith('main', null, '${returnTo}')" style="margin-top:8px; padding:8px 16px;">← BACK</button>`;
+            <button onclick="showBlacksmith('main', null, '${returnTo}')" style="margin-top:8px; padding:8px 16px;">← BACK</button>`);
     }
 
     else if (subview === 'info') {
-        screen.innerHTML = `
+        setScreen(`
             <div class="location-header">⚒️ HOW GEMS WORK</div>
             ${anvil}
             <div class="message" style="font-size:13px;line-height:1.6;">
@@ -419,7 +419,7 @@ function armorSocketCard() {
                 Weapon DMG (Ruby) is melee only. Spell Power (Sapphire) is spells only.<br>
                 Lifesteal (Ruby) works on both melee and spells.</p>
             </div>
-            <button onclick="showBlacksmith('main', null, '${returnTo}')" style="margin-top:8px; padding:8px 16px;">← BACK</button>`;
+            <button onclick="showBlacksmith('main', null, '${returnTo}')" style="margin-top:8px; padding:8px 16px;">← BACK</button>`);
     }
 }
 
@@ -657,7 +657,7 @@ console.log('✅ Socket duplication prevention active - duplicates will be clean
             const totalAllocated = calculateTotalAllocatedPoints();
             const respecCost = calculateRespecCost(p.level);
             
-            screen.innerHTML = `
+            setScreen(`
                 <div class="location-header">⛪ TEMPLE</div>
                 <button onclick="showTown()" style="margin-bottom:10px;">← BACK TO TOWN</button>
                 ${renderPlayerStats()}
@@ -677,7 +677,7 @@ console.log('✅ Socket duplication prevention active - duplicates will be clean
                     <div class="menu-option" onclick="showRespec()">🔄 STAT RESPEC (${respecCost}g)</div>
                     <button onclick="showTown()">← BACK TO TOWN</button>
                 </div>
-            `;
+            `);
         }
         
         function showRespec() {
@@ -687,7 +687,7 @@ console.log('✅ Socket duplication prevention active - duplicates will be clean
             const totalAllocated = calculateTotalAllocatedPoints();
             const respecCost = calculateRespecCost(p.level);
             
-            screen.innerHTML = `
+            setScreen(`
                 <div class="location-header">🔄 STAT RESPEC</div>
                 <button onclick="showTemple()" style="margin-bottom:10px;">← BACK</button>
                 ${renderPlayerStats()}
@@ -712,7 +712,7 @@ console.log('✅ Socket duplication prevention active - duplicates will be clean
                     ${p.gold >= respecCost ? `<button onclick="confirmRespec()" style="border-color:#FFD700;">💰 RESPEC (${respecCost}g)</button>` : `<button disabled>Need ${respecCost - p.gold}g more</button>`}
                     <button onclick="showTemple()">← BACK</button>
                 </div>
-            `;
+            `);
         }
         
         function calculateTotalAllocatedPoints() {
@@ -796,14 +796,14 @@ console.log('✅ Socket duplication prevention active - duplicates will be clean
     const spellTree = CLASS_SPELL_TREES[classKey];
     
     if (!spellTree) {
-        screen.innerHTML = `
+        setScreen(`
             <div class="location-header">📖 SPELL TRAINING</div>
             ${renderPlayerStats()}
             <div class="message" style="border-color:var(--error-color);">
                 <p>Your class (${classKey}) does not have spell training available.</p>
             </div>
             <button onclick="showTemple()">← BACK TO TEMPLE</button>
-        `;
+        `);
         return;
     }
     
@@ -955,7 +955,7 @@ console.log('✅ Socket duplication prevention active - duplicates will be clean
     }
     
     html += `<button onclick="showTemple()">← BACK</button>`;
-    screen.innerHTML = html;
+    setScreen(html);
 }
         
         function learnSpell(spellKey) {
@@ -1031,14 +1031,14 @@ console.log('✅ Socket duplication prevention active - duplicates will be clean
             const screen = document.getElementById('mainScreen');
             
             if ((p.baseClass || p.class) !== 'hunter') {
-                screen.innerHTML = `
+                setScreen(`
                     <div class="location-header">🐺 PET TRAINING</div>
                     ${renderPlayerStats()}
                     <div class="message" style="border-color:var(--error-color);">
                         <p>The beast trainer shakes their head. "Only hunters may bond with beasts."</p>
                     </div>
                     <button onclick="showTemple()">← BACK TO TEMPLE</button>
-                `;
+                `);
                 return;
             }
             
@@ -1122,7 +1122,7 @@ console.log('✅ Socket duplication prevention active - duplicates will be clean
             `;
             
             html += `<button onclick="showTemple()">← BACK</button>`;
-            screen.innerHTML = html;
+            setScreen(html);
         }
         
         function upgradePet(petKey) {
