@@ -1089,24 +1089,48 @@ function checkGuildEncounter(locKey) {
                 startCombat([questDef.target, questDef.target], false, ['rare', 'rare']);
                 
             } else { // boss
-                // Get the boss enemy key from our mapping
-                const bossKey = BOSS_ENEMIES[questDef.id];
-                if (!bossKey) {
-                    console.error('No boss mapped for', questDef.id);
-                    return;
-                }
-                
-                const bossEnemy = ENEMIES[bossKey];
-                if (!bossEnemy) {
-                    console.error('Boss enemy not found:', bossKey);
-                    return;
-                }
-                
-                termAppend(`<span style="color:#9933FF;">The ${bossEnemy.name} appears! Defeat it to complete your contract!</span>`, 'term-victory');
-                
-                // Start combat with 1 epic boss enemy
-                startCombat([bossKey], false, ['epic']);
-            }
+    // Get the boss enemy key from our mapping
+    const bossKey = BOSS_ENEMIES[questDef.id];
+    if (!bossKey) {
+        console.error('No boss mapped for', questDef.id);
+        return;
+    }
+    
+    const bossTemplate = ENEMIES[bossKey];
+    if (!bossTemplate) {
+        console.error('Boss enemy not found:', bossKey);
+        return;
+    }
+    
+    termAppend(`<span style="color:#9933FF;">The ${bossTemplate.name} appears! Defeat it to complete your contract!</span>`, 'term-victory');
+    
+    // Create the boss monster manually with EXACT template stats (no level scaling)
+    const bossMonster = {
+        key: bossKey,
+        name: bossTemplate.name,
+        rarity: 'epic',
+        rarityColor: '#9c27b0',
+        hp: bossTemplate.baseHp,
+        maxHp: bossTemplate.baseHp,
+        damage: bossTemplate.baseDamage,
+        minDamage: bossTemplate.minDamage,
+        maxDamage: bossTemplate.maxDamage,
+        defense: bossTemplate.baseDefense,
+        xp: bossTemplate.baseXp,
+        gold: bossTemplate.baseGold,
+        level: bossTemplate.level,
+        possibleDrops: bossTemplate.possibleDrops,
+        dropRates: bossTemplate.dropRates,
+        abilities: bossTemplate.abilities || [],
+        isBoss: true,
+        isGuildQuest: true,
+        questId: questDef.id
+    };
+    
+    // Start combat with the manual boss monster (no zone level override)
+    gameState.combatState = null;
+    startCombat([bossMonster]);
+}
         }
     });
     
