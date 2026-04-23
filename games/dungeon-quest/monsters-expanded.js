@@ -10075,7 +10075,7 @@ young_ogre: {
     baseDefense: 14,
     baseXp: 118,
     baseGold: 90,
-    level: 12,
+    level: 8,
     description: 'A dim-witted giant with a massive club',
     possibleDrops: ['greater_health_potion', 'large_gem'],
     abilities: [
