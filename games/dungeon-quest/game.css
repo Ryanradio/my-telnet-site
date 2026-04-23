@@ -611,25 +611,40 @@ body.terminal-mode #sbXpBar { display: block; }
             50%, 100% { opacity: 0; }
         }
 
-        @keyframes flashRed {
+        @keyframes pulseOrange {
             0%, 100% { color: #FF8C00; text-shadow: 0 0 6px #FF8C00; }
-            50%      { color: #FFD700; text-shadow: 0 0 14px #FFD700; }
+            50%       { color: #FFD700; text-shadow: 0 0 14px #FFD700; }
         }
 
-        @keyframes flashOrange {
-            0%, 100% { color: #FF0000; text-shadow: 0 0 6px #FF0000; }
-            50%      { color: #FF4444; text-shadow: 0 0 14px #FF4444; }
+        @keyframes pulseRed {
+            0%, 100% { color: #FF2200; text-shadow: 0 0 6px #FF2200; }
+            50%       { color: #FF5533; text-shadow: 0 0 14px #FF5533; }
         }
 
+        /* Final total damage (player) — pulsing orange, larger */
         .dmg-player {
-            animation: flashOrange 0.6s ease-in-out infinite;
+            animation: pulseOrange 0.6s ease-in-out infinite;
             font-weight: bold;
+            font-size: 17px;
         }
 
+        /* Enemy incoming damage — pulsing red, larger */
         .dmg-enemy {
-            animation: flashRed 0.6s ease-in-out infinite;
+            animation: pulseRed 0.6s ease-in-out infinite;
             font-weight: bold;
+            font-size: 19px;
         }
+
+        /* Bonus damage components — static colors, no pulse, normal size */
+        .dmg-lightning { color: #FFD700; font-weight: bold; }
+        .dmg-fire      { color: #FF4400; font-weight: bold; }
+        .dmg-poison    { color: #44FF44; font-weight: bold; }
+        .dmg-frost     { color: #88EEFF; font-weight: bold; }
+        .dmg-magic     { color: #AA88FF; font-weight: bold; }
+        .dmg-soul      { color: #FF88AA; font-weight: bold; }
+        .dmg-physical  { color: #FF8C00; font-weight: bold; }
+        .dmg-shadow    { color: #CC88FF; font-weight: bold; }
+        .dmg-holy      { color: #FFFFAA; font-weight: bold; }
 
      .container {
     height: 100%;

@@ -2349,7 +2349,7 @@ if (baseClass === 'rogue' && isDaggerWeapon && enemy.hp > 0) {
         enemy.hp -= mod2.totalDamage;
         const crit2Tag = result2.crit ? ' <span style="color:#FFD700;">★ CRIT!</span>' : '';
         modifierResult.messages.push(
-            `↪ Second strike: <span class="dmg-enemy">${mod2.totalDamage} damage</span>${crit2Tag}`
+            `↪ Second strike: <span class="dmg-player">${mod2.totalDamage} damage</span>${crit2Tag}`
         );
         
         if (gemLifesteal > 0) {
@@ -2379,7 +2379,7 @@ if (baseClass === 'rogue' && isDaggerWeapon && enemy.hp > 0) {
                 enemy.hp -= petDamage;
                 const pet = HUNTER_PETS[p.activePet];
                 modifierResult.messages.push(
-                    `${pet.icon} <span style="color:#88FF88;">${pet.name} attacks for <span class="dmg-enemy">${petDamage} damage</span>!</span>`
+                    `${pet.icon} <span style="color:#88FF88;">${pet.name} attacks for <span class="dmg-player">${petDamage} damage</span>!</span>`
                 );
             }
         }
@@ -2428,58 +2428,52 @@ if (baseClass === 'rogue' && isDaggerWeapon && enemy.hp > 0) {
         if (hpPct < 10) condition = 'barely standing';
 
         // ========== COMPREHENSIVE COLOR MAP FOR ALL ABILITIES ==========
-        const DAMAGE_COLORS = {
-            shock: '#FFD700', lightning: '#FFD700', shadow: '#AA44FF',
-            void: '#6600BB', fire: '#FF6600', frost: '#88EEFF',
-            ice: '#88EEFF', poison: '#00EE00', acid: '#a8e63d',
-            bleed: '#FF4488', holy: '#FFFF88', chaos: '#FF88FF',
-            arcane: '#AA88FF', nature: '#88FF88', dark: '#8844AA',
-            light: '#FFFFAA', power: '#FFAA00', razor: '#CCCCCC',
-            sharp: '#CCCCCC', piercing: '#AAAAAA', crushing: '#BB8844',
-            slashing: '#DDDDDD', bleeding: '#FF4488', wounding: '#FF6666',
-            spell: '#AA88FF', magic: '#8888FF', mana: '#4488FF',
-            soul: '#AA44AA', spirit: '#88AAFF', burning: '#FF8800',
-            frozen: '#88FFFF', stunned: '#FFFF88', slowed: '#888888',
-            weakened: '#AA8888', cursed: '#884488', hexed: '#AA44AA',
-            diseased: '#88AA44', heal: '#88FF88', lifesteal: '#FF8888',
-            leech: '#FF88AA', strength: '#FF8888', agility: '#88FF88',
-            intellect: '#8888FF', vitality: '#88FFAA', default: '#FFFFFF'
-        };
-
-        // Calculate total damage and build colored parts
+        // Calculate total damage and build colored bonus parts
         let elementalTotal = 0;
         let elementalParts = [];
 
+        // Map damage type keywords to CSS classes
+        const DMG_CLASS = {
+            lightning: 'dmg-lightning', electric: 'dmg-lightning', thunder: 'dmg-lightning',
+            fire: 'dmg-fire', flame: 'dmg-fire', burn: 'dmg-fire', burning: 'dmg-fire',
+            poison: 'dmg-poison', venom: 'dmg-poison', toxic: 'dmg-poison',
+            frost: 'dmg-frost', ice: 'dmg-frost', cold: 'dmg-frost', frozen: 'dmg-frost',
+            magic: 'dmg-magic', arcane: 'dmg-magic', mana: 'dmg-magic', spell: 'dmg-magic',
+            soul: 'dmg-soul', spirit: 'dmg-soul', lifesteal: 'dmg-soul', leech: 'dmg-soul',
+            shadow: 'dmg-shadow', dark: 'dmg-shadow',
+            holy: 'dmg-holy', radiant: 'dmg-holy', light: 'dmg-holy',
+            physical: 'dmg-physical', bleed: 'dmg-physical', rend: 'dmg-physical',
+        };
+
         modifierResult.messages.forEach(msg => {
-            // Check for damage patterns
             const damageMatch = msg.match(/\+(\d+) ([\w\s]+) damage/);
             if (damageMatch) {
                 const dmg = parseInt(damageMatch[1]);
                 const type = damageMatch[2].toLowerCase().trim();
                 elementalTotal += dmg;
-                
                 const colorKey = type.split(' ')[0];
-                const color = DAMAGE_COLORS[colorKey] || DAMAGE_COLORS[type] || DAMAGE_COLORS.default;
-                
-                elementalParts.push(`<span style="color:${color};">+${dmg} ${type}</span>`);
+                const cls = DMG_CLASS[colorKey] || DMG_CLASS[type] || 'dmg-physical';
+                elementalParts.push(`<span class="${cls}">+${dmg} ${type}</span>`);
             }
         });
 
-        // Build the main damage number with enemy damage color (red pulsing)
-        const mainDamageSpan = `<span class="dmg-enemy">${finalDamage}</span>`;
+        // Base weapon damage component — static orange, normal size
+        const baseDmgSpan = `<span class="dmg-physical">${finalDamage}</span>`;
+        // Final total — pulsing orange, larger (dmg-player)
+        const totalDamage = finalDamage + elementalTotal;
+        const totalDmgSpan = `<span class="dmg-player">${totalDamage}</span>`;
 
         let elementalString = '';
         if (elementalParts.length > 0) {
             elementalString = ' + ' + elementalParts.join(' + ');
         }
 
-        const totalDamage = finalDamage + elementalTotal;
-
         let damageMessage;
         if (elementalParts.length > 0) {
-            damageMessage = `You ${attackName} ${tName} for ${mainDamageSpan}${elementalString} for <span class="dmg-enemy">${totalDamage}</span> total damage!${critTag}`;
+            damageMessage = `You ${attackName} ${tName} for ${baseDmgSpan}${elementalString} for ${totalDmgSpan} total damage!${critTag}`;
         } else {
-            damageMessage = `You ${attackName} ${tName} for <span class="dmg-enemy">${finalDamage}</span> total damage!${critTag}`;
+            // No bonus damage — just show the final number pulsing
+            damageMessage = `You ${attackName} ${tName} for ${totalDmgSpan} total damage!${critTag}`;
         }
 
         termAppend(
@@ -2891,7 +2885,7 @@ function cancelSpellMenu() {
                 hitCount++;
                 
                 const critTag = crit ? ' <span style="color:#FFD700;">★ CRIT!</span>' : '';
-                let msg = `→ ${tName} takes <span class="dmg-enemy">${finalDamage} damage!</span>${critTag}`;
+                let msg = `→ ${tName} takes <span class="dmg-player">${finalDamage} damage!</span>${critTag}`;
                 if (modifierResult.messages.length > 0) {
                     msg += ' ' + modifierResult.messages.join(' ');
                 }
@@ -3017,7 +3011,7 @@ function cancelSpellMenu() {
         p.hp = Math.min(p.maxHp, p.hp + healAmount);
         
         const critTag = crit ? ' <span style="color:#FFD700;">★ CRIT!</span>' : '';
-        let spellMsg = `You cast ${spell.name} on ${tName} for <span class="dmg-enemy">${finalDamage} damage!</span>${critTag}`;
+        let spellMsg = `You cast ${spell.name} on ${tName} for <span class="dmg-player">${finalDamage} damage!</span>${critTag}`;
         if (modifierResult.messages.length > 0) {
             spellMsg += '<br>' + modifierResult.messages.join('<br>');
         }
@@ -3151,7 +3145,7 @@ function cancelSpellMenu() {
         if (hpPct < 10) condition = 'barely standing';
         
         // Build message with weapon modifier bonuses
-        let spellMsg = `You cast ${spell.name} on ${tName} for <span class="dmg-enemy">${finalDamage} damage!</span>${critTag}`;
+        let spellMsg = `You cast ${spell.name} on ${tName} for <span class="dmg-player">${finalDamage} damage!</span>${critTag}`;
         if (modifierResult.messages.length > 0) {
             spellMsg += '<br>' + modifierResult.messages.join('<br>');
         }
@@ -4510,7 +4504,7 @@ if (staggerBonus > 0 && Math.random() < (staggerBonus / 100)) {
                 );
             } else {
                 termAppend(
-                    `${hit.eName} attacks for <span class="dmg-player">${hit.dmg} damage!</span>${critTag}${shieldTag}${abilityTag}`,
+                    `${hit.eName} attacks for <span class="dmg-enemy">${hit.dmg} damage!</span>${critTag}${shieldTag}${abilityTag}`,
                     null,
                     isLast ? afterAttack : null
                 );
