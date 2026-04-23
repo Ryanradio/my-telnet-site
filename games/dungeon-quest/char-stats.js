@@ -40,7 +40,7 @@ function showCharacterStats() {
         }
     }
 
-    setScreen(`
+    screen.innerHTML = `
         <div class="location-header">📊 CHARACTER STATS</div>
         <button onclick="window._statsPageOpen=false;showTown();" style="margin-bottom:10px;">← BACK TO TOWN</button>
 
@@ -74,7 +74,7 @@ function showCharacterStats() {
                 style="margin-top:12px;font-size:18px;border-color:#00FF00;color:#00FF00;width:100%;">
                 💾 SAVE CHANGES
             </button>
-        ` ): ''}
+        ` : ''}
         <button onclick="window._statsPageOpen=false;showTown();" style="margin-top:8px;">← BACK TO TOWN</button>
 
         <!-- Chronicle & Bestiary launcher -->

@@ -464,10 +464,10 @@ const BOSS_ENEMIES = {
     guild_6: 'flesh_golem',
     guild_9: 'werewolf',
     guild_12: 'troll',
-    guild_15: 'golem',
-    guild_18: 'minotaur',
+    guild_15: 'ancient_golem',  // changed from 'golem' to 'ancient_golem'
+    guild_18: 'minotaur_scout',  // changed from 'minotaur' to 'minotaur_scout'
     guild_21: 'vampire_lord',
-    guild_24: 'dragon'
+    guild_24: 'red_dragon'  // changed from 'dragon' to 'red_dragon'
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -1089,48 +1089,99 @@ function checkGuildEncounter(locKey) {
                 startCombat([questDef.target, questDef.target], false, ['rare', 'rare']);
                 
             } else { // boss
-    // Get the boss enemy key from our mapping
-    const bossKey = BOSS_ENEMIES[questDef.id];
-    if (!bossKey) {
-        console.error('No boss mapped for', questDef.id);
-        return;
-    }
-    
-    const bossTemplate = ENEMIES[bossKey];
-    if (!bossTemplate) {
-        console.error('Boss enemy not found:', bossKey);
-        return;
-    }
-    
-    termAppend(`<span style="color:#9933FF;">The ${bossTemplate.name} appears! Defeat it to complete your contract!</span>`, 'term-victory');
-    
-    // Create the boss monster manually with EXACT template stats (no level scaling)
-    const bossMonster = {
-        key: bossKey,
-        name: bossTemplate.name,
-        rarity: 'epic',
-        rarityColor: '#9c27b0',
-        hp: bossTemplate.baseHp,
-        maxHp: bossTemplate.baseHp,
-        damage: bossTemplate.baseDamage,
-        minDamage: bossTemplate.minDamage,
-        maxDamage: bossTemplate.maxDamage,
-        defense: bossTemplate.baseDefense,
-        xp: bossTemplate.baseXp,
-        gold: bossTemplate.baseGold,
-        level: bossTemplate.level,
-        possibleDrops: bossTemplate.possibleDrops,
-        dropRates: bossTemplate.dropRates,
-        abilities: bossTemplate.abilities || [],
-        isBoss: true,
-        isGuildQuest: true,
-        questId: questDef.id
-    };
-    
-    // Start combat with the manual boss monster (no zone level override)
-    gameState.combatState = null;
-    startCombat([bossMonster]);
-}
+                // Get the boss enemy key from our mapping
+                const bossKey = BOSS_ENEMIES[questDef.id];
+                if (!bossKey) {
+                    console.error('No boss mapped for', questDef.id);
+                    return;
+                }
+                
+                const bossTemplate = ENEMIES[bossKey];
+                if (!bossTemplate) {
+                    console.error('Boss enemy not found:', bossKey);
+                    return;
+                }
+                
+                termAppend(`<span style="color:#9933FF;">The ${bossTemplate.name} appears! Defeat it to complete your contract!</span>`, 'term-victory');
+                
+                // Create the boss monster manually with EXACT template stats and timer properties
+                const bossMonster = {
+                    key: bossKey,
+                    name: bossTemplate.name,
+                    rarity: 'epic',
+                    rarityColor: '#9c27b0',
+                    hp: bossTemplate.baseHp,
+                    maxHp: bossTemplate.baseHp,
+                    damage: bossTemplate.baseDamage,
+                    minDamage: bossTemplate.minDamage,
+                    maxDamage: bossTemplate.maxDamage,
+                    defense: bossTemplate.baseDefense,
+                    xp: bossTemplate.baseXp,
+                    gold: bossTemplate.baseGold,
+                    level: bossTemplate.level,
+                    possibleDrops: bossTemplate.possibleDrops,
+                    dropRates: bossTemplate.dropRates,
+                    abilities: bossTemplate.abilities || [],
+                    isBoss: true,
+                    isGuildQuest: true,
+                    questId: questDef.id,
+                    index: 0,
+                    // ⭐ TIMER PROPERTIES - so enemy can attack
+                    timer: 3,
+                    delay: 3
+                };
+                
+                // ⭐ COMPLETELY BYPASS startCombat - set combat state directly
+                // Stop any existing combat timer
+                if (gameState.combatTimer) {
+                    clearInterval(gameState.combatTimer);
+                    gameState.combatTimer = null;
+                }
+                
+                // Stop resting
+                if (typeof stopResting === 'function') stopResting();
+                
+                // Calculate pips
+                const maxHits = typeof calcPlayerHits === 'function' ? calcPlayerHits(gameState.player) : 3;
+                const pipTimers = [];
+                for (let i = 0; i < maxHits; i++) {
+                    pipTimers.push(10);
+                }
+                
+                // Set combat state directly with enemyTimer
+                gameState.combatState = {
+                    monsters: [bossMonster],
+                    currentTarget: 0,
+                    messages: [],
+                    defeatedMonsters: [],
+                    pipTimers: pipTimers,
+                    pipAvailable: pipTimers.map(() => true),
+                    enemyHits: 1,
+                    enemyHitsLeft: 1,
+                    playerStatusEffects: [],
+                    monsterStatusEffects: {},
+                    dotTimers: {},
+                    isGuildBoss: true,
+                    actionMode: 'main',
+                    // ⭐ GLOBAL ENEMY TIMER - for backward compatibility
+                    enemyTimer: 3,
+                    enemyDelay: 3
+                };
+                
+                // Render combat UI
+                if (typeof termClear === 'function') termClear();
+                if (typeof termAppend === 'function') {
+                    termAppend('', 'term-separator');
+                    termAppend(`<span style="color:#FF4444;font-size:18px;">⚔️ BOSS ENCOUNTER! ⚔️</span>`, 'term-highlight');
+                    termAppend(`<span style="color:${bossMonster.rarityColor};">${bossMonster.name}</span> stands before you, ready for battle!`, 'term-enemy');
+                }
+                if (typeof renderEnemyCards === 'function') renderEnemyCards();
+                if (typeof renderActionBar === 'function') renderActionBar();
+                if (typeof startCombatTimer === 'function') startCombatTimer();
+                if (typeof updateHud === 'function') updateHud();
+                
+                console.log(`👹 Guild Boss spawned: ${bossTemplate.name} (Level ${bossTemplate.level}, ${bossTemplate.baseHp} HP)`);
+            }
         }
     });
     

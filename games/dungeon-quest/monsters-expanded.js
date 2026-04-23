@@ -10068,11 +10068,11 @@ grave_knight: {
 // ── LEVEL 8 ── (Plains/Graveyard additions)
 young_ogre: {
     name: 'Young Ogre',
-    baseHp: 350,
-    baseDamage: 29,
-    minDamage: 20,
-    maxDamage: 37,
-    baseDefense: 14,
+    baseHp: 150,
+    baseDamage: 10,
+    minDamage: 10,
+    maxDamage: 15,
+    baseDefense: 5,
     baseXp: 118,
     baseGold: 90,
     level: 8,
