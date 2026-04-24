@@ -1754,6 +1754,47 @@ function handleAboutCancel(e) {
     aboutHoldFired = false;
 }
 
+function restAtInn() {
+    const p = gameState.player;
+    const cost = calcInnCost(p.cha);
+    
+    if (p.gold < cost) {
+        alert(`You need ${cost} gold to rest at the inn!`);
+        return;
+    }
+    
+    // Deduct gold
+    p.gold -= cost;
+    
+    // Full restore
+    p.hp = p.maxHp;
+    p.mp = p.maxMp;
+    
+    // ⭐ RESET TOWN2 WANTED BOARD
+    if (typeof window.resetTown2WantedBoard === 'function') {
+        window.resetTown2WantedBoard();
+    } else {
+        // Fallback: reset bounties if they exist
+        if (p.activeBounties) p.activeBounties = [];
+        if (p.pendingBounties) p.pendingBounties = [];
+        if (p.collectedBounties) p.collectedBounties = {};
+        console.log('🔄 Town2 wanted board reset');
+    }
+    
+    // Update HUD
+    updateHud();
+    saveGame();
+    
+    // Show success message
+    const flash = document.createElement('div');
+    flash.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#0a0a0a;border:2px solid #00FF88;padding:12px 24px;color:#00FF88;z-index:9999;font-family:"VT323",monospace;font-size:18px;text-align:center;';
+    flash.innerHTML = `✨ You rest at the inn for ${cost} gold.<br>❤️ HP and 💙 MP fully restored! ✨<br><span style="font-size:12px;">🔄 Wanted board refreshed</span>`;
+    document.body.appendChild(flash);
+    setTimeout(() => flash.remove(), 3500);
+    
+    // Refresh town display
+    showTown();
+}
 
 function showMainMenu() {
     checkGameVersion();

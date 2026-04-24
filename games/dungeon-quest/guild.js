@@ -108,6 +108,7 @@ function generateEliteArmorReward(p, questLevel) {
         description: `Elite guild armor from level ${questLevel} quest`
     };
     
+    ARMOR[armor.id] = armor;
     return armor;
 }
 
@@ -382,7 +383,7 @@ function generateBossWeaponReward(p, questLevel) {
         unarmed: false,
         description: `A powerful ${questLevel > 15 ? 'legendary' : 'epic'} weapon earned from a guild boss contract.`
     };
-    
+    WEAPONS[id] = weapon;
     return weapon;
 }
 
@@ -988,11 +989,17 @@ function claimGuildReward(questId, rewardType, optionIndex) {
         const chosen = window._guildRewardOptions[optionIndex];
         
         if (rewardType === 'armor') {
+            // Store in ARMOR lookup
             ARMOR[chosen.id] = chosen;
-            p.inventory.push(chosen.id);
+            // Add the OBJECT to inventory (NOT the ID string)
+            p.inventory.push(chosen);
+            console.log(`✅ Added armor: ${chosen.name}`);
         } else if (rewardType === 'weapon') {
+            // Store in WEAPONS lookup
             WEAPONS[chosen.id] = chosen;
-            p.inventory.push(chosen.id);
+            // Add the OBJECT to inventory (NOT the ID string)
+            p.inventory.push(chosen);
+            console.log(`✅ Added weapon: ${chosen.name}`);
         }
         
         // Clear temp storage
@@ -1026,7 +1033,7 @@ function claimGuildReward(questId, rewardType, optionIndex) {
     
     let rewardLine = '';
     if (rewardName) {
-        rewardLine = `<p style="color:#00FF88; font-size: 16px; margin-top: 10px;">Received: ${rewardName}</p>`;
+        rewardLine = `<p style="color:#00FF88; font-size: 16px; margin-top: 10px;">✓ Received: ${rewardName}</p>`;
     }
     
     screen.innerHTML = `
