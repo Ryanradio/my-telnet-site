@@ -5008,8 +5008,16 @@ if (cs.isBountyFight) {
             termAppend('', 'term-separator');
             termAppend(`💎 <span style="color:${qualityColor};font-size:18px;font-weight:bold;">WEAPON DROP!</span>`, 'term-victory');
             termAppend(`<span style="color:${qualityColor};">${weaponDrop.name}</span>`, 'term-loot');
-            termAppend(`<span style="color:#8aaa8a;">Level ${weaponDrop.level} ${weaponDrop.quality} ${weaponDrop.type}</span>`, 'term-dim');
-            termAppend(`<span style="color:#FFD700;">DMG: ${weaponDrop.baseDamage}-${weaponDrop.maxDamage}</span>`);
+            termAppend(`<span style="color:#aaa;">Level ${weaponDrop.level} ${weaponDrop.quality} ${weaponDrop.type}</span>`, 'term-dim');
+
+            // Physical damage line
+            let dmgLine = `<span style="color:#FFD700;">DMG: ${weaponDrop.baseDamage}-${weaponDrop.maxDamage}</span>`;
+            // Magic/spell damage — shown if present (covers tomes, wands, staves, hybrid weapons)
+            if (weaponDrop.baseMagicDamage && weaponDrop.baseMagicDamage > 0) {
+                const magMax = weaponDrop.maxMagicDamage || weaponDrop.baseMagicDamage;
+                dmgLine += `  <span style="color:#AA88FF;">SPELL: ${weaponDrop.baseMagicDamage}-${magMax}</span>`;
+            }
+            termAppend(dmgLine);
             
             // Show gem slots on drop
             const dropSlots = getGemSlots(weaponDrop.quality);

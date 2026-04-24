@@ -2811,6 +2811,12 @@ function equipItem(type, key) {
         return;
     }
     
+    // Remove newly equipped weapon from inventory (it's now in the equipped slot)
+    p.inventory = p.inventory.filter(i => {
+        if (!i || typeof i !== 'object') return true;
+        return i.instanceId !== key && i.weaponId !== key;
+    });
+
     // Mark current weapon as not equipped (but leave it in inventory)
     if (p.weapon && p.weapon !== 'bare_fists') {
         const currentWeapon = WEAPONS[p.weapon];
@@ -2843,6 +2849,12 @@ function equipItem(type, key) {
             alert(`You need to be level ${armor.level} to equip this armor! (You are level ${p.level})`);
             return;
         }
+
+        // Remove newly equipped armor from inventory (it's now in the equipped slot)
+        p.inventory = p.inventory.filter(i => {
+            if (!i || typeof i !== 'object') return true;
+            return i.instanceId !== key && i.armorId !== key;
+        });
         
         // UNEQUIP CURRENT ARMOR FIRST (remove its flag)
         if (p.armor && p.armor !== 'no_armor') {
@@ -2871,45 +2883,56 @@ function unequipItem(type) {
     const p = gameState.player;
     
     if (type === 'weapon') {
-        // Get the current weapon
         const currentWeapon = WEAPONS[p.weapon];
         if (currentWeapon && p.weapon !== 'bare_fists') {
-            // Remove equipped flag
             currentWeapon.isEquipped = false;
             
-            // Add back to inventory
-            const inventoryItem = {
-                weaponId: currentWeapon.id,
-                instanceId: p.weapon,
-                name: currentWeapon.name,
-                quality: currentWeapon.quality,
-                modifiers: currentWeapon.modifiers || [],
-                gems: currentWeapon.gems || []
-            };
-            p.inventory.push(inventoryItem);
+            // Only add back to inventory if not already there
+            const alreadyInInventory = p.inventory.some(i =>
+                i && typeof i === 'object' &&
+                (i.instanceId === p.weapon || i.weaponId === p.weapon)
+            );
             
-            console.log(`🔧 Unequipped: ${currentWeapon.name}`);
+            if (!alreadyInInventory) {
+                p.inventory.push({
+                    weaponId: currentWeapon.id,
+                    instanceId: p.weapon,
+                    name: currentWeapon.name,
+                    quality: currentWeapon.quality,
+                    modifiers: currentWeapon.modifiers || [],
+                    gems: currentWeapon.gems || []
+                });
+                console.log(`🔧 Unequipped and returned to inventory: ${currentWeapon.name}`);
+            } else {
+                console.log(`🔧 Unequipped: ${currentWeapon.name} (already in inventory)`);
+            }
         }
         p.weapon = 'bare_fists';
         
     } else if (type === 'armor') {
-        // Get the current armor
         const currentArmor = ARMOR[p.armor];
         if (currentArmor && p.armor !== 'no_armor') {
-            // Remove equipped flag
             currentArmor.isEquipped = false;
             
-            // Add back to inventory
-            const inventoryItem = {
-                armorId: currentArmor.id,
-                instanceId: p.armor,
-                name: currentArmor.name,
-                quality: currentArmor.quality,
-                gems: currentArmor.gems || []
-            };
-            p.inventory.push(inventoryItem);
+            // Only add back to inventory if not already there
+            const alreadyInInventory = p.inventory.some(i =>
+                i && typeof i === 'object' &&
+                (i.instanceId === p.armor || i.armorId === p.armor)
+            );
             
-            console.log(`🔧 Unequipped: ${currentArmor.name}`);
+            if (!alreadyInInventory) {
+                p.inventory.push({
+                    armorId: currentArmor.id,
+                    instanceId: p.armor,
+                    name: currentArmor.name,
+                    quality: currentArmor.quality,
+                    modifiers: currentArmor.modifiers || [],
+                    gems: currentArmor.gems || []
+                });
+                console.log(`🔧 Unequipped and returned to inventory: ${currentArmor.name}`);
+            } else {
+                console.log(`🔧 Unequipped: ${currentArmor.name} (already in inventory)`);
+            }
         }
         p.armor = 'no_armor';
     }

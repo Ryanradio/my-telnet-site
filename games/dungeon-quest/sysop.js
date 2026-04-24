@@ -465,50 +465,41 @@ generatedWeapons: (() => {
     const generated = {};
 
     function buildFullWeaponSnapshot(item) {
-        // Get the actual weapon object from WEAPONS
-        const weaponObj = WEAPONS[item.instanceId];
+        // Prefer the live WEAPONS[] entry (has latest gem/equip state)
+        // but fall back to the inventory item itself — it IS the full object
+        // and may have been orphaned from WEAPONS[] by a page reload.
+        const weaponObj = WEAPONS[item.instanceId] || item;
         if (!weaponObj) return null;
-        
-        // Create a COMPLETE snapshot of the weapon
+
+        // Re-register in WEAPONS[] if it was orphaned, so the rest of the
+        // session continues to work without needing another save/load cycle.
+        if (!WEAPONS[item.instanceId] && item.instanceId) {
+            WEAPONS[item.instanceId] = weaponObj;
+            console.log(`🔧 Re-registered orphaned weapon: ${weaponObj.name} (${item.instanceId})`);
+        }
+
         return {
-            // Core identity
             id: weaponObj.id,
             instanceId: weaponObj.instanceId,
             weaponId: weaponObj.weaponId || weaponObj.id,
-            
-            // Name (preserve enhanced names!)
             name: weaponObj.name,
             baseName: weaponObj.baseName,
-            
-            // Type info
             type: weaponObj.type,
             weaponSubtype: weaponObj.weaponSubtype,
-            
-            // Stats (preserve exact values)
             baseDamage: weaponObj.baseDamage,
             maxDamage: weaponObj.maxDamage,
             baseMagicDamage: weaponObj.baseMagicDamage || 0,
             healingBonus: weaponObj.healingBonus || 0,
-            
-            // Quality and scaling
             quality: weaponObj.quality,
             qualityBonus: weaponObj.qualityBonus || 0,
             level: weaponObj.level,
             originalLevel: weaponObj.originalLevel,
-            
-            // Modifiers (critical for names like "Colossal Venomous Frost Wand")
             modifiers: weaponObj.modifiers ? [...weaponObj.modifiers] : [],
-            
-            // Gems
             gems: weaponObj.gems ? [...weaponObj.gems] : [],
             gemSlots: weaponObj.gemSlots || 0,
-            
-            // Cost and description
             cost: weaponObj.cost,
             description: weaponObj.description,
             allowedClasses: weaponObj.allowedClasses,
-            
-            // Metadata
             isDropped: true,
             isEquipped: weaponObj.isEquipped || false,
             dropTimestamp: weaponObj.dropTimestamp || Date.now()
@@ -573,46 +564,37 @@ generatedArmor: (() => {
     const generated = {};
 
     function buildFullArmorSnapshot(item) {
-        const armorObj = ARMOR[item.instanceId];
+        // Prefer live ARMOR[] entry, fall back to inventory item itself
+        const armorObj = ARMOR[item.instanceId] || item;
         if (!armorObj) return null;
-        
+
+        // Re-register orphaned armor so the session stays consistent
+        if (!ARMOR[item.instanceId] && item.instanceId) {
+            ARMOR[item.instanceId] = armorObj;
+            console.log(`🔧 Re-registered orphaned armor: ${armorObj.name} (${item.instanceId})`);
+        }
+
         return {
-            // Core identity
             id: armorObj.id,
             instanceId: armorObj.instanceId,
             armorId: armorObj.armorId || armorObj.id,
-            
-            // Name
             name: armorObj.name,
             baseName: armorObj.baseName,
-            
-            // Type
             type: armorObj.type,
             armorSubtype: armorObj.armorSubtype,
-            
-            // Stats
             baseDefense: armorObj.baseDefense,
             baseMagicBonus: armorObj.baseMagicBonus || 0,
             bonusHp: armorObj.bonusHp || 0,
             bonusMp: armorObj.bonusMp || 0,
-
-
-            // Quality
             quality: armorObj.quality,
             qualityBonus: armorObj.qualityBonus || 0,
             level: armorObj.level,
             originalLevel: armorObj.originalLevel,
-            
-            // Gems
             gems: armorObj.gems ? [...armorObj.gems] : [],
             gemSlots: armorObj.gemSlots || 0,
             modifiers: armorObj.modifiers || [],
-            
-            // Cost and description
             cost: armorObj.cost,
             description: armorObj.description,
-            
-            // Metadata
             isDropped: true,
             isEquipped: armorObj.isEquipped || false,
             dropTimestamp: armorObj.dropTimestamp || Date.now()
@@ -2407,6 +2389,15 @@ function handleGive(args) {
                     armorName = `${qualityDisplay} ${baseArmor.name}`;
                 }
                 
+                // Generate armor modifiers based on quality
+                let armorModifiers = [];
+                if (typeof rollArmorModifiers === 'function') {
+                    armorModifiers = rollArmorModifiers(finalQuality, armorLevel);
+                }
+
+                // Gem slots: armor doesn't use gem slots yet
+                const armorGemSlots = 0;
+
                 const armor = {
                     id: id,
                     armorId: id,
@@ -2417,11 +2408,14 @@ function handleGive(args) {
                     armorSubtype: baseArmor.armorSubtype || baseArmor.type || baseArmor.slot || 'armor',
                     baseDefense: baseArmor.baseDefense + defenseBonus,
                     baseMagicBonus: (baseArmor.baseMagicBonus || 0) + magicBonus,
-                    level: baseArmor.level,
+                    bonusHp: baseArmor.bonusHp || 0,
+                    bonusMp: baseArmor.bonusMp || 0,
+                    level: armorLevel,
                     quality: finalQuality,
                     qualityBonus: bonusPct,
+                    modifiers: armorModifiers,
                     gems: [],
-                    gemSlots: 0,
+                    gemSlots: armorGemSlots,
                     cost: baseArmor.cost,
                     description: baseArmor.description || `A ${finalQuality} quality ${baseArmor.name}.`,
                     allowedClasses: baseArmor.allowedClasses,
@@ -2432,8 +2426,9 @@ function handleGive(args) {
                 
                 ARMOR[instanceId] = armor;
                 gameState.player.inventory.push(armor);
-                
-                terminalPrint(`SUCCESS: Gave ${armorName} (DEF:${armor.baseDefense}${armor.baseMagicBonus > 0 ? ` MAG:+${armor.baseMagicBonus}` : ''})`, 'success');
+
+                const modText = armorModifiers.length > 0 ? ` with ${armorModifiers.length} modifier(s)` : '';
+                terminalPrint(`SUCCESS: Gave ${armorName}${modText} DEF:${armor.baseDefense}${armor.baseMagicBonus > 0 ? ` MAG:+${armor.baseMagicBonus}` : ''} (${armorGemSlots} gem slot${armorGemSlots !== 1 ? 's' : ''})`, 'success');
             } else {
                 terminalPrint(`ERROR: Armor '${id}' not found`, 'error');
                 terminalPrint('Use /listarmor to see available armor', 'error');
