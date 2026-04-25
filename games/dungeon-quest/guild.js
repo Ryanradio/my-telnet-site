@@ -108,7 +108,6 @@ function generateEliteArmorReward(p, questLevel) {
         description: `Elite guild armor from level ${questLevel} quest`
     };
     
-    ARMOR[armor.id] = armor;
     return armor;
 }
 
@@ -383,7 +382,7 @@ function generateBossWeaponReward(p, questLevel) {
         unarmed: false,
         description: `A powerful ${questLevel > 15 ? 'legendary' : 'epic'} weapon earned from a guild boss contract.`
     };
-    WEAPONS[id] = weapon;
+    
     return weapon;
 }
 
@@ -397,7 +396,7 @@ const GUILD_QUESTS = {
                flavorItem:'Goblin Ears', zone:'the Whispering Forest', emoji:'👺', nextQuest:'guild_2' },
     guild_2: { id:'guild_2', level:2, type:'elite', target:'goblin_shaman', targetName:'Goblin Shaman',
                flavorItem:'Shaman Totems', zone:'the Whispering Forest', emoji:'🔮', nextQuest:'guild_3' },
-    guild_3: { id:'guild_3', level:3, type:'boss', target:'young_ogre', targetName:'Young Ogre',
+    guild_3: { id:'guild_3', level:3, type:'boss', target:'ogre', targetName:'Ogre',
                flavorItem:'Ogre Hide', zone:'the Whispering Forest', emoji:'👹', nextQuest:null },
     
     // LEVEL 4-6 - Misty Riverside
@@ -461,14 +460,14 @@ const GUILD_QUESTS = {
 // BOSS ENEMY MAPPING - Maps guild quests to actual boss enemies
 // ═══════════════════════════════════════════════════════════════
 const BOSS_ENEMIES = {
-    guild_3: 'young_ogre',
+    guild_3: 'ogre',
     guild_6: 'flesh_golem',
     guild_9: 'werewolf',
     guild_12: 'troll',
-    guild_15: 'ancient_golem',  // changed from 'golem' to 'ancient_golem'
-    guild_18: 'minotaur_scout',  // changed from 'minotaur' to 'minotaur_scout'
+    guild_15: 'golem',
+    guild_18: 'minotaur',
     guild_21: 'vampire_lord',
-    guild_24: 'red_dragon'  // changed from 'dragon' to 'red_dragon'
+    guild_24: 'dragon'
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -987,21 +986,56 @@ function claimGuildReward(questId, rewardType, optionIndex) {
     // Handle item rewards for elite/boss/ultimate quests
     if (rewardType && optionIndex !== null && window._guildRewardOptions) {
         const chosen = window._guildRewardOptions[optionIndex];
-        
+
         if (rewardType === 'armor') {
-            // Store in ARMOR lookup
-            ARMOR[chosen.id] = chosen;
-            // Add the OBJECT to inventory (NOT the ID string)
-            p.inventory.push(chosen);
-            console.log(`✅ Added armor: ${chosen.name}`);
+            // Build a proper armor instance (same structure as drops)
+            const instanceId = chosen.id;
+            const armorInstance = {
+                ...chosen,
+                instanceId: instanceId,
+                armorId:    instanceId,
+                isDropped:  true,
+                isEquipped: false,
+                dropTimestamp: Date.now()
+            };
+            ARMOR[instanceId] = armorInstance;
+            // Push a proper inventory reference object (not a string)
+            p.inventory.push({
+                armorId:    instanceId,
+                instanceId: instanceId,
+                name:       armorInstance.name,
+                quality:    armorInstance.quality || 'rare',
+                modifiers:  armorInstance.modifiers || [],
+                gems:       armorInstance.gems || [],
+                gemSlots:   0
+            });
+            console.log(`🎁 Guild armor reward added to inventory: ${armorInstance.name}`);
+
         } else if (rewardType === 'weapon') {
-            // Store in WEAPONS lookup
-            WEAPONS[chosen.id] = chosen;
-            // Add the OBJECT to inventory (NOT the ID string)
-            p.inventory.push(chosen);
-            console.log(`✅ Added weapon: ${chosen.name}`);
+            // Build a proper weapon instance (same structure as drops)
+            const instanceId = chosen.id;
+            const weaponInstance = {
+                ...chosen,
+                instanceId: instanceId,
+                weaponId:   instanceId,
+                isDropped:  true,
+                isEquipped: false,
+                dropTimestamp: Date.now()
+            };
+            WEAPONS[instanceId] = weaponInstance;
+            // Push a proper inventory reference object (not a string)
+            p.inventory.push({
+                weaponId:   instanceId,
+                instanceId: instanceId,
+                name:       weaponInstance.name,
+                quality:    weaponInstance.quality || 'epic',
+                modifiers:  weaponInstance.modifiers || [],
+                gems:       weaponInstance.gems || [],
+                gemSlots:   weaponInstance.gemSlots || 2
+            });
+            console.log(`🎁 Guild weapon reward added to inventory: ${weaponInstance.name}`);
         }
-        
+
         // Clear temp storage
         window._guildRewardOptions = null;
         window._guildRewardQuestId = null;
@@ -1033,7 +1067,7 @@ function claimGuildReward(questId, rewardType, optionIndex) {
     
     let rewardLine = '';
     if (rewardName) {
-        rewardLine = `<p style="color:#00FF88; font-size: 16px; margin-top: 10px;">✓ Received: ${rewardName}</p>`;
+        rewardLine = `<p style="color:#00FF88; font-size: 16px; margin-top: 10px;">Received: ${rewardName}</p>`;
     }
     
     screen.innerHTML = `
@@ -1068,6 +1102,17 @@ function checkGuildEncounter(locKey) {
         
         // Only elite and boss quests have special encounters
         if (questDef.type === 'standard') return;
+
+        // ── LEVEL GATE ─────────────────────────────────────────────────
+        // Never spawn a guild encounter if the quest target is more than
+        // 3 levels above the player — they accepted a high-level quest
+        // early or are under-levelled. The encounter can trigger once they
+        // catch up in level.
+        const questLevel = questDef.level || 1;
+        if (p.level < questLevel - 3) {
+            return; // player too low — skip silently
+        }
+        // ───────────────────────────────────────────────────────────────
         
         // Zone matching
         let zoneMatch = false;
@@ -1103,91 +1148,16 @@ function checkGuildEncounter(locKey) {
                     return;
                 }
                 
-                const bossTemplate = ENEMIES[bossKey];
-                if (!bossTemplate) {
+                const bossEnemy = ENEMIES[bossKey];
+                if (!bossEnemy) {
                     console.error('Boss enemy not found:', bossKey);
                     return;
                 }
                 
-                termAppend(`<span style="color:#9933FF;">The ${bossTemplate.name} appears! Defeat it to complete your contract!</span>`, 'term-victory');
+                termAppend(`<span style="color:#9933FF;">The ${bossEnemy.name} appears! Defeat it to complete your contract!</span>`, 'term-victory');
                 
-                // Create the boss monster manually with EXACT template stats and timer properties
-                const bossMonster = {
-                    key: bossKey,
-                    name: bossTemplate.name,
-                    rarity: 'epic',
-                    rarityColor: '#9c27b0',
-                    hp: bossTemplate.baseHp,
-                    maxHp: bossTemplate.baseHp,
-                    damage: bossTemplate.baseDamage,
-                    minDamage: bossTemplate.minDamage,
-                    maxDamage: bossTemplate.maxDamage,
-                    defense: bossTemplate.baseDefense,
-                    xp: bossTemplate.baseXp,
-                    gold: bossTemplate.baseGold,
-                    level: bossTemplate.level,
-                    possibleDrops: bossTemplate.possibleDrops,
-                    dropRates: bossTemplate.dropRates,
-                    abilities: bossTemplate.abilities || [],
-                    isBoss: true,
-                    isGuildQuest: true,
-                    questId: questDef.id,
-                    index: 0,
-                    // ⭐ TIMER PROPERTIES - so enemy can attack
-                    timer: 3,
-                    delay: 3
-                };
-                
-                // ⭐ COMPLETELY BYPASS startCombat - set combat state directly
-                // Stop any existing combat timer
-                if (gameState.combatTimer) {
-                    clearInterval(gameState.combatTimer);
-                    gameState.combatTimer = null;
-                }
-                
-                // Stop resting
-                if (typeof stopResting === 'function') stopResting();
-                
-                // Calculate pips
-                const maxHits = typeof calcPlayerHits === 'function' ? calcPlayerHits(gameState.player) : 3;
-                const pipTimers = [];
-                for (let i = 0; i < maxHits; i++) {
-                    pipTimers.push(10);
-                }
-                
-                // Set combat state directly with enemyTimer
-                gameState.combatState = {
-                    monsters: [bossMonster],
-                    currentTarget: 0,
-                    messages: [],
-                    defeatedMonsters: [],
-                    pipTimers: pipTimers,
-                    pipAvailable: pipTimers.map(() => true),
-                    enemyHits: 1,
-                    enemyHitsLeft: 1,
-                    playerStatusEffects: [],
-                    monsterStatusEffects: {},
-                    dotTimers: {},
-                    isGuildBoss: true,
-                    actionMode: 'main',
-                    // ⭐ GLOBAL ENEMY TIMER - for backward compatibility
-                    enemyTimer: 3,
-                    enemyDelay: 3
-                };
-                
-                // Render combat UI
-                if (typeof termClear === 'function') termClear();
-                if (typeof termAppend === 'function') {
-                    termAppend('', 'term-separator');
-                    termAppend(`<span style="color:#FF4444;font-size:18px;">⚔️ BOSS ENCOUNTER! ⚔️</span>`, 'term-highlight');
-                    termAppend(`<span style="color:${bossMonster.rarityColor};">${bossMonster.name}</span> stands before you, ready for battle!`, 'term-enemy');
-                }
-                if (typeof renderEnemyCards === 'function') renderEnemyCards();
-                if (typeof renderActionBar === 'function') renderActionBar();
-                if (typeof startCombatTimer === 'function') startCombatTimer();
-                if (typeof updateHud === 'function') updateHud();
-                
-                console.log(`👹 Guild Boss spawned: ${bossTemplate.name} (Level ${bossTemplate.level}, ${bossTemplate.baseHp} HP)`);
+                // Start combat with 1 epic boss enemy
+                startCombat([bossKey], false, ['epic']);
             }
         }
     });

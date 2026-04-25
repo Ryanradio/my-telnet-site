@@ -1754,47 +1754,6 @@ function handleAboutCancel(e) {
     aboutHoldFired = false;
 }
 
-function restAtInn() {
-    const p = gameState.player;
-    const cost = calcInnCost(p.cha);
-    
-    if (p.gold < cost) {
-        alert(`You need ${cost} gold to rest at the inn!`);
-        return;
-    }
-    
-    // Deduct gold
-    p.gold -= cost;
-    
-    // Full restore
-    p.hp = p.maxHp;
-    p.mp = p.maxMp;
-    
-    // ⭐ RESET TOWN2 WANTED BOARD
-    if (typeof window.resetTown2WantedBoard === 'function') {
-        window.resetTown2WantedBoard();
-    } else {
-        // Fallback: reset bounties if they exist
-        if (p.activeBounties) p.activeBounties = [];
-        if (p.pendingBounties) p.pendingBounties = [];
-        if (p.collectedBounties) p.collectedBounties = {};
-        console.log('🔄 Town2 wanted board reset');
-    }
-    
-    // Update HUD
-    updateHud();
-    saveGame();
-    
-    // Show success message
-    const flash = document.createElement('div');
-    flash.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#0a0a0a;border:2px solid #00FF88;padding:12px 24px;color:#00FF88;z-index:9999;font-family:"VT323",monospace;font-size:18px;text-align:center;';
-    flash.innerHTML = `✨ You rest at the inn for ${cost} gold.<br>❤️ HP and 💙 MP fully restored! ✨<br><span style="font-size:12px;">🔄 Wanted board refreshed</span>`;
-    document.body.appendChild(flash);
-    setTimeout(() => flash.remove(), 3500);
-    
-    // Refresh town display
-    showTown();
-}
 
 function showMainMenu() {
     checkGameVersion();
@@ -8386,6 +8345,25 @@ if (modifiers && modifiers.length > 0) {
         }
     });
 
+    // Add the equipped armor if it wasn't found in inventory
+    // (happens after our equipItem fix removes it from inventory into the equipped slot)
+    if (p.armor && p.armor !== 'no_armor') {
+        const equippedArmorData = ARMOR[p.armor];
+        if (equippedArmorData && !equippedArmorData.unarmored) {
+            const alreadyExists = armorItems.some(item => item.key === p.armor);
+            if (!alreadyExists) {
+                armorItems.unshift({
+                    type: 'equipped',
+                    key: p.armor,
+                    armor: equippedArmorData,
+                    instanceData: null,
+                    quality: equippedArmorData.quality,
+                    isEquipped: true
+                });
+            }
+        }
+    }
+
     // Sort: equipped first, then by quality, then name
     armorItems.sort((a, b) => {
         if (a.isEquipped && !b.isEquipped) return -1;
@@ -9827,21 +9805,33 @@ function generateLegacyArmorInstance(armorKey, playerLevel, quality = 'normal') 
     
     const instanceId = `${armorKey}_${quality}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
     const bonusPct = QUALITY_CONFIG[quality]?.bonusPct || 0;
-    
+
+    // Generate armor modifiers for epic+ quality
+    let modifiers = [];
+    if (typeof rollArmorModifiers === 'function' && quality !== 'normal' && quality !== 'poor' && quality !== 'rare') {
+        modifiers = rollArmorModifiers(quality, baseArmor.level || playerLevel);
+    }
+
     ARMOR[instanceId] = {
         id: armorKey,
         instanceId: instanceId,
+        armorId: armorKey,
         name: `${quality.charAt(0).toUpperCase() + quality.slice(1)} ${baseArmor.name}`,
         baseName: baseArmor.name,
         type: baseArmor.type || baseArmor.armorSubtype,
+        armorSubtype: baseArmor.armorSubtype || baseArmor.type,
         baseDefense: baseArmor.baseDefense + Math.floor(baseArmor.baseDefense * bonusPct),
         baseMagicBonus: baseArmor.baseMagicBonus ? baseArmor.baseMagicBonus + Math.floor(baseArmor.baseMagicBonus * bonusPct) : 0,
-        level: playerLevel,
+        bonusHp: baseArmor.bonusHp || 0,
+        bonusMp: baseArmor.bonusMp || 0,
+        level: baseArmor.level || playerLevel,
         originalLevel: baseArmor.level,
         quality: quality,
         qualityBonus: bonusPct,
+        modifiers: modifiers,
         gems: [],
-        gemSlots: getGemSlots(quality),
+        gemSlots: 0,   // armor gem slots not active yet
+        allowedClasses: baseArmor.allowedClasses,
         cost: baseArmor.cost,
         description: baseArmor.description || `A ${quality} quality ${baseArmor.name}.`,
         isDropped: true,
@@ -9852,8 +9842,9 @@ function generateLegacyArmorInstance(armorKey, playerLevel, quality = 'normal') 
         armorId: armorKey,
         instanceId: instanceId,
         quality: quality,
+        modifiers: modifiers,
         gems: [],
-        gemSlots: getGemSlots(quality),
+        gemSlots: 0,
         dropLevel: playerLevel,
         dropTime: Date.now()
     };

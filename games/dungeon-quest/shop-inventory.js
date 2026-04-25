@@ -5,16 +5,44 @@
 // ═══════════════════════════════════════════════════════════════
 
 const FEATURED_QUALITY_ROLLS = [
-    { quality: 'normal',    threshold: 61.9  },
-    { quality: 'rare',      threshold: 86.9  },
-    { quality: 'epic',      threshold: 98.9  },
-    { quality: 'legendary', threshold: 99.9  },
+    { quality: 'epic',      threshold: 60.0  },
+    { quality: 'legendary', threshold: 92.0  },
     { quality: 'godly',     threshold: 100.0 },
 ];
 
-const FEATURED_PRICE_MULTIPLIERS = {
-    normal: 2, rare: 3, epic: 4, legendary: 5, godly: 6,
+// Level-scaled featured prices by quality — fair and predictable regardless of base item cost
+const FEATURED_PRICES = {
+    epic: [
+        { maxLevel: 5,  cost: 800   },
+        { maxLevel: 10, cost: 2500  },
+        { maxLevel: 15, cost: 6000  },
+        { maxLevel: 20, cost: 12000 },
+        { maxLevel: 25, cost: 20000 },
+    ],
+    legendary: [
+        { maxLevel: 5,  cost: 2000  },
+        { maxLevel: 10, cost: 6000  },
+        { maxLevel: 15, cost: 14000 },
+        { maxLevel: 20, cost: 25000 },
+        { maxLevel: 25, cost: 40000 },
+    ],
+    godly: [
+        { maxLevel: 5,  cost: 5000  },
+        { maxLevel: 10, cost: 15000 },
+        { maxLevel: 15, cost: 32000 },
+        { maxLevel: 20, cost: 55000 },
+        { maxLevel: 25, cost: 80000 },
+    ],
 };
+
+function getFeaturedPrice(quality, playerLevel) {
+    const tiers = FEATURED_PRICES[quality];
+    if (!tiers) return 500; // fallback
+    for (const tier of tiers) {
+        if (playerLevel <= tier.maxLevel) return tier.cost;
+    }
+    return tiers[tiers.length - 1].cost;
+}
 
 const REROLL_COSTS = [
     { maxLevel: 5,  cost: 50   },
@@ -156,8 +184,7 @@ function renderShop(tab, section, typeFilter, levelFilter) {
             if (!item) { html += `<div style="background:#080800;padding:16px;"></div>`; return; }
             const qc       = QUALITY_CONFIG[data.quality];
             const color    = qc?.color || '#00ff00';
-            const multi    = FEATURED_PRICE_MULTIPLIERS[data.quality] || 2;
-            const price    = Math.floor((item.cost || 100) * multi);
+            const price    = getFeaturedPrice(data.quality, p.level);
             const canBuy   = type === 'weapon' ? canUseWeapon(playerClass, item) : canUseArmor(playerClass, item);
             const canAfford = p.gold >= price;
             const isSpecial = ['legendary','godly'].includes(data.quality);
@@ -422,7 +449,9 @@ const typeOptions = subtypes.map(t =>
     }
 
     // ── Full render ──────────────────────────────────────────────
-    setScreen(`
+    // NOTE: renderShop writes into #shopRoot (not mainScreen directly)
+    // showShop() creates #shopRoot via setScreen, then renderShop populates it
+    const shopHtml = `
         <style>#shopRoot button:not([disabled]):hover{filter:brightness(1.3);}</style>
 
         <!-- Top bar -->
@@ -464,7 +493,8 @@ const typeOptions = subtypes.map(t =>
 
         <!-- Bottom leave -->
         <button onclick="showTown()" style="display:block;width:100%;background:#080808;border:1px solid #1a1a1a;color:#333;font-size:11px;padding:8px;cursor:pointer;font-family:'Courier New',monospace;letter-spacing:2px;">← LEAVE SHOP</button>
-    `);
+    `;
+    screen.innerHTML = shopHtml;
 
     // Timer tick
     window._shopTimerInterval = setInterval(() => {
@@ -575,18 +605,20 @@ function showShopSell() {
     let sellAllCount = 0;
 
     weaponInstances.forEach(({ item }) => {
-        const qIdx = QUALITY_ORDER.indexOf(item.quality || 'normal');
+        const weapon = WEAPONS[item.weaponId] || WEAPONS[item.instanceId];
+        if (!weapon) return;
+        const qIdx = QUALITY_ORDER.indexOf(item.quality || weapon.quality || 'normal');
         if (qIdx <= thresholdIdx) {
-            const weapon = WEAPONS[item.weaponId];
             sellAllGold += Math.floor((weapon.cost || 100) * 0.1);
             sellAllCount++;
         }
     });
 
     armorInstances.forEach(({ item }) => {
-        const qIdx = QUALITY_ORDER.indexOf(item.quality || 'normal');
+        const armor = ARMOR[item.armorId] || ARMOR[item.instanceId];
+        if (!armor) return;
+        const qIdx = QUALITY_ORDER.indexOf(item.quality || armor.quality || 'normal');
         if (qIdx <= thresholdIdx) {
-            const armor = ARMOR[item.armorId] || ARMOR[item.instanceId];
             sellAllGold += Math.floor((armor.cost || 100) * 0.1);
             sellAllCount++;
         }
@@ -599,6 +631,7 @@ function showShopSell() {
 
     Object.entries(stringWeapons).forEach(([key, data]) => {
         const weapon = WEAPONS[key];
+        if (!weapon) return;
         const qIdx = QUALITY_ORDER.indexOf(weapon.quality || 'normal');
         if (qIdx <= thresholdIdx) {
             sellAllGold += Math.floor((weapon.cost || 100) * 0.1) * data.count;
@@ -608,6 +641,7 @@ function showShopSell() {
 
     Object.entries(stringArmor).forEach(([key, data]) => {
         const armor = ARMOR[key];
+        if (!armor) return;
         const qIdx = QUALITY_ORDER.indexOf(armor.quality || 'normal');
         if (qIdx <= thresholdIdx) {
             sellAllGold += Math.floor((armor.cost || 100) * 0.1) * data.count;
@@ -640,7 +674,7 @@ function showShopSell() {
 
     // WEAPON INSTANCES (with full stats) - FIXED to show gems and increase value
 weaponInstances.forEach(({ item, index }) => {
-    const weapon = WEAPONS[item.weaponId];
+    const weapon = WEAPONS[item.weaponId] || WEAPONS[item.instanceId];
     if (!weapon) return;
     
     // Get instance quality or use base

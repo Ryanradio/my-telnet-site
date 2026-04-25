@@ -19,6 +19,7 @@ function validateAndRepairInventory() {
     for (const item of p.inventory) {
         // ── WEAPON OBJECTS ─────────────────────────────────────────
         if (typeof item === 'object' && item !== null && item.weaponId && item.instanceId) {
+            // Skip duplicates
             if (seenInstanceIds.has(item.instanceId)) {
                 console.warn(`🗑️ Removed duplicate weapon: ${item.name}`);
                 removals++;
@@ -28,48 +29,24 @@ function validateAndRepairInventory() {
             
             const masterCopy = WEAPONS[item.instanceId];
             if (!masterCopy) {
-                console.warn(`⚠️ Orphaned weapon: ${item.name} - removing`);
-                removals++;
-                continue;
+                // Re-register the inventory item itself rather than dropping it
+                // This handles weapons orphaned from WEAPONS[] by a page reload
+                WEAPONS[item.instanceId] = item;
+                console.log(`🔧 Re-registered orphaned weapon: ${item.name}`);
+                repairs++;
+                validatedInventory.push(item);
+            } else {
+                // Use master copy only if it has MORE data (more fields) than the inventory item
+                // This prevents master copy from overwriting richer instance data
+                const masterKeys = Object.keys(masterCopy).length;
+                const itemKeys = Object.keys(item).length;
+                validatedInventory.push(masterKeys >= itemKeys ? masterCopy : item);
+                if (masterCopy !== item) repairs++;
             }
-            
-            // ── FIX INCORRECT WEAPON LEVEL ─────────────────────────
-            if (masterCopy.id) {
-                const baseWeapon = WEAPONS[masterCopy.id];
-                if (baseWeapon && masterCopy.level !== baseWeapon.level) {
-                    console.log(`🔧 Fixing weapon level: ${masterCopy.name} was Lv${masterCopy.level}, should be Lv${baseWeapon.level}`);
-                    
-                    const originalQuality = masterCopy.quality;
-                    const originalModifiers = masterCopy.modifiers;
-                    const originalGems = masterCopy.gems;
-                    const originalName = masterCopy.name;
-                    
-                    const bonusPct = QUALITY_CONFIG[originalQuality]?.bonusPct || 0;
-                    const baseDamageBonus = Math.floor(baseWeapon.baseDamage * bonusPct);
-                    const maxDamageBonus = baseWeapon.maxDamage ? Math.floor(baseWeapon.maxDamage * bonusPct) : baseDamageBonus;
-                    const magicDamageBonus = baseWeapon.baseMagicDamage ? Math.floor(baseWeapon.baseMagicDamage * bonusPct) : 0;
-                    
-                    masterCopy.level = baseWeapon.level;
-                    masterCopy.baseDamage = baseWeapon.baseDamage + baseDamageBonus;
-                    masterCopy.maxDamage = (baseWeapon.maxDamage || baseWeapon.baseDamage) + maxDamageBonus;
-                    if (baseWeapon.baseMagicDamage) {
-                        masterCopy.baseMagicDamage = baseWeapon.baseMagicDamage + magicDamageBonus;
-                    }
-                    
-                    masterCopy.quality = originalQuality;
-                    masterCopy.modifiers = originalModifiers;
-                    masterCopy.gems = originalGems;
-                    masterCopy.name = originalName;
-                    
-                    levelFixes++;
-                }
-            }
-            
-            if (masterCopy !== item) repairs++;
-            validatedInventory.push(masterCopy);
         }
         // ── ARMOR OBJECTS ──────────────────────────────────────────
         else if (typeof item === 'object' && item !== null && item.armorId && item.instanceId) {
+            // Skip duplicates
             if (seenInstanceIds.has(item.instanceId)) {
                 console.warn(`🗑️ Removed duplicate armor: ${item.name}`);
                 removals++;
@@ -79,41 +56,18 @@ function validateAndRepairInventory() {
             
             const masterCopy = ARMOR[item.instanceId];
             if (!masterCopy) {
-                console.warn(`⚠️ Orphaned armor: ${item.name} - removing`);
-                removals++;
-                continue;
+                // Re-register the inventory item itself rather than dropping it
+                ARMOR[item.instanceId] = item;
+                console.log(`🔧 Re-registered orphaned armor: ${item.name}`);
+                repairs++;
+                validatedInventory.push(item);
+            } else {
+                // Use master copy only if it has MORE data than the inventory item
+                const masterKeys = Object.keys(masterCopy).length;
+                const itemKeys = Object.keys(item).length;
+                validatedInventory.push(masterKeys >= itemKeys ? masterCopy : item);
+                if (masterCopy !== item) repairs++;
             }
-            
-            // ── FIX INCORRECT ARMOR LEVEL ──────────────────────────
-            if (masterCopy.id) {
-                const baseArmor = ARMOR[masterCopy.id];
-                if (baseArmor && masterCopy.level !== baseArmor.level) {
-                    console.log(`🔧 Fixing armor level: ${masterCopy.name} was Lv${masterCopy.level}, should be Lv${baseArmor.level}`);
-                    
-                    const originalQuality = masterCopy.quality;
-                    const originalGems = masterCopy.gems;
-                    const originalName = masterCopy.name;
-                    
-                    const bonusPct = QUALITY_CONFIG[originalQuality]?.bonusPct || 0;
-                    const defenseBonus = Math.floor(baseArmor.baseDefense * bonusPct);
-                    const magicBonus = baseArmor.baseMagicBonus ? Math.floor(baseArmor.baseMagicBonus * bonusPct) : 0;
-                    
-                    masterCopy.level = baseArmor.level;
-                    masterCopy.baseDefense = baseArmor.baseDefense + defenseBonus;
-                    if (baseArmor.baseMagicBonus) {
-                        masterCopy.baseMagicBonus = baseArmor.baseMagicBonus + magicBonus;
-                    }
-                    
-                    masterCopy.quality = originalQuality;
-                    masterCopy.gems = originalGems;
-                    masterCopy.name = originalName;
-                    
-                    levelFixes++;
-                }
-            }
-            
-            if (masterCopy !== item) repairs++;
-            validatedInventory.push(masterCopy);
         }
         else {
             validatedInventory.push(item);
@@ -124,18 +78,18 @@ function validateAndRepairInventory() {
     
     // Fix equipped references
     if (p.weapon && p.weapon !== 'bare_fists' && !WEAPONS[p.weapon]) {
-        console.warn(`⚠️ Equipped weapon missing - unequipping`);
+        console.warn(`⚠️ Equipped weapon missing from WEAPONS[] — unequipping`);
         p.weapon = 'bare_fists';
         repairs++;
     }
     if (p.armor && p.armor !== 'no_armor' && !ARMOR[p.armor]) {
-        console.warn(`⚠️ Equipped armor missing - unequipping`);
+        console.warn(`⚠️ Equipped armor missing from ARMOR[] — unequipping`);
         p.armor = 'no_armor';
         repairs++;
     }
     
     console.log(`✅ Inventory validation: ${repairs} repaired, ${removals} removed, ${levelFixes} level fixes`);
-    return repairs > 0 || removals > 0 || levelFixes > 0;
+    return repairs > 0 || removals > 0;
 }
 
 
