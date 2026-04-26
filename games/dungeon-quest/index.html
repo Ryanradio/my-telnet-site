@@ -1362,44 +1362,44 @@ if (typeof ADVENTURE_ENEMIES !== 'undefined') {
             fleeFailure: 'ios-flash-enemyhit',
             levelUp:     'ios-flash-levelup',
         };
-/*
-        function haptic(type) {
-            if (localStorage.getItem('dq_haptic') === 'off') return;
 
-            // Border flash — all platforms, toggle: dq_ios_flash
-            if (_iosFlashMap[type]) iosFlash(_iosFlashMap[type]);
+function haptic(type) {
+    // Border flash only - check the flash setting
+    const flashSetting = localStorage.getItem('dq_ios_flash');
+    const flashEnabled = flashSetting !== 'off';
+    
+    if (!flashEnabled) return;
+    
+    // Determine which element to flash
+    const inTerminal = document.body.classList.contains('terminal-mode');
+    const el = document.getElementById(inTerminal ? 'terminalWindow' : 'mainScreen');
+    
+    if (!el) return;
+    
+    // Enemy hit flash - red
+    if (type === 'enemyHit' || type === 'enemyCrit' || type === 'dot' || type === 'death' || type === 'lowHp' || type === 'fleeFailure') {
+        el.classList.remove('border-flash-hit');
+        void el.offsetWidth; // Force reflow to restart animation
+        el.classList.add('border-flash-hit');
+        setTimeout(() => {
+            el.classList.remove('border-flash-hit');
+        }, 300);
+    }
+    
+    // Level up flash - cyan
+    if (type === 'levelUp') {
+        el.classList.remove('border-flash-levelup');
+        void el.offsetWidth;
+        el.classList.add('border-flash-levelup');
+        setTimeout(() => {
+            el.classList.remove('border-flash-levelup');
+        }, 800);
+    }
+}
 
-            if (type === 'levelUp') {
-                if (_hasVibrate) {
-                    navigator.vibrate([30, 80, 50, 60, 80, 40, 120, 30, 150]);
-                } else if (_isIOS) {
-                    _iosHapticPulse(30);
-                    setTimeout(() => _iosHapticPulse(50), 110);
-                    setTimeout(() => _iosHapticPulse(80), 230);
-                    setTimeout(() => _iosHapticPulse(120), 380);
-                    setTimeout(() => _iosHapticPulse(150), 560);
-                }
-                return;
-            }
 
-            const pattern = HAPTIC_PATTERNS[type];
-            if (!pattern) return;
-
-            if (_hasVibrate) {
-                navigator.vibrate(pattern);
-            } else if (_isIOS) {
-                let t = 0;
-                for (let i = 0; i < pattern.length; i++) {
-                    if (i % 2 === 0) setTimeout(() => _iosHapticPulse(pattern[i]), t);
-                    t += pattern[i];
-                }
-            }
-        }
-
-
-        let isStreaming = false;
-        let streamCancelled = false;
-  */      
+let isStreaming = false;
+let streamCancelled = false;       
 
 
 // ── setScreen: set mainScreen content and always scroll to top ──
@@ -1413,10 +1413,10 @@ function setScreen(html) {
 }
 
   // Placeholder haptic function (does nothing, prevents console errors)
-function haptic(type) {
+/* function haptic(type) {
     // All haptic feedback removed
     return;
-}
+} */
 
 
         function streamText(element, html, callback) {
@@ -7248,6 +7248,8 @@ if (mod.modKey === 'vorpal') {
 monsters.forEach((monster, idx) => {
     monster.timer = 10 + Math.floor(Math.random() * 9); // 10-18 seconds
     monster.delay = monster.timer;
+    monster._telegraphShown = false;  // ← ADD THIS - tracks if we've shown the windup message
+    monster._pendingIntent = null;    // ← ADD THIS - stores what attack they're winding up for
 });
 
             let msg;

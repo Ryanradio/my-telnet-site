@@ -4222,6 +4222,8 @@ function cancelSpellMenu() {
     // Reset timer for next attack with NEW random value
 enemy.timer = 10 + Math.floor(Math.random() * 9); // New random 10-18 seconds
 enemy.delay = enemy.timer;
+enemy._telegraphShown = false;  // ← ADD THIS LINE
+enemy._pendingIntent = null;    // ← ADD THIS LINE (optional but good)
 
         // Calculate intent for THIS enemy (each enemy gets its own)
         const intent = selectEnemyIntent(enemy);
