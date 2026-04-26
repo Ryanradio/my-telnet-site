@@ -1977,11 +1977,143 @@ if (type === 'magic' && defender.magicResist) {
 }
 
         
+// ═══════════════════════════════════════════════════════════════
+// WARRIOR HEAVY ATTACK POWER BAR MINIGAME
+// ═══════════════════════════════════════════════════════════════
+function showHeavyAttackMinigame(callback) {
+    // Remove any existing overlay
+    const existing = document.getElementById('heavyAttackMinigame');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'heavyAttackMinigame';
+    overlay.style.cssText = `
+        position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
+        width:min(380px,94vw);background:#0a0a0a;
+        border:2px solid #FF8C00;border-radius:8px;padding:14px;
+        z-index:99999;box-shadow:0 0 30px rgba(255,140,0,0.4);
+        font-family:monospace;
+    `;
+
+    // Zones: symmetric around center 3x bullseye
+    const zones = [
+        { pct:12, color:'#1c0000', textColor:'#552200', mult:0,   label:'MISS'  },
+        { pct:16, color:'#1a0800', textColor:'#994400', mult:1.0, label:'1x'    },
+        { pct:18, color:'#1a1400', textColor:'#BB8800', mult:2.0, label:'2x'    },
+        { pct:8,  color:'#002000', textColor:'#44FF44', mult:3.0, label:'3x'    },
+        { pct:18, color:'#1a1400', textColor:'#BB8800', mult:2.0, label:'2x'    },
+        { pct:16, color:'#1a0800', textColor:'#994400', mult:1.0, label:'1x'    },
+        { pct:12, color:'#1c0000', textColor:'#552200', mult:0,   label:'MISS'  },
+    ];
+
+    // Build zone HTML
+    let zonesHtml = '';
+    let left = 0;
+    zones.forEach(z => {
+        zonesHtml += `<div style="position:absolute;left:${left}%;width:${z.pct}%;top:0;height:100%;background:${z.color};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;">
+            <span style="color:${z.textColor};font-size:${z.mult===3?17:z.mult===0?11:14}px;font-weight:bold;">${z.mult===0?'MISS':z.mult+'x'}</span>
+            <span style="color:${z.textColor};font-size:8px;opacity:0.7;">${z.label}</span>
+        </div>`;
+        left += z.pct;
+    });
+
+    overlay.innerHTML = `
+        <div style="color:#FF8C00;font-size:12px;letter-spacing:3px;text-align:center;margin-bottom:10px;">⚔ HEAVY STRIKE ⚔</div>
+        <div style="position:relative;height:48px;background:#111;border:1px solid #333;border-radius:4px;overflow:hidden;cursor:pointer;" id="haMgBar">
+            ${zonesHtml}
+            <div id="haMgCursor" style="position:absolute;left:0%;top:0;width:4px;height:100%;background:#fff;border-radius:2px;box-shadow:0 0 8px #fff;transform:translateX(-50%);pointer-events:none;"></div>
+        </div>
+        <button id="haMgBtn" style="background:#1a0a00;border:2px solid #FF8C00;color:#FF8C00;font-family:monospace;font-size:13px;padding:9px;cursor:pointer;border-radius:4px;letter-spacing:3px;width:100%;margin-top:10px;">STRIKE</button>
+        <div id="haMgResult" style="font-size:15px;font-weight:bold;text-align:center;min-height:22px;margin-top:8px;letter-spacing:1px;"></div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    // Minigame logic
+    // Random speed each swing: 1.6–2.8 — fast enough to be a real skill check
+    const speed = 1.6 + Math.random() * 1.2;
+    let pos = 2, dir = 1, running = true, rafId = null, lastTime = 0;
+
+    function getMultiplierAt(p) {
+        let acc = 0;
+        for (const z of zones) {
+            if (p < acc + z.pct) return z.mult;
+            acc += z.pct;
+        }
+        return 0;
+    }
+
+    function getResultText(m) {
+        if (m === 0)   return { text:'MISS — no damage!',        color:'#555'    };
+        if (m === 1.0) return { text:'WEAK HIT — 1x damage',     color:'#FF8C00' };
+        if (m === 2.0) return { text:'SOLID HIT — 2x damage!',   color:'#FFD700' };
+        if (m === 3.0) return { text:'BULLSEYE — 3x CRITICAL!!', color:'#FF44FF' };
+        return { text:`${m}x damage`, color:'#FF8C00' };
+    }
+
+    function tick(ts) {
+        if (!running) return;
+        const dt = Math.min(ts - lastTime, 32);
+        lastTime = ts;
+        pos += dir * speed * (dt / 16.67);
+        if (pos >= 100) { pos = 100; dir = -1; }
+        if (pos <= 0)   { pos = 0;   dir = 1;  }
+        document.getElementById('haMgCursor').style.left = pos + '%';
+        rafId = requestAnimationFrame(tick);
+    }
+
+    function strike() {
+        // Stop the RAF loop instantly
+        running = false;
+        if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+
+        // IMMEDIATELY freeze the cursor's visual position — no more rendering
+        const cursorEl = document.getElementById('haMgCursor');
+        if (cursorEl) cursorEl.style.left = pos + '%';
+
+        document.getElementById('haMgBtn').disabled = true;
+
+        const mult = getMultiplierAt(pos);
+        const { text, color } = getResultText(mult);
+        const resEl = document.getElementById('haMgResult');
+        resEl.style.color = color;
+        resEl.textContent = text;
+
+        // Fire callback then close after a brief moment
+        setTimeout(() => {
+            overlay.remove();
+            callback(mult);
+        }, 700);
+    }
+
+    document.getElementById('haMgBtn').addEventListener('click', strike);
+    // Also allow tapping the bar itself
+    document.getElementById('haMgBar').addEventListener('click', strike);
+
+    lastTime = performance.now();
+    rafId = requestAnimationFrame(tick);
+}
+
  function executeAttack(attackType) {
     const cs = gameState.combatState;
     if (!cs) return;
 
     const p  = gameState.player;
+
+    // ── WARRIOR HEAVY ATTACK: intercept and show power bar minigame ──
+    // Only intercept if the minigame hasn't run yet (_heavyMultiplier not set)
+    const baseClass = p.baseClass || p.class;
+    // ALL melee classes get the power bar minigame for heavy attacks
+    if (attackType === 'heavy' && cs._heavyMultiplier == null) {
+        showHeavyAttackMinigame((multiplier) => {
+            const cs2 = gameState.combatState;
+            if (!cs2) return;
+            cs2._heavyMultiplier = multiplier;
+            executeAttack('heavy');
+        });
+        return;
+    }
+
     const ti = cs.currentTarget;
     const enemy = cs.monsters[ti];
     
@@ -2021,13 +2153,27 @@ if (type === 'magic' && defender.magicResist) {
         pipCost = 1;
     } 
     else if (attackType === 'heavy') {
-        // HIGH RISK / HIGH REWARD: costs 2 pips, 35% miss chance, but hits for 3x damage
+         // Multiplier driven by power bar minigame result (warrior/paladin only)
+        const mg = (cs._heavyMultiplier != null) ? cs._heavyMultiplier : 1;
         pipCost = 2;
-        damageMultiplier = 3.0;
-        attackName = unarmed
-            ? 'winds up a <span style="color:#FF8800;">HAYMAKER</span>'
-            : 'winds up a <span style="color:#FF8800;">HEAVY STRIKE</span>';
-        armorPiercing = 0.35;
+        damageMultiplier = mg;
+        armorPiercing = mg >= 2.5 ? 0.5 : mg >= 2 ? 0.35 : 0.15;
+        if (mg === 0) {
+            attackName = unarmed ? 'swings wildly' : 'overswings';
+        } else if (mg >= 3) {
+            attackName = unarmed
+                ? 'winds up a <span style="color:#FF44FF;">PERFECT HAYMAKER</span>'
+                : 'winds up a <span style="color:#FF44FF;">PERFECT HEAVY STRIKE</span>';
+        } else if (mg >= 2) {
+            attackName = unarmed
+                ? 'winds up a <span style="color:#FFD700;">HEAVY HAYMAKER</span>'
+                : 'winds up a <span style="color:#FFD700;">HEAVY STRIKE</span>';
+        } else {
+            attackName = unarmed
+                ? 'winds up a <span style="color:#FF8800;">HAYMAKER</span>'
+                : 'winds up a <span style="color:#FF8800;">HEAVY STRIKE</span>';
+        }
+        cs._heavyMultiplier = null; // clear after use
     } 
     else if (attackType === 'special') {
         const availablePips = cs.pipAvailable.filter(x => x).length;
@@ -2049,15 +2195,26 @@ if (type === 'magic' && defender.magicResist) {
     // Consume pips
     consumePips(cs, pipCost, getPipCooldown(p));
     
-    // Always reset action mode to main - whether the attack hits or dodges,
-    // the player should see the main combat menu (with updated pips)
+    // Always reset action mode to main
     cs.actionMode = 'main';
+
+    // ── HEAVY ATTACK MISS (minigame landed in miss zone) ─────────────
+    if (attackType === 'heavy' && damageMultiplier === 0) {
+        termAppend(
+            `You ${attackName} — the blow goes wide! <span style="color:#ff8c00;">MISS!</span>`,
+            'term-warning'
+        );
+        updateEnemyCards();
+        updateHud();
+        renderActionBar();
+        return;
+    }
     
     // ═══════════════════════════════════════════════════════════════
     // ROGUE: SHADOW STRIKE - Guaranteed crit from stealth
     // ═══════════════════════════════════════════════════════════════
     let shadowStrike = false;
-    const baseClass = p.baseClass || p.class;
+    // Note: baseClass already declared above in the intercept block
     if (baseClass === 'rogue' && p.shadowStrikeReady) {
         shadowStrike = true;
         p.shadowStrikeReady = false;
@@ -2166,19 +2323,6 @@ let totalBase = Math.floor(physicalBase * damageMultiplier);
             updateEnemyCards(); updateHud(); renderActionBar();
             return;
         }
-    }
-
-    // ── HEAVY ATTACK: extra 15% miss chance on top of dodge ──────────
-    if (attackType === 'heavy' && Math.random() < 0.15) {
-        const missVerb = unarmed ? 'swing wildly' : 'overswing';
-        termAppend(
-            `You ${attackName} but ${missVerb} and <span style="color:#ff8c00;">MISS!</span>`,
-            'term-warning'
-        );
-        updateEnemyCards();
-        updateHud();
-        renderActionBar();
-        return;
     }
 
     // ── LEVEL SCALING: player damage modifier ────────────────────────

@@ -1332,7 +1332,7 @@ if (typeof ADVENTURE_ENEMIES !== 'undefined') {
         //   town/menu mode → #mainScreen      (exploration)
         let _flashTimer = null;
         function iosFlash(type) {
-            if (localStorage.getItem('dq_ios_flash') !== 'on') return;
+            if (localStorage.getItem('dq_ios_flash') === 'off') return; // only skip if explicitly OFF
             // Pick the visible container
             const inTerminal = document.body.classList.contains('terminal-mode');
             const el = document.getElementById(inTerminal ? 'terminalWindow' : 'mainScreen');
@@ -6218,13 +6218,13 @@ function usePortal(destTownId) {
                         Works on all devices.
                     </p>
                     <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px;">
-                        <div class="menu-option ${localStorage.getItem('dq_ios_flash') === 'on' ? 'equipped' : ''}"
-                             onclick="localStorage.setItem('dq_ios_flash','on'); showSettings();"
+                        <div class="menu-option ${localStorage.getItem('dq_ios_flash') !== 'off' ? 'equipped' : ''}"
+                             onclick="localStorage.removeItem('dq_ios_flash'); showSettings();"
                              style="flex:1;text-align:center;padding:10px 8px;">
                             ✨ FLASH ON
                         </div>
-                        <div class="menu-option ${localStorage.getItem('dq_ios_flash') !== 'on' ? 'equipped' : ''}"
-                             onclick="localStorage.removeItem('dq_ios_flash'); showSettings();"
+                        <div class="menu-option ${localStorage.getItem('dq_ios_flash') === 'off' ? 'equipped' : ''}"
+                             onclick="localStorage.setItem('dq_ios_flash','off'); showSettings();"
                              style="flex:1;text-align:center;padding:10px 8px;">
                             🔇 FLASH OFF
                         </div>
@@ -7710,7 +7710,7 @@ function renderDungeonActionBar() {
                     ⚔️ Normal
                 </button>
                 <button onclick="selectAttackType('heavy')" ${hitsLeft < heavyCost ? 'disabled' : ''}
-                    title="35% miss — hits for 3x!">
+                    title="Heavy Strike — Power Bar skill check">
                     💥 Heavy<span style="font-size:10px;color:#ff8c00;"> ⚠</span>
                 </button>
                 ${showSpecial ? `<button onclick="selectAttackType('special')">⭐ Special</button>` : ''}
@@ -8780,7 +8780,7 @@ function dungeonNav(input) {
                     ab.innerHTML = `
                         <div style="display:flex;gap:3px;width:100%;">
                             <button onclick="selectAttackType('normal')" ${hitsLeft < normalCost ? 'disabled' : ''} class="action-icon-btn" title="Normal Attack [N]">⚔️<span class="kb-hint">N</span></button>
-                            <button onclick="selectAttackType('heavy')"  ${hitsLeft < heavyCost  ? 'disabled' : ''} class="action-icon-btn" title="Heavy — 35% miss, 3× dmg [H]" style="border-color:#ff8c00;">💥<span class="kb-hint">H</span></button>
+                            <button onclick="selectAttackType('heavy')"  ${hitsLeft < heavyCost  ? 'disabled' : ''} class="action-icon-btn" title="Heavy Strike — Power Bar skill check [H]" style="border-color:#ff8c00;">💥<span class="kb-hint">H</span></button>
                             ${showSpecial ? `<button onclick="selectAttackType('special')" class="action-icon-btn" title="Special — all pips [S]" style="border-color:#FFD700;">⭐<span class="kb-hint">S</span></button>` : ''}
                             <button onclick="cancelAction()" class="action-icon-btn" title="Cancel [Esc]" style="border-color:#888;">❌<span class="kb-hint">Esc</span></button>
                         </div>
