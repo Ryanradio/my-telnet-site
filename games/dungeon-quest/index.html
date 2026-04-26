@@ -1870,6 +1870,86 @@ function showMainMenu() {
             });
         }
 
+// ═══════════════════════════════════════════════════════════════
+// ONE-TIME LEGACY MIGRATION SYSTEM - Add this ABOVE loadCharacter
+// ═══════════════════════════════════════════════════════════════
+
+const MIGRATION_VERSION = 'v2_owner_ids';
+
+function hasRunMigration() {
+    return localStorage.getItem(`dq_migration_${MIGRATION_VERSION}`) === 'true';
+}
+
+function markMigrationComplete() {
+    localStorage.setItem(`dq_migration_${MIGRATION_VERSION}`, 'true');
+}
+
+function runOneTimeLegacyMigration() {
+    if (hasRunMigration()) {
+        console.log(`✅ Migration ${MIGRATION_VERSION} already completed, skipping`);
+        return;
+    }
+    
+    console.log(`🔄 Running one-time migration: ${MIGRATION_VERSION}`);
+    
+    const characters = getAllCharacters();
+    let migratedCount = 0;
+    
+    for (const char of characters) {
+        const saveKey = `dq_save_${char.id}`;
+        const saveDataRaw = localStorage.getItem(saveKey);
+        if (!saveDataRaw) continue;
+        
+        try {
+            const saveData = JSON.parse(saveDataRaw);
+            let changed = false;
+            
+            // Add ownerId to generatedWeapons
+            if (saveData.generatedWeapons) {
+                for (const [id, weapon] of Object.entries(saveData.generatedWeapons)) {
+                    if (!weapon.ownerId) {
+                        weapon.ownerId = char.id;
+                        changed = true;
+                    }
+                }
+            }
+            
+            // Add ownerId to generatedArmor
+            if (saveData.generatedArmor) {
+                for (const [id, armor] of Object.entries(saveData.generatedArmor)) {
+                    if (!armor.ownerId) {
+                        armor.ownerId = char.id;
+                        changed = true;
+                    }
+                }
+            }
+            
+            if (changed) {
+                localStorage.setItem(saveKey, JSON.stringify(saveData));
+                migratedCount++;
+                console.log(`   ✅ Migrated: ${char.name} (${char.class} Lv${char.level})`);
+            }
+        } catch (e) {
+            console.error(`   ❌ Failed to migrate ${char.name}:`, e);
+        }
+    }
+    
+    markMigrationComplete();
+    console.log(`✅ Migration complete! ${migratedCount} characters updated.`);
+}
+
+// Run migration automatically
+setTimeout(() => {
+    if (typeof getAllCharacters === 'function') {
+        runOneTimeLegacyMigration();
+    }
+}, 1000);
+
+
+// ═══════════════════════════════════════════════════════════════
+// YOUR ORIGINAL loadCharacter FUNCTION - WITH ONLY STEP 3.5 COMMENTED OUT
+// ═══════════════════════════════════════════════════════════════
+
 async function loadCharacter(characterId) {
     try {
         // RECONCILE FIRST
@@ -1955,11 +2035,7 @@ async function loadCharacter(characterId) {
             },
         };
         
-
-        
-
-
-            gameState.currentTown = data.currentTown || 'town1';
+        gameState.currentTown = data.currentTown || 'town1';
         gameState.guildQuests = gameState.player.guildQuests;
         
         // ═══════════════════════════════════════════════════════════════
@@ -2665,6 +2741,10 @@ console.log('⚠️ legacyMigrationPerformed set TRUE at:', new Error().stack.sp
         })(p);
         */
 
+
+
+        
+
         // ======================================================
         // FIX WEAPONS WITH UNDEFINED MODIFIERS
         // Creates weapons by ID (not random) with correct level
@@ -3000,27 +3080,22 @@ if (data.generatedWeapons) {
         const weaponData = data.generatedWeapons[instanceId];
         console.log(`  → Processing: ${instanceId}`);
         
-        // RESTORE THE COMPLETE WEAPON OBJECT - DON'T RECONSTRUCT
-        // The save already has everything: name, modifiers, gems, etc.
+        // RESTORE THE COMPLETE WEAPON OBJECT
         WEAPONS[instanceId] = {
-            // Copy everything from the save
             ...weaponData,
-            
-            // Ensure critical fields exist
             instanceId: instanceId,
             weaponId: weaponData.weaponId || weaponData.id,
-            
-            // Make sure modifiers is an array
             modifiers: weaponData.modifiers || [],
-            
-            // Make sure gems is an array
             gems: weaponData.gems || [],
-            
-            // Set default values for any missing fields
             allowedClasses: weaponData.allowedClasses || null,
             isDropped: true
         };
         
+        // Make sure ownerId is preserved on the weapon object
+        if (weaponData.ownerId) {
+            WEAPONS[instanceId].ownerId = weaponData.ownerId;
+        }
+
         // Update the inventory item to match (if it exists in inventory)
         const invItem = p.inventory.find(i => 
             i && typeof i === 'object' && i.instanceId === instanceId
@@ -3041,29 +3116,34 @@ if (data.generatedWeapons) {
     console.log('⚠️ No generatedWeapons found in save data');
 }
 
+// 🔧 FIX: Ensure every weapon has ownerId (fallback for legacy weapons)
+for (const [id, weapon] of Object.entries(WEAPONS)) {
+    if (weapon && weapon.instanceId && !weapon.ownerId) {
+        weapon.ownerId = characterId;
+        console.log(`🔧 Assigned ownerId to ${weapon.name} (was missing)`);
+    }
+}
 
-// STEP 3.5: FORCE RESTORE WEAPONS FROM INVENTORY (CRITICAL FIX)
+
+// ======================================================
+// ⚠️⚠️⚠️ STEP 3.5: COMMENTED OUT - THIS WAS CAUSING CROSS-CHARACTER CONTAMINATION ⚠️⚠️⚠️
+// ======================================================
+/*
 console.log('🔄 STEP 3.5: Force restoring weapons from inventory...');
 let forceRestored = 0;
 p.inventory.forEach((item, idx) => {
     if (typeof item === 'object' && item.instanceId) {
-        // SKIP ARMOR ITEMS - they are handled in STEP 4
         if (item.armorId) {
-            return; // Skip armor, don't log anything
+            return;
         }
-        
-        // Check if this weapon is already in WEAPONS
         if (!WEAPONS[item.instanceId]) {
             console.log(`  → Missing weapon in WEAPONS: ${item.instanceId}`);
-            
-            // Try to find weapon data in generatedWeapons
             const weaponData = data.generatedWeapons?.[item.instanceId];
             if (weaponData && weaponData.baseDamage !== undefined) {
                 WEAPONS[item.instanceId] = weaponData;
                 console.log(`     ✅ Force restored from generatedWeapons: ${weaponData.name}`);
                 forceRestored++;
             } else if (item.weaponId || item.id) {
-                // Reconstruct from base weapon
                 const baseWeaponId = item.weaponId || item.id;
                 const baseWeapon = WEAPONS[baseWeaponId];
                 if (baseWeapon) {
@@ -3098,19 +3178,17 @@ p.inventory.forEach((item, idx) => {
 if (forceRestored > 0) {
     console.log(`✅ STEP 3.5 Complete: Force restored ${forceRestored} weapons to WEAPONS`);
 }
+*/
 
 
-// ======================================================
 // STEP 4: RESTORE GENERATED ARMOR FROM SAVE DATA
-// ======================================================
 if (data.generatedArmor) {
     console.log(`📦 Found ${Object.keys(data.generatedArmor).length} generated armor in save`);
-    let restoredCount = 0;
+    let restoredCount = 0;  // ← MAKE SURE THIS LINE EXISTS
     
     Object.keys(data.generatedArmor).forEach(instanceId => {
         const armorData = data.generatedArmor[instanceId];
         
-        // RESTORE THE COMPLETE ARMOR OBJECT
         ARMOR[instanceId] = {
             ...armorData,
             instanceId: instanceId,
@@ -3118,6 +3196,11 @@ if (data.generatedArmor) {
             gems: armorData.gems || [],
             isDropped: true
         };
+        
+        // Make sure ownerId is preserved
+        if (armorData.ownerId) {
+            ARMOR[instanceId].ownerId = armorData.ownerId;
+        }
         
         // Update inventory item
         const invItem = p.inventory.find(i => 
@@ -3134,21 +3217,19 @@ if (data.generatedArmor) {
     });
     
     console.log(`✅ Restored ${restoredCount} generated armor pieces`);
-    
-    // Re-point p.armor if needed
-    if ((!p.armor || p.armor === 'no_armor') && p.inventory) {
-        const order = ['godly','legendary','epic','rare','normal','poor'];
-        const armorItems = p.inventory.filter(item =>
-            item && typeof item === 'object' && item.armorId &&
-            item.instanceId && ARMOR[item.instanceId]
-        );
-        armorItems.sort((a,b) => order.indexOf(a.quality) - order.indexOf(b.quality));
-        if (armorItems.length > 0) {
-            p.armor = armorItems[0].instanceId;
-            console.log(`✅ Re-pointed equipped armor to: ${p.armor}`);
-        }
+} else {
+    console.log('⚠️ No generatedArmor found in save data');
+}
+
+// 🔧 FIX: Ensure every armor has ownerId (fallback for legacy items)
+for (const [id, armor] of Object.entries(ARMOR)) {
+    if (armor && armor.instanceId && !armor.ownerId) {
+        armor.ownerId = characterId;
+        console.log(`🔧 Assigned ownerId to ${armor.name} (was missing)`);
     }
 }
+
+
 
 fixUndefinedModifiers(p);
         
@@ -3805,16 +3886,23 @@ validateAndRepairInventory();
 // RESTORE EQUIPPED WEAPON AND ARMOR (using isEquipped flag)
 // ======================================================
 
-// Restore equipped weapon from flag
+// Restore equipped weapon from flag - ONLY if weapon belongs to this character
 let equippedWeaponFound = false;
 
-// Check all weapons in WEAPONS for isEquipped flag
+// Check all weapons in WEAPONS for isEquipped flag AND matching ownerId
 for (const [id, weapon] of Object.entries(WEAPONS)) {
     if (weapon && weapon.isEquipped === true) {
-        gameState.player.weapon = id;
-        equippedWeaponFound = true;
-        console.log(`✅ Restored equipped weapon: ${weapon.name}`);
-        break;
+        // Check if this weapon belongs to the current character
+        if (weapon.ownerId === characterId || !weapon.ownerId) {
+            gameState.player.weapon = id;
+            equippedWeaponFound = true;
+            console.log(`✅ Restored equipped weapon: ${weapon.name}`);
+            break;
+        } else {
+            console.log(`⚠️ Skipping weapon ${weapon.name} - belongs to different character (${weapon.ownerId})`);
+            // Remove the false isEquipped flag from other character's weapon
+            delete weapon.isEquipped;
+        }
     }
 }
 
@@ -3833,15 +3921,20 @@ if (!equippedWeaponFound && gameState.player.inventory) {
     }
 }
 
-// Restore equipped armor from flag
+// Restore equipped armor from flag - ONLY if armor belongs to this character
 let equippedArmorFound = false;
 
 for (const [id, armor] of Object.entries(ARMOR)) {
     if (armor && armor.isEquipped === true) {
-        gameState.player.armor = id;
-        equippedArmorFound = true;
-        console.log(`✅ Restored equipped armor: ${armor.name}`);
-        break;
+        if (armor.ownerId === characterId || !armor.ownerId) {
+            gameState.player.armor = id;
+            equippedArmorFound = true;
+            console.log(`✅ Restored equipped armor: ${armor.name}`);
+            break;
+        } else {
+            console.log(`⚠️ Skipping armor ${armor.name} - belongs to different character (${armor.ownerId})`);
+            delete armor.isEquipped;
+        }
     }
 }
 
