@@ -5193,36 +5193,61 @@ if (weaponDrop.modifiers && weaponDrop.modifiers.length > 0) {
         }
 
         // ── Armor drop ────────────────────────────────────────
-        // Using your existing generateArmorDrop function (already handles inventory)
-        const armorDrop = generateArmorDrop(
-            gameState.player,
-            monster.level,      // ← Use monster's level for appropriate gear
-            monster.rarity || 'common',
-            false,              // ← false = real drop with RNG
-            null                // ← null = random quality
-        );
-        
-        if (armorDrop) {
-            // generateArmorDrop already adds to inventory, so we just show the message
-            const qColor = QUALITY_CONFIG[armorDrop.quality]?.color || '#00FF00';
-            
-            termAppend('', 'term-separator');
-            termAppend(`🛡️ <span style="color:${qColor};font-size:18px;font-weight:bold;">ARMOR DROP!</span>`, 'term-victory');
-            termAppend(`<span style="color:${qColor};">${armorDrop.name}</span>`, 'term-loot');
-            termAppend(`<span style="color:#8aaa8a;">Level ${armorDrop.level || 1} ${armorDrop.quality} armor</span>`, 'term-dim');
-            termAppend(`<span style="color:#00AAFF;">DEF: ${armorDrop.baseDefense}${armorDrop.baseMagicBonus > 0 ? ` | MAG BONUS: +${armorDrop.baseMagicBonus}` : ''}</span>`);
-            
+// Using your existing generateArmorDrop function (already handles inventory)
+const armorDrop = generateArmorDrop(
+    gameState.player,
+    monster.level,      // ← Use monster's level for appropriate gear
+    monster.rarity || 'common',
+    false,              // ← false = real drop with RNG
+    null                // ← null = random quality
+);
 
-
-            // ADD BACK IN when armor has sockets for gems!
-       /*     const dropSlots = armorDrop.gemSlots || getGemSlots(armorDrop.quality);
-            if (dropSlots > 0) {
-                const slotCircles = '⬤'.repeat(dropSlots);
-                termAppend(`<span style="color:#333;font-size:13px;">${slotCircles}</span> <span style="color:#555;font-size:11px;">${dropSlots} gem slot${dropSlots>1?'s':''} — visit the Blacksmith to socket gems</span>`);
+if (armorDrop) {
+    // generateArmorDrop already adds to inventory, so we just show the message
+    const qColor = QUALITY_CONFIG[armorDrop.quality]?.color || '#00FF00';
+    
+    termAppend('', 'term-separator');
+    termAppend(`🛡️ <span style="color:${qColor};font-size:18px;font-weight:bold;">ARMOR DROP!</span>`, 'term-victory');
+    termAppend(`<span style="color:${qColor};">${armorDrop.name}</span>`, 'term-loot');
+    termAppend(`<span style="color:#8aaa8a;">Level ${armorDrop.level || 1} ${armorDrop.quality} armor</span>`, 'term-dim');
+    termAppend(`<span style="color:#00AAFF;">DEF: ${armorDrop.baseDefense}${armorDrop.baseMagicBonus > 0 ? ` | MAG BONUS: +${armorDrop.baseMagicBonus}` : ''}</span>`, 'term-loot');
+    
+    // ── HP/MP Bonuses ─────────────────────────────────
+    if (armorDrop.bonusHp && armorDrop.bonusHp > 0) {
+        termAppend(`<span style="color:#FF8888;">❤️ +${armorDrop.bonusHp} HP</span>`, 'term-loot');
+    }
+    if (armorDrop.bonusMp && armorDrop.bonusMp > 0) {
+        termAppend(`<span style="color:#8888FF;">💙 +${armorDrop.bonusMp} MP</span>`, 'term-loot');
+    }
+    
+    // ── Armor Modifiers (Regenerating, Resonant, etc.) ──
+    if (armorDrop.modifiers && armorDrop.modifiers.length > 0) {
+        termAppend('<span style="color:#00FFFF;">Special Properties:</span>', 'term-loot');
+        armorDrop.modifiers.forEach(mod => {
+            let modText = `  • <span style="color:${mod.color || '#FFD700'};">${mod.name}`;
+            if (mod.value) {
+                modText += `: ${mod.value}${mod.statType === 'percent' ? '%' : ''}`;
             }
-            termAppend('', 'term-separator'); */
-        }
-    });
+            if (mod.description) {
+                modText += ` — ${mod.description}`;
+            }
+            modText += `</span>`;
+            termAppend(modText, 'term-loot');
+        });
+    }
+    
+    // Optional: Gem slots (commented out for now)
+    /*
+    const dropSlots = armorDrop.gemSlots || getGemSlots(armorDrop.quality);
+    if (dropSlots > 0) {
+        const slotCircles = '⬤'.repeat(dropSlots);
+        termAppend(`<span style="color:#333;font-size:13px;">${slotCircles}</span> <span style="color:#555;font-size:11px;">${dropSlots} gem slot${dropSlots>1?'s':''} — visit the Blacksmith to socket gems</span>`, 'term-loot');
+    }
+    */
+    
+    termAppend('', 'term-separator');
+}
+});
 
     // Check for level-up (possibly multiple levels)
     while (gameState.player.xp >= gameState.player.xpToNext && gameState.player.level < 25) {

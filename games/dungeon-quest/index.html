@@ -8154,14 +8154,24 @@ function showInventoryOverlay() {
             overflow:hidden;
         ">
         <!-- Fixed header -->
-        <div style="flex:0 0 auto;padding:10px 12px 8px;border-bottom:2px solid var(--border-color);
-                    display:flex;justify-content:space-between;align-items:center;background:#000d00;">
-            <span style="color:var(--highlight-color);font-size:20px;letter-spacing:3px;">🎒 INVENTORY</span>
-            <span style="color:#8aaa8a;font-size:14px;">
-                ❤️ ${p.hp}/${p.maxHp} &nbsp; 💙 ${p.mp}/${p.maxMp}
-                ${inCombat ? ' &nbsp;<span style="color:#ff4444;">⚔️ COMBAT</span>' : ''}
-            </span>
-        </div>
+<div style="flex:0 0 auto;padding:10px 12px 8px;border-bottom:2px solid var(--border-color);
+            background:#000d00;">
+    <!-- Top back button row -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <button onclick="(document.getElementById('dungeonInvOverlay').remove(),${inDungeon?'renderDungeonActionBar()':'renderActionBar()'})"
+            style="padding:4px 12px;font-size:14px;border-color:#ff4444;color:#ff4444;">
+            ← BACK
+        </button>
+        <span style="color:#8aaa8a;font-size:14px;">
+            ❤️ ${p.hp}/${p.maxHp} &nbsp; 💙 ${p.mp}/${p.maxMp}
+            ${inCombat ? ' &nbsp;<span style="color:#ff4444;">⚔️ COMBAT</span>' : ''}
+        </span>
+    </div>
+    <!-- Title row -->
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="color:var(--highlight-color);font-size:20px;letter-spacing:3px;">🎒 INVENTORY</span>
+    </div>
+</div>
 
         <!-- Scrollable body -->
         <div style="flex:1 1 0;overflow-y:auto;padding:10px 12px;-webkit-overflow-scrolling:touch;">`;
