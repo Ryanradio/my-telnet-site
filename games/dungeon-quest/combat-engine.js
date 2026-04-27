@@ -2839,7 +2839,62 @@ if (baseClass === 'rogue' && isDaggerWeapon && enemy.hp > 0) {
     executeAttack('normal');
 }
 
-        
+                function startMasterBattle(masterKey) {
+    const master = CLASS_MASTERS[masterKey];
+    const masterMonster = {
+        key: masterKey, 
+        name: master.name, 
+        rarity: 'epic',
+        rarityColor: RARITY_CONFIG.epic.color,
+        hp: master.baseHp, 
+        maxHp: master.baseHp,
+        damage: master.baseDamage, 
+        defense: master.baseDefense,
+        xp: master.xp, 
+        gold: master.gold, 
+        level: master.level,
+        possibleDrops: master.possibleDrops, 
+        dropRates: master.dropRates,
+        isMaster: true, 
+        masterKey: masterKey,
+        guaranteedDrops: master.guaranteedDrops,
+        abilities: master.abilities || [],           // ← ADD THIS
+        timer: 12 + Math.floor(Math.random() * 7),   // ← ADD THIS (12-18 seconds)
+        _telegraphShown: false,                      // ← ADD THIS
+        _pendingIntent: null                         // ← ADD THIS
+    };
+    
+    const maxHits = calcPlayerHits(gameState.player);
+    const pipTimers = [];
+    for (let i = 0; i < maxHits; i++) {
+        pipTimers.push(10);
+    }
+    
+    gameState.combatState = {
+        monsters: [masterMonster], 
+        currentTarget: 0,
+        messages: [], 
+        defeatedMonsters: [],
+        pipTimers: pipTimers,
+        pipAvailable: pipTimers.map(() => true),
+        enemyHits: 3,
+        enemyHitsLeft: 3,
+        playerStatusEffects: [],      // ← ADD THIS
+        monsterStatusEffects: {},     // ← ADD THIS
+        dotTimers: {}                 // ← ADD THIS
+    };
+    
+    // Open the terminal view
+    openTerminalView(gameState.currentLocation);
+    
+    // Append intro text
+    termAppend(`<span style="color:${RARITY_CONFIG.epic.color}; font-size:22px;">⚔️ ${master.name} challenges you to an honorable duel! ⚔️</span>`, 'term-highlight');
+    
+    // Render combat UI
+    renderEnemyCards();
+    renderActionBar();
+    startCombatTimer();
+}
 
 
 function showSpellMenu() {
