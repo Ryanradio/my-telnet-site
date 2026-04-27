@@ -502,6 +502,7 @@ generatedWeapons: (() => {
             allowedClasses: weaponObj.allowedClasses,
             isDropped: true,
             isEquipped: weaponObj.isEquipped || false,
+            ownerId: weaponObj.ownerId || gameState.player?.id,
             dropTimestamp: weaponObj.dropTimestamp || Date.now()
         };
     }
@@ -597,6 +598,7 @@ generatedArmor: (() => {
             description: armorObj.description,
             isDropped: true,
             isEquipped: armorObj.isEquipped || false,
+            ownerId: armorObj.ownerId || gameState.player?.id,
             dropTimestamp: armorObj.dropTimestamp || Date.now()
         };
     }
