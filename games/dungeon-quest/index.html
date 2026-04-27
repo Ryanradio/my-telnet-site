@@ -356,11 +356,16 @@
     <script src="bounties.js"></script>
     <script src="hunter-pets.js"></script>
     <script src="presshold.js"></script>
+    
     <script>
 // ═══════════════════════════════════════════════════════════════
 // INVENTORY ITEM LONG-PRESS TOOLTIP SYSTEM
 // Shows detailed stats when holding on weapons/armor in inventory
 // ═══════════════════════════════════════════════════════════════
+
+
+
+
 
 function initInventoryTooltips() {
     // Check both town inventory (mainScreen) and dungeon inventory (dungeonInvOverlay)
@@ -4525,9 +4530,211 @@ exploreLocation = function(locKey) {
                     <p style="margin-top:6px;">New drops go directly into your inventory. Use the <strong>🎒 Inventory</strong> button in the dungeon or visit Inventory from town to equip them.</p>
                 </div>
 
+<div class="message" style="border-color:#FF9900;">
+    <p><span class="stat-label" style="color:#FF9900;">📋 CLASS WEAPON &amp; ARMOR LISTS:</span></p>
+    <p>View complete equipment lists for each class (opens in-game):</p>
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 12px;">
+        <div><span style="color:#FFD700;">⚔️ Warrior</span> — <a href="#" onclick="showEquipmentList('warrior'); return false;" style="color:#88FF88;">[weapons]</a> / <a href="#" onclick="showEquipmentList('warrior', 'armor'); return false;" style="color:#88FF88;">[armor]</a></div>
+        <div><span style="color:#FFD700;">🗡️ Rogue</span> — <a href="#" onclick="showEquipmentList('rogue'); return false;" style="color:#88FF88;">[weapons]</a> / <a href="#" onclick="showEquipmentList('rogue', 'armor'); return false;" style="color:#88FF88;">[armor]</a></div>
+        <div><span style="color:#FFD700;">🛡️ Paladin</span> — <a href="#" onclick="showEquipmentList('paladin'); return false;" style="color:#88FF88;">[weapons]</a> / <a href="#" onclick="showEquipmentList('paladin', 'armor'); return false;" style="color:#88FF88;">[armor]</a></div>
+        <div><span style="color:#FFD700;">🔮 Mage</span> — <a href="#" onclick="showEquipmentList('mage'); return false;" style="color:#88FF88;">[weapons]</a> / <a href="#" onclick="showEquipmentList('mage', 'armor'); return false;" style="color:#88FF88;">[armor]</a></div>
+        <div><span style="color:#FFD700;">⛪ Cleric</span> — <a href="#" onclick="showEquipmentList('cleric'); return false;" style="color:#88FF88;">[weapons]</a> / <a href="#" onclick="showEquipmentList('cleric', 'armor'); return false;" style="color:#88FF88;">[armor]</a></div>
+        <div><span style="color:#FFD700;">🏹 Hunter</span> — <a href="#" onclick="showEquipmentList('hunter'); return false;" style="color:#88FF88;">[weapons]</a> / <a href="#" onclick="showEquipmentList('hunter', 'armor'); return false;" style="color:#88FF88;">[armor]</a></div>
+        <div><span style="color:#FFD700;">🔱 Warlock</span> — <a href="#" onclick="showEquipmentList('warlock'); return false;" style="color:#88FF88;">[weapons]</a> / <a href="#" onclick="showEquipmentList('warlock', 'armor'); return false;" style="color:#88FF88;">[armor]</a></div>
+        <div><span style="color:#FFD700;">⚙️ Runesmith</span> — <a href="#" onclick="showEquipmentList('runesmith'); return false;" style="color:#88FF88;">[weapons]</a> / <a href="#" onclick="showEquipmentList('runesmith', 'armor'); return false;" style="color:#88FF88;">[armor]</a></div>
+    </div>
+</div>
+
                 <button onclick="showMainMenu()">BACK TO MENU</button>
             `);
         }
+
+// ======================================================
+// IN-GAME EQUIPMENT LIST VIEWER - NO FETCH NEEDED!
+// Reads directly from WEAPONS and ARMOR objects
+// Works with file:// protocol, no server required!
+// ======================================================
+
+function showEquipmentList(className, type = 'weapons') {
+    const classMap = {
+        'warrior': 'Warrior',
+        'rogue': 'Rogue',
+        'paladin': 'Paladin', 
+        'mage': 'Mage',
+        'cleric': 'Cleric',
+        'hunter': 'Hunter',
+        'warlock': 'Warlock',
+        'runesmith': 'Runesmith'
+    };
+    
+    const displayClass = classMap[className] || className;
+    const displayType = type === 'weapons' ? 'WEAPONS' : 'ARMOR';
+    
+    // Build the list directly from WEAPONS/ARMOR objects
+    let lines = [];
+    lines.push(`═══════════════════════════════════════════════════════════════`);
+    lines.push(`                    ${displayClass.toUpperCase()} ${displayType}`);
+    lines.push(`═══════════════════════════════════════════════════════════════`);
+    lines.push(``);
+    
+    if (type === 'weapons') {
+        // Group weapons by level
+        for (let level = 1; level <= 25; level++) {
+            const levelWeapons = [];
+            
+            for (const [id, weapon] of Object.entries(WEAPONS)) {
+                // Skip unarmed/bare fists
+                if (weapon.unarmed === true) continue;
+                if (weapon.level !== level) continue;
+                
+                // Check if class can use this weapon
+                if (weapon.allowedClasses && !weapon.allowedClasses.includes(className)) continue;
+                
+                const name = weapon.name || id;
+                const minDmg = weapon.baseDamage || 0;
+                const maxDmg = weapon.maxDamage || weapon.baseDamage || 0;
+                const magic = weapon.baseMagicDamage || 0;
+                const cost = weapon.cost || 0;
+                const subtype = weapon.weaponSubtype || weapon.type || 'weapon';
+                
+                levelWeapons.push(`  ${name.padEnd(28)} Dmg: ${minDmg}-${maxDmg} | Magic: ${magic} | ${subtype} | Cost: ${cost}`);
+            }
+            
+            if (levelWeapons.length > 0) {
+                lines.push(`═══════════════════════════════════════════════════════════════`);
+                lines.push(`LEVEL ${level}`);
+                lines.push(`═══════════════════════════════════════════════════════════════`);
+                lines.push(...levelWeapons.sort());
+                lines.push(``);
+            }
+        }
+    } else {
+        // ARMOR list
+        for (let level = 1; level <= 25; level++) {
+            const levelArmor = [];
+            
+            for (const [id, armorItem] of Object.entries(ARMOR)) {
+                if (armorItem.unarmored === true) continue;
+                if (armorItem.level !== level) continue;
+                
+                // Check if class can use this armor
+                if (armorItem.allowedClasses && !armorItem.allowedClasses.includes(className)) continue;
+                
+                const name = armorItem.name || id;
+                const defense = armorItem.baseDefense || armorItem.defense || 0;
+                const magic = armorItem.baseMagicBonus || armorItem.magicBonus || 0;
+                const cost = armorItem.cost || 0;
+                
+                levelArmor.push(`  ${name.padEnd(28)} DEF: ${defense} | Magic: +${magic} | Cost: ${cost}`);
+            }
+            
+            if (levelArmor.length > 0) {
+                lines.push(`═══════════════════════════════════════════════════════════════`);
+                lines.push(`LEVEL ${level}`);
+                lines.push(`═══════════════════════════════════════════════════════════════`);
+                lines.push(...levelArmor.sort());
+                lines.push(``);
+            }
+        }
+    }
+    
+    lines.push(`═══════════════════════════════════════════════════════════════`);
+    lines.push(`                    END OF LIST`);
+    lines.push(`═══════════════════════════════════════════════════════════════`);
+    
+    const content = lines.join('\n');
+    
+    // Create overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'equipmentListOverlay';
+    overlay.style.cssText = `
+        position: fixed;
+        inset: 0;
+        z-index: 100000;
+        background: #000d00;
+        display: flex;
+        flex-direction: column;
+        font-family: 'VT323', monospace;
+    `;
+    
+    // Header
+    const header = document.createElement('div');
+    header.style.cssText = `
+        background: #0a1a0a;
+        border-bottom: 2px solid #00FF41;
+        padding: 12px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+    `;
+    header.innerHTML = `
+        <div>
+            <span style="color: #FFD700; font-size: 22px;">📋 ${displayClass} ${displayType}</span>
+            <div style="color: #8aaa8a; font-size: 12px;">Complete equipment list for ${displayClass}</div>
+        </div>
+        <button onclick="closeEquipmentList()" style="
+            background: none;
+            border: 2px solid #ff4444;
+            color: #ff4444;
+            font-family: 'VT323', monospace;
+            font-size: 20px;
+            padding: 6px 16px;
+            cursor: pointer;
+            border-radius: 4px;
+        ">✕ CLOSE</button>
+    `;
+    
+    // Content area
+    const contentArea = document.createElement('div');
+    contentArea.style.cssText = `
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px 20px;
+        white-space: pre-wrap;
+        font-family: 'VT323', monospace;
+        font-size: 14px;
+        color: #00FF41;
+        line-height: 1.5;
+    `;
+    contentArea.textContent = content;
+    
+    // Footer
+    const footer = document.createElement('div');
+    footer.style.cssText = `
+        background: #0a1a0a;
+        border-top: 2px solid #00FF41;
+        padding: 12px 16px;
+        text-align: center;
+        flex-shrink: 0;
+    `;
+    footer.innerHTML = `
+        <button onclick="closeEquipmentList()" style="
+            background: #0a0a0a;
+            border: 2px solid #00FF41;
+            color: #00FF41;
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            padding: 8px 32px;
+            cursor: pointer;
+            border-radius: 4px;
+        ">← BACK TO INSTRUCTIONS</button>
+    `;
+    
+    overlay.appendChild(header);
+    overlay.appendChild(contentArea);
+    overlay.appendChild(footer);
+    document.body.appendChild(overlay);
+    
+    contentArea.scrollTop = 0;
+}
+
+function closeEquipmentList() {
+    const overlay = document.getElementById('equipmentListOverlay');
+    if (overlay) overlay.remove();
+}
+
+
 
         function showRevisionHistory() {
             const screen = document.getElementById('mainScreen');

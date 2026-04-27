@@ -523,22 +523,43 @@ function doShopReroll() {
 
 // ── Buy featured ─────────────────────────────────────────────────
 function buyFeaturedItem(type, key, quality, price) {
-    const p           = gameState.player;
+    const p = gameState.player;
     const playerClass = p.baseClass || p.class;
-    const item        = type === 'weapon' ? WEAPONS[key] : ARMOR[key];
+    const item = type === 'weapon' ? WEAPONS[key] : ARMOR[key];
     if (!item) return;
     const canUse = type === 'weapon' ? canUseWeapon(playerClass, item) : canUseArmor(playerClass, item);
-    if (!canUse)      { alert(`Your class cannot use this item.`); return; }
+    if (!canUse) { alert(`Your class cannot use this item.`); return; }
     if (p.gold < price) { alert('Not enough gold!'); return; }
     if (!confirm(`Buy ${item.name} [${quality}] for ${price.toLocaleString()}g?`)) return;
+    
     p.gold -= price;
+    
     if (type === 'weapon') {
-        const inst = generateLegacyWeaponInstance(key, p.level, quality);
-        if (inst) p.inventory.push(inst);
+        // Use generateWeaponDrop instead of legacy function
+        const weaponDrop = generateWeaponDrop(p, p.level, quality, true, quality);
+        if (weaponDrop) {
+            weaponDrop.isEquipped = false;
+            p.inventory.push(weaponDrop);
+            console.log(`✅ Purchased weapon: ${weaponDrop.name}`);
+        } else {
+            // Fallback
+            const inst = generateLegacyWeaponInstance(key, p.level, quality);
+            if (inst) p.inventory.push(inst);
+        }
     } else {
-        const inst = generateLegacyArmorInstance(key, p.level, quality);
-        if (inst) p.inventory.push(inst);
+        // Use generateArmorDrop instead of legacy function
+        const armorDrop = generateArmorDrop(p, p.level, quality, true, quality);
+        if (armorDrop) {
+            armorDrop.isEquipped = false;
+            p.inventory.push(armorDrop);
+            console.log(`✅ Purchased armor: ${armorDrop.name}`);
+        } else {
+            // Fallback
+            const inst = generateLegacyArmorInstance(key, p.level, quality);
+            if (inst) p.inventory.push(inst);
+        }
     }
+    
     saveGame();
     renderShop('buy', 'weapons', 'all', 'near');
 }
@@ -1408,20 +1429,32 @@ function _executeBuy(type, key, cost, itemName, disc) {
     p.gold -= cost;
     haptic('buy');
     
-    // Instead of pushing the string key, create an instance
     if (type === 'weapon') {
-        const instance = generateLegacyWeaponInstance(key, p.level, 'normal');
-        if (instance) {
-            p.inventory.push(instance);
+        // Get base weapon for quality reference
+        const baseWeapon = WEAPONS[key];
+        const quality = baseWeapon?.quality || 'normal';
+        // Use generateWeaponDrop for proper instance
+        const weaponDrop = generateWeaponDrop(p, p.level, quality, true, quality);
+        if (weaponDrop) {
+            weaponDrop.isEquipped = false;
+            p.inventory.push(weaponDrop);
         } else {
-            p.inventory.push(key); // fallback
+            // Fallback to legacy
+            const instance = generateLegacyWeaponInstance(key, p.level, 'normal');
+            if (instance) p.inventory.push(instance);
+            else p.inventory.push(key);
         }
     } else if (type === 'armor') {
-        const instance = generateLegacyArmorInstance(key, p.level, 'normal');
-        if (instance) {
-            p.inventory.push(instance);
+        const baseArmor = ARMOR[key];
+        const quality = baseArmor?.quality || 'normal';
+        const armorDrop = generateArmorDrop(p, p.level, quality, true, quality);
+        if (armorDrop) {
+            armorDrop.isEquipped = false;
+            p.inventory.push(armorDrop);
         } else {
-            p.inventory.push(key);
+            const instance = generateLegacyArmorInstance(key, p.level, 'normal');
+            if (instance) p.inventory.push(instance);
+            else p.inventory.push(key);
         }
     } else {
         // Items (potions, etc.) stay as strings
@@ -1432,6 +1465,7 @@ function _executeBuy(type, key, cost, itemName, disc) {
     if (typeof updateHud === 'function') updateHud();
     renderShop('buy', 'weapons', 'all', 'near');
 }
+
 function showInventory() {
     checkGameVersion();
     const p = gameState.player;

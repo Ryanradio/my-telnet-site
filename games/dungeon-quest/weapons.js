@@ -295,7 +295,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "tome",
-        "allowedClasses": ["cleric", "acolyte"],
+        "allowedClasses": ["mage", "warlock", "cleric"],
         "description": "A basic prayer book filled with simple blessings."
     },
     prayer_book: {
@@ -309,7 +309,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "tome",
-        "allowedClasses": ["cleric", "acolyte"],
+        "allowedClasses": ["mage", "warlock", "cleric"],
         "description": "Common prayers and hymns for the faithful."
     },
     holy_scriptures: {
@@ -323,7 +323,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "tome",
-        "allowedClasses": ["cleric", "acolyte"],
+        "allowedClasses": ["mage", "warlock", "cleric"],
         "description": "The core teachings of the faith."
     },
     blessed_tome: {
@@ -337,7 +337,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "tome",
-        "allowedClasses": ["cleric", "acolyte"],
+        "allowedClasses": ["mage", "warlock", "cleric"],
         "description": "Blessed by a traveling priest."
     },
     sacred_texts: {
@@ -351,7 +351,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "tome",
-        "allowedClasses": ["cleric", "acolyte"],
+        "allowedClasses": ["mage", "warlock", "cleric"],
         "description": "Writings from various prophets."
     },
     gospel_of_healing: {
@@ -685,7 +685,7 @@ const WEAPONS = {
         "level": 4,
         "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["cleric", "paladin"],
+        "allowedClasses": ["mage", "warlock", "cleric"],
         "weaponSubtype": "staff"
     },
     dark_staff: {
@@ -697,7 +697,7 @@ const WEAPONS = {
         "level": 5,
         "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["warlock", "necrolyte"],
+        "allowedClasses": ["mage", "warlock", "cleric"],
         "weaponSubtype": "staff"
     },
     flame_staff: {
@@ -709,7 +709,7 @@ const WEAPONS = {
         "level": 6,
         "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["mage", "warlock", "sorceror"],
+        "allowedClasses": ["mage", "warlock", "cleric"],
         "weaponSubtype": "staff"
     },
     sacred_staff: {
@@ -721,7 +721,7 @@ const WEAPONS = {
         "level": 7,
         "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["cleric", "paladin"],
+        "allowedClasses": ["mage", "warlock", "cleric"],
         "weaponSubtype": "staff"
     },
     ice_staff: {
@@ -733,7 +733,7 @@ const WEAPONS = {
         "level": 8,
         "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["mage", "warlock", "sorceror"],
+        "allowedClasses": ["mage", "warlock", "cleric"],
         "weaponSubtype": "staff"
     },
     cursed_staff: {
@@ -745,7 +745,7 @@ const WEAPONS = {
         "level": 9,
         "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["warlock", "necrolyte"],
+        "allowedClasses": ["mage", "warlock", "cleric"],
         "weaponSubtype": "staff"
     },
     shadow_staff: {
@@ -757,7 +757,7 @@ const WEAPONS = {
         "level": 10,
         "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["warlock", "necrolyte"],
+        "allowedClasses": ["mage", "warlock", "cleric"],
         "weaponSubtype": "staff"
     },
     lightning_staff: {
@@ -769,7 +769,7 @@ const WEAPONS = {
         "level": 11,
         "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["mage", "warlock", "sorceror"],
+        "allowedClasses": ["mage", "warlock", "cleric"],
         "weaponSubtype": "staff"
     },
     necromantic_staff: {
@@ -781,7 +781,7 @@ const WEAPONS = {
         "level": 12,
         "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["necrolyte", "warlock"],
+        "allowedClasses": ["mage", "warlock", "cleric"],
         "weaponSubtype": "staff"
     },
     prophecy_staff: {
@@ -793,7 +793,7 @@ const WEAPONS = {
         "level": 13,
         "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["cleric", "acolyte"],
+        "allowedClasses": ["mage", "warlock", "cleric"],
         "weaponSubtype": "staff"
     },
     divine_staff: {
@@ -805,7 +805,7 @@ const WEAPONS = {
         "level": 14,
         "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["cleric", "paladin"],
+        "allowedClasses": ["mage", "warlock", "cleric"],
         "weaponSubtype": "staff"
     },
     archmage_staff: {
@@ -817,7 +817,7 @@ const WEAPONS = {
         "level": 15,
         "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["mage", "sorceror"],
+        "allowedClasses": ["mage", "warlock", "cleric"],
         "weaponSubtype": "staff"
     },
     void_staff: {
@@ -829,7 +829,7 @@ const WEAPONS = {
         "level": 16,
         "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["warlock", "necrolyte"],
+        "allowedClasses": ["mage", "warlock", "cleric"],
         "weaponSubtype": "staff"
     },
     soul_staff: {
@@ -841,7 +841,7 @@ const WEAPONS = {
         "level": 17,
         "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["warlock", "necrolyte"],
+        "allowedClasses": ["mage", "warlock", "cleric"],
         "weaponSubtype": "staff"
     },
     celestial_staff: {
@@ -853,7 +853,7 @@ const WEAPONS = {
         "level": 18,
         "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["cleric", "acolyte"],
+        "allowedClasses": ["mage", "warlock", "cleric"],
         "weaponSubtype": "staff"
     },
     celestial_rod: {
@@ -865,7 +865,7 @@ const WEAPONS = {
         "level": 19,
         "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["cleric", "paladin"],
+        "allowedClasses": ["mage", "warlock", "cleric"],
         "weaponSubtype": "staff"
     },
     eternity_staff: {
@@ -889,7 +889,7 @@ const WEAPONS = {
         "level": 21,
         "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["warlock", "necrolyte"],
+        "allowedClasses": ["mage", "warlock", "cleric"],
         "weaponSubtype": "staff"
     },
     apocalypse_staff: {
@@ -901,7 +901,7 @@ const WEAPONS = {
         "level": 22,
         "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["mage", "warlock", "sorceror"],
+        "allowedClasses": ["mage", "warlock", "cleric"],
         "weaponSubtype": "staff"
     },
     cosmic_staff: {
@@ -913,7 +913,7 @@ const WEAPONS = {
         "level": 23,
         "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["mage", "sorceror"],
+        "allowedClasses": ["mage", "warlock", "cleric"],
         "weaponSubtype": "staff"
     },
     gods_scepter: {
@@ -937,7 +937,7 @@ const WEAPONS = {
         "level": 25,
         "quality": "",
         "slot": "weapon",
-        "allowedClasses": ["mage", "warlock", "sorceror", "cleric"],
+        "allowedClasses": ["mage", "warlock", "sorceror", "cleric", "high_priest"],
         "weaponSubtype": "staff"
     },
 
@@ -1016,7 +1016,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["cleric", "paladin"]
+        "allowedClasses": ["mage", "warlock", "cleric"]
     },
     war_mace: {
         "name": "War Mace",
@@ -1040,7 +1040,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["cleric", "paladin"]
+        "allowedClasses": ["mage", "warlock", "cleric"]
     },
     silver_mace: {
         "name": "Silver Mace",
@@ -1052,7 +1052,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["cleric", "paladin"]
+        "allowedClasses": ["mage", "warlock", "cleric"]
     },
     crushmaster: {
         "name": "Crushmaster",
@@ -1076,7 +1076,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["cleric", "paladin"]
+        "allowedClasses": ["mage", "warlock", "cleric"]
     },
     soul_mace: {
         "name": "Soul Mace",
@@ -1100,7 +1100,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["cleric", "paladin"]
+        "allowedClasses": ["mage", "warlock", "cleric"]
     },
     judgment: {
         "name": "Judgment",
@@ -1112,7 +1112,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["cleric", "paladin"]
+        "allowedClasses": ["mage", "warlock", "cleric"]
     },
     templar_mace: {
         "name": "Templar Mace",
@@ -1124,7 +1124,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["cleric", "paladin"]
+        "allowedClasses": ["mage", "warlock", "cleric"]
     },
     thundermace: {
         "name": "Thundermace",
@@ -1148,7 +1148,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["cleric", "paladin"]
+        "allowedClasses": ["mage", "warlock", "cleric"]
     },
     celestial_crusher: {
         "name": "Celestial Crusher",
@@ -1160,7 +1160,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["cleric", "paladin"]
+        "allowedClasses": ["mage", "warlock", "cleric"]
     },
     scepter_of_doom: {
         "name": "Scepter of Doom",
@@ -1184,7 +1184,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["cleric", "paladin"]
+        "allowedClasses": ["mage", "warlock", "cleric"]
     },
     world_mace: {
         "name": "World Mace",
@@ -1220,7 +1220,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "mace",
-        "allowedClasses": ["cleric", "paladin"]
+        "allowedClasses": ["mage", "warlock", "cleric"]
     },
     genesis_mace: {
         "name": "Genesis Mace",
@@ -3166,7 +3166,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "orb",
-        "allowedClasses": ["mage", "sorceror"]
+        "allowedClasses": ["mage", "warlock", "cleric"]
     },
     shadow_orb: {
         "name": "Shadow Orb",
@@ -3178,7 +3178,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "orb",
-        "allowedClasses": ["warlock", "necrolyte"]
+        "allowedClasses": ["mage", "warlock", "cleric"]
     },
     void_orb: {
         "name": "Void Orb",
@@ -3202,7 +3202,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "orb",
-        "allowedClasses": ["warlock", "necrolyte"]
+        "allowedClasses": ["mage", "warlock", "cleric"]
     },
     chaos_orb: {
         "name": "Chaos Orb",
@@ -3214,7 +3214,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "orb",
-        "allowedClasses": ["mage", "sorceror"]
+        "allowedClasses": ["mage", "warlock", "cleric"]
     },
     genesis_orb: {
         "name": "Orb of Genesis",
@@ -3238,7 +3238,7 @@ const WEAPONS = {
         "quality": "",
         "slot": "weapon",
         "weaponSubtype": "orb",
-        "allowedClasses": ["warlock", "necrolyte"]
+        "allowedClasses": ["mage", "warlock", "cleric"]
     },
 */
     // ======================================================

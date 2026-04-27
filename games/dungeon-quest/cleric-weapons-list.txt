@@ -1,0 +1,186 @@
+═══════════════════════════════════════════════════════════════
+                    CLERIC WEAPONS
+═══════════════════════════════════════════════════════════════
+
+Weapon Types: TOME, STAFF, MACE, SWORD, CLUB, UNIVERSAL
+
+
+═══════════════════════════════════════════════════════════════
+LEVEL 1
+═══════════════════════════════════════════════════════════════
+  Cracked Mace                   Dmg: 4-7 | Magic: 0 | MACE | Cost: 20
+  Tattered Tome                  Dmg: 1-2 | Magic: 5 | TOME | Cost: 20
+  Withered Staff                 Dmg: 2-4 | Magic: 2 | STAFF | Cost: 15
+
+═══════════════════════════════════════════════════════════════
+LEVEL 2
+═══════════════════════════════════════════════════════════════
+  Apprentice Tome                Dmg: 2-4 | Magic: 8 | TOME | Cost: 60
+  Bone Club                      Dmg: 5-9 | Magic: 0 | CLUB | Cost: 0
+  Wooden Club                    Dmg: 9-13 | Magic: 0 | MACE | Cost: 150
+  Wooden Staff                   Dmg: 4-8 | Magic: 4 | STAFF | Cost: 100
+
+═══════════════════════════════════════════════════════════════
+LEVEL 3
+═══════════════════════════════════════════════════════════════
+  Apprentice Staff               Dmg: 5-9 | Magic: 6 | STAFF | Cost: 500
+  Iron Mace                      Dmg: 13-19 | Magic: 0 | MACE | Cost: 400
+  Prayer Book                    Dmg: 2-4 | Magic: 11 | TOME | Cost: 120
+
+═══════════════════════════════════════════════════════════════
+LEVEL 4
+═══════════════════════════════════════════════════════════════
+  Flanged Mace                   Dmg: 17-26 | Magic: 0 | MACE | Cost: 750
+  Holy Scriptures                Dmg: 2-5 | Magic: 14 | TOME | Cost: 180
+  Holy Staff                     Dmg: 6-10 | Magic: 8 | STAFF | Cost: 220
+
+═══════════════════════════════════════════════════════════════
+LEVEL 5
+═══════════════════════════════════════════════════════════════
+  Battlemace                     Dmg: 21-31 | Magic: 2 | MACE | Cost: 500
+  Blessed Tome                   Dmg: 3-5 | Magic: 17 | TOME | Cost: 250
+  Dark Staff                     Dmg: 6-11 | Magic: 10 | STAFF | Cost: 350
+
+═══════════════════════════════════════════════════════════════
+LEVEL 6
+═══════════════════════════════════════════════════════════════
+  Flame Staff                    Dmg: 7-12 | Magic: 12 | STAFF | Cost: 550
+  Holy Mace                      Dmg: 24-36 | Magic: 5 | MACE | Cost: 1930
+  Sacred Texts                   Dmg: 3-5 | Magic: 20 | TOME | Cost: 350
+
+═══════════════════════════════════════════════════════════════
+LEVEL 7
+═══════════════════════════════════════════════════════════════
+  Gospel of Healing              Dmg: 3-6 | Magic: 23 | TOME | Cost: 500
+  Purified Sacred Blade          Dmg: 19-30 | Magic: 8 | SWORD | Cost: 2000
+  Sacred Staff                   Dmg: 8-14 | Magic: 14 | STAFF | Cost: 550
+  War Mace                       Dmg: 28-42 | Magic: 0 | MACE | Cost: 2400
+  Wyrm-Slayer                    Dmg: 21-33 | Magic: 5 | SWORD | Cost: 1900
+
+═══════════════════════════════════════════════════════════════
+LEVEL 8
+═══════════════════════════════════════════════════════════════
+  Blessed Mace                   Dmg: 32-49 | Magic: 5 | MACE | Cost: 3470
+  Holy Tome                      Dmg: 4-6 | Magic: 26 | TOME | Cost: 700
+  Ice Staff                      Dmg: 9-15 | Magic: 16 | STAFF | Cost: 1100
+
+═══════════════════════════════════════════════════════════════
+LEVEL 9
+═══════════════════════════════════════════════════════════════
+  Cursed Staff                   Dmg: 9-16 | Magic: 18 | STAFF | Cost: 1800
+  Divine Tome                    Dmg: 4-7 | Magic: 29 | TOME | Cost: 950
+  Silver Mace                    Dmg: 35-54 | Magic: 6 | MACE | Cost: 4400
+
+═══════════════════════════════════════════════════════════════
+LEVEL 10
+═══════════════════════════════════════════════════════════════
+  Crushmaster                    Dmg: 39-58 | Magic: 0 | MACE | Cost: 4950
+  Scripture of Light             Dmg: 4-7 | Magic: 32 | TOME | Cost: 1250
+  Shadow Staff                   Dmg: 10-17 | Magic: 20 | STAFF | Cost: 1100
+
+═══════════════════════════════════════════════════════════════
+LEVEL 11
+═══════════════════════════════════════════════════════════════
+  Divine Mace                    Dmg: 43-65 | Magic: 7 | MACE | Cost: 6600
+  Lightning Staff                Dmg: 11-18 | Magic: 22 | STAFF | Cost: 1800
+  Prayers of the Faithful        Dmg: 5-8 | Magic: 35 | TOME | Cost: 1600
+
+═══════════════════════════════════════════════════════════════
+LEVEL 12
+═══════════════════════════════════════════════════════════════
+  Holy Blade                     Dmg: 32-50 | Magic: 8 | SWORD | Cost: 2500
+  Necromantic Staff              Dmg: 11-19 | Magic: 24 | STAFF | Cost: 2000
+  Soul Mace                      Dmg: 47-71 | Magic: 0 | MACE | Cost: 7150
+  Tome of Renewal                Dmg: 5-8 | Magic: 38 | TOME | Cost: 2100
+
+═══════════════════════════════════════════════════════════════
+LEVEL 13
+═══════════════════════════════════════════════════════════════
+  Codex of Healing               Dmg: 5-9 | Magic: 41 | TOME | Cost: 2700
+  Prophecy Staff                 Dmg: 12-20 | Magic: 26 | STAFF | Cost: 2500
+  Sanctified Mace                Dmg: 50-76 | Magic: 8 | MACE | Cost: 9240
+
+═══════════════════════════════════════════════════════════════
+LEVEL 14
+═══════════════════════════════════════════════════════════════
+  Divine Staff                   Dmg: 13-22 | Magic: 28 | STAFF | Cost: 2000
+  Gospel of Life                 Dmg: 6-9 | Magic: 44 | TOME | Cost: 3400
+  Judgment                       Dmg: 54-81 | Magic: 8 | MACE | Cost: 10720
+
+═══════════════════════════════════════════════════════════════
+LEVEL 15
+═══════════════════════════════════════════════════════════════
+  Archmage Staff                 Dmg: 14-23 | Magic: 30 | STAFF | Cost: 11000
+  Scripture of the Divine        Dmg: 6-10 | Magic: 47 | TOME | Cost: 4200
+  Templar Mace                   Dmg: 58-87 | Magic: 9 | MACE | Cost: 12320
+
+═══════════════════════════════════════════════════════════════
+LEVEL 16
+═══════════════════════════════════════════════════════════════
+  Holy Bible                     Dmg: 6-10 | Magic: 50 | TOME | Cost: 5100
+  Thundermace                    Dmg: 62-94 | Magic: 0 | MACE | Cost: 12750
+  Void Staff                     Dmg: 15-24 | Magic: 32 | STAFF | Cost: 5000
+
+═══════════════════════════════════════════════════════════════
+LEVEL 17
+═══════════════════════════════════════════════════════════════
+  Soul Staff                     Dmg: 16-25 | Magic: 34 | STAFF | Cost: 5500
+  Tome of Miracles               Dmg: 7-11 | Magic: 53 | TOME | Cost: 6200
+  Wrath of the Gods              Dmg: 65-99 | Magic: 10 | MACE | Cost: 15840
+
+═══════════════════════════════════════════════════════════════
+LEVEL 18
+═══════════════════════════════════════════════════════════════
+  Celestial Crusher              Dmg: 68-104 | Magic: 10 | MACE | Cost: 17760
+  Celestial Staff                Dmg: 17-26 | Magic: 36 | STAFF | Cost: 8000
+  Codex of the Chosen            Dmg: 7-11 | Magic: 56 | TOME | Cost: 7500
+
+═══════════════════════════════════════════════════════════════
+LEVEL 19
+═══════════════════════════════════════════════════════════════
+  Celestial Rod                  Dmg: 18-28 | Magic: 38 | STAFF | Cost: 8000
+  Scepter of Doom                Dmg: 73-110 | Magic: 0 | MACE | Cost: 18000
+  Scripture of Eternal Light     Dmg: 7-12 | Magic: 59 | TOME | Cost: 9000
+
+═══════════════════════════════════════════════════════════════
+LEVEL 20
+═══════════════════════════════════════════════════════════════
+  Apocalypse Mace                Dmg: 77-117 | Magic: 11 | MACE | Cost: 21940
+  Gospel of Salvation            Dmg: 8-12 | Magic: 62 | TOME | Cost: 10800
+  Staff of Eternity              Dmg: 19-30 | Magic: 40 | STAFF | Cost: 11000
+
+═══════════════════════════════════════════════════════════════
+LEVEL 21
+═══════════════════════════════════════════════════════════════
+  Divine Codex                   Dmg: 8-13 | Magic: 65 | TOME | Cost: 12800
+  Staff of the Void              Dmg: 20-32 | Magic: 42 | STAFF | Cost: 19000
+  World Mace                     Dmg: 80-121 | Magic: 0 | MACE | Cost: 22000
+
+═══════════════════════════════════════════════════════════════
+LEVEL 22
+═══════════════════════════════════════════════════════════════
+  Apocalypse Staff               Dmg: 21-34 | Magic: 44 | STAFF | Cost: 50000
+  Eternity Crusher               Dmg: 88-133 | Magic: 0 | MACE | Cost: 26400
+
+═══════════════════════════════════════════════════════════════
+LEVEL 23
+═══════════════════════════════════════════════════════════════
+  Cosmic Staff                   Dmg: 22-36 | Magic: 46 | STAFF | Cost: 22000
+  Oblivion Scepter               Dmg: 95-145 | Magic: 14 | MACE | Cost: 34320
+
+═══════════════════════════════════════════════════════════════
+LEVEL 24
+═══════════════════════════════════════════════════════════════
+  Genesis Mace                   Dmg: 98-149 | Magic: 0 | MACE | Cost: 33750
+  Gods Scepter                   Dmg: 24-38 | Magic: 50 | STAFF | Cost: 30000
+
+═══════════════════════════════════════════════════════════════
+LEVEL 25
+═══════════════════════════════════════════════════════════════
+  Mace of Annihilation           Dmg: 103-157 | Magic: 0 | MACE | Cost: 52000
+  Magical Butterknife            Dmg: 10000-10000 | Magic: 10000 | UNIVERSAL | Cost: 999999
+  Staff of Annihilation          Dmg: 26-42 | Magic: 55 | STAFF | Cost: 52000
+
+═══════════════════════════════════════════════════════════════
+                    END OF LIST
+═══════════════════════════════════════════════════════════════

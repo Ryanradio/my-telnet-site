@@ -1,0 +1,218 @@
+═══════════════════════════════════════════════════════════════
+                    WARRIOR WEAPONS
+═══════════════════════════════════════════════════════════════
+
+Weapon Types: MACE, SWORD, DAGGER, AXE, HAMMER, CLUB, UNIVERSAL
+
+
+═══════════════════════════════════════════════════════════════
+LEVEL 1
+═══════════════════════════════════════════════════════════════
+  Cracked Mace                   Dmg: 4-7 | Magic: 0 | MACE | Cost: 20
+  Rusted Hammer                  Dmg: 4-7 | Magic: 0 | HAMMER | Cost: 20
+  Rusty Axe                      Dmg: 4-8 | Magic: 0 | AXE | Cost: 20
+  Rusty Sword                    Dmg: 3-6 | Magic: 0 | SWORD | Cost: 15
+
+═══════════════════════════════════════════════════════════════
+LEVEL 2
+═══════════════════════════════════════════════════════════════
+  Bone Club                      Dmg: 5-9 | Magic: 0 | CLUB | Cost: 0
+  Hand Axe                       Dmg: 8-14 | Magic: 0 | AXE | Cost: 150
+  Iron Maul                      Dmg: 9-13 | Magic: 0 | HAMMER | Cost: 150
+  Iron Sword                     Dmg: 8-14 | Magic: 0 | SWORD | Cost: 100
+  Wooden Club                    Dmg: 9-13 | Magic: 0 | MACE | Cost: 150
+
+═══════════════════════════════════════════════════════════════
+LEVEL 3
+═══════════════════════════════════════════════════════════════
+  Battle Axe                     Dmg: 13-21 | Magic: 0 | AXE | Cost: 400
+  Iron Mace                      Dmg: 13-19 | Magic: 0 | MACE | Cost: 400
+  Short Sword                    Dmg: 11-18 | Magic: 0 | SWORD | Cost: 110
+  Stone Hammer                   Dmg: 13-20 | Magic: 0 | HAMMER | Cost: 400
+  Wood Axe                       Dmg: 13-21 | Magic: 0 | AXE | Cost: 400
+
+═══════════════════════════════════════════════════════════════
+LEVEL 4
+═══════════════════════════════════════════════════════════════
+  Broad Axe                      Dmg: 20-32 | Magic: 0 | AXE | Cost: 1200
+  Flanged Mace                   Dmg: 17-26 | Magic: 0 | MACE | Cost: 750
+  Steel Sword                    Dmg: 15-24 | Magic: 0 | SWORD | Cost: 1000
+  War Hammer                     Dmg: 18-27 | Magic: 0 | HAMMER | Cost: 750
+
+═══════════════════════════════════════════════════════════════
+LEVEL 5
+═══════════════════════════════════════════════════════════════
+  Battlemace                     Dmg: 21-31 | Magic: 2 | MACE | Cost: 500
+  Flanged Hammer                 Dmg: 21-31 | Magic: 0 | HAMMER | Cost: 1200
+  Giant Axe                      Dmg: 22-36 | Magic: 0 | AXE | Cost: 500
+
+═══════════════════════════════════════════════════════════════
+LEVEL 6
+═══════════════════════════════════════════════════════════════
+  Bastard Sword                  Dmg: 22-36 | Magic: 0 | SWORD | Cost: 900
+  Dragon-kin Blade               Dmg: 17-26 | Magic: 4 | SWORD | Cost: 1100
+  Ironbane Hammer                Dmg: 24-37 | Magic: 0 | HAMMER | Cost: 1750
+  Reinforced Axe                 Dmg: 23-38 | Magic: 0 | AXE | Cost: 1750
+
+═══════════════════════════════════════════════════════════════
+LEVEL 7
+═══════════════════════════════════════════════════════════════
+  Ancient Sword                  Dmg: 25-40 | Magic: 0 | SWORD | Cost: 1200
+  Drake-Tongue Blade             Dmg: 19-30 | Magic: 6 | SWORD | Cost: 2100
+  Raiders Axe                    Dmg: 27-45 | Magic: 0 | AXE | Cost: 2400
+  Runic Hammer                   Dmg: 29-44 | Magic: 0 | HAMMER | Cost: 2400
+  War Mace                       Dmg: 28-42 | Magic: 0 | MACE | Cost: 2400
+
+═══════════════════════════════════════════════════════════════
+LEVEL 8
+═══════════════════════════════════════════════════════════════
+  Dire Axe                       Dmg: 32-52 | Magic: 0 | AXE | Cost: 3150
+  Dragon Piercer                 Dmg: 24-36 | Magic: 0 | AXE | Cost: 1800
+  Fire Blade                     Dmg: 24-38 | Magic: 5 | SWORD | Cost: 1500
+  Forge Hammer                   Dmg: 33-50 | Magic: 0 | HAMMER | Cost: 3150
+  Frozen Blade                   Dmg: 24-38 | Magic: 5 | SWORD | Cost: 1500
+  Scale Piercer                  Dmg: 22-34 | Magic: 0 | AXE | Cost: 1700
+
+═══════════════════════════════════════════════════════════════
+LEVEL 9
+═══════════════════════════════════════════════════════════════
+  Cursed Sword                   Dmg: 28-44 | Magic: 4 | SWORD | Cost: 1800
+  Great Axe                      Dmg: 35-57 | Magic: 0 | AXE | Cost: 4000
+  Soul Drinker                   Dmg: 24-38 | Magic: 0 | SWORD | Cost: 2900
+  Soul Render                    Dmg: 24-38 | Magic: 0 | SWORD | Cost: 2900
+  Thunder Maul                   Dmg: 36-56 | Magic: 0 | HAMMER | Cost: 4000
+
+═══════════════════════════════════════════════════════════════
+LEVEL 10
+═══════════════════════════════════════════════════════════════
+  Berserker Axe                  Dmg: 38-62 | Magic: 0 | AXE | Cost: 4950
+  Crushmaster                    Dmg: 39-58 | Magic: 0 | MACE | Cost: 4950
+  Skullcracker                   Dmg: 40-60 | Magic: 0 | HAMMER | Cost: 4950
+  sword                          Dmg: 32-50 | Magic: 0 | SWORD | Cost: 5000
+
+═══════════════════════════════════════════════════════════════
+LEVEL 11
+═══════════════════════════════════════════════════════════════
+  Mjolnite Hammer                Dmg: 44-67 | Magic: 0 | HAMMER | Cost: 6000
+  Shadowblade                    Dmg: 30-48 | Magic: 6 | DAGGER | Cost: 2000
+  Stormaxe                       Dmg: 42-69 | Magic: 0 | AXE | Cost: 6000
+
+═══════════════════════════════════════════════════════════════
+LEVEL 12
+═══════════════════════════════════════════════════════════════
+  Bloodaxe                       Dmg: 46-76 | Magic: 0 | AXE | Cost: 7150
+  Earthshaker                    Dmg: 48-74 | Magic: 0 | HAMMER | Cost: 7150
+  Soul Mace                      Dmg: 47-71 | Magic: 0 | MACE | Cost: 7150
+  Spectral Blade                 Dmg: 32-50 | Magic: 8 | SWORD | Cost: 2800
+
+═══════════════════════════════════════════════════════════════
+LEVEL 13
+═══════════════════════════════════════════════════════════════
+  Excalibur                      Dmg: 35-55 | Magic: 8 | SWORD | Cost: 2800
+  Titan Axe                      Dmg: 49-80 | Magic: 0 | AXE | Cost: 8400
+  Titans Fist                    Dmg: 52-78 | Magic: 0 | HAMMER | Cost: 8400
+
+═══════════════════════════════════════════════════════════════
+LEVEL 14
+═══════════════════════════════════════════════════════════════
+  Infernal Blade                 Dmg: 36-56 | Magic: 8 | SWORD | Cost: 3000
+  Siegebreaker                   Dmg: 55-84 | Magic: 0 | HAMMER | Cost: 9750
+  Soulcleaver                    Dmg: 52-86 | Magic: 0 | AXE | Cost: 9750
+  Vampire Blade                  Dmg: 36-56 | Magic: 6 | SWORD | Cost: 3000
+
+═══════════════════════════════════════════════════════════════
+LEVEL 15
+═══════════════════════════════════════════════════════════════
+  Champion Sword                 Dmg: 42-64 | Magic: 0 | SWORD | Cost: 4000
+  Devastator                     Dmg: 59-91 | Magic: 0 | HAMMER | Cost: 11200
+  Runic Blade                    Dmg: 40-62 | Magic: 8 | SWORD | Cost: 4500
+  Warbringer                     Dmg: 57-93 | Magic: 0 | AXE | Cost: 11200
+
+═══════════════════════════════════════════════════════════════
+LEVEL 16
+═══════════════════════════════════════════════════════════════
+  Dread Axe                      Dmg: 61-100 | Magic: 0 | AXE | Cost: 12750
+  Ragnarok Maul                  Dmg: 64-97 | Magic: 0 | HAMMER | Cost: 12750
+  Thundermace                    Dmg: 62-94 | Magic: 0 | MACE | Cost: 12750
+  Titan Blade                    Dmg: 48-72 | Magic: 0 | SWORD | Cost: 5000
+  Void Blade                     Dmg: 45-68 | Magic: 10 | SWORD | Cost: 5000
+
+═══════════════════════════════════════════════════════════════
+LEVEL 17
+═══════════════════════════════════════════════════════════════
+  Colossus Hammer                Dmg: 67-103 | Magic: 0 | HAMMER | Cost: 14400
+  Titanforged Sword              Dmg: 50-76 | Magic: 10 | SWORD | Cost: 7000
+  Voidedge Axe                   Dmg: 64-106 | Magic: 0 | AXE | Cost: 14400
+
+═══════════════════════════════════════════════════════════════
+LEVEL 18
+═══════════════════════════════════════════════════════════════
+  Celestial Blade                Dmg: 52-78 | Magic: 12 | SWORD | Cost: 8000
+  Godbreaker                     Dmg: 70-108 | Magic: 0 | HAMMER | Cost: 16150
+  Heavenly Blade                 Dmg: 52-78 | Magic: 10 | SWORD | Cost: 7500
+  Ruinbringer                    Dmg: 67-110 | Magic: 0 | AXE | Cost: 16150
+
+═══════════════════════════════════════════════════════════════
+LEVEL 19
+═══════════════════════════════════════════════════════════════
+  Cataclysm Axe                  Dmg: 71-117 | Magic: 0 | AXE | Cost: 18000
+  Hellforged Blade               Dmg: 54-82 | Magic: 10 | SWORD | Cost: 8000
+  Scepter of Doom                Dmg: 73-110 | Magic: 0 | MACE | Cost: 18000
+  Voidhammer                     Dmg: 75-114 | Magic: 0 | HAMMER | Cost: 18000
+
+═══════════════════════════════════════════════════════════════
+LEVEL 20
+═══════════════════════════════════════════════════════════════
+  Eclipse Maul                   Dmg: 79-121 | Magic: 0 | HAMMER | Cost: 19950
+  Godslayer                      Dmg: 58-88 | Magic: 12 | SWORD | Cost: 35000
+  Sundering Axe                  Dmg: 76-124 | Magic: 0 | AXE | Cost: 19950
+
+═══════════════════════════════════════════════════════════════
+LEVEL 21
+═══════════════════════════════════════════════════════════════
+  Abyssal Blade                  Dmg: 60-92 | Magic: 14 | SWORD | Cost: 10000
+  World Ender                    Dmg: 82-125 | Magic: 0 | HAMMER | Cost: 22000
+  World Mace                     Dmg: 80-121 | Magic: 0 | MACE | Cost: 22000
+  World Splitter                 Dmg: 79-129 | Magic: 0 | AXE | Cost: 22000
+
+═══════════════════════════════════════════════════════════════
+LEVEL 22
+═══════════════════════════════════════════════════════════════
+  Demonic Blade                  Dmg: 66-100 | Magic: 14 | SWORD | Cost: 14000
+  Dragonscale Blade              Dmg: 48-76 | Magic: 18 | SWORD | Cost: 38000
+  Eternity Crusher               Dmg: 88-133 | Magic: 0 | MACE | Cost: 26400
+  Eternity Maul                  Dmg: 90-138 | Magic: 0 | HAMMER | Cost: 26400
+  Infinity Axe                   Dmg: 86-141 | Magic: 0 | AXE | Cost: 26400
+  Oblivion Blade                 Dmg: 64-98 | Magic: 16 | SWORD | Cost: 15000
+
+═══════════════════════════════════════════════════════════════
+LEVEL 23
+═══════════════════════════════════════════════════════════════
+  Ancient Dragon-Slayer          Dmg: 58-92 | Magic: 25 | SWORD | Cost: 45000
+  Dragonheart Blade              Dmg: 52-84 | Magic: 30 | SWORD | Cost: 48000
+  Oblivion Cleaver               Dmg: 93-154 | Magic: 0 | AXE | Cost: 31200
+  Oblivion Hammer                Dmg: 98-150 | Magic: 0 | HAMMER | Cost: 31200
+
+═══════════════════════════════════════════════════════════════
+LEVEL 24
+═══════════════════════════════════════════════════════════════
+  Axe of Genesis                 Dmg: 97-159 | Magic: 0 | AXE | Cost: 33750
+  Calamity Breaker               Dmg: 62-98 | Magic: 20 | SWORD | Cost: 52000
+  Genesis Mace                   Dmg: 98-149 | Magic: 0 | MACE | Cost: 33750
+  Hammer of Creation             Dmg: 101-155 | Magic: 0 | HAMMER | Cost: 33750
+
+═══════════════════════════════════════════════════════════════
+LEVEL 25
+═══════════════════════════════════════════════════════════════
+  Axe of Annihilation            Dmg: 102-167 | Magic: 0 | AXE | Cost: 52000
+  Genesis                        Dmg: 100-150 | Magic: 25 | SWORD | Cost: 50000
+  God Blade                      Dmg: 80-120 | Magic: 20 | SWORD | Cost: 50000
+  Hammer of Annihilation         Dmg: 106-163 | Magic: 0 | HAMMER | Cost: 52000
+  Infinity Blade                 Dmg: 85-130 | Magic: 18 | SWORD | Cost: 28000
+  Mace of Annihilation           Dmg: 103-157 | Magic: 0 | MACE | Cost: 52000
+  Magical Butterknife            Dmg: 10000-10000 | Magic: 10000 | UNIVERSAL | Cost: 999999
+  Primordial Weapon              Dmg: 95-145 | Magic: 20 | SWORD | Cost: 35000
+
+═══════════════════════════════════════════════════════════════
+                    END OF LIST
+═══════════════════════════════════════════════════════════════

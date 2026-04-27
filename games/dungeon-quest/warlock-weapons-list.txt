@@ -1,0 +1,182 @@
+═══════════════════════════════════════════════════════════════
+                    WARLOCK WEAPONS
+═══════════════════════════════════════════════════════════════
+
+Weapon Types: WAND, TOME, STAFF, MACE, SWORD, DAGGER, UNIVERSAL
+
+
+═══════════════════════════════════════════════════════════════
+LEVEL 1
+═══════════════════════════════════════════════════════════════
+  Frayed Wand                    Dmg: 1-2 | Magic: 5 | WAND | Cost: 20
+  Withered Staff                 Dmg: 2-4 | Magic: 2 | STAFF | Cost: 15
+
+═══════════════════════════════════════════════════════════════
+LEVEL 2
+═══════════════════════════════════════════════════════════════
+  Apprentice Tome                Dmg: 2-4 | Magic: 8 | TOME | Cost: 60
+  Apprentice Wand                Dmg: 1-3 | Magic: 8 | WAND | Cost: 80
+  Wooden Staff                   Dmg: 4-8 | Magic: 4 | STAFF | Cost: 100
+
+═══════════════════════════════════════════════════════════════
+LEVEL 3
+═══════════════════════════════════════════════════════════════
+  Apprentice Staff               Dmg: 5-9 | Magic: 6 | STAFF | Cost: 500
+  Focus Wand                     Dmg: 1-3 | Magic: 11 | WAND | Cost: 200
+  Prayer Book                    Dmg: 2-4 | Magic: 11 | TOME | Cost: 120
+
+═══════════════════════════════════════════════════════════════
+LEVEL 4
+═══════════════════════════════════════════════════════════════
+  Ember Wand                     Dmg: 1-4 | Magic: 14 | WAND | Cost: 320
+  Holy Scriptures                Dmg: 2-5 | Magic: 14 | TOME | Cost: 180
+  Holy Staff                     Dmg: 6-10 | Magic: 8 | STAFF | Cost: 220
+
+═══════════════════════════════════════════════════════════════
+LEVEL 5
+═══════════════════════════════════════════════════════════════
+  Blessed Tome                   Dmg: 3-5 | Magic: 17 | TOME | Cost: 250
+  Dark Staff                     Dmg: 6-11 | Magic: 10 | STAFF | Cost: 350
+  Frost Wand                     Dmg: 1-4 | Magic: 17 | WAND | Cost: 800
+
+═══════════════════════════════════════════════════════════════
+LEVEL 6
+═══════════════════════════════════════════════════════════════
+  Flame Staff                    Dmg: 7-12 | Magic: 12 | STAFF | Cost: 550
+  Holy Mace                      Dmg: 24-36 | Magic: 5 | MACE | Cost: 1930
+  Sacred Texts                   Dmg: 3-5 | Magic: 20 | TOME | Cost: 350
+  Shock Wand                     Dmg: 2-4 | Magic: 20 | WAND | Cost: 1100
+
+═══════════════════════════════════════════════════════════════
+LEVEL 7
+═══════════════════════════════════════════════════════════════
+  Sacred Staff                   Dmg: 8-14 | Magic: 14 | STAFF | Cost: 550
+
+═══════════════════════════════════════════════════════════════
+LEVEL 8
+═══════════════════════════════════════════════════════════════
+  Arcane Wand                    Dmg: 2-5 | Magic: 24 | WAND | Cost: 2200
+  Blessed Mace                   Dmg: 32-49 | Magic: 5 | MACE | Cost: 3470
+  Ice Staff                      Dmg: 9-15 | Magic: 16 | STAFF | Cost: 1100
+
+═══════════════════════════════════════════════════════════════
+LEVEL 9
+═══════════════════════════════════════════════════════════════
+  Cursed Staff                   Dmg: 9-16 | Magic: 18 | STAFF | Cost: 1800
+  Cursed Sword                   Dmg: 28-44 | Magic: 4 | SWORD | Cost: 1800
+  Silver Mace                    Dmg: 35-54 | Magic: 6 | MACE | Cost: 4400
+  Soul Render                    Dmg: 24-38 | Magic: 0 | SWORD | Cost: 2900
+
+═══════════════════════════════════════════════════════════════
+LEVEL 10
+═══════════════════════════════════════════════════════════════
+  Shadow Staff                   Dmg: 10-17 | Magic: 20 | STAFF | Cost: 1100
+  Void Wand                      Dmg: 2-5 | Magic: 28 | WAND | Cost: 3200
+
+═══════════════════════════════════════════════════════════════
+LEVEL 11
+═══════════════════════════════════════════════════════════════
+  Divine Mace                    Dmg: 43-65 | Magic: 7 | MACE | Cost: 6600
+  Lightning Staff                Dmg: 11-18 | Magic: 22 | STAFF | Cost: 1800
+  Shadowblade                    Dmg: 30-48 | Magic: 6 | DAGGER | Cost: 2000
+
+═══════════════════════════════════════════════════════════════
+LEVEL 12
+═══════════════════════════════════════════════════════════════
+  Celestial Wand                 Dmg: 2-5 | Magic: 32 | WAND | Cost: 5500
+  Necromantic Staff              Dmg: 11-19 | Magic: 24 | STAFF | Cost: 2000
+  Spectral Blade                 Dmg: 32-50 | Magic: 8 | SWORD | Cost: 2800
+
+═══════════════════════════════════════════════════════════════
+LEVEL 13
+═══════════════════════════════════════════════════════════════
+  Prophecy Staff                 Dmg: 12-20 | Magic: 26 | STAFF | Cost: 2500
+  Sanctified Mace                Dmg: 50-76 | Magic: 8 | MACE | Cost: 9240
+
+═══════════════════════════════════════════════════════════════
+LEVEL 14
+═══════════════════════════════════════════════════════════════
+  Divine Staff                   Dmg: 13-22 | Magic: 28 | STAFF | Cost: 2000
+  Infernal Blade                 Dmg: 36-56 | Magic: 8 | SWORD | Cost: 3000
+  Judgment                       Dmg: 54-81 | Magic: 8 | MACE | Cost: 10720
+  Vampire Blade                  Dmg: 36-56 | Magic: 6 | SWORD | Cost: 3000
+  Wand of Eternity               Dmg: 3-6 | Magic: 36 | WAND | Cost: 8000
+
+═══════════════════════════════════════════════════════════════
+LEVEL 15
+═══════════════════════════════════════════════════════════════
+  Archmage Staff                 Dmg: 14-23 | Magic: 30 | STAFF | Cost: 11000
+  Templar Mace                   Dmg: 58-87 | Magic: 9 | MACE | Cost: 12320
+
+═══════════════════════════════════════════════════════════════
+LEVEL 16
+═══════════════════════════════════════════════════════════════
+  Apocalypse Wand                Dmg: 3-6 | Magic: 40 | WAND | Cost: 18000
+  Void Blade                     Dmg: 45-68 | Magic: 10 | SWORD | Cost: 5000
+  Void Staff                     Dmg: 15-24 | Magic: 32 | STAFF | Cost: 5000
+
+═══════════════════════════════════════════════════════════════
+LEVEL 17
+═══════════════════════════════════════════════════════════════
+  Soul Staff                     Dmg: 16-25 | Magic: 34 | STAFF | Cost: 5500
+  Wrath of the Gods              Dmg: 65-99 | Magic: 10 | MACE | Cost: 15840
+
+═══════════════════════════════════════════════════════════════
+LEVEL 18
+═══════════════════════════════════════════════════════════════
+  Celestial Crusher              Dmg: 68-104 | Magic: 10 | MACE | Cost: 17760
+  Celestial Staff                Dmg: 17-26 | Magic: 36 | STAFF | Cost: 8000
+  Cosmic Wand                    Dmg: 3-7 | Magic: 45 | WAND | Cost: 16000
+
+═══════════════════════════════════════════════════════════════
+LEVEL 19
+═══════════════════════════════════════════════════════════════
+  Celestial Rod                  Dmg: 18-28 | Magic: 38 | STAFF | Cost: 8000
+  Hellforged Blade               Dmg: 54-82 | Magic: 10 | SWORD | Cost: 8000
+  Phantom Wand                   Dmg: 3-7 | Magic: 49 | WAND | Cost: 20000
+
+═══════════════════════════════════════════════════════════════
+LEVEL 20
+═══════════════════════════════════════════════════════════════
+  Apocalypse Mace                Dmg: 77-117 | Magic: 11 | MACE | Cost: 21940
+  Eclipse Wand                   Dmg: 3-7 | Magic: 53 | WAND | Cost: 24000
+  Staff of Eternity              Dmg: 19-30 | Magic: 40 | STAFF | Cost: 11000
+
+═══════════════════════════════════════════════════════════════
+LEVEL 21
+═══════════════════════════════════════════════════════════════
+  Abyssal Blade                  Dmg: 60-92 | Magic: 14 | SWORD | Cost: 10000
+  Oblivion Wand                  Dmg: 3-8 | Magic: 57 | WAND | Cost: 28000
+  Staff of the Void              Dmg: 20-32 | Magic: 42 | STAFF | Cost: 19000
+
+═══════════════════════════════════════════════════════════════
+LEVEL 22
+═══════════════════════════════════════════════════════════════
+  Apocalypse Staff               Dmg: 21-34 | Magic: 44 | STAFF | Cost: 50000
+  Demonic Blade                  Dmg: 66-100 | Magic: 14 | SWORD | Cost: 14000
+  Genesis Wand                   Dmg: 3-8 | Magic: 61 | WAND | Cost: 33000
+  Oblivion Blade                 Dmg: 64-98 | Magic: 16 | SWORD | Cost: 15000
+
+═══════════════════════════════════════════════════════════════
+LEVEL 23
+═══════════════════════════════════════════════════════════════
+  Cosmic Staff                   Dmg: 22-36 | Magic: 46 | STAFF | Cost: 22000
+  Dragonheart Blade              Dmg: 52-84 | Magic: 30 | SWORD | Cost: 48000
+  Etherweave Wand                Dmg: 4-8 | Magic: 65 | WAND | Cost: 38000
+  Oblivion Scepter               Dmg: 95-145 | Magic: 14 | MACE | Cost: 34320
+
+═══════════════════════════════════════════════════════════════
+LEVEL 24
+═══════════════════════════════════════════════════════════════
+  Singularity Wand               Dmg: 4-9 | Magic: 69 | WAND | Cost: 44000
+
+═══════════════════════════════════════════════════════════════
+LEVEL 25
+═══════════════════════════════════════════════════════════════
+  Magical Butterknife            Dmg: 10000-10000 | Magic: 10000 | UNIVERSAL | Cost: 999999
+  Staff of Annihilation          Dmg: 26-42 | Magic: 55 | STAFF | Cost: 52000
+  Wand of Annihilation           Dmg: 4-9 | Magic: 74 | WAND | Cost: 52000
+
+═══════════════════════════════════════════════════════════════
+                    END OF LIST
+═══════════════════════════════════════════════════════════════
