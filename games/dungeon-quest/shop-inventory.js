@@ -535,28 +535,22 @@ function buyFeaturedItem(type, key, quality, price) {
     p.gold -= price;
     
     if (type === 'weapon') {
-        // Use generateWeaponDrop instead of legacy function
-        const weaponDrop = generateWeaponDrop(p, p.level, quality, true, quality);
-        if (weaponDrop) {
-            weaponDrop.isEquipped = false;
-            p.inventory.push(weaponDrop);
-            console.log(`✅ Purchased weapon: ${weaponDrop.name}`);
-        } else {
-            // Fallback
-            const inst = generateLegacyWeaponInstance(key, p.level, quality);
-            if (inst) p.inventory.push(inst);
+        // Use generateLegacyWeaponInstance so we get the SPECIFIC weapon by key
+        const inst = generateLegacyWeaponInstance(key, p.level, quality);
+        if (inst) {
+            const weaponObj = WEAPONS[inst.instanceId];
+            if (weaponObj) weaponObj.isDropped = false;
+            p.inventory.push(inst);
+            console.log(`✅ Purchased featured weapon: ${weaponObj?.name || key} [${quality}]`);
         }
     } else {
-        // Use generateArmorDrop instead of legacy function
-        const armorDrop = generateArmorDrop(p, p.level, quality, true, quality);
-        if (armorDrop) {
-            armorDrop.isEquipped = false;
-            p.inventory.push(armorDrop);
-            console.log(`✅ Purchased armor: ${armorDrop.name}`);
-        } else {
-            // Fallback
-            const inst = generateLegacyArmorInstance(key, p.level, quality);
-            if (inst) p.inventory.push(inst);
+        // Use generateLegacyArmorInstance so we get the SPECIFIC armor by key
+        const inst = generateLegacyArmorInstance(key, p.level, quality);
+        if (inst) {
+            const armorObj = ARMOR[inst.instanceId];
+            if (armorObj) armorObj.isDropped = false;
+            p.inventory.push(inst);
+            console.log(`✅ Purchased featured armor: ${armorObj?.name || key} [${quality}]`);
         }
     }
     
@@ -1072,92 +1066,124 @@ function getInstanceSellValue(item) {
 
 function sellAllBelowThreshold() {
     const p = gameState.player;
-    const QUALITY_ORDER = ['poor','normal','rare','epic','legendary','godly'];
-    const thresholdEl  = document.getElementById('sellQualityThreshold');
-    const threshold    = thresholdEl ? thresholdEl.value : 'poor';
+    const QUALITY_ORDER = ['poor', 'normal', 'rare', 'epic', 'legendary', 'godly'];
+    const thresholdEl = document.getElementById('sellQualityThreshold');
+    const threshold = thresholdEl ? thresholdEl.value : 'poor';
     const thresholdIdx = QUALITY_ORDER.indexOf(threshold);
-    const bonus        = calcChaSellBonus(p.cha);
+    const bonus = calcChaSellBonus(p.cha);
 
-    const toRemove = []; // { item, index, name, value }
+    const toRemove = [];
 
     p.inventory.forEach((item, index) => {
-        // ── Instance weapons ──────────────────────────────────
-        if (item && typeof item === 'object' && item.weaponId) {
-            if (item.instanceId === p.weapon) return; // equipped
-            const qIdx = QUALITY_ORDER.indexOf(item.quality || 'normal');
-            if (qIdx <= thresholdIdx) {
-                const base = WEAPONS[item.weaponId];
-                const name = base ? `${item.quality} ${base.name}` : item.instanceId;
-                toRemove.push({ item, index, name, value: getInstanceSellValue(item), isInstance: true });
-            }
+        // Skip if string is a potion
+        if (typeof item === 'string' && ITEMS[item] && ITEMS[item].subtype === 'heal_hp') return;
+        if (typeof item === 'string' && ITEMS[item] && ITEMS[item].subtype === 'heal_mp') return;
+        if (typeof item === 'string' && ITEMS[item] && ITEMS[item].subtype === 'full_restore') return;
+        if (typeof item === 'string' && ITEMS[item] && ITEMS[item].subtype?.startsWith('buff_')) return;
+        
+        // Skip gems (cut or uncut)
+        if (typeof item === 'object' && item !== null && item.cut) return; // cut gem
+        if (typeof item === 'string' && item.startsWith('raw_')) return; // uncut gem
+        
+        // Skip equipped weapon
+        if (typeof item === 'object' && item !== null && item.weaponId && item.instanceId === p.weapon) return;
+        if (typeof item === 'string' && item === p.weapon) return;
+        
+        // Skip equipped armor
+        if (typeof item === 'object' && item !== null && item.armorId && item.instanceId === p.armor) return;
+        if (typeof item === 'string' && item === p.armor) return;
+        
+        // For items with quality (weapons/armor), check threshold
+        let itemQuality = null;
+        let qIdx = -1;
+        
+        if (typeof item === 'object' && item !== null) {
+            itemQuality = item.quality || 'normal';
+            qIdx = QUALITY_ORDER.indexOf(itemQuality);
+        } else if (typeof item === 'string' && WEAPONS[item]) {
+            itemQuality = WEAPONS[item].quality || 'normal';
+            qIdx = QUALITY_ORDER.indexOf(itemQuality);
+        } else if (typeof item === 'string' && ARMOR[item]) {
+            itemQuality = ARMOR[item].quality || 'normal';
+            qIdx = QUALITY_ORDER.indexOf(itemQuality);
         }
-        // ── Instance armor ────────────────────────────────────
-        else if (item && typeof item === 'object' && item.armorId) {
-            if (item.instanceId === p.armor) return; // equipped
-            const qIdx = QUALITY_ORDER.indexOf(item.quality || 'normal');
-            if (qIdx <= thresholdIdx) {
-                const base = ARMOR[item.armorId] || ARMOR[item.instanceId];
-                const name = base ? `${item.quality} ${base.name}` : item.instanceId;
-                toRemove.push({ item, index, name, value: getInstanceSellValue(item), isInstance: true });
-            }
+        
+        // If it has a quality and is above threshold, skip it
+        if (qIdx !== -1 && qIdx > thresholdIdx) return;
+        
+        // Calculate sell value
+        let value = 0;
+        if (typeof item === 'object' && item !== null && (item.weaponId || item.armorId)) {
+            value = getInstanceSellValue ? getInstanceSellValue(item) : 100;
+        } else if (typeof item === 'string' && ITEMS[item]) {
+            value = ITEMS[item].sellValue || 0;
+        } else if (typeof item === 'string' && WEAPONS[item]) {
+            value = getSellValue(item, 'weapon');
+        } else if (typeof item === 'string' && ARMOR[item]) {
+            value = getSellValue(item, 'armor');
         }
-        // ── String items (potions etc) ────────────────────────
-        else if (typeof item === 'string') {
-            if (ITEMS[item] && ITEMS[item].sellValue > 0 && !ITEMS[item].maxStack) {
-                toRemove.push({ item, index, name: ITEMS[item].name, value: ITEMS[item].sellValue, isInstance: false });
-            } else if (WEAPONS[item] && item !== p.weapon && !WEAPONS[item].unarmed) {
-                const qIdx = QUALITY_ORDER.indexOf(WEAPONS[item]?.quality || 'poor');
-                if (qIdx <= thresholdIdx) {
-                    toRemove.push({ item, index, name: WEAPONS[item].name, value: getSellValue(item, 'weapon'), isInstance: false });
-                }
-            } else if (ARMOR[item] && item !== p.armor && !ARMOR[item].unarmored) {
-                const qIdx = QUALITY_ORDER.indexOf(ARMOR[item]?.quality || 'poor');
-                if (qIdx <= thresholdIdx) {
-                    toRemove.push({ item, index, name: ARMOR[item].name, value: getSellValue(item, 'armor'), isInstance: false });
-                }
-            }
+        
+        if (value > 0) {
+            let name = '';
+            if (typeof item === 'object' && item !== null) name = item.name;
+            else if (typeof item === 'string' && ITEMS[item]) name = ITEMS[item].name;
+            else if (typeof item === 'string' && WEAPONS[item]) name = WEAPONS[item].name;
+            else if (typeof item === 'string' && ARMOR[item]) name = ARMOR[item].name;
+            else name = item;
+            
+            toRemove.push({ item, index, name, value: value });
         }
     });
 
-    if (toRemove.length === 0) { showShopSell(); return; }
+    if (toRemove.length === 0) {
+        alert(`No items below ${threshold} quality to sell.`);
+        return;
+    }
 
     // Build display lines
     const lines = toRemove.map(r => ({
         name: r.name,
         count: 1,
-        each: Math.floor(r.value * (1 + bonus/100)),
-        total: Math.floor(r.value * (1 + bonus/100))
+        each: Math.floor(r.value * (1 + bonus / 100)),
+        total: Math.floor(r.value * (1 + bonus / 100))
     }));
-    const totalGold = lines.reduce((s, l) => s + l.total, 0);
 
-    _showSellConfirm(lines, totalGold, () => {
-        // Remove in reverse index order so splicing doesn't shift indices
+    // Group identical items
+    const grouped = {};
+    lines.forEach(line => {
+        const key = line.name;
+        if (grouped[key]) {
+            grouped[key].count++;
+            grouped[key].total += line.total;
+        } else {
+            grouped[key] = { ...line, count: 1 };
+        }
+    });
+
+    const groupedLines = Object.values(grouped);
+    const totalGold = groupedLines.reduce((s, l) => s + l.total, 0);
+
+    _showSellConfirm(groupedLines, totalGold, () => {
         const sortedByIndex = [...toRemove].sort((a, b) => b.index - a.index);
         let totalPaid = 0;
         sortedByIndex.forEach(r => {
-            const val = Math.floor(r.value * (1 + bonus/100));
-            // Verify item is still at that index
-            if (p.inventory[r.index] === r.item ||
-                (typeof r.item === 'object' && p.inventory[r.index]?.instanceId === r.item.instanceId)) {
+            const val = Math.floor(r.value * (1 + bonus / 100));
+            if (p.inventory[r.index] === r.item) {
                 p.inventory.splice(r.index, 1);
-                // Also remove from WEAPONS/ARMOR if instance
                 if (r.item && r.item.weaponId && r.item.instanceId) delete WEAPONS[r.item.instanceId];
-                if (r.item && r.item.armorId  && r.item.instanceId) delete ARMOR[r.item.instanceId];
+                if (r.item && r.item.armorId && r.item.instanceId) delete ARMOR[r.item.instanceId];
                 totalPaid += val;
             }
         });
         p.gold += totalPaid;
         const bonusText = bonus > 0 ? ` (+${bonus}% CHA)` : '';
         saveGame();
-        showShopSell();
-        const content = document.getElementById('shopContent');
-        if (content) {
-            const msg = document.createElement('div');
-            msg.style.cssText = 'background:#111;border:1px solid #ff8c00;color:#ff8c00;padding:6px 12px;font-size:15px;margin-bottom:10px;';
-            msg.textContent = `Sold ${toRemove.length} item${toRemove.length!==1?'s':''} for ${totalPaid}g${bonusText}.`;
-            content.prepend(msg);
-            setTimeout(() => msg.remove(), 3000);
+        
+        if (typeof showShopSell === 'function') {
+            showShopSell();
         }
+        
+        alert(`Sold ${toRemove.length} item${toRemove.length !== 1 ? 's' : ''} for ${totalPaid}g${bonusText}.`);
     });
 }
 
@@ -1430,32 +1456,98 @@ function _executeBuy(type, key, cost, itemName, disc) {
     haptic('buy');
     
     if (type === 'weapon') {
-        // Get base weapon for quality reference
         const baseWeapon = WEAPONS[key];
-        const quality = baseWeapon?.quality || 'normal';
-        // Use generateWeaponDrop for proper instance
-        const weaponDrop = generateWeaponDrop(p, p.level, quality, true, quality);
-        if (weaponDrop) {
-            weaponDrop.isEquipped = false;
-            p.inventory.push(weaponDrop);
-        } else {
-            // Fallback to legacy
-            const instance = generateLegacyWeaponInstance(key, p.level, 'normal');
-            if (instance) p.inventory.push(instance);
-            else p.inventory.push(key);
+        if (!baseWeapon) {
+            console.error(`Weapon ${key} not found!`);
+            return;
         }
+        
+        // Create a NEW instance of this weapon (copy all properties)
+        const instanceId = `${key}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+        
+        // Create the weapon object exactly like a drop would
+        const weaponInstance = {
+            id: key,
+            weaponId: key,
+            instanceId: instanceId,
+            name: baseWeapon.name,
+            baseName: baseWeapon.name,
+            type: baseWeapon.type || baseWeapon.weaponSubtype,
+            weaponSubtype: baseWeapon.weaponSubtype || baseWeapon.type,
+            baseDamage: baseWeapon.baseDamage,
+            maxDamage: baseWeapon.maxDamage || baseWeapon.baseDamage,
+            baseMagicDamage: baseWeapon.baseMagicDamage || 0,
+            maxMagicDamage: baseWeapon.maxMagicDamage || baseWeapon.baseMagicDamage || 0,
+            healingBonus: baseWeapon.healingBonus || 0,
+            level: baseWeapon.level || p.level,
+            quality: baseWeapon.quality || 'normal',
+            qualityBonus: 0,
+            modifiers: baseWeapon.modifiers ? [...baseWeapon.modifiers] : [],
+            gemSlots: baseWeapon.gemSlots || 0,
+            gems: [],
+            cost: baseWeapon.cost,
+            description: baseWeapon.description,
+            allowedClasses: baseWeapon.allowedClasses,
+            isDropped: false,  // Shop purchase, not dropped
+            isEquipped: false,
+            dropTimestamp: Date.now(),
+            ownerId: p.id
+        };
+        
+        // Store in WEAPONS registry
+        WEAPONS[instanceId] = weaponInstance;
+        
+        // Add to inventory
+        p.inventory.push(weaponInstance);
+        
+        console.log(`✅ Purchased weapon: ${weaponInstance.name} [${weaponInstance.instanceId}]`);
+        
     } else if (type === 'armor') {
         const baseArmor = ARMOR[key];
-        const quality = baseArmor?.quality || 'normal';
-        const armorDrop = generateArmorDrop(p, p.level, quality, true, quality);
-        if (armorDrop) {
-            armorDrop.isEquipped = false;
-            p.inventory.push(armorDrop);
-        } else {
-            const instance = generateLegacyArmorInstance(key, p.level, 'normal');
-            if (instance) p.inventory.push(instance);
-            else p.inventory.push(key);
+        if (!baseArmor) {
+            console.error(`Armor ${key} not found!`);
+            return;
         }
+        
+        // Create a NEW instance of this armor (copy all properties)
+        const instanceId = `${key}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+        
+        // Create the armor object exactly like a drop would
+        const armorInstance = {
+            id: key,
+            armorId: key,
+            instanceId: instanceId,
+            name: baseArmor.name,
+            baseName: baseArmor.name,
+            type: baseArmor.type || baseArmor.armorSubtype,
+            armorSubtype: baseArmor.armorSubtype || baseArmor.type,
+            baseDefense: baseArmor.baseDefense,
+            baseMagicBonus: baseArmor.baseMagicBonus || 0,
+            bonusHp: baseArmor.bonusHp || 0,
+            bonusMp: baseArmor.bonusMp || 0,
+            level: baseArmor.level || p.level,
+            quality: baseArmor.quality || 'normal',
+            qualityBonus: 0,
+            modifiers: baseArmor.modifiers ? [...baseArmor.modifiers] : [],
+            gemSlots: baseArmor.gemSlots || 0,
+            gems: [],
+            cost: baseArmor.cost,
+            description: baseArmor.description,
+            allowedClasses: baseArmor.allowedClasses,
+            isDropped: false,  // Shop purchase, not dropped
+            isEquipped: false,
+            dropTimestamp: Date.now(),
+            ownerId: p.id
+        };
+        
+        // Store in ARMOR registry
+        ARMOR[instanceId] = armorInstance;
+        
+        // Add to inventory
+        p.inventory.push(armorInstance);
+        
+        console.log(`✅ Purchased armor: ${armorInstance.name} [${armorInstance.instanceId}]`);
+        
     } else {
         // Items (potions, etc.) stay as strings
         p.inventory.push(key);
@@ -2784,131 +2876,146 @@ function equipItem(type, key) {
     const playerClass = p.baseClass || p.class;
     
     if (type === 'weapon') {
-    const weapon = WEAPONS[key];
-    if (!weapon) { 
-        alert('Invalid weapon!'); 
-        return; 
-    }
-    
-    // ⭐ NEW: Check if weapon is universal (no class restrictions)
-    const isUniversal = weapon.weaponSubtype === 'universal' || 
-                       weapon.type === 'universal' ||
-                       weapon.allowedClasses === null ||
-                       (weapon.allowedClasses && weapon.allowedClasses.length === 0);
-    
-    if (!isUniversal) {
-        // ===== CLASS WEAPON RESTRICTIONS =====
-        const CLASS_WEAPON_RESTRICTIONS = {
-            warrior: { swords: true, axes: true, maces: true, hammers: true, staves: false, wands: false, bows: false, daggers: false, unarmed: true },
-            paladin: { swords: true, axes: true, maces: true, hammers: true, staves: false, wands: false, bows: false, daggers: false, unarmed: true },
-            cleric:  { swords: false, axes: false, maces: true, hammers: false, staves: true, wands: true, bows: false, daggers: false, unarmed: true },
-            mage:    { swords: false, axes: false, maces: false, hammers: false, staves: true, wands: true, bows: false, daggers: false, unarmed: true },
-            warlock: { swords: false, axes: false, maces: false, hammers: false, staves: true, wands: true, bows: false, daggers: false, unarmed: true },
-            archer:  { swords: false, axes: false, maces: false, hammers: false, staves: false, wands: false, bows: true, daggers: false, unarmed: true },
-            hunter:  { swords: false, axes: false, maces: false, hammers: false, staves: false, wands: false, bows: true, daggers: false, unarmed: true },
-            rogue:   { swords: false, axes: false, maces: false, hammers: false, staves: false, wands: false, bows: false, daggers: true, unarmed: true }
-        };
+        const weapon = WEAPONS[key];
+        if (!weapon) { 
+            alert('Invalid weapon!'); 
+            return; 
+        }
+        
+        // Check if weapon is universal (no class restrictions)
+        const isUniversal = weapon.weaponSubtype === 'universal' || 
+                           weapon.type === 'universal' ||
+                           weapon.allowedClasses === null ||
+                           (weapon.allowedClasses && weapon.allowedClasses.length === 0);
+        
+        if (!isUniversal) {
+            // Class weapon restrictions check...
+            const CLASS_WEAPON_RESTRICTIONS = {
+                warrior: { swords: true, axes: true, maces: true, hammers: true, staves: false, wands: false, bows: false, daggers: false, unarmed: true },
+                paladin: { swords: true, axes: true, maces: true, hammers: true, staves: false, wands: false, bows: false, daggers: false, unarmed: true },
+                cleric:  { swords: false, axes: false, maces: true, hammers: false, staves: true, wands: true, bows: false, daggers: false, unarmed: true },
+                mage:    { swords: false, axes: false, maces: false, hammers: false, staves: true, wands: true, bows: false, daggers: false, unarmed: true },
+                warlock: { swords: false, axes: false, maces: false, hammers: false, staves: true, wands: true, bows: false, daggers: false, unarmed: true },
+                archer:  { swords: false, axes: false, maces: false, hammers: false, staves: false, wands: false, bows: true, daggers: false, unarmed: true },
+                hunter:  { swords: false, axes: false, maces: false, hammers: false, staves: false, wands: false, bows: true, daggers: false, unarmed: true },
+                rogue:   { swords: false, axes: false, maces: false, hammers: false, staves: false, wands: false, bows: false, daggers: true, unarmed: true }
+            };
 
-        const restrictions = CLASS_WEAPON_RESTRICTIONS[playerClass];
-        if (restrictions) {
-            let weaponType = weapon.weaponSubtype || weapon.type || '';
-            weaponType = weaponType.toLowerCase();
-            
-            let canEquip = true;
-            let restrictionMessage = '';
-            
-            if (weapon.unarmed) {
-                canEquip = restrictions.unarmed;
-                restrictionMessage = 'unarmed';
-            }
-            else if (weaponType.includes('sword')) {
-                canEquip = restrictions.swords;
-                restrictionMessage = 'swords';
-            }
-            else if (weaponType.includes('axe')) {
-                canEquip = restrictions.axes;
-                restrictionMessage = 'axes';
-            }
-            else if (weaponType.includes('mace')) {
-                canEquip = restrictions.maces;
-                restrictionMessage = 'maces';
-            }
-            else if (weaponType.includes('hammer') || weaponType.includes('maul')) {
-                canEquip = restrictions.hammers;
-                restrictionMessage = 'hammers';
-            }
-            else if (weaponType.includes('staff')) {
-                canEquip = restrictions.staves;
-                restrictionMessage = 'staves';
-            }
-            else if (weaponType.includes('wand')) {
-                canEquip = restrictions.wands;
-                restrictionMessage = 'wands';
-            }
-            else if (weaponType.includes('bow')) {
-                canEquip = restrictions.bows;
-                restrictionMessage = 'bows';
-            }
-            else if (weaponType.includes('dagger') || weaponType.includes('shiv') || weaponType.includes('knife')) {
-                canEquip = restrictions.daggers;
-                restrictionMessage = 'daggers';
-            }
-            
-            if (!canEquip) {
-                const className = playerClass.charAt(0).toUpperCase() + playerClass.slice(1);
-                alert(`${className}s cannot equip ${restrictionMessage}!`);
-                return;
+            const restrictions = CLASS_WEAPON_RESTRICTIONS[playerClass];
+            if (restrictions) {
+                let weaponType = weapon.weaponSubtype || weapon.type || '';
+                weaponType = weaponType.toLowerCase();
+                
+                let canEquip = true;
+                let restrictionMessage = '';
+                
+                if (weapon.unarmed) {
+                    canEquip = restrictions.unarmed;
+                    restrictionMessage = 'unarmed';
+                }
+                else if (weaponType.includes('sword')) {
+                    canEquip = restrictions.swords;
+                    restrictionMessage = 'swords';
+                }
+                else if (weaponType.includes('axe')) {
+                    canEquip = restrictions.axes;
+                    restrictionMessage = 'axes';
+                }
+                else if (weaponType.includes('mace')) {
+                    canEquip = restrictions.maces;
+                    restrictionMessage = 'maces';
+                }
+                else if (weaponType.includes('hammer') || weaponType.includes('maul')) {
+                    canEquip = restrictions.hammers;
+                    restrictionMessage = 'hammers';
+                }
+                else if (weaponType.includes('staff')) {
+                    canEquip = restrictions.staves;
+                    restrictionMessage = 'staves';
+                }
+                else if (weaponType.includes('wand')) {
+                    canEquip = restrictions.wands;
+                    restrictionMessage = 'wands';
+                }
+                else if (weaponType.includes('bow')) {
+                    canEquip = restrictions.bows;
+                    restrictionMessage = 'bows';
+                }
+                else if (weaponType.includes('dagger') || weaponType.includes('shiv') || weaponType.includes('knife')) {
+                    canEquip = restrictions.daggers;
+                    restrictionMessage = 'daggers';
+                }
+                
+                if (!canEquip) {
+                    const className = playerClass.charAt(0).toUpperCase() + playerClass.slice(1);
+                    alert(`${className}s cannot equip ${restrictionMessage}!`);
+                    return;
+                }
             }
         }
-    }
-    
-    // Check classRestriction if present
-    if (weapon.classRestriction && weapon.classRestriction !== playerClass && !isUniversal) {
-        alert(`This weapon can only be used by ${weapon.classRestriction}s!`);
-        return;
-    }
-    
-    // Check allowedClasses if present
-    if (weapon.allowedClasses && weapon.allowedClasses.length > 0 && !weapon.allowedClasses.includes(playerClass) && !isUniversal) {
-        alert(`This weapon cannot be used by your class!`);
-        return;
-    }
-    
-    if (weapon.level && weapon.level > p.level) {
-        alert(`You need to be level ${weapon.level} to equip this weapon! (You are level ${p.level})`);
-        return;
-    }
-    
-    // Remove newly equipped weapon from inventory (it's now in the equipped slot)
-    p.inventory = p.inventory.filter(i => {
-        if (!i || typeof i !== 'object') return true;
-        return i.instanceId !== key && i.weaponId !== key;
-    });
-
-    // Mark current weapon as not equipped (but leave it in inventory)
-    if (p.weapon && p.weapon !== 'bare_fists') {
-        const currentWeapon = WEAPONS[p.weapon];
-        if (currentWeapon) {
-            currentWeapon.isEquipped = false;
+        
+        // Check classRestriction if present
+        if (weapon.classRestriction && weapon.classRestriction !== playerClass && !isUniversal) {
+            alert(`This weapon can only be used by ${weapon.classRestriction}s!`);
+            return;
+        }
+        
+        // Check allowedClasses if present
+        if (weapon.allowedClasses && weapon.allowedClasses.length > 0 && !weapon.allowedClasses.includes(playerClass) && !isUniversal) {
+            alert(`This weapon cannot be used by your class!`);
+            return;
+        }
+        
+        if (weapon.level && weapon.level > p.level) {
+            alert(`You need to be level ${weapon.level} to equip this weapon! (You are level ${p.level})`);
+            return;
+        }
+        
+        // ⭐⭐⭐ CRITICAL FIX: Return current weapon to inventory BEFORE equipping new one
+        if (p.weapon && p.weapon !== 'bare_fists') {
+            const currentWeapon = WEAPONS[p.weapon];
+            if (currentWeapon) {
+                // Mark current weapon as not equipped
+                currentWeapon.isEquipped = false;
+                
+                // Check if already in inventory to avoid duplicates
+                const alreadyInInventory = p.inventory.some(i =>
+                    i && typeof i === 'object' && i.instanceId === p.weapon
+                );
+                
+                if (!alreadyInInventory) {
+                    // Push the FULL weapon object back to inventory
+                    p.inventory.push(currentWeapon);
+                    console.log(`🔧 Returned ${currentWeapon.name} to inventory`);
+                }
+            }
+        }
+        
+        // Remove new weapon from inventory (it will be equipped)
+        p.inventory = p.inventory.filter(i => {
+            if (!i || typeof i !== 'object') return true;
+            return i.instanceId !== key && i.weaponId !== key;
+        });
+        
+        // Set new weapon
+        p.weapon = key;
+        weapon.isEquipped = true;
+        
+        recalcGemStats(p);
+        saveGame();
+        updateHud();
+        
+        if (typeof termAppend === 'function') {
+            termAppend(`✅ Equipped ${weapon.name}`, 'term-success');
+        }
+        
+        // Refresh the current view
+        if (typeof showUnifiedInventory === 'function') {
+            showUnifiedInventory();
+        } else if (typeof showInventory === 'function') {
+            showInventory();
         }
     }
-    
-    // Set new weapon
-    p.weapon = key;
-    weapon.isEquipped = true;
-    
-    // REMOVED: The block that was adding the old weapon back to inventory
-    
-    recalcGemStats(p);
-    saveGame();
-    updateHud();
-    
-    if (typeof termAppend === 'function') {
-        termAppend(`✅ Equipped ${weapon.name}`, 'term-success');
-    }
-    
-    if (typeof showInventory === 'function') showInventory();
-}
     else if (type === 'armor') {
         const armor = ARMOR[key];
         if (!armor) { alert('Invalid armor!'); return; }
@@ -2917,20 +3024,32 @@ function equipItem(type, key) {
             alert(`You need to be level ${armor.level} to equip this armor! (You are level ${p.level})`);
             return;
         }
-
-        // Remove newly equipped armor from inventory (it's now in the equipped slot)
+        
+        // ⭐⭐⭐ CRITICAL FIX: Return current armor to inventory BEFORE equipping new one
+        if (p.armor && p.armor !== 'no_armor') {
+            const currentArmor = ARMOR[p.armor];
+            if (currentArmor) {
+                // Mark current armor as not equipped
+                currentArmor.isEquipped = false;
+                
+                // Check if already in inventory to avoid duplicates
+                const alreadyInInventory = p.inventory.some(i =>
+                    i && typeof i === 'object' && i.instanceId === p.armor
+                );
+                
+                if (!alreadyInInventory) {
+                    // Push the FULL armor object back to inventory
+                    p.inventory.push(currentArmor);
+                    console.log(`🔧 Returned ${currentArmor.name} to inventory`);
+                }
+            }
+        }
+        
+        // Remove new armor from inventory (it will be equipped)
         p.inventory = p.inventory.filter(i => {
             if (!i || typeof i !== 'object') return true;
             return i.instanceId !== key && i.armorId !== key;
         });
-        
-        // UNEQUIP CURRENT ARMOR FIRST (remove its flag)
-        if (p.armor && p.armor !== 'no_armor') {
-            const currentArmor = ARMOR[p.armor];
-            if (currentArmor) {
-                currentArmor.isEquipped = false;
-            }
-        }
         
         p.armor = key;
         armor.isEquipped = true;
@@ -2942,7 +3061,13 @@ function equipItem(type, key) {
         if (typeof termAppend === 'function') {
             termAppend(`✅ Equipped ${armor.name}`, 'term-success');
         }
-        if (typeof showInventory === 'function') showInventory();
+        
+        // Refresh the current view
+        if (typeof showUnifiedInventory === 'function') {
+            showUnifiedInventory();
+        } else if (typeof showInventory === 'function') {
+            showInventory();
+        }
     }
 }
 
@@ -2962,14 +3087,8 @@ function unequipItem(type) {
             );
             
             if (!alreadyInInventory) {
-                p.inventory.push({
-                    weaponId: currentWeapon.id,
-                    instanceId: p.weapon,
-                    name: currentWeapon.name,
-                    quality: currentWeapon.quality,
-                    modifiers: currentWeapon.modifiers || [],
-                    gems: currentWeapon.gems || []
-                });
+                // ⭐ FIX: Push the FULL weapon object, not a stripped-down version
+                p.inventory.push(currentWeapon);
                 console.log(`🔧 Unequipped and returned to inventory: ${currentWeapon.name}`);
             } else {
                 console.log(`🔧 Unequipped: ${currentWeapon.name} (already in inventory)`);
@@ -2989,14 +3108,8 @@ function unequipItem(type) {
             );
             
             if (!alreadyInInventory) {
-                p.inventory.push({
-                    armorId: currentArmor.id,
-                    instanceId: p.armor,
-                    name: currentArmor.name,
-                    quality: currentArmor.quality,
-                    modifiers: currentArmor.modifiers || [],
-                    gems: currentArmor.gems || []
-                });
+                // ⭐ FIX: Push the FULL armor object, not a stripped-down version
+                p.inventory.push(currentArmor);
                 console.log(`🔧 Unequipped and returned to inventory: ${currentArmor.name}`);
             } else {
                 console.log(`🔧 Unequipped: ${currentArmor.name} (already in inventory)`);
@@ -3009,8 +3122,13 @@ function unequipItem(type) {
     saveGame();
     updateHud();
     
+    // Refresh the current view
     if (typeof showInventory === 'function') {
         showInventory();
+    } else if (typeof showUnifiedInventory === 'function') {
+        showUnifiedInventory();
+    } else if (typeof renderShop === 'function') {
+        renderShop('sell', 'weapons', 'all', 'near');
     }
 }
 

@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>TEST - Button Itself Fills Left to Right</title>
+    <style>
+        /* Your game's color scheme */
+        :root {
+            --text-color: #00FF41;
+            --highlight-color: #FFD700;
+            --border-color: #1a4a1a;
+            --error-color: #ff4444;
+            --secondary-bg: #0a1a0a;
+        }
+        
+        * {
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #0a0a0a;
+            font-family: 'VT323', 'Courier New', monospace;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-color);
+        }
+        
+        .test-container {
+            max-width: 450px;
+            width: 100%;
+            background: #050a05;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+        }
+        
+        .location-header {
+            text-align: center;
+            font-size: 22px;
+            letter-spacing: 3px;
+            color: var(--highlight-color);
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 8px;
+            margin-bottom: 16px;
+        }
+        
+        /* Enemy cards */
+        .enemy-cards {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .enemy-card {
+            background: var(--secondary-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 8px 12px;
+            text-align: center;
+            min-width: 90px;
+        }
+        
+        .enemy-name {
+            color: #FF8844;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .enemy-hp {
+            font-size: 11px;
+            color: #ff8888;
+        }
+        
+        /* Action bar */
+        .action-bar {
+            background: #000d00;
+            border-top: 2px solid var(--border-color);
+            border-bottom: 2px solid var(--border-color);
+            padding: 8px;
+            margin-bottom: 16px;
+        }
+        
+        .pip-display {
+            color: var(--highlight-color);
+            font-size: 13px;
+            text-align: center;
+            letter-spacing: 3px;
+            margin-bottom: 8px;
+        }
+        
+        .button-row {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .action-btn {
+            background: #0a1a0a;
+            border: 2px solid var(--border-color);
+            color: var(--text-color);
+            font-family: 'VT323', monospace;
+            font-size: 16px;
+            padding: 8px 12px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        
+        /* ⭐ THE SPELL BUTTON - BUTTON ITSELF IS THE CHARGING BAR ⭐ */
+        .spell-btn {
+            position: relative;
+            background: linear-gradient(90deg, #1a0a2a 0%, #1a0a2a 100%);
+            border: 3px solid #8844FF;
+            color: #AA88FF;
+            font-family: 'VT323', 'Courier New', monospace;
+            font-size: 20px;
+            font-weight: bold;
+            padding: 14px 24px;
+            cursor: pointer;
+            border-radius: 12px;
+            text-align: center;
+            transition: transform 0.05s linear, border-color 0.05s linear;
+            min-width: 160px;
+            letter-spacing: 2px;
+            overflow: hidden;
+            z-index: 1;
+        }
+        
+        /* The charging fill - overlays the button from left to right */
+        .spell-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #8844FF, #FF44FF, #FFAA44);
+            transition: width 0.02s linear;
+            z-index: -1;
+            border-radius: 9px;
+        }
+        
+        /* Button text stays on top */
+        .spell-btn span {
+            position: relative;
+            z-index: 2;
+        }
+        
+        /* AOE spell variant - different base color */
+        .spell-btn.aoe {
+            border-color: #FF8800;
+            color: #FFD700;
+            background: linear-gradient(90deg, #2a1a0a 0%, #2a1a0a 100%);
+        }
+        
+        .spell-btn.aoe::before {
+            background: linear-gradient(90deg, #FF6600, #FFAA44, #FFD700);
+        }
+        
+        /* Holding state - slight press effect */
+        .spell-btn.holding {
+            transform: scale(0.97);
+        }
+        
+        /* High charge glow effect */
+        .spell-btn.charge-high {
+            border-color: #FFAA44;
+            box-shadow: 0 0 15px rgba(255,170,68,0.5);
+        }
+        
+        .spell-btn.charge-perfect {
+            border-color: #FFD700;
+            box-shadow: 0 0 25px rgba(255,215,0,0.7);
+            animation: pulseGlow 0.2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes pulseGlow {
+            from { box-shadow: 0 0 15px rgba(255,215,0,0.5); }
+            to { box-shadow: 0 0 35px rgba(255,215,0,0.9); }
+        }
+        
+        /* Regular spell button */
+        .spell-btn.normal {
+            border-color: #4488FF;
+            color: #88AAFF;
+            background: linear-gradient(90deg, #0a1a2a 0%, #0a1a2a 100%);
+        }
+        
+        .spell-btn.normal::before {
+            background: linear-gradient(90deg, #4488FF, #88AAFF, #44FFFF);
+        }
+        
+        /* Terminal message area */
+        .terminal-mock {
+            background: #000;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 12px;
+            height: 180px;
+            overflow-y: auto;
+            font-size: 13px;
+            line-height: 1.4;
+            margin-top: 16px;
+        }
+        
+        .term-line {
+            color: var(--text-color);
+            border-bottom: 1px dotted #1a3a1a;
+            padding: 3px 0;
+        }
+        
+        .term-loot { color: #FFD700; }
+        .term-warning { color: #FF8844; }
+        .term-victory { color: #88FF88; }
+        .term-highlight { color: #FF44FF; }
+        .stat-label { color: var(--highlight-color); }
+        
+        .reset-btn {
+            background: #1a0a0a;
+            border: 1px solid #ff4444;
+            color: #ff4444;
+            padding: 8px 16px;
+            margin-top: 12px;
+            cursor: pointer;
+            font-family: monospace;
+            width: 100%;
+            font-size: 14px;
+        }
+        
+        .charge-label {
+            text-align: center;
+            font-size: 12px;
+            color: #888;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="location-header">🌀 BUTTON = CHARGING BAR 🌀</div>
+        
+        <!-- Enemy Cards -->
+        <div class="enemy-cards">
+            <div class="enemy-card">
+                <div class="enemy-name">🔥 Fire Elemental</div>
+                <div class="enemy-hp">HP: 45/45</div>
+            </div>
+            <div class="enemy-card">
+                <div class="enemy-name">💧 Water Elemental</div>
+                <div class="enemy-hp">HP: 52/52</div>
+            </div>
+            <div class="enemy-card">
+                <div class="enemy-name">🌪️ Air Elemental</div>
+                <div class="enemy-hp">HP: 38/38</div>
+            </div>
+        </div>
+        
+        <!-- Action Bar -->
+        <div class="action-bar">
+            <div class="pip-display">●●●○○ (3/5 pips ready)</div>
+            <div class="button-row">
+                <button class="action-btn">⚔️ Attack</button>
+                <button class="action-btn">✨ Spell</button>
+                <button class="action-btn">🎒 Inventory</button>
+                <button class="action-btn" style="border-color:#ff4444;color:#ff4444;">🏃 Flee</button>
+            </div>
+        </div>
+        
+        <!-- ⭐ THE SPELL BUTTONS - BUTTON ITSELF FILLS LEFT TO RIGHT ⭐ -->
+        <div style="text-align: center; margin: 20px 0;">
+            <div style="color: var(--highlight-color); font-size: 14px; margin-bottom: 12px;">🔥 HOLD TO CHARGE 🔥</div>
+            <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                
+                <!-- AOE SPELL BUTTON - Button itself is the charging bar -->
+                <button id="aoeSpellBtn" class="spell-btn aoe">
+                    <span>🌀 INFERNO <span style="font-size: 12px;">(AOE)</span></span>
+                </button>
+                
+                <!-- Regular spell button -->
+                <button id="normalSpellBtn" class="spell-btn normal">
+                    <span>✨ FIREBALL</span>
+                </button>
+            </div>
+            <div id="chargePercent" class="charge-label">⚡ Tap or Hold to Cast ⚡</div>
+        </div>
+        
+        <!-- Terminal message area -->
+        <div class="terminal-mock" id="terminalMock">
+            <div class="term-line">🔮 Select a spell...</div>
+            <div class="term-line">💡 <span class="stat-label">HOLD</span> the button - watch it FILL FROM LEFT TO RIGHT!</div>
+            <div class="term-line">   Release at different charge levels for bonus effects</div>
+        </div>
+        
+        <button class="reset-btn" id="resetBtn">⟳ RESET</button>
+        
+        <div style="margin-top: 12px; font-size: 10px; color: #555; text-align: center;">
+            ⚡ TAP = Quick cast (risky, random multiplier)<br>
+            🔋 HOLD = Button fills left→right → Release for bonus!<br>
+            🟣 0-30%: Weak │ 🟣 30-60%: Normal │ 🟡 60-90%: Empowered │ ⭐ 90-100%: PERFECT!
+        </div>
+    </div>
+
+    <script>
+        const aoeBtn = document.getElementById('aoeSpellBtn');
+        const normalBtn = document.getElementById('normalSpellBtn');
+        const terminal = document.getElementById('terminalMock');
+        const resetBtn = document.getElementById('resetBtn');
+        const chargePercentDiv = document.getElementById('chargePercent');
+        
+        let activeHold = null;
+        
+        function addTermMessage(html, type = '') {
+            const div = document.createElement('div');
+            div.className = 'term-line';
+            if (type === 'loot') div.classList.add('term-loot');
+            if (type === 'warning') div.classList.add('term-warning');
+            if (type === 'victory') div.classList.add('term-victory');
+            if (type === 'highlight') div.classList.add('term-highlight');
+            div.innerHTML = html;
+            terminal.appendChild(div);
+            div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            while (terminal.children.length > 15) terminal.removeChild(terminal.firstChild);
+        }
+        
+        function setupChargingButton(button, spellName, isAOE, baseManaCost) {
+            let chargeInterval = null;
+            let currentCharge = 0;
+            let isHolding = false;
+            
+            function updateButtonCharge(percent) {
+                // The button FILLS from left to right via CSS ::before
+                button.style.setProperty('--charge-width', percent + '%');
+                // Apply using inline style since CSS variable might not be set
+                const style = document.createElement('style');
+                style.id = `charge-style-${spellName}`;
+                const oldStyle = document.getElementById(`charge-style-${spellName}`);
+                if (oldStyle) oldStyle.remove();
+                style.id = `charge-style-${spellName}`;
+                style.textContent = `#${button.id}::before { width: ${percent}%; }`;
+                document.head.appendChild(style);
+                
+                // Update visual classes
+                button.classList.remove('charge-high', 'charge-perfect');
+                if (percent >= 90) {
+                    button.classList.add('charge-perfect');
+                    chargePercentDiv.innerHTML = `💯 PERFECT ZONE! Release NOW! (${Math.floor(percent)}%)`;
+                    chargePercentDiv.style.color = '#FFD700';
+                } else if (percent >= 60) {
+                    button.classList.add('charge-high');
+                    chargePercentDiv.innerHTML = `🌟 EMPOWERED ZONE! (${Math.floor(percent)}%)`;
+                    chargePercentDiv.style.color = '#FFAA44';
+                } else if (percent >= 30) {
+                    chargePercentDiv.innerHTML = `📈 Normal Zone... (${Math.floor(percent)}%)`;
+                    chargePercentDiv.style.color = '#88AAFF';
+                } else if (percent > 0) {
+                    chargePercentDiv.innerHTML = `🔋 Charging... (${Math.floor(percent)}%)`;
+                    chargePercentDiv.style.color = '#888';
+                } else {
+                    chargePercentDiv.innerHTML = `⚡ Tap or Hold to Cast ⚡`;
+                    chargePercentDiv.style.color = '#888';
+                }
+            }
+            
+            function startHold(e) {
+                e.preventDefault();
+                if (isHolding) return;
+                
+                isHolding = true;
+                currentCharge = 0;
+                activeHold = button;
+                updateButtonCharge(0);
+                button.classList.add('holding');
+                
+                // Charge fills in 1.5 seconds (100% in 1500ms)
+                chargeInterval = setInterval(() => {
+                    if (isHolding && currentCharge < 100) {
+                        currentCharge += 2.2; // ~2.2% per 33ms = 100% in ~1.5 sec
+                        if (currentCharge > 100) currentCharge = 100;
+                        updateButtonCharge(currentCharge);
+                        
+                        if (currentCharge >= 100) {
+                            clearInterval(chargeInterval);
+                            chargeInterval = null;
+                            chargePercentDiv.innerHTML = '⚡ MAX CHARGE! Release for PERFECT CAST! ⚡';
+                            chargePercentDiv.style.color = '#FF44FF';
+                        }
+                    }
+                }, 33);
+            }
+            
+            function endHold() {
+                if (!isHolding) return;
+                
+                if (chargeInterval) {
+                    clearInterval(chargeInterval);
+                    chargeInterval = null;
+                }
+                
+                button.classList.remove('holding');
+                
+                // Calculate outcome based on charge %
+                let success = false;
+                let multiplier = 1.0;
+                let resultText = '';
+                let baseDamage = isAOE ? 35 : 45;
+                
+                // Enemy data
+                const enemyNames = isAOE ? ['Fire Elemental', 'Water Elemental', 'Air Elemental'] : ['Fire Elemental'];
+                const initialHPs = isAOE ? [45, 52, 38] : [45];
+                
+                if (currentCharge >= 90) {
+                    // PERFECT CAST - 100% success, 2.5x damage
+                    success = true;
+                    multiplier = 2.5;
+                    resultText = '✨ PERFECT CAST! ✨';
+                    addTermMessage(`<span style="color:#FF44FF;">💯 PERFECT! ${Math.floor(currentCharge)}% charge!</span>`, 'highlight');
+                }
+                else if (currentCharge >= 60) {
+                    // EMPOWERED CAST - 95% success, 1.8x damage
+                    const roll = Math.random() * 100;
+                    success = roll < 95;
+                    multiplier = 1.8;
+                    resultText = success ? '⚡ EMPOWERED CAST! ⚡' : '💨 Spell Fizzled...';
+                    addTermMessage(`<span style="color:#FFAA44;">🌟 EMPOWERED! ${Math.floor(currentCharge)}% charge</span>`, 'warning');
+                }
+                else if (currentCharge >= 30) {
+                    // NORMAL CAST - 75% success, 1.2x damage
+                    const roll = Math.random() * 100;
+                    success = roll < 75;
+                    multiplier = 1.2;
+                    resultText = success ? '✓ Normal Cast' : '💨 Spell Fizzled...';
+                    addTermMessage(`📈 Normal charge: ${Math.floor(currentCharge)}%`, '');
+                }
+                else if (currentCharge > 0) {
+                    // WEAK CAST - 55% success, 0.7x damage
+                    const roll = Math.random() * 100;
+                    success = roll < 55;
+                    multiplier = 0.7;
+                    resultText = success ? '⚠️ Weak Cast' : '💨 Spell Fizzled...';
+                    addTermMessage(`⚠️ Weak charge: ${Math.floor(currentCharge)}%`, 'warning');
+                }
+                else {
+                    // TAP CAST - 50% success, random multiplier 0.6-1.2x
+                    const roll = Math.random() * 100;
+                    success = roll < 50;
+                    multiplier = success ? (0.6 + Math.random() * 0.6) : 0;
+                    resultText = success ? `⚡ Quick Cast! (${multiplier.toFixed(1)}x)` : '💨 Spell Fizzled!';
+                    addTermMessage(`👆 TAP CAST! ${success ? `${multiplier.toFixed(1)}x damage` : 'Failed'}`, success ? '' : 'warning');
+                }
+                
+                // Show spell result
+                if (success) {
+                    addTermMessage(`🌀 <span style="color:#FFD700;">${spellName} - ${resultText}</span>`, 'loot');
+                    addTermMessage(`   <span style="color:#88FF88;">${multiplier}x damage!</span>`, 'victory');
+                    
+                    // Apply damage to enemies
+                    for (let i = 0; i < enemyNames.length; i++) {
+                        const damage = Math.floor(baseDamage * multiplier * (0.8 + Math.random() * 0.4));
+                        const wasKilled = damage >= initialHPs[i];
+                        addTermMessage(`   → ${enemyNames[i]} takes <span style="color:#FF8800;">${damage} damage!</span>${wasKilled ? ' 💀 SLAIN!' : ''}`, 'loot');
+                    }
+                    
+                    if (isAOE) {
+                        addTermMessage(`<span style="color:#88FF88;">🌀 AOE! All enemies hit!</span>`, 'victory');
+                    }
+                } else {
+                    addTermMessage(`❌ <span style="color:#ff6666;">${spellName} FAILED! ${Math.floor(currentCharge)}% charge wasted.</span>`, 'warning');
+                }
+                
+                // Add separator
+                addTermMessage('━━━━━━━━━━━━━━━━━━━━━━', '');
+                
+                // Reset button visual
+                setTimeout(() => {
+                    updateButtonCharge(0);
+                    button.classList.remove('charge-high', 'charge-perfect');
+                }, 100);
+                
+                isHolding = false;
+                currentCharge = 0;
+                activeHold = null;
+            }
+            
+            function cancelHold() {
+                if (isHolding) endHold();
+            }
+            
+            // Attach events
+            button.addEventListener('mousedown', startHold);
+            button.addEventListener('mouseup', endHold);
+            button.addEventListener('mouseleave', cancelHold);
+            button.addEventListener('touchstart', startHold, { passive: false });
+            button.addEventListener('touchend', endHold);
+            button.addEventListener('touchcancel', cancelHold);
+        }
+        
+        // Setup both buttons
+        setupChargingButton(aoeBtn, 'INFERNO', true, 30);
+        setupChargingButton(normalBtn, 'FIREBALL', false, 20);
+        
+        resetBtn.addEventListener('click', () => {
+            addTermMessage('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', '');
+            addTermMessage('<span style="color: #FFD700;">✨ Ready for next spell! ✨</span>', 'loot');
+            addTermMessage('💡 <span class="stat-label">HOLD</span> the button - watch it FILL LEFT TO RIGHT!', '');
+        });
+        
+        setTimeout(() => {
+            addTermMessage('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', '');
+            addTermMessage('<span style="color: #FFD700;">🔥 HOLD the INFERNO button - watch it FILL!</span>', 'loot');
+            addTermMessage('   The button itself is the charging bar!', '');
+        }, 500);
+    </script>
+</body>
+</html>
