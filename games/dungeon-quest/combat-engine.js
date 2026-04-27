@@ -2175,15 +2175,198 @@ function showHeavyAttackMinigame(callback) {
         }
         cs._heavyMultiplier = null; // clear after use
     } 
-    else if (attackType === 'special') {
-        const availablePips = cs.pipAvailable.filter(x => x).length;
-        pipCost = availablePips;
-        damageMultiplier = 1 + (availablePips * 0.5);
-        attackName = unarmed
-            ? `unleashes a <span style="color:#FFD700;">⭐ FLURRY OF BLOWS ⭐</span> (${availablePips} pips)`
-            : `unleashes a <span style="color:#FFD700;">⭐ SPECIAL ATTACK ⭐</span> (${availablePips} pips)`;
-        armorPiercing = 0.3;
+else if (attackType === 'special') {
+    const availablePips = cs.pipAvailable.filter(x => x).length;
+    pipCost = availablePips;
+    damageMultiplier = 1 + (availablePips * 0.5);
+    attackName = unarmed
+        ? `unleashes a <span style="color:#FFD700;">⭐ FLURRY OF BLOWS ⭐</span> (${availablePips} pips)`
+        : `unleashes a <span style="color:#FFD700;">⭐ SWEEPING STRIKE ⭐</span> (${availablePips} pips)`;
+    armorPiercing = 0.3;
+    
+    // Consume pips
+    consumePips(cs, pipCost, getPipCooldown(p));
+    cs.actionMode = 'main';
+    
+    termAppend('', 'term-separator');
+    termAppend(`<span style="color:#FFD700;font-size:18px;">🌀 SWEEPING STRIKE! 🌀</span>`, 'term-highlight');
+    termAppend(`You unleash a devastating attack with all your remaining energy!`, 'term-warning');
+    
+    let totalDamageDealt = 0;
+    let enemiesHit = 0;
+    let killCount = 0;
+    
+    // STANDALONE GEM BONUS CALCULATION
+    const socketed = weapon.gems || [];
+    const armorObj = p.armor ? ARMOR[p.armor] : null;
+    const armorGems = (armorObj && armorObj.gems) ? armorObj.gems : [];
+    const allGems = [...socketed, ...armorGems];
+    let gemMeleeDmg = 0, gemCritBonus = 0, gemPierceBonus = 0;
+    let gemPoisonChance = 0, gemLightningDmg = 0, gemLifesteal = 0;
+    let gemFireDmg = 0, gemFrostDmg = 0, gemSpellLeech = 0;
+    
+    for (const gem of allGems) {
+        if (!gem || !gem.stats) continue;
+        gemMeleeDmg     += gem.stats.weaponDmg    || 0;
+        gemCritBonus    += gem.stats.critBonus    || 0;
+        gemPierceBonus  += gem.stats.armorPierce  || 0;
+        gemPoisonChance += gem.stats.poisonChance || 0;
+        gemLightningDmg += gem.stats.lightningDmg || 0;
+        gemLifesteal    += gem.stats.lifesteal    || 0;
+        gemFireDmg      += gem.stats.fireDmg      || 0;
+        gemFrostDmg     += gem.stats.frostDmg     || 0;
+        gemSpellLeech   += gem.stats.spellLeech   || 0;
     }
+    
+    // Class and STR bonus
+    const playerClass = p.baseClass || p.class;
+    let strMult = 1.0;
+    if (playerClass === 'warrior' || playerClass === 'paladin') strMult = 1.5;
+    else if (playerClass === 'mage' || playerClass === 'warlock') strMult = 0.5;
+    else strMult = 1.0;
+    
+    const strBonus = Math.floor((p.str || 0) * strMult);
+    const classMult = getClassDamageMultiplier(p);
+    const qBonus = getQualityBonus(weapon.quality, weapon.baseDamage);
+    const weaponMods = weapon.modifiers || [];
+    
+    // Store which enemies died for loot processing
+    const deadEnemies = [];
+    
+    // Loop through all enemies
+    for (let i = 0; i < cs.monsters.length; i++) {
+        const enemy = cs.monsters[i];
+        if (enemy.hp <= 0) continue;
+        
+        // Roll weapon damage
+        const minDmg = weapon.baseDamage + qBonus;
+        const maxDmg = (weapon.maxDamage || weapon.baseDamage) + qBonus;
+        let weaponDamageRoll = Math.floor(Math.random() * (maxDmg - minDmg + 1)) + minDmg;
+        
+        const physicalBase = weaponDamageRoll + strBonus + gemMeleeDmg;
+        let totalBase = Math.floor(physicalBase * damageMultiplier);
+        totalBase = Math.floor(totalBase * classMult);
+        
+        // Level scaling
+        const lvlMult = getLevelDamageMult(p.level, enemy.level);
+        totalBase = Math.max(1, Math.floor(totalBase * lvlMult.playerDealt));
+        totalBase += gemLightningDmg + gemFireDmg + gemFrostDmg;
+        
+        // Intimidate penalty
+        if ((cs.playerIntimidated || 0) > 0) {
+            totalBase = Math.max(1, Math.floor(totalBase * (1 - (cs.playerIntimidated || 0))));
+        }
+        
+        // Dodge check
+        const enemyDodgeChance = calculateEnemyDodge(p.level, enemy.level);
+        if (Math.random() < enemyDodgeChance) {
+            termAppend(`→ <span style="color:${enemy.rarityColor};">${enemy.name}</span> <span style="color:#88ff88;">DODGES</span> your sweeping strike!`, 'term-dim');
+            continue;
+        }
+        
+        // Crit check
+        const weaponCritBonusVal = (weapon && weapon.critBonus) ? weapon.critBonus / 100 : 0;
+        const critChance = Math.min(0.75, (calcCritChance(p.lck || 0, p) / 100) + (gemCritBonus / 100) + weaponCritBonusVal);
+        const isCrit = Math.random() < critChance;
+        
+        // Defense mitigation
+        let totalDef = enemy.defense || 0;
+        const effectiveArmorPierce = Math.min(1.0, armorPiercing + (gemPierceBonus / 100));
+        const DR_PER_POINT = 0.028;
+        const effectiveDR = Math.min(0.75, totalDef * DR_PER_POINT) * (1 - effectiveArmorPierce);
+        let finalDamage = Math.max(1, Math.floor(totalBase * (1 - effectiveDR)));
+        
+        if (isCrit) {
+            finalDamage = Math.floor(finalDamage * 2.0);
+        }
+        
+        // Apply modifier bonus damage
+        let modifierMessages = [];
+        for (const mod of weaponMods) {
+            if (mod.minDamage !== undefined) {
+                const bonusDmg = Math.floor(Math.random() * (mod.maxDamage - mod.minDamage + 1)) + mod.minDamage;
+                finalDamage += bonusDmg;
+                modifierMessages.push(`<span style="color:${mod.color || '#FFD700'};">+${bonusDmg} ${mod.name}</span>`);
+            }
+        }
+        
+        // APPLY DAMAGE
+        const wasAlive = enemy.hp > 0;
+        enemy.hp -= finalDamage;
+        const isDead = enemy.hp <= 0;
+        
+        totalDamageDealt += finalDamage;
+        enemiesHit++;
+        
+        if (isDead && wasAlive) {
+            killCount++;
+            deadEnemies.push({enemy: enemy, index: i});
+        }
+        
+        // Apply status effects (only if enemy still alive)
+        if (!isDead) {
+            if ((gemPoisonChance > 0 && Math.random() < (gemPoisonChance / 100)) ||
+                (weapon.poisonChance && Math.random() < weapon.poisonChance)) {
+                applyStatusEffect(enemy, 'poisoned', false);
+                modifierMessages.push('<span style="color:#00EE00;">💀 Poisoned!</span>');
+            }
+            
+            for (const mod of weaponMods) {
+                if (mod.statusEffect && mod.statusChance && Math.random() < mod.statusChance) {
+                    applyStatusEffect(enemy, mod.statusEffect, false);
+                    modifierMessages.push(`<span style="color:${mod.color || '#FFD700'};">⚡ ${mod.name}: ${mod.statusEffect} applied!</span>`);
+                }
+            }
+        }
+        
+        // Show damage message
+        const critTag = isCrit ? ' <span style="color:#FFD700;">★ CRIT!</span>' : '';
+        const killTag = isDead ? ' <span style="color:#ff4444;">💀 KILLED!</span>' : '';
+        let msg = `→ <span style="color:${enemy.rarityColor};">${enemy.name}</span> takes <span class="dmg-player">${finalDamage} damage!</span>${critTag}${killTag}`;
+        if (modifierMessages.length > 0) {
+            msg += ' ' + modifierMessages.join(' ');
+        }
+        termAppend(msg);
+        
+        // Lifesteal per hit
+        if (gemLifesteal > 0 && finalDamage > 0) {
+            const steal = Math.max(1, Math.floor(finalDamage * (gemLifesteal / 100)));
+            p.hp = Math.min(p.maxHp, p.hp + steal);
+        }
+        
+        // Spell leech per hit
+        if (gemSpellLeech > 0 && finalDamage > 0) {
+            const mpSteal = Math.max(1, Math.floor(finalDamage * (gemSpellLeech / 100)));
+            p.mp = Math.min(p.maxMp, p.mp + mpSteal);
+        }
+    }
+    
+    // Summary
+    termAppend('', 'term-separator');
+    if (enemiesHit > 0) {
+        termAppend(`<span style="color:#FFD700;font-size:16px;">⚡ Total: ${totalDamageDealt} damage to ${enemiesHit} enemy${enemiesHit !== 1 ? 'ies' : 'y'}! ⚡</span>`, 'term-loot');
+        if (gemLifesteal > 0 && totalDamageDealt > 0) {
+            termAppend(`<span style="color:#FF4488;">🩸 Lifesteal: Restored HP from the carnage!</span>`, 'term-loot');
+        }
+        if (gemSpellLeech > 0 && totalDamageDealt > 0) {
+            termAppend(`<span style="color:#AA55FF;">🔮 Voidstone: Absorbed MP!</span>`, 'term-loot');
+        }
+    } else {
+        termAppend(`<span style="color:#ff8888;">Your sweeping strike hits nothing but air!</span>`, 'term-warning');
+    }
+    
+    if (killCount > 0) {
+        termAppend(`💀 ${killCount} enemy${killCount !== 1 ? 's' : ''} slain!`, 'term-victory');
+    }
+    
+    // Update displays
+    updateEnemyCards();
+    updateHud();
+    renderActionBar();
+    checkCombatEnd();
+    
+    return; // Skip normal single-target code
+}
 
     // Check pip availability
     const availablePips = cs.pipAvailable.filter(x => x).length;
@@ -4696,115 +4879,101 @@ function checkCombatEnd() {
     const cs = gameState.combatState;
     if (!cs || !cs.monsters || cs.monsters.length === 0) return;
 
-    let totalXp = 0;
-    let totalGold = 0;
-    let allLoot = [];
-
-
-    let ti = cs.currentTarget;
-
-    // Clamp target index (important after splicing)
-    if (ti < 0 || ti >= cs.monsters.length) {
-        cs.currentTarget = 0;
-        ti = 0;
-    }
-
-    const target = cs.monsters[ti];
-    if (!target) return;
-
-    if (!cs.defeatedMonsters) cs.defeatedMonsters = [];
-
-    if (target.hp <= 0) {
-        const dead = target;
-
-
- // ── ARMOR MODIFIER: Gluttonous (heal when killing an enemy) ──
-    const gluttonousBonus = getArmorModifierBonus('killHeal');
-    if (gluttonousBonus > 0) {
-        const p = gameState.player;
-        const actualHeal = Math.min(p.maxHp - p.hp, gluttonousBonus);
-        if (actualHeal > 0) {
-            p.hp += actualHeal;
-            termAppend(`🍖 Your Gluttonous armor heals ${actualHeal} HP from defeating ${dead.name}!`, 'term-loot');
-            updateHud();
+    // Process ALL dead enemies, not just the current target
+    let anyProcessed = false;
+    
+    // Loop backwards so we can safely splice
+    for (let i = cs.monsters.length - 1; i >= 0; i--) {
+        const monster = cs.monsters[i];
+        
+        if (monster.hp <= 0) {
+            anyProcessed = true;
+            
+            // ── ARMOR MODIFIER: Gluttonous (heal when killing an enemy) ──
+            const gluttonousBonus = getArmorModifierBonus('killHeal');
+            if (gluttonousBonus > 0) {
+                const p = gameState.player;
+                const actualHeal = Math.min(p.maxHp - p.hp, gluttonousBonus);
+                if (actualHeal > 0) {
+                    p.hp += actualHeal;
+                    termAppend(`🍖 Your Gluttonous armor heals ${actualHeal} HP from defeating ${monster.name}!`, 'term-loot');
+                    updateHud();
+                }
+            }
+            
+            // Calculate rewards for THIS enemy
+            const baseXp = monster.xp || (monster.level * 10);
+            const baseGold = monster.gold || (monster.level * 5);
+            
+            // ── ARMOR MODIFIER: Merchant's (gold bonus) ──
+            const goldBonus = getArmorModifierBonus('goldBonus');
+            let finalGold = baseGold;
+            if (goldBonus > 0) {
+                const bonusAmount = Math.floor(baseGold * (goldBonus / 100));
+                finalGold = baseGold + bonusAmount;
+                termAppend(`💰 Your Merchant's armor adds +${bonusAmount} gold!`, 'term-loot');
+            }
+            
+            termAppend(
+                `<span style="color:${monster.rarityColor};">${monster.name}</span> has been defeated!`,
+                'term-victory'
+            );
+            
+            termAppend(`Gained <span style="color:#FFD700;">${baseXp} XP</span> and <span style="color:#FFD700;">${finalGold} Gold!</span>`, 'term-loot');
+            
+            // Apply rewards
+            const p = gameState.player;
+            p.xp += baseXp;
+            p.gold += finalGold;
+            
+            // Check for level up
+            if (p.xp >= p.xpToNext) {
+                levelUp();
+                showLevelUpCeremony(p.level);
+                termAppend(`<span style="color:#FFD700;font-size:14px;">+3 Stat Points earned!</span>`, 'term-loot');
+            }
+            
+            // ── BESTIARY: increment kill count
+            if (!p.kills) p.kills = {};
+            const killKey = monster.key || monster.name.toLowerCase().replace(/\s+/g, '_');
+            p.kills[killKey] = (p.kills[killKey] || 0) + 1;
+            onMonsterKill(killKey, p.kills[killKey], monster);
+            
+            // Roll for loot
+            const loot = rollLoot(monster);
+            for (const item of loot) {
+                if (typeof item === 'object' && item !== null) {
+                    gameState.player.inventory.push(item);
+                    const qualityColor = QUALITY_CONFIG[item.quality]?.color || '#00FF00';
+                    termAppend(`  + <span style="color:${qualityColor};">${item.name}</span>`, 'term-loot');
+                } else if (typeof item === 'string') {
+                    gameState.player.inventory.push(item);
+                    termAppend(`  + <span style="color:${getItemColor(item)};">${getItemName(item)}</span>`, 'term-loot');
+                }
+            }
+            
+            // Remove the dead monster
+            cs.monsters.splice(i, 1);
         }
     }
-
-
-        // Calculate rewards for THIS enemy immediately
-        const baseXp = dead.xp || (dead.level * 10);
-        const baseGold = dead.gold || (dead.level * 5);
-
-        // ── ARMOR MODIFIER: Merchant's (gold bonus) ──
-const goldBonus = getArmorModifierBonus('goldBonus');
-let finalGold = baseGold;
-if (goldBonus > 0) {
-    const bonusAmount = Math.floor(baseGold * (goldBonus / 100));
-    finalGold = baseGold + bonusAmount;
-    termAppend(`💰 Your Merchant's armor adds +${bonusAmount} gold!`, 'term-loot');
-} else {
-    finalGold = baseGold;
+    
+    // Update target index if needed
+    if (cs.currentTarget >= cs.monsters.length) {
+        cs.currentTarget = Math.max(0, cs.monsters.length - 1);
+    }
+    
+    // Update displays
+    updateEnemyCards();
+    updateHud();
+    
+    // If all enemies are dead, end combat
+    if (cs.monsters.length === 0) {
+        cs.rewardsAlreadyGiven = true;
+        endCombat(true);
+    }
+    
+    return anyProcessed;
 }
-
-totalGold += finalGold;
-        
-
-        
-        termAppend(
-            `<span style="color:${dead.rarityColor};">${dead.name}</span> has been defeated!`,
-            'term-victory'
-        );
-        
-        // Show individual rewards immediately
-        termAppend(`Gained <span style="color:#FFD700;">${baseXp} XP</span> and <span style="color:#FFD700;">${finalGold} Gold!</span>`, 'term-loot');
-        
-        // Apply rewards immediately (use finalGold so Merchant's bonus is included)
-        const p = gameState.player;
-        p.xp += baseXp;
-        p.gold += finalGold;
-        
-        // Check for level up
-        if (p.xp >= p.xpToNext) {
-            levelUp();
-            showLevelUpCeremony(p.level);
-            termAppend(`<span style="color:#FFD700;font-size:14px;">+3 Stat Points earned!</span>`, 'term-loot');
-            termAppend(`<span style="color:#00FFFF;">→ Tap </span><span style="color:#FFD700;font-weight:bold;">⬆ pts</span><span style="color:#00FFFF;"> in the compass panel, or open </span><span style="color:#00FF88;font-weight:bold;">🎒 Inventory</span><span style="color:#00FFFF;">.</span>`, 'term-loot');
-        }
-        
-        // Add to defeated list and remove from active combat
-        cs.defeatedMonsters.push(dead);
-
-        // ── BESTIARY: increment kill count for this monster type ──
-        const p2 = gameState.player;
-        if (!p2.kills) p2.kills = {};
-        const killKey = dead.key || dead.name.toLowerCase().replace(/\s+/g, '_');
-        p2.kills[killKey] = (p2.kills[killKey] || 0) + 1;
-        // Fire bestiary discovery event so UI can react immediately
-        onMonsterKill(killKey, p2.kills[killKey], dead);
-        cs.monsters.splice(ti, 1);
-
-// When a monster dies, log its key
-        console.log('💀 Monster killed - key:', killKey);
-
-        // Adjust target after removal
-        if (cs.currentTarget >= cs.monsters.length) {
-            cs.currentTarget = Math.max(0, cs.monsters.length - 1);
-        }
-
-        // Update cards and HUD immediately
-        updateEnemyCards();
-        updateHud();
-        
-        // Check if all enemies dead
-        if (cs.monsters.length === 0) {
-            // All enemies dead - end combat
-            // Don't give rewards again in endCombat
-            cs.rewardsAlreadyGiven = true;
-            endCombat(true);
-        }
-    }
-}
-
 // ═══════════════════════════════════════════════════════════════
 // END COMBAT
 // ═══════════════════════════════════════════════════════════════

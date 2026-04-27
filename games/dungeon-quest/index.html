@@ -8008,14 +8008,13 @@ function renderDungeonActionBar() {
                 ATTACK TYPE
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;">
-                <button onclick="selectAttackType('normal')" ${hitsLeft < normalCost ? 'disabled' : ''}>
-                    ⚔️ Normal
-                </button>
-                <button onclick="selectAttackType('heavy')" ${hitsLeft < heavyCost ? 'disabled' : ''}
-                    title="Heavy Strike — Power Bar skill check">
-                    💥 Heavy<span style="font-size:10px;color:#ff8c00;"> ⚠</span>
-                </button>
-                ${showSpecial ? `<button onclick="selectAttackType('special')">⭐ Special</button>` : ''}
+                <button onclick="handleAttackType('normal')" ${hitsLeft < normalCost ? 'disabled' : ''}>
+    ⚔️ Normal
+</button>
+<button onclick="handleAttackType('heavy')" ${hitsLeft < heavyCost ? 'disabled' : ''}>
+    💥 Heavy
+</button>
+${showSpecial ? `<button onclick="handleAttackType('special')">⭐ Special</button>` : ''}
                 <button onclick="cancelAction()">❌</button>
             </div>
         `;
@@ -9023,149 +9022,163 @@ function dungeonNav(input) {
 
 
 
-
+function handleAttackType(type) {
+    const cs = gameState.combatState;
+    if (!cs) return;
+    
+    if (type === 'special') {
+        // Special attack hits ALL enemies - execute immediately, no target selection
+        cs.actionMode = 'main';
+        executeAttack('special');
+    } else {
+        // Normal and Heavy attacks need target selection
+        cs.pendingAttackType = type;
+        cs.actionMode = 'target_attack';
+        renderActionBar();
+    }
+}
 
 
         
         
         function renderActionBar() {
-            const ab = document.getElementById('actionBar');
-            showActionBar();
-            
-            // If in dungeon, always use dungeon action bar with combat overlay
-            if (gameState.dungeon) {
-                renderDungeonActionBar();
-                // Sweep animation + scroll fix (deferred so DOM is settled)
-                requestAnimationFrame(() => { updatePipButtons(); stabilizeTerminalLayout(); });
-                return;
-            }
-            
-            if (gameState.combatState) {
-                const cs       = gameState.combatState;
-                const monsters = cs.monsters;
-                const p        = gameState.player;
-                const maxHits  = cs.pipAvailable ? cs.pipAvailable.length : calcPlayerHits(p);
-                const hitsLeft = cs.pipAvailable ? cs.pipAvailable.filter(x => x).length : maxHits;
-                const canAct   = hitsLeft > 0;
+    const ab = document.getElementById('actionBar');
+    showActionBar();
+    
+    // If in dungeon, always use dungeon action bar with combat overlay
+    if (gameState.dungeon) {
+        renderDungeonActionBar();
+        // Sweep animation + scroll fix (deferred so DOM is settled)
+        requestAnimationFrame(() => { updatePipButtons(); stabilizeTerminalLayout(); });
+        return;
+    }
+    
+    if (gameState.combatState) {
+        const cs       = gameState.combatState;
+        const monsters = cs.monsters;
+        const p        = gameState.player;
+        const maxHits  = cs.pipAvailable ? cs.pipAvailable.length : calcPlayerHits(p);
+        const hitsLeft = cs.pipAvailable ? cs.pipAvailable.filter(x => x).length : maxHits;
+        const canAct   = hitsLeft > 0;
 
-                // attack-charge pips  ●●○
-                const pips = '●'.repeat(hitsLeft) + '○'.repeat(maxHits - hitsLeft);
+        // attack-charge pips  ●●○
+        const pips = '●'.repeat(hitsLeft) + '○'.repeat(maxHits - hitsLeft);
 
-                // Check what menu mode we're in
-                const mode = cs.actionMode || 'main';
+        // Check what menu mode we're in
+        const mode = cs.actionMode || 'main';
 
-                if (mode === 'main') {
-                    // Main combat menu — icons only, pip dots only
-                    const isHunter    = (p.baseClass || p.class) === 'hunter';
-                    const isWarrior   = (p.baseClass || p.class) === 'warrior';
-                    const isRunesmith = (p.baseClass || p.class) === 'runesmith';
-                    const trapBtn   = isHunter  ? `<button onclick="(castTrap())" ${p.mp < 10 ? 'disabled' : ''} class="action-icon-btn" title="Set Trap [T] - 10 MP" style="border-color:#8B4513;">🪤<span class="kb-hint">T</span></button>` : '';
-                    const shieldBtn = isWarrior ? `<button onclick="playerDefend()" ${!canAct?'disabled':''} class="action-icon-btn" title="Shield [4] — Raise defense by 50% this turn" style="border-color:#00CCFF;">🛡️<span class="kb-hint">4</span></button>` : '';
+        if (mode === 'main') {
+            // Main combat menu — icons only, pip dots only
+            const isHunter    = (p.baseClass || p.class) === 'hunter';
+            const isWarrior   = (p.baseClass || p.class) === 'warrior';
+            const isRunesmith = (p.baseClass || p.class) === 'runesmith';
+            const trapBtn   = isHunter  ? `<button onclick="(castTrap())" ${p.mp < 10 ? 'disabled' : ''} class="action-icon-btn" title="Set Trap [T] - 10 MP" style="border-color:#8B4513;">🪤<span class="kb-hint">T</span></button>` : '';
+            const shieldBtn = isWarrior ? `<button onclick="playerDefend()" ${!canAct?'disabled':''} class="action-icon-btn" title="Shield [4] — Raise defense by 50% this turn" style="border-color:#00CCFF;">🛡️<span class="kb-hint">4</span></button>` : '';
 
-                    // Runesmith overload UI
-                    const rsPips = isRunesmith ? (p.runeOverloadPips || 0) : 0;
-                    const rsReady = rsPips >= 3;
-                    const rp1 = rsPips >= 1 ? '🔶' : '⬛'; const rp2 = rsPips >= 2 ? '🔶' : '⬛'; const rp3 = rsPips >= 3 ? '🔶' : '⬛';
-                    const attackBtnHTML = isRunesmith
-                        ? `<button onclick="showAttackMenu()" ${!canAct?'disabled':''} class="action-icon-btn pip-btn" id="pipBtn-attack" title="${rsReady ? 'OVERLOAD — Strike! [1]' : 'Attack [1]'}" style="${rsReady ? 'border-color:#FF4400;animation:runeOverloadPulse 0.7s ease-in-out infinite;outline-offset:0;' : ''}">⚒️<span class="kb-hint">1</span></button>`
-                        : `<button onclick="showAttackMenu()" ${!canAct?'disabled':''} class="action-icon-btn pip-btn" title="Attack [1]" id="pipBtn-attack">⚔️<span class="kb-hint">1</span></button>`;
-                    const spellBtnHTML = isRunesmith
-                        ? `<button onclick="showSpellMenu()" ${!canAct?'disabled':''} class="action-icon-btn pip-btn" id="pipBtn-spell" title="Cast Rune [2]" style="border-color:#c8a000;"><span style="font-size:9px;line-height:1;display:block;">${rsReady ? '⚡READY' : rp1+rp2+rp3}</span>✨<span class="kb-hint">2</span></button>`
-                        : `<button onclick="showSpellMenu()"  ${!canAct?'disabled':''} class="action-icon-btn pip-btn" title="Cast Spell [2]" id="pipBtn-spell">✨<span class="kb-hint">2</span></button>`;
+            // Runesmith overload UI
+            const rsPips = isRunesmith ? (p.runeOverloadPips || 0) : 0;
+            const rsReady = rsPips >= 3;
+            const rp1 = rsPips >= 1 ? '🔶' : '⬛'; const rp2 = rsPips >= 2 ? '🔶' : '⬛'; const rp3 = rsPips >= 3 ? '🔶' : '⬛';
+            const attackBtnHTML = isRunesmith
+                ? `<button onclick="showAttackMenu()" ${!canAct?'disabled':''} class="action-icon-btn pip-btn" id="pipBtn-attack" title="${rsReady ? 'OVERLOAD — Strike! [1]' : 'Attack [1]'}" style="${rsReady ? 'border-color:#FF4400;animation:runeOverloadPulse 0.7s ease-in-out infinite;outline-offset:0;' : ''}">⚒️<span class="kb-hint">1</span></button>`
+                : `<button onclick="showAttackMenu()" ${!canAct?'disabled':''} class="action-icon-btn pip-btn" title="Attack [1]" id="pipBtn-attack">⚔️<span class="kb-hint">1</span></button>`;
+            const spellBtnHTML = isRunesmith
+                ? `<button onclick="showSpellMenu()" ${!canAct?'disabled':''} class="action-icon-btn pip-btn" id="pipBtn-spell" title="Cast Rune [2]" style="border-color:#c8a000;"><span style="font-size:9px;line-height:1;display:block;">${rsReady ? '⚡READY' : rp1+rp2+rp3}</span>✨<span class="kb-hint">2</span></button>`
+                : `<button onclick="showSpellMenu()"  ${!canAct?'disabled':''} class="action-icon-btn pip-btn" title="Cast Spell [2]" id="pipBtn-spell">✨<span class="kb-hint">2</span></button>`;
 
-                    ab.innerHTML = `
-                        <div style="color:var(--highlight-color);font-size:13px;line-height:1;margin-bottom:3px;text-align:center;letter-spacing:3px;">${pips}</div>
-                        <div style="display:flex;gap:3px;width:100%;">
-                            ${attackBtnHTML}
-                            ${spellBtnHTML}
-                            <button onclick="showCombatInventory()" class="action-icon-btn" title="Inventory [3]" style="border-color:#00FF88;">🎒<span class="kb-hint">3</span></button>
-                            ${trapBtn}
-                            ${shieldBtn}
-                            <button onclick="attemptFlee()"    ${!canAct?'disabled':''} class="action-icon-btn" title="Flee [5]">🏃<span class="kb-hint">5</span></button>
-                            <button onclick="printStatsToTerminal()" class="action-icon-btn" title="Show Stats [6]" style="border-color:#4488ff;">📊<span class="kb-hint">6</span></button>
-                        </div>
-                    `;
-                } else if (mode === 'attack_type') {
-                    const normalCost = 1;
-                    const heavyCost = 2;
-                    const showSpecial = hitsLeft >= 3;
-                    ab.innerHTML = `
-                        <div style="display:flex;gap:3px;width:100%;">
-                            <button onclick="selectAttackType('normal')" ${hitsLeft < normalCost ? 'disabled' : ''} class="action-icon-btn" title="Normal Attack [N]">⚔️<span class="kb-hint">N</span></button>
-                            <button onclick="selectAttackType('heavy')"  ${hitsLeft < heavyCost  ? 'disabled' : ''} class="action-icon-btn" title="Heavy Strike — Power Bar skill check [H]" style="border-color:#ff8c00;">💥<span class="kb-hint">H</span></button>
-                            ${showSpecial ? `<button onclick="selectAttackType('special')" class="action-icon-btn" title="Special — all pips [S]" style="border-color:#FFD700;">⭐<span class="kb-hint">S</span></button>` : ''}
-                            <button onclick="cancelAction()" class="action-icon-btn" title="Cancel [Esc]" style="border-color:#888;">❌<span class="kb-hint">Esc</span></button>
-                        </div>
-                    `;
-                } else if (mode === 'target_attack' || mode === 'target_spell' || mode === 'target_staff_melee') {
-                    const targetBtns = monsters.map((m, i) =>
-                        `<button onclick="executeTargetedAction(${i})" class="target-btn" style="position:relative;">
-                            ${i + 1}. ${m.name}<span class="kb-hint">${i + 1}</span>
-                        </button>`
-                    ).join('');
-                    ab.innerHTML = `
-                        <div style="display:flex;flex-wrap:wrap;gap:3px;width:100%;">
-                            ${targetBtns}
-                            <button onclick="cancelAction()" class="action-icon-btn" style="border-color:#888;position:relative;">❌<span class="kb-hint">Esc</span></button>
-                        </div>
-                    `;
-                } else if (mode === 'spell_list') {
-                    // Build numbered spell list
-                    const validSpells = p.knownSpells.map(sk => {
-                        const spell = ensureSpellExists(sk) || SPELLS[sk];
-                        if (!spell) { console.warn(`⚠️ Spell '${sk}' not found`); return null; }
-                        return { sk, spell };
-                    }).filter(Boolean);
+            ab.innerHTML = `
+                <div style="color:var(--highlight-color);font-size:13px;line-height:1;margin-bottom:3px;text-align:center;letter-spacing:3px;">${pips}</div>
+                <div style="display:flex;gap:3px;width:100%;">
+                    ${attackBtnHTML}
+                    ${spellBtnHTML}
+                    <button onclick="showCombatInventory()" class="action-icon-btn" title="Inventory [3]" style="border-color:#00FF88;">🎒<span class="kb-hint">3</span></button>
+                    ${trapBtn}
+                    ${shieldBtn}
+                    <button onclick="attemptFlee()"    ${!canAct?'disabled':''} class="action-icon-btn" title="Flee [5]">🏃<span class="kb-hint">5</span></button>
+                    <button onclick="printStatsToTerminal()" class="action-icon-btn" title="Show Stats [6]" style="border-color:#4488ff;">📊<span class="kb-hint">6</span></button>
+                </div>
+            `;
+        } else if (mode === 'attack_type') {
+            const normalCost = 1;
+            const heavyCost = 2;
+            const showSpecial = hitsLeft >= 3;
+            ab.innerHTML = `
+                <div style="display:flex;gap:3px;width:100%;">
+                    <button onclick="handleAttackType('normal')" ${hitsLeft < normalCost ? 'disabled' : ''} class="action-icon-btn" title="Normal Attack [N]">⚔️<span class="kb-hint">N</span></button>
+                    <button onclick="handleAttackType('heavy')"  ${hitsLeft < heavyCost  ? 'disabled' : ''} class="action-icon-btn" title="Heavy Strike — Power Bar skill check [H]" style="border-color:#ff8c00;">💥<span class="kb-hint">H</span></button>
+                    ${showSpecial ? `<button onclick="handleAttackType('special')" class="action-icon-btn" title="Special — AOE all enemies [S]" style="border-color:#FFD700;">⭐<span class="kb-hint">S</span></button>` : ''}
+                    <button onclick="cancelAction()" class="action-icon-btn" title="Cancel [Esc]" style="border-color:#888;">❌<span class="kb-hint">Esc</span></button>
+                </div>
+            `;
+        } else if (mode === 'target_attack' || mode === 'target_spell') {
+            const targetBtns = monsters.map((m, i) =>
+                `<button onclick="executeTargetedAction(${i})" class="target-btn" style="position:relative;">
+                    ${i + 1}. ${m.name}<span class="kb-hint">${i + 1}</span>
+                </button>`
+            ).join('');
+            ab.innerHTML = `
+                <div style="display:flex;flex-wrap:wrap;gap:3px;width:100%;">
+                    ${targetBtns}
+                    <button onclick="cancelAction()" class="action-icon-btn" style="border-color:#888;position:relative;">❌<span class="kb-hint">Esc</span></button>
+                </div>
+            `;
+        } else if (mode === 'spell_list') {
+            // Build numbered spell list
+            const validSpells = p.knownSpells.map(sk => {
+                const spell = ensureSpellExists(sk) || SPELLS[sk];
+                if (!spell) { console.warn(`⚠️ Spell '${sk}' not found`); return null; }
+                return { sk, spell };
+            }).filter(Boolean);
 
-                    const spellBtns = validSpells.map(({sk, spell}, i) => {
-                        const canCast = p.mp >= spell.mpCost;
-                        const aoeTag  = spell.type === 'aoe_damage' ? ' <span style="color:#FF8800;">AOE</span>' : '';
-                        return `<button onclick="selectSpell('${sk}')" ${!canCast?'disabled':''} class="spell-btn" style="position:relative;">
-                            ${spell.name}${aoeTag}<br>
-                            <span style="font-size:12px;">${spell.mpCost} MP</span>
-                            <span class="kb-hint">${i + 1}</span>
-                        </button>`;
-                    }).join('');
+            const spellBtns = validSpells.map(({sk, spell}, i) => {
+                const canCast = p.mp >= spell.mpCost;
+                const aoeTag  = spell.type === 'aoe_damage' ? ' <span style="color:#FF8800;">AOE</span>' : '';
+                return `<button onclick="selectSpell('${sk}')" ${!canCast?'disabled':''} class="spell-btn" style="position:relative;">
+                    ${spell.name}${aoeTag}<br>
+                    <span style="font-size:12px;">${spell.mpCost} MP</span>
+                    <span class="kb-hint">${i + 1}</span>
+                </button>`;
+            }).join('');
 
-                    ab.innerHTML = `
-                        <div style="display:flex;flex-wrap:wrap;gap:3px;width:100%;">
-                            ${spellBtns}
-                            <button onclick="cancelAction()" class="action-icon-btn" style="border-color:#888;position:relative;">❌<span class="kb-hint">Esc</span></button>
-                        </div>
-                    `;
-                }
-            } else {
-                // Out of combat - exploring
-                // Show pip recovery status if any pips are still cooling down
-                const cs2 = gameState.combatState;
-                let pipWarning = '';
-                let canLeave = true;
-                if (cs2 && cs2.pipAvailable) {
-                    const ready = cs2.pipAvailable.filter(x => x).length;
-                    const total = cs2.pipAvailable.length;
-                    canLeave = (ready === total);
-                    if (!canLeave) {
-                        pipWarning = `<div style="color:#FF8800;font-size:11px;margin-bottom:4px;">
-                            ⏳ Pips recovering: ${'●'.repeat(ready) + '○'.repeat(total-ready)} — wait to leave</div>`;
-                    }
-                }
-                const _xpSp = gameState.player.statPoints || 0;
-                ab.innerHTML = `
-                    ${pipWarning}
-                    <div style="display:flex;gap:3px;width:100%;flex-wrap:wrap;">
-                        <button onclick="exploreLocation('${gameState.currentLocation}')" style="flex:2;" title="Explore [1]">🔍 Explore<span class="kb-hint">1</span></button>
-                        <button onclick="showCombatInventory()" class="action-icon-btn" title="Inventory [3]" style="border-color:#00FF88;">🎒<span class="kb-hint">3</span></button>
-                        ${_xpSp > 0 ? `<button onclick="showLevelUpModal()" class="action-icon-btn" title="${_xpSp} stat points to spend" style="border-color:#FFD700;color:#FFD700;font-weight:bold;animation:hpLowPulse 1.2s ease-in-out infinite;">⬆${_xpSp}<span class="kb-hint">S</span></button>` : ''}
-                        <button onclick="leaveExploreToTown()" ${canLeave ? '' : 'disabled'}
-                            style="flex:1;${canLeave ? '' : 'opacity:0.4;'}border-color:${canLeave ? 'var(--text-color)' : '#888'};" title="Return to Town [5]">
-                            🏘️<span class="kb-hint">5</span>
-                        </button>
-                    </div>
-                `;
-            }
-            // After any button-set change, fix terminal scroll on mobile
-            requestAnimationFrame(() => { updatePipButtons(); stabilizeTerminalLayout(); });
+            ab.innerHTML = `
+                <div style="display:flex;flex-wrap:wrap;gap:3px;width:100%;">
+                    ${spellBtns}
+                    <button onclick="cancelAction()" class="action-icon-btn" style="border-color:#888;position:relative;">❌<span class="kb-hint">Esc</span></button>
+                </div>
+            `;
         }
+    } else {
+        // Out of combat - exploring
+        // Show pip recovery status if any pips are still cooling down
+        const cs2 = gameState.combatState;
+        let pipWarning = '';
+        let canLeave = true;
+        if (cs2 && cs2.pipAvailable) {
+            const ready = cs2.pipAvailable.filter(x => x).length;
+            const total = cs2.pipAvailable.length;
+            canLeave = (ready === total);
+            if (!canLeave) {
+                pipWarning = `<div style="color:#FF8800;font-size:11px;margin-bottom:4px;">
+                    ⏳ Pips recovering: ${'●'.repeat(ready) + '○'.repeat(total-ready)} — wait to leave</div>`;
+            }
+        }
+        const _xpSp = gameState.player.statPoints || 0;
+        ab.innerHTML = `
+            ${pipWarning}
+            <div style="display:flex;gap:3px;width:100%;flex-wrap:wrap;">
+                <button onclick="exploreLocation('${gameState.currentLocation}')" style="flex:2;" title="Explore [1]">🔍 Explore<span class="kb-hint">1</span></button>
+                <button onclick="showCombatInventory()" class="action-icon-btn" title="Inventory [3]" style="border-color:#00FF88;">🎒<span class="kb-hint">3</span></button>
+                ${_xpSp > 0 ? `<button onclick="showLevelUpModal()" class="action-icon-btn" title="${_xpSp} stat points to spend" style="border-color:#FFD700;color:#FFD700;font-weight:bold;animation:hpLowPulse 1.2s ease-in-out infinite;">⬆${_xpSp}<span class="kb-hint">S</span></button>` : ''}
+                <button onclick="leaveExploreToTown()" ${canLeave ? '' : 'disabled'}
+                    style="flex:1;${canLeave ? '' : 'opacity:0.4;'}border-color:${canLeave ? 'var(--text-color)' : '#888'};" title="Return to Town [5]">
+                    🏘️<span class="kb-hint">5</span>
+                </button>
+            </div>
+        `;
+    }
+    // After any button-set change, fix terminal scroll on mobile
+    requestAnimationFrame(() => { updatePipButtons(); stabilizeTerminalLayout(); });
+}
         function goBackToTown() {
             leaveExploreToTown();
         }
