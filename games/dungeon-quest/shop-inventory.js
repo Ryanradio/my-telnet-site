@@ -3385,29 +3385,15 @@ function useRecallPotion() {
             p.unlockedAreas.push(key);
         }
         
-        // Town2 and Town3 zones: unlock by level only (NO MASTERS)
-        if (noMasterZones.includes(key)) {
-            if (p.level >= (loc.requiredLevel || 1)) {
-                if (!p.unlockedAreas.includes(key)) {
-                    p.unlockedAreas.push(key);
-                }
-            } else {
-                // Strip if below level (safety)
-                const idx = p.unlockedAreas.indexOf(key);
-                if (idx !== -1) p.unlockedAreas.splice(idx, 1);
-            }
-        } else {
-            // Town1 zones: original logic (requires master defeats)
-            if (!loc.locked && loc.requiredLevel && p.level >= loc.requiredLevel) {
-                if (!p.unlockedAreas.includes(key)) {
-                    p.unlockedAreas.push(key);
-                }
-            }
-            if (loc.locked && loc.requiredLevel && p.level < loc.requiredLevel) {
-                const idx = p.unlockedAreas.indexOf(key);
-                if (idx !== -1) p.unlockedAreas.splice(idx, 1);
-            }
-        }
+        // ALL zones unlock by level only
+if (p.level >= (loc.requiredLevel || 1)) {
+    if (!p.unlockedAreas.includes(key)) {
+        p.unlockedAreas.push(key);
+    }
+} else {
+    const idx = p.unlockedAreas.indexOf(key);
+    if (idx !== -1) p.unlockedAreas.splice(idx, 1);
+}
     });
 
     const townName = townDef ? townDef.name : 'World';
@@ -3452,29 +3438,7 @@ function useRecallPotion() {
                 </div>
             `;
             
-            // ONLY show master challenges for Town1 zones (never Town2/Town3)
-            if (!isTown2or3Zone) {
-                const masterKey = `${p.baseClass || p.class}_master_${key}`;
-                if (typeof CLASS_MASTERS !== 'undefined' && CLASS_MASTERS[masterKey] &&
-                    !p.defeatedMasters.includes(masterKey) && !renderedMasterKeys.has(masterKey)) {
-                    const master = CLASS_MASTERS[masterKey];
-                    renderedMasterKeys.add(masterKey);
-                    if (p.level >= master.requiredLevel) {
-                        exploreHtml += `
-                            <div class="menu-option" onclick="challengeMaster('${masterKey}')"
-                                 style="border-color:var(--highlight-color);background:rgba(255,255,0,0.1);">
-                                ⚔️ CHALLENGE MASTER: ${master.name} (Lv ${master.level})
-                            </div>
-                        `;
-                    } else {
-                        exploreHtml += `
-                            <div style="color:#666;font-size:12px;padding:4px 8px;">
-                                ⚔️ Master available at level ${master.requiredLevel}: ${master.name}
-                            </div>
-                        `;
-                    }
-                }
-            }
+            
         } else {
             // Locked zone — level requirement not met
             exploreHtml += `
@@ -3484,6 +3448,28 @@ function useRecallPotion() {
             `;
         }
     });
+
+    // Add announcement for level 7+ players in Town 1 (need to go to Ashen Harbor)
+    if (tid === 'town1' && p.level >= 7) {
+        exploreHtml += `
+            <div style="margin-top: 20px; padding: 12px; border: 2px solid #AA88FF; background: rgba(170,136,255,0.1); border-radius: 8px; text-align: center;">
+                <span style="color: #AA88FF; font-size: 16px;">🌀 PORTAL REQUIRED 🌀</span><br>
+                <span style="color: #ccaaee; font-size: 13px;">To reach the next exploration areas, you must venture into the <strong>The Undermaze Dungeon</strong><br>
+                and journey through to reach the town of <strong>Ashen Harbor</strong>.</span>
+            </div>
+        `;
+    }
+
+    // Add announcement for level 13+ players in Town 2 (need to go to Crossroads)
+    if (tid === 'town2' && p.level >= 13) {
+        exploreHtml += `
+            <div style="margin-top: 20px; padding: 12px; border: 2px solid #FFAA44; background: rgba(255,170,68,0.1); border-radius: 8px; text-align: center;">
+                <span style="color: #FFAA44; font-size: 16px;">🌀 JOURNEY AHEAD 🌀</span><br>
+                <span style="color: #ffcc88; font-size: 13px;">To reach the next exploration areas, you must venture into the <strong>Ashen Depths Dungeon</strong><br>
+                and journey through to reach the town of <strong>The Crossroads</strong>.</span>
+            </div>
+        `;
+    }
 
     exploreHtml += `
         </div>

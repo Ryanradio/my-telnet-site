@@ -14,7 +14,7 @@ window.TOWNS.town1 = {
     description: 'A peaceful town nestled at the edge of the Whispering Forest. Your adventure begins here.',
     theme: '#00FF41',   // green terminal color
     dungeonKey: 'Dungeon1',
-    dungeonName: 'The Undermaze Dungeon!  Defeat it to reach Ashen Harbor!',
+    dungeonName: 'The Undermaze Dungeon!',
     dungeonDescription: 'A treacherous maze of tunnels beneath Silverdale. Rumored to connect to another world...',
     dungeonRequiredLevel: 3,
     dungeonUnlockMessage: 'You must be at least level 3 to brave the Undermaze!',
