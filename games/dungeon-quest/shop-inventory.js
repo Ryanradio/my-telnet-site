@@ -2064,14 +2064,32 @@ function showUnifiedInventory(returnCallback = null) {
                     <div class="inventory-grid">`;
         
         const potionItems = [];
+        let recallPotion = null;
+        
         p.inventory.forEach(item => {
-            if (typeof item === 'string' && ITEMS[item] && 
+            if (item === 'recall_potion') {
+                recallPotion = item;
+            } else if (typeof item === 'string' && ITEMS[item] && 
                 (ITEMS[item].subtype === 'heal_hp' || ITEMS[item].subtype === 'heal_mp' || ITEMS[item].subtype === 'full_restore')) {
                 potionItems.push(item);
             }
         });
         
-        if (potionItems.length === 0) {
+        // Display Recall Potion FIRST if present (purple styling)
+        if (recallPotion) {
+            const recallItem = ITEMS['recall_potion'];
+            invHtml += `
+                <div class="item-card" style="border: 2px solid #AA88FF; background: rgba(170,136,255,0.1);">
+                    <div style="color: #AA88FF; font-size: 18px;">🌀 ${recallItem.name}</div>
+                    <div style="font-size: 16px; color: #ccaaee;">${recallItem.description}</div>
+                    <div style="color: #FFD700; font-size: 12px; margin-top: 4px;">⚠️ Returns you to town (Dungeon only)</div>
+                    <button onclick="useRecallPotion()" style="border-color: #AA88FF; color: #AA88FF; margin-top: 6px;">🌀 USE (Return to Town)</button>
+                </div>
+            `;
+        }
+        
+        // Display regular potions
+        if (potionItems.length === 0 && !recallPotion) {
             invHtml += `<div class="item-card" style="color:#888;">No potions</div>`;
         } else {
             const potionCounts = {};
@@ -3137,115 +3155,115 @@ function unequipItem(type) {
         // USE POTION FROM INVENTORY
         // ═══════════════════════════════════════════════════════════════
         function useInventoryPotion(potionKey) {
-            const potion = ITEMS[potionKey];
-            const p = gameState.player;
-            
-            if (!potion) {
-                alert('Invalid potion!');
-                return;
-            }
-
-            // ── Recall Potion ──────────────────────────────────────────────
-            if (potion.subtype === 'recall') {
-                alert('Recall Potions can only be used while inside a dungeon.');
-                return;
-            }
-            
-            let msg = '';
-            let used = false;
-            
-            // Handle different potion types
-            if (potion.subtype === 'heal_hp') {
-                if (p.hp >= p.maxHp) {
-                    alert("You're already at full HP!");
-                    return;
-                }
-                const actual = Math.min(p.maxHp - p.hp, potion.power);
-                p.hp = Math.min(p.maxHp, p.hp + potion.power);
-                msg = `Used ${potion.name} – restored ${actual} HP!`;
-                used = true;
-            } 
-            else if (potion.subtype === 'heal_mp') {
-                if (p.mp >= p.maxMp) {
-                    alert("You're already at full MP!");
-                    return;
-                }
-                const actual = Math.min(p.maxMp - p.mp, potion.power);
-                p.mp = Math.min(p.maxMp, p.mp + potion.power);
-                msg = `Used ${potion.name} – restored ${actual} MP!`;
-                used = true;
-            } 
-            else if (potion.subtype === 'full_restore') {
-                if (p.hp >= p.maxHp && p.mp >= p.maxMp) {
-                    alert("You're already fully restored!");
-                    return;
-                }
-                const hpR = p.maxHp - p.hp;
-                const mpR = p.maxMp - p.mp;
-                p.hp = p.maxHp;
-                p.mp = p.maxMp;
-                msg = `Used ${potion.name} – fully restored ${hpR} HP & ${mpR} MP!`;
-                used = true;
-            }
-            else if (potion.subtype?.startsWith('buff_')) {
-                // Apply buff
-                const buffType = potion.subtype;
-                const duration = potion.duration || 300000; // 5 minutes default
-                
-                if (!p.activeBuffs) p.activeBuffs = {};
-                
-                // Check if buff is already active
-                if (p.activeBuffs[buffType] && Date.now() < p.activeBuffs[buffType].endTime) {
-                    // Check if we can stack
-                    const currentStacks = p.activeBuffs[buffType].stacks || 1;
-                    if (currentStacks >= 3) {
-                        alert(`${potion.name} is already at maximum stacks (3x)!`);
-                        return;
-                    }
-                    // Stack the buff
-                    p.activeBuffs[buffType].stacks = currentStacks + 1;
-                    p.activeBuffs[buffType].power = potion.power * (currentStacks + 1);
-                    p.activeBuffs[buffType].endTime = Date.now() + duration;
-                    msg = `Used ${potion.name} – buff stacked! (${currentStacks + 1}x)`;
-                } else {
-                    // New buff
-                    p.activeBuffs[buffType] = {
-                        power: potion.power,
-                        endTime: Date.now() + duration,
-                        stacks: 1
-                    };
-                    msg = `Used ${potion.name} – buff activated!`;
-                }
-                used = true;
-            }
-            
-            if (used) {
-                // Remove potion from inventory
-                const idx = p.inventory.indexOf(potionKey);
-                if (idx !== -1) {
-                    p.inventory.splice(idx, 1);
-                }
-                
-                // Update HUD
-                updateHud();
-                
-                // Save game
-                saveGame();
-                
-                // Show message and refresh inventory
-                if (gameState.dungeon || document.body.classList.contains('terminal-mode')) {
-    termAppend(msg, 'term-info');
-} else {
-    // Only show alert in town
-    if (gameState.dungeon || gameState._currentExploreArea) {
-    if (typeof termAppend === 'function') {
-        termAppend(msg, 'term-info');
+    const potion = ITEMS[potionKey];
+    const p = gameState.player;
+    
+    if (!potion) {
+        alert('Invalid potion!');
+        return;
     }
-} else {
-    alert(msg);
-}
-}
-showInventory();
+
+    // ── Recall Potion - redirect to dedicated function ──────────────────────────────
+    if (potion.subtype === 'recall') {
+        useRecallPotion();
+        return;
+    }
+    
+    let msg = '';
+    let used = false;
+    
+    // Handle different potion types
+    if (potion.subtype === 'heal_hp') {
+        if (p.hp >= p.maxHp) {
+            alert("You're already at full HP!");
+            return;
+        }
+        const actual = Math.min(p.maxHp - p.hp, potion.power);
+        p.hp = Math.min(p.maxHp, p.hp + potion.power);
+        msg = `Used ${potion.name} – restored ${actual} HP!`;
+        used = true;
+    } 
+    else if (potion.subtype === 'heal_mp') {
+        if (p.mp >= p.maxMp) {
+            alert("You're already at full MP!");
+            return;
+        }
+        const actual = Math.min(p.maxMp - p.mp, potion.power);
+        p.mp = Math.min(p.maxMp, p.mp + potion.power);
+        msg = `Used ${potion.name} – restored ${actual} MP!`;
+        used = true;
+    } 
+    else if (potion.subtype === 'full_restore') {
+        if (p.hp >= p.maxHp && p.mp >= p.maxMp) {
+            alert("You're already fully restored!");
+            return;
+        }
+        const hpR = p.maxHp - p.hp;
+        const mpR = p.maxMp - p.mp;
+        p.hp = p.maxHp;
+        p.mp = p.maxMp;
+        msg = `Used ${potion.name} – fully restored ${hpR} HP & ${mpR} MP!`;
+        used = true;
+    }
+    else if (potion.subtype?.startsWith('buff_')) {
+        // Apply buff
+        const buffType = potion.subtype;
+        const duration = potion.duration || 300000; // 5 minutes default
+        
+        if (!p.activeBuffs) p.activeBuffs = {};
+        
+        // Check if buff is already active
+        if (p.activeBuffs[buffType] && Date.now() < p.activeBuffs[buffType].endTime) {
+            // Check if we can stack
+            const currentStacks = p.activeBuffs[buffType].stacks || 1;
+            if (currentStacks >= 3) {
+                alert(`${potion.name} is already at maximum stacks (3x)!`);
+                return;
+            }
+            // Stack the buff
+            p.activeBuffs[buffType].stacks = currentStacks + 1;
+            p.activeBuffs[buffType].power = potion.power * (currentStacks + 1);
+            p.activeBuffs[buffType].endTime = Date.now() + duration;
+            msg = `Used ${potion.name} – buff stacked! (${currentStacks + 1}x)`;
+        } else {
+            // New buff
+            p.activeBuffs[buffType] = {
+                power: potion.power,
+                endTime: Date.now() + duration,
+                stacks: 1
+            };
+            msg = `Used ${potion.name} – buff activated!`;
+        }
+        used = true;
+    }
+    
+    if (used) {
+        // Remove potion from inventory
+        const idx = p.inventory.indexOf(potionKey);
+        if (idx !== -1) {
+            p.inventory.splice(idx, 1);
+        }
+        
+        // Update HUD
+        updateHud();
+        
+        // Save game
+        saveGame();
+        
+        // Show message and refresh inventory
+        if (gameState.dungeon || document.body.classList.contains('terminal-mode')) {
+            termAppend(msg, 'term-info');
+        } else {
+            if (gameState.dungeon || gameState._currentExploreArea) {
+                if (typeof termAppend === 'function') {
+                    termAppend(msg, 'term-info');
+                }
+            } else {
+                alert(msg);
+            }
+        }
+        showInventory();
+    
             }
         }
 
@@ -3270,6 +3288,67 @@ showInventory();
                 }, 100);
             }
         };
+
+
+
+function useRecallPotion() {
+    // Check if in dungeon
+    if (!gameState.dungeon) {
+        alert('Recall Potions can only be used inside dungeons!');
+        return;
+    }
+    
+    // Check if in combat
+    if (gameState.combatState && gameState.combatState.monsters && gameState.combatState.monsters.length > 0) {
+        alert('⚠️ You cannot recall while in combat! Defeat or flee from your enemies first.');
+        return;
+    }
+    
+    // Confirmation dialog
+    const confirmed = confirm(
+        '🌀 USE RECALL POTION? 🌀\n\n' +
+        'This will instantly return you to town.\n' +
+        'Your dungeon progress will be saved.\n\n' +
+        'Are you sure you want to leave?'
+    );
+    
+    if (!confirmed) return;
+    
+    // Find and remove the recall potion from inventory
+    const index = gameState.player.inventory.indexOf('recall_potion');
+    if (index !== -1) {
+        gameState.player.inventory.splice(index, 1);
+    }
+    
+    // Save current state before leaving
+    saveGame();
+    
+    // Show effect in terminal
+    if (typeof termAppend === 'function') {
+        termAppend(`<span style="color:#AA88FF;">🌀 The Recall Potion dissolves in your hand — a swirling portal opens beneath you...</span>`, 'term-highlight');
+        termAppend(`<span style="color:#AA88FF;">You are swept away to safety!</span>`, 'term-loot');
+    }
+    
+    // Return to town after a short delay
+    setTimeout(() => {
+        const destTown = gameState.currentTown || 'town1';
+        
+        // Clear dungeon and combat state
+        gameState.dungeon = null;
+        gameState.combatState = null;
+        if (gameState.combatTimer) {
+            clearInterval(gameState.combatTimer);
+            gameState.combatTimer = null;
+        }
+        
+        // Exit terminal mode and show town
+        document.body.classList.remove('terminal-mode');
+        gameState._terminalOpen = false;
+        
+        saveGame();
+        showTown(destTown);
+    }, 1800);
+}
 
 
         function showExplore() {
