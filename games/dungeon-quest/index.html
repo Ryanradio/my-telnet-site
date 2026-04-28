@@ -9441,102 +9441,88 @@ if (typeof returnToTown === 'function') {
 // Combat engine, dungeon nav inner combat, spell/potion actions, end combat, loot → combat-engine.js
 function rollLoot(monster) {
     const loot = [];
+    const p = gameState.player;
     const debugMode = gameState.sysop && gameState.sysop.authenticated;
 
-    // ── GEM DROP ──
-    const gemRoll = Math.random();
-    const gemChance = 0.04;
-    if (gemRoll < gemChance) {
+    // Calculate luck bonus for drop chances
+    const playerLck = p.lck || 0;
+    const luckBonus = Math.min(25, playerLck * 0.5); // 0.5% per luck, max 25%
+    
+    // Fortunate armor bonus - reduced to 25% effectiveness
+    let fortunateBonus = getArmorModifierBonus('dropBonus');
+    if (fortunateBonus > 0) {
+        fortunateBonus = fortunateBonus * 0.25; // Only 25% as effective
+        if (debugMode) console.log(`  🍀 Fortunate: +${fortunateBonus.toFixed(1)}% drop chance (reduced from ${getArmorModifierBonus('dropBonus')}%)`);
+    }
+    
+    // Helper function to check if an item drops
+    function doesDrop(baseChance) {
+        let chance = baseChance;
+        chance += luckBonus;
+        if (fortunateBonus > 0) chance += fortunateBonus;
+        return Math.random() * 100 < chance;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // 1. RAW GEMS (4% base)
+    // ═══════════════════════════════════════════════════════════════
+    if (doesDrop(4.0)) {
         const tier = getGemTier(monster.level || 1);
         const gemTypeKey = GEM_KEYS[Math.floor(Math.random() * GEM_KEYS.length)];
         const rawGemKey = `raw_${gemTypeKey}_t${tier}`;
         if (ITEMS[rawGemKey]) {
             loot.push(rawGemKey);
+            if (debugMode) console.log(`  → Gem drop: ${rawGemKey}`);
         }
     }
 
-    if (!monster.possibleDrops || monster.possibleDrops.length === 0) {
-        return loot;
+    // ═══════════════════════════════════════════════════════════════
+    // 2. POTIONS (20% base)
+    // ═══════════════════════════════════════════════════════════════
+    if (doesDrop(20.0)) {
+        // Higher level enemies drop better potions
+        let potionKey;
+        if (monster.level >= 15) {
+            const highPool = ['greater_health_potion', 'greater_mana_potion', 'superior_health_potion'];
+            potionKey = highPool[Math.floor(Math.random() * highPool.length)];
+        } else if (monster.level >= 8) {
+            const midPool = ['health_potion', 'mana_potion', 'greater_health_potion'];
+            potionKey = midPool[Math.floor(Math.random() * midPool.length)];
+        } else {
+            const lowPool = ['health_potion', 'mana_potion'];
+            potionKey = lowPool[Math.floor(Math.random() * lowPool.length)];
+        }
+        loot.push(potionKey);
+        if (debugMode) console.log(`  → Potion drop: ${potionKey}`);
     }
-    
-    let armorDropped = false;  // Track if an armor already dropped from this enemy
-    let itemDropped = false;   // Track if an item already dropped from this enemy
 
-    monster.possibleDrops.forEach(itemKey => {
-        // Skip armor if one already dropped from this enemy
-        if (armorDropped && ARMOR[itemKey] && !ARMOR[itemKey].unarmored) {
-            return;
-        }
-        
-        // Skip items if one already dropped from this enemy
-        if (itemDropped && ITEMS[itemKey]) {
-            return;
-        }
-
-        let dropChance = 0;
-        
-        // Determine base drop chance
-        if (ITEMS[itemKey]) {
-            dropChance = monster.dropRates.common || 0.1;
-        } else if (WEAPONS[itemKey] || ARMOR[itemKey]) {
-            const quality = getItemQuality(itemKey);
-            dropChance = monster.dropRates[quality] || 0.05;
-        }
-        
-        const lckBonus = gameState.player ? calcLootBonus(gameState.player.lck || 0) / 100 : 0;
-
-        // ── ARMOR MODIFIER: Fortunate (drop bonus) ──
-        const dropBonus = getArmorModifierBonus('dropBonus');
-        let dropMultiplier = 1 + lckBonus;
-        if (dropBonus > 0) {
-            dropMultiplier += (dropBonus / 100);
-            if (gameState.sysop && gameState.sysop.authenticated) {
-                console.log(`🍀 Drop bonus: +${dropBonus}% from Fortunate armor`);
+    // ═══════════════════════════════════════════════════════════════
+    // 3. EVERYTHING ELSE (junk, keys, quest items) - 15% base
+    // ═══════════════════════════════════════════════════════════════
+    if (monster.possibleDrops && monster.possibleDrops.length > 0 && doesDrop(15.0)) {
+        // Build weighted pool from monster's possibleDrops
+        const dropPool = [];
+        monster.possibleDrops.forEach(itemKey => {
+            // Skip potions and gems (handled above)
+            if (itemKey.includes('potion') || itemKey.startsWith('raw_')) return;
+            
+            let weight = 1;
+            if (ITEMS[itemKey] && monster.dropRates) {
+                const quality = getItemQuality(itemKey);
+                weight = Math.floor(monster.dropRates[quality] * 100) || 1;
             }
-        }
-
-        const adjustedChance = Math.min(0.95, dropChance * dropMultiplier);
-        const roll = Math.random();
+            for (let i = 0; i < weight; i++) {
+                dropPool.push(itemKey);
+            }
+        });
         
-        if (roll < adjustedChance) {
-            // ── WEAPON DROP: Generate INSTANCE (skip roll, we already know it dropped) ──
-            if (WEAPONS[itemKey] && !WEAPONS[itemKey].unarmed) {
-                const weaponDrop = generateWeaponDrop(
-                    gameState.player,
-                    monster.level,
-                    monster.rarity || 'common',
-                    true,  // skipRoll = true
-                    null
-                );
-                if (weaponDrop) {
-                    loot.push(weaponDrop);
-                    if (debugMode) console.log(`  → Weapon drop: ${weaponDrop.name}`);
-                }
-            } 
-            // ── ARMOR DROP: Generate INSTANCE (skip roll, we already know it dropped) ──
-            else if (ARMOR[itemKey] && !ARMOR[itemKey].unarmored) {
-                armorDropped = true;  // Mark that an armor dropped
-                const armorDrop = generateArmorDrop(
-                    gameState.player,
-                    monster.level,
-                    monster.rarity || 'common',
-                    true,  // skipRoll = true
-                    null
-                );
-                if (armorDrop) {
-                    loot.push(armorDrop);
-                    if (debugMode) console.log(`  → Armor drop: ${armorDrop.name}`);
-                }
-            }
-            // ── ITEMS (potions, keys, etc.) stay as strings ──
-            else if (ITEMS[itemKey]) {
-                itemDropped = true;  // Mark that an item dropped
-                loot.push(itemKey);
-                if (debugMode) console.log(`  → Item drop: ${itemKey}`);
-            }
+        if (dropPool.length > 0) {
+            const selected = dropPool[Math.floor(Math.random() * dropPool.length)];
+            loot.push(selected);
+            if (debugMode) console.log(`  → Other drop: ${selected}`);
         }
-    });
-    
+    }
+
     return loot;
 }
 
