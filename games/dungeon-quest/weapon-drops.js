@@ -149,7 +149,23 @@ function randomChoice(arr) {
 }
 
 function rollQuality() {
-    const weights = WEAPON_DROP_CONFIG.qualityWeights;
+    // Get base weights from config
+    let weights = { ...WEAPON_DROP_CONFIG.qualityWeights };
+    
+    // ── LUCK BONUS: Higher luck = better quality (0.10 weight per luck) ──
+    const playerLck = gameState.player?.lck || 0;
+    const luckWeight = playerLck * 0.10;  // Half of the first roll's 0.25 (using 0.25 for weapons)
+    
+    // Redistribute weight: reduce poor/normal, increase epic/legendary/godly
+    weights.poor = Math.max(0, (weights.poor || 5) - (luckWeight * 0.5));
+    weights.normal = Math.max(0, (weights.normal || 35) - (luckWeight * 0.5));
+    weights.epic = (weights.epic || 18) + luckWeight;
+    weights.legendary = (weights.legendary || 6) + luckWeight;
+    weights.godly = (weights.godly || 1) + luckWeight;
+    
+    // Ensure rare stays the same (no change from luck)
+    weights.rare = weights.rare || 35;
+    
     const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
     let roll = Math.random() * totalWeight;
     
@@ -406,11 +422,28 @@ function generateWeaponDrop(player, enemyLevel, enemyRarity = 'common', skipRoll
     try {
         // Calculate drop chance (skip if forced)
         if (!skipRoll) {
-            const baseChance = WEAPON_DROP_CONFIG.baseDropChance;
-            const rarityMult = WEAPON_DROP_CONFIG.rarityMultipliers[enemyRarity] || 1.0;
-            const dropChance = baseChance * rarityMult;
+            // Base drop chance: 3%
+            let dropChance = 3.0;
             
-            if (Math.random() > dropChance) {
+            // Luck bonus: 0.25% per luck point (matches armor)
+            const playerLck = player.lck || 0;
+            const luckBonus = playerLck * 0.20;
+            
+            // Enemy rarity multiplier (converted to percentage bonus)
+            const rarityMult = WEAPON_DROP_CONFIG.rarityMultipliers[enemyRarity] || 1.0;
+            // Convert multiplier to percentage: 1.5x = +0.5%? No, let's make it scale reasonably
+            let rarityBonus = 0;
+            if (enemyRarity === 'uncommon') rarityBonus = 0.5;
+            else if (enemyRarity === 'rare') rarityBonus = 1.0;
+            else if (enemyRarity === 'epic') rarityBonus = 2.0;
+            else if (enemyRarity === 'legendary') rarityBonus = 3.0;
+            else if (enemyRarity === 'mythic') rarityBonus = 4.0;
+            
+            dropChance += luckBonus + rarityBonus;
+            
+            // Roll for drop (dropChance is a percentage 0-100)
+            const roll = Math.random() * 100;
+            if (roll > dropChance) {
                 return null;
             }
         }
@@ -775,7 +808,7 @@ const ARMOR_DROP_CONFIG = {
 // ═══════════════════════════════════════════════════════════════
 function rollQualityForDrop(sourceLevel, enemyRarity) {
     // Base quality distribution
-    const weights = {
+    let weights = {
         poor: 5,
         normal: 40,
         rare: 35,
@@ -783,6 +816,17 @@ function rollQualityForDrop(sourceLevel, enemyRarity) {
         legendary: 4,
         godly: 1
     };
+    
+    // ── LUCK BONUS: Higher luck = better quality (0.10 weight per luck) ──
+    const playerLck = gameState.player?.lck || 0;
+    const luckWeight = playerLck * 0.10;  // Half of the first roll's 0.20
+    
+    // Redistribute weight: reduce poor/normal, increase epic/legendary/godly
+    weights.poor = Math.max(0, weights.poor - (luckWeight * 0.5));
+    weights.normal = Math.max(0, weights.normal - (luckWeight * 0.5));
+    weights.epic += luckWeight;
+    weights.legendary += luckWeight;
+    weights.godly += luckWeight;
     
     // Adjust based on enemy rarity
     const rarityBonus = {
@@ -827,22 +871,26 @@ function rollQualityForDrop(sourceLevel, enemyRarity) {
 // GENERATE ARMOR DROP - WITH HP/MP BONUSES AND MODIFIERS
 // ═══════════════════════════════════════════════════════════════
 function generateArmorDrop(player, sourceLevel, enemyRarity, skipRoll = false, forcedQuality = null) {
-    if (!skipRoll) {
+        if (!skipRoll) {
         const dropRoll = Math.random() * 100;
-        let dropChance = 0.04; // 4% base drop chance
+        let dropChance = 3.0; // 3% base drop chance
+        
+        // Luck bonus: 0.20% per luck point (20 luck = 4% bonus)
+        const playerLck = player.lck || 0;
+        const luckBonus = playerLck * 0.20;
         
         // Higher rarity enemies drop armor more often
         const rarityBonus = {
-            'uncommon': 0.05,
-            'rare': 0.10,
-            'epic': 0.15,
-            'legendary': 0.25,
-            'mythic': 0.35
-        }[enemyRarity] || 0;
+    'uncommon': 1.0,
+    'rare': 3.0,
+    'epic': 8.0,
+    'legendary': 15.0,
+    'mythic': 25.0
+}[enemyRarity] || 0;
         
-        dropChance += rarityBonus;
+        dropChance += luckBonus + rarityBonus;
         
-        if (dropRoll > dropChance * 100) return null;
+        if (dropRoll > dropChance) return null;
     }
     
     // Determine armor quality based on enemy rarity and source level

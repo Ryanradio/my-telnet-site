@@ -4994,7 +4994,7 @@ function checkCombatEnd() {
             p.kills[killKey] = (p.kills[killKey] || 0) + 1;
             onMonsterKill(killKey, p.kills[killKey], monster);
             
-            // Roll for loot
+            // Roll for loot (potions, keys, etc.)
             const loot = rollLoot(monster);
             for (const item of loot) {
                 if (typeof item === 'object' && item !== null) {
@@ -5004,6 +5004,80 @@ function checkCombatEnd() {
                 } else if (typeof item === 'string') {
                     gameState.player.inventory.push(item);
                     termAppend(`  + <span style="color:${getItemColor(item)};">${getItemName(item)}</span>`, 'term-loot');
+                }
+            }
+            
+            // ═══════════════════════════════════════════════════════════════
+            // ⭐ WEAPON DROP ⭐
+            // ═══════════════════════════════════════════════════════════════
+            const weaponDrop = generateWeaponDrop(
+                gameState.player,
+                monster.level,
+                monster.rarity || 'common',
+                false,
+                null
+            );
+            
+            if (weaponDrop) {
+                gameState.player.inventory.push(weaponDrop.instanceId);
+                const qualityColor = QUALITY_CONFIG[weaponDrop.quality]?.color || '#00FF00';
+                termAppend('', 'term-separator');
+                termAppend(`💎 <span style="color:${qualityColor};font-size:18px;font-weight:bold;">WEAPON DROP!</span>`, 'term-victory');
+                termAppend(`<span style="color:${qualityColor};">${weaponDrop.name}</span>`, 'term-loot');
+                termAppend(`<span style="color:#aaa;">Level ${weaponDrop.level} ${weaponDrop.quality} ${weaponDrop.type}</span>`, 'term-dim');
+                termAppend(`<span style="color:#FFD700;">DMG: ${weaponDrop.baseDamage}-${weaponDrop.maxDamage}</span>`, 'term-loot');
+                
+                // Show modifiers
+                if (weaponDrop.modifiers && weaponDrop.modifiers.length > 0) {
+                    termAppend('<span style="color:#00FFFF;">Special Properties:</span>', 'term-loot');
+                    weaponDrop.modifiers.forEach(mod => {
+                        let modText = `  • <span style="color:${mod.color || '#FFD700'};">${mod.name}`;
+                        if (mod.minDamage) {
+                            modText += ` (${mod.minDamage}-${mod.maxDamage} dmg)`;
+                        }
+                        if (mod.statusEffect) {
+                            const status = STATUS_EFFECTS[mod.statusEffect];
+                            modText += ` - ${Math.floor(mod.statusChance * 100)}% ${status.icon} ${status.name}`;
+                        }
+                        modText += `</span>`;
+                        termAppend(modText, 'term-loot');
+                    });
+                }
+            }
+            
+            // ═══════════════════════════════════════════════════════════════
+            // ⭐ ARMOR DROP ⭐
+            // ═══════════════════════════════════════════════════════════════
+            const armorDrop = generateArmorDrop(
+                gameState.player,
+                monster.level,
+                monster.rarity || 'common',
+                false,
+                null
+            );
+            
+            if (armorDrop) {
+                const qColor = QUALITY_CONFIG[armorDrop.quality]?.color || '#00FF00';
+                termAppend('', 'term-separator');
+                termAppend(`🛡️ <span style="color:${qColor};font-size:18px;font-weight:bold;">ARMOR DROP!</span>`, 'term-victory');
+                termAppend(`<span style="color:${qColor};">${armorDrop.name}</span>`, 'term-loot');
+                termAppend(`<span style="color:#8aaa8a;">Level ${armorDrop.level || 1} ${armorDrop.quality} armor</span>`, 'term-dim');
+                termAppend(`<span style="color:#00AAFF;">DEF: ${armorDrop.baseDefense}${armorDrop.baseMagicBonus > 0 ? ` | MAG BONUS: +${armorDrop.baseMagicBonus}` : ''}</span>`, 'term-loot');
+                
+                // Show armor modifiers
+                if (armorDrop.modifiers && armorDrop.modifiers.length > 0) {
+                    termAppend('<span style="color:#00FFFF;">Special Properties:</span>', 'term-loot');
+                    armorDrop.modifiers.forEach(mod => {
+                        let modText = `  • <span style="color:${mod.color || '#FFD700'};">${mod.name}`;
+                        if (mod.value) {
+                            modText += `: ${mod.value}${mod.statType === 'percent' ? '%' : ''}`;
+                        }
+                        if (mod.description) {
+                            modText += ` — ${mod.description}`;
+                        }
+                        modText += `</span>`;
+                        termAppend(modText, 'term-loot');
+                    });
                 }
             }
             
@@ -5355,123 +5429,6 @@ if (cs.isBountyFight) {
     }    
 
 
-    // ═══════════════════════════════════════════════════════════
-    // WEAPON + ARMOR DROPS 🗡️🛡️
-    // ═══════════════════════════════════════════════════════════
-    defeated.forEach((monster, index) => {
-        // ── Weapon drop ───────────────────────────────────────
-        // FIXED: Pass monster.level, NOT player level!
-        const weaponDrop = generateWeaponDrop(
-            gameState.player, 
-            monster.level,      // ← Use monster's level for appropriate gear
-            monster.rarity || 'common',
-            false,              // ← false = real drop with RNG
-            null                // ← null = random quality based on rollQuality()
-        );
-        
-        if (weaponDrop) {
-            // Add to player inventory - ONLY ONCE
-            gameState.player.inventory.push(weaponDrop);
-            
-            // Show drop message with quality color
-            const qualityColor = QUALITY_CONFIG[weaponDrop.quality].color;
-            termAppend('', 'term-separator');
-            termAppend(`💎 <span style="color:${qualityColor};font-size:18px;font-weight:bold;">WEAPON DROP!</span>`, 'term-victory');
-            termAppend(`<span style="color:${qualityColor};">${weaponDrop.name}</span>`, 'term-loot');
-            termAppend(`<span style="color:#aaa;">Level ${weaponDrop.level} ${weaponDrop.quality} ${weaponDrop.type}</span>`, 'term-dim');
-
-            // Physical damage line
-            let dmgLine = `<span style="color:#FFD700;">DMG: ${weaponDrop.baseDamage}-${weaponDrop.maxDamage}</span>`;
-            // Magic/spell damage — shown if present (covers tomes, wands, staves, hybrid weapons)
-            if (weaponDrop.baseMagicDamage && weaponDrop.baseMagicDamage > 0) {
-                const magMax = weaponDrop.maxMagicDamage || weaponDrop.baseMagicDamage;
-                dmgLine += `  <span style="color:#AA88FF;">SPELL: ${weaponDrop.baseMagicDamage}-${magMax}</span>`;
-            }
-            termAppend(dmgLine);
-            
-            // Show gem slots on drop
-            const dropSlots = getGemSlots(weaponDrop.quality);
-            if (dropSlots > 0) {
-                const slotCircles = '⬤'.repeat(dropSlots);
-                termAppend(`<span style="color:#333;font-size:13px;">${slotCircles}</span> <span style="color:#555;font-size:11px;">${dropSlots} gem slot${dropSlots>1?'s':''} — visit the Blacksmith to socket gems</span>`);
-            }
-            
-// Show modifiers
-if (weaponDrop.modifiers && weaponDrop.modifiers.length > 0) {
-    termAppend('<span style="color:#00FFFF;">Special Properties:</span>');
-    weaponDrop.modifiers.forEach(mod => {
-        // mod is already an object, not a key
-        let modText = `  • <span style="color:${mod.color || '#FFD700'};">${mod.name}`;
-        if (mod.minDamage) {
-            modText += ` (${mod.minDamage}-${mod.maxDamage} dmg)`;
-        }
-        if (mod.statusEffect) {
-            const status = STATUS_EFFECTS[mod.statusEffect];
-            modText += ` - ${Math.floor(mod.statusChance * 100)}% ${status.icon} ${status.name}`;
-        }
-        modText += `</span>`;
-        termAppend(modText, 'term-loot');
-    });
-}
-            termAppend('', 'term-separator');
-        }
-
-        // ── Armor drop ────────────────────────────────────────
-// Using your existing generateArmorDrop function (already handles inventory)
-const armorDrop = generateArmorDrop(
-    gameState.player,
-    monster.level,      // ← Use monster's level for appropriate gear
-    monster.rarity || 'common',
-    false,              // ← false = real drop with RNG
-    null                // ← null = random quality
-);
-
-if (armorDrop) {
-    // generateArmorDrop already adds to inventory, so we just show the message
-    const qColor = QUALITY_CONFIG[armorDrop.quality]?.color || '#00FF00';
-    
-    termAppend('', 'term-separator');
-    termAppend(`🛡️ <span style="color:${qColor};font-size:18px;font-weight:bold;">ARMOR DROP!</span>`, 'term-victory');
-    termAppend(`<span style="color:${qColor};">${armorDrop.name}</span>`, 'term-loot');
-    termAppend(`<span style="color:#8aaa8a;">Level ${armorDrop.level || 1} ${armorDrop.quality} armor</span>`, 'term-dim');
-    termAppend(`<span style="color:#00AAFF;">DEF: ${armorDrop.baseDefense}${armorDrop.baseMagicBonus > 0 ? ` | MAG BONUS: +${armorDrop.baseMagicBonus}` : ''}</span>`, 'term-loot');
-    
-    // ── HP/MP Bonuses ─────────────────────────────────
-    if (armorDrop.bonusHp && armorDrop.bonusHp > 0) {
-        termAppend(`<span style="color:#FF8888;">❤️ +${armorDrop.bonusHp} HP</span>`, 'term-loot');
-    }
-    if (armorDrop.bonusMp && armorDrop.bonusMp > 0) {
-        termAppend(`<span style="color:#8888FF;">💙 +${armorDrop.bonusMp} MP</span>`, 'term-loot');
-    }
-    
-    // ── Armor Modifiers (Regenerating, Resonant, etc.) ──
-    if (armorDrop.modifiers && armorDrop.modifiers.length > 0) {
-        termAppend('<span style="color:#00FFFF;">Special Properties:</span>', 'term-loot');
-        armorDrop.modifiers.forEach(mod => {
-            let modText = `  • <span style="color:${mod.color || '#FFD700'};">${mod.name}`;
-            if (mod.value) {
-                modText += `: ${mod.value}${mod.statType === 'percent' ? '%' : ''}`;
-            }
-            if (mod.description) {
-                modText += ` — ${mod.description}`;
-            }
-            modText += `</span>`;
-            termAppend(modText, 'term-loot');
-        });
-    }
-    
-    // Optional: Gem slots (commented out for now)
-    /*
-    const dropSlots = armorDrop.gemSlots || getGemSlots(armorDrop.quality);
-    if (dropSlots > 0) {
-        const slotCircles = '⬤'.repeat(dropSlots);
-        termAppend(`<span style="color:#333;font-size:13px;">${slotCircles}</span> <span style="color:#555;font-size:11px;">${dropSlots} gem slot${dropSlots>1?'s':''} — visit the Blacksmith to socket gems</span>`, 'term-loot');
-    }
-    */
-    
-    termAppend('', 'term-separator');
-}
-});
 
     // Check for level-up (possibly multiple levels)
     while (gameState.player.xp >= gameState.player.xpToNext && gameState.player.level < 25) {
