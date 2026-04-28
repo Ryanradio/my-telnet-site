@@ -4943,7 +4943,9 @@ function checkCombatEnd() {
         
         if (monster.hp <= 0) {
             anyProcessed = true;
-            
+                if (!cs.killCount) cs.killCount = 0;
+                    cs.killCount++;
+
             // ── ARMOR MODIFIER: Gluttonous (heal when killing an enemy) ──
             const gluttonousBonus = getArmorModifierBonus('killHeal');
             if (gluttonousBonus > 0) {
@@ -5358,17 +5360,23 @@ if (cs.isBountyFight) {
         termAppend(`✨ ${LOCATIONS[unlockedArea].name} IS NOW UNLOCKED! ✨`, 'term-loot');
     }
 
-    if (defeated.length === 1) {
+        // Use killCount from combatState instead of defeated.length
+    const killCount = cs.killCount || defeated.length;
+    
+    if (killCount === 1) {
         termAppend(
-            `You defeated <span style="color:${defeated[0].rarityColor};">${defeated[0].name}</span>!`,
+            `You defeated <span style="color:${defeated[0]?.rarityColor || '#fff'};">${defeated[0]?.name || 'an enemy'}</span>!`,
             'term-highlight'
         );
     } else {
-        termAppend(`You defeated ${defeated.length} enemies!`, 'term-highlight');
+        termAppend(`You defeated ${killCount} enemies!`, 'term-highlight');
         defeated.forEach(e =>
             termAppend(`  • <span style="color:${e.rarityColor};">${e.name}</span>`)
         );
     }
+    
+    // Reset killCount for next combat
+    cs.killCount = 0;
 
     if (!rewardsAlreadyGiven) {
         termAppend(
@@ -5377,55 +5385,53 @@ if (cs.isBountyFight) {
         );
     }
 
-    if (allLoot.length > 0) {
-    haptic('loot');
-    termAppend('⚡ LOOT:', 'term-loot');
-    allLoot.forEach(item => {
-        // Handle object items (weapons, armor instances)
-        if (typeof item === 'object' && item !== null) {
-            // Already a full object - add to inventory as-is
-            gameState.player.inventory.push(item);
-            const qualityColor = QUALITY_CONFIG[item.quality]?.color || '#00FF00';
-            termAppend(`  + <span style="color:${qualityColor};">${item.name}</span>`, 'term-loot');
-        } 
-        // Handle string items (potions, keys, etc.)
-        else if (typeof item === 'string') {
-            // CHECK FOR STAFF PIECE DUPLICATES
-            const isStaffPiece = item.startsWith('staff_piece_');
-            let alreadyHas = false;
-            
-            if (isStaffPiece) {
-                const staffNumber = ITEMS[item]?.staffPieceNumber;
-                alreadyHas = gameState.player.inventory.some(invItem => {
-                    if (typeof invItem === 'object' && invItem !== null) {
-                        return invItem.staffPieceNumber === staffNumber;
-                    }
-                    return invItem === item;
-                });
-            }
-            
-            if (isStaffPiece && alreadyHas) {
-                termAppend(`  + <span style="color:#888;">${getItemName(item)} (already collected — sold for ${ITEMS[item]?.sellValue || 0}g)</span>`, 'term-loot');
-                gameState.player.gold += ITEMS[item]?.sellValue || 0;
-                return;
-            }
-            
-            const _def = ITEMS[item];
-            const _cap = _def?.maxStack;
-            if (_cap) {
-                const _held = gameState.player.inventory.filter(k => k === item).length;
-                if (_held >= _cap) {
-                    termAppend(`  + <span style="color:#888;">${getItemName(item)} (bag full — sold for ${_def.sellValue}g)</span>`, 'term-loot');
-                    gameState.player.gold += _def.sellValue;
+        if (allLoot.length > 0) {
+        haptic('loot');
+        termAppend('⚡ LOOT:', 'term-loot');
+        allLoot.forEach(item => {
+            // Handle object items (weapons, armor instances)
+            if (typeof item === 'object' && item !== null) {
+                // Already a full object - add to inventory as-is
+                gameState.player.inventory.push(item);
+                const qualityColor = QUALITY_CONFIG[item.quality]?.color || '#00FF00';
+                termAppend(`  + <span style="color:${qualityColor};">${item.name}</span>`, 'term-loot');
+            } 
+            // Handle string items (potions, keys, etc.)
+            else if (typeof item === 'string') {
+                // CHECK FOR STAFF PIECE DUPLICATES
+                const isStaffPiece = item.startsWith('staff_piece_');
+                let alreadyHas = false;
+                
+                if (isStaffPiece) {
+                    const staffNumber = ITEMS[item]?.staffPieceNumber;
+                    alreadyHas = gameState.player.inventory.some(invItem => {
+                        if (typeof invItem === 'object' && invItem !== null) {
+                            return invItem.staffPieceNumber === staffNumber;
+                        }
+                        return invItem === item;
+                    });
+                }
+                
+                if (isStaffPiece && alreadyHas) {
+                    termAppend(`  + <span style="color:#888;">${getItemName(item)} (already collected — sold for ${ITEMS[item]?.sellValue || 0}g)</span>`, 'term-loot');
+                    gameState.player.gold += ITEMS[item]?.sellValue || 0;
                     return;
                 }
+                
+                const _def = ITEMS[item];
+                const _cap = _def?.maxStack;
+                if (_cap) {
+                    const _held = gameState.player.inventory.filter(k => k === item).length;
+                    if (_held >= _cap) {
+                        termAppend(`  + <span style="color:#888;">${getItemName(item)} (bag full — sold for ${_def.sellValue}g)</span>`, 'term-loot');
+                        gameState.player.gold += _def.sellValue;
+                        return;
+                    }
+                }
+                gameState.player.inventory.push(item);
+                termAppend(`  + <span style="color:${getItemColor(item)};">${getItemName(item)}</span>`, 'term-loot');
             }
-            gameState.player.inventory.push(item);
-            termAppend(`  + <span style="color:${getItemColor(item)};">${getItemName(item)}</span>`, 'term-loot');
-        }
-    });
-} else {
-        termAppend('No items dropped…', 'term-dim');
+        });
     }    
 
 

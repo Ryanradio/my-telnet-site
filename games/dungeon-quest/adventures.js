@@ -2,7 +2,46 @@
 // These are rare encounters that can happen while exploring
 // Each adventure is a choose-your-own-adventure style mini-quest
 
+// Get a random enemy within 3 levels of the player
+function getLevelAppropriateEnemy(playerLevel, enemyType = null) {
+    // Filter enemies by level range (playerLevel -3 to playerLevel +3)
+    const candidates = Object.keys(ENEMIES).filter(key => {
+        const enemy = ENEMIES[key];
+        // Skip bosses for regular adventures
+        if (enemy.isBoss) return false;
+        // Skip if level is not within range
+        const enemyLevel = enemy.level || 1;
+        return Math.abs(enemyLevel - playerLevel) <= 3;
+    });
+    
+    if (candidates.length === 0) {
+        // Fallback - any non-boss enemy
+        const fallback = Object.keys(ENEMIES).filter(key => !ENEMIES[key].isBoss);
+        return [fallback[Math.floor(Math.random() * fallback.length)]];
+    }
+    
+    // If specific enemy type requested, try to find it first
+    if (enemyType) {
+        const specific = candidates.find(key => key.includes(enemyType));
+        if (specific) return [specific];
+    }
+    
+    // Return 1-3 random enemies based on difficulty
+    const count = Math.random() < 0.7 ? 1 : (Math.random() < 0.7 ? 2 : 3);
+    const selected = [];
+    const shuffled = [...candidates];
+    for (let i = 0; i < Math.min(count, shuffled.length); i++) {
+        const randomIndex = Math.floor(Math.random() * shuffled.length);
+        selected.push(shuffled[randomIndex]);
+        shuffled.splice(randomIndex, 1);
+    }
+    return selected;
+}
+
+
 const ADVENTURES = {
+
+    
     // ═══════════════════════════════════════════════════════════════
     // TREASURE ADVENTURES
     // ═══════════════════════════════════════════════════════════════
@@ -10,7 +49,7 @@ const ADVENTURES = {
         id: 'buried_treasure',
         name: 'Buried Treasure Chest',
         rarity: 'legendary',
-        minLevel: 1,
+        minLevel: 15,
         description: 'You stumble upon something gleaming in the dirt...',
         intro: 'Your foot catches on something hard beneath the leaves. Brushing away the dirt, you uncover an ancient treasure chest covered in strange runes!',
 
@@ -72,6 +111,655 @@ const ADVENTURES = {
             }
         ]
     },
+
+
+mysterious_lantern: {
+    id: 'mysterious_lantern',
+    name: 'The Mysterious Lantern',
+    rarity: 'common',
+    minLevel: 1,
+    description: 'A soft glowing lantern hangs from a tree branch, flickering warmly in the dusk...',
+    intro: 'While walking along a forest path at dusk, you notice a soft glowing lantern hanging from a tree branch. It flickers warmly, almost as if beckoning you closer. The forest is quiet — too quiet. No birds, no insects. Just the soft crackle of the lantern\'s flame.',
+
+    choices: [
+        // ============================================================
+        // CHOICE 1: Approach the lantern carefully
+        // ============================================================
+        {
+            text: 'Approach the lantern carefully',
+            outcomes: [
+                {
+                    weight: 100,
+                    text: 'You step closer. The lantern\'s glow intensifies. You notice fresh footprints in the dirt leading away from the tree.',
+                    nextChoices: [
+                        {
+                            text: 'Follow the footprints',
+                            outcomes: [
+                                {
+                                    weight: 100,
+                                    text: 'You follow the footprints deeper into the woods. After several minutes, you find a small campsite with supplies scattered.',
+                                    nextChoices: [
+                                        {
+                                            text: 'Search the campsite for valuables',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'You find 150 gold, a health potion, and a finely crafted dagger lying among the supplies!',
+                                                    rewards: { weapon: { force: true, quality: 'rare' }, gold: 150, items: ['health_potion'], xp: 150 }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            text: 'Wait hidden to see who returns',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'A wounded traveler returns to camp. They thank you for waiting and give you a superior healing potion. They warn you about bandits ahead.',
+                                                    rewards: { items: ['superior_health_potion'], xp: 200 }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            text: 'Take only what you need and leave',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'You take 50 gold from the camp. As you turn to leave, a forest spirit appears, nods approvingly, and blesses you with wisdom.',
+                                                    rewards: { gold: 50, xp: 300 }
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            text: 'Unhook the lantern and take it',
+                            outcomes: [
+                                {
+                                    weight: 100,
+                                    text: 'The lantern is warm in your hands. It\'s beautifully crafted with strange runes etched into the metal.',
+                                    nextChoices: [
+                                        {
+                                            text: 'Examine the runes closely',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'You study the runes carefully. Suddenly they glow brightly!',
+                                                    nextChoices: [
+                                                        {
+                                                            text: 'Trace the runes with your finger',
+                                                            outcomes: [
+                                                                {
+                                                                    weight: 100,
+                                                                    text: 'The lantern explodes! You\'re caught in the blast, taking 15 fire damage over several seconds. Among the ashes, you find a small scorched gem.',
+                                                                    rewards: { items: ['small_gem'], damage: 15, xp: 100 }
+                                                                }
+                                                            ]
+                                                        },
+                                                        {
+                                                            text: 'Set the lantern down and back away',
+                                                            outcomes: [
+                                                                {
+                                                                    weight: 100,
+                                                                    text: 'The lantern floats into the air, spins three times, and vanishes in a flash of light. A silver coin pouch drops where it hovered.',
+                                                                    rewards: { gold: 500, xp: 300 }
+                                                                }
+                                                            ]
+                                                        },
+                                                        {
+                                                            text: 'Speak the words the runes seem to form',
+                                                            outcomes: [
+                                                                {
+                                                                    weight: 100,
+                                                                    text: 'A ghostly merchant appears before you! "A wise choice," they say. "Take this gift." The weapon feels powerful in your hands.',
+                                                                    rewards: { weapon: { force: true, quality: 'epic' }, xp: 200 }
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            text: 'Smash it open to see what\'s inside',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'You smash the lantern against a rock. Glass shatters everywhere. Inside is... nothing but ashes. Disappointed, you continue on your way.',
+                                                    rewards: { xp: 50 }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            text: 'Carry it back to town to sell',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'You carry the lantern for an hour before it grows too heavy. A merchant offers you a fair price for the strange artifact.',
+                                                    rewards: { gold: 250, xp: 150 }
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            text: 'Wait by the lantern',
+                            outcomes: [
+                                {
+                                    weight: 100,
+                                    text: 'You sit against the tree and wait. The lantern flickers warmly, almost hypnotically. Your eyelids grow heavy...',
+                                    nextChoices: [
+                                        {
+                                            text: 'Close your eyes and rest (you\'re tired)',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'You drift off... Then footsteps wake you. Two cultists approach, talking about a sacrifice. You learn their hideout location before they move on.',
+                                                    rewards: { xp: 400 }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            text: 'Keep watching the surrounding woods',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'A wolf emerges from the darkness, drawn by the light. It growls and attacks!',
+                                                    combat: ['wolf'],
+                                                    rewards: { items: ['wolf_pelt'], gold: 50, xp: 150 }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            text: 'Build a small fire nearby for warmth',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'The lantern flickers and goes out. In the darkness, you hear wings beating. A forest spirit thanks you for dispelling the cursed light and grants you a boon.',
+                                                    rewards: { items: ['health_potion'], xp: 500 }
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+
+        // ============================================================
+        // CHOICE 2: Circle around and observe from hiding
+        // ============================================================
+        {
+            text: 'Circle around and observe from hiding',
+            outcomes: [
+                {
+                    weight: 100,
+                    text: 'You duck behind a large oak and watch. After a minute, a hooded figure emerges from the shadows and checks the lantern.',
+                    nextChoices: [
+                        {
+                            text: 'Follow the hooded figure',
+                            outcomes: [
+                                {
+                                    weight: 100,
+                                    text: 'The figure takes the lantern and walks east. You follow at a distance.',
+                                    nextChoices: [
+                                        {
+                                            text: 'Stay far back, using trees for cover',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'They lead you to a hidden shrine tucked between ancient oaks.',
+                                                    nextChoices: [
+                                                        {
+                                                            text: 'Sneak around the shrine\'s perimeter',
+                                                            outcomes: [
+                                                                {
+                                                                    weight: 100,
+                                                                    text: 'Behind a loose stone, you discover a hidden weapon cache! The blade gleams with quality craftsmanship.',
+                                                                    rewards: { weapon: { force: true, quality: 'rare' }, gold: 200, items: ['health_potion'], xp: 250 }
+                                                                }
+                                                            ]
+                                                        },
+                                                        {
+                                                            text: 'Confront the figure directly',
+                                                            outcomes: [
+                                                                {
+                                                                    weight: 100,
+                                                                    text: 'The figure spins around — it\'s a cult priest! "You shouldn\'t have followed me!" They attack!',
+                                                                    combat: ['cultist'],
+                                                                    rewards: { gold: 150, items: ['ritual_dagger'], xp: 200 }
+                                                                }
+                                                            ]
+                                                        },
+                                                        {
+                                                            text: 'Wait until they leave, then search the shrine',
+                                                            outcomes: [
+                                                                {
+                                                                    weight: 100,
+                                                                    text: 'The priest prays for ten minutes then leaves. The shrine has an offering bowl with 300 gold. You take it. Nothing stirs.',
+                                                                    rewards: { gold: 300, xp: 200 }
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            text: 'Get closer to hear what they\'re muttering',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'You creep closer. "The master awakens at midnight," they whisper. "Bring the sacrifice." You step on a twig. CRACK! They spin around.',
+                                                    combat: ['cultist'],
+                                                    rewards: { gold: 100, xp: 150 }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            text: 'Cut through the woods to get ahead of them',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'You take a shortcut through dense brush. You emerge ahead of them... directly into a pit trap! You fall, taking 20 damage. The figure passes above, unaware.',
+                                                    rewards: { damage: 20, xp: 100 }
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            text: 'Ambush the hooded figure',
+                            outcomes: [
+                                {
+                                    weight: 100,
+                                    text: 'You leap out from behind the tree! "Stop right there!" The figure freezes, hands raised.',
+                                    nextChoices: [
+                                        {
+                                            text: 'Demand to know what they\'re doing',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'The figure pulls back their hood — it\'s an old woman. "I mean no harm, traveler. I was just checking my lantern." She seems sincere.',
+                                                    nextChoices: [
+                                                        {
+                                                            text: 'Lower your weapon and talk',
+                                                            outcomes: [
+                                                                {
+                                                                    weight: 100,
+                                                                    text: 'She explains she lights the lantern to guide lost travelers. In thanks, she gives you a treasure map.',
+                                                                    rewards: { items: ['treasure_map'], xp: 200 }
+                                                                }
+                                                            ]
+                                                        },
+                                                        {
+                                                            text: 'Tie them up and search them',
+                                                            outcomes: [
+                                                                {
+                                                                    weight: 100,
+                                                                    text: 'You find cult tattoos under her sleeves! She screams and cultists emerge from hiding!',
+                                                                    combat: ['cultist', 'cultist'],
+                                                                    rewards: { gold: 250, xp: 250 }
+                                                                }
+                                                            ]
+                                                        },
+                                                        {
+                                                            text: 'Demand they hand over the lantern',
+                                                            outcomes: [
+                                                                {
+                                                                    weight: 100,
+                                                                    text: 'She hands it over willingly, tears in her eyes. "It\'s just a lantern. Take it." It\'s worth a fortune to a collector in town.',
+                                                                    rewards: { gold: 400, xp: 300 }
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            text: 'Immediately attack without warning',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'Your blade strikes true! The figure crumples... but it was just a traveler. You feel immediate regret as you search their belongings.',
+                                                    rewards: { gold: 80, xp: -100, items: ['health_potion'] }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            text: 'Grab the lantern and run',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'You snatch the lantern and sprint into the woods. The figure shouts but doesn\'t chase. You escaped with a valuable artifact!',
+                                                    rewards: { gold: 400, xp: 300 }
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            text: 'Return to the lantern after they leave',
+                            outcomes: [
+                                {
+                                    weight: 100,
+                                    text: 'The figure hangs the lantern back on the tree and disappears into the mist. You wait five minutes, then approach.',
+                                    nextChoices: [
+                                        {
+                                            text: 'Take the lantern now',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'You grab the lantern and examine it closely.',
+                                                    nextChoices: [
+                                                        {
+                                                            text: 'Open the small hatch on its side',
+                                                            outcomes: [
+                                                                {
+                                                                    weight: 100,
+                                                                    text: 'Inside is a glowing copper key and 100 gold! The key opens a nearby chest hidden under roots, containing leather armor.',
+                                                                    rewards: { armor: { force: true, quality: 'normal' }, gold: 100, items: ['copper_key'], xp: 250 }
+                                                                }
+                                                            ]
+                                                        },
+                                                        {
+                                                            text: 'Twist the top counter-clockwise',
+                                                            outcomes: [
+                                                                {
+                                                                    weight: 100,
+                                                                    text: 'The top unscrews with a hiss. A wisp of smoke rises and forms into a genie! "For freeing me, take this gold." A pouch appears.',
+                                                                    rewards: { gold: 500, xp: 500 }
+                                                                }
+                                                            ]
+                                                        },
+                                                        {
+                                                            text: 'Shake it gently',
+                                                            outcomes: [
+                                                                {
+                                                                    weight: 100,
+                                                                    text: 'It\'s empty. Disappointed, you toss it away. A startled rabbit runs out from nearby bushes, and where it sat you find a silver coin.',
+                                                                    rewards: { gold: 50, xp: 50 }
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            text: 'Mark the tree and return tomorrow',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'You carve an X into the bark and return the next day. The lantern is gone, but you find a note: "Nice try. —W" and 50 gold left as a courtesy.',
+                                                    rewards: { gold: 50, xp: 100 }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            text: 'Search the area where the figure stood',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'You find a small leather pouch on the ground. Inside: 80 gold and a lockpick.',
+                                                    rewards: { gold: 80, items: ['lockpick'], xp: 100 }
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+
+        // ============================================================
+        // CHOICE 3: Shoot the lantern with an arrow
+        // ============================================================
+        {
+            text: 'Shoot the lantern with an arrow (or throw a rock)',
+            outcomes: [
+                {
+                    weight: 100,
+                    text: 'Your projectile shatters the lantern! Glass explodes everywhere, and a small fire spreads on the ground. A figure screams from the darkness.',
+                    nextChoices: [
+                        {
+                            text: 'Confront the screaming figure',
+                            outcomes: [
+                                {
+                                    weight: 100,
+                                    text: 'A cloaked woman stumbles out of the bushes, clutching her arm. "What have you done?! That lantern protected this grove!"',
+                                    nextChoices: [
+                                        {
+                                            text: 'Apologize and offer to help',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'She hesitates, then accepts your help. She reveals she was running from cultists who want to corrupt the grove.',
+                                                    nextChoices: [
+                                                        {
+                                                            text: 'Bandage her wound with your supplies',
+                                                            outcomes: [
+                                                                {
+                                                                    weight: 100,
+                                                                    text: 'You clean and wrap her wound. Grateful, she gives you a large gem she was carrying. "For your kindness."',
+                                                                    rewards: { items: ['large_gem'], xp: 300 }
+                                                                }
+                                                            ]
+                                                        },
+                                                        {
+                                                            text: 'Offer to escort her to town',
+                                                            outcomes: [
+                                                                {
+                                                                    weight: 100,
+                                                                    text: 'Halfway to town, cultists ambush you! "There she is!" You fight them off. She gives you 200 gold and a health potion for your trouble.',
+                                                                    combat: ['cultist', 'cultist'],
+                                                                    rewards: { gold: 200, items: ['health_potion'], xp: 250 }
+                                                                }
+                                                            ]
+                                                        },
+                                                        {
+                                                            text: 'Give her gold for medicine',
+                                                            outcomes: [
+                                                                {
+                                                                    weight: 100,
+                                                                    text: 'You press 50 gold into her hand. She weeps and tells you about an unguarded treasure chest to the north. You find it — 600 gold inside!',
+                                                                    rewards: { gold: -50, gold_bonus: 600, xp: 400 }
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            text: 'Accuse her of luring travelers',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'Her eyes widen. "No! I was protecting people from the cult!" She storms off, offended and hurt. You feel a twinge of guilt.',
+                                                    rewards: { xp: 50 }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            text: 'Run away',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'You sprint into the darkness, branches whipping your face. You escape, but you hear her crying behind you. That will haunt you.',
+                                                    rewards: { xp: 25 }
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            text: 'Search for the owner',
+                            outcomes: [
+                                {
+                                    weight: 100,
+                                    text: 'You scour the area where the scream came from. No one is there, but you find a small leather pouch on the ground.',
+                                    nextChoices: [
+                                        {
+                                            text: 'Open the pouch',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'Inside: a handful of gold coins and a strange iron key.',
+                                                    nextChoices: [
+                                                        {
+                                                            text: 'Take everything and leave',
+                                                            outcomes: [
+                                                                {
+                                                                    weight: 100,
+                                                                    text: 'A merchant catches you later. "That\'s my pouch!" He demands it back. His bodyguard attacks when you refuse.',
+                                                                    combat: ['mercenary'],
+                                                                    rewards: { gold: 300, items: ['iron_key'], xp: 200 }
+                                                                }
+                                                            ]
+                                                        },
+                                                        {
+                                                            text: 'Take only the key, leave the gold',
+                                                            outcomes: [
+                                                                {
+                                                                    weight: 100,
+                                                                    text: 'The key opens a locked chest hidden under a rock nearby. Inside: rare-quality armor and 150 gold!',
+                                                                    rewards: { armor: { force: true, quality: 'rare' }, gold: 150, xp: 400 }
+                                                                }
+                                                            ]
+                                                        },
+                                                        {
+                                                            text: 'Close it and leave it all',
+                                                            outcomes: [
+                                                                {
+                                                                    weight: 100,
+                                                                    text: 'A starving orphan finds it later. Years afterward, you hear stories of a hero who credits a mysterious stranger\'s kindness. The universe smiles on you.',
+                                                                    rewards: { xp: 1000 }
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            text: 'Leave it where you found it',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'You walk away. Sometimes the right choice is to take nothing.',
+                                                    rewards: { xp: 100 }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            text: 'Hide nearby to see who comes for it',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'You wait behind a log. A crying child eventually arrives, looking for the pouch. You reveal yourself and return it. The child\'s father rewards you.',
+                                                    rewards: { gold: 150, xp: 250 }
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            text: 'Put out the fire',
+                            outcomes: [
+                                {
+                                    weight: 100,
+                                    text: 'You stomp out the spreading flames before they grow. The grove is safe, for now.',
+                                    nextChoices: [
+                                        {
+                                            text: 'Inspect the broken lantern pieces',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'Among the glass shards, you find a small glowing crystal that pulses with heat.',
+                                                    nextChoices: [
+                                                        {
+                                                            text: 'Pick it up with your bare hand',
+                                                            outcomes: [
+                                                                {
+                                                                    weight: 100,
+                                                                    text: 'The crystal burns your palm! A fire gem bonds to your skin. You take 10 fire damage, but the gem is valuable and can be socketed.',
+                                                                    rewards: { items: ['fire_gem'], damage: 10, xp: 200 }
+                                                                }
+                                                            ]
+                                                        },
+                                                        {
+                                                            text: 'Wrap it in cloth first',
+                                                            outcomes: [
+                                                                {
+                                                                    weight: 100,
+                                                                    text: 'You safely retrieve a frost gem. It glitters coldly in your palm. A collector will pay handsomely for this.',
+                                                                    rewards: { items: ['small_gem'], gold: 200, xp: 400 }
+                                                                }
+                                                            ]
+                                                        },
+                                                        {
+                                                            text: 'Leave it and walk away',
+                                                            outcomes: [
+                                                                {
+                                                                    weight: 100,
+                                                                    text: 'A mage finds it the next day. He tracks you down to thank you for leaving it intact and rewards you with a spell scroll.',
+                                                                    rewards: { items: ['healing_scroll'], xp: 500 }
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            text: 'Leave before someone comes',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'You slip away into the darkness. Behind you, you hear footsteps arriving. You were wise to leave when you did.',
+                                                    rewards: { xp: 100 }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            text: 'Call out to see if anyone is hurt',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'An old man emerges from the trees, coughing from the smoke. "I\'m fine... just startled. Thank you for putting out the fire." He gives you a health potion.',
+                                                    rewards: { items: ['health_potion'], xp: 150 }
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+},
 
     // ═══════════════════════════════════════════════════════════════
     // Common Weathered Shack
@@ -3025,73 +3713,439 @@ wandering_merchant: {
     // EARLY GAME ADVENTURES (Levels 1-8)
     // ═══════════════════════════════════════════════════════════════
 
-    // 1. FRIGHTENED VILLAGER
-    frightened_villager: {
-        id: 'frightened_villager',
-        name: 'Frightened Villager',
-        rarity: 'common',
-        minLevel: 1,
-        description: 'A terrified villager runs toward you, screaming about "fire in the sky"...',
-        intro: 'A farmer crashes into you, eyes wild with panic. "I saw it! In the mountains! A red glow! And... and WINGS! The old stories are true! The dragon is real!"',
+frightened_villager: {
+    id: 'frightened_villager',
+    name: 'Frightened Villager',
+    rarity: 'common',
+    minLevel: 1,
+    description: 'A terrified villager runs toward you, screaming about "fire in the sky"...',
+    intro: 'A farmer crashes into you, eyes wild with panic. "I saw it! In the mountains! A red glow! And... and WINGS! The old stories are true! The dragon is real!"',
 
-        choices: [
-            {
-                text: 'Calm them down and get details',
-                outcomes: [
-                    {
-                        weight: 50,
-                        text: 'They describe a location where dragon cultists are gathering! Useful intel!',
-                        rewards: { xp: 100, items: ['rough_map'] }
-                    },
-                    {
-                        weight: 30,
-                        text: 'They\'re too hysterical to make sense. You learn nothing useful.',
-                        rewards: { xp: 25 }
-                    },
-                    {
-                        weight: 20,
-                        text: 'As they describe what they saw, cultists emerge from hiding! "SILENCE THE WITNESS!"',
-                        combat: ['cultist_scouts_easy']
-                    }
-                ]
-            },
-            {
-                text: 'Offer to investigate their claim',
-                outcomes: [
-                    {
-                        weight: 40,
-                        text: 'You find scorch marks and tracks! Something big was here recently!',
-                        rewards: { xp: 150, gold: 80 }
-                    },
-                    {
-                        weight: 35,
-                        text: 'It was just a large bonfire from travelers. False alarm.',
-                        rewards: { xp: 50 }
-                    },
-                    {
-                        weight: 25,
-                        text: 'You find a small wyrmling den! The babies attack to defend their nest!',
-                        combat: ['wyrmling_babies_2']
-                    }
-                ]
-            },
-            {
-                text: 'Dismiss them as crazy',
-                outcomes: [
-                    {
-                        weight: 60,
-                        text: 'They run off muttering. You continue on your way.',
-                        rewards: { xp: 10 }
-                    },
-                    {
-                        weight: 40,
-                        text: 'Weeks later, their village burns. You ignored a real warning.',
-                        rewards: { xp: 50 }
-                    }
-                ]
-            }
-        ]
-    },
+    choices: [
+        // ============================================================
+        // CHOICE 1: Calm them down and get details (9 paths)
+        // ============================================================
+        {
+            text: 'Calm them down and get details',
+            outcomes: [
+                {
+                    weight: 100,
+                    text: 'You speak softly and hand them your waterskin. After a moment, their breathing steadies. "Thank you... I\'m sorry. My name is Brom. I was gathering herbs when I saw it."',
+                    nextChoices: [
+                        {
+                            text: 'Ask for the exact location',
+                            outcomes: [
+                                {
+                                    weight: 100,
+                                    text: 'Brom points toward the eastern mountains. "There\'s a cave about two hours up. I saw the glow from its entrance."',
+                                    nextChoices: [
+                                        {
+                                            text: 'Go to the cave immediately',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'You reach the cave entrance. Inside, you hear chanting. Cultists are performing a ritual! You burst in and disrupt it. They flee, leaving behind their offerings.',
+                                                    rewards: { weapon: { force: true, quality: 'rare' }, gold: 200, xp: 250 }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            text: 'Bring Brom with you as a guide',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'Brom reluctantly agrees. Halfway there, enemies attack! You fight them off. Brom gives you his family heirloom as thanks.',
+                                                    combat: true,
+                                                    rewards: { armor: { force: true, quality: 'normal' }, gold: 100, xp: 200 }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            text: 'Mark the location and return to town for help',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'You rally the town guard. They raid the cave later that day and find a hoard of stolen goods. The mayor rewards you handsomely.',
+                                                    rewards: { gold: 500, xp: 300, items: ['health_potion'] }
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            text: 'Ask what else they saw',
+                            outcomes: [
+                                {
+                                    weight: 100,
+                                    text: 'Brom shudders. "There were... people in robes. Hooded. They were chanting around the fire."',
+                                    nextChoices: [
+                                        {
+                                            text: 'Ask for descriptions of the cultists',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'He describes their leader — a tall woman with a dragon tattoo. You later see her in town and report her. The guards arrest her and reward you.',
+                                                    rewards: { gold: 400, xp: 350 }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            text: 'Ask where they went after',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'Brom points toward an abandoned farmhouse. You investigate and find a hidden basement with supplies and a chest of gold.',
+                                                    rewards: { gold: 300, xp: 200, items: ['lockpick'] }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            text: 'Ask if they saw any symbols',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'Brom draws a crude dragon symbol in the dirt. You recognize it from old texts — a dragon cult insignia. Scholars pay you for the information.',
+                                                    rewards: { gold: 250, xp: 400 }
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            text: 'Give them gold to find shelter',
+                            outcomes: [
+                                {
+                                    weight: 100,
+                                    text: 'You press 50 gold into Brom\'s hand. "Get somewhere safe." He thanks you profusely and hurries away.',
+                                    nextChoices: [
+                                        {
+                                            text: 'Follow him secretly',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'Brom heads to the inn, but you notice he\'s met by a hooded figure. He\'s a cult informant! You confront them. Brom begs for mercy and gives you cult secrets.',
+                                                    combat: true,
+                                                    rewards: { gold: 150, items: ['cult_map'], xp: 300 }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            text: 'Trust him and go your own way',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'Days later, Brom finds you in town. He used the gold to buy his family passage to safety. He gives you a carved wooden charm as thanks.',
+                                                    rewards: { items: ['wooden_charm'], xp: 150 }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            text: 'Regret giving the gold and follow at a distance',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'Brom heads straight to the tavern and buys drinks for everyone. You feel foolish, but an old soldier overhears your story and gives you a spare dagger.',
+                                                    rewards: { gold: -50, weapon: { force: true, quality: 'normal' }, xp: 100 }
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+
+        // ============================================================
+        // CHOICE 2: Offer to investigate yourself (9 paths)
+        // ============================================================
+        {
+            text: 'Offer to investigate yourself',
+            outcomes: [
+                {
+                    weight: 100,
+                    text: '"You\'d do that?" Brom\'s eyes widen with hope. "I can tell you where I saw it."',
+                    nextChoices: [
+                        {
+                            text: 'Go alone to the mountain cave',
+                            outcomes: [
+                                {
+                                    weight: 100,
+                                    text: 'You climb for two hours and reach the cave entrance. Smoke rises from within.',
+                                    nextChoices: [
+                                        {
+                                            text: 'Sneak inside quietly',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'You find cultists counting gold. You steal a pouch and escape unnoticed.',
+                                                    rewards: { gold: 400, xp: 250 }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            text: 'Charge in fighting',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'You burst in with weapon drawn! The cultists scatter. You loot their supplies and find a fine weapon left behind.',
+                                                    combat: true,
+                                                    rewards: { weapon: { force: true, quality: 'rare' }, gold: 100, xp: 300 }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            text: 'Set a trap at the entrance',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'You rig a snare. When cultists emerge, one gets caught. His companions flee. The captured cultist gives up their hideout location.',
+                                                    rewards: { gold: 200, xp: 350, items: ['health_potion'] }
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            text: 'Bring a friend from town',
+                            outcomes: [
+                                {
+                                    weight: 100,
+                                    text: 'You recruit a burly blacksmith named Grom. "I owe Brom a favor. Let\'s go."',
+                                    nextChoices: [
+                                        {
+                                            text: 'Grom charges ahead and fights the cultists',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'Grom is wounded but victorious. Brom gives you both a share of his savings.',
+                                                    combat: true,
+                                                    rewards: { gold: 300, items: ['health_potion'], xp: 250 }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            text: 'You and Grom sneak in together',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'You find the cult leader\'s quarters. Grom distracts them while you grab a chest of gold.',
+                                                    rewards: { gold: 500, xp: 300 }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            text: 'Grom proves to be a coward and runs',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'You face the cultists alone but manage to defeat them. Grom apologizes and gives you his family axe.',
+                                                    combat: true,
+                                                    rewards: { weapon: { force: true, quality: 'rare' }, xp: 350 }
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            text: 'Hire a mercenary to help',
+                            outcomes: [
+                                {
+                                    weight: 100,
+                                    text: 'At the tavern, you find a sellsword willing to help for 100 gold upfront.',
+                                    nextChoices: [
+                                        {
+                                            text: 'Pay the mercenary',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'The mercenary proves worth every coin. Together you clear the cave. He lets you take the best loot.',
+                                                    combat: true,
+                                                    rewards: { gold: -100, weapon: { force: true, quality: 'epic' }, xp: 400 }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            text: 'Refuse to pay and go alone',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'The mercenary laughs. "Good luck." You go alone and find the cave empty — they already fled. But they left a chest behind.',
+                                                    rewards: { gold: 350, xp: 200 }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            text: 'Negotiate a lower price',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'You talk him down to 75 gold. He fights well but gets injured. He gives you a healing potion from his pack.',
+                                                    rewards: { gold: -75, items: ['health_potion', 'health_potion'], xp: 300 }
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+
+        // ============================================================
+        // CHOICE 3: Go to the tavern to ask around (9 paths)
+        // ============================================================
+        {
+            text: 'Go to the tavern to ask around',
+            outcomes: [
+                {
+                    weight: 100,
+                    text: 'You tell Brom to rest and head to the local tavern. The barkeep nods toward a shadowy corner. "Old Bertha knows things. Buy her a drink."',
+                    nextChoices: [
+                        {
+                            text: 'Buy Old Bertha a drink',
+                            outcomes: [
+                                {
+                                    weight: 100,
+                                    text: 'Bertha downs the ale and leans in. "The cult meets at midnight in the old cemetery. Tell anyone I told you and I\'ll deny it."',
+                                    nextChoices: [
+                                        {
+                                            text: 'Go to the cemetery at midnight',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'You find cultists performing a ritual. You disrupt it and scatter them. They leave behind an offering chest.',
+                                                    combat: true,
+                                                    rewards: { weapon: { force: true, quality: 'rare' }, gold: 200, xp: 350 }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            text: 'Bring the town guards to the cemetery',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'The guards arrest the cultists. The mayor thanks you with a bag of gold and a key to the city armory.',
+                                                    rewards: { gold: 300, items: ['health_potion'], xp: 400 }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            text: 'Tell Brom the bad news and leave town',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'Brom packs his family and leaves that night. He gives you his grandmother\'s ring as thanks.',
+                                                    rewards: { items: ['small_gem'], xp: 200 }
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            text: 'Ask the barkeep directly',
+                            outcomes: [
+                                {
+                                    weight: 100,
+                                    text: 'The barkeep sighs. "Fine. There\'s a cave north of here. Cultists been using it. I\'ll give you a discount if you clear them out."',
+                                    nextChoices: [
+                                        {
+                                            text: 'Clear the cave for the discount',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'You clear the cultists. The barkeep gives you free drinks for life and a cut of their stored gold.',
+                                                    combat: true,
+                                                    rewards: { gold: 250, xp: 300, items: ['health_potion'] }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            text: 'Demand payment upfront',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'The barkeep throws 50 gold on the bar. "There. Now go." You clear the cave and return for free drinks.',
+                                                    combat: true,
+                                                    rewards: { gold: 50, items: ['health_potion'], xp: 250 }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            text: 'Report the barkeep to the authorities',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'The guards raid the tavern. They find cult propaganda in the basement. The barkeep is arrested. You receive a reward.',
+                                                    rewards: { gold: 400, xp: 350 }
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            text: 'Bribe a drunk patron for information',
+                            outcomes: [
+                                {
+                                    weight: 100,
+                                    text: 'You slip a drunk 25 gold. He mumbles about a "secret tunnel under the old well."',
+                                    nextChoices: [
+                                        {
+                                            text: 'Search the old well',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'You find a hidden tunnel leading to a cult storeroom. You help yourself to their supplies.',
+                                                    rewards: { armor: { force: true, quality: 'normal' }, gold: 150, xp: 250 }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            text: 'Tell the town guard about the tunnel',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'The guards raid the tunnel and capture several cultists. They give you a portion of the recovered goods.',
+                                                    rewards: { gold: 300, xp: 300 }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            text: 'The drunk was lying! You wasted your gold.',
+                                            outcomes: [
+                                                {
+                                                    weight: 100,
+                                                    text: 'The drunk laughs and passes out. You learned a valuable lesson about trusting drunks.',
+                                                    rewards: { gold: -25, xp: 50 }
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+},
 
     // 2. MYSTERIOUS CAVE PAINTING
     mysterious_cave_painting: {
@@ -5840,25 +6894,23 @@ const ADVENTURE_RARITY_CHANCES = {
 
 // Helper function to roll for random adventure
 function rollForAdventure(playerLevel) {
+    // Global adventure chance (30% = 0.30)
+    const GLOBAL_ADVENTURE_CHANCE = 0.10; // 10%
+    
     const roll = Math.random();
-    let cumulative = 0;
-
-    for (const [rarity, chance] of Object.entries(ADVENTURE_RARITY_CHANCES)) {
-        cumulative += chance;
-
-        if (roll < cumulative) {
-            const eligibleAdventures = Object.values(ADVENTURES)
-                .filter(adv => adv.rarity === rarity && playerLevel >= (adv.minLevel || 1));
-
-            if (!eligibleAdventures.length) return null;
-
-            return eligibleAdventures[
-                Math.floor(Math.random() * eligibleAdventures.length)
-            ];
-        }
+    
+    if (roll > GLOBAL_ADVENTURE_CHANCE) {
+        return null; // No adventure
     }
-
-    return null;
+    
+    // Get all adventures the player qualifies for (any rarity)
+    const eligibleAdventures = Object.values(ADVENTURES)
+        .filter(adv => playerLevel >= (adv.minLevel || 1));
+    
+    if (eligibleAdventures.length === 0) return null;
+    
+    // Pick a random adventure from all eligible ones
+    return eligibleAdventures[Math.floor(Math.random() * eligibleAdventures.length)];
 }
 
 // Export

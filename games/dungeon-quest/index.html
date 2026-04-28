@@ -7038,7 +7038,7 @@ function stabilizeTerminalLayout() {
                         // ═══════════════════════════════════════════════════════════════
             // NORMAL COMBAT ENCOUNTER
             // ═══════════════════════════════════════════════════════════════
-            if (Math.random() < 0.7) {
+            if (Math.random() < 0.9) {  //90% chance to find battle
                 const zoneLevelRange = location.enemyLevelRange;
                 const playerLevel = p.level;
                 
@@ -9615,24 +9615,27 @@ function getItemName(item) {
         // ═══════════════════════════════════════════════════════════════
         
         function startAdventure(adventure) {
-            gameState.currentAdventure = adventure;
-            
-            termAppend('', 'term-separator');
-            termAppend(`<span style="color:#FFD700;font-size:20px;">✨ ${adventure.name}! ✨</span>`, 'term-highlight');
-            termAppend('', 'term-separator');
-            termAppend(adventure.intro, 'term-dim');
-            termAppend('', 'term-separator');
-            termAppend('<span style="color:var(--highlight-color);">What do you do?</span>');
-            termAppend('', 'term-separator');
-            
-            // Show choices
-            adventure.choices.forEach((choice, index) => {
-                termAppend(`<span style="color:var(--highlight-color);">${index + 1}.</span> ${choice.text}`, 'term-highlight');
-            });
-            
-            // Render adventure action bar
-            renderAdventureActionBar();
-        }
+    // Create a DEEP COPY of the adventure so we don't modify the original
+    const adventureCopy = JSON.parse(JSON.stringify(adventure));
+    
+    gameState.currentAdventure = adventureCopy;
+    
+    termAppend('', 'term-separator');
+    termAppend(`<span style="color:#FFD700;font-size:20px;">✨ ${adventureCopy.name}! ✨</span>`, 'term-highlight');
+    termAppend('', 'term-separator');
+    termAppend(adventureCopy.intro, 'term-dim');
+    termAppend('', 'term-separator');
+    termAppend('<span style="color:var(--highlight-color);">What do you do?</span>');
+    termAppend('', 'term-separator');
+    
+    // Show choices
+    adventureCopy.choices.forEach((choice, index) => {
+        termAppend(`<span style="color:var(--highlight-color);">${index + 1}.</span> ${choice.text}`, 'term-highlight');
+    });
+    
+    // Render adventure action bar
+    renderAdventureActionBar();
+}
         
         function renderAdventureActionBar() {
             const adventure = gameState.currentAdventure;
@@ -9688,11 +9691,18 @@ function getItemName(item) {
                 
                 // Start combat if needed
                 if (selectedOutcome.combat) {
-                    termAppend('', 'term-separator');
-                    gameState.currentAdventure = null;
-                    startCombat(selectedOutcome.combat);
-                    return;
-                }
+    termAppend('', 'term-separator');
+    gameState.currentAdventure = null;
+    
+    // If combat is true, generate level-appropriate enemies
+    let enemiesToFight = selectedOutcome.combat;
+    if (enemiesToFight === true) {
+        enemiesToFight = getLevelAppropriateEnemy(gameState.player.level);
+    }
+    
+    startCombat(enemiesToFight);
+    return;
+}
                 
                 // Check if this outcome leads to another choice
                 if (selectedOutcome.nextChoices && selectedOutcome.nextChoices.length > 0) {
@@ -9719,90 +9729,196 @@ function getItemName(item) {
         }
         
         function applyAdventureRewards(rewards) {
-            const p = gameState.player;
+    const p = gameState.player;
+    
+    try {
+        // ── WEAPON DROP ───────────────────────────────────────────────
+        if (rewards.weapon) {
+            let weaponLevel = rewards.weapon.level || p.level;
+            let weaponQuality = rewards.weapon.quality || 'normal';
+            let forceWeapon = rewards.weapon.force || false;
             
-            try {
-
-            if (rewards.gold) {
-                p.gold = Math.max(0, p.gold + rewards.gold);
-                if (rewards.gold > 0) {
-                    termAppend(`<span style="color:#FFD700;">💰 +${rewards.gold} Gold!</span>`, 'term-loot');
-                } else {
-                    termAppend(`<span style="color:#FF6666;">💰 ${rewards.gold} Gold (paid)</span>`, 'term-error');
+            // If force is true, use the weapon key directly
+            let weaponDrop;
+            if (rewards.weapon.key && forceWeapon) {
+                // Create a specific weapon instance
+                const baseWeapon = WEAPONS[rewards.weapon.key];
+                if (baseWeapon) {
+                    const instanceId = `${rewards.weapon.key}_${weaponQuality}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+                    const bonusPct = QUALITY_CONFIG[weaponQuality]?.bonusPct || 0;
+                    weaponDrop = {
+                        id: rewards.weapon.key,
+                        weaponId: rewards.weapon.key,
+                        instanceId: instanceId,
+                        name: `${weaponQuality.charAt(0).toUpperCase() + weaponQuality.slice(1)} ${baseWeapon.name}`,
+                        baseName: baseWeapon.name,
+                        type: baseWeapon.type || baseWeapon.weaponSubtype,
+                        weaponSubtype: baseWeapon.weaponSubtype || baseWeapon.type,
+                        baseDamage: baseWeapon.baseDamage + Math.floor(baseWeapon.baseDamage * bonusPct),
+                        maxDamage: (baseWeapon.maxDamage || baseWeapon.baseDamage) + Math.floor((baseWeapon.maxDamage || baseWeapon.baseDamage) * bonusPct),
+                        baseMagicDamage: baseWeapon.baseMagicDamage ? baseWeapon.baseMagicDamage + Math.floor(baseWeapon.baseMagicDamage * bonusPct) : 0,
+                        level: weaponLevel,
+                        quality: weaponQuality,
+                        qualityBonus: bonusPct,
+                        modifiers: [],
+                        gems: [],
+                        gemSlots: 0,
+                        cost: baseWeapon.cost,
+                        description: baseWeapon.description || `A ${weaponQuality} quality ${baseWeapon.name}.`,
+                        allowedClasses: baseWeapon.allowedClasses,
+                        isDropped: true,
+                        dropTimestamp: Date.now(),
+                        ownerId: p.id
+                    };
+                    WEAPONS[instanceId] = weaponDrop;
+                    p.inventory.push(weaponDrop);
+                    termAppend(`<span style="color:#FFD700;">⚔️ Received: ${weaponDrop.name}!</span>`, 'term-loot');
                 }
-            }
-            
-            if (rewards.xp) {
-                p.xp += rewards.xp;
-                termAppend(`<span style="color:#88FF88;">⭐ +${rewards.xp} XP!</span>`, 'term-loot');
-                
-                // Check for level up
-                while (p.xp >= p.xpToNext && p.level < 25) {
-                    levelUp();
-                    termAppend(`<span style="color:var(--highlight-color);font-size:18px;">⬆️ LEVEL UP! You are now level ${p.level}!</span>`, 'term-victory');
-                    termAppend(`<span style="color:#FFD700;">+3 Stat Points earned!</span>`, 'term-loot');
-                    termAppend(`<span style="color:#00FFFF;">→ Tap </span><span style="color:#00FF88;font-weight:bold;">🎒 Inventory</span><span style="color:#00FFFF;"> or the </span><span style="color:#FFD700;font-weight:bold;">⬆ pts</span><span style="color:#00FFFF;"> button to spend them now.</span>`, 'term-loot');
-                    
-                    // Check for class evolution
-                    if (p._justEvolved) {
-                        termAppend('', 'term-separator');
-                        termAppend(`<span style="color:#FF00FF;font-size:24px;font-weight:bold;">⚡ CLASS EVOLUTION! ⚡</span>`, 'term-victory');
-                        termAppend(p._evolutionMessage, 'term-victory');
-                        termAppend(`<span style="color:#FFD700;">Your power has DOUBLED!</span>`, 'term-loot');
-                        p._justEvolved = false;
-                        p._evolutionMessage = null;
+            } else {
+                // Use generateWeaponDrop for level-appropriate random weapon
+                weaponDrop = generateWeaponDrop(p, weaponLevel, 'common', true, weaponQuality);
+                if (weaponDrop) {
+                    if (typeof weaponDrop === 'object') {
+                        p.inventory.push(weaponDrop);
+                        termAppend(`<span style="color:#FFD700;">⚔️ Received: ${weaponDrop.name}!</span>`, 'term-loot');
+                    } else {
+                        p.inventory.push(weaponDrop);
+                        termAppend(`<span style="color:#FFD700;">⚔️ Received a weapon!</span>`, 'term-loot');
                     }
                 }
-            }
-            
-            if (rewards.damage) {
-                p.hp -= rewards.damage;
-                termAppend(`<span style="color:#FF6666;">💔 Took ${rewards.damage} damage!</span>`, 'term-error');
-                if (p.hp <= 0) {
-                    p.hp = 1; // Can't die from adventure damage
-                    termAppend(`<span style="color:#FFAA00;">You barely survive!</span>`, 'term-warning');
-                }
-            }
-            
-            if (rewards.heal === 'full') {
-                p.hp = p.maxHp;
-                p.mp = p.maxMp;
-                termAppend(`<span style="color:#00FF00;">✨ Fully restored!</span>`, 'term-victory');
-            }
-            
-            if (rewards.items) {
-                rewards.items.forEach(itemKey => {
-                    // Validate the item exists before pushing to inventory
-                    const item = ITEMS[itemKey] || WEAPONS[itemKey] || ARMOR[itemKey];
-                    if (!item) {
-                        console.warn(`⚠️ Adventure reward item '${itemKey}' not found in ITEMS/WEAPONS/ARMOR — skipping.`);
-                        termAppend(`<span style="color:#888;">📦 (A reward item was unavailable and skipped)</span>`, 'term-dim');
-                        return; // skip this item, don't freeze the game
-                    }
-                    p.inventory.push(itemKey);
-                    termAppend(`<span style="color:#00FFFF;">🎁 Received: ${item.name}!</span>`, 'term-loot');
-                });
-            }
-            
-            if (rewards.spell) {
-                if (!p.knownSpells.includes(rewards.spell)) {
-                    p.knownSpells.push(rewards.spell);
-                    termAppend(`<span style="color:#FF00FF;">📖 Learned spell: ${rewards.spell}!</span>`, 'term-victory');
-                }
-            }
-            
-            updateHud();
-            saveGame();
-
-            } catch (err) {
-                console.error('⚠️ applyAdventureRewards error:', err);
-                termAppend(`<span style="color:#FF8800;">⚠️ Something went wrong applying rewards — your gold and XP were saved.</span>`, 'term-warning');
-                // Still try to save whatever we managed to apply
-                try { updateHud(); } catch(e) {}
-                try { saveGame(); } catch(e) {}
             }
         }
-
+        
+        // ── ARMOR DROP ─────────────────────────────────────────────────
+        if (rewards.armor) {
+            let armorLevel = rewards.armor.level || p.level;
+            let armorQuality = rewards.armor.quality || 'normal';
+            let forceArmor = rewards.armor.force || false;
+            
+            let armorDrop;
+            if (rewards.armor.key && forceArmor) {
+                // Create a specific armor instance
+                const baseArmor = ARMOR[rewards.armor.key];
+                if (baseArmor) {
+                    const instanceId = `${rewards.armor.key}_${armorQuality}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+                    const bonusPct = QUALITY_CONFIG[armorQuality]?.bonusPct || 0;
+                    armorDrop = {
+                        id: rewards.armor.key,
+                        armorId: rewards.armor.key,
+                        instanceId: instanceId,
+                        name: `${armorQuality.charAt(0).toUpperCase() + armorQuality.slice(1)} ${baseArmor.name}`,
+                        baseName: baseArmor.name,
+                        type: baseArmor.type || baseArmor.armorSubtype,
+                        armorSubtype: baseArmor.armorSubtype || baseArmor.type,
+                        baseDefense: baseArmor.baseDefense + Math.floor(baseArmor.baseDefense * bonusPct),
+                        baseMagicBonus: baseArmor.baseMagicBonus ? baseArmor.baseMagicBonus + Math.floor(baseArmor.baseMagicBonus * bonusPct) : 0,
+                        level: armorLevel,
+                        quality: armorQuality,
+                        qualityBonus: bonusPct,
+                        modifiers: [],
+                        gems: [],
+                        gemSlots: 0,
+                        cost: baseArmor.cost,
+                        description: baseArmor.description || `A ${armorQuality} quality ${baseArmor.name}.`,
+                        allowedClasses: baseArmor.allowedClasses,
+                        isDropped: true,
+                        dropTimestamp: Date.now(),
+                        ownerId: p.id
+                    };
+                    ARMOR[instanceId] = armorDrop;
+                    p.inventory.push(armorDrop);
+                    termAppend(`<span style="color:#44AAFF;">🛡️ Received: ${armorDrop.name}!</span>`, 'term-loot');
+                }
+            } else {
+                // Use generateArmorDrop for level-appropriate random armor
+                armorDrop = generateArmorDrop(p, armorLevel, 'common', true, armorQuality);
+                if (armorDrop && typeof armorDrop === 'object') {
+                    termAppend(`<span style="color:#44AAFF;">🛡️ Received: ${armorDrop.name}!</span>`, 'term-loot');
+                }
+            }
+        }
+        
+        // ── GOLD ──────────────────────────────────────────────────────
+        if (rewards.gold) {
+            p.gold = Math.max(0, p.gold + rewards.gold);
+            if (rewards.gold > 0) {
+                termAppend(`<span style="color:#FFD700;">💰 +${rewards.gold} Gold!</span>`, 'term-loot');
+            } else {
+                termAppend(`<span style="color:#FF6666;">💰 ${rewards.gold} Gold (paid)</span>`, 'term-error');
+            }
+        }
+        
+        // ── XP ────────────────────────────────────────────────────────
+        if (rewards.xp) {
+            p.xp += rewards.xp;
+            termAppend(`<span style="color:#88FF88;">⭐ +${rewards.xp} XP!</span>`, 'term-loot');
+            
+            while (p.xp >= p.xpToNext && p.level < 25) {
+                levelUp();
+                termAppend(`<span style="color:var(--highlight-color);font-size:18px;">⬆️ LEVEL UP! You are now level ${p.level}!</span>`, 'term-victory');
+                termAppend(`<span style="color:#FFD700;">+3 Stat Points earned!</span>`, 'term-loot');
+                termAppend(`<span style="color:#00FFFF;">→ Tap </span><span style="color:#00FF88;font-weight:bold;">🎒 Inventory</span><span style="color:#00FFFF;"> or the </span><span style="color:#FFD700;font-weight:bold;">⬆ pts</span><span style="color:#00FFFF;"> button to spend them now.</span>`, 'term-loot');
+                
+                if (p._justEvolved) {
+                    termAppend('', 'term-separator');
+                    termAppend(`<span style="color:#FF00FF;font-size:24px;font-weight:bold;">⚡ CLASS EVOLUTION! ⚡</span>`, 'term-victory');
+                    termAppend(p._evolutionMessage, 'term-victory');
+                    termAppend(`<span style="color:#FFD700;">Your power has DOUBLED!</span>`, 'term-loot');
+                    p._justEvolved = false;
+                    p._evolutionMessage = null;
+                }
+            }
+        }
+        
+        // ── DAMAGE ────────────────────────────────────────────────────
+        if (rewards.damage) {
+            p.hp -= rewards.damage;
+            termAppend(`<span style="color:#FF6666;">💔 Took ${rewards.damage} damage!</span>`, 'term-error');
+            if (p.hp <= 0) {
+                p.hp = 1;
+                termAppend(`<span style="color:#FFAA00;">You barely survive!</span>`, 'term-warning');
+            }
+        }
+        
+        // ── HEAL ──────────────────────────────────────────────────────
+        if (rewards.heal === 'full') {
+            p.hp = p.maxHp;
+            p.mp = p.maxMp;
+            termAppend(`<span style="color:#00FF00;">✨ Fully restored!</span>`, 'term-victory');
+        }
+        
+        // ── ITEMS (potions, keys, etc.) ───────────────────────────────
+        if (rewards.items) {
+            rewards.items.forEach(itemKey => {
+                const item = ITEMS[itemKey] || WEAPONS[itemKey] || ARMOR[itemKey];
+                if (!item) {
+                    console.warn(`⚠️ Adventure reward item '${itemKey}' not found — skipping.`);
+                    termAppend(`<span style="color:#888;">📦 (A reward item was unavailable and skipped)</span>`, 'term-dim');
+                    return;
+                }
+                p.inventory.push(itemKey);
+                termAppend(`<span style="color:#00FFFF;">🎁 Received: ${item.name}!</span>`, 'term-loot');
+            });
+        }
+        
+        // ── SPELL ─────────────────────────────────────────────────────
+        if (rewards.spell) {
+            if (!p.knownSpells.includes(rewards.spell)) {
+                p.knownSpells.push(rewards.spell);
+                termAppend(`<span style="color:#FF00FF;">📖 Learned spell: ${rewards.spell}!</span>`, 'term-victory');
+            }
+        }
+        
+        updateHud();
+        saveGame();
+        
+    } catch (err) {
+        console.error('⚠️ applyAdventureRewards error:', err);
+        termAppend(`<span style="color:#FF8800;">⚠️ Something went wrong applying rewards — your gold and XP were saved.</span>`, 'term-warning');
+        try { updateHud(); } catch(e) {}
+        try { saveGame(); } catch(e) {}
+    }
+}
 
         // ═══════════════════════════════════════════════════════════════
         // CHARACTER STATS & STAT ALLOCATION
@@ -10613,6 +10729,34 @@ function portalTransition(targetTown) {
     });
 }
 
+function getLevelAppropriateEnemy(playerLevel) {
+    // Filter enemies by level range (playerLevel -3 to playerLevel +3)
+    const candidates = Object.keys(ENEMIES).filter(key => {
+        const enemy = ENEMIES[key];
+        // Skip bosses for regular adventures
+        if (enemy.isBoss) return false;
+        // Skip if level is not within range
+        const enemyLevel = enemy.level || 1;
+        return Math.abs(enemyLevel - playerLevel) <= 3;
+    });
+    
+    if (candidates.length === 0) {
+        // Fallback - any non-boss enemy
+        const fallback = Object.keys(ENEMIES).filter(key => !ENEMIES[key].isBoss);
+        return [fallback[Math.floor(Math.random() * fallback.length)]];
+    }
+    
+    // Return 1-3 random enemies
+    const count = Math.random() < 0.7 ? 1 : (Math.random() < 0.7 ? 2 : 3);
+    const selected = [];
+    const shuffled = [...candidates];
+    for (let i = 0; i < Math.min(count, shuffled.length); i++) {
+        const randomIndex = Math.floor(Math.random() * shuffled.length);
+        selected.push(shuffled[randomIndex]);
+        shuffled.splice(randomIndex, 1);
+    }
+    return selected;
+}
 
 
 
