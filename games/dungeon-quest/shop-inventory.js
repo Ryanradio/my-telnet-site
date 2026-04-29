@@ -67,7 +67,20 @@ function rollFeaturedQuality(seed) {
     return 'normal';
 }
 
+// Global variable to track current featured items
+window._currentFeaturedItems = { weapon: null, armor: null };
+
 function getFeaturedItems(playerLevel, playerClass, rerollOffset) {
+    // Clean up OLD featured items from WEAPONS/ARMOR registries
+    if (window._currentFeaturedItems.weapon && window._currentFeaturedItems.weapon.instanceId) {
+        delete WEAPONS[window._currentFeaturedItems.weapon.instanceId];
+        console.log(`🧹 Cleaned up old featured weapon: ${window._currentFeaturedItems.weapon.name}`);
+    }
+    if (window._currentFeaturedItems.armor && window._currentFeaturedItems.armor.instanceId) {
+        delete ARMOR[window._currentFeaturedItems.armor.instanceId];
+        console.log(`🧹 Cleaned up old featured armor: ${window._currentFeaturedItems.armor.name}`);
+    }
+    
     const cycleWindow = Math.floor(Date.now() / (4 * 60 * 60 * 1000));
     const weaponSeed  = cycleWindow * 1000 + rerollOffset * 7 + 1;
     const armorSeed   = cycleWindow * 1000 + rerollOffset * 7 + 2;
@@ -77,13 +90,22 @@ function getFeaturedItems(playerLevel, playerClass, rerollOffset) {
     const minLv = Math.max(1, playerLevel - 2);
     const maxLv = playerLevel + 2;
 
+    // Filter weapons by class AND level
     const allWeapons = Object.keys(WEAPONS).filter(k => {
         const w = WEAPONS[k];
-        return !w.unarmed && !w.instanceId && w.level >= minLv && w.level <= maxLv && w.cost;
+        if (w.unarmed || w.instanceId || !w.cost) return false;
+        if (w.level < minLv || w.level > maxLv) return false;
+        if (!canUseWeapon(playerClass, w)) return false;
+        return true;
     });
+    
+    // Filter armor by class AND level
     const allArmors = Object.keys(ARMOR).filter(k => {
         const a = ARMOR[k];
-        return !a.unarmored && !a.isDropped && a.level >= minLv && a.level <= maxLv && a.cost;
+        if (a.unarmored || a.isDropped || !a.cost) return false;
+        if (a.level < minLv || a.level > maxLv) return false;
+        if (!canUseArmor(playerClass, a)) return false;
+        return true;
     });
 
     if (!allWeapons.length || !allArmors.length) return { weapon: null, armor: null };
@@ -92,31 +114,18 @@ function getFeaturedItems(playerLevel, playerClass, rerollOffset) {
     const aIdx = Math.abs(Math.floor(Math.sin(armorSeed  + 99) * 99999)) % allArmors.length;
     
     const weaponKey = allWeapons[wIdx];
-    const baseWeapon = WEAPONS[weaponKey];
+    const armorKey = allArmors[aIdx];
     
-    // Generate modifiers for the featured weapon based on its quality
-    let modifiers = [];
-    if (typeof generateModifiers === 'function' && weaponQuality !== 'normal' && weaponQuality !== 'poor') {
-        modifiers = generateModifiers(weaponQuality, playerLevel);
-    }
+    // Create the full weapon object
+    const weaponDrop = generateWeaponDrop(gameState.player, playerLevel, 'common', true, weaponQuality);
+    const armorDrop = generateArmorDrop(gameState.player, playerLevel, 'common', true, armorQuality);
     
-    // Generate enhanced name with modifiers
-    let weaponName = baseWeapon.name;
-    if (typeof generateEnhancedWeaponName === 'function' && modifiers.length > 0) {
-        weaponName = generateEnhancedWeaponName(baseWeapon, weaponQuality, modifiers);
-    } else {
-        const qualityDisplay = weaponQuality.charAt(0).toUpperCase() + weaponQuality.slice(1);
-        weaponName = `${qualityDisplay} ${baseWeapon.name}`;
-    }
+    // Store current featured items for cleanup next time
+    window._currentFeaturedItems = { weapon: weaponDrop, armor: armorDrop };
 
     return {
-        weapon: { 
-            key: weaponKey, 
-            quality: weaponQuality,
-            name: weaponName,
-            modifiers: modifiers
-        },
-        armor:  { key: allArmors[aIdx], quality: armorQuality }
+        weapon: weaponDrop,
+        armor: armorDrop
     };
 }
 
@@ -163,7 +172,7 @@ function renderShop(tab, section, typeFilter, levelFilter) {
     const rerollsLeft = 3 - rerollState.count;
 
     // ── Featured banner ──────────────────────────────────────────
-    function buildFeaturedHtml() {
+            function buildFeaturedHtml() {
         let html = `
         <div style="border:1px solid #2a1a05;border-radius:3px;overflow:hidden;margin-bottom:14px;background:#080800;">
             <div style="background:linear-gradient(90deg,#0a0a0a,#1a1005,#0a0a0a);border-bottom:1px solid #2a1a05;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
@@ -178,52 +187,106 @@ function renderShop(tab, section, typeFilter, levelFilter) {
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#1a1005;">`;
 
-        [{ type:'weapon', data:featured.weapon }, { type:'armor', data:featured.armor }].forEach(({ type, data }) => {
-            if (!data) { html += `<div style="background:#080800;padding:16px;text-align:center;color:#222;">–</div>`; return; }
-            const item = type === 'weapon' ? WEAPONS[data.key] : ARMOR[data.key];
-            if (!item) { html += `<div style="background:#080800;padding:16px;"></div>`; return; }
-            const qc       = QUALITY_CONFIG[data.quality];
-            const color    = qc?.color || '#00ff00';
-            const price    = getFeaturedPrice(data.quality, p.level);
-            const canBuy   = type === 'weapon' ? canUseWeapon(playerClass, item) : canUseArmor(playerClass, item);
+        // Featured Weapon
+        if (featured.weapon) {
+            const weapon = featured.weapon;
+            const qc = QUALITY_CONFIG[weapon.quality];
+            const color = qc?.color || '#00ff00';
+            const price = getFeaturedPrice(weapon.quality, p.level);
+            const canBuy = canUseWeapon(playerClass, weapon);
             const canAfford = p.gold >= price;
-            const isSpecial = ['legendary','godly'].includes(data.quality);
-            const statLine  = type === 'weapon'
-    ? buildWeaponDmgLine({...item, quality:data.quality}, data.quality, p)
-    : buildArmorDefLine({...item, quality:data.quality}, p);
-
-// Build modifier display for featured weapon
-let modifierHtml = '';
-if (type === 'weapon' && data.modifiers && data.modifiers.length > 0) {
-    modifierHtml = '<div style="margin-top:5px;font-size:9px;">';
-    data.modifiers.forEach(mod => {
-        const modColor = mod.color || '#FFD700';
-        modifierHtml += `<span style="color:${modColor};margin-right:8px;">✨ ${mod.name}</span>`;
-    });
-    modifierHtml += '</div>';
-}
-
+            const isSpecial = ['legendary','godly'].includes(weapon.quality);
+            const statLine = buildWeaponDmgLine(weapon, weapon.quality, p);
+            
+            // Weapon modifiers display
+            let weaponModifierHtml = '';
+            if (weapon.modifiers && weapon.modifiers.length > 0) {
+                weaponModifierHtml = '<div style="margin-top:5px;font-size:9px;">';
+                weapon.modifiers.forEach(mod => {
+                    const modColor = mod.color || '#FFD700';
+                    let modText = mod.name;
+                    if (mod.minDamage) modText += ` (+${mod.minDamage}-${mod.maxDamage} dmg)`;
+                    if (mod.critBonus) modText += ` (+${mod.critBonus}% crit)`;
+                    if (mod.lifestealPercent) modText += ` (${mod.lifestealPercent}% lifesteal)`;
+                    weaponModifierHtml += `<span style="color:${modColor};margin-right:8px;">✨ ${modText}</span>`;
+                });
+                weaponModifierHtml += '</div>';
+            }
+            
             html += `
             <div style="background:#080800;padding:10px 12px;position:relative;overflow:hidden;${isSpecial?`box-shadow:inset 0 0 20px ${color}08;`:''}">
                 ${isSpecial ? `<div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,${color}66,transparent);"></div>` : ''}
                 <div style="display:flex;align-items:center;gap:5px;margin-bottom:4px;flex-wrap:wrap;">
-                    <span style="color:${color};font-size:12px;font-weight:bold;">${type==='weapon'?'⚔️':'🛡️'} ${item.name}</span>
+                    <span style="color:${color};font-size:12px;font-weight:bold;">⚔️ ${weapon.name}</span>
                 </div>
-                <div style="display:inline-block;background:${color}18;border:1px solid ${color}33;color:${color};font-size:9px;letter-spacing:1px;padding:1px 5px;margin-bottom:4px;font-family:'Courier New',monospace;">${data.quality.toUpperCase()}</div>
+                <div style="display:inline-block;background:${color}18;border:1px solid ${color}33;color:${color};font-size:9px;letter-spacing:1px;padding:1px 5px;margin-bottom:4px;font-family:'Courier New',monospace;">${weapon.quality.toUpperCase()}</div>
                 <div style="font-size:10px;margin-bottom:6px;">${statLine}</div>
-${modifierHtml}
-                <div style="color:#555;font-size:9px;margin-bottom:6px;font-family:'Courier New',monospace;">LV${item.level||1}</div>
+                ${weaponModifierHtml}
+                <div style="color:#555;font-size:9px;margin-bottom:6px;font-family:'Courier New',monospace;">LV${weapon.level || 1}</div>
                 <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid #151505;padding-top:6px;">
                     <span style="color:#c8a000;font-size:12px;font-family:'Courier New',monospace;">${price.toLocaleString()}g</span>
                     ${canBuy
                         ? (canAfford
-                            ? `<button onclick="buyFeaturedItem('${type}','${data.key}','${data.quality}',${price})" style="background:#080800;border:1px solid ${color};color:${color};font-size:10px;padding:3px 8px;cursor:pointer;font-family:'Courier New',monospace;">BUY</button>`
+                            ? `<button onclick="buyFeaturedItem('weapon', featured.weapon, ${price})" style="background:#080800;border:1px solid ${color};color:${color};font-size:10px;padding:3px 8px;cursor:pointer;font-family:'Courier New',monospace;">BUY</button>`
                             : `<span style="color:#2a2a2a;font-size:10px;font-family:'Courier New',monospace;">+${(price-p.gold).toLocaleString()}g</span>`)
                         : `<span style="color:#222;font-size:10px;font-family:'Courier New',monospace;">Can't use</span>`
                     }
                 </div>
             </div>`;
-        });
+        } else {
+            html += `<div style="background:#080800;padding:16px;text-align:center;color:#222;">–</div>`;
+        }
+        
+        // Featured Armor
+        if (featured.armor) {
+            const armor = featured.armor;
+            const qc = QUALITY_CONFIG[armor.quality];
+            const color = qc?.color || '#00ff00';
+            const price = getFeaturedPrice(armor.quality, p.level);
+            const canBuy = canUseArmor(playerClass, armor);
+            const canAfford = p.gold >= price;
+            const isSpecial = ['legendary','godly'].includes(armor.quality);
+            const statLine = buildArmorDefLine(armor, p);
+            
+            // Armor modifiers display
+            let armorModifierHtml = '';
+            if (armor.modifiers && armor.modifiers.length > 0) {
+                armorModifierHtml = '<div style="margin-top:5px;font-size:9px;">';
+                armor.modifiers.forEach(mod => {
+                    const modColor = mod.color || '#FFD700';
+                    let modText = mod.name;
+                    if (mod.value) {
+                        modText += `: ${mod.value}${mod.statType === 'percent' ? '%' : ''}`;
+                    }
+                    armorModifierHtml += `<span style="color:${modColor};margin-right:8px;">✨ ${modText}</span>`;
+                });
+                armorModifierHtml += '</div>';
+            }
+            
+            html += `
+            <div style="background:#080800;padding:10px 12px;position:relative;overflow:hidden;${isSpecial?`box-shadow:inset 0 0 20px ${color}08;`:''}">
+                ${isSpecial ? `<div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,${color}66,transparent);"></div>` : ''}
+                <div style="display:flex;align-items:center;gap:5px;margin-bottom:4px;flex-wrap:wrap;">
+                    <span style="color:${color};font-size:12px;font-weight:bold;">🛡️ ${armor.name}</span>
+                </div>
+                <div style="display:inline-block;background:${color}18;border:1px solid ${color}33;color:${color};font-size:9px;letter-spacing:1px;padding:1px 5px;margin-bottom:4px;font-family:'Courier New',monospace;">${armor.quality.toUpperCase()}</div>
+                <div style="font-size:10px;margin-bottom:6px;">${statLine}</div>
+                ${armorModifierHtml}
+                <div style="color:#555;font-size:9px;margin-bottom:6px;font-family:'Courier New',monospace;">LV${armor.level || 1}</div>
+                <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid #151505;padding-top:6px;">
+                    <span style="color:#c8a000;font-size:12px;font-family:'Courier New',monospace;">${price.toLocaleString()}g</span>
+                    ${canBuy
+                        ? (canAfford
+                            ? `<button onclick="buyFeaturedItem('armor', featured.armor, ${price})" style="background:#080800;border:1px solid ${color};color:${color};font-size:10px;padding:3px 8px;cursor:pointer;font-family:'Courier New',monospace;">BUY</button>`
+                            : `<span style="color:#2a2a2a;font-size:10px;font-family:'Courier New',monospace;">+${(price-p.gold).toLocaleString()}g</span>`)
+                        : `<span style="color:#222;font-size:10px;font-family:'Courier New',monospace;">Can't use</span>`
+                    }
+                </div>
+            </div>`;
+        } else {
+            html += `<div style="background:#080800;padding:16px;text-align:center;color:#222;">–</div>`;
+        }
+        
         html += `</div></div>`;
         return html;
     }
@@ -522,41 +585,28 @@ function doShopReroll() {
 }
 
 // ── Buy featured ─────────────────────────────────────────────────
-function buyFeaturedItem(type, key, quality, price) {
+function buyFeaturedItem(type, featuredItem, price) {
     const p = gameState.player;
     const playerClass = p.baseClass || p.class;
-    const item = type === 'weapon' ? WEAPONS[key] : ARMOR[key];
-    if (!item) return;
-    const canUse = type === 'weapon' ? canUseWeapon(playerClass, item) : canUseArmor(playerClass, item);
+    
+    if (!featuredItem) return;
+    
+    const canUse = type === 'weapon' ? canUseWeapon(playerClass, featuredItem) : canUseArmor(playerClass, featuredItem);
     if (!canUse) { alert(`Your class cannot use this item.`); return; }
     if (p.gold < price) { alert('Not enough gold!'); return; }
-    if (!confirm(`Buy ${item.name} [${quality}] for ${price.toLocaleString()}g?`)) return;
+    if (!confirm(`Buy ${featuredItem.name} for ${price.toLocaleString()}g?`)) return;
     
     p.gold -= price;
     
-    if (type === 'weapon') {
-        // Use generateLegacyWeaponInstance so we get the SPECIFIC weapon by key
-        const inst = generateLegacyWeaponInstance(key, p.level, quality);
-        if (inst) {
-            const weaponObj = WEAPONS[inst.instanceId];
-            if (weaponObj) weaponObj.isDropped = false;
-            p.inventory.push(inst);
-            console.log(`✅ Purchased featured weapon: ${weaponObj?.name || key} [${quality}]`);
-        }
-    } else {
-        // Use generateLegacyArmorInstance so we get the SPECIFIC armor by key
-        const inst = generateLegacyArmorInstance(key, p.level, quality);
-        if (inst) {
-            const armorObj = ARMOR[inst.instanceId];
-            if (armorObj) armorObj.isDropped = false;
-            p.inventory.push(inst);
-            console.log(`✅ Purchased featured armor: ${armorObj?.name || key} [${quality}]`);
-        }
-    }
+    // Mark as purchased (not dropped) and add to inventory
+    featuredItem.isDropped = false;
+    p.inventory.push(featuredItem);
     
     saveGame();
     renderShop('buy', 'weapons', 'all', 'near');
 }
+
+
 function showShopSell() {
     const p = gameState.player;
     const QUALITY_ORDER = ['poor','normal','rare','epic','legendary','godly'];
