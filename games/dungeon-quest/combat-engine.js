@@ -4457,11 +4457,11 @@ function cancelSpellMenu() {
         return;
     }
     
-    // Reset timer for next attack with NEW random value
-enemy.timer = 10 + Math.floor(Math.random() * 9); // New random 10-18 seconds
-enemy.delay = enemy.timer;
-enemy._telegraphShown = false;  // ← ADD THIS LINE
-enemy._pendingIntent = null;    // ← ADD THIS LINE (optional but good)
+    // Reset timer for next attack (10-15 seconds for subsequent attacks)
+    enemy.timer = 10 + Math.floor(Math.random() * 6); // 10-15 seconds
+    enemy.delay = enemy.timer;
+    enemy._telegraphShown = false;
+    enemy._pendingIntent = null;
 
         // Calculate intent for THIS enemy (each enemy gets its own)
         const intent = selectEnemyIntent(enemy);
@@ -4469,8 +4469,6 @@ enemy._pendingIntent = null;    // ← ADD THIS LINE (optional but good)
         const eName = monsters.length > 1
             ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${i + 1}</span>`
             : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
-
-
 
             
 // Check if enemy is feared

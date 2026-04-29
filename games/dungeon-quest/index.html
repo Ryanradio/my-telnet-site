@@ -7453,10 +7453,10 @@ if (mod.modKey === 'vorpal') {
 
 // Give each enemy their own attack timer (random each time)
 monsters.forEach((monster, idx) => {
-    monster.timer = 10 + Math.floor(Math.random() * 9); // 10-18 seconds
+    monster.timer = 5 + Math.floor(Math.random() * 6); // FIRST attack: 5-10 seconds
     monster.delay = monster.timer;
-    monster._telegraphShown = false;  // ← ADD THIS - tracks if we've shown the windup message
-    monster._pendingIntent = null;    // ← ADD THIS - stores what attack they're winding up for
+    monster._telegraphShown = false;
+    monster._pendingIntent = null;
 });
 
             let msg;

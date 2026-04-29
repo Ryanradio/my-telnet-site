@@ -28,7 +28,7 @@ const GEM_TYPES = {
     ruby:     { name: 'Ruby',     color: '#FF2244', emoji: '🔴', tier_color: '#FF2244',
                 desc: 'Red — Damage & Lifesteal',
                 stats: ['weaponDmg','weaponDmg','lifesteal'],
-                rolls: { weaponDmg: [2,8], lifesteal: [3,10] } },
+                rolls: { weaponDmg: [2,8], lifesteal: [1,4] } },
     sapphire: { name: 'Sapphire', color: '#2266FF', emoji: '🔵', tier_color: '#2266FF',
                 desc: 'Blue — Spell Power & MP',
                 stats: ['spellPower','spellPower','mpBonus'],
