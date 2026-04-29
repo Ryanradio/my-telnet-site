@@ -3,6 +3,9 @@
 // Extracted from index.html
 // Dependencies: gameState, termAppend, updateHud, saveGame (runtime globals)
 // ═══════════════════════════════════════════════════════════════
+let _currentFeaturedWeapon = null;
+let _currentFeaturedArmor = null;
+let _currentFeaturedCycle = null;
 
 const FEATURED_QUALITY_ROLLS = [
     { quality: 'epic',      threshold: 60.0  },
@@ -71,21 +74,26 @@ function rollFeaturedQuality(seed) {
 window._currentFeaturedItems = { weapon: null, armor: null };
 
 function getFeaturedItems(playerLevel, playerClass, rerollOffset) {
-    // Clean up OLD featured items from WEAPONS/ARMOR registries
-    if (window._currentFeaturedItems.weapon && window._currentFeaturedItems.weapon.instanceId) {
-        delete WEAPONS[window._currentFeaturedItems.weapon.instanceId];
-        console.log(`🧹 Cleaned up old featured weapon: ${window._currentFeaturedItems.weapon.name}`);
-    }
-    if (window._currentFeaturedItems.armor && window._currentFeaturedItems.armor.instanceId) {
-        delete ARMOR[window._currentFeaturedItems.armor.instanceId];
-        console.log(`🧹 Cleaned up old featured armor: ${window._currentFeaturedItems.armor.name}`);
+    const cycleWindow = Math.floor(Date.now() / (4 * 60 * 60 * 1000));
+    
+    // If we already have items for this cycle, return them (don't generate new ones)
+    if (_currentFeaturedCycle === cycleWindow && _currentFeaturedWeapon && _currentFeaturedArmor) {
+        console.log('Using cached featured items for cycle', cycleWindow);
+        return { weapon: _currentFeaturedWeapon, armor: _currentFeaturedArmor };
     }
     
-    const cycleWindow = Math.floor(Date.now() / (4 * 60 * 60 * 1000));
-    const weaponSeed  = cycleWindow * 1000 + rerollOffset * 7 + 1;
-    const armorSeed   = cycleWindow * 1000 + rerollOffset * 7 + 2;
+    // Clean up OLD featured items from previous cycle
+    if (_currentFeaturedWeapon && _currentFeaturedWeapon.instanceId) {
+        delete WEAPONS[_currentFeaturedWeapon.instanceId];
+    }
+    if (_currentFeaturedArmor && _currentFeaturedArmor.instanceId) {
+        delete ARMOR[_currentFeaturedArmor.instanceId];
+    }
+    
+    const weaponSeed = cycleWindow * 1000 + rerollOffset * 7 + 1;
+    const armorSeed = cycleWindow * 1000 + rerollOffset * 7 + 2;
     const weaponQuality = rollFeaturedQuality(weaponSeed);
-    const armorQuality  = rollFeaturedQuality(armorSeed);
+    const armorQuality = rollFeaturedQuality(armorSeed);
 
     const minLv = Math.max(1, playerLevel - 2);
     const maxLv = playerLevel + 2;
@@ -111,17 +119,19 @@ function getFeaturedItems(playerLevel, playerClass, rerollOffset) {
     if (!allWeapons.length || !allArmors.length) return { weapon: null, armor: null };
 
     const wIdx = Math.abs(Math.floor(Math.sin(weaponSeed + 99) * 99999)) % allWeapons.length;
-    const aIdx = Math.abs(Math.floor(Math.sin(armorSeed  + 99) * 99999)) % allArmors.length;
+    const aIdx = Math.abs(Math.floor(Math.sin(armorSeed + 99) * 99999)) % allArmors.length;
     
     const weaponKey = allWeapons[wIdx];
     const armorKey = allArmors[aIdx];
     
-    // Create the full weapon object
-    const weaponDrop = generateWeaponDrop(gameState.player, playerLevel, 'common', true, weaponQuality);
-    const armorDrop = generateArmorDrop(gameState.player, playerLevel, 'common', true, armorQuality);
+    // Create the full weapon object (without adding to inventory)
+    const weaponDrop = generateWeaponDrop(gameState.player, playerLevel, 'common', true, weaponQuality, false);
+    const armorDrop = generateArmorDrop(gameState.player, playerLevel, 'common', true, armorQuality, false);
     
-    // Store current featured items for cleanup next time
-    window._currentFeaturedItems = { weapon: weaponDrop, armor: armorDrop };
+    // Store for this cycle
+    _currentFeaturedCycle = cycleWindow;
+    _currentFeaturedWeapon = weaponDrop;
+    _currentFeaturedArmor = armorDrop;
 
     return {
         weapon: weaponDrop,
@@ -227,7 +237,7 @@ function renderShop(tab, section, typeFilter, levelFilter) {
                     <span style="color:#c8a000;font-size:12px;font-family:'Courier New',monospace;">${price.toLocaleString()}g</span>
                     ${canBuy
                         ? (canAfford
-                            ? `<button onclick="buyFeaturedItem('weapon', featured.weapon, ${price})" style="background:#080800;border:1px solid ${color};color:${color};font-size:10px;padding:3px 8px;cursor:pointer;font-family:'Courier New',monospace;">BUY</button>`
+                            ? `<button onclick="buyFeaturedItem('weapon', '${weapon.instanceId}', ${price})" style="background:#080800;border:1px solid ${color};color:${color};font-size:10px;padding:3px 8px;cursor:pointer;font-family:'Courier New',monospace;">BUY</button>`
                             : `<span style="color:#2a2a2a;font-size:10px;font-family:'Courier New',monospace;">+${(price-p.gold).toLocaleString()}g</span>`)
                         : `<span style="color:#222;font-size:10px;font-family:'Courier New',monospace;">Can't use</span>`
                     }
@@ -277,7 +287,7 @@ function renderShop(tab, section, typeFilter, levelFilter) {
                     <span style="color:#c8a000;font-size:12px;font-family:'Courier New',monospace;">${price.toLocaleString()}g</span>
                     ${canBuy
                         ? (canAfford
-                            ? `<button onclick="buyFeaturedItem('armor', featured.armor, ${price})" style="background:#080800;border:1px solid ${color};color:${color};font-size:10px;padding:3px 8px;cursor:pointer;font-family:'Courier New',monospace;">BUY</button>`
+                            ? `<button onclick="buyFeaturedItem('armor', '${armor.instanceId}', ${price})" style="background:#080800;border:1px solid ${color};color:${color};font-size:10px;padding:3px 8px;cursor:pointer;font-family:'Courier New',monospace;">BUY</button>`
                             : `<span style="color:#2a2a2a;font-size:10px;font-family:'Courier New',monospace;">+${(price-p.gold).toLocaleString()}g</span>`)
                         : `<span style="color:#222;font-size:10px;font-family:'Courier New',monospace;">Can't use</span>`
                     }
@@ -585,22 +595,27 @@ function doShopReroll() {
 }
 
 // ── Buy featured ─────────────────────────────────────────────────
-function buyFeaturedItem(type, featuredItem, price) {
+function buyFeaturedItem(type, instanceId, price) {
     const p = gameState.player;
     const playerClass = p.baseClass || p.class;
     
-    if (!featuredItem) return;
+    // Find the item by instanceId
+    const item = type === 'weapon' ? WEAPONS[instanceId] : ARMOR[instanceId];
+    if (!item) {
+        alert('Item not found!');
+        return;
+    }
     
-    const canUse = type === 'weapon' ? canUseWeapon(playerClass, featuredItem) : canUseArmor(playerClass, featuredItem);
+    const canUse = type === 'weapon' ? canUseWeapon(playerClass, item) : canUseArmor(playerClass, item);
     if (!canUse) { alert(`Your class cannot use this item.`); return; }
     if (p.gold < price) { alert('Not enough gold!'); return; }
-    if (!confirm(`Buy ${featuredItem.name} for ${price.toLocaleString()}g?`)) return;
+    if (!confirm(`Buy ${item.name} for ${price.toLocaleString()}g?`)) return;
     
     p.gold -= price;
     
     // Mark as purchased (not dropped) and add to inventory
-    featuredItem.isDropped = false;
-    p.inventory.push(featuredItem);
+    item.isDropped = false;
+    p.inventory.push(item);
     
     saveGame();
     renderShop('buy', 'weapons', 'all', 'near');

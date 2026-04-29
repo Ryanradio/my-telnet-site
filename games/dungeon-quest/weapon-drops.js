@@ -412,7 +412,7 @@ function rollQuality() {
 // MAIN WEAPON GENERATION FUNCTION
 // ═══════════════════════════════════════════════════════════════
 
-function generateWeaponDrop(player, enemyLevel, enemyRarity = 'common', skipRoll = false, forcedQuality = null) {
+function generateWeaponDrop(player, enemyLevel, enemyRarity = 'common', skipRoll = false, forcedQuality = null, addToInventory = true) {
     // ⭐ Prevent recursive/duplicate calls
     if (window._generatingWeapon) {
         return null;
@@ -870,7 +870,7 @@ function rollQualityForDrop(sourceLevel, enemyRarity) {
 // ═══════════════════════════════════════════════════════════════
 // GENERATE ARMOR DROP - WITH HP/MP BONUSES AND MODIFIERS
 // ═══════════════════════════════════════════════════════════════
-function generateArmorDrop(player, sourceLevel, enemyRarity, skipRoll = false, forcedQuality = null) {
+function generateArmorDrop(player, sourceLevel, enemyRarity, skipRoll = false, forcedQuality = null, addToInventory = true) {
         if (!skipRoll) {
         const dropRoll = Math.random() * 100;
         let dropChance = 3.0; // 3% base drop chance
@@ -1015,7 +1015,11 @@ function generateArmorDrop(player, sourceLevel, enemyRarity, skipRoll = false, f
     ARMOR[instanceId] = armorInstance;
     
     // Add to player inventory
+    
+    if (addToInventory) {
     player.inventory.push(armorInstance);
+}
+
     
     return armorInstance;
 }
