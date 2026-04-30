@@ -1978,6 +1978,244 @@ if (type === 'magic' && defender.magicResist) {
 
         
 // ═══════════════════════════════════════════════════════════════
+// SPELL CHARGE MINI-GAME
+// Applies to: mage, cleric, warlock
+// Hold the spell button to charge. Release to cast.
+// Charge % maps to a damage/heal multiplier:
+//   0–30%  : 50% fizzle chance, else 0.5x
+//   30–60% : 1.0x  (normal)
+//   60–90% : 1.25x (empowered)
+//   90–130%: 1.5x  (perfect)
+//   130%+  : overcharge — spell fizzles
+// Heal spells: multiplier instead maps charge % across min→max power range.
+// AOE / single-target: multiplier scales final damage.
+// ═══════════════════════════════════════════════════════════════
+const SPELL_CHARGE_CLASSES = new Set(['mage', 'cleric', 'warlock']);
+const SPELL_CHARGE_DURATION = 1000; // ms to reach 100%
+const SPELL_OVERCHARGE_PCT  = 130;  // % at which spell fizzles
+
+// CSS injected once for the charge fill gradient colours per spell type
+(function injectSpellChargeStyles() {
+    if (document.getElementById('spell-charge-styles')) return;
+    const s = document.createElement('style');
+    s.id = 'spell-charge-styles';
+    s.textContent = `
+        .spell-charge-btn { transition: border-color 0.08s, box-shadow 0.08s; }
+        .spell-charge-btn.sc-holding { transform: scale(0.97); }
+        .spell-charge-btn.sc-empowered { border-color: #FFAA44 !important; box-shadow: 0 0 12px rgba(255,170,68,0.55); }
+        .spell-charge-btn.sc-perfect   { border-color: #FFD700 !important; box-shadow: 0 0 22px rgba(255,215,0,0.75); animation: scPulseGold 0.25s ease-in-out infinite alternate; }
+        .spell-charge-btn.sc-over      { border-color: #FF4444 !important; box-shadow: 0 0 22px rgba(255,68,68,0.75);  animation: scPulseRed  0.12s ease-in-out infinite alternate; }
+        @keyframes scPulseGold { from { box-shadow: 0 0 12px rgba(255,215,0,0.5); } to { box-shadow: 0 0 32px rgba(255,215,0,0.95); } }
+        @keyframes scPulseRed  { from { box-shadow: 0 0 12px rgba(255,68,68,0.5);  } to { box-shadow: 0 0 32px rgba(255,68,68,0.95);  } }
+        .spell-charge-fill.sc-fill-normal  { background: linear-gradient(90deg, #4422aa, #8844ff, #cc66ff); }
+        .spell-charge-fill.sc-fill-empowered { background: linear-gradient(90deg, #8844ff, #ffaa44, #ffd700); }
+        .spell-charge-fill.sc-fill-perfect { background: linear-gradient(90deg, #ffd700, #ffffff, #ffd700); }
+        .spell-charge-fill.sc-fill-over    { background: linear-gradient(90deg, #ff4444, #ff8888); }
+        .spell-charge-fill.sc-fill-heal    { background: linear-gradient(90deg, #22aa55, #44ff88, #aaffcc); }
+    `;
+    document.head.appendChild(s);
+})();
+
+function getSpellChargeResult(chargePct) {
+    if (chargePct >= SPELL_OVERCHARGE_PCT) return { mult: 0,    tier: 'over'     };
+    if (chargePct >= 90)                   return { mult: 1.5,  tier: 'perfect'  };
+    if (chargePct >= 60)                   return { mult: 1.25, tier: 'empowered'};
+    if (chargePct >= 30)                   return { mult: 1.0,  tier: 'normal'   };
+    // Under 30%: 50% fizzle
+    if (Math.random() < 0.5)              return { mult: 0,    tier: 'fizzle'   };
+    return                                        { mult: 0.5,  tier: 'weak'     };
+}
+
+function spellChannelMessage(spellKey, tier, chargePct) {
+    const spellData = (typeof ensureSpellExists === 'function' && ensureSpellExists(spellKey))
+                   || (typeof SPELLS !== 'undefined' && SPELLS[spellKey]);
+    const spellName = spellData ? spellData.name : spellKey;
+    const pct       = Math.min(Math.floor(chargePct), 130);
+
+    switch (tier) {
+        case 'perfect':
+            return `<span style="color:#FF44FF;">✨ <em>${spellName}</em> channeled to full power! (${pct}%)</span>`;
+        case 'empowered':
+            return `<span style="color:#FFD700;">🌟 <em>${spellName}</em> empowered — surging with energy! (${pct}%)</span>`;
+        case 'normal':
+            return `<span style="color:#88FF88;">⚡ <em>${spellName}</em> channeled — steady focus. (${pct}%)</span>`;
+        case 'weak':
+            return `<span style="color:#FF8866;">⚠️ <em>${spellName}</em> barely channeled — weak discharge. (${pct}%)</span>`;
+        case 'fizzle':
+            return `<span style="color:#FF4444;">💨 <em>${spellName}</em> fizzles before taking form...</span>`;
+        case 'over':
+            return `<span style="color:#FF4444;">💥 <em>${spellName}</em> overchanneled — spell collapses!</span>`;
+        default:
+            return `<span style="color:#88FF88;">⚡ <em>${spellName}</em> channeled. (${pct}%)</span>`;
+    }
+}
+
+function setupSpellCharging(button) {
+    const p  = gameState.player;
+    const cls = p.baseClass || p.class;
+    if (!SPELL_CHARGE_CLASSES.has(cls)) {
+        // Non-caster class: fall back to simple click
+        button.addEventListener('click', () => selectSpell(button.dataset.spellKey));
+        return;
+    }
+
+    const spellKey  = button.dataset.spellKey;
+    const fillEl    = button.querySelector('.spell-charge-fill');
+    const spellData = (typeof ensureSpellExists === 'function' && ensureSpellExists(spellKey)) || (typeof SPELLS !== 'undefined' && SPELLS[spellKey]);
+    const isHeal    = spellData && spellData.type === 'heal';
+
+    let rafId      = null;
+    let startTime  = null;  // RAF timestamp (from requestAnimationFrame)
+    let startMs    = null;  // wall-clock ms (from performance.now) set on first RAF frame
+    let holding    = false;
+    let didRelease = false; // guard against double-fire
+
+    function setFillClass(tier) {
+        fillEl.className = 'spell-charge-fill';
+        if (isHeal) { fillEl.classList.add('sc-fill-heal'); return; }
+        if (tier === 'empowered') fillEl.classList.add('sc-fill-empowered');
+        else if (tier === 'perfect' || tier === 'over') fillEl.classList.add('sc-fill-' + tier);
+        else fillEl.classList.add('sc-fill-normal');
+    }
+
+    function updateFill(pct, tier) {
+        const clamped = Math.min(100, pct);
+        fillEl.style.width = clamped + '%';
+        setFillClass(tier);
+        button.classList.remove('sc-empowered', 'sc-perfect', 'sc-over');
+        if (tier === 'empowered') button.classList.add('sc-empowered');
+        else if (tier === 'perfect') button.classList.add('sc-perfect');
+        else if (tier === 'over') button.classList.add('sc-over');
+    }
+
+    function resetVisuals() {
+        holding    = false;
+        startTime  = null;
+        startMs    = null;
+        button.classList.remove('sc-holding', 'sc-empowered', 'sc-perfect', 'sc-over');
+        fillEl.style.width = '0%';
+        fillEl.className = 'spell-charge-fill';
+    }
+
+    function animate(ts) {
+        if (!holding) return;
+        if (startTime === null) { startTime = ts; startMs = performance.now(); }
+        const elapsed = ts - startTime;
+        const pct = (elapsed / SPELL_CHARGE_DURATION) * 100;
+
+        let tier = 'normal';
+        if (pct >= SPELL_OVERCHARGE_PCT) tier = 'over';
+        else if (pct >= 90) tier = 'perfect';
+        else if (pct >= 60) tier = 'empowered';
+
+        updateFill(pct, tier);
+
+        // Auto-release at 200% (hard cap — no point holding further)
+        if (pct >= 200) {
+            releaseCharge(true);
+            return;
+        }
+        rafId = requestAnimationFrame(animate);
+    }
+
+    function startCharge(e) {
+        e.preventDefault();
+        const cs = gameState.combatState;
+        // Don't start if already holding, awaiting target, or enemy is dead
+        if (holding || didRelease) return;
+        if (cs && cs.actionMode === 'target_spell') return;
+
+        // Check enemy still alive (cancel guard)
+        if (cs && cs.monsters) {
+            const alive = cs.monsters.some(m => m.hp > 0);
+            if (!alive) {
+                termAppend('<span style="color:#888;">No valid targets.</span>');
+                return;
+            }
+        }
+
+        holding    = true;
+        didRelease = false;
+        startTime  = null;
+        button.classList.add('sc-holding');
+        rafId = requestAnimationFrame(animate);
+    }
+
+    function releaseCharge(forceOver = false) {
+        if (!holding || didRelease) return;
+        didRelease = true;
+        holding    = false;
+
+        if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+
+        const cs = gameState.combatState;
+
+        // ── Enemy died mid-charge? Cancel. ──────────────────────────
+        if (cs && cs.monsters) {
+            const alive = cs.monsters.some(m => m.hp > 0);
+            if (!alive) {
+                resetVisuals();
+                termAppend('<span style="color:#888;">✦ Your spell dissipates — no valid targets.</span>');
+                didRelease = false;
+                return;
+            }
+        }
+
+        const chargePct = forceOver ? 200 : (() => {
+            if (startMs === null) return 0;
+            return ((performance.now() - startMs) / SPELL_CHARGE_DURATION) * 100;
+        })();
+
+        resetVisuals();
+
+        const result = getSpellChargeResult(forceOver ? 200 : chargePct);
+
+        // Fizzle / overcharge — show message, consume pip, reset UI (no second chance)
+        if (result.mult === 0) {
+            termAppend(spellChannelMessage(spellKey, result.tier, chargePct));
+            if (cs) {
+                cs._spellChargeMultiplier = 0;
+                cs._spellChargePct        = chargePct;
+                cs._spellFizzled          = true;
+            }
+            selectSpell(spellKey);
+            didRelease = false;
+            return;
+        }
+
+        // Store multiplier on combatState for castSpellOnTarget to read
+        if (cs) {
+            cs._spellChargeMultiplier = result.mult;
+            cs._spellChargePct        = chargePct;
+            cs._spellChargeTier       = result.tier;
+        }
+
+        // Log channel result to terminal
+        termAppend(spellChannelMessage(spellKey, result.tier, chargePct));
+
+        // Now hand off to the normal spell selection flow
+        selectSpell(spellKey);
+
+        // Reset flag so button can be used again next render
+        didRelease = false;
+    }
+
+    function cancelCharge() {
+        if (!holding || didRelease) return;
+        resetVisuals(); // already clears startMs, startTime, holding
+        didRelease = false;
+        if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    }
+
+    button.addEventListener('mousedown',   startCharge);
+    button.addEventListener('mouseup',     () => releaseCharge());
+    button.addEventListener('mouseleave',  cancelCharge);
+    button.addEventListener('touchstart',  startCharge,           { passive: false });
+    button.addEventListener('touchend',    () => releaseCharge(),  { passive: false });
+    button.addEventListener('touchcancel', cancelCharge);
+}
+
+// ═══════════════════════════════════════════════════════════════
 // WARRIOR HEAVY ATTACK POWER BAR MINIGAME
 // ═══════════════════════════════════════════════════════════════
 function showHeavyAttackMinigame(callback) {
@@ -3105,10 +3343,28 @@ function cancelSpellMenu() {
     // Consume spell pips
     consumePips(cs, spell.pipCost || 1, getPipCooldown(p));
 
-
+    // ── SPELL CHARGE MULTIPLIER (mage / cleric / warlock hold-to-charge) ──
+    const _chargeMultiplier = cs._spellChargeMultiplier != null ? cs._spellChargeMultiplier : 1.0;
+    const _chargePct        = cs._spellChargePct        != null ? cs._spellChargePct        : 100;
+    const _fizzledByCharge  = !!cs._spellFizzled;
+    cs._spellChargeMultiplier = null;
+    cs._spellChargePct        = null;
+    cs._spellChargeTier       = null;
+    cs._spellFizzled          = null;
 
     p.mp -= spell.mpCost;
-    markMpAction();  // reset 15s MP regen countdown on every spell cast
+    markMpAction();
+
+    // Pip consumed, MP spent — if fizzle, stop here and return to main menu
+    if (_fizzledByCharge) {
+        updateHud();
+        cs.actionMode = 'main';
+        cs.pendingSpell = null;
+        cs.pendingSpellKey = null;
+        renderActionBar();
+        localSave();
+        return;
+    }
 
     // ── RUNESMITH: charge Rune Overload pip on every spell cast ──
     if ((p.baseClass || p.class) === 'runesmith' && (p.runeOverloadPips || 0) < 3) {
@@ -3123,29 +3379,39 @@ function cancelSpellMenu() {
     }
 
     if (spell.type === 'heal') {
-        // Healing spells: 5% chance to fail, random between minPower and maxPower
+        // Healing spells: charge % linearly maps minPower → maxPower.
+        // Under 30% charge there is a 50% fizzle (already handled pre-cast, but
+        // also keep the original 5% baseline fizzle for un-charged / non-caster casts).
         const _dbgSpell = gameState.sysop && gameState.sysop.authenticated;
-        const _fizzRoll = Math.random();
+
+        // Charge-based fizzle for caster classes (< 30% = 50% fizzle, handled in
+        // setupSpellCharging — by the time we get here mult=0.5 or 1.0+ so we
+        // only need the old 5% baseline fizzle for edge cases).
+        const _fizzRoll   = Math.random();
         const spellFailed = _fizzRoll < 0.05;
+
+        // Charge % clamped 0–100 drives the heal range
+        const _chargeRatio = Math.min(1, Math.max(0, _chargePct / 100));
+        const minHeal      = spell.minPower || 10;
+        const maxHeal      = spell.maxPower || minHeal;
+        // Linear interpolation: 0% charge → minPower, 100% charge → maxPower
+        const chargedBase  = Math.round(minHeal + _chargeRatio * (maxHeal - minHeal));
+
         if (_dbgSpell) {
             termAppend('<span style="color:#004466;">✨ [HEAL] ' + spell.name
                 + ' | cost: ' + spell.mpCost + ' MP'
-                + ' | range: ' + (spell.minPower||10) + '–' + (spell.maxPower||spell.minPower||10)
+                + ' | range: ' + minHeal + '–' + maxHeal
+                + ' | charge: ' + _chargePct.toFixed(1) + '% → base: ' + chargedBase
                 + ' | fizzle roll: ' + (_fizzRoll*100).toFixed(2) + '% / need ≤5% → ' + (spellFailed ? '💀 FIZZLE' : '✅ ok')
                 + '</span>', 'term-dim');
         }
         if (spellFailed) {
             termAppend(`You cast ${spell.name} but it <span style="color:#ff6666;">fizzles!</span> The gods did not answer.`);
         } else {
-            // Calculate random heal between minPower and maxPower
-            const minHeal = spell.minPower || 10;
-            const maxHeal = spell.maxPower || minHeal;
-            const _healRoll = Math.floor(Math.random() * (maxHeal - minHeal + 1)) + minHeal;
-            const baseHeal = _healRoll;
-            const heal = baseHeal + Math.floor(p.magic * 1.5) + (p.wis || 0);
+            const heal       = chargedBase + Math.floor(p.magic * 1.5) + (p.wis || 0);
             const actualHeal = Math.min(p.maxHp - p.hp, heal);
             if (_dbgSpell) {
-                termAppend('<span style="color:#004466;">  rolled: ' + _healRoll
+                termAppend('<span style="color:#004466;">  chargedBase: ' + chargedBase
                     + ' | +magic ' + Math.floor(p.magic*1.5) + ' | +WIS ' + (p.wis||0)
                     + ' → heal: ' + heal + ' | actual: ' + actualHeal
                     + ' (HP cap: ' + p.hp + '/' + p.maxHp + ')'
@@ -3218,10 +3484,11 @@ function cancelSpellMenu() {
                     return; // Skip this enemy
                 }
                 
-                // SPELL DAMAGE WITH WIDE RANGE ROLLING (each enemy rolls independently!)
+                // SPELL DAMAGE: charge % lerps minPower → maxPower (same mechanic as heals)
                 const minPower = spell.minPower || spell.power;
                 const maxPower = spell.maxPower || spell.power;
-                const spellRoll = Math.floor(Math.random() * (maxPower - minPower + 1)) + minPower;
+                const _chargeRatio = Math.min(1, Math.max(0, _chargePct / 100));
+                const spellRoll = Math.round(minPower + _chargeRatio * (maxPower - minPower));
                 
                 // Add weapon modifier bonus to offensive spells
                 const modifierBonus = getWeaponModifierSpellBonus();
@@ -3315,15 +3582,15 @@ function cancelSpellMenu() {
             return;
         }
         
-        // SPELL DAMAGE WITH WIDE RANGE ROLLING
+        // SPELL DAMAGE: charge % lerps minPower → maxPower (same mechanic as heals)
         const minPower = spell.minPower || spell.power;
         const maxPower = spell.maxPower || spell.power;
-        const spellRoll = Math.floor(Math.random() * (maxPower - minPower + 1)) + minPower;
-        
+        const _chargeRatio = Math.min(1, Math.max(0, _chargePct / 100));
+        const spellRoll = Math.round(minPower + _chargeRatio * (maxPower - minPower));
+
         // Add weapon modifier bonus to offensive spells
         const modifierBonus = getWeaponModifierSpellBonus();
 
-        // ── Gem bonuses for spells ────────────────────────────────
         const spellWeapon = WEAPONS[p.weapon];
         let gemSpellBonus = 0, gemSpellCrit = 0, gemSpellPoison = 0;
         let gemSpellUniversal = 0; // lightning + fire + frost all apply to spells
@@ -3360,7 +3627,7 @@ function cancelSpellMenu() {
         const modifierResult = weapon ? applyWeaponModifiers(p, enemy, dmg, weapon) : { totalDamage: dmg, messages: [] };
         const finalDamage = modifierResult.totalDamage;
 
-        // Gem poison proc on spell (universal gem)
+        // Gem poison proc on spell
         if (gemSpellPoison > 0 && Math.random() < (gemSpellPoison / 100) && enemy.hp > 0) {
             applyStatusEffect(enemy, 'poisoned', false);
             modifierResult.messages.push('<span style="color:#00EE00;">💎 Emerald: Poisoned!</span>');
@@ -3440,10 +3707,11 @@ function cancelSpellMenu() {
             return;
         }
         
-        // SPELL DAMAGE WITH WIDE RANGE ROLLING
+        // SPELL DAMAGE: charge % lerps minPower → maxPower (same mechanic as heals)
         const minPower = spell.minPower || spell.power;
         const maxPower = spell.maxPower || spell.power;
-        const spellRoll = Math.floor(Math.random() * (maxPower - minPower + 1)) + minPower;
+        const _chargeRatio = Math.min(1, Math.max(0, _chargePct / 100));
+        const spellRoll = Math.round(minPower + _chargeRatio * (maxPower - minPower));
         
         // Add weapon modifier bonus to offensive spells
         const modifierBonus = getWeaponModifierSpellBonus();

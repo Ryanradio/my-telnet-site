@@ -9133,10 +9133,13 @@ function handleAttackType(type) {
             const spellBtns = validSpells.map(({sk, spell}, i) => {
                 const canCast = p.mp >= spell.mpCost;
                 const aoeTag  = spell.type === 'aoe_damage' ? ' <span style="color:#FF8800;">AOE</span>' : '';
-                return `<button onclick="selectSpell('${sk}')" ${!canCast?'disabled':''} class="spell-btn" style="position:relative;">
-                    ${spell.name}${aoeTag}<br>
-                    <span style="font-size:12px;">${spell.mpCost} MP</span>
-                    <span class="kb-hint">${i + 1}</span>
+                const healTag = spell.type === 'heal' ? ' <span style="color:#88FF88;">HEAL</span>' : '';
+                return `<button data-spell-key="${sk}" ${!canCast?'disabled':''} class="spell-btn spell-charge-btn" style="position:relative;overflow:hidden;">
+                    <span class="spell-charge-fill" style="position:absolute;top:0;left:0;width:0%;height:100%;z-index:0;border-radius:inherit;pointer-events:none;transition:width 0.01s linear;"></span>
+                    <span style="position:relative;z-index:1;">${spell.name}${aoeTag}${healTag}<br>
+                    <span style="font-size:12px;">${spell.mpCost} MP</span><br>
+                    <span style="font-size:9px;opacity:0.55;letter-spacing:1px;">HOLD TO CAST</span>
+                    <span class="kb-hint">${i + 1}</span></span>
                 </button>`;
             }).join('');
 
@@ -9146,6 +9149,12 @@ function handleAttackType(type) {
                     <button onclick="cancelAction()" class="action-icon-btn" style="border-color:#888;position:relative;">❌<span class="kb-hint">Esc</span></button>
                 </div>
             `;
+            // Attach hold-to-charge listeners after DOM is written
+            if (typeof setupSpellCharging === 'function') {
+                ab.querySelectorAll('.spell-charge-btn:not([disabled])').forEach(btn => {
+                    setupSpellCharging(btn);
+                });
+            }
         }
     } else {
         // Out of combat - exploring
@@ -9357,9 +9366,19 @@ const result = calculateDamage({
         cs.pendingSpell = null;
         cs.pendingSpellKey = null;
     } else {
-        // Regular spells need target selection
-        cs.actionMode = 'target_spell';
-        renderActionBar();
+        // Single living enemy → auto-cast on currentTarget, no target picker needed
+        const aliveEnemies = cs.monsters.filter(m => m.hp > 0);
+        if (aliveEnemies.length === 1) {
+            cs.currentTarget = cs.monsters.indexOf(aliveEnemies[0]);
+            castSpellOnTarget(spell);
+            cs.actionMode = 'main';
+            cs.pendingSpell = null;
+            cs.pendingSpellKey = null;
+        } else {
+            // Multiple enemies → show target selection
+            cs.actionMode = 'target_spell';
+            renderActionBar();
+        }
     }
 }
 
