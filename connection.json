@@ -1,9 +1,9 @@
 {
-  "last_updated": "2026-04-29 23:12:01 UTC",
+  "last_updated": "2026-04-30 04:00:02 UTC",
   "status": "active",
   "proxy_hostname": "jamie-humidity-highest-measurements.trycloudflare.com",
   "type": "cloudflare_tunnel",
-  "ip": "3.142.167.54",
+  "ip": "13.58.157.220",
   "port": "21826",
   "hostname": "8.tcp.ngrok.io"
 }
