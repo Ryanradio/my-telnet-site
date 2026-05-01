@@ -832,7 +832,7 @@ const CLASS_SPELL_TREES = {
                 mpCost: 12,
                 minPower: 7,
 
-                maxPower: 37,
+                maxPower: 25,
                 type: 'lifesteal',
                 lifestealPercent: 50,
                 cost: 2700,
@@ -846,7 +846,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 70,
                 type: 'lifesteal',
-                lifestealPercent: 60,
+                lifestealPercent: 50,
                 cost: 9000,
                 description: 'Steal life from your enemy (60% returned)',
                 upgradesTo: 'drain_3',
@@ -860,7 +860,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 110,
                 type: 'lifesteal',
-                lifestealPercent: 70,
+                lifestealPercent: 50,
                 cost: 2500,
                 description: 'Leech the enemy\'s soul (70% returned)',
                 upgradesTo: 'drain_4',
@@ -874,7 +874,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 162,
                 type: 'lifesteal',
-                lifestealPercent: 75,
+                lifestealPercent: 50,
                 cost: 45000,
                 description: 'Pact with death itself (75% returned)',
                 upgradesTo: 'drain_5',
@@ -888,7 +888,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 225,
                 type: 'lifesteal',
-                lifestealPercent: 80,
+                lifestealPercent: 50,
                 cost: 9000,
                 description: 'Dark ritual that feeds on life (80% returned)',
                 upgradesTo: 'drain_6',
@@ -902,7 +902,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 300,
                 type: 'lifesteal',
-                lifestealPercent: 85,
+                lifestealPercent: 50,
                 cost: 45000,
                 description: 'Consume the enemy\'s essence (85% returned)',
                 upgradesTo: 'drain_7',
@@ -916,7 +916,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 400,
                 type: 'lifesteal',
-                lifestealPercent: 90,
+                lifestealPercent: 50,
                 cost: 225000,
                 description: 'Harvest abundant life energy (90% returned)',
                 upgradesTo: 'drain_8',
@@ -930,7 +930,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 525,
                 type: 'lifesteal',
-                lifestealPercent: 95,
+                lifestealPercent: 50,
                 cost: 120000,
                 description: 'Drain the very essence of life (95% returned)',
                 upgradesTo: 'drain_9',
@@ -944,7 +944,7 @@ const CLASS_SPELL_TREES = {
 
                 maxPower: 700,
                 type: 'lifesteal',
-                lifestealPercent: 100,
+                lifestealPercent: 50,
                 cost: 150000,
                 description: 'Feed eternally on life itself (100% returned)',
                 requires: 'drain_8'

@@ -455,6 +455,7 @@ function removeTooltip() {
 window.initInventoryTooltips = initInventoryTooltips;
 </script>
     <script src="combat-engine.js"></script>
+    <script src="spellbook.js"></script>
     <script src="shop-helpers.js"></script>
     <script src="save-load.js"></script>
     <script src="lore-data.js"></script>
@@ -1999,6 +2000,7 @@ async function loadCharacter(characterId) {
             ...data.player,
             inventory: data.player.inventory || [],
             knownSpells: data.player.knownSpells || [],
+            equippedSpells: data.player.equippedSpells || [],
             defeatedMasters: data.player.defeatedMasters || [],
             unlockedAreas: data.player.unlockedAreas || [],
             activeBounties: data.player.activeBounties || [],
@@ -2122,6 +2124,9 @@ async function loadCharacter(characterId) {
             
             console.log(`⚔️ Restored combat with ${restoredMonsters.length} enemies`);
         }
+
+        // Migrate / init equippedSpells for spellbook system
+        if (typeof initEquippedSpells === 'function') initEquippedSpells();
         
 // Start combat with active enemies in current room
 if (gameState.dungeon && gameState.dungeon.activeEnemies && gameState.dungeon.activeEnemies.length > 0) {
@@ -2466,24 +2471,32 @@ if (gameState.dungeon) {
             let needsArmorFix = false;
             
             playerData.inventory.forEach((item, idx) => {
-                // Check weapon instances (objects with weaponId)
-                if (typeof item === 'object' && item !== null && item.weaponId) {
-                    const baseWeapon = WEAPONS[item.weaponId];
-                    if (!baseWeapon) {
-                        // Base weapon missing - this is a broken item
-                        console.warn(`🗑️ Removing broken weapon instance: ${item.instanceId || item.weaponId} (base weapon not found)`);
-                        removedCount++;
-                        
-                        // If this broken weapon was equipped, flag for repair
-                        if (equippedWeaponId === item.instanceId || equippedWeaponId === item.weaponId) {
-                            needsWeaponFix = true;
-                            console.warn(`⚠️ Broken weapon was equipped! Will replace with new weapon.`);
-                        }
-                        return; // Skip adding to new inventory
-                    }
-                    // Valid weapon - keep it
-                    newInventory.push(item);
-                }
+    // Check weapon instances (objects with weaponId)
+    if (typeof item === 'object' && item !== null && item.weaponId) {
+        const baseWeapon = WEAPONS[item.weaponId];
+        if (!baseWeapon) {
+            // Base weapon missing - this is a broken item
+            console.warn(`🗑️ Removing broken weapon instance: ${item.instanceId || item.weaponId} (base weapon not found)`);
+            
+            // 🔧 FIX: If this is the EQUIPPED weapon, KEEP IT regardless
+            if (item.instanceId === equippedWeaponId) {
+                console.log(`🛡️ Keeping equipped weapon despite missing base: ${item.name}`);
+                newInventory.push(item);  // ← THIS IS THE FIX - keep equipped weapon
+                return;
+            }
+            
+            removedCount++;
+            
+            // If this broken weapon was equipped, flag for repair
+            if (equippedWeaponId === item.instanceId || equippedWeaponId === item.weaponId) {
+                needsWeaponFix = true;
+                console.warn(`⚠️ Broken weapon was equipped! Will replace with new weapon.`);
+            }
+            return; // Skip adding to new inventory
+        }
+        // Valid weapon - keep it
+        newInventory.push(item);
+    }
                 // Check armor instances (objects with armorId)
                 else if (typeof item === 'object' && item !== null && item.armorId) {
                     const baseArmor = ARMOR[item.armorId];
@@ -3073,7 +3086,24 @@ function generateAndEquipNewWeapon(playerData) {
     }
 }
 
-
+// ═══════════════════════════════════════════════════════════════
+// FIX: Ensure Bare Fists is NEVER marked as equipped
+// ═══════════════════════════════════════════════════════════════
+if (WEAPONS.bare_fists) {
+    if (WEAPONS.bare_fists.isEquipped === true) {
+        console.log(`🔧 Fixing: Bare Fists had isEquipped=true, setting to false`);
+        WEAPONS.bare_fists.isEquipped = false;
+    }
+}
+// Also check any other instance of bare_fists (like instance IDs)
+for (const [id, weapon] of Object.entries(WEAPONS)) {
+    if (weapon && (weapon.id === 'bare_fists' || weapon.weaponId === 'bare_fists' || weapon.name === 'Bare Fists')) {
+        if (weapon.isEquipped === true) {
+            console.log(`🔧 Fixing: ${weapon.name} (${id}) had isEquipped=true, setting to false`);
+            weapon.isEquipped = false;
+        }
+    }
+}
 
 // STEP 3: RESTORE GENERATED WEAPONS FROM SAVE DATA
 console.log('🔄 STEP 3: Starting weapon restoration...');
@@ -3891,32 +3921,51 @@ validateAndRepairInventory();
 // RESTORE EQUIPPED WEAPON AND ARMOR (using isEquipped flag)
 // ======================================================
 
-// Restore equipped weapon from flag - ONLY if weapon belongs to this character
+// Restore equipped weapon - KEEP what was already loaded, don't let Bare Fists override
 let equippedWeaponFound = false;
 
-// Check all weapons in WEAPONS for isEquipped flag AND matching ownerId
+// First, ensure Bare Fists is NEVER marked as equipped anywhere
+if (WEAPONS.bare_fists) {
+    WEAPONS.bare_fists.isEquipped = false;
+}
 for (const [id, weapon] of Object.entries(WEAPONS)) {
-    if (weapon && weapon.isEquipped === true) {
-        // Check if this weapon belongs to the current character
-        if (weapon.ownerId === characterId || !weapon.ownerId) {
-            gameState.player.weapon = id;
-            equippedWeaponFound = true;
-            console.log(`✅ Restored equipped weapon: ${weapon.name}`);
-            break;
-        } else {
-            console.log(`⚠️ Skipping weapon ${weapon.name} - belongs to different character (${weapon.ownerId})`);
-            // Remove the false isEquipped flag from other character's weapon
-            delete weapon.isEquipped;
+    if (weapon && (weapon.id === 'bare_fists' || weapon.weaponId === 'bare_fists' || id === 'bare_fists')) {
+        weapon.isEquipped = false;
+    }
+}
+
+// If a real weapon is already loaded from the save data, KEEP IT
+if (gameState.player.weapon && gameState.player.weapon !== 'bare_fists') {
+    equippedWeaponFound = true;
+    console.log(`✅ Keeping already loaded weapon: ${gameState.player.weapon}`);
+} else {
+    // Only search for equipped flag if no weapon was loaded
+    for (const [id, weapon] of Object.entries(WEAPONS)) {
+        // Skip Bare Fists entirely
+        if (weapon && (weapon.id === 'bare_fists' || weapon.weaponId === 'bare_fists' || id === 'bare_fists')) {
+            continue;
+        }
+        
+        if (weapon && weapon.isEquipped === true) {
+            if (weapon.ownerId === characterId || !weapon.ownerId) {
+                gameState.player.weapon = id;
+                equippedWeaponFound = true;
+                console.log(`✅ Restored equipped weapon: ${weapon.name}`);
+                break;
+            } else {
+                console.log(`⚠️ Skipping weapon ${weapon.name} - belongs to different character (${weapon.ownerId})`);
+                delete weapon.isEquipped;
+            }
         }
     }
 }
 
-// If no weapon was marked as equipped, check inventory for one
+// If still no weapon, try inventory as fallback
 if (!equippedWeaponFound && gameState.player.inventory) {
     for (const item of gameState.player.inventory) {
         if (item && typeof item === 'object' && item.weaponId && item.instanceId) {
             const weapon = WEAPONS[item.instanceId];
-            if (weapon && !weapon.unarmed) {
+            if (weapon && !weapon.unarmed && weapon.id !== 'bare_fists') {
                 gameState.player.weapon = item.instanceId;
                 weapon.isEquipped = true;
                 console.log(`⚔️ Auto-equipped weapon from inventory: ${weapon.name}`);
@@ -3924,6 +3973,11 @@ if (!equippedWeaponFound && gameState.player.inventory) {
             }
         }
     }
+}
+
+// Final safety: if still bare_fists, ensure it's not marked equipped
+if (gameState.player.weapon === 'bare_fists' && WEAPONS.bare_fists) {
+    WEAPONS.bare_fists.isEquipped = false;
 }
 
 // Restore equipped armor from flag - ONLY if armor belongs to this character
@@ -4931,6 +4985,7 @@ function closeEquipmentList() {
                 armor:  classData.startArmor,
                 inventory:  [classData.startWeapon, classData.startArmor],
                 knownSpells: getStartingSpells(classKey),
+                equippedSpells: getStartingSpells(classKey).slice(0, 3),
                 defeatedMasters: [],
                 unlockedAreas:  ['forest'],
                 // ── new stat block ──
@@ -5599,6 +5654,138 @@ async function saveToCloud() {
     const statusEl = document.getElementById('cloudStatus');
     if (statusEl) statusEl.innerHTML = '<span style="color: #FFD700;">☁️ Saving to cloud...</span>';
     
+
+// Add this near your other save functions (search for "function saveGame" or "function localSave")
+function buildSaveSnapshot() {
+    const p = gameState.player;
+    if (!p) return null;
+    
+    const dungeon = gameState.dungeon;
+    const combatState = gameState.combatState;
+    
+    const snapshot = {
+        version: 1,
+        characterId: p.id,
+        characterName: p.name,
+        timestamp: Date.now(),
+        lastSaved: new Date().toLocaleString(),
+        player: {
+            id: p.id,
+            name: p.name,
+            class: p.class,
+            className: p.className,
+            baseClass: p.baseClass,
+            level: p.level,
+            xp: p.xp,
+            xpToNext: p.xpToNext,
+            hp: p.hp,
+            maxHp: p.maxHp,
+            mp: p.mp,
+            maxMp: p.maxMp,
+            gold: p.gold,
+            bankGold: p.bankGold || 0,
+            strength: p.strength,
+            defense: p.defense,
+            magic: p.magic,
+            speed: p.speed,
+            str: p.str,
+            dex: p.dex,
+            con: p.con,
+            wis: p.wis,
+            cha: p.cha,
+            lck: p.lck,
+            weapon: p.weapon,
+            armor: p.armor,
+            activePet: p.activePet || null,
+            inventory: [...(p.inventory || [])],
+            knownSpells: [...(p.knownSpells || [])],
+            equippedSpells: [...(p.equippedSpells || [])],  // ✅ THIS IS THE KEY LINE
+            statPoints: p.statPoints || 0,
+            defeatedMasters: [...(p.defeatedMasters || [])],
+            unlockedAreas: [...(p.unlockedAreas || [])],
+            activeBounties: [...(p.activeBounties || [])],
+            pendingBounties: [...(p.pendingBounties || [])],
+            collectedBounties: {...(p.collectedBounties || {})},
+            portalUnlocked: p.portalUnlocked || false,
+            achievements: [...(p.achievements || [])],
+            runestones: [...(p.runestones || [])],
+            kills: {...(p.kills || {})},
+            bestiaryRead: {...(p.bestiaryRead || {})},
+            chronicle: {
+                unlockedEntries: [...((p.chronicle && p.chronicle.unlockedEntries) || [])],
+                readEntries: [...((p.chronicle && p.chronicle.readEntries) || [])],
+            },
+            guildQuests: {
+                active: p.guildQuests?.active || null,
+                completed: [...(p.guildQuests?.completed || [])],
+                progress: {...(p.guildQuests?.progress || {})}
+            },
+            hasSeenWelcome: p.hasSeenWelcome || false,
+            hasSeenLegacyWelcome: p.hasSeenLegacyWelcome || false,
+            hasSeenTownArrival_town2: p.hasSeenTownArrival_town2 || false,
+            hasSeenTownArrival_town3: p.hasSeenTownArrival_town3 || false,
+            dungeonMaps: (() => {
+                const maps = {};
+                if (p.dungeonMaps) {
+                    for (const dungeonKey in p.dungeonMaps) {
+                        maps[dungeonKey] = {};
+                        for (const floorNum in p.dungeonMaps[dungeonKey]) {
+                            maps[dungeonKey][floorNum] = Array.from(p.dungeonMaps[dungeonKey][floorNum] || []);
+                        }
+                    }
+                }
+                return maps;
+            })(),
+            dungeonTimers: p.dungeonTimers || {},
+            _gemHpBonus: p._gemHpBonus || 0,
+            _gemMpBonus: p._gemMpBonus || 0,
+            _gemDefBonus: p._gemDefBonus || 0,
+            _gemStrBonus: p._gemStrBonus || 0,
+            _gemDexBonus: p._gemDexBonus || 0,
+            _gemConBonus: p._gemConBonus || 0,
+            _gemWisBonus: p._gemWisBonus || 0,
+            _gemChaBonus: p._gemChaBonus || 0,
+            _gemLckBonus: p._gemLckBonus || 0,
+            _gemCritBonus: p._gemCritBonus || 0,
+            _gemPierceBonus: p._gemPierceBonus || 0,
+            _gemSpellBonus: p._gemSpellBonus || 0,
+        },
+        currentTown: gameState.currentTown || 'town1',
+        currentLocation: gameState.currentLocation || 'town'
+    };
+    
+    // Include dungeon if active
+    if (dungeon) {
+        snapshot.meta = { inDungeon: true };
+        snapshot.dungeon = {
+            dungeonKey: dungeon.dungeonKey,
+            floor: dungeon.floor,
+            currentRoom: dungeon.currentRoom,
+            discoveredRooms: dungeon.discoveredRooms ? Array.from(dungeon.discoveredRooms) : [],
+            spawnedRooms: dungeon.spawnedRooms ? Array.from(dungeon.spawnedRooms) : [],
+            activeEnemies: dungeon.activeEnemies || [],
+            defeatedEnemies: dungeon.defeatedEnemies || []
+        };
+    }
+    
+    // Include combat if active
+    if (combatState && combatState.monsters && combatState.monsters.length > 0) {
+        snapshot.activeCombat = {
+            monsters: combatState.monsters,
+            currentTarget: combatState.currentTarget,
+            enemyHits: combatState.enemyHits,
+            enemyHitsLeft: combatState.enemyHitsLeft,
+            pipsReady: combatState.pipAvailable,
+            pipCount: combatState.pipTimers?.length,
+            location: gameState.currentLocation
+        };
+    }
+    
+    return snapshot;
+}
+
+
+
     // Build save data WITHOUT calling buildSaveSnapshot()
     function buildCloudSaveData() {
         const p = gameState.player;
@@ -8376,6 +8563,12 @@ function showInventoryOverlay() {
     <!-- Title row -->
     <div style="display:flex;justify-content:space-between;align-items:center;">
         <span style="color:var(--highlight-color);font-size:20px;letter-spacing:3px;">🎒 INVENTORY</span>
+        ${(['mage','cleric','warlock'].includes(playerClass)) ? `
+        <button onclick="openSpellbook();" style="
+            padding:6px 14px;font-size:15px;letter-spacing:2px;
+            border-color:#aa66ff;color:#aa66ff;
+            font-family:'VT323',monospace;
+        ">📖 SPELLBOOK</button>` : ''}
     </div>
 </div>
 
@@ -9123,8 +9316,17 @@ function handleAttackType(type) {
                 </div>
             `;
         } else if (mode === 'spell_list') {
-            // Build numbered spell list
-            const validSpells = p.knownSpells.map(sk => {
+            // If the player is mid-charge, DO NOT rebuild the DOM — destroying the
+            // button they're holding is what kills the charge. Leave it alone.
+            if (window._spellCharging) return;
+
+            // Use equipped loadout (top 3 from spellbook), falling back to knownSpells for legacy saves
+            if (typeof initEquippedSpells === 'function') initEquippedSpells();
+            const spellSource = (p.equippedSpells && p.equippedSpells.length > 0)
+                ? p.equippedSpells
+                : (p.knownSpells || []).slice(0, 3);
+
+            const validSpells = spellSource.map(sk => {
                 const spell = ensureSpellExists(sk) || SPELLS[sk];
                 if (!spell) { console.warn(`⚠️ Spell '${sk}' not found`); return null; }
                 return { sk, spell };

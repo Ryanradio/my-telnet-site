@@ -343,6 +343,7 @@ if ((!p.armor || p.armor === 'no_armor') && p.inventory) {
             // Inventory & spells
             inventory: [...(p.inventory || [])],
             knownSpells: [...(p.knownSpells || [])],
+            equippedSpells: [...(p.equippedSpells || [])],
             
             // Stat points
             statPoints: p.statPoints || 0,

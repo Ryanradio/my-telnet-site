@@ -1,5 +1,7 @@
 
-
+/* Spellbook tab colors */
+.sb-tab-damage { color: #FF6666; }
+.sb-tab-healing { color: #44FF88; }
 
         /* ── FONT SIZE SETTINGS ─────────────────────────────────────── */
         :root {

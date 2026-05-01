@@ -2117,7 +2117,15 @@ function showUnifiedInventory(returnCallback = null) {
 
     let invHtml = `
         <div class="location-header">🎒 INVENTORY</div>
-        <button onclick="closeUnifiedInventory()" style="margin-bottom:10px;">← BACK</button>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <button onclick="closeUnifiedInventory()">← BACK</button>
+            ${(['mage','cleric','warlock'].includes(p.baseClass || p.class)) ? `
+            <button onclick="closeUnifiedInventory();openSpellbook();" style="
+                padding:6px 14px;font-size:15px;letter-spacing:2px;
+                border:2px solid #aa66ff;color:#aa66ff;background:transparent;
+                font-family:'VT323',monospace;cursor:pointer;
+            ">📖 SPELLBOOK</button>` : ''}
+        </div>
         ${statsHtml}
     `;
     

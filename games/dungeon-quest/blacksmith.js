@@ -788,7 +788,9 @@ console.log('✅ Socket duplication prevention active - duplicates will be clean
         // SPELL SHOP - Temple Spell Training
         // ═══════════════════════════════════════════════════════════════
         
-        function showSpellShop() {
+        let _currentSpellShopTab = 'damage'; // 'damage' or 'healing'
+
+function showSpellShop() {
     const p = gameState.player;
     const screen = document.getElementById('mainScreen');
     
@@ -807,220 +809,284 @@ console.log('✅ Socket duplication prevention active - duplicates will be clean
         return;
     }
     
-    // Build spell lists
-    const availableSpells = [];   // can learn now
-    const upcomingSpells  = [];   // locked by level
-    const currentSpells   = [];   // already known
-
-    // For each spell in the tree, determine if it's available as an UPGRADE
+    // Collect all spells and separate by type
+    const damageSpells = [];
+    const healingSpells = [];
+    
     Object.entries(spellTree.spellTree).forEach(([key, spell]) => {
-        const hasSpell = p.knownSpells.includes(key);
+        const isHealing = spell.type === 'heal' || spell.type === 'lifesteal';
+        const spellData = { key, spell };
         
-        if (hasSpell) {
-            // Player already has this spell
-            currentSpells.push({ key, spell });
-            return;
-        }
-        
-        // Check if this spell can be learned (it's the NEXT spell in the chain)
-        let canLearn = false;
-        let requiredSpell = null;
-        
-        // If this spell has a requirement
-        if (spell.requires) {
-            // Check if player has the required spell AND no higher version yet
-            if (p.knownSpells.includes(spell.requires)) {
-                // They have the required spell - this is the NEXT upgrade
-                canLearn = true;
-                requiredSpell = spell.requires;
-            }
+        if (isHealing) {
+            healingSpells.push(spellData);
         } else {
-            // No requirement - it's a starting spell. Only show if they don't have ANY spells?
-            // Actually, starting spells should only be available if they have no spells yet
-            if (p.knownSpells.length === 0) {
-                canLearn = true;
-            }
-        }
-        
-        // Also check if they already have a HIGHER version (skip if they do)
-        let hasHigherVersion = false;
-        for (const known of p.knownSpells) {
-            const knownSpell = spellTree.spellTree[known];
-            if (knownSpell && knownSpell.requires === key) {
-                hasHigherVersion = true;
-                break;
-            }
-        }
-        
-        if (hasHigherVersion) {
-            return; // Skip - they already upgraded past this
-        }
-        
-        if (canLearn && !hasHigherVersion) {
-            const levelReq = p.level >= spell.level;
-            const canAfford = p.gold >= spell.cost;
-            
-            if (levelReq) {
-                availableSpells.push({ key, spell, canAfford, requiredSpell });
-            } else {
-                upcomingSpells.push({ key, spell, requiredSpell });
-            }
+            damageSpells.push(spellData);
         }
     });
     
-    let html = `
-        <div class="location-header">📖 SPELL TRAINING</div>
-        <button onclick="showTemple()" style="margin-bottom:10px;">← BACK</button>
-        ${renderPlayerStats()}
-        
-        <div class="message">
-            <p style="color:var(--highlight-color);"><strong>The priests offer to teach you the sacred arts</strong></p>
-            <p style="color:#8aaa8a;">Learn new spells or upgrade existing ones</p>
-        </div>
-    `;
+    // Sort by level requirement (lowest to highest)
+    const sortByLevel = (a, b) => a.spell.level - b.spell.level;
+    damageSpells.sort(sortByLevel);
+    healingSpells.sort(sortByLevel);
     
-    // Show current spells
-    if (currentSpells.length > 0) {
-        html += `<div class="message" style="border-color:#00FF00;"><h3 style="color:#00FF00;">Your Known Spells</h3>`;
-        currentSpells.forEach(({ key, spell }) => {
-            const typeColor = spell.type === 'heal' || spell.type === 'lifesteal' ? '#00FF00' : '#FF6666';
-            const typeIcon = spell.type === 'heal' ? '💚' : spell.type === 'lifesteal' ? '🩸' : spell.type === 'aoe_damage' ? '🔥' : '💥';
-            const lifestealInfo = spell.lifestealPercent ? ` (${spell.lifestealPercent}%)` : '';
-            const aoeTag = spell.type === 'aoe_damage' ? ' <span style="color:#FF8800;">[AOE]</span>' : '';
-            const powerDisplay = spell.minPower !== undefined ? `${spell.minPower}–${spell.maxPower}` : '?';
+    // Count available spells for badges (meet level, don't own, can afford, no prereq check)
+    const countAvailable = (spells) => {
+        return spells.filter(({ key, spell }) => {
+            if (p.knownSpells.includes(key)) return false;
+            if (p.level < spell.level) return false;
+            if (p.gold < spell.cost) return false;
+            // No prerequisite check - just level and gold
+            return true;
+        }).length;
+    };
+    
+    const damageAvailable = countAvailable(damageSpells);
+    const healingAvailable = countAvailable(healingSpells);
+    
+    // Build spell list HTML for current tab
+    const buildSpellList = (spells, isHealingTab) => {
+        if (spells.length === 0) {
+            return `<div style="color:#555; text-align:center; padding:30px;">No ${isHealingTab ? 'healing' : 'damage'} spells available for your class.</div>`;
+        }
+        
+        let html = '';
+        
+        spells.forEach(({ key, spell }) => {
+            const hasSpell = p.knownSpells.includes(key);
+            const meetsLevel = p.level >= spell.level;
+            const canAfford = p.gold >= spell.cost;
+            const canBuy = meetsLevel && canAfford && !hasSpell;
             
-            // Check if there's an upgrade available
-            let upgradeInfo = '';
-            if (spell.upgradesTo) {
-                const upgradeSpell = spellTree.spellTree[spell.upgradesTo];
-                if (upgradeSpell) {
-                    if (p.level >= upgradeSpell.level) {
-                        upgradeInfo = `<br><span style="color:#FFD700;font-size:12px;">→ Upgrade available at Temple!</span>`;
-                    } else {
-                        upgradeInfo = `<br><span style="color:#555;font-size:12px;">→ Upgrade unlocks at Lv ${upgradeSpell.level}</span>`;
-                    }
+            const spellColor = isHealingTab ? '#44FF88' : '#FF6666';
+            
+            // Determine visual state
+            let borderColor = '#333';
+            let bgColor = '#0a0a0a';
+            let opacity = '1';
+            let statusText = '';
+            let statusColor = '#888';
+            
+            if (hasSpell) {
+                borderColor = '#00FF00';
+                bgColor = '#0a1a0a';
+                statusText = '✓ KNOWN';
+                statusColor = '#00FF00';
+                opacity = '0.6';
+            } else if (!meetsLevel) {
+                borderColor = '#444';
+                statusText = `🔒 Lv ${spell.level}`;
+                statusColor = '#666';
+                opacity = '0.5';
+            } else if (!canAfford) {
+                borderColor = '#8B0000';
+                bgColor = '#1a0a0a';
+                statusText = `💰 ${(spell.cost - p.gold).toLocaleString()}g more`;
+                statusColor = '#FF6666';
+            } else {
+                borderColor = '#FFD700';
+                bgColor = '#1a1a0a';
+                statusText = `💰 ${spell.cost.toLocaleString()}g`;
+                statusColor = '#FFD700';
+            }
+            
+            // Type tag
+            const typeTag = spell.type === 'heal' ? 'HEAL' : 
+                           spell.type === 'lifesteal' ? 'DRAIN' : 
+                           spell.type === 'aoe_damage' ? 'AOE' : 'DMG';
+            const typeColor = spell.type === 'heal' ? '#44FF88' : 
+                             spell.type === 'lifesteal' ? '#FF6688' : 
+                             spell.type === 'aoe_damage' ? '#FF8844' : spellColor;
+            
+            // Power display
+            const powerDisplay = spell.minPower !== undefined ? `${spell.minPower}–${spell.maxPower}` : '?';
+            const leechInfo = spell.lifestealPercent ? ` (${spell.lifestealPercent}% leech)` : '';
+            
+            // Get prerequisite spell name if exists (for display only)
+            let prereqInfo = '';
+            if (spell.requires && spell.requires !== key) {
+                const prereqSpell = spellTree.spellTree[spell.requires];
+                if (prereqSpell && !hasSpell && meetsLevel) {
+                    prereqInfo = `<div style="color:#FFAA44; font-size: 10px; margin-top: 4px;">⚠️ Requires: ${prereqSpell.name}</div>`;
                 }
             }
             
-            html += `<p>${typeIcon} <strong>${spell.name}${aoeTag}</strong> - <span style="color:${typeColor};">${powerDisplay} ${spell.type === 'heal' ? 'HP' : 'DMG'}${lifestealInfo}</span> (${spell.mpCost} MP)${upgradeInfo}</p>`;
+            html += `
+                <div style="
+                    border: 2px solid ${borderColor};
+                    background: ${bgColor};
+                    border-radius: 6px;
+                    padding: 12px 15px;
+                    margin-bottom: 8px;
+                    opacity: ${opacity};
+                    transition: all 0.2s;
+                    ${canBuy ? 'cursor: pointer;' : ''}
+                " ${canBuy ? `onclick="learnSpell('${key}')"` : ''}>
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                        <div style="flex: 2;">
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <span style="color: ${spellColor}; font-size: 18px; font-weight: bold;">${spell.name}</span>
+                                <span style="
+                                    background: ${typeColor}22;
+                                    border: 1px solid ${typeColor};
+                                    color: ${typeColor};
+                                    font-size: 10px;
+                                    padding: 2px 6px;
+                                    border-radius: 4px;
+                                    letter-spacing: 1px;
+                                ">${typeTag}</span>
+                                <span style="color: #555; font-size: 11px;">Lv ${spell.level}</span>
+                            </div>
+                            <div style="color: #aaa; font-size: 12px; margin-top: 4px;">${spell.description || ''}</div>
+                            <div style="display: flex; gap: 15px; margin-top: 6px; flex-wrap: wrap;">
+                                <span style="color: ${typeColor}; font-size: 13px;">⚔️ ${powerDisplay} ${spell.type === 'heal' ? 'HP' : 'DMG'}${leechInfo}</span>
+                                <span style="color: #88AAFF;">💙 ${spell.mpCost} MP</span>
+                            </div>
+                            ${prereqInfo}
+                        </div>
+                        <div style="text-align: right; min-width: 110px;">
+                            <div style="color: ${statusColor}; font-size: 14px; font-weight: bold;">${statusText}</div>
+                            ${!hasSpell && meetsLevel && !canAfford ? `<div style="color: #FF6666; font-size: 11px;">Need: ${(spell.cost - p.gold).toLocaleString()}g</div>` : ''}
+                            ${canBuy ? `<div style="color: #FFD700; font-size: 11px; margin-top: 4px;">▼ Click to purchase</div>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
         });
-        html += `</div>`;
-    }
+        
+        return html;
+    };
     
-    // Show available spells (UPGRADES)
-    if (availableSpells.length > 0) {
-        html += `<div class="message" style="border-color:#FFD700;"><h3 style="color:#FFD700;">Available Upgrades</h3>`;
-        availableSpells.forEach(({ key, spell, canAfford, requiredSpell }) => {
-            const typeColor = spell.type === 'heal' || spell.type === 'lifesteal' ? '#00FF00' : '#FF6666';
-            const typeIcon = spell.type === 'heal' ? '💚' : spell.type === 'lifesteal' ? '🩸' : spell.type === 'aoe_damage' ? '🔥' : '💥';
-            const lifestealInfo = spell.lifestealPercent ? ` (${spell.lifestealPercent}% lifesteal)` : '';
-            const aoeTag = spell.type === 'aoe_damage' ? ' <span style="color:#FF8800;">[AOE]</span>' : '';
-            const powerDisplay = spell.minPower !== undefined ? `${spell.minPower}–${spell.maxPower}` : '?';
-            
-            // Get the name of the spell this upgrades from
-            const oldSpell = spellTree.spellTree[requiredSpell];
-            const upgradeText = oldSpell ? `Upgrade: ${oldSpell.name} → ${spell.name}` : 'New Spell';
-            
-            html += `<div style="margin:10px 0;padding:10px;border:1px solid ${canAfford ? '#FFD700' : '#666'};">
-                <p>${typeIcon} <strong style="color:${typeColor};">${spell.name}${aoeTag}</strong><br>
-                <span style="font-size:12px;">${upgradeText}</span><br>
-                <span style="font-size:12px;">${spell.description}</span><br>
-                <span style="color:${typeColor};">${powerDisplay} ${spell.type === 'heal' ? 'HP' : 'DMG'}${lifestealInfo}</span> | ${spell.mpCost} MP | Requires Level ${spell.level}<br>
-                <span style="color:#FFD700;">Cost: ${spell.cost}g</span></p>
-                ${canAfford ? `<button onclick="learnSpell('${key}')" style="border-color:#FFD700;">💰 Upgrade (${spell.cost}g)</button>` : `<button disabled style="opacity:0.5;">Need ${spell.cost - p.gold}g more</button>`}
-            </div>`;
-        });
-        html += `</div>`;
-    } else {
-        html += `<div class="message"><p style="color:#888;">No upgrades available at your level.</p></div>`;
-    }
-
-    // Show upcoming locked upgrades
-    if (upcomingSpells.length > 0) {
-        html += `<div class="message" style="border-color:#444;"><h3 style="color:#888;">Coming Soon</h3>`;
-        upcomingSpells.forEach(({ key, spell, requiredSpell }) => {
-            const typeIcon = spell.type === 'heal' ? '💚' : spell.type === 'lifesteal' ? '🩸' : spell.type === 'aoe_damage' ? '🔥' : '💥';
-            const aoeTag = spell.type === 'aoe_damage' ? ' <span style="color:#664400;">[AOE]</span>' : '';
-            const oldSpell = spellTree.spellTree[requiredSpell];
-            const upgradeText = oldSpell ? `Upgrade: ${oldSpell.name} → ${spell.name}` : 'New Spell';
-            
-            html += `<div style="margin:8px 0;padding:8px;border:1px solid #333;opacity:0.6;">
-                <p>${typeIcon} <strong style="color:#666;">${spell.name}${aoeTag}</strong><br>
-                <span style="font-size:12px;color:#777;">${upgradeText}</span><br>
-                <span style="font-size:12px;color:#555;">${spell.description}</span><br>
-                <span style="color:#666;">Unlocks at Level ${spell.level} | ${spell.mpCost} MP | Cost: ${spell.cost}g</span></p>
-            </div>`;
-        });
-        html += `</div>`;
-    }
+    // Build the full page with tabs
+    const currentSpellsHtml = _currentSpellShopTab === 'damage' 
+        ? buildSpellList(damageSpells, false)
+        : buildSpellList(healingSpells, true);
     
-    html += `<button onclick="showTemple()">← BACK</button>`;
+    const html = `
+        <div class="location-header">📖 SPELL TRAINING</div>
+        <button onclick="showTemple()" style="margin-bottom: 10px;">← BACK TO TEMPLE</button>
+        ${renderPlayerStats()}
+        
+        <div class="message" style="border-color: var(--highlight-color); text-align: center; margin-bottom: 15px;">
+            <p style="color: var(--highlight-color);"><strong>✦ THE GRIMOIRE OF ${(classKey || '').toUpperCase()} ✦</strong></p>
+            <p style="color: #8aaa8a;">Study the tomes below. Purchase spells when you meet the requirements.</p>
+            <p style="color: #FFD700; font-size: 14px;">💰 Your gold: ${p.gold.toLocaleString()}g</p>
+        </div>
+        
+        <!-- TABS -->
+        <div style="display: flex; gap: 4px; margin-bottom: 15px; border-bottom: 2px solid var(--border-color);">
+            <button onclick="_switchSpellShopTab('damage')" id="shopTabDamage" style="
+                flex: 1;
+                background: ${_currentSpellShopTab === 'damage' ? 'var(--highlight-color)22' : 'transparent'};
+                border: none;
+                border-bottom: 3px solid ${_currentSpellShopTab === 'damage' ? 'var(--highlight-color)' : 'transparent'};
+                color: ${_currentSpellShopTab === 'damage' ? 'var(--highlight-color)' : '#666'};
+                font-family: 'VT323', monospace;
+                font-size: 18px;
+                padding: 10px;
+                cursor: pointer;
+                letter-spacing: 3px;
+                font-weight: bold;
+            ">
+                ⚔️ DAMAGE 
+                ${damageAvailable > 0 ? `<span style="background: #FF4444; color: white; padding: 2px 8px; border-radius: 20px; font-size: 12px; margin-left: 8px;">${damageAvailable}</span>` : ''}
+            </button>
+            <button onclick="_switchSpellShopTab('healing')" id="shopTabHealing" style="
+                flex: 1;
+                background: ${_currentSpellShopTab === 'healing' ? 'var(--highlight-color)22' : 'transparent'};
+                border: none;
+                border-bottom: 3px solid ${_currentSpellShopTab === 'healing' ? 'var(--highlight-color)' : 'transparent'};
+                color: ${_currentSpellShopTab === 'healing' ? 'var(--highlight-color)' : '#666'};
+                font-family: 'VT323', monospace;
+                font-size: 18px;
+                padding: 10px;
+                cursor: pointer;
+                letter-spacing: 3px;
+                font-weight: bold;
+            ">
+                💚 HEALING/LEECH
+                ${healingAvailable > 0 ? `<span style="background: #44FF88; color: #000; padding: 2px 8px; border-radius: 20px; font-size: 12px; margin-left: 8px;">${healingAvailable}</span>` : ''}
+            </button>
+        </div>
+        
+        <!-- SPELL LIST -->
+        <div style="max-height: 500px; overflow-y: auto; padding-right: 5px;">
+            ${currentSpellsHtml}
+        </div>
+        
+        <div class="message" style="margin-top: 20px; text-align: center;">
+            <span style="color: #8aaa8a;">📖 Spells Known: ${p.knownSpells.length}</span>
+            <span style="color: #555; margin-left: 15px;">⚡ You can equip 3 spells in your spellbook</span>
+        </div>
+        <button onclick="showTemple()" style="margin-top: 15px;">← BACK TO TEMPLE</button>
+    `;
+    
     setScreen(html);
+}
+
+// Tab switching function for spell shop
+function _switchSpellShopTab(tab) {
+    _currentSpellShopTab = tab;
+    showSpellShop();
 }
         
         function learnSpell(spellKey) {
-            const p = gameState.player;
-            const classKey = p.baseClass || p.class;
-            const spell = CLASS_SPELL_TREES[classKey].spellTree[spellKey];
-            
-            if (!spell || p.gold < spell.cost || p.level < spell.level) {
-                alert('Cannot learn this spell!');
-                return;
-            }
-            
-            if (spell.requires && !p.knownSpells.includes(spell.requires)) {
-                alert('Learn previous spell first!');
-                return;
-            }
-            
-            p.gold -= spell.cost;
-            
-            // Remove old spell if upgrade
-            if (spell.requires) {
-                const idx = p.knownSpells.indexOf(spell.requires);
-                if (idx > -1) p.knownSpells.splice(idx, 1);
-            }
-            
-            p.knownSpells.push(spellKey);
-            
-            // Add to SPELLS if not present
-            if (!SPELLS[spellKey]) {
-                SPELLS[spellKey] = { ...spell, pipCost: 1 };
-            }
+    const p = gameState.player;
+    const classKey = p.baseClass || p.class;
+    const spell = CLASS_SPELL_TREES[classKey].spellTree[spellKey];
+    
+    if (!spell || p.gold < spell.cost || p.level < spell.level) {
+        alert('Cannot learn this spell!');
+        return;
+    }
+    
+    if (spell.requires && !p.knownSpells.includes(spell.requires)) {
+        alert('Learn previous spell first!');
+        return;
+    }
+    
+    p.gold -= spell.cost;
+    
+    // ✅ FIX: DON'T remove old spell - keep both!
+    // The old spell stays in knownSpells, we just add the new one
+    
+    // Add the new spell if not already known
+    if (!p.knownSpells.includes(spellKey)) {
+        p.knownSpells.push(spellKey);
+    }
+    
+    // Add to SPELLS if not present
+    if (!SPELLS[spellKey]) {
+        SPELLS[spellKey] = { ...spell, pipCost: 1 };
+    }
 
-            // ── Enforce slot order after every learn ───────────────────────
-            // Slot 1 = single-target (damage / heal for healers)
-            // Slot 2 = AOE (heal for healers)
-            // Rule: for healer classes damage goes first, for others single-target damage first, AOE second
-            const healerClasses = ['cleric','priest','paladin','shaman'];
-            const isHealer = healerClasses.includes(classKey);
+    // Sort spells by type for proper slot ordering
+    const healerClasses = ['cleric','priest','paladin','shaman'];
+    const isHealer = healerClasses.includes(classKey);
 
-            p.knownSpells.sort((a, b) => {
-                const sa = SPELLS[a] || CLASS_SPELL_TREES[classKey]?.spellTree?.[a];
-                const sb = SPELLS[b] || CLASS_SPELL_TREES[classKey]?.spellTree?.[b];
-                if (!sa || !sb) return 0;
-                function rank(s) {
-                    if (isHealer) {
-                        // healers: damage=0 (slot1), heal=1 (slot2), aoe=2
-                        if (s.type === 'damage') return 0;
-                        if (s.type === 'heal' || s.type === 'lifesteal') return 1;
-                        if (s.type === 'aoe_damage') return 2;
-                        return 3;
-                    } else {
-                        // mages/others: single-target damage=0 (slot1), aoe=1 (slot2), heal=2
-                        if (s.type === 'damage') return 0;
-                        if (s.type === 'aoe_damage') return 1;
-                        if (s.type === 'heal' || s.type === 'lifesteal') return 2;
-                        return 3;
-                    }
-                }
-                return rank(sa) - rank(sb);
-            });
-            
-            saveGame();
-            alert(`Learned ${spell.name}!`);
-            showSpellShop();
+    p.knownSpells.sort((a, b) => {
+        const sa = SPELLS[a] || CLASS_SPELL_TREES[classKey]?.spellTree?.[a];
+        const sb = SPELLS[b] || CLASS_SPELL_TREES[classKey]?.spellTree?.[b];
+        if (!sa || !sb) return 0;
+        function rank(s) {
+            if (isHealer) {
+                if (s.type === 'damage') return 0;
+                if (s.type === 'heal' || s.type === 'lifesteal') return 1;
+                if (s.type === 'aoe_damage') return 2;
+                return 3;
+            } else {
+                if (s.type === 'damage') return 0;
+                if (s.type === 'aoe_damage') return 1;
+                if (s.type === 'heal' || s.type === 'lifesteal') return 2;
+                return 3;
+            }
         }
+        return rank(sa) - rank(sb);
+    });
+    
+    saveGame();
+    alert(`Learned ${spell.name}!`);
+    showSpellShop();
+}
         
         // ═══════════════════════════════════════════════════════════════
         // PET TRAINER (Hunter Only)

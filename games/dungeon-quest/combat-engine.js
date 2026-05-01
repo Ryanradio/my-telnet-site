@@ -2065,10 +2065,10 @@ function setupSpellCharging(button) {
     const isHeal    = spellData && spellData.type === 'heal';
 
     let rafId      = null;
-    let startTime  = null;  // RAF timestamp (from requestAnimationFrame)
-    let startMs    = null;  // wall-clock ms (from performance.now) set on first RAF frame
+    let startTime  = null;
+    let startMs    = null;
     let holding    = false;
-    let didRelease = false; // guard against double-fire
+    let didRelease = false;
 
     function setFillClass(tier) {
         fillEl.className = 'spell-charge-fill';
@@ -2099,6 +2099,7 @@ function setupSpellCharging(button) {
 
     function animate(ts) {
         if (!holding) return;
+
         if (startTime === null) { startTime = ts; startMs = performance.now(); }
         const elapsed = ts - startTime;
         const pct = (elapsed / SPELL_CHARGE_DURATION) * 100;
@@ -2110,7 +2111,6 @@ function setupSpellCharging(button) {
 
         updateFill(pct, tier);
 
-        // Auto-release at 200% (hard cap — no point holding further)
         if (pct >= 200) {
             releaseCharge(true);
             return;
@@ -2121,11 +2121,9 @@ function setupSpellCharging(button) {
     function startCharge(e) {
         e.preventDefault();
         const cs = gameState.combatState;
-        // Don't start if already holding, awaiting target, or enemy is dead
         if (holding || didRelease) return;
         if (cs && cs.actionMode === 'target_spell') return;
 
-        // Check enemy still alive (cancel guard)
         if (cs && cs.monsters) {
             const alive = cs.monsters.some(m => m.hp > 0);
             if (!alive) {
@@ -2137,6 +2135,7 @@ function setupSpellCharging(button) {
         holding    = true;
         didRelease = false;
         startTime  = null;
+        window._spellCharging = true;
         button.classList.add('sc-holding');
         rafId = requestAnimationFrame(animate);
     }
@@ -2145,12 +2144,12 @@ function setupSpellCharging(button) {
         if (!holding || didRelease) return;
         didRelease = true;
         holding    = false;
+        window._spellCharging = false;
 
         if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
 
         const cs = gameState.combatState;
 
-        // ── Enemy died mid-charge? Cancel. ──────────────────────────
         if (cs && cs.monsters) {
             const alive = cs.monsters.some(m => m.hp > 0);
             if (!alive) {
@@ -2170,7 +2169,6 @@ function setupSpellCharging(button) {
 
         const result = getSpellChargeResult(forceOver ? 200 : chargePct);
 
-        // Fizzle / overcharge — show message, consume pip, reset UI (no second chance)
         if (result.mult === 0) {
             termAppend(spellChannelMessage(spellKey, result.tier, chargePct));
             if (cs) {
@@ -2183,37 +2181,26 @@ function setupSpellCharging(button) {
             return;
         }
 
-        // Store multiplier on combatState for castSpellOnTarget to read
         if (cs) {
             cs._spellChargeMultiplier = result.mult;
             cs._spellChargePct        = chargePct;
             cs._spellChargeTier       = result.tier;
         }
 
-        // Log channel result to terminal
         termAppend(spellChannelMessage(spellKey, result.tier, chargePct));
-
-        // Now hand off to the normal spell selection flow
         selectSpell(spellKey);
-
-        // Reset flag so button can be used again next render
         didRelease = false;
     }
 
-    function cancelCharge() {
-        if (!holding || didRelease) return;
-        resetVisuals(); // already clears startMs, startTime, holding
-        didRelease = false;
-        if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
-    }
-
-    button.addEventListener('mousedown',   startCharge);
-    button.addEventListener('mouseup',     () => releaseCharge());
-    button.addEventListener('mouseleave',  cancelCharge);
-    button.addEventListener('touchstart',  startCharge,           { passive: false });
-    button.addEventListener('touchend',    () => releaseCharge(),  { passive: false });
-    button.addEventListener('touchcancel', cancelCharge);
+    // mouseleave / touchcancel intentionally NOT wired up — we never want
+    // external events (including enemy hits causing UI disruption) to cancel
+    // a spell charge. Only the player explicitly lifting their finger/mouse fires.
+    button.addEventListener('mousedown',  startCharge);
+    button.addEventListener('mouseup',    () => releaseCharge());
+    button.addEventListener('touchstart', startCharge,          { passive: false });
+    button.addEventListener('touchend',   () => releaseCharge(), { passive: false });
 }
+
 
 // ═══════════════════════════════════════════════════════════════
 // WARRIOR HEAVY ATTACK POWER BAR MINIGAME
@@ -4665,7 +4652,11 @@ function cancelSpellMenu() {
         // ═══════════════════════════════════════════════════════════════
         // ENEMY ATTACK
         // ═══════════════════════════════════════════════════════════════
-       function enemyAttackSingle() {
+function enemyAttackSingle() {
+      // ✅ Set the enemyInterrupted flag at the VERY START
+    if (gameState.combatState) {
+        gameState.combatState.enemyInterrupted = true;
+    }
     // Enemy uses ONE charge, attacks once, then resets its own timer
     const cs       = gameState.combatState;
     const monsters = cs.monsters;
@@ -4700,9 +4691,7 @@ function cancelSpellMenu() {
         totalDef = Math.max(0, totalDef - rendLoss);
     }
 
-        // ── Warrior Shield: 70% chance to halve ALL incoming damage each attack ──
-    // cs.shieldActive is set by playerDefend() and persists until combat ends.
-    // Shield now always adds +50% defense bonus (applied to totalDef below)
+    // ── Warrior Shield: 70% chance to halve ALL incoming damage each attack ──
     const shieldTriggered = cs.shieldActive;
     if (cs.shieldActive && (gameState.sysop && gameState.sysop.authenticated)) {
         const _shieldBonus = Math.floor(totalDef * 0.5);
@@ -4738,15 +4727,12 @@ function cancelSpellMenu() {
             ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${i + 1}</span>`
             : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
 
-            
 // Check if enemy is feared
 if (gameState.combatState?.fearedEnemies?.[enemy.index]) {
     termAppend(`😨 ${enemy.name} is too terrified to attack!`, 'term-warning');
     delete gameState.combatState.fearedEnemies[enemy.index];
-    // Do NOT push to hits - completely skip this enemy
     return;
 }
-// Make sure there is NO code after this that would still run for feared enemies
 
         // God mode bypass
         if (p.godMode) {
@@ -4770,11 +4756,8 @@ if (gameState.combatState?.fearedEnemies?.[enemy.index]) {
         }
 
         // ── Phase II: deduct MP and handle pure-debuff abilities ──────
-        // Pure debuffs (rend, intimidate, blind, stun, etc.) replace the
-        // physical hit entirely — no damage is rolled or applied.
         if (intent.isPureDebuff && intent.abilityDef) {
             const _debugCombat = gameState.sysop && gameState.sysop.authenticated;
-            // Deduct MP
             if ((intent.abilityMpCost || 0) > 0) {
                 enemy.mp = Math.max(0, (enemy.mp || 0) - intent.abilityMpCost);
             }
@@ -4782,16 +4765,13 @@ if (gameState.combatState?.fearedEnemies?.[enemy.index]) {
                 const _mpLeft = enemy.mp || 0;
                 termAppend(`<span style="color:#553300;">  💙 [PURE DEBUFF] ${intent.abilityId} | MP cost: ${intent.abilityMpCost||0} | MP remaining: ${_mpLeft}</span>`, 'term-dim');
             }
-            // Execute the debuff side-effect directly (no damage)
             executeAbilitySideEffect(intent.abilityDef, p, cs, enemy);
             haptic('ability');
             hits.push({ eName, dmg: 0, isPureDebuff: true, abilityName: intent.abilityDef.name });
-            return; // skip damage roll for this enemy
+            return;
         }
 
         // ── Pick a random damage roll within the enemy's min/max range ──
-        // Stats are already scaled for level and rarity at spawn.
-        // enemyDealt applies an additional 5% reduction per level the player is above the enemy.
         const eMin = Math.max(1, enemy.minDamage ?? Math.round(enemy.damage * 0.67));
         const eMax = Math.max(eMin + 1, enemy.maxDamage ?? Math.round(enemy.damage * 1.33));
         const rolledDamage = eMin + Math.floor(Math.random() * (eMax - eMin + 1));
@@ -4801,9 +4781,7 @@ if (gameState.combatState?.fearedEnemies?.[enemy.index]) {
             Math.floor(rolledDamage * intent.damageMult * DAMAGE_SCALING.monsterDamageMult * _lvlMult.enemyDealt)
         );
 
-        // ── SYSOP DEBUG: pre-roll dodge so we can show the number ──
         const _debugCombat = gameState.sysop && gameState.sysop.authenticated;
-        // Constricted: player cannot dodge (water snake ability)
         const _constricted = cs.playerConstricted || false;
         const _dodgeChance = _constricted ? 0 : (calcDodgeChance(p.dex || 0) / 100);
         const _dodgeRoll   = Math.random();
@@ -4836,14 +4814,13 @@ const magicResist = enemy.magicAttack ? getMagicResist(p) : 0;
 
 // Calculate enemy armor piercing from quality
 const qualityPierce = {
-    'uncommon': 0.10,  // 10% armor ignored
-    'rare': 0.20,      // 20% armor ignored
-    'epic': 0.35,      // 35% armor ignored
-    'legendary': 0.50, // 50% armor ignored
-    'godly': 0.75      // 75% armor ignored
+    'uncommon': 0.10,
+    'rare': 0.20,
+    'epic': 0.35,
+    'legendary': 0.50,
+    'godly': 0.75
 }[enemy.rarity] || 0;
 
-// Combine with ability piercing
 const totalEnemyPierce = Math.min(1.0, (intent.armorPiercing || 0) + qualityPierce);
 
 const result = _didDodge
@@ -4858,7 +4835,7 @@ const result = _didDodge
         base: _scaledBase,
         type: enemy.magicAttack ? 'magic' : 'physical',
         dodgeChance: 0,
-        armorPiercing: totalEnemyPierce  // Now includes quality piercing!
+        armorPiercing: totalEnemyPierce
     });
 
         if (result.dodged) {
@@ -4867,16 +4844,13 @@ const result = _didDodge
             return;
         }
 
-                // Check if enemy is blinded (from Radiance armor modifier)
         if (gameState.combatState?.blindedEnemies?.[enemy.index]) {
-            if (Math.random() < 0.5) { // 50% chance to miss when blinded
+            if (Math.random() < 0.5) {
                 termAppend(`✨ ${enemy.name} is blinded and misses its attack!`, 'term-warning');
-                // Clear blinded flag after use
                 delete gameState.combatState.blindedEnemies[enemy.index];
                 hits.push({ eName, dodged: true, blinded: true });
-                return; // Skip this enemy's attack
+                return;
             } else {
-                // Still blinded but hit anyway - clear flag
                 delete gameState.combatState.blindedEnemies[enemy.index];
                 termAppend(`✨ ${enemy.name} is blinded but still manages to attack!`, 'term-dim');
             }
@@ -4889,55 +4863,37 @@ const result = _didDodge
             termAppend(`<span style="color:#553300;">  → final: <b>${finalDmg} dmg</b>${_critStr} | player HP: ${p.hp} → ${p.hp - finalDmg}</span>`, 'term-dim');
         }
 
-
-        // ========== DEBUFF CHECKS - Add BEFORE p.hp -= finalDmg ==========
-
-// Check if enemy is weakened (30% less damage)
 if (gameState.combatState.weakenedEnemy === enemy) {
     const originalDamage = finalDmg;
-    finalDmg = Math.floor(finalDmg * 0.7); // 30% less damage
+    finalDmg = Math.floor(finalDmg * 0.7);
     termAppend(`<span style="color:#AA00AA;">💔 ${enemy.name} is weakened! Damage reduced from ${originalDamage} to ${finalDmg}! 💔</span>`, 'term-dim');
 }
 
-// Check if enemy is blinded (40% chance to miss)
 if (gameState.combatState.blindedEnemy === enemy && Math.random() < 0.4) {
     termAppend(`<span style="color:#FFFF00;">💫 ${enemy.name} is blinded and misses its attack! 💫</span>`, 'term-warning');
-    return; // Enemy misses, skip damage
+    return;
 }
 
-// Check if enemy is confused (30% chance to hit itself)
 if (gameState.combatState.confusedEnemy === enemy && Math.random() < 0.3) {
     const selfDamage = Math.max(1, Math.floor(finalDmg * 0.5));
     enemy.hp -= selfDamage;
     termAppend(`<span style="color:#FF00FF;">😵 ${enemy.name} is confused and hits itself for ${selfDamage} damage! 😵</span>`, 'term-warning');
     updateEnemyCards();
     checkCombatEnd();
-    return; // No player damage
+    return;
 }
 
-// ========== END DEBUFF CHECKS ==========
-
-// Then the original damage line:
-
-
-
-
-                // ── ARMOR MODIFIER: Reflective (chance to reflect damage back to attacker) ──
         const reflectBonus = getArmorModifierBonus('reflectChance');
         let reflectedDamage = 0;
         if (reflectBonus > 0 && Math.random() < (reflectBonus / 100)) {
-            // Reflect 50% of damage back — reflectBonus is the trigger chance, not the amount
             reflectedDamage = Math.max(1, Math.floor(finalDmg * 0.5));
             termAppend(`🪞 Your Reflective armor reflects ${reflectedDamage} damage back to ${enemy.name}!`, 'term-loot');
             haptic('ability');
         }
-        
 
-        // ── ARMOR MODIFIER: Static Discharge (chance to shock/stun attacker) ──
         const shockBonus = getArmorModifierBonus('shockChance');
         if (shockBonus > 0 && Math.random() < (shockBonus / 100)) {
             if (gameState.combatState && enemy) {
-                // Stun the enemy - they lose their next attack
                 if (!gameState.combatState.stunnedEnemies) gameState.combatState.stunnedEnemies = {};
                 gameState.combatState.stunnedEnemies[enemy.index] = true;
                 termAppend(`⚡ Your Static Discharge armor shocks ${enemy.name}! It is stunned and loses its next attack!`, 'term-loot');
@@ -4945,10 +4901,8 @@ if (gameState.combatState.confusedEnemy === enemy && Math.random() < 0.3) {
             }
         }
 
-
         p.hp -= finalDmg;
 
-// ── ARMOR MODIFIER: Barbed (flat thorns damage on hit) ──
 const thornsDamage = getArmorModifierBonus('thornsDamage');
 if (thornsDamage > 0 && finalDmg > 0) {
     enemy.hp -= thornsDamage;
@@ -4961,7 +4915,6 @@ if (thornsDamage > 0 && finalDmg > 0) {
     updateEnemyCards();
 }
 
-// ── ARMOR MODIFIER: Spiked (percent thorns — returns % of damage taken) ──
 const thornsPercent = getArmorModifierBonus('thornsPercent');
 if (thornsPercent > 0 && finalDmg > 0) {
     const spikedDmg = Math.max(1, Math.floor(finalDmg * (thornsPercent / 100)));
@@ -4975,10 +4928,8 @@ if (thornsPercent > 0 && finalDmg > 0) {
     updateEnemyCards();
 }
         
-        // ── ARMOR MODIFIER: Leeching (chance to heal when hit) ──
         const leechBonus = getArmorModifierBonus('leechChance');
         if (leechBonus > 0 && Math.random() < (leechBonus / 100)) {
-            // Heal 30% of damage taken — leechBonus is the trigger chance, not the amount
             const healAmount = Math.max(1, Math.floor(finalDmg * 0.3));
             const actualHeal = Math.min(p.maxHp - p.hp, healAmount);
             if (actualHeal > 0) {
@@ -4989,7 +4940,6 @@ if (thornsPercent > 0 && finalDmg > 0) {
             }
         }
         
-        // Apply reflected damage to enemy (after player takes damage)
         if (reflectedDamage > 0) {
             enemy.hp -= reflectedDamage;
             if (enemy.hp <= 0) {
@@ -4999,7 +4949,6 @@ if (thornsPercent > 0 && finalDmg > 0) {
             updateEnemyCards();
         }
 
- // Check if enemy is stunned (from Static Discharge armor modifier)
         if (gameState.combatState?.stunnedEnemies?.[enemy.index]) {
             termAppend(`⚡ ${enemy.name} is stunned and cannot attack!`, 'term-warning');
             delete gameState.combatState.stunnedEnemies[enemy.index];
@@ -5010,21 +4959,18 @@ if (thornsPercent > 0 && finalDmg > 0) {
         cs.lastEnemyDamageDealt = finalDmg;
         haptic(result.crit ? 'enemyCrit' : 'enemyHit');
         
-        // ── ARMOR MODIFIER: Frostbite (chance to chill attacker) ──
 const frostbiteBonus = getArmorModifierBonus('chillChance');
 if (frostbiteBonus > 0 && Math.random() < (frostbiteBonus / 100)) {
     if (gameState.combatState && enemy) {
-        enemy.timer += 3;  // Add delay to THIS enemy's timer
+        enemy.timer += 3;
         termAppend(`❄️ Your Frostbite armor chills ${enemy.name}! Their next attack is delayed!`, 'term-loot');
         haptic('ability');
     }
 }
 
-        // ── ARMOR MODIFIER: Radiance (chance to blind attacker) ──
         const blindBonus = getArmorModifierBonus('blindChance');
         if (blindBonus > 0 && Math.random() < (blindBonus / 100)) {
             if (gameState.combatState && enemy) {
-                // Store blinded flag for this enemy
                 if (!gameState.combatState.blindedEnemies) gameState.combatState.blindedEnemies = {};
                 gameState.combatState.blindedEnemies[enemy.index] = true;
                 termAppend(`✨ Your Radiance armor blinds ${enemy.name}! Its next attack may miss!`, 'term-loot');
@@ -5032,7 +4978,6 @@ if (frostbiteBonus > 0 && Math.random() < (frostbiteBonus / 100)) {
             }
         }
 
-// ── ARMOR MODIFIER: Dreadful (chance to fear attacker) ──
 const fearBonus = getArmorModifierBonus('fearChance');
 if (fearBonus > 0 && Math.random() < (fearBonus / 100)) {
     if (gameState.combatState && enemy) {
@@ -5043,35 +4988,26 @@ if (fearBonus > 0 && Math.random() < (fearBonus / 100)) {
     }
 }
 
-// ── ARMOR MODIFIER: Staggering (chance to interrupt enemy's telegraphed ability) ──
 const staggerBonus = getArmorModifierBonus('staggerChance');
 if (staggerBonus > 0 && Math.random() < (staggerBonus / 100)) {
     if (enemy._pendingIntent && enemy._pendingIntent.abilityDef) {
-        // Cancel the telegraphed ability — enemy falls back to a basic attack
         const cancelledAbility = enemy._pendingIntent.abilityDef.name;
         enemy._pendingIntent = null;
         enemy._telegraphShown = false;
         termAppend(`💫 Your Staggering armor disrupts ${enemy.name}'s ${cancelledAbility}! The ability is cancelled!`, 'term-loot');
         haptic('ability');
     } else {
-        // No ability pending — still counts as a stagger, just bumps their timer slightly
         enemy.timer += 2;
         termAppend(`💫 Your Staggering armor staggers ${enemy.name}! Their next attack is delayed!`, 'term-loot');
         haptic('ability');
     }
 }
 
-
-
         cs.lastEnemyDamageDealt = finalDmg;
-        haptic(result.crit ? 'enemyCrit' : 'enemyHit');   // used by leech ability
+        haptic(result.crit ? 'enemyCrit' : 'enemyHit');
 
-        // ── Execute ability side-effects ─────────────────────────────
-        // Only runs if this attack was powered by an ability with a type
-        // that has additional effects beyond damage.
         const _abilityDef = intent && intent.abilityDef;
         if (_abilityDef) {
-            // Deduct enemy MP for damage-dealing abilities
             if ((intent.abilityMpCost || 0) > 0) {
                 enemy.mp = Math.max(0, (enemy.mp || 0) - intent.abilityMpCost);
                 if (_debugCombat) {
@@ -5095,24 +5031,15 @@ if (staggerBonus > 0 && Math.random() < (staggerBonus / 100)) {
 
     updateHud();
 
-    // After attack messages stream, reset enemy timer and resume
-        const afterAttack = () => {
-        // cs.enemyIntent = null; // clear intent after execution
-
+    const afterAttack = () => {
         if (p.hp <= 0 && !p.godMode) {
             endCombat(false);
         } else {
-            // Timers are now per-enemy - no global timer to reset
-            // Trap slow is applied to each enemy individually in their attack loop
-            
             renderActionBar();
             startCombatTimer();
         }
     };
 
-    // If every ready enemy was feared/skipped, hits will be empty and
-    // afterAttack() would never fire — restarting the combat timer here
-    // prevents the timer from freezing permanently.
     if (hits.length === 0) {
         afterAttack();
         return;
@@ -5145,7 +5072,6 @@ if (staggerBonus > 0 && Math.random() < (staggerBonus / 100)) {
             const abilityTag = hit.abilityName
                 ? ` <span style="color:#FF8800;font-size:12px;">[${hit.abilityName}]</span>`
                 : '';
-            // Pure-debuff abilities replace the hit — no "X damage" message
             if (hit.isPureDebuff) {
                 termAppend(
                     `${hit.eName} uses ${abilityTag}`,
@@ -5161,6 +5087,12 @@ if (staggerBonus > 0 && Math.random() < (staggerBonus / 100)) {
             }
         }
     });
+     // ✅ Clear the flag at the end (add this right before the final })
+    setTimeout(() => {
+        if (gameState.combatState) {
+            gameState.combatState.enemyInterrupted = false;
+        }
+    }, 100);
 }
 
 // Calculate magic resistance from armor and class
