@@ -4653,7 +4653,7 @@ function cancelSpellMenu() {
         // ENEMY ATTACK
         // ═══════════════════════════════════════════════════════════════
 function enemyAttackSingle() {
-      // ✅ Set the enemyInterrupted flag at the VERY START
+    // ✅ Set the enemyInterrupted flag at the VERY START
     if (gameState.combatState) {
         gameState.combatState.enemyInterrupted = true;
     }
@@ -4701,24 +4701,26 @@ function enemyAttackSingle() {
 
     // Each monster in the pack gets ONE hit
     const hits = [];
+    // ✅ Track enemies that died from thorns to prevent duplicate processing
+    const enemiesKilledByThorns = new Set();
 
     monsters.forEach((enemy, i) => {
 
-    // Decrement this enemy's timer
-    if (enemy.timer > 0) {
-        enemy.timer--;
-    }
-    
-    // Skip if not ready to attack
-    if (enemy.timer > 0) {
-        return;
-    }
-    
-    // Reset timer for next attack (10-15 seconds for subsequent attacks)
-    enemy.timer = 10 + Math.floor(Math.random() * 6); // 10-15 seconds
-    enemy.delay = enemy.timer;
-    enemy._telegraphShown = false;
-    enemy._pendingIntent = null;
+        // Decrement this enemy's timer
+        if (enemy.timer > 0) {
+            enemy.timer--;
+        }
+        
+        // Skip if not ready to attack
+        if (enemy.timer > 0) {
+            return;
+        }
+        
+        // Reset timer for next attack (10-15 seconds for subsequent attacks)
+        enemy.timer = 10 + Math.floor(Math.random() * 6); // 10-15 seconds
+        enemy.delay = enemy.timer;
+        enemy._telegraphShown = false;
+        enemy._pendingIntent = null;
 
         // Calculate intent for THIS enemy (each enemy gets its own)
         const intent = selectEnemyIntent(enemy);
@@ -4727,12 +4729,12 @@ function enemyAttackSingle() {
             ? `<span style="color:${enemy.rarityColor};">${enemy.name} #${i + 1}</span>`
             : `<span style="color:${enemy.rarityColor};">${enemy.name}</span>`;
 
-// Check if enemy is feared
-if (gameState.combatState?.fearedEnemies?.[enemy.index]) {
-    termAppend(`😨 ${enemy.name} is too terrified to attack!`, 'term-warning');
-    delete gameState.combatState.fearedEnemies[enemy.index];
-    return;
-}
+        // Check if enemy is feared
+        if (gameState.combatState?.fearedEnemies?.[enemy.index]) {
+            termAppend(`😨 ${enemy.name} is too terrified to attack!`, 'term-warning');
+            delete gameState.combatState.fearedEnemies[enemy.index];
+            return;
+        }
 
         // God mode bypass
         if (p.godMode) {
@@ -4810,33 +4812,33 @@ if (gameState.combatState?.fearedEnemies?.[enemy.index]) {
         }
 
         // Calculate magic resistance
-const magicResist = enemy.magicAttack ? getMagicResist(p) : 0;
+        const magicResist = enemy.magicAttack ? getMagicResist(p) : 0;
 
-// Calculate enemy armor piercing from quality
-const qualityPierce = {
-    'uncommon': 0.10,
-    'rare': 0.20,
-    'epic': 0.35,
-    'legendary': 0.50,
-    'godly': 0.75
-}[enemy.rarity] || 0;
+        // Calculate enemy armor piercing from quality
+        const qualityPierce = {
+            'uncommon': 0.10,
+            'rare': 0.20,
+            'epic': 0.35,
+            'legendary': 0.50,
+            'godly': 0.75
+        }[enemy.rarity] || 0;
 
-const totalEnemyPierce = Math.min(1.0, (intent.armorPiercing || 0) + qualityPierce);
+        const totalEnemyPierce = Math.min(1.0, (intent.armorPiercing || 0) + qualityPierce);
 
-const result = _didDodge
-    ? { damage: 0, dodged: true, crit: false }
-    : calculateDamage({
-        attacker: enemy,
-        defender: {
-            defense: totalDef,
-            magicDefense: totalDef,
-            magicResist: magicResist
-        },
-        base: _scaledBase,
-        type: enemy.magicAttack ? 'magic' : 'physical',
-        dodgeChance: 0,
-        armorPiercing: totalEnemyPierce
-    });
+        const result = _didDodge
+            ? { damage: 0, dodged: true, crit: false }
+            : calculateDamage({
+                attacker: enemy,
+                defender: {
+                    defense: totalDef,
+                    magicDefense: totalDef,
+                    magicResist: magicResist
+                },
+                base: _scaledBase,
+                type: enemy.magicAttack ? 'magic' : 'physical',
+                dodgeChance: 0,
+                armorPiercing: totalEnemyPierce
+            });
 
         if (result.dodged) {
             if (_debugCombat) termAppend(`<span style="color:#553300;">  → ✅ DODGED</span>`, 'term-dim');
@@ -4863,25 +4865,25 @@ const result = _didDodge
             termAppend(`<span style="color:#553300;">  → final: <b>${finalDmg} dmg</b>${_critStr} | player HP: ${p.hp} → ${p.hp - finalDmg}</span>`, 'term-dim');
         }
 
-if (gameState.combatState.weakenedEnemy === enemy) {
-    const originalDamage = finalDmg;
-    finalDmg = Math.floor(finalDmg * 0.7);
-    termAppend(`<span style="color:#AA00AA;">💔 ${enemy.name} is weakened! Damage reduced from ${originalDamage} to ${finalDmg}! 💔</span>`, 'term-dim');
-}
+        if (gameState.combatState.weakenedEnemy === enemy) {
+            const originalDamage = finalDmg;
+            finalDmg = Math.floor(finalDmg * 0.7);
+            termAppend(`<span style="color:#AA00AA;">💔 ${enemy.name} is weakened! Damage reduced from ${originalDamage} to ${finalDmg}! 💔</span>`, 'term-dim');
+        }
 
-if (gameState.combatState.blindedEnemy === enemy && Math.random() < 0.4) {
-    termAppend(`<span style="color:#FFFF00;">💫 ${enemy.name} is blinded and misses its attack! 💫</span>`, 'term-warning');
-    return;
-}
+        if (gameState.combatState.blindedEnemy === enemy && Math.random() < 0.4) {
+            termAppend(`<span style="color:#FFFF00;">💫 ${enemy.name} is blinded and misses its attack! 💫</span>`, 'term-warning');
+            return;
+        }
 
-if (gameState.combatState.confusedEnemy === enemy && Math.random() < 0.3) {
-    const selfDamage = Math.max(1, Math.floor(finalDmg * 0.5));
-    enemy.hp -= selfDamage;
-    termAppend(`<span style="color:#FF00FF;">😵 ${enemy.name} is confused and hits itself for ${selfDamage} damage! 😵</span>`, 'term-warning');
-    updateEnemyCards();
-    checkCombatEnd();
-    return;
-}
+        if (gameState.combatState.confusedEnemy === enemy && Math.random() < 0.3) {
+            const selfDamage = Math.max(1, Math.floor(finalDmg * 0.5));
+            enemy.hp -= selfDamage;
+            termAppend(`<span style="color:#FF00FF;">😵 ${enemy.name} is confused and hits itself for ${selfDamage} damage! 😵</span>`, 'term-warning');
+            updateEnemyCards();
+            checkCombatEnd();
+            return;
+        }
 
         const reflectBonus = getArmorModifierBonus('reflectChance');
         let reflectedDamage = 0;
@@ -4902,14 +4904,11 @@ if (gameState.combatState.confusedEnemy === enemy && Math.random() < 0.3) {
         }
 
         // Declare _abilityDef here so it's in scope for all code below
-        // (it was previously declared late in the block, causing a TDZ ReferenceError)
         const _abilityDef = intent && intent.abilityDef;
 
         p.hp -= finalDmg;
 
         // ── STEP 1: Queue the attack message FIRST so it appears before retaliation ──
-        // We collect all pending terminal messages for this enemy into the hit record.
-        // They will be flushed in order when the hits array is displayed.
         const pendingMessages = [];
 
         // Leeching armor (heals player after hit)
@@ -4925,8 +4924,7 @@ if (gameState.combatState.confusedEnemy === enemy && Math.random() < 0.3) {
             }
         }
 
-        // ── STEP 2: Calculate thorns / reflect AFTER recording the attack, but
-        //    apply them to enemy HP now so the death check is immediate. ──
+        // ── STEP 2: Calculate thorns / reflect AFTER recording the attack ──
         let enemyDied = false;
 
         // Thorns (flat damage)
@@ -4938,6 +4936,7 @@ if (gameState.combatState.confusedEnemy === enemy && Math.random() < 0.3) {
                 pendingMessages.push({ text: `⚔️ Your Barbed armor spikes deal ${thornsDamage} damage to ${enemy.name}!`, cls: 'term-loot' });
                 pendingMessages.push({ text: `💀 ${enemy.name} dies from your armor spikes!`, cls: 'term-victory' });
                 enemyDied = true;
+                enemiesKilledByThorns.add(enemy);
             } else {
                 pendingMessages.push({ text: `⚔️ Your Barbed armor spikes deal ${thornsDamage} damage to ${enemy.name}!`, cls: 'term-loot' });
             }
@@ -4954,6 +4953,7 @@ if (gameState.combatState.confusedEnemy === enemy && Math.random() < 0.3) {
                     pendingMessages.push({ text: `🩸 Your Spiked armor returns ${spikedDmg} damage (${thornsPercent}%) to ${enemy.name}!`, cls: 'term-loot' });
                     pendingMessages.push({ text: `💀 ${enemy.name} dies from your spiked armor!`, cls: 'term-victory' });
                     enemyDied = true;
+                    enemiesKilledByThorns.add(enemy);
                 } else {
                     pendingMessages.push({ text: `🩸 Your Spiked armor returns ${spikedDmg} damage (${thornsPercent}%) to ${enemy.name}!`, cls: 'term-loot' });
                 }
@@ -4966,34 +4966,11 @@ if (gameState.combatState.confusedEnemy === enemy && Math.random() < 0.3) {
             if (enemy.hp <= 0) {
                 pendingMessages.push({ text: `🪞 ${enemy.name} dies from reflected damage!`, cls: 'term-victory' });
                 enemyDied = true;
+                enemiesKilledByThorns.add(enemy);
             }
         }
 
-        // ── STEP 3: If the enemy died from thorns/reflect, hand off to
-        //    checkCombatEnd() — the exact same path a weapon kill uses.
-        //    It handles XP, gold, loot, weapon/armor drops, bestiary, level-up, everything.
-        if (enemyDied) {
-            // Clamp to 0 so checkCombatEnd's (hp <= 0) check picks it up
-            enemy.hp = 0;
-
-            // Push the hit record so the attack message prints,
-            // then pending retaliation messages flush after it.
-            hits.push({
-                eName,
-                dmg: finalDmg,
-                crit: result.crit,
-                abilityName: _abilityDef ? _abilityDef.name : null,
-                shieldBlocked: shieldTriggered,
-                pendingMessages,
-                killedByThorns: true
-            });
-
-            // hp already set to 0 — afterAttack will call checkCombatEnd()
-            // once all hit messages have finished displaying.
-            return; // Skip the normal "enemy survived" push below
-        }
-
-        // ── STEP 4: Push hit record (enemy alive or just killed by thorns — either way) ──
+        // ── STEP 3: Push hit record
         updateEnemyCards();
         hits.push({
             eName,
@@ -5001,7 +4978,9 @@ if (gameState.combatState.confusedEnemy === enemy && Math.random() < 0.3) {
             crit: result.crit,
             abilityName: _abilityDef ? _abilityDef.name : null,
             shieldBlocked: shieldTriggered,
-            pendingMessages
+            pendingMessages,
+            enemyDied: enemyDied,
+            enemy: enemy
         });
 
         if (gameState.combatState?.stunnedEnemies?.[enemy.index]) {
@@ -5014,14 +4993,14 @@ if (gameState.combatState.confusedEnemy === enemy && Math.random() < 0.3) {
         cs.lastEnemyDamageDealt = finalDmg;
         haptic(result.crit ? 'enemyCrit' : 'enemyHit');
         
-const frostbiteBonus = getArmorModifierBonus('chillChance');
-if (frostbiteBonus > 0 && Math.random() < (frostbiteBonus / 100)) {
-    if (gameState.combatState && enemy) {
-        enemy.timer += 3;
-        termAppend(`❄️ Your Frostbite armor chills ${enemy.name}! Their next attack is delayed!`, 'term-loot');
-        haptic('ability');
-    }
-}
+        const frostbiteBonus = getArmorModifierBonus('chillChance');
+        if (frostbiteBonus > 0 && Math.random() < (frostbiteBonus / 100)) {
+            if (gameState.combatState && enemy) {
+                enemy.timer += 3;
+                termAppend(`❄️ Your Frostbite armor chills ${enemy.name}! Their next attack is delayed!`, 'term-loot');
+                haptic('ability');
+            }
+        }
 
         const blindBonus = getArmorModifierBonus('blindChance');
         if (blindBonus > 0 && Math.random() < (blindBonus / 100)) {
@@ -5033,35 +5012,34 @@ if (frostbiteBonus > 0 && Math.random() < (frostbiteBonus / 100)) {
             }
         }
 
-const fearBonus = getArmorModifierBonus('fearChance');
-if (fearBonus > 0 && Math.random() < (fearBonus / 100)) {
-    if (gameState.combatState && enemy) {
-        if (!gameState.combatState.fearedEnemies) gameState.combatState.fearedEnemies = {};
-        gameState.combatState.fearedEnemies[enemy.index] = true;
-        termAppend(`😱 Your Dreadful armor terrifies ${enemy.name}! It cowers in fear!`, 'term-loot');
-        haptic('ability');
-    }
-}
+        const fearBonus = getArmorModifierBonus('fearChance');
+        if (fearBonus > 0 && Math.random() < (fearBonus / 100)) {
+            if (gameState.combatState && enemy) {
+                if (!gameState.combatState.fearedEnemies) gameState.combatState.fearedEnemies = {};
+                gameState.combatState.fearedEnemies[enemy.index] = true;
+                termAppend(`😱 Your Dreadful armor terrifies ${enemy.name}! It cowers in fear!`, 'term-loot');
+                haptic('ability');
+            }
+        }
 
-const staggerBonus = getArmorModifierBonus('staggerChance');
-if (staggerBonus > 0 && Math.random() < (staggerBonus / 100)) {
-    if (enemy._pendingIntent && enemy._pendingIntent.abilityDef) {
-        const cancelledAbility = enemy._pendingIntent.abilityDef.name;
-        enemy._pendingIntent = null;
-        enemy._telegraphShown = false;
-        termAppend(`💫 Your Staggering armor disrupts ${enemy.name}'s ${cancelledAbility}! The ability is cancelled!`, 'term-loot');
-        haptic('ability');
-    } else {
-        enemy.timer += 2;
-        termAppend(`💫 Your Staggering armor staggers ${enemy.name}! Their next attack is delayed!`, 'term-loot');
-        haptic('ability');
-    }
-}
+        const staggerBonus = getArmorModifierBonus('staggerChance');
+        if (staggerBonus > 0 && Math.random() < (staggerBonus / 100)) {
+            if (enemy._pendingIntent && enemy._pendingIntent.abilityDef) {
+                const cancelledAbility = enemy._pendingIntent.abilityDef.name;
+                enemy._pendingIntent = null;
+                enemy._telegraphShown = false;
+                termAppend(`💫 Your Staggering armor disrupts ${enemy.name}'s ${cancelledAbility}! The ability is cancelled!`, 'term-loot');
+                haptic('ability');
+            } else {
+                enemy.timer += 2;
+                termAppend(`💫 Your Staggering armor staggers ${enemy.name}! Their next attack is delayed!`, 'term-loot');
+                haptic('ability');
+            }
+        }
 
         cs.lastEnemyDamageDealt = finalDmg;
         haptic(result.crit ? 'enemyCrit' : 'enemyHit');
 
-        // _abilityDef declared above — no redeclaration needed
         if (_abilityDef) {
             if ((intent.abilityMpCost || 0) > 0) {
                 enemy.mp = Math.max(0, (enemy.mp || 0) - intent.abilityMpCost);
@@ -5075,25 +5053,26 @@ if (staggerBonus > 0 && Math.random() < (staggerBonus / 100)) {
         }
 
         if (_abilityDef && !result.crit) haptic('ability');
-        // hits.push already done in STEP 4 above — no duplicate push here.
     });
 
     updateHud();
 
+    // ✅ MODIFIED: afterAttack now waits for ALL messages to flush before processing rewards
     const afterAttack = () => {
         if (p.hp <= 0 && !p.godMode) {
             endCombat(false);
             return;
         }
-        // checkCombatEnd processes any enemies at 0 HP (thorns or weapon kills),
-        // awards XP/gold/loot/drops, and calls endCombat(true) if all are dead.
-        // It returns truthy if it ended combat, so only restart the timer if not.
-        const combatEnded = gameState.combatState && gameState.combatState.monsters.length === 0;
-        checkCombatEnd();
-        if (!combatEnded) {
-            renderActionBar();
-            startCombatTimer();
-        }
+        
+        // ⭐ CRITICAL FIX: Short delay to ensure ALL thorns messages are displayed
+        // before checkCombatEnd processes XP/gold/loot
+        setTimeout(() => {
+            checkCombatEnd();
+            if (gameState.combatState && gameState.combatState.monsters?.length > 0) {
+                renderActionBar();
+                startCombatTimer();
+            }
+        }, 50);
     };
 
     if (hits.length === 0) {
@@ -5104,7 +5083,6 @@ if (staggerBonus > 0 && Math.random() < (staggerBonus / 100)) {
     hits.forEach((hit, i) => {
         const isLast = (i === hits.length - 1);
 
-        // Helper: flush any buffered retaliation/leech messages for this hit
         const flushPending = () => {
             if (hit.pendingMessages && hit.pendingMessages.length) {
                 hit.pendingMessages.forEach(msg => termAppend(msg.text, msg.cls));
@@ -5137,6 +5115,7 @@ if (staggerBonus > 0 && Math.random() < (staggerBonus / 100)) {
             const abilityTag = hit.abilityName
                 ? ` <span style="color:#FF8800;font-size:12px;">[${hit.abilityName}]</span>`
                 : '';
+            
             if (hit.isPureDebuff) {
                 termAppend(
                     `${hit.eName} uses ${abilityTag}`,
@@ -5147,12 +5126,16 @@ if (staggerBonus > 0 && Math.random() < (staggerBonus / 100)) {
                 termAppend(
                     `${hit.eName} attacks for <span class="dmg-enemy">${hit.dmg} damage!</span>${critTag}${shieldTag}${abilityTag}`,
                     null,
-                    () => { flushPending(); if (isLast && lastCallback) lastCallback(); }
+                    () => { 
+                        flushPending(); 
+                        if (isLast && lastCallback) lastCallback(); 
+                    }
                 );
             }
         }
     });
-     // ✅ Clear the flag at the end (add this right before the final })
+    
+    // ✅ Clear the flag at the end
     setTimeout(() => {
         if (gameState.combatState) {
             gameState.combatState.enemyInterrupted = false;
