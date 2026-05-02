@@ -350,7 +350,7 @@ window.TOWNS.town3 = {
 
             <!-- ░░ PLAYER STATS ░░ -->
             ${typeof renderPlayerStats === 'function' ? renderPlayerStats() : ''}
-
+<div id="leaderboard-ticker" style="display:none; margin-bottom:10px;"></div>
             <!-- ░░ ARRIVAL LORE ░░ -->
             <div style="margin:8px 0;padding:12px 15px;
                         background:linear-gradient(135deg,
@@ -387,6 +387,8 @@ window.TOWNS.town3 = {
             <!-- ░░ SERVICES ░░ -->
             <div class="t3-divider">◈ &nbsp; CROSSROADS &nbsp; SERVICES &nbsp; ◈</div>
             <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:12px;">
+
+<div class="t3-row" onclick="showLeaderboard()" style="border-color:#FFD700; background:rgba(255,215,0,0.08);">► 🏆 &nbsp;HALL OF LEGENDS</div>
 
                 <div class="t3-row" onclick="showShop()"
                      style="border-color:#5a3d00;background:rgba(255,215,0,0.03);">
@@ -457,8 +459,16 @@ window.TOWNS.town3 = {
                 background-size:200% auto;
                 animation:t3-shimmer 4s linear infinite reverse;"></div>
         `;
+
+        fetchLeaderboardTicker();
+        if (window.tickerInterval) clearInterval(window.tickerInterval);
+        window.tickerInterval = setInterval(fetchLeaderboardTicker, 60000);
+
+
     }
 };
+
+
 
 // ─────────────────────────────────────────────────────────────────────────
 //  ELEMENTAL LORE POPUP

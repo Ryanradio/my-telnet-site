@@ -424,7 +424,9 @@ if (hasVisitedTown3) {
             </div>
 
             <!-- ░░ PLAYER STATS ░░ -->
+            
             ${typeof renderPlayerStats === 'function' ? renderPlayerStats() : ''}
+<div id="leaderboard-ticker" style="display:none; margin-bottom:10px;"></div>
 
             <!-- ░░ TIDE / WEATHER ░░ -->
             ${tideStrip}
@@ -456,6 +458,9 @@ if (hasVisitedTown3) {
             <!-- ░░ SERVICES ░░ -->
             <div class="t2-divider">◈ &nbsp; HARBOR &nbsp; SERVICES &nbsp; ◈</div>
             <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:12px;">
+
+<div class="t2-row" onclick="showLeaderboard()" style="border-color:#FFD700; background:rgba(255,215,0,0.08);">► 🏆 &nbsp;HALL OF LEGENDS</div>
+
 
                 <div class="t2-row" onclick="showBountyBoard()"
                      style="border-color:#9966cc;background:rgba(204,102,255,0.05);">
@@ -546,6 +551,12 @@ ${p.level >= 10 ?
                 background-size:200% auto;
                 animation:t2-tide 6s ease-in-out infinite reverse;"></div>
         `;
+
+fetchLeaderboardTicker();
+        if (window.tickerInterval) clearInterval(window.tickerInterval);
+        window.tickerInterval = setInterval(fetchLeaderboardTicker, 60000);
+
+
     }
 };
 

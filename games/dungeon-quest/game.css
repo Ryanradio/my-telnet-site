@@ -2611,7 +2611,117 @@ body.terminal-mode #menuContainer {
             100% { opacity: 0; transform: scale(0.92); }
         }
 
-     
+     /* 🏆 LEADERBOARD TICKER STYLES */
+.leaderboard-ticker {
+    background: linear-gradient(135deg, #0a1a0a 0%, #0a0a0a 100%);
+    border: 2px solid #FFD700;
+    border-radius: 8px;
+    margin: 8px 0 16px 0;
+    padding: 8px 12px;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.3), inset 0 0 10px rgba(255, 215, 0, 0.05);
+    animation: leaderboardGlow 2s ease-in-out infinite;
+}
+
+@keyframes leaderboardGlow {
+    0% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.2), inset 0 0 5px rgba(255, 215, 0, 0.05); border-color: #FFD700; }
+    50% { box-shadow: 0 0 30px rgba(255, 215, 0, 0.6), inset 0 0 15px rgba(255, 215, 0, 0.1); border-color: #FFAA00; }
+    100% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.2), inset 0 0 5px rgba(255, 215, 0, 0.05); border-color: #FFD700; }
+}
+
+.leaderboard-ticker-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 1px solid #FFD700;
+    margin-bottom: 6px;
+    padding-bottom: 4px;
+}
+
+.leaderboard-ticker-title {
+    color: #FFD700;
+    font-size: 14px;
+    letter-spacing: 2px;
+    font-weight: bold;
+}
+
+.leaderboard-ticker-update {
+    color: #6a6a6a;
+    font-size: 10px;
+}
+
+.leaderboard-scroll-container {
+    overflow: hidden;
+    height: 28px;
+    position: relative;
+}
+
+.leaderboard-scroll {
+    white-space: nowrap;
+    animation: scrollTicker 40s linear infinite;
+    display: inline-block;
+    padding-right: 50px;
+}
+
+@keyframes scrollTicker {
+    0% { transform: translateX(100%); }
+    100% { transform: translateX(-100%); }
+}
+
+.leaderboard-scroll:hover {
+    animation-play-state: paused;
+}
+
+.leaderboard-entry {
+    display: inline-block;
+    margin-right: 40px;
+    font-size: 13px;
+}
+
+.leaderboard-rank {
+    color: #FFD700;
+    font-weight: bold;
+}
+
+.leaderboard-name {
+    color: #00FF41;
+}
+
+.leaderboard-name-current {
+    color: #FF8800;
+    font-weight: bold;
+}
+
+.leaderboard-runes {
+    color: #FFD700;
+}
+
+.leaderboard-level {
+    color: #88FF88;
+}
+
+.leaderboard-kills {
+    color: #FFAA66;
+}
+
+.leaderboard-full-btn {
+    display: block;
+    text-align: center;
+    margin-top: 8px;
+    padding: 6px 12px;
+    background: rgba(255, 215, 0, 0.1);
+    border: 1px solid #FFD700;
+    border-radius: 4px;
+    color: #FFD700;
+    text-decoration: none;
+    font-size: 12px;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.leaderboard-full-btn:hover {
+    background: rgba(255, 215, 0, 0.2);
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
 
 
 
