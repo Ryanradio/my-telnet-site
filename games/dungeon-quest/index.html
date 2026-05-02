@@ -5260,6 +5260,9 @@ function validateAndGoToStatAlloc() {
         baseClass: classKey,
         activePet: classKey === 'hunter' ? null : undefined,
         runeOverloadPips: classKey === 'runesmith' ? 0 : undefined,
+        enchant: MELEE_CLASSES && MELEE_CLASSES.includes(classKey)
+            ? { tier: 0, key: MELEE_ENCHANTS[classKey]?.key || null }
+            : undefined,
         kills: {},
         runestones: [],
         portalUnlocked: false,
@@ -8359,6 +8362,25 @@ ${showSpecial ? `<button onclick="handleAttackType('special')">⭐ Special</butt
         `;
     }
 
+    /* ───────── ENCHANT TARGET SELECTION ───────── */
+    else if (mode === 'enchant_target') {
+        const enchTargetBtns = cs.monsters.map((m, i) => `
+            <button onclick="activateEnchant(${i})">
+                #${i + 1} ${m.name}<br>
+                <span style="font-size:11px;">HP ${m.hp}/${m.maxHp}</span>
+            </button>
+        `).join('');
+        combatDiv.innerHTML = `
+            <div style="color:#c8a000;font-size:14px;margin-bottom:4px;text-align:center;">
+                🎯 SELECT ENCHANT TARGET
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;">
+                ${enchTargetBtns}
+                <button onclick="cancelAction()">❌</button>
+            </div>
+        `;
+    }
+
     /* ───────── TARGET SELECTION ───────── */
     else if (mode === 'target_attack' || mode === 'target_spell') {
         const targetBtns = cs.monsters.map((m, i) => `
@@ -8394,12 +8416,47 @@ ${showSpecial ? `<button onclick="handleAttackType('special')">⭐ Special</butt
             `;
         }).join('');
 
+        // Enchant button for melee classes
+        const _pSL = gameState.player;
+        const _clsSL = _pSL.baseClass || _pSL.class;
+        const _hasMeleeEnchant = typeof MELEE_CLASSES !== 'undefined' && MELEE_CLASSES.includes(_clsSL)
+            && _pSL.enchant && _pSL.enchant.tier >= 1;
+        const _enchDef = _hasMeleeEnchant ? MELEE_ENCHANTS[_clsSL] : null;
+        const _enchTierData = _hasMeleeEnchant ? MELEE_ENCHANTS[_clsSL].tiers[(_pSL.enchant.tier||1)-1] : null;
+        const _enchMpCost = _enchTierData
+            ? (_enchTierData.mpCostPct ? Math.floor(_pSL.maxMp * _enchTierData.mpCostPct)
+               : _enchTierData.mpCost !== undefined ? (_enchTierData.mpCost <= 1 && _enchTierData.mpCost > 0
+                   ? Math.floor(_pSL.maxMp * _enchTierData.mpCost) : _enchTierData.mpCost)
+               : 0)
+            : 0;
+        const _enchCanAct = _hasMeleeEnchant && _pSL.mp >= _enchMpCost;
+        const enchantBtn = _hasMeleeEnchant ? `
+            <button onclick="showEnchantTargetMenu()" ${!_enchCanAct ? 'disabled' : ''}
+                style="border-color:#c8a000;background:rgba(200,160,0,0.1);"
+                title="${_enchDef.name} — ${_enchMpCost} MP">
+                ${_enchDef.icon} ${_enchDef.name}<br>
+                <span style="font-size:10px;color:#c8a000;">${_enchMpCost} MP</span>
+            </button>` : '';
+
+        // Scatter Shot for hunters (2 pips, no mp)
+        const _isHunterSL = _clsSL === 'hunter';
+        const _scatterAvail = _isHunterSL && hitsLeft >= 2;
+        const scatterBtn = _isHunterSL ? `
+            <button onclick="executeScatterShot()" ${!_scatterAvail ? 'disabled' : ''}
+                style="border-color:#CCCC44;background:rgba(200,200,0,0.1);"
+                title="Scatter Shot — 2 pips">
+                🏹 Scatter Shot<br>
+                <span style="font-size:10px;color:#CCCC44;">2 pips</span>
+            </button>` : '';
+
         combatDiv.innerHTML = `
             <div style="color:var(--highlight-color);font-size:14px;margin-bottom:4px;text-align:center;">
                 SPELL
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;">
                 ${spellBtns}
+                ${enchantBtn}
+                ${scatterBtn}
                 <button onclick="cancelAction()">❌</button>
             </div>
         `;
@@ -9402,6 +9459,7 @@ function handleAttackType(type) {
         
         
         function renderActionBar() {
+            if (window._spellCharging) return;
     const ab = document.getElementById('actionBar');
     showActionBar();
     

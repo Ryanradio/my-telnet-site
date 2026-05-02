@@ -2069,14 +2069,14 @@ function showInventory() {
 let _inventoryReturnCallback = null;
 
 function showUnifiedInventory(returnCallback = null) {
-    // DETECT ORIGIN - where is this being called from?
-        let origin = 'unknown';
+        // DETECT ORIGIN - where is this being called from?
+    let origin = 'unknown';
     
-    // Check explore FIRST (since it may not have terminal-mode)
-    if (gameState._currentExploreArea) {
-        origin = 'explore';
-    } else if (gameState.dungeon) {
+    // Check DUNGEON FIRST (since it also has _currentExploreArea)
+    if (gameState.dungeon) {
         origin = 'dungeon';
+    } else if (gameState._currentExploreArea) {
+        origin = 'explore';
     } else if (!document.body.classList.contains('terminal-mode')) {
         origin = 'town';
     }
@@ -2084,686 +2084,317 @@ function showUnifiedInventory(returnCallback = null) {
     // Store origin globally for other functions to use
     window._currentInventoryOrigin = origin;
     
-    // Check if we're in dungeon or explore (use special layout)
-    const isInDungeonOrExplore = (origin === 'dungeon' || origin === 'explore');
-    
-    // If we're in terminal mode (explore/dungeon), temporarily exit it to show inventory
+    // If we're in terminal mode, temporarily exit it to show inventory
     const wasTerminalMode = document.body.classList.contains('terminal-mode');
     window._wasInTerminalMode = wasTerminalMode;
     if (wasTerminalMode) {
         document.body.classList.remove('terminal-mode');
     }
+    
     // Store the callback
     _inventoryReturnCallback = returnCallback;
     
     const p = gameState.player;
     const screen = document.getElementById('mainScreen');
+    const isInDungeonOrExplore = (origin === 'dungeon' || origin === 'explore');
     
     // Compact stats for dungeon/explore
     let statsHtml = '';
     if (isInDungeonOrExplore) {
         statsHtml = `
-            <div style="display: flex; gap: 8px; justify-content: space-between; background: rgba(0,0,0,0.3); padding: 6px 10px; border-radius: 8px; margin-bottom: 10px; font-size: 12px; flex-wrap: wrap;">
+            <div class="inventory-stats">
                 <span>⭐ Lv${p.level}</span>
-                <span>❤️ ${p.hp}/${p.maxHp}</span>
-                <span>💙 ${p.mp}/${p.maxMp}</span>
+                <span class="hp">❤️ ${p.hp}/${p.maxHp}</span>
+                <span class="mp">💙 ${p.mp}/${p.maxMp}</span>
                 <span>🛡️ ${Math.floor(p.defense || 0)}</span>
                 <span>⚔️ ${Math.floor(p.attack || 0)}</span>
+                <span class="gold">💰 ${p.gold.toLocaleString()}</span>
             </div>
         `;
     } else {
         statsHtml = renderPlayerStats();
-    } 
-
+    }
+    
+    // Check if class has spells (for spellbook button)
+    const hasSpells = (p.knownSpells && p.knownSpells.length > 0) || 
+                      (p.baseClass && ['mage', 'cleric', 'warlock', 'paladin', 'runesmith'].includes(p.baseClass));
+    
     let invHtml = `
-        <div class="location-header">🎒 INVENTORY</div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-            <button onclick="closeUnifiedInventory()">← BACK</button>
-            ${(['mage','cleric','warlock'].includes(p.baseClass || p.class)) ? `
-            <button onclick="closeUnifiedInventory();openSpellbook();" style="
-                padding:6px 14px;font-size:15px;letter-spacing:2px;
-                border:2px solid #aa66ff;color:#aa66ff;background:transparent;
-                font-family:'VT323',monospace;cursor:pointer;
-            ">📖 SPELLBOOK</button>` : ''}
+        <div class="inventory-header">🎒 INVENTORY</div>
+        <div class="inventory-actions">
+            <button class="inv-back-btn" onclick="closeUnifiedInventory()">← BACK</button>
+            ${hasSpells ? `<button class="inv-spellbook-btn" onclick="closeUnifiedInventory(); openSpellbook();">📖 SPELLBOOK</button>` : '<div></div>'}
         </div>
         ${statsHtml}
     `;
     
-    if (isInDungeonOrExplore) {
-        // ========== DUNGEON/EXPLORE LAYOUT ==========
-        
-        // ── POTIONS SECTION (at the very top) ─────────────────────────────────────────
-        invHtml += `<h3 style="color: var(--highlight-color);">🧪 POTIONS</h3>
-                    <div class="inventory-grid">`;
-        
-        const potionItems = [];
-        let recallPotion = null;
-        
-        p.inventory.forEach(item => {
-            if (item === 'recall_potion') {
-                recallPotion = item;
-            } else if (typeof item === 'string' && ITEMS[item] && 
-                (ITEMS[item].subtype === 'heal_hp' || ITEMS[item].subtype === 'heal_mp' || ITEMS[item].subtype === 'full_restore')) {
-                potionItems.push(item);
-            }
-        });
-        
-        // Display Recall Potion FIRST if present (purple styling)
-        if (recallPotion) {
-            const recallItem = ITEMS['recall_potion'];
-            invHtml += `
-                <div class="item-card" style="border: 2px solid #AA88FF; background: rgba(170,136,255,0.1);">
-                    <div style="color: #AA88FF; font-size: 18px;">🌀 ${recallItem.name}</div>
-                    <div style="font-size: 16px; color: #ccaaee;">${recallItem.description}</div>
-                    <div style="color: #FFD700; font-size: 12px; margin-top: 4px;">⚠️ Returns you to town (Dungeon only)</div>
-                    <button onclick="useRecallPotion()" style="border-color: #AA88FF; color: #AA88FF; margin-top: 6px;">🌀 USE (Return to Town)</button>
+    // ── POTIONS SECTION (compact, at the top) ──────────────────────────────
+    const potionItems = [];
+    let recallPotion = null;
+    
+    p.inventory.forEach(item => {
+        if (item === 'recall_potion') {
+            recallPotion = item;
+        } else if (typeof item === 'string' && ITEMS[item] && 
+            (ITEMS[item].subtype === 'heal_hp' || ITEMS[item].subtype === 'heal_mp' || ITEMS[item].subtype === 'full_restore')) {
+            potionItems.push(item);
+        }
+    });
+    
+    invHtml += `<div class="inv-section">
+        <div class="inv-section-title">🧪 POTIONS</div>
+        <div class="potion-container">`;
+    
+    // Recall Potion (purple, prominent)
+    if (recallPotion) {
+        const recallItem = ITEMS['recall_potion'];
+        invHtml += `
+            <div class="potion-item recall">
+                <span>🌀</span>
+                <div>
+                    <div class="potion-name">${recallItem.name}</div>
+                    <div class="potion-desc">Returns to town</div>
                 </div>
-            `;
-        }
+                <button class="potion-use" onclick="useRecallPotion()">USE</button>
+            </div>
+        `;
+    }
+    
+    // Regular potions (compact)
+    const potionCounts = {};
+    potionItems.forEach(potion => { potionCounts[potion] = (potionCounts[potion] || 0) + 1; });
+    
+    Object.keys(potionCounts).forEach(potionKey => {
+        const item = ITEMS[potionKey];
+        const count = potionCounts[potionKey];
+        const isHeal = item.subtype === 'heal_hp';
+        const isMana = item.subtype === 'heal_mp';
+        const isFull = item.subtype === 'full_restore';
+        let potionClass = isHeal ? 'health' : isMana ? 'mana' : 'full';
+        let icon = isHeal ? '❤️' : isMana ? '💙' : '✨';
         
-        // Display regular potions
-        if (potionItems.length === 0 && !recallPotion) {
-            invHtml += `<div class="item-card" style="color:#888;">No potions</div>`;
-        } else {
-            const potionCounts = {};
-            potionItems.forEach(potion => { potionCounts[potion] = (potionCounts[potion] || 0) + 1; });
-            Object.keys(potionCounts).forEach(potionKey => {
-                const item = ITEMS[potionKey];
-                const count = potionCounts[potionKey];
-                invHtml += `<div class="item-card">
-                    <div style="color:#00aa88;">🧪 ${item.name} ${count > 1 ? `x${count}` : ''}</div>
-                    <div style="font-size: 16px;">${item.description}</div>
-                    <button onclick="useInventoryPotion('${potionKey}'); showUnifiedInventory(_inventoryReturnCallback);">USE</button>
-                </div>`;
-            });
-        }
-        invHtml += `</div>`;
-        
-        // ── EQUIPPED WEAPON & ARMOR (side by side) ────────────────────────────────
-        invHtml += `<div style="display: flex; gap: 20px; margin-top: 20px;">
-                        <div style="flex: 1;"><h3 style="color: var(--highlight-color);">⚔️ EQUIPPED WEAPON</h3>
-                        <div class="inventory-grid">`;
-        
-        // Get equipped weapon
-        const eqWeapon = (() => {
-            if (!p.weapon || p.weapon === 'bare_fists') return null;
-            if (typeof p.weapon === 'string' && p.weapon.includes('_')) {
-                const instance = p.inventory.find(item => 
-                    item && typeof item === 'object' && item.instanceId === p.weapon
-                );
-                if (instance && instance.weaponId) return instance;
-            }
-            return WEAPONS[p.weapon];
-        })();
-        
-        // Display equipped weapon
-        if (!eqWeapon || !!eqWeapon.unarmed) {
-            invHtml += `<div class="item-card equipped" style="border-color:#555;">
-                <div style="color:#888;">✊ Bare Fists</div>
-                <div style="color:#555;font-size:13px;">DMG: 0 (stats only)</div>
-                <div style="color:#555;font-size:12px;">No weapon equipped</div>
-            </div>`;
-        } else {
-            const equippedInstance = p.inventory.find(item => 
+        invHtml += `
+            <div class="potion-item ${potionClass}">
+                <span>${icon}</span>
+                <div>
+                    <div class="potion-name">${item.name} ${count > 1 ? `x${count}` : ''}</div>
+                    <div class="potion-desc">${item.description.substring(0, 25)}</div>
+                </div>
+                <button class="potion-use" onclick="useInventoryPotion('${potionKey}'); showUnifiedInventory(_inventoryReturnCallback);">USE</button>
+            </div>
+        `;
+    });
+    
+    if (potionItems.length === 0 && !recallPotion) {
+        invHtml += `<div class="empty-message">No potions</div>`;
+    }
+    invHtml += `</div></div>`;
+    
+    // ── KEY RING (cool ASCII keys) ─────────────────────────────────────────
+    invHtml += renderKeyRing(p);
+    
+    // ── EQUIPPED ITEMS (side by side) ──────────────────────────────────────
+    invHtml += `<div class="inv-section">
+        <div class="inv-section-title">⚔️ EQUIPPED</div>
+        <div class="equipped-container">`;
+    
+    // Get equipped weapon
+    const eqWeapon = (() => {
+        if (!p.weapon || p.weapon === 'bare_fists') return null;
+        if (typeof p.weapon === 'string' && p.weapon.includes('_')) {
+            const instance = p.inventory.find(item => 
                 item && typeof item === 'object' && item.instanceId === p.weapon
             );
-            const displayQuality = equippedInstance?.quality || eqWeapon.quality;
-            const qc = QUALITY_CONFIG[displayQuality];
-            const qualityColor = qc?.color || '#0f0';
-            
-            invHtml += `<div class="item-card equipped">
-                <div style="color:${qualityColor};">⚔️ ${equippedInstance?.name || eqWeapon.name}${displayQuality !== eqWeapon.quality ? ` [${displayQuality}]` : ''}</div>
-                <div style="font-size:10px; color:#aaa; margin-bottom:2px;">⚔️ ${eqWeapon.weaponSubtype || eqWeapon.type || 'Weapon'}</div>
-                <div style="font-size:12px;">${buildWeaponDmgLine({...eqWeapon, quality: displayQuality}, displayQuality, p)}</div>
-                <div style="color:#888; font-size:11px; margin-top:2px;">Level ${eqWeapon.level || 1}</div>`;
-            
-            if (eqWeapon.modifiers && eqWeapon.modifiers.length > 0) {
-                invHtml += `<div style="margin-top:5px; font-size:11px;">`;
-                eqWeapon.modifiers.forEach(mod => {
-                    const modColor = mod.color || '#FFD700';
-                    let modText = mod.name;
-                    if (mod.minDamage) modText += ` (+${mod.minDamage}-${mod.maxDamage})`;
-                    if (mod.critBonus) modText += ` (+${mod.critBonus}% crit)`;
-                    if (mod.lifestealPercent) modText += ` (${mod.lifestealPercent}% lifesteal)`;
-                    invHtml += `<div style="color:${modColor};">✨ ${modText}</div>`;
-                });
-                invHtml += `</div>`;
-            }
-            
-            if (eqWeapon.gems && eqWeapon.gems.length > 0) {
-                invHtml += `<div style="margin-top:5px; font-size:11px;">`;
-                eqWeapon.gems.forEach(gem => {
-                    invHtml += `<div style="color:${gem.color};">💎 ${gem.name}</div>`;
-                });
-                invHtml += `</div>`;
-            }
-            
-            const totalGemSlots = eqWeapon.gemSlots || 3;
-            const filledGems = eqWeapon.gems || [];
-            const emptySlots = totalGemSlots - filledGems.length;
-            invHtml += `<div style="margin-top:5px; font-size:10px; color:#888;">💎 Slots: ${filledGems.length}/${totalGemSlots}`;
-            if (emptySlots > 0) invHtml += ` (${emptySlots} empty)`;
-            invHtml += `</div>`;
-            
-            invHtml += `<div style="color:var(--border-color);">EQUIPPED</div>
-                <button onclick="unequipItem('weapon'); showUnifiedInventory(_inventoryReturnCallback);" style="border-color:#ff4444;color:#ff4444;margin-top:4px;">UNEQUIP</button>
-            </div>`;
+            if (instance && instance.weaponId) return instance;
         }
-        invHtml += `</div></div>`;
-        
-        // ── EQUIPPED ARMOR (right side) ──────────────────────────────────────────
-        invHtml += `<div style="flex: 1;"><h3 style="color: var(--highlight-color);">🛡️ EQUIPPED ARMOR</h3>
-                    <div class="inventory-grid">`;
-        
-        const eqArmor = (() => {
-            if (!p.armor || p.armor === 'no_armor') return null;
-            if (typeof p.armor === 'string' && p.armor.includes('_')) {
-                const instance = p.inventory.find(item => 
-                    item && typeof item === 'object' && item.instanceId === p.armor
-                );
-                if (instance && instance.armorId) return instance;
-            }
-            return ARMOR[p.armor];
-        })();
-        
-        if (!eqArmor || !!eqArmor.unarmored) {
-            invHtml += `<div class="item-card equipped" style="border-color:#555;">
-                <div style="color:#888;">🫥 No Armor</div>
-                <div style="color:#555;font-size:13px;">DEF: 0</div>
-                <div style="color:#555;font-size:12px;">No armor equipped</div>
-            </div>`;
-        } else {
-            const equippedInstance = p.inventory.find(item => 
-                item && typeof item === 'object' && item.instanceId === p.armor
-            );
-            const displayQuality = equippedInstance?.quality || eqArmor.quality;
-            const aqc = QUALITY_CONFIG[displayQuality];
-            const qualityColor = aqc?.color || '#0f0';
-            
-            invHtml += `<div class="item-card equipped">
-                <div style="color:${qualityColor};">🛡️ ${eqArmor.name}${displayQuality !== eqArmor.quality ? ` [${displayQuality}]` : ''}</div>
-                <div style="font-size:10px; color:#aaa; margin-bottom:2px;">🛡️ ${eqArmor.armorSubtype || eqArmor.type || 'Armor'}</div>
-                <div style="font-size:12px;">${buildArmorDefLine({...eqArmor, quality: displayQuality}, p)}</div>
-                <div style="color:#888; font-size:11px; margin-top:2px;">Level ${eqArmor.level || 1}</div>`;
-            
-            const hpBonus = eqArmor.bonusHp || eqArmor.baseHp;
-            const mpBonus = eqArmor.bonusMp || eqArmor.baseMp;
-            if (hpBonus || mpBonus) {
-                invHtml += `<div style="color:#88ff88; font-size:12px; margin-top:4px;">`;
-                if (hpBonus) invHtml += `❤️ +${hpBonus} HP `;
-                if (mpBonus) invHtml += `✨ +${mpBonus} MP`;
-                invHtml += `</div>`;
-            }
-            
-            if (eqArmor.modifiers && eqArmor.modifiers.length > 0) {
-                invHtml += `<div style="margin-top:5px; font-size:11px;">`;
-                eqArmor.modifiers.forEach(mod => {
-                    const valueStr = mod.statType === 'percent' ? `${mod.value}%` : `+${mod.value}`;
-                    invHtml += `<div style="color:${mod.color};">${mod.icon || '✨'} ${mod.name}: ${valueStr}</div>`;
-                });
-                invHtml += `</div>`;
-            }
-            
-            invHtml += `<div style="color:var(--border-color);">EQUIPPED</div>
-                <button onclick="unequipItem('armor'); showUnifiedInventory(_inventoryReturnCallback);" style="border-color:#ff4444;color:#ff4444;margin-top:4px;">UNEQUIP</button>
-            </div>`;
-        }
-        invHtml += `</div></div></div>`;
-        
-        // ── UNEQUIPPED WEAPONS (below equipped weapon) ───────────────────────────
-        invHtml += `<div style="margin-top: 20px;"><h3 style="color: var(--highlight-color);">⚔️ WEAPONS</h3>
-                    <div class="inventory-grid">`;
-        
-        const weaponItems = [];
-        p.inventory.forEach(item => {
-            if (typeof item === 'object' && item !== null && item.weaponId && item.instanceId !== p.weapon) {
-                const weaponData = WEAPONS[item.instanceId];
-                if (weaponData && !weaponData.unarmed) {
-                    weaponItems.push({ item, weaponData });
-                }
-            }
-        });
-        
-        weaponItems.forEach(({ item, weaponData }) => {
-            const displayQuality = item.quality || weaponData.quality;
-            const qc = QUALITY_CONFIG[displayQuality];
-            const qualityColor = qc?.color || '#0f0';
-            const canEquip = canUseWeapon(p.baseClass || p.class, weaponData);
-            
-            invHtml += `<div class="item-card">
-                <div style="color:${qualityColor};">⚔️ ${item.name}</div>
-                <div style="font-size:10px; color:#aaa; margin-bottom:2px;">⚔️ ${weaponData.weaponSubtype || weaponData.type || 'Weapon'}</div>
-                <div style="font-size:12px;">${buildWeaponDmgLine({...weaponData, quality: displayQuality}, displayQuality, p)}</div>
-                <div style="color:#888; font-size:11px; margin-top:2px;">Level ${weaponData.level || 1}</div>`;
-            
-            if (item.modifiers && item.modifiers.length > 0) {
-                invHtml += `<div style="margin-top:5px; font-size:11px;">`;
-                item.modifiers.forEach(mod => {
-                    const modColor = mod.color || '#FFD700';
-                    let modText = mod.name;
-                    if (mod.minDamage) modText += ` (+${mod.minDamage}-${mod.maxDamage})`;
-                    if (mod.critBonus) modText += ` (+${mod.critBonus}% crit)`;
-                    if (mod.lifestealPercent) modText += ` (${mod.lifestealPercent}% lifesteal)`;
-                    invHtml += `<div style="color:${modColor};">✨ ${modText}</div>`;
-                });
-                invHtml += `</div>`;
-            }
-            
-            if (item.gems && item.gems.length > 0) {
-                invHtml += `<div style="margin-top:5px; font-size:11px;">`;
-                item.gems.forEach(gem => {
-                    invHtml += `<div style="color:${gem.color};">💎 ${gem.name}</div>`;
-                });
-                invHtml += `</div>`;
-            }
-            
-            const totalGemSlots = weaponData.gemSlots || 3;
-            const filledGems = item.gems || [];
-            const emptySlots = totalGemSlots - filledGems.length;
-            invHtml += `<div style="margin-top:5px; font-size:10px; color:#888;">💎 Slots: ${filledGems.length}/${totalGemSlots}`;
-            if (emptySlots > 0) invHtml += ` (${emptySlots} empty)`;
-            invHtml += `</div>`;
-            
-            invHtml += `${canEquip ? `<button onclick="equipItem('weapon', '${item.instanceId}'); showUnifiedInventory(_inventoryReturnCallback);">EQUIP</button>` : `<button disabled>CANNOT EQUIP</button>`}
-            </div>`;
-        });
-        
-        if (weaponItems.length === 0) {
-            invHtml += `<div class="item-card" style="color:#888;">No weapons in inventory</div>`;
-        }
-        invHtml += `</div></div>`;
-        
-        // ── UNEQUIPPED ARMOR (below equipped armor) ──────────────────────────────
-        invHtml += `<div style="margin-top: 20px;"><h3 style="color: var(--highlight-color);">🛡️ ARMOR</h3>
-                    <div class="inventory-grid">`;
-        
-        const armorItems = [];
-        p.inventory.forEach(item => {
-            if (typeof item === 'object' && item !== null && item.armorId && item.instanceId !== p.armor) {
-                const armorData = ARMOR[item.instanceId];
-                if (armorData && !armorData.unarmored) {
-                    armorItems.push({ item, armorData });
-                }
-            }
-        });
-        
-        armorItems.forEach(({ item, armorData }) => {
-            const displayQuality = item.quality || armorData.quality;
-            const aqc = QUALITY_CONFIG[displayQuality];
-            const qualityColor = aqc?.color || '#0f0';
-            const canEquip = canUseArmor(p.baseClass || p.class, armorData);
-            
-            invHtml += `<div class="item-card">
-                <div style="color:${qualityColor};">🛡️ ${item.name}</div>
-                <div style="font-size:10px; color:#aaa; margin-bottom:2px;">🛡️ ${armorData.armorSubtype || armorData.type || 'Armor'}</div>
-                <div style="font-size:12px;">DEF: ${armorData.baseDefense + getQualityBonus(displayQuality, armorData.baseDefense)}${armorData.baseMagicBonus ? ` | MAG: +${armorData.baseMagicBonus}` : ''}</div>
-                <div style="color:#888; font-size:11px; margin-top:2px;">Level ${armorData.level || 1}</div>`;
-            
-            if (item.bonusHp || item.bonusMp) {
-                invHtml += `<div style="color:#88ff88; font-size:12px; margin-top:4px;">`;
-                if (item.bonusHp) invHtml += `❤️ +${item.bonusHp} HP `;
-                if (item.bonusMp) invHtml += `✨ +${item.bonusMp} MP`;
-                invHtml += `</div>`;
-            }
-            
-            if (item.modifiers && item.modifiers.length > 0) {
-                invHtml += `<div style="margin-top:5px; font-size:11px;">`;
-                item.modifiers.forEach(mod => {
-                    const valueStr = mod.statType === 'percent' ? `${mod.value}%` : `+${mod.value}`;
-                    invHtml += `<div style="color:${mod.color};">${mod.icon || '✨'} ${mod.name}: ${valueStr}</div>`;
-                });
-                invHtml += `</div>`;
-            }
-            
-            invHtml += `${canEquip ? `<button onclick="equipItem('armor', '${item.instanceId}'); showUnifiedInventory(_inventoryReturnCallback);">EQUIP</button>` : `<button disabled>CANNOT EQUIP</button>`}
-            </div>`;
-        });
-        
-        if (armorItems.length === 0) {
-            invHtml += `<div class="item-card" style="color:#888;">No armor in inventory</div>`;
-        }
-        invHtml += `</div></div>`;
-        
-        // ── KEYS SECTION (below weapons/armor) ─────────────────────────────────────
-        invHtml += `<h3 style="color: var(--highlight-color); margin-top: 20px;">🔑 KEYS</h3>
-                    <div class="inventory-grid">`;
-        
-        const keyItems = [];
-        p.inventory.forEach(item => {
-            if (typeof item === 'string' && ITEMS[item] && ITEMS[item].name?.toLowerCase().includes('key')) {
-                keyItems.push(item);
-            }
-        });
-        
-        if (keyItems.length === 0) {
-            invHtml += `<div class="item-card" style="color:#888;">No keys</div>`;
-        } else {
-            const keyCounts = {};
-            keyItems.forEach(key => { keyCounts[key] = (keyCounts[key] || 0) + 1; });
-            Object.keys(keyCounts).forEach(keyKey => {
-                const item = ITEMS[keyKey];
-                const count = keyCounts[keyKey];
-                invHtml += `<div class="item-card">
-                    <div style="color:#FFD700;">🔑 ${item.name} ${count > 1 ? `x${count}` : ''}</div>
-                    <div style="font-size: 16px;">${item.description || 'A mysterious key.'}</div>
-                </div>`;
-            });
-        }
-        invHtml += `</div>`;
-        
-        // ── OTHER ITEMS (junk for cashing in) ────────────────────────────────────
-        invHtml += `<h3 style="color: var(--highlight-color); margin-top: 20px;">📦 OTHER ITEMS</h3>
-                    <div class="inventory-grid">`;
-        
-        const otherItems = [];
-        p.inventory.forEach(item => {
-            if (typeof item === 'string' && ITEMS[item]) {
-                const itemData = ITEMS[item];
-                // Exclude keys, potions, and items we already handled
-                if (!itemData.name?.toLowerCase().includes('key') &&
-                    itemData.subtype !== 'heal_hp' &&
-                    itemData.subtype !== 'heal_mp' &&
-                    itemData.subtype !== 'full_restore') {
-                    otherItems.push(item);
-                }
-            }
-        });
-        
-        if (otherItems.length === 0) {
-            invHtml += `<div class="item-card" style="color:#888;">No other items</div>`;
-        } else {
-            const otherCounts = {};
-            otherItems.forEach(item => { otherCounts[item] = (otherCounts[item] || 0) + 1; });
-            Object.keys(otherCounts).forEach(itemKey => {
-                const item = ITEMS[itemKey];
-                const count = otherCounts[itemKey];
-                invHtml += `<div class="item-card">
-                    <div style="color:#aaa;">📦 ${item.name} ${count > 1 ? `x${count}` : ''}</div>
-                    <div style="font-size: 16px;">${item.description || 'A miscellaneous item.'}</div>
-                    <div style="color: var(--border-color); margin-top:4px;">Sell: ${item.sellValue || 0}g</div>
-                </div>`;
-            });
-        }
-        invHtml += `</div>`;
-        
+        return WEAPONS[p.weapon];
+    })();
+    
+    invHtml += `<div class="equipped-card weapon">`;
+    if (!eqWeapon || !!eqWeapon.unarmed) {
+        invHtml += `<div class="item-name">✊ Bare Fists</div>
+                    <div class="item-stats">No weapon equipped</div>
+                    <button class="inv-btn-small" disabled>UNEQUIP</button>`;
     } else {
-        // ========== TOWN LAYOUT (original, unchanged) ==========
+        const equippedInstance = p.inventory.find(item => 
+            item && typeof item === 'object' && item.instanceId === p.weapon
+        );
+        const displayQuality = equippedInstance?.quality || eqWeapon.quality;
+        const qc = QUALITY_CONFIG[displayQuality];
+        const qualityColor = qc?.color || '#0f0';
+        const qualityName = qc?.name || displayQuality;
         
-        // ── WEAPONS SECTION ─────────────────────────────────────────────
-        invHtml += `<h3 style="color: var(--highlight-color);">WEAPONS</h3>
-                    <div class="inventory-grid">`;
-        
-        // Get equipped weapon
-        const eqWeaponTown = (() => {
-            if (!p.weapon || p.weapon === 'bare_fists') return null;
-            if (typeof p.weapon === 'string' && p.weapon.includes('_')) {
-                const instance = p.inventory.find(item => 
-                    item && typeof item === 'object' && item.instanceId === p.weapon
-                );
-                if (instance && instance.weaponId) return instance;
-            }
-            return WEAPONS[p.weapon];
-        })();
-        
-        // Display equipped weapon
-        if (!eqWeaponTown || !!eqWeaponTown.unarmed) {
-            invHtml += `<div class="item-card equipped" style="border-color:#555;">
-                <div style="color:#888;">✊ Bare Fists</div>
-                <div style="color:#555;font-size:13px;">DMG: 0 (stats only)</div>
-                <div style="color:#555;font-size:12px;">No weapon equipped</div>
-            </div>`;
-        } else {
-            const equippedInstance = p.inventory.find(item => 
-                item && typeof item === 'object' && item.instanceId === p.weapon
-            );
-            const displayQuality = equippedInstance?.quality || eqWeaponTown.quality;
-            const qc = QUALITY_CONFIG[displayQuality];
-            const qualityColor = qc?.color || '#0f0';
-            
-            invHtml += `<div class="item-card equipped">
-                <div style="color:${qualityColor};">⚔️ ${equippedInstance?.name || eqWeaponTown.name}${displayQuality !== eqWeaponTown.quality ? ` [${displayQuality}]` : ''}</div>
-                <div style="font-size:10px; color:#aaa; margin-bottom:2px;">⚔️ ${eqWeaponTown.weaponSubtype || eqWeaponTown.type || 'Weapon'}</div>
-                <div style="font-size:12px;">${buildWeaponDmgLine({...eqWeaponTown, quality: displayQuality}, displayQuality, p)}</div>
-                <div style="color:#888; font-size:11px; margin-top:2px;">Level ${eqWeaponTown.level || 1}</div>`;
-            
-            if (eqWeaponTown.modifiers && eqWeaponTown.modifiers.length > 0) {
-                invHtml += `<div style="margin-top:5px; font-size:11px;">`;
-                eqWeaponTown.modifiers.forEach(mod => {
-                    const modColor = mod.color || '#FFD700';
-                    let modText = mod.name;
-                    if (mod.minDamage) modText += ` (+${mod.minDamage}-${mod.maxDamage})`;
-                    if (mod.critBonus) modText += ` (+${mod.critBonus}% crit)`;
-                    if (mod.lifestealPercent) modText += ` (${mod.lifestealPercent}% lifesteal)`;
-                    invHtml += `<div style="color:${modColor};">✨ ${modText}</div>`;
-                });
-                invHtml += `</div>`;
-            }
-            
-            if (eqWeaponTown.gems && eqWeaponTown.gems.length > 0) {
-                invHtml += `<div style="margin-top:5px; font-size:11px;">`;
-                eqWeaponTown.gems.forEach(gem => {
-                    invHtml += `<div style="color:${gem.color};">💎 ${gem.name}</div>`;
-                });
-                invHtml += `</div>`;
-            }
-            
-            const totalGemSlots = eqWeaponTown.gemSlots || 3;
-            const filledGems = eqWeaponTown.gems || [];
-            const emptySlots = totalGemSlots - filledGems.length;
-            invHtml += `<div style="margin-top:5px; font-size:10px; color:#888;">💎 Slots: ${filledGems.length}/${totalGemSlots}`;
-            if (emptySlots > 0) invHtml += ` (${emptySlots} empty)`;
-            invHtml += `</div>`;
-            
-            invHtml += `<div style="color:var(--border-color);">EQUIPPED</div>
-                <button onclick="unequipItem('weapon'); showUnifiedInventory(_inventoryReturnCallback);" style="border-color:#ff4444;color:#ff4444;margin-top:4px;">UNEQUIP</button>
-            </div>`;
-        }
-        
-        // Other weapons
-        const weaponItemsTown = [];
-        p.inventory.forEach(item => {
-            if (typeof item === 'object' && item !== null && item.weaponId && item.instanceId !== p.weapon) {
-                const weaponData = WEAPONS[item.instanceId];
-                if (weaponData && !weaponData.unarmed) {
-                    weaponItemsTown.push({ item, weaponData });
-                }
-            }
-        });
-        
-        weaponItemsTown.forEach(({ item, weaponData }) => {
-            const displayQuality = item.quality || weaponData.quality;
-            const qc = QUALITY_CONFIG[displayQuality];
-            const qualityColor = qc?.color || '#0f0';
-            const canEquip = canUseWeapon(p.baseClass || p.class, weaponData);
-            
-            invHtml += `<div class="item-card">
-                <div style="color:${qualityColor};">⚔️ ${item.name}</div>
-                <div style="font-size:10px; color:#aaa; margin-bottom:2px;">⚔️ ${weaponData.weaponSubtype || weaponData.type || 'Weapon'}</div>
-                <div style="font-size:12px;">${buildWeaponDmgLine({...weaponData, quality: displayQuality}, displayQuality, p)}</div>
-                <div style="color:#888; font-size:11px; margin-top:2px;">Level ${weaponData.level || 1}</div>`;
-            
-            if (item.modifiers && item.modifiers.length > 0) {
-                invHtml += `<div style="margin-top:5px; font-size:11px;">`;
-                item.modifiers.forEach(mod => {
-                    const modColor = mod.color || '#FFD700';
-                    let modText = mod.name;
-                    if (mod.minDamage) modText += ` (+${mod.minDamage}-${mod.maxDamage})`;
-                    if (mod.critBonus) modText += ` (+${mod.critBonus}% crit)`;
-                    if (mod.lifestealPercent) modText += ` (${mod.lifestealPercent}% lifesteal)`;
-                    invHtml += `<div style="color:${modColor};">✨ ${modText}</div>`;
-                });
-                invHtml += `</div>`;
-            }
-            
-            if (item.gems && item.gems.length > 0) {
-                invHtml += `<div style="margin-top:5px; font-size:11px;">`;
-                item.gems.forEach(gem => {
-                    invHtml += `<div style="color:${gem.color};">💎 ${gem.name}</div>`;
-                });
-                invHtml += `</div>`;
-            }
-            
-            const totalGemSlots = weaponData.gemSlots || 3;
-            const filledGems = item.gems || [];
-            const emptySlots = totalGemSlots - filledGems.length;
-            invHtml += `<div style="margin-top:5px; font-size:10px; color:#888;">💎 Slots: ${filledGems.length}/${totalGemSlots}`;
-            if (emptySlots > 0) invHtml += ` (${emptySlots} empty)`;
-            invHtml += `</div>`;
-            
-            invHtml += `${canEquip ? `<button onclick="equipItem('weapon', '${item.instanceId}'); showUnifiedInventory(_inventoryReturnCallback);">EQUIP</button>` : `<button disabled>CANNOT EQUIP</button>`}
-            </div>`;
-        });
-        
-        invHtml += `</div>`;
-        
-        // ── ARMOR SECTION ──────────────────────────────────────────────
-        invHtml += `<h3 style="color: var(--highlight-color); margin-top: 20px;">ARMOR</h3>
-                    <div class="inventory-grid">`;
-        
-        // Get equipped armor
-        const eqArmorTown = (() => {
-            if (!p.armor || p.armor === 'no_armor') return null;
-            if (typeof p.armor === 'string' && p.armor.includes('_')) {
-                const instance = p.inventory.find(item => 
-                    item && typeof item === 'object' && item.instanceId === p.armor
-                );
-                if (instance && instance.armorId) return instance;
-            }
-            return ARMOR[p.armor];
-        })();
-        
-        if (!eqArmorTown || !!eqArmorTown.unarmored) {
-            invHtml += `<div class="item-card equipped" style="border-color:#555;">
-                <div style="color:#888;">🫥 No Armor</div>
-                <div style="color:#555;font-size:13px;">DEF: 0</div>
-                <div style="color:#555;font-size:12px;">No armor equipped</div>
-            </div>`;
-        } else {
-            const equippedInstance = p.inventory.find(item => 
+        invHtml += `<div class="item-name" style="color:${qualityColor};">⚔️ ${equippedInstance?.name || eqWeapon.name}</div>
+                    <div class="item-stats">${eqWeapon.weaponSubtype || eqWeapon.type || 'Weapon'} | Lv${eqWeapon.level || 1}</div>
+                    <div class="item-stats">${buildWeaponDmgLine({...eqWeapon, quality: displayQuality}, displayQuality, p)}</div>
+                    <button class="inv-btn-small unequip" onclick="unequipItem('weapon'); showUnifiedInventory(_inventoryReturnCallback);">UNEQUIP</button>`;
+    }
+    invHtml += `</div>`;
+    
+    // Equipped armor
+    const eqArmor = (() => {
+        if (!p.armor || p.armor === 'no_armor') return null;
+        if (typeof p.armor === 'string' && p.armor.includes('_')) {
+            const instance = p.inventory.find(item => 
                 item && typeof item === 'object' && item.instanceId === p.armor
             );
-            const displayQuality = equippedInstance?.quality || eqArmorTown.quality;
-            const aqc = QUALITY_CONFIG[displayQuality];
-            const qualityColor = aqc?.color || '#0f0';
-            
-            invHtml += `<div class="item-card equipped">
-                <div style="color:${qualityColor};">🛡️ ${eqArmorTown.name}${displayQuality !== eqArmorTown.quality ? ` [${displayQuality}]` : ''}</div>
-                <div style="font-size:10px; color:#aaa; margin-bottom:2px;">🛡️ ${eqArmorTown.armorSubtype || eqArmorTown.type || 'Armor'}</div>
-                <div style="font-size:12px;">${buildArmorDefLine({...eqArmorTown, quality: displayQuality}, p)}</div>
-                <div style="color:#888; font-size:11px; margin-top:2px;">Level ${eqArmorTown.level || 1}</div>`;
-            
-            const hpBonus = eqArmorTown.bonusHp || eqArmorTown.baseHp;
-            const mpBonus = eqArmorTown.bonusMp || eqArmorTown.baseMp;
-            if (hpBonus || mpBonus) {
-                invHtml += `<div style="color:#88ff88; font-size:12px; margin-top:4px;">`;
-                if (hpBonus) invHtml += `❤️ +${hpBonus} HP `;
-                if (mpBonus) invHtml += `✨ +${mpBonus} MP`;
-                invHtml += `</div>`;
-            }
-            
-            if (eqArmorTown.modifiers && eqArmorTown.modifiers.length > 0) {
-                invHtml += `<div style="margin-top:5px; font-size:11px;">`;
-                eqArmorTown.modifiers.forEach(mod => {
-                    const valueStr = mod.statType === 'percent' ? `${mod.value}%` : `+${mod.value}`;
-                    invHtml += `<div style="color:${mod.color};">${mod.icon || '✨'} ${mod.name}: ${valueStr}</div>`;
-                });
-                invHtml += `</div>`;
-            }
-            
-            invHtml += `<div style="color:var(--border-color);">EQUIPPED</div>
-                <button onclick="unequipItem('armor'); showUnifiedInventory(_inventoryReturnCallback);" style="border-color:#ff4444;color:#ff4444;margin-top:4px;">UNEQUIP</button>
-            </div>`;
+            if (instance && instance.armorId) return instance;
         }
-        
-        // Other armor
-        const armorItemsTown = [];
-        p.inventory.forEach(item => {
-            if (typeof item === 'object' && item !== null && item.armorId && item.instanceId !== p.armor) {
-                const armorData = ARMOR[item.instanceId];
-                if (armorData && !armorData.unarmored) {
-                    armorItemsTown.push({ item, armorData });
-                }
-            }
-        });
-        
-        armorItemsTown.forEach(({ item, armorData }) => {
-            const displayQuality = item.quality || armorData.quality;
-            const aqc = QUALITY_CONFIG[displayQuality];
-            const qualityColor = aqc?.color || '#0f0';
-            const canEquip = canUseArmor(p.baseClass || p.class, armorData);
-            
-            invHtml += `<div class="item-card">
-                <div style="color:${qualityColor};">🛡️ ${item.name}</div>
-                <div style="font-size:10px; color:#aaa; margin-bottom:2px;">🛡️ ${armorData.armorSubtype || armorData.type || 'Armor'}</div>
-                <div style="font-size:12px;">DEF: ${armorData.baseDefense + getQualityBonus(displayQuality, armorData.baseDefense)}${armorData.baseMagicBonus ? ` | MAG: +${armorData.baseMagicBonus}` : ''}</div>
-                <div style="color:#888; font-size:11px; margin-top:2px;">Level ${armorData.level || 1}</div>`;
-            
-            if (item.bonusHp || item.bonusMp) {
-                invHtml += `<div style="color:#88ff88; font-size:12px; margin-top:4px;">`;
-                if (item.bonusHp) invHtml += `❤️ +${item.bonusHp} HP `;
-                if (item.bonusMp) invHtml += `✨ +${item.bonusMp} MP`;
-                invHtml += `</div>`;
-            }
-            
-            if (item.modifiers && item.modifiers.length > 0) {
-                invHtml += `<div style="margin-top:5px; font-size:11px;">`;
-                item.modifiers.forEach(mod => {
-                    const valueStr = mod.statType === 'percent' ? `${mod.value}%` : `+${mod.value}`;
-                    invHtml += `<div style="color:${mod.color};">${mod.icon || '✨'} ${mod.name}: ${valueStr}</div>`;
-                });
-                invHtml += `</div>`;
-            }
-            
-            invHtml += `${canEquip ? `<button onclick="equipItem('armor', '${item.instanceId}'); showUnifiedInventory(_inventoryReturnCallback);">EQUIP</button>` : `<button disabled>CANNOT EQUIP</button>`}
-            </div>`;
-        });
-        
-        invHtml += `</div>`;
-        
-        // ── CONSUMABLES SECTION ────────────────────────────────────────
-        invHtml += `<h3 style="color: var(--highlight-color); margin-top: 20px;">CONSUMABLES & ITEMS</h3>
-                    <div class="inventory-grid">`;
-        
-        const itemCounts = {};
-        p.inventory.filter(item => typeof item === 'string' && ITEMS[item] && ITEMS[item].subtype !== 'dungeon_key')
-            .forEach(key => { itemCounts[key] = (itemCounts[key] || 0) + 1; });
-        
-        Object.keys(itemCounts).forEach(itemKey => {
-            const item = ITEMS[itemKey];
-            const count = itemCounts[itemKey];
-            const isPotion = item.subtype === 'heal_hp' || item.subtype === 'heal_mp' || item.subtype === 'full_restore';
-            
-            invHtml += `<div class="item-card">
-                <div style="color:#00aa88;">🧪 ${item.name} ${count > 1 ? `x${count}` : ''}</div>
-                <div style="font-size: 16px;">${item.description}</div>
-                ${isPotion ? `<button onclick="useInventoryPotion('${itemKey}'); showUnifiedInventory(_inventoryReturnCallback);">USE</button>` : ''}
-                <div style="color: var(--border-color); margin-top:4px;">Sell: ${item.sellValue || 0}g</div>
-            </div>`;
-        });
-        
-        invHtml += `</div>`;
-        
-        // ── KEY RING ───────────────────────────────────────────────────
-        invHtml += renderKeyRing(p);
-    }
+        return ARMOR[p.armor];
+    })();
     
-        // Add I'M STUCK button for dungeon only
+    invHtml += `<div class="equipped-card armor">`;
+    if (!eqArmor || !!eqArmor.unarmored) {
+        invHtml += `<div class="item-name">🫥 No Armor</div>
+                    <div class="item-stats">No armor equipped</div>
+                    <button class="inv-btn-small" disabled>UNEQUIP</button>`;
+    } else {
+        const equippedInstance = p.inventory.find(item => 
+            item && typeof item === 'object' && item.instanceId === p.armor
+        );
+        const displayQuality = equippedInstance?.quality || eqArmor.quality;
+        const aqc = QUALITY_CONFIG[displayQuality];
+        const qualityColor = aqc?.color || '#0f0';
+        
+        invHtml += `<div class="item-name" style="color:${qualityColor};">🛡️ ${eqArmor.name}</div>
+                    <div class="item-stats">${eqArmor.armorSubtype || eqArmor.type || 'Armor'} | Lv${eqArmor.level || 1}</div>
+                    <div class="item-stats">DEF: ${eqArmor.baseDefense + (aqc?.bonusPct ? Math.floor(eqArmor.baseDefense * aqc.bonusPct) : 0)}</div>
+                    <button class="inv-btn-small unequip" onclick="unequipItem('armor'); showUnifiedInventory(_inventoryReturnCallback);">UNEQUIP</button>`;
+    }
+    invHtml += `</div></div></div>`;
+    
+    // ── WEAPONS LIST (compact grid) ────────────────────────────────────────
+    invHtml += `<div class="inv-section">
+        <div class="inv-section-title">⚔️ WEAPONS</div>
+        <div class="items-grid">`;
+    
+    const weaponItems = [];
+    p.inventory.forEach(item => {
+        if (typeof item === 'object' && item !== null && item.weaponId && item.instanceId !== p.weapon) {
+            const weaponData = WEAPONS[item.instanceId];
+            if (weaponData && !weaponData.unarmed) {
+                weaponItems.push({ item, weaponData });
+            }
+        }
+    });
+    
+    weaponItems.forEach(({ item, weaponData }) => {
+        const displayQuality = item.quality || weaponData.quality;
+        const qc = QUALITY_CONFIG[displayQuality];
+        const qualityClass = displayQuality || 'normal';
+        const qualityColor = qc?.color || '#0f0';
+        const canEquip = canUseWeapon(p.baseClass || p.class, weaponData);
+        
+        invHtml += `<div class="item-card ${qualityClass}" data-item-id="${item.instanceId}">
+            <div class="item-name" style="color:${qualityColor};">⚔️ ${item.name}</div>
+            <div class="item-stats">Lv${weaponData.level || 1} | ${buildWeaponDmgLine({...weaponData, quality: displayQuality}, displayQuality, p)}</div>
+            ${canEquip ? `<button class="inv-btn-equip" onclick="equipItem('weapon', '${item.instanceId}'); showUnifiedInventory(_inventoryReturnCallback);">EQUIP</button>` : `<button class="inv-btn-equip disabled" disabled>CANNOT EQUIP</button>`}
+        </div>`;
+    });
+    
+    if (weaponItems.length === 0) {
+        invHtml += `<div class="empty-message">No weapons in inventory</div>`;
+    }
+    invHtml += `</div></div>`;
+    
+    // ── ARMOR LIST (compact grid) ─────────────────────────────────────────
+    invHtml += `<div class="inv-section">
+        <div class="inv-section-title">🛡️ ARMOR</div>
+        <div class="items-grid">`;
+    
+    const armorItems = [];
+    p.inventory.forEach(item => {
+        if (typeof item === 'object' && item !== null && item.armorId && item.instanceId !== p.armor) {
+            const armorData = ARMOR[item.instanceId];
+            if (armorData && !armorData.unarmored) {
+                armorItems.push({ item, armorData });
+            }
+        }
+    });
+    
+    armorItems.forEach(({ item, armorData }) => {
+        const displayQuality = item.quality || armorData.quality;
+        const qc = QUALITY_CONFIG[displayQuality];
+        const qualityClass = displayQuality || 'normal';
+        const qualityColor = qc?.color || '#0f0';
+        const canEquip = canUseArmor(p.baseClass || p.class, armorData);
+        
+        invHtml += `<div class="item-card ${qualityClass}" data-item-id="${item.instanceId}">
+            <div class="item-name" style="color:${qualityColor};">🛡️ ${item.name}</div>
+            <div class="item-stats">Lv${armorData.level || 1} | DEF: ${armorData.baseDefense + (qc?.bonusPct ? Math.floor(armorData.baseDefense * qc.bonusPct) : 0)}</div>
+            ${canEquip ? `<button class="inv-btn-equip" onclick="equipItem('armor', '${item.instanceId}'); showUnifiedInventory(_inventoryReturnCallback);">EQUIP</button>` : `<button class="inv-btn-equip disabled" disabled>CANNOT EQUIP</button>`}
+        </div>`;
+    });
+    
+    if (armorItems.length === 0) {
+        invHtml += `<div class="empty-message">No armor in inventory</div>`;
+    }
+    invHtml += `</div></div>`;
+    
+
+    // ── OTHER ITEMS (junk for selling) ──────────────────────────────────────
+    const otherItemsList = [];
+    p.inventory.forEach(item => {
+        if (typeof item === 'string' && ITEMS[item]) {
+            const itemData = ITEMS[item];
+            // Exclude keys, potions, weapons, armor
+            if (!itemData.name?.toLowerCase().includes('key') &&
+                itemData.subtype !== 'heal_hp' &&
+                itemData.subtype !== 'heal_mp' &&
+                itemData.subtype !== 'full_restore' &&
+                itemData.subtype !== 'dungeon_key' &&
+                !item.includes('_key') &&
+                typeof item !== 'object') {
+                otherItemsList.push(item);
+            }
+        }
+        // Also check for object items that aren't weapons/armor
+        if (typeof item === 'object' && item !== null && !item.weaponId && !item.armorId) {
+            otherItemsList.push(item);
+        }
+    });
+    
+    if (otherItemsList.length > 0) {
+        invHtml += `<div class="inv-section">
+            <div class="inv-section-title">📦 OTHER ITEMS</div>
+            <div class="other-items-grid">`;
+        
+        const otherCounts = {};
+        otherItemsList.forEach(item => {
+            const key = typeof item === 'string' ? item : (item.name || 'unknown');
+            otherCounts[key] = (otherCounts[key] || 0) + 1;
+        });
+        
+        Object.keys(otherCounts).forEach(itemKey => {
+            const item = typeof itemKey === 'string' && ITEMS[itemKey] ? ITEMS[itemKey] : null;
+            const count = otherCounts[itemKey];
+            const itemName = item ? item.name : (typeof itemKey === 'string' ? itemKey : 'Unknown');
+            const sellValue = item ? (item.sellValue || 0) : 0;
+            
+            invHtml += `<div class="other-item">
+                <span class="other-icon">📦</span>
+                <span class="other-name">${itemName}</span>
+                ${count > 1 ? `<span class="other-count">x${count}</span>` : ''}
+                <span class="other-sell">💰 ${sellValue}g</span>
+            </div>`;
+        });
+        
+        invHtml += `</div></div>`;
+    }
+
+
+    // ── I'M STUCK BUTTON (dungeon only) ───────────────────────────────────
     if (origin === 'dungeon') {
-        invHtml += `<button onclick="resetCurrentDungeonKeepProgress(); closeUnifiedInventory();" style="
-            margin-top:20px; 
-            width:100%; 
-            padding:12px;
-            border:2px solid #FF8800;
-            color:#FF8800;
-            background:#1a0a00;
-            font-size:16px;
-            font-family:'VT323',monospace;
-            cursor:pointer;
-            border-radius:4px;
-        ">🔄 I'M STUCK — Reset Dungeon Enemies (Logout Required)</button>`;
+        invHtml += `
+        <div class="inv-stuck-container">
+            <button class="inv-btn-stuck" onclick="resetCurrentDungeonKeepProgress(); closeUnifiedInventory();">
+                🔄 I'M STUCK — Reset Dungeon Enemies (Logout Required)
+            </button>
+        </div>`;
     }
     
-    invHtml += `<button onclick="closeUnifiedInventory()" style="margin-top:20px; width:100%;">← BACK</button>`;
+    // ── CLOSE BUTTON ──────────────────────────────────────────────────────
+    invHtml += `<button class="inv-close-btn" onclick="closeUnifiedInventory()">← BACK</button>`;
     
     setScreen(invHtml);
 }

@@ -5,6 +5,107 @@
 // Load after: dungeon-nav.js, shop-helpers.js, gem-system.js
 // ═══════════════════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════════════
+// MELEE ENCHANT SYSTEM
+// ═══════════════════════════════════════════════════════════════
+const MELEE_CLASSES = ['warrior','rogue','paladin','archer','hunter','runesmith'];
+
+const MELEE_ENCHANTS = {
+    warrior: {
+        key: 'bloodrage', name: 'Bloodrage', icon: '\u{1F9F8}',
+        description: 'Each hit restores HP equal to a % of damage dealt.',
+        tiers: [
+            { level: 5,  swings: 4, healPct: 0.12, mpCost: 1.0, label: 'Your blade drinks deep.' },
+            { level: 10, swings: 5, healPct: 0.16, mpCost: 1.0, label: 'The hunger grows.' },
+            { level: 15, swings: 6, healPct: 0.20, mpCost: 1.0, label: 'You become the wound.' },
+            { level: 20, swings: 7, healPct: 0.25, mpCost: 1.0, label: 'Unstoppable bloodlust.' },
+            { level: 25, swings: 8, healPct: 0.30, mpCost: 1.0, label: 'Death feeds you.' },
+        ]
+    },
+    rogue: {
+        key: 'expose_weakness', name: 'Expose Weakness', icon: '\u{1F5E1}\uFE0F',
+        description: 'Each strike strips enemy armor permanently for this fight.',
+        tiers: [
+            { level: 5,  swings: 4, defStrip: 3, mpCost: 1.0, label: 'Find the gap.' },
+            { level: 10, swings: 5, defStrip: 4, mpCost: 1.0, label: 'Widen it.' },
+            { level: 15, swings: 5, defStrip: 5, mpCost: 1.0, label: 'They have no defense.' },
+            { level: 20, swings: 6, defStrip: 6, mpCost: 1.0, label: 'Naked before your blade.' },
+            { level: 25, swings: 6, defStrip: 8, mpCost: 1.0, label: 'Armor is an illusion.' },
+        ]
+    },
+    paladin: {
+        key: 'consecrated_ground', name: 'Consecrated Ground', icon: '\u{1F525}',
+        description: 'Holy fire erupts beneath all enemies. Burns until mana runs out.',
+        tiers: [
+            { level: 5,  aoePct: 0.50, tickDmg: 4,  mpPerTick: 10, pipCost: 1, label: 'The light burns.' },
+            { level: 10, aoePct: 0.55, tickDmg: 8,  mpPerTick: 10, pipCost: 1, label: 'Righteous flame.' },
+            { level: 15, aoePct: 0.60, tickDmg: 14, mpPerTick: 10, pipCost: 1, label: 'Holy inferno.' },
+            { level: 20, aoePct: 0.65, tickDmg: 22, mpPerTick: 10, pipCost: 1, label: 'Divine judgment.' },
+            { level: 25, aoePct: 0.70, tickDmg: 32, mpPerTick: 10, pipCost: 1, label: 'Wrath of the divine.' },
+        ]
+    },
+    archer: {
+        key: 'death_mark', name: 'Death Mark', icon: '\u{1F3AF}',
+        description: 'Mark a target. They take bonus damage. All others take splash.',
+        tiers: [
+            { level: 5,  primaryBonus: 1.25, splashPct: 0.40, mpCostPct: 0.25, label: 'Marked. Hunted.' },
+            { level: 10, primaryBonus: 1.30, splashPct: 0.45, mpCostPct: 0.25, label: 'No escape.' },
+            { level: 15, primaryBonus: 1.35, splashPct: 0.50, mpCostPct: 0.25, label: 'Dead already.' },
+            { level: 20, primaryBonus: 1.40, splashPct: 0.50, mpCostPct: 0.25, label: 'The Deadeye sees all.' },
+            { level: 25, primaryBonus: 1.50, splashPct: 0.50, mpCostPct: 0.25, label: 'One arrow. All fall.' },
+        ]
+    },
+    hunter: {
+        key: 'savage_bite', name: 'Savage Bite', icon: '\u{1F43E}',
+        description: 'Command your pet to bite — stacking bleed on the target.',
+        tiers: [
+            { level: 5,  tickDmg: 3,  mpCost: 15, label: 'The pack draws blood.' },
+            { level: 10, tickDmg: 6,  mpCost: 15, label: 'Fangs find the vein.' },
+            { level: 15, tickDmg: 12, mpCost: 15, label: 'The beast is ravenous.' },
+            { level: 20, tickDmg: 20, mpCost: 15, label: 'Shredded to the bone.' },
+            { level: 25, tickDmg: 30, mpCost: 15, label: 'They will not stop bleeding.' },
+        ]
+    },
+    runesmith: {
+        key: 'mjolnirs_wrath', name: "Mjolnir's Wrath", icon: '\u26A1',
+        description: 'Channel lightning through your hammer — bounces between all enemies while mana lasts.',
+        tiers: [
+            { level: 5,  wisMult: 1.2, mpPerBounce: 8, bounceMs: 1500, pipCost: 1, label: 'The runes awaken.' },
+            { level: 10, wisMult: 1.4, mpPerBounce: 8, bounceMs: 1400, pipCost: 1, label: 'Thunder obeys you.' },
+            { level: 15, wisMult: 1.6, mpPerBounce: 7, bounceMs: 1300, pipCost: 1, label: 'The sky is your forge.' },
+            { level: 20, wisMult: 1.8, mpPerBounce: 7, bounceMs: 1200, pipCost: 1, label: 'Storm incarnate.' },
+            { level: 25, wisMult: 2.0, mpPerBounce: 6, bounceMs: 1000, pipCost: 1, label: 'You ARE the lightning.' },
+        ]
+    }
+};
+
+// Scatter Shot tiers (Hunter special — 2 pips, no MP cost)
+const SCATTER_SHOT_TIERS = [
+    { level: 5,  arrowPct: 0.60, minHits: 1, maxHits: 3 },
+    { level: 10, arrowPct: 0.65, minHits: 1, maxHits: 3 },
+    { level: 15, arrowPct: 0.70, minHits: 1, maxHits: 4 },
+    { level: 20, arrowPct: 0.75, minHits: 1, maxHits: 4 },
+    { level: 25, arrowPct: 0.80, minHits: 1, maxHits: 5 },
+];
+
+// Helper: get enchant tier data for current player
+function getEnchantTier(classKey) {
+    const p = gameState.player;
+    if (!p || !p.enchant || !p.enchant.tier || p.enchant.tier < 1) return null;
+    const def = MELEE_ENCHANTS[classKey];
+    if (!def) return null;
+    return def.tiers[Math.min(p.enchant.tier - 1, def.tiers.length - 1)];
+}
+
+// Helper: get scatter shot tier data for hunter
+function getScatterShotTier(playerLevel) {
+    let tier = SCATTER_SHOT_TIERS[0];
+    for (const t of SCATTER_SHOT_TIERS) {
+        if (playerLevel >= t.level) tier = t;
+    }
+    return tier;
+}
+
 function startCombatTimer() {
     if (gameState.combatTimer) clearInterval(gameState.combatTimer);
 
@@ -2850,7 +2951,22 @@ const effectiveArmorPierce = Math.min(1.0, armorPiercing + (gemPierceBonus / 100
                 ` | enemy HP: ${enemy.hp} → ${Math.max(0, enemy.hp - finalDamage)}` +
                 `</span>`, 'term-dim');
         }
-        enemy.hp -= finalDamage;
+        // ── ENCHANT HOOKS: apply on every player hit ──────────────
+        let _enchantedDmg = finalDamage;
+        const _classKey = p.baseClass || p.class;
+        // Death Mark — archer/ranger: boost damage on marked target, splash others
+        if ((_classKey === 'archer' || _classKey === 'ranger') && cs.deathMark) {
+            _enchantedDmg = applyDeathMark(p, cs, enemy, finalDamage);
+        }
+        // Bloodrage — warrior: heal on hit
+        if (_classKey === 'warrior' && cs.bloodrage) {
+            applyBloodrageHeal(p, cs, _enchantedDmg);
+        }
+        // Expose Weakness — rogue: strip armor on hit
+        if (_classKey === 'rogue' && cs.exposeWeakness) {
+            applyExposeWeakness(cs, enemy);
+        }
+        enemy.hp -= _enchantedDmg;
         
         // HAPTIC feedback
         if (result.crit) {
@@ -6168,3 +6284,494 @@ function playerIsExhausted() {
         // LOOT DROP SYSTEM (Phase 1)
         // ═══════════════════════════════════════════════════════════════
 
+
+// ═══════════════════════════════════════════════════════════════
+// MELEE ENCHANT FUNCTIONS
+// ═══════════════════════════════════════════════════════════════
+
+// ── Master dispatcher: called from spell menu ─────────────────
+function activateEnchant(targetIndex) {
+    const p = gameState.player;
+    const cs = gameState.combatState;
+    if (!p || !cs) return;
+
+    const classKey = p.baseClass || p.class;
+    if (!MELEE_CLASSES.includes(classKey)) return;
+
+    const tier = getEnchantTier(classKey);
+    if (!tier) {
+        termAppend('You have not learned an enchant yet. Visit the Temple.', 'term-error');
+        return;
+    }
+
+    cs.actionMode = 'main';
+    renderActionBar();
+
+    switch (classKey) {
+        case 'warrior':   activateBloodrage(p, cs, tier);             break;
+        case 'rogue':     activateExposeWeakness(p, cs, tier);        break;
+        case 'paladin':   activateConsecratedGround(p, cs, tier);     break;
+        case 'archer':    activateDeathMark(p, cs, tier, targetIndex); break;
+        case 'hunter':    activateSavageBite(p, cs, tier, targetIndex); break;
+        case 'runesmith': activateMjolnirsWrath(p, cs, tier);         break;
+    }
+}
+
+// ── Show enchant target picker (for archer/hunter) ───────────
+function showEnchantTargetMenu() {
+    const p = gameState.player;
+    const cs = gameState.combatState;
+    if (!p || !cs) return;
+    const classKey = p.baseClass || p.class;
+    const needsTarget = classKey === 'archer' || classKey === 'hunter';
+
+    if (!needsTarget) {
+        activateEnchant(null);
+        return;
+    }
+    cs.actionMode = 'enchant_target';
+    renderActionBar();
+}
+
+// ══════════════════════════════════════════════════════════════
+// 1. BLOODRAGE — Warrior
+// ══════════════════════════════════════════════════════════════
+function activateBloodrage(p, cs, tier) {
+    const mpCost = Math.floor(p.maxMp * tier.mpCost);
+    if (p.mp < mpCost) {
+        termAppend(`Not enough mana! Bloodrage requires full mana (${mpCost} MP).`, 'term-error');
+        return;
+    }
+    p.mp -= mpCost;
+    cs.bloodrage = { swingsLeft: tier.swings, healPct: tier.healPct };
+    termAppend('', 'term-separator');
+    termAppend(`🩸 <span style="color:#FF4444;font-weight:bold;">BLOODRAGE!</span> <span style="color:#FF8888;">${tier.label}</span>`, 'term-highlight');
+    termAppend(`🩸 Next ${tier.swings} strikes will restore ${Math.round(tier.healPct * 100)}% of damage dealt as HP.`, 'term-loot');
+    updateHud();
+    saveGame();
+}
+
+// Called inside calculateDamage after a warrior hit lands — heals player
+function applyBloodrageHeal(p, cs, damageDealt) {
+    if (!cs.bloodrage || cs.bloodrage.swingsLeft <= 0) return;
+    const heal = Math.max(1, Math.floor(damageDealt * cs.bloodrage.healPct));
+    const actual = Math.min(heal, p.maxHp - p.hp);
+    if (actual > 0) {
+        p.hp += actual;
+        termAppend(`🩸 Bloodrage restores <span style="color:#FF8888;">${actual} HP</span>!`, 'term-loot');
+    }
+    cs.bloodrage.swingsLeft--;
+    if (cs.bloodrage.swingsLeft <= 0) {
+        cs.bloodrage = null;
+        termAppend('🩸 <span style="color:#888;">Bloodrage fades...</span>', 'term-dim');
+    }
+    updateHud();
+}
+
+// ══════════════════════════════════════════════════════════════
+// 2. EXPOSE WEAKNESS — Rogue
+// ══════════════════════════════════════════════════════════════
+function activateExposeWeakness(p, cs, tier) {
+    const mpCost = Math.floor(p.maxMp * tier.mpCost);
+    if (p.mp < mpCost) {
+        termAppend(`Not enough mana! Expose Weakness requires full mana (${mpCost} MP).`, 'term-error');
+        return;
+    }
+    if (!cs.monsters || cs.monsters.length === 0) return;
+    p.mp -= mpCost;
+    cs.exposeWeakness = { swingsLeft: tier.swings, defStrip: tier.defStrip };
+    termAppend('', 'term-separator');
+    termAppend(`🗡️ <span style="color:#AA88FF;font-weight:bold;">EXPOSE WEAKNESS!</span> <span style="color:#AA88FF;">${tier.label}</span>`, 'term-highlight');
+    termAppend(`🗡️ Next ${tier.swings} strikes will strip ${tier.defStrip} armor from the target permanently.`, 'term-loot');
+    updateHud();
+    saveGame();
+}
+
+// Called after a rogue hit — strips enemy defense
+function applyExposeWeakness(cs, enemy) {
+    if (!cs.exposeWeakness || cs.exposeWeakness.swingsLeft <= 0) return;
+    const strip = cs.exposeWeakness.defStrip;
+    const oldDef = enemy.defense || 0;
+    enemy.defense = Math.max(0, oldDef - strip);
+    termAppend(`🗡️ Expose Weakness strips <span style="color:#AA88FF;">${strip} armor</span> from ${enemy.name}! (${oldDef} → ${enemy.defense})`, 'term-loot');
+    cs.exposeWeakness.swingsLeft--;
+    if (cs.exposeWeakness.swingsLeft <= 0) {
+        cs.exposeWeakness = null;
+        termAppend('🗡️ <span style="color:#888;">Expose Weakness fades — armor stays stripped.</span>', 'term-dim');
+    }
+}
+
+// ══════════════════════════════════════════════════════════════
+// 3. CONSECRATED GROUND — Paladin
+// ══════════════════════════════════════════════════════════════
+function activateConsecratedGround(p, cs, tier) {
+    if (p.mp <= 0) {
+        termAppend('No mana! Consecrated Ground requires mana to channel.', 'term-error');
+        return;
+    }
+    if (!cs.monsters || cs.monsters.length === 0) return;
+
+    // Cost 1 pip
+    const pipIdx = cs.pipAvailable ? cs.pipAvailable.findIndex(x => x) : -1;
+    if (pipIdx === -1) {
+        termAppend('No pips available!', 'term-error');
+        return;
+    }
+    cs.pipAvailable[pipIdx] = false;
+    cs.pipTimers[pipIdx] = getPipCooldown(p);
+
+    termAppend('', 'term-separator');
+    termAppend(`🔥 <span style="color:#FFD700;font-weight:bold;">CONSECRATED GROUND!</span> <span style="color:#FFD700;">${tier.label}</span>`, 'term-highlight');
+
+    // Initial AOE hit to all enemies
+    const weapon = WEAPONS[p.weapon];
+    if (weapon) {
+        const qBonus = getQualityBonus(weapon.quality, weapon.baseDamage);
+        const baseWpnDmg = Math.floor(
+            Math.random() * ((weapon.maxDamage || weapon.baseDamage) - weapon.baseDamage + 1)
+        ) + weapon.baseDamage + qBonus;
+        const aoeDmg = Math.floor(baseWpnDmg * tier.aoePct);
+        cs.monsters.forEach(enemy => {
+            if (enemy.hp <= 0) return;
+            const eDef = enemy.defense || 0;
+            const eDR = Math.min(0.75, eDef * 0.028);
+            const finalAoe = Math.max(1, Math.floor(aoeDmg * (1 - eDR)));
+            enemy.hp -= finalAoe;
+            termAppend(`🔥 Holy fire erupts! ${enemy.name} takes <span class="dmg-player">${finalAoe} holy damage</span>!`, 'term-warning');
+        });
+    }
+
+    // Start consecration DOT on all enemies — drains MP each tick
+    if (cs.consecratedTimer) {
+        clearInterval(cs.consecratedTimer);
+        cs.consecratedTimer = null;
+    }
+
+    // Mark all living enemies as consecrated
+    cs.monsters.forEach(enemy => { if (enemy.hp > 0) enemy._consecrated = true; });
+
+    cs.consecratedTimer = setInterval(() => {
+        const _cs = gameState.combatState;
+        const _p = gameState.player;
+        if (!_cs || !_p || _p.mp <= 0 || _cs.combatOver) {
+            clearInterval(_cs ? _cs.consecratedTimer : cs.consecratedTimer);
+            if (_cs) _cs.consecratedTimer = null;
+            termAppend('💨 <span style="color:#888;">The holy flames gutter out as your power fades...</span>', 'term-dim');
+            if (_cs) _cs.monsters.forEach(e => { e._consecrated = false; });
+            return;
+        }
+        // Drain MP
+        _p.mp = Math.max(0, _p.mp - tier.mpPerTick);
+        updateHud();
+
+        // Tick damage to all consecrated enemies
+        let anyAlive = false;
+        _cs.monsters.forEach(enemy => {
+            if (enemy.hp <= 0 || !enemy._consecrated) return;
+            anyAlive = true;
+            enemy.hp -= tier.tickDmg;
+            termAppend(`✨ Holy fire scorches ${enemy.name}! <span class="dmg-player">${tier.tickDmg} holy damage</span>`, 'term-loot');
+            if (enemy.hp <= 0) {
+                enemy._consecrated = false;
+                termAppend(`💀 ${enemy.name} is consumed by holy fire!`, 'term-victory');
+            }
+        });
+
+        if (!anyAlive || _p.mp <= 0) {
+            clearInterval(_cs.consecratedTimer);
+            _cs.consecratedTimer = null;
+            if (_p.mp <= 0) termAppend('💨 <span style="color:#888;">The holy flames gutter out as your power fades...</span>', 'term-dim');
+            _cs.monsters.forEach(e => { e._consecrated = false; });
+        }
+
+        checkCombatEnd();
+        updateHud();
+    }, 4000);
+
+    updateHud();
+    renderActionBar();
+    saveGame();
+}
+
+// ══════════════════════════════════════════════════════════════
+// 4. DEATH MARK — Archer
+// ══════════════════════════════════════════════════════════════
+function activateDeathMark(p, cs, tier, targetIndex) {
+    const mpCost = Math.floor(p.maxMp * tier.mpCostPct);
+    if (p.mp < mpCost) {
+        termAppend(`Not enough mana! Death Mark costs ${mpCost} MP (25% of max).`, 'term-error');
+        return;
+    }
+    if (!cs.monsters || cs.monsters.length === 0) return;
+    const idx = (targetIndex !== null && targetIndex !== undefined)
+        ? targetIndex
+        : 0;
+    const target = cs.monsters[idx];
+    if (!target || target.hp <= 0) return;
+
+    p.mp -= mpCost;
+    cs.deathMark = {
+        enemyIndex: idx,
+        enemyName: target.name,
+        primaryBonus: tier.primaryBonus,
+        splashPct: tier.splashPct,
+        mpCostPct: tier.mpCostPct,
+    };
+
+    termAppend('', 'term-separator');
+    termAppend(`🎯 <span style="color:#FF4444;font-weight:bold;">DEATH MARK!</span> ${target.name} is marked for death!`, 'term-highlight');
+    termAppend(`🎯 Strikes on ${target.name}: +${Math.round((tier.primaryBonus - 1) * 100)}% damage | All other enemies: ${Math.round(tier.splashPct * 100)}% splash.`, 'term-loot');
+    termAppend(`🎯 <span style="color:#888;">Retarget anytime for another ${mpCost} MP.</span>`, 'term-dim');
+    updateHud();
+    saveGame();
+}
+
+// Called after each archer/ranger hit — applies death mark bonus and splash
+function applyDeathMark(p, cs, hitEnemy, rawDamage) {
+    if (!cs.deathMark) return rawDamage;
+
+    // If marked enemy died, clear the mark
+    const markedEnemy = cs.monsters ? cs.monsters[cs.deathMark.enemyIndex] : null;
+    if (!markedEnemy || markedEnemy.hp <= 0) {
+        termAppend('🎯 <span style="color:#888;">The Death Mark fades.</span>', 'term-dim');
+        cs.deathMark = null;
+        return rawDamage;
+    }
+
+    // Hitting the marked target — boost damage
+    if (hitEnemy === markedEnemy) {
+        const boosted = Math.floor(rawDamage * cs.deathMark.primaryBonus);
+        const bonus = boosted - rawDamage;
+        termAppend(`🎯 <span style="color:#FF4444;">Death Mark amplifies the strike! +${bonus} damage!</span>`, 'term-loot');
+
+        // Splash to all other enemies
+        const splashDmg = Math.max(1, Math.floor(boosted * cs.deathMark.splashPct));
+        cs.monsters.forEach(other => {
+            if (other === hitEnemy || other.hp <= 0) return;
+            other.hp -= splashDmg;
+            termAppend(`🎯 Shockwave hits ${other.name} for <span class="dmg-player">${splashDmg}</span>!`, 'term-loot');
+        });
+        return boosted;
+    }
+    return rawDamage;
+}
+
+// ══════════════════════════════════════════════════════════════
+// 5. SAVAGE BITE — Hunter
+// ══════════════════════════════════════════════════════════════
+function activateSavageBite(p, cs, tier, targetIndex) {
+    if (p.mp < tier.mpCost) {
+        termAppend(`Not enough mana! Savage Bite costs ${tier.mpCost} MP.`, 'term-error');
+        return;
+    }
+    if (!cs.monsters || cs.monsters.length === 0) return;
+    const idx = (targetIndex !== null && targetIndex !== undefined) ? targetIndex : 0;
+    const target = cs.monsters[idx];
+    if (!target || target.hp <= 0) return;
+
+    p.mp -= tier.mpCost;
+
+    // Count existing bite stacks on this enemy for display
+    if (!target._biteStacks) target._biteStacks = 0;
+    target._biteStacks++;
+    const stacks = target._biteStacks;
+
+    termAppend(`🐾 <span style="color:#AA0000;font-weight:bold;">SAVAGE BITE!</span> ${tier.label}`, 'term-highlight');
+    termAppend(`🐾 Your pet lunges at ${target.name}! Bleeding x${stacks} stack${stacks > 1 ? 's' : ''}!`, 'term-loot');
+
+    // Apply an independent bleed DOT instance (stackable)
+    const bleedTimer = setInterval(() => {
+        const _cs = gameState.combatState;
+        if (!_cs || !_cs.monsters || _cs.combatOver) { clearInterval(bleedTimer); return; }
+        const _target = _cs.monsters.find(m => m === target);
+        if (!_target || _target.hp <= 0) { clearInterval(bleedTimer); return; }
+        _target.hp -= tier.tickDmg;
+        termAppend(`🩸 ${_target.name} bleeds for <span class="dmg-player">${tier.tickDmg} damage</span>! (bite wound)`, 'term-loot');
+        if (_target.hp <= 0) {
+            clearInterval(bleedTimer);
+            termAppend(`💀 ${_target.name} bleeds out!`, 'term-victory');
+            checkCombatEnd();
+        }
+        updateHud();
+    }, 2000);
+
+    // Store timer reference so it can be cleared on combat end
+    if (!cs.dotTimers) cs.dotTimers = {};
+    cs.dotTimers[`savage_bite_${Date.now()}`] = bleedTimer;
+
+    // Schedule bleed expiry (10 seconds per stack)
+    setTimeout(() => {
+        clearInterval(bleedTimer);
+        if (target._biteStacks) target._biteStacks = Math.max(0, target._biteStacks - 1);
+    }, 10000);
+
+    updateHud();
+    saveGame();
+}
+
+// ══════════════════════════════════════════════════════════════
+// 6. MJOLNIR'S WRATH — Runesmith
+// ══════════════════════════════════════════════════════════════
+function activateMjolnirsWrath(p, cs, tier) {
+    if (p.mp <= 0) {
+        termAppend("No mana! Mjolnir's Wrath requires mana to channel.", 'term-error');
+        return;
+    }
+    if (!cs.monsters || cs.monsters.length === 0) return;
+
+    // Cost 1 pip
+    const pipIdx = cs.pipAvailable ? cs.pipAvailable.findIndex(x => x) : -1;
+    if (pipIdx === -1) {
+        termAppend('No pips available!', 'term-error');
+        return;
+    }
+    cs.pipAvailable[pipIdx] = false;
+    cs.pipTimers[pipIdx] = getPipCooldown(p);
+
+    // Stop any existing channel
+    if (cs.mjolnirTimer) {
+        clearInterval(cs.mjolnirTimer);
+        cs.mjolnirTimer = null;
+    }
+
+    termAppend('', 'term-separator');
+    termAppend(`⚡ <span style="color:#FFFF00;font-weight:bold;">MJOLNIR'S WRATH!</span> <span style="color:#FFDD00;">${tier.label}</span>`, 'term-highlight');
+    termAppend('⚡ Lightning crackles through your hammer — arcing to all enemies!', 'term-warning');
+
+    let bounceIndex = 0;
+    const lightningDmg = Math.floor((p.wis || 1) * tier.wisMult) + 3;
+
+    cs.mjolnirTimer = setInterval(() => {
+        const _cs = gameState.combatState;
+        const _p = gameState.player;
+        if (!_cs || !_p || _cs.combatOver) {
+            clearInterval(cs.mjolnirTimer);
+            cs.mjolnirTimer = null;
+            return;
+        }
+
+        // Drain MP
+        if (_p.mp <= 0) {
+            clearInterval(_cs.mjolnirTimer);
+            _cs.mjolnirTimer = null;
+            termAppend('💨 <span style="color:#888;">The lightning fades — your mana is spent...</span>', 'term-dim');
+            return;
+        }
+        _p.mp = Math.max(0, _p.mp - tier.mpPerBounce);
+
+        // Pick next living enemy to arc to
+        const living = _cs.monsters.filter(m => m.hp > 0);
+        if (living.length === 0) {
+            clearInterval(_cs.mjolnirTimer);
+            _cs.mjolnirTimer = null;
+            return;
+        }
+        const target = living[bounceIndex % living.length];
+        bounceIndex++;
+
+        // Apply lightning damage (ignores armor — pure magic)
+        target.hp -= lightningDmg;
+        termAppend(`⚡ Lightning arcs to <span style="color:#FFFF44;">${target.name}</span>! <span class="dmg-player">${lightningDmg} lightning damage!</span>`, 'term-loot');
+
+        // Charge a runesmith overload pip every 3 bounces
+        if (bounceIndex % 3 === 0 && (_p.runeOverloadPips || 0) < 3) {
+            _p.runeOverloadPips = (_p.runeOverloadPips || 0) + 1;
+            const rp = _p.runeOverloadPips;
+            const r1 = rp >= 1 ? '🔶' : '⬛'; const r2 = rp >= 2 ? '🔶' : '⬛'; const r3 = rp >= 3 ? '🔶' : '⬛';
+            if (rp >= 3) {
+                termAppend('⚒️ <span style="color:#FF8800;font-weight:bold;">RUNE OVERLOAD CHARGED!</span> Strike now!');
+            } else {
+                termAppend(`⚒️ <span style="color:#c8a000;">Rune charged: ${r1}${r2}${r3}</span>`);
+            }
+        }
+
+        if (target.hp <= 0) {
+            termAppend(`💀 ${target.name} is struck down by lightning!`, 'term-victory');
+            checkCombatEnd();
+        }
+        updateHud();
+        renderActionBar();
+    }, tier.bounceMs);
+
+    // Store timer reference
+    cs.mjolnirTimer = cs.mjolnirTimer;
+    if (!cs.dotTimers) cs.dotTimers = {};
+    cs.dotTimers['mjolnir_wrath'] = cs.mjolnirTimer;
+
+    updateHud();
+    renderActionBar();
+    saveGame();
+}
+
+// ══════════════════════════════════════════════════════════════
+// SCATTER SHOT — Hunter Special Attack (2 pips)
+// ══════════════════════════════════════════════════════════════
+function executeScatterShot() {
+    const p = gameState.player;
+    const cs = gameState.combatState;
+    if (!p || !cs || !cs.monsters || cs.monsters.length === 0) return;
+
+    // Requires 2 pips
+    const availablePips = cs.pipAvailable ? cs.pipAvailable.filter(x => x).length : 0;
+    if (availablePips < 2) {
+        termAppend('Scatter Shot requires 2 pips!', 'term-error');
+        return;
+    }
+    consumePips(cs, 2, getPipCooldown(p));
+    cs.actionMode = 'main';
+
+    const tier = getScatterShotTier(p.level);
+    const weapon = WEAPONS[p.weapon];
+    if (!weapon) return;
+
+    const qBonus = getQualityBonus(weapon.quality, weapon.baseDamage);
+    const baseWpnDmg = Math.floor(
+        Math.random() * ((weapon.maxDamage || weapon.baseDamage) - weapon.baseDamage + 1)
+    ) + weapon.baseDamage + qBonus;
+    const strBonus = Math.floor((p.str || 0) * 1.0);
+    const arrowBaseDmg = Math.floor((baseWpnDmg + strBonus) * tier.arrowPct);
+
+    termAppend('', 'term-separator');
+    termAppend('🏹 <span style="color:#CCCC44;font-weight:bold;font-size:16px;">SCATTER SHOT!</span> Arrows fly in all directions!', 'term-highlight');
+
+    let totalDmg = 0;
+    const deadEnemies = [];
+
+    cs.monsters.forEach(enemy => {
+        if (enemy.hp <= 0) return;
+        const hits = Math.floor(Math.random() * (tier.maxHits - tier.minHits + 1)) + tier.minHits;
+        let enemyDmg = 0;
+        const arrowLog = [];
+
+        for (let i = 0; i < hits; i++) {
+            // Each arrow can crit independently
+            const critChance = (p.lck || 0) * 0.5 + 10;
+            const isCrit = Math.random() * 100 < critChance;
+            const eDef = enemy.defense || 0;
+            const eDR = Math.min(0.75, eDef * 0.028);
+            let arrowDmg = Math.max(1, Math.floor(arrowBaseDmg * (1 - eDR)));
+            if (isCrit) {
+                arrowDmg *= 2;
+                arrowLog.push(`<span style="color:#FF4444;">${arrowDmg}💀</span>`);
+            } else {
+                arrowLog.push(`<span class="dmg-player">${arrowDmg}</span>`);
+            }
+            enemyDmg += arrowDmg;
+        }
+
+        enemy.hp -= enemyDmg;
+        totalDmg += enemyDmg;
+        termAppend(`🏹 ${enemy.name}: ${arrowLog.join(', ')} (${hits} arrow${hits > 1 ? 's' : ''}) = <strong>${enemyDmg} total</strong>`, 'term-loot');
+
+        if (enemy.hp <= 0) {
+            termAppend(`💀 ${enemy.name} is riddled with arrows!`, 'term-victory');
+            deadEnemies.push(enemy);
+        }
+    });
+
+    termAppend(`🏹 Scatter Shot total damage: <span class="dmg-player">${totalDmg}</span>`, 'term-highlight');
+    checkCombatEnd();
+    updateHud();
+    renderActionBar();
+    saveGame();
+}

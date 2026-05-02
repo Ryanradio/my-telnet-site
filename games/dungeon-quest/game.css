@@ -2724,6 +2724,281 @@ body.terminal-mode #menuContainer {
 }
 
 
+/* =====================================================
+   GLOW THEME INVENTORY - Unified Inventory Styling
+   ===================================================== */
 
+/* Container & Layout */
+.inventory-header {
+    text-align: center;
+    font-size: 20px;
+    color: #FFD700;
+    letter-spacing: 4px;
+    text-shadow: 0 0 10px #FFD700;
+    padding: 8px 0;
+    border-bottom: 2px solid #FFD700;
+    margin-bottom: 12px;
+}
+
+.inventory-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.inv-back-btn {
+    background: #1a1a1a;
+    border: 1px solid #FFD700;
+    color: #FFD700;
+    padding: 6px 12px;
+    font-family: 'VT323', monospace;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 6px;
+}
+
+.inv-spellbook-btn {
+    background: #1a1a1a;
+    border: 1px solid #aa66ff;
+    color: #aa66ff;
+    padding: 6px 14px;
+    font-family: 'VT323', monospace;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 6px;
+}
+
+/* Stats bar */
+.inventory-stats {
+    display: flex;
+    justify-content: space-between;
+    background: #0a0505;
+    border: 1px solid #FFD700;
+    border-radius: 10px;
+    padding: 8px 12px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.inventory-stats .hp { color: #ff6666; }
+.inventory-stats .mp { color: #88aaff; }
+.inventory-stats .gold { color: #FFD700; }
+
+/* Section titles */
+.inv-section {
+    margin-bottom: 20px;
+}
+.inv-section-title {
+    color: #FFD700;
+    font-size: 14px;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+    border-left: 3px solid #FFD700;
+    padding-left: 8px;
+}
+
+/* Potion container */
+.potion-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.potion-item {
+    background: #0a0a0a;
+    border: 1px solid;
+    border-radius: 24px;
+    padding: 6px 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #ffffff;
+}
+.potion-item.health { border-color: #ff4444; box-shadow: 0 0 6px #ff4444; }
+.potion-item.mana { border-color: #4488ff; box-shadow: 0 0 6px #4488ff; }
+.potion-item.full { border-color: #FFD700; box-shadow: 0 0 6px #FFD700; }
+.potion-item.recall { border-color: #AA88FF; box-shadow: 0 0 6px #AA88FF; }
+.potion-name { font-weight: bold; }
+.potion-desc { font-size: 10px; color: #aaa; }
+.potion-use {
+    background: #1a1a1a;
+    border: 1px solid currentColor;
+    color: inherit;
+    padding: 2px 8px;
+    font-family: 'VT323', monospace;
+    font-size: 10px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+/* Key Ring - preserve existing key-ring styles, just add glow */
+.key-ring-container {
+    background: #050505;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 16px;
+    border: 1px solid #2a2a2a;
+}
+
+/* Equipped items */
+.equipped-container {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+.equipped-card {
+    flex: 1;
+    background: #0a0a0a;
+    border-radius: 12px;
+    padding: 12px;
+    text-align: center;
+}
+.equipped-card.weapon { border: 1px solid #FF9900; box-shadow: 0 0 8px #FF9900; }
+.equipped-card.armor { border: 1px solid #9933FF; box-shadow: 0 0 8px #9933FF; }
+.equipped-card .item-name { font-size: 13px; font-weight: bold; margin-bottom: 4px; }
+.equipped-card .item-stats { font-size: 11px; color: #aaa; margin-bottom: 6px; }
+
+/* Items grid - uses .item-card for tooltip compatibility */
+.items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 8px;
+}
+.item-card {
+    background: #0a0a0a;
+    border-radius: 10px;
+    padding: 8px 10px;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+.item-card:active { transform: scale(0.98); }
+.item-card .item-name { font-weight: bold; margin-bottom: 4px; }
+.item-card .item-stats { font-size: 10px; color: #aaa; margin-bottom: 6px; }
+
+/* Quality colors for .item-card */
+.item-card.legendary { border-left: 4px solid #FF9900; background: #0a0a0a; }
+.item-card.legendary .item-name { color: #FFcc99; }
+.item-card.epic { border-left: 4px solid #9933FF; background: #0a0a0a; }
+.item-card.epic .item-name { color: #cc99ff; }
+.item-card.rare { border-left: 4px solid #0099FF; background: #0a0a0a; }
+.item-card.rare .item-name { color: #99ccff; }
+.item-card.uncommon { border-left: 4px solid #00FF88; background: #0a0a0a; }
+.item-card.uncommon .item-name { color: #aaffcc; }
+.item-card.normal { border-left: 4px solid #00FF00; background: #0a0a0a; }
+.item-card.normal .item-name { color: #ccffcc; }
+.item-card.poor { border-left: 4px solid #888; background: #0a0a0a; opacity: 0.7; }
+
+/* Buttons */
+.inv-btn-small {
+    background: #1a1a1a;
+    border: 1px solid #555;
+    color: #ccc;
+    padding: 3px 8px;
+    font-family: 'VT323', monospace;
+    font-size: 10px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+.inv-btn-small.unequip { border-color: #ff4444; color: #ff4444; }
+.inv-btn-equip {
+    background: #1a1a1a;
+    border: 1px solid #FFD700;
+    color: #FFD700;
+    padding: 4px 10px;
+    font-family: 'VT323', monospace;
+    font-size: 10px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin-top: 4px;
+}
+.inv-btn-equip.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+.inv-btn-stuck {
+    background: #1a0a00;
+    border: 2px solid #FF8800;
+    color: #FF8800;
+    width: 100%;
+    padding: 10px;
+    font-family: 'VT323', monospace;
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+.inv-btn-stuck:hover {
+    background: #2a1500;
+    box-shadow: 0 0 12px #FF8800;
+}
+.inv-close-btn {
+    background: #1a1a1a;
+    border: 1px solid #ff4444;
+    color: #ff4444;
+    width: 100%;
+    padding: 8px;
+    font-family: 'VT323', monospace;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 6px;
+    margin-top: 8px;
+}
+.empty-message {
+    color: #555;
+    font-size: 12px;
+    padding: 12px;
+    text-align: center;
+}
+
+/* Mobile Responsive */
+@media (max-width: 600px) {
+    .equipped-container { flex-direction: column; }
+    .items-grid { grid-template-columns: 1fr; }
+    .potion-container { gap: 6px; }
+    .potion-item { padding: 4px 10px; font-size: 11px; }
+    .inventory-stats { font-size: 11px; }
+    .inv-section-title { font-size: 12px; }
+    .item-card .item-stats { font-size: 9px; }
+}
+
+/* Other Items (junk for selling) */
+.other-items-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 8px;
+    padding: 8px;
+}
+.other-item {
+    background: #0a0a0a;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 4px 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+}
+.other-icon {
+    color: #8a8a8a;
+    font-size: 12px;
+}
+.other-name {
+    color: #aaa;
+}
+.other-count {
+    color: #FFD700;
+    font-size: 10px;
+    background: rgba(255,215,0,0.15);
+    padding: 1px 4px;
+    border-radius: 8px;
+}
+.other-sell {
+    color: #88ff88;
+    font-size: 10px;
+}
 
 

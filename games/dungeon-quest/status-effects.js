@@ -184,6 +184,39 @@ weakened: {
 },
     
     // ═══════════════════════════════════════════════════════════════
+    // ENCHANT STATUS EFFECTS
+    // ═══════════════════════════════════════════════════════════════
+
+    consecrated: {
+        name: 'Consecrated',
+        icon: '✨',
+        color: '#FFD700',
+        type: 'dot',
+        damagePerTick: 4,        // overridden dynamically by player level tier
+        tickInterval: 4000,      // 4 seconds — slower than burn, but permanent
+        duration: Infinity,      // never expires — killed by enemy death only
+        description: 'Burning with holy fire — will not stop until death',
+        applyMessage: (target) => `✨ ${target} is seared by holy fire!`,
+        tickMessage:  (target, damage) => `✨ Holy fire scorches ${target}! (${damage} holy damage)`,
+        message:      (target, damage) => `✨ Holy fire scorches ${target}! (${damage} holy damage)`
+    },
+
+    savage_bite: {
+        name: 'Savage Bite',
+        icon: '🐾',
+        color: '#AA0000',
+        type: 'dot',
+        damagePerTick: 3,        // overridden dynamically by player level tier
+        tickInterval: 2000,      // 2 seconds — fast ticks, stacks independently
+        duration: 10000,         // 10 seconds per stack (5 ticks)
+        stackable: true,         // each bite is an independent DOT instance
+        description: 'Bleeding from savage bite wounds',
+        applyMessage: (target) => `🐾 ${target} is torn open by savage fangs!`,
+        tickMessage:  (target, damage) => `🐾 ${target} bleeds from bite wounds! (${damage} damage)`,
+        message:      (target, damage) => `🐾 ${target} bleeds from bite wounds! (${damage} damage)`
+    },
+
+    // ═══════════════════════════════════════════════════════════════
     // BUFF EFFECTS (for future use)
     // ═══════════════════════════════════════════════════════════════
     haste: {
