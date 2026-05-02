@@ -1699,12 +1699,10 @@ window.DUNGEONS.Dungeon1 = {
               {
                 "key": "giant_scorpion",
                 "drop": "silver_key",
-                "rarity": "common"
+                "rarity": "epic",
+                "dropAlways": true
               }
             ]
-          },
-          "flags": {
-            "discovered": false
           }
         },
         "R29": {
