@@ -4901,53 +4901,108 @@ if (gameState.combatState.confusedEnemy === enemy && Math.random() < 0.3) {
             }
         }
 
+        // Declare _abilityDef here so it's in scope for all code below
+        // (it was previously declared late in the block, causing a TDZ ReferenceError)
+        const _abilityDef = intent && intent.abilityDef;
+
         p.hp -= finalDmg;
 
-const thornsDamage = getArmorModifierBonus('thornsDamage');
-if (thornsDamage > 0 && finalDmg > 0) {
-    enemy.hp -= thornsDamage;
-    termAppend(`⚔️ Your Barbed armor spikes deal ${thornsDamage} damage to ${enemy.name}!`, 'term-loot');
-    haptic('ability');
-    if (enemy.hp <= 0) {
-        termAppend(`💀 ${enemy.name} dies from your armor spikes!`, 'term-victory');
-        checkCombatEnd();
-    }
-    updateEnemyCards();
-}
+        // ── STEP 1: Queue the attack message FIRST so it appears before retaliation ──
+        // We collect all pending terminal messages for this enemy into the hit record.
+        // They will be flushed in order when the hits array is displayed.
+        const pendingMessages = [];
 
-const thornsPercent = getArmorModifierBonus('thornsPercent');
-if (thornsPercent > 0 && finalDmg > 0) {
-    const spikedDmg = Math.max(1, Math.floor(finalDmg * (thornsPercent / 100)));
-    enemy.hp -= spikedDmg;
-    termAppend(`🩸 Your Spiked armor returns ${spikedDmg} damage (${thornsPercent}%) to ${enemy.name}!`, 'term-loot');
-    haptic('ability');
-    if (enemy.hp <= 0) {
-        termAppend(`💀 ${enemy.name} dies from your spiked armor!`, 'term-victory');
-        checkCombatEnd();
-    }
-    updateEnemyCards();
-}
-        
+        // Leeching armor (heals player after hit)
         const leechBonus = getArmorModifierBonus('leechChance');
         if (leechBonus > 0 && Math.random() < (leechBonus / 100)) {
             const healAmount = Math.max(1, Math.floor(finalDmg * 0.3));
             const actualHeal = Math.min(p.maxHp - p.hp, healAmount);
             if (actualHeal > 0) {
                 p.hp += actualHeal;
-                termAppend(`🩸 Your Leeching armor absorbs ${actualHeal} HP from the attack!`, 'term-loot');
+                pendingMessages.push({ text: `🩸 Your Leeching armor absorbs ${actualHeal} HP from the attack!`, cls: 'term-loot' });
                 haptic('ability');
                 updateHud();
             }
         }
-        
-        if (reflectedDamage > 0) {
+
+        // ── STEP 2: Calculate thorns / reflect AFTER recording the attack, but
+        //    apply them to enemy HP now so the death check is immediate. ──
+        let enemyDied = false;
+
+        // Thorns (flat damage)
+        const thornsDamage = getArmorModifierBonus('thornsDamage');
+        if (thornsDamage > 0 && finalDmg > 0) {
+            haptic('ability');
+            enemy.hp -= thornsDamage;
+            if (enemy.hp <= 0) {
+                pendingMessages.push({ text: `⚔️ Your Barbed armor spikes deal ${thornsDamage} damage to ${enemy.name}!`, cls: 'term-loot' });
+                pendingMessages.push({ text: `💀 ${enemy.name} dies from your armor spikes!`, cls: 'term-victory' });
+                enemyDied = true;
+            } else {
+                pendingMessages.push({ text: `⚔️ Your Barbed armor spikes deal ${thornsDamage} damage to ${enemy.name}!`, cls: 'term-loot' });
+            }
+        }
+
+        // Thorns (percent) — only if not already dead
+        if (!enemyDied) {
+            const thornsPercent = getArmorModifierBonus('thornsPercent');
+            if (thornsPercent > 0 && finalDmg > 0) {
+                const spikedDmg = Math.max(1, Math.floor(finalDmg * (thornsPercent / 100)));
+                haptic('ability');
+                enemy.hp -= spikedDmg;
+                if (enemy.hp <= 0) {
+                    pendingMessages.push({ text: `🩸 Your Spiked armor returns ${spikedDmg} damage (${thornsPercent}%) to ${enemy.name}!`, cls: 'term-loot' });
+                    pendingMessages.push({ text: `💀 ${enemy.name} dies from your spiked armor!`, cls: 'term-victory' });
+                    enemyDied = true;
+                } else {
+                    pendingMessages.push({ text: `🩸 Your Spiked armor returns ${spikedDmg} damage (${thornsPercent}%) to ${enemy.name}!`, cls: 'term-loot' });
+                }
+            }
+        }
+
+        // Reflected damage — only if not already dead
+        if (!enemyDied && reflectedDamage > 0) {
             enemy.hp -= reflectedDamage;
             if (enemy.hp <= 0) {
-                termAppend(`${enemy.name} dies from reflected damage!`, 'term-victory');
-                checkCombatEnd();
+                pendingMessages.push({ text: `🪞 ${enemy.name} dies from reflected damage!`, cls: 'term-victory' });
+                enemyDied = true;
             }
-            updateEnemyCards();
         }
+
+        // ── STEP 3: If the enemy died from thorns/reflect, hand off to
+        //    checkCombatEnd() — the exact same path a weapon kill uses.
+        //    It handles XP, gold, loot, weapon/armor drops, bestiary, level-up, everything.
+        if (enemyDied) {
+            // Clamp to 0 so checkCombatEnd's (hp <= 0) check picks it up
+            enemy.hp = 0;
+
+            // Push the hit record so the attack message prints,
+            // then pending retaliation messages flush after it.
+            hits.push({
+                eName,
+                dmg: finalDmg,
+                crit: result.crit,
+                abilityName: _abilityDef ? _abilityDef.name : null,
+                shieldBlocked: shieldTriggered,
+                pendingMessages,
+                killedByThorns: true
+            });
+
+            // hp already set to 0 — afterAttack will call checkCombatEnd()
+            // once all hit messages have finished displaying.
+            return; // Skip the normal "enemy survived" push below
+        }
+
+        // ── STEP 4: Push hit record (enemy alive or just killed by thorns — either way) ──
+        updateEnemyCards();
+        hits.push({
+            eName,
+            dmg: finalDmg,
+            crit: result.crit,
+            abilityName: _abilityDef ? _abilityDef.name : null,
+            shieldBlocked: shieldTriggered,
+            pendingMessages
+        });
 
         if (gameState.combatState?.stunnedEnemies?.[enemy.index]) {
             termAppend(`⚡ ${enemy.name} is stunned and cannot attack!`, 'term-warning');
@@ -5006,7 +5061,7 @@ if (staggerBonus > 0 && Math.random() < (staggerBonus / 100)) {
         cs.lastEnemyDamageDealt = finalDmg;
         haptic(result.crit ? 'enemyCrit' : 'enemyHit');
 
-        const _abilityDef = intent && intent.abilityDef;
+        // _abilityDef declared above — no redeclaration needed
         if (_abilityDef) {
             if ((intent.abilityMpCost || 0) > 0) {
                 enemy.mp = Math.max(0, (enemy.mp || 0) - intent.abilityMpCost);
@@ -5020,13 +5075,7 @@ if (staggerBonus > 0 && Math.random() < (staggerBonus / 100)) {
         }
 
         if (_abilityDef && !result.crit) haptic('ability');
-        hits.push({
-            eName,
-            dmg:        finalDmg,
-            crit:       result.crit,
-            abilityName: _abilityDef ? _abilityDef.name : null,
-            shieldBlocked: shieldTriggered
-        });
+        // hits.push already done in STEP 4 above — no duplicate push here.
     });
 
     updateHud();
@@ -5034,7 +5083,14 @@ if (staggerBonus > 0 && Math.random() < (staggerBonus / 100)) {
     const afterAttack = () => {
         if (p.hp <= 0 && !p.godMode) {
             endCombat(false);
-        } else {
+            return;
+        }
+        // checkCombatEnd processes any enemies at 0 HP (thorns or weapon kills),
+        // awards XP/gold/loot/drops, and calls endCombat(true) if all are dead.
+        // It returns truthy if it ended combat, so only restart the timer if not.
+        const combatEnded = gameState.combatState && gameState.combatState.monsters.length === 0;
+        checkCombatEnd();
+        if (!combatEnded) {
             renderActionBar();
             startCombatTimer();
         }
@@ -5048,18 +5104,27 @@ if (staggerBonus > 0 && Math.random() < (staggerBonus / 100)) {
     hits.forEach((hit, i) => {
         const isLast = (i === hits.length - 1);
 
+        // Helper: flush any buffered retaliation/leech messages for this hit
+        const flushPending = () => {
+            if (hit.pendingMessages && hit.pendingMessages.length) {
+                hit.pendingMessages.forEach(msg => termAppend(msg.text, msg.cls));
+            }
+        };
+
+        const lastCallback = isLast ? afterAttack : null;
+
         if (hit.godMode) {
             termAppend(
                 `${hit.eName} attacks but you are <span class="term-highlight">INVINCIBLE!</span>`,
                 null,
-                isLast ? afterAttack : null
+                isLast ? lastCallback : null
             );
         } else if (hit.dodged) {
             haptic('dodge');
             termAppend(
                 `${hit.eName} attacks… <span style="color:#88ff88;">DODGED!</span>`,
                 null,
-                isLast ? afterAttack : null
+                isLast ? lastCallback : null
             );
         } else {
             const critTag    = hit.crit
@@ -5076,13 +5141,13 @@ if (staggerBonus > 0 && Math.random() < (staggerBonus / 100)) {
                 termAppend(
                     `${hit.eName} uses ${abilityTag}`,
                     null,
-                    isLast ? afterAttack : null
+                    () => { flushPending(); if (isLast && lastCallback) lastCallback(); }
                 );
             } else {
                 termAppend(
                     `${hit.eName} attacks for <span class="dmg-enemy">${hit.dmg} damage!</span>${critTag}${shieldTag}${abilityTag}`,
                     null,
-                    isLast ? afterAttack : null
+                    () => { flushPending(); if (isLast && lastCallback) lastCallback(); }
                 );
             }
         }
@@ -5281,6 +5346,10 @@ function checkCombatEnd() {
                 }
             }
             
+            // Track for endCombat kill summary (name, rarityColor, etc.)
+            if (!cs.defeatedMonsters) cs.defeatedMonsters = [];
+            cs.defeatedMonsters.push(monster);
+
             // Remove the dead monster
             cs.monsters.splice(i, 1);
         }

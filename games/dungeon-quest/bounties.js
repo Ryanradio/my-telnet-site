@@ -642,6 +642,105 @@ function collectBounty(bountyId) {
     if (detailOverlay) detailOverlay.remove();
 }
 
+
+
+
+
+// ─────────────────────────────────────────────────────────────────────────
+//  REST AT INN - Show confirmation modal then restore HP/MP
+// ─────────────────────────────────────────────────────────────────────────
+window.restAtInn = function() {
+    const p = gameState.player;
+    
+    // Calculate cost
+    let innCost;
+    if (typeof calcInnCost === 'function') {
+        innCost = calcInnCost(p.cha);
+    } else {
+        const discount = Math.min(30, (p.cha || 0) * 2);
+        innCost = Math.max(10, Math.floor(50 * (1 - discount / 100)));
+    }
+    
+    // Create modal
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.85); z-index: 100000;
+        display: flex; align-items: center; justify-content: center;
+        font-family: 'VT323', monospace;
+    `;
+    
+    modal.innerHTML = `
+        <div style="
+            background: #0a1a0a;
+            border: 3px solid #c8a000;
+            border-radius: 16px;
+            max-width: 400px;
+            width: 90%;
+            padding: 20px;
+            text-align: center;
+        ">
+            <div style="font-size: 48px;">🏨</div>
+            <div style="color: #c8a000; font-size: 24px;">REST AT THE INN</div>
+            <div style="color: #aaa; margin: 15px 0;">Cost: <span style="color: #FFD700; font-size: 20px;">${innCost} gold</span></div>
+            <div style="color: #8aaa8a; margin: 10px 0;">❤️ Restore all HP & MP</div>
+            <div style="color: #8aaa8a; margin: 10px 0;">📜 Reset wanted board</div>
+            <div style="margin: 20px 0;">
+                <button id="innYes" style="
+                    background: #1a3a1a;
+                    border: 2px solid #00aa44;
+                    color: #88ff88;
+                    padding: 10px 20px;
+                    margin: 0 10px;
+                    cursor: pointer;
+                    font-family: 'VT323', monospace;
+                    font-size: 18px;
+                ">✅ YES</button>
+                <button id="innNo" style="
+                    background: #3a1a1a;
+                    border: 2px solid #aa4444;
+                    color: #ff8888;
+                    padding: 10px 20px;
+                    margin: 0 10px;
+                    cursor: pointer;
+                    font-family: 'VT323', monospace;
+                    font-size: 18px;
+                ">❌ NO</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    document.getElementById('innYes').onclick = () => {
+        modal.remove();
+        if (p.gold >= innCost) {
+            p.gold -= innCost;
+            const hpRestored = p.maxHp - p.hp;
+            const mpRestored = p.maxMp - p.mp;
+            p.hp = p.maxHp;
+            p.mp = p.maxMp;
+            
+            // Call your existing bounty reset
+            if (typeof window.resetBountiesAfterInn === 'function') {
+                window.resetBountiesAfterInn();
+            }
+            
+            if (typeof termAppend === 'function') {
+                termAppend(`🏨 Restored ${hpRestored} HP and ${mpRestored} MP. -${innCost} gold`, 'term-victory');
+            }
+            if (typeof updateHud === 'function') updateHud();
+            if (typeof saveGame === 'function') saveGame();
+            if (typeof showTown === 'function') showTown();
+        } else {
+            alert(`Not enough gold! Need ${innCost - p.gold} more.`);
+        }
+    };
+    
+    document.getElementById('innNo').onclick = () => modal.remove();
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+};
+
 // ─────────────────────────────────────────────────────────────────────────
 //  RESET BOUNTIES AFTER INN REST
 //  Call this at the end of restAtInn().
