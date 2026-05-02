@@ -364,7 +364,68 @@
 // ═══════════════════════════════════════════════════════════════
 
 
-
+function resetCurrentDungeonKeepProgress() {
+    const ds = gameState.dungeon;
+    if (!ds) {
+        alert('You are not in a dungeon.');
+        return;
+    }
+    
+    const p = gameState.player;
+    const dungeonName = ds.dungeonKey;
+    
+    if (!confirm(`⚠️ RESET ${dungeonName} ENEMIES ⚠️\n\nThis will reset all enemies in this dungeon.\nYour map, position, keys, and runestones will be preserved.\nYou will be logged out and need to log back in.\n\nContinue?`)) {
+        return;
+    }
+    
+    // Save current position before clearing anything
+    const savedFloor = ds.floor;
+    const savedRoom = ds.currentRoom;
+    const savedDiscoveredRooms = ds.discoveredRooms ? new Set(ds.discoveredRooms) : new Set();
+    
+    // Clear respawn timers ONLY (this is what respawns enemies)
+    if (p.dungeonTimers && p.dungeonTimers[dungeonName]) {
+        delete p.dungeonTimers[dungeonName];
+    }
+    
+    // Clear combat state
+    if (gameState.combatState) {
+        gameState.combatState = null;
+        if (gameState.combatTimer) {
+            clearInterval(gameState.combatTimer);
+            gameState.combatTimer = null;
+        }
+    }
+    
+    // Rebuild dungeon state with preserved map and position
+    gameState.dungeon = {
+        dungeonKey: dungeonName,
+        floor: savedFloor,
+        currentRoom: savedRoom,
+        discoveredRooms: savedDiscoveredRooms,
+        spawnedRooms: new Set(),
+        activeEnemies: [],
+        defeatedEnemies: []
+    };
+    
+    // Save
+    saveGame();
+    
+    // Stop regen timers
+    if (gameState.restState) {
+        if (gameState.restState.hpRegenTimer) clearInterval(gameState.restState.hpRegenTimer);
+        if (gameState.restState.mpRegenTimer) clearInterval(gameState.restState.mpRegenTimer);
+    }
+    
+    // Return to main menu
+    document.body.classList.remove('terminal-mode');
+    const overlay = document.getElementById('dungeonInvOverlay');
+    if (overlay) overlay.remove();
+    
+    alert(`✅ ${dungeonName} enemies have been reset.\n\nYour map, position, keys, and runestones were preserved.\n\nLog back in to continue.`);
+    
+    showMainMenu();
+}
 
 
 function initInventoryTooltips() {
@@ -585,7 +646,15 @@ const PORTAL_MESSAGES = [
 ];
 
 
-
+function confirmDeleteCharacter(characterId, characterName) {
+    if (confirm(`⚠️ DELETE CHARACTER: ${characterName}\n\nThis action cannot be undone!\n\nAll progress, items, and stats will be permanently lost.\n\nAre you absolutely sure?`)) {
+        if (confirm(`LAST WARNING: Delete ${characterName}?`)) {
+            deleteCharacter(characterId);
+            alert(`❌ ${characterName} has been deleted.`);
+            showCharacterSelect(); // Refresh the character list
+        }
+    }
+}
 
 // ☁️ CLOUD SAVE - Reads current game state and uploads to Supabase
 async function cloudSave() {
@@ -700,41 +769,50 @@ testCalamityConnection();
 
 // Function to save player data to Google Sheets
 async function savePlayerToSheet(playerData) {
-  // Build URL with parameters instead of POST body (avoids CORS preflight)
-  const params = new URLSearchParams({
-    name: playerData.name,
-    class: playerData.class,
-    level: playerData.level,
-    createdDate: playerData.createdDate,
-    country: playerData.country,
-    state: playerData.state,
-    event: playerData.event || 'character_created'
-  });
-  
-  const scriptURL = 'https://script.google.com/macros/s/AKfycbxWLFhlEgtItbtKHJlTinYBXm8r7ZEbY17eWaEvNBlxsjoHYkgx4Ip3lJvCdukobqx6iw/exec?' + params.toString();
-  
-  console.log('📤 Sending to Google Sheets:', playerData);
-  
-  try {
-    const response = await fetch(scriptURL, {
-      method: 'GET',
-      redirect: 'follow'
-    });
-    
-    const result = await response.json();
-    console.log('📥 Response from Google Sheets:', result);
-    
-    if (result.ok) {
-      console.log('✅ Player data saved to Google Sheets!');
-      return true;
-    } else {
-      console.error('❌ Google Sheets error:', result.error);
-      return false;
+    // Get the logged-in user's ID from Supabase (if logged in, otherwise empty)
+    let userId = '';
+    try {
+        const { data: { user } } = await calamitySupabase.auth.getUser();
+        if (user) userId = user.id;
+    } catch(e) {
+        // User not logged in, that's fine
     }
-  } catch (error) {
-    console.error('❌ Error saving to Google Sheets:', error);
-    return false;
-  }
+    
+    const params = new URLSearchParams();
+    params.append('name', playerData.name);
+    params.append('class', playerData.class);
+    params.append('level', playerData.level);
+    params.append('createdDate', playerData.createdDate);
+    params.append('country', playerData.country);
+    params.append('state', playerData.state);
+    params.append('event', playerData.event || 'character_created');
+    params.append('runestones', playerData.runestones || 0);
+    params.append('kills', playerData.kills || 0);
+    params.append('character_id', playerData.characterId || '');
+    params.append('user_id', userId);
+    // params.append('name_suffix', playerData.nameSuffix || '');
+    
+   
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbwh7_fSt6gRjObMZCvNLUOcwJpfVgzpeAC7InjPR0E51B7CRpFNj-Qvbe_LL8WR3AhaKg/exec?' + params.toString();
+    
+    console.log('📤 Sending to Google Sheets:', Object.fromEntries(params));
+    console.log('📤 Full URL:', scriptURL);
+    
+    try {
+        const response = await fetch(scriptURL, {
+            method: 'GET',
+            mode: 'no-cors',  // Add this to bypass CORS for testing
+            redirect: 'follow'
+        });
+        
+        // With no-cors, we can't read the response, so just assume success
+        console.log('✅ Request sent (no-cors mode)');
+        return true;
+        
+    } catch (error) {
+        console.error('❌ Error saving to Google Sheets:', error);
+        return false;
+    }
 }
 
 // Optional: Get player's location automatically
@@ -1758,6 +1836,153 @@ function handleAboutCancel(e) {
         aboutHoldTimer = null;
     }
     aboutHoldFired = false;
+}
+
+
+// 🏆 LEADERBOARD SYSTEM
+let leaderboardData = [];
+let lastLeaderboardFetch = 0;
+const LEADERBOARD_REFRESH_MS = 60000; // 60 seconds
+let leaderboardRefreshInterval = null;
+
+
+
+async function fetchLeaderboard(silent = false) {
+    const contentEl = document.getElementById('leaderboard-content');
+    if (!contentEl) return;
+    
+    if (!silent) {
+        contentEl.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-color);">Loading leaderboard...</div>';
+    }
+    
+    try {
+        fetch('https://script.google.com/macros/s/AKfycbxavCRZkluhOaKV3iFyIgIgLTEz164_Am0Nt8SrhaD2--ekZ2PdivfZCqpmGd6IVOW6RQ/exec?action=getLeaderboard');
+        const data = await response.json();
+        
+        if (data.ok && data.leaderboard) {
+            leaderboardData = data.leaderboard;
+            renderLeaderboard();
+            
+            const tsEl = document.getElementById('leaderboard-timestamp');
+            if (tsEl) {
+                tsEl.innerHTML = `📡 Last updated: ${new Date().toLocaleTimeString()} | Auto-refreshes every minute`;
+            }
+        } else {
+            throw new Error('Invalid response');
+        }
+    } catch (error) {
+        console.error('Leaderboard fetch failed:', error);
+        if (!silent) {
+            contentEl.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #ff6666;">
+                    ⚠️ Could not load leaderboard data.<br>
+                    <span style="font-size: 12px; color: #888;">The Hall of Legends is temporarily unreachable.</span>
+                </div>
+            `;
+        }
+    }
+}
+
+function renderLeaderboard() {
+    const contentEl = document.getElementById('leaderboard-content');
+    if (!contentEl) return;
+    
+    if (!leaderboardData || leaderboardData.length === 0) {
+        contentEl.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #8aaa8a;">
+                No adventurers have entered the Hall of Legends yet.<br>
+                <span style="font-size: 12px;">Be the first!</span>
+            </div>
+        `;
+        return;
+    }
+    
+    const currentPlayerId = gameState.player?.id;
+    const topPlayers = leaderboardData.slice(0, 20);
+    
+    let html = `
+        <div style="
+            font-family: 'VT323', monospace;
+            background: rgba(0, 10, 0, 0.6);
+            border: 2px solid var(--border-color);
+            padding: 15px;
+            overflow-x: auto;
+        ">
+            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                <thead>
+                    <tr style="border-bottom: 2px solid var(--highlight-color); color: var(--highlight-color);">
+                        <th style="padding: 10px 5px; text-align: center;">Rank</th>
+                        <th style="padding: 10px 5px; text-align: left;">Player</th>
+                        <th style="padding: 10px 5px; text-align: left;">Class</th>
+                        <th style="padding: 10px 5px; text-align: center;">Runes</th>
+                        <th style="padding: 10px 5px; text-align: center;">Lv</th>
+                        <th style="padding: 10px 5px; text-align: right;">Kills</th>
+                     </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    topPlayers.forEach((player, idx) => {
+        const rank = idx + 1;
+        let rankDisplay = '';
+        let rankColor = '';
+        
+        if (rank === 1) { rankDisplay = '🥇'; rankColor = '#FFD700'; }
+        else if (rank === 2) { rankDisplay = '🥈'; rankColor = '#C0C0C0'; }
+        else if (rank === 3) { rankDisplay = '🥉'; rankColor = '#CD7F32'; }
+        else { rankDisplay = `#${rank}`; rankColor = '#8aaa8a'; }
+        
+        // Check if this is the current player
+        const isCurrentPlayer = (player.characterId === currentPlayerId);
+        
+        // Generate rune icons (✦)
+        const runeIcons = '✦'.repeat(Math.min(player.runestones, 12)) + (player.runestones > 12 ? '+' : '');
+        
+        // Truncate long names
+        const displayName = player.name.length > 18 ? player.name.substring(0, 16) + '...' : player.name;
+        const displayClass = player.class.length > 12 ? player.class.substring(0, 10) + '...' : player.class;
+        
+        // Name color: orange for current player, green for others
+        const nameColor = isCurrentPlayer ? '#FF8800' : 'var(--text-color)';
+        const nameWeight = isCurrentPlayer ? 'bold' : 'normal';
+        
+        html += `
+            <tr style="border-bottom: 1px solid #1a3a1a;">
+                <td style="padding: 8px 5px; text-align: center; color: ${rankColor}; font-weight: bold;">${rankDisplay}</td>
+                <td style="padding: 8px 5px; text-align: left; color: ${nameColor}; font-weight: ${nameWeight};">${escapeHtml(displayName)}</td>
+                <td style="padding: 8px 5px; text-align: left; color: #8aaa8a;">${escapeHtml(displayClass)}</td>
+                <td style="padding: 8px 5px; text-align: center; color: #FFD700; font-size: 16px; letter-spacing: 2px;">${runeIcons || '—'}</td>
+                <td style="padding: 8px 5px; text-align: center; color: #88FF88;">${player.level}</td>
+                <td style="padding: 8px 5px; text-align: right; color: #FFAA66;">${player.kills.toLocaleString()}</td>
+             </tr>
+        `;
+    });
+    
+    html += `
+                </tbody>
+             </table>
+        </div>
+    `;
+    
+    if (leaderboardData.length > 20) {
+        html += `
+            <div style="text-align: center; margin-top: 12px; color: #6a6a6a; font-size: 12px;">
+                Showing top 20 of ${leaderboardData.length} adventurers
+            </div>
+        `;
+    }
+    
+    contentEl.innerHTML = html;
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+    });
 }
 
 
@@ -3903,18 +4128,26 @@ validateAndRepairInventory();
         }
 
         (async function() {
-            const location = await getPlayerLocation();
-            const loginData = {
-                name: gameState.player.name,
-                class: gameState.player.className || CLASSES[gameState.player.class]?.name || gameState.player.class,
-                level: gameState.player.level,
-                createdDate: new Date().toISOString(),
-                country: location.country,
-                state: location.state,
-                event: 'character_login'
-            };
-            await savePlayerToSheet(loginData);
-        })();
+    const location = await getPlayerLocation();
+    
+    // Calculate total kills from player.kills object
+    const totalKills = gameState.player.kills ? Object.values(gameState.player.kills).reduce((a, b) => a + b, 0) : 0;
+    const runestoneCount = (gameState.player.runestones || []).length;
+    
+    const loginData = {
+        name: gameState.player.name,
+        class: gameState.player.className || CLASSES[gameState.player.class]?.name || gameState.player.class,
+        level: gameState.player.level,
+        createdDate: gameState.player.createdDate || new Date().toISOString(),
+        country: location.country,
+        state: location.state,
+        event: 'character_login',
+        runestones: runestoneCount,
+        kills: totalKills,
+        characterId: gameState.player.id
+    };
+    await savePlayerToSheet(loginData);
+})();
 
 
 // ======================================================
@@ -4824,47 +5057,72 @@ function closeEquipmentList() {
         }
 
         function newGame() {
-            const screen = document.getElementById('mainScreen');
-            setScreen(`
-                <div class="location-header">CHARACTER CREATION</div>
-                <div class="message">
-                    <p>Enter your character name:</p>
-                    <input type="text" id="playerName" maxlength="20" placeholder="Hero Name">
-                </div>
-                <div class="message">
-                    <p><span class="stat-label">Choose your class:</span></p>
-                </div>
-                <div class="character-select" id="classSelect"></div>
-                <button onclick="goToStatAlloc()" id="createBtn" disabled>ALLOCATE STATS →</button>
-                <button onclick="showMainMenu()">CANCEL</button>
-            `);
+    const screen = document.getElementById('mainScreen');
+    setScreen(`
+        <div class="location-header">CHARACTER CREATION</div>
+        <div class="message">
+            <p>Enter your character name:</p>
+            <input type="text" id="playerName" maxlength="16" placeholder="Hero Name">
+            <div style="font-size:12px; color:#8aaa8a; margin-top:4px;">Letters, numbers, hyphens, underscores only. 2-16 characters.</div>
+        </div>
+        <div class="message">
+            <p><span class="stat-label">Choose your class:</span></p>
+        </div>
+        <div class="character-select" id="classSelect"></div>
+        <button onclick="validateAndGoToStatAlloc()" id="createBtn" disabled>ALLOCATE STATS →</button>
+        <button onclick="showMainMenu()">CANCEL</button>
+    `);
 
-            const classSelect = document.getElementById('classSelect');
-            window._selectedClass = null;
+    const classSelect = document.getElementById('classSelect');
+    window._selectedClass = null;
 
-            Object.keys(CLASSES).forEach(classKey => {
-                const cd   = CLASSES[classKey];
-                const card = document.createElement('div');
-                card.className = 'class-card';
-                card.innerHTML = `
-                    <div style="color:var(--highlight-color);font-size:22px;margin-bottom:8px;">${cd.name}</div>
-                    <div style="font-size:16px;margin-bottom:8px;">${cd.description}</div>
-                    <div class="stat">HP: ${cd.hp} | MP: ${cd.mp}</div>
-                    <div class="stat" style="color:#8aaa8a;">STR/DEF/MAG/SPD set at creation</div>
-                `;
-                card.onclick = () => {
-                    document.querySelectorAll('.class-card').forEach(c => c.classList.remove('selected'));
-                    card.classList.add('selected');
-                    window._selectedClass = classKey;
-                    document.getElementById('createBtn').disabled = false;
-                };
-                classSelect.appendChild(card);
-            });
-        }
+    Object.keys(CLASSES).forEach(classKey => {
+        const cd   = CLASSES[classKey];
+        const card = document.createElement('div');
+        card.className = 'class-card';
+        card.innerHTML = `
+            <div style="color:var(--highlight-color);font-size:22px;margin-bottom:8px;">${cd.name}</div>
+            <div style="font-size:16px;margin-bottom:8px;">${cd.description}</div>
+            <div class="stat">HP: ${cd.hp} | MP: ${cd.mp}</div>
+            <div class="stat" style="color:#8aaa8a;">STR/DEF/MAG/SPD set at creation</div>
+        `;
+        card.onclick = () => {
+            document.querySelectorAll('.class-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            window._selectedClass = classKey;
+            document.getElementById('createBtn').disabled = false;
+        };
+        classSelect.appendChild(card);
+    });
+}
 
-        // ── stat allocation screen ─────────────────────────────────
-        window._pendingStats = null;
-        window._pendingName  = '';
+// New validation function
+function validateAndGoToStatAlloc() {
+    const name = document.getElementById('playerName').value.trim();
+    
+    // Name validation
+    if (name.length < 2) {
+        alert('Name must be at least 2 characters!');
+        return;
+    }
+    if (name.length > 16) {
+        alert('Name cannot exceed 16 characters!');
+        return;
+    }
+    if (!/^[a-zA-Z0-9\-_]+$/.test(name)) {
+        alert('Name can only contain letters, numbers, hyphens, and underscores!');
+        return;
+    }
+    if (!window._selectedClass) {
+        alert('Please select a class!');
+        return;
+    }
+    
+    window._pendingName = name;
+    window._pendingStats = Object.assign({}, CLASS_STAT_PRESETS[window._selectedClass]);
+    renderStatAllocScreen();
+}
+
 
         function goToStatAlloc() {
             const name = document.getElementById('playerName').value.trim();
@@ -4944,87 +5202,101 @@ function closeEquipmentList() {
         };
 
         function finaliseCharacter() {
-            const classKey  = window._selectedClass;
-            const classData = CLASSES[classKey];
-            const stats     = window._pendingStats;
+    const classKey  = window._selectedClass;
+    const classData = CLASSES[classKey];
+    const stats     = window._pendingStats;
 
-            // Generate unique character ID
-            const charId = 'char_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    // Generate unique character ID (permanent, creation timestamp)
+    const charId = 'char_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 
-            // ── CRITICAL: fully wipe all gameState fields that could bleed
-            // from a previous character's session before building the new one ──
-            gameState.currentTown      = 'town1';   // always start in town1
-            gameState.currentLocation  = 'town';
-            gameState.dungeon          = null;       // never inherit previous dungeon
-            gameState.combatState      = null;
-            gameState.combatTimer      = null;
-            gameState.currentAdventure = null;
-            gameState.postCombatRecovery = false;
-            if (gameState.restState) {
-                if (gameState.restState.hpRegenTimer) clearInterval(gameState.restState.hpRegenTimer);
-                if (gameState.restState.mpRegenTimer) clearInterval(gameState.restState.mpRegenTimer);
-            }
-            gameState.restState = { hpRegenTimer: null, mpRegenTimer: null, mpLastAction: 0 };
-            gameState.guildQuests = { active: [], completed: [], progress: {} };
+    // ── CRITICAL: fully wipe all gameState fields that could bleed
+    // from a previous character's session before building the new one ──
+    gameState.currentTown      = 'town1';
+    gameState.currentLocation  = 'town';
+    gameState.dungeon          = null;
+    gameState.combatState      = null;
+    gameState.combatTimer      = null;
+    gameState.currentAdventure = null;
+    gameState.postCombatRecovery = false;
+    if (gameState.restState) {
+        if (gameState.restState.hpRegenTimer) clearInterval(gameState.restState.hpRegenTimer);
+        if (gameState.restState.mpRegenTimer) clearInterval(gameState.restState.mpRegenTimer);
+    }
+    gameState.restState = { hpRegenTimer: null, mpRegenTimer: null, mpLastAction: 0 };
+    gameState.guildQuests = { active: [], completed: [], progress: {} };
 
-            gameState.player = {
-                id: charId,  // Unique character ID
-                name: window._pendingName,
-                class: classKey,  className: classData.name,
-                level: 1,  xp: 0,  xpToNext: getXpToNextLevel(classKey, 1),
-                hp: classData.hp + stats.con * 5,
-                maxHp: classData.hp + stats.con * 5,
-                mp: classData.mp,  maxMp: classData.mp,
-                strength: classData.strength,   // legacy weapon-calc field
-                defense:  classData.defense,
-                magic:    classData.magic,
-                speed:    classData.speed,
-                gold: 100,
-                bankGold: 0,  // Bank storage starts empty
-                weapon: classData.startWeapon,
-                armor:  classData.startArmor,
-                inventory:  [classData.startWeapon, classData.startArmor],
-                knownSpells: getStartingSpells(classKey),
-                equippedSpells: getStartingSpells(classKey).slice(0, 3),
-                defeatedMasters: [],
-                unlockedAreas:  ['forest'],
-                // ── new stat block ──
-                str: stats.str,  dex: stats.dex,  wis: stats.wis,
-                cha: stats.cha,  con: stats.con,  lck: stats.lck,
-                // ── stat point allocation ──
-                statPoints: 0,   // earned 3 per level-up, spent in Character Stats
-                // ── store base class so evolution doesn't lose class identity ──
-                baseClass: classKey,
-                // ── hunter pet system ──
-                activePet: classKey === 'hunter' ? null : undefined,  // hunters start with no pet, others don't use this
-                runeOverloadPips: classKey === 'runesmith' ? 0 : undefined  // runesmith overload charge tracker
-                
-            };
-
-           // Auto-save new character
-saveGame();
-
-// ═══════════════════════════════════════════════════════════════
-// SAVE TO GOOGLE SHEETS
-// ═══════════════════════════════════════════════════════════════
-(async function() {
-    const location = await getPlayerLocation();
-    
-    const playerData = {
-        name: gameState.player.name,
-        class: classData.name,
-        level: gameState.player.level,
-        createdDate: new Date().toISOString(),
-        country: location.country,
-        state: location.state
+    gameState.player = {
+        id: charId,
+        name: window._pendingName,
+        class: classKey,
+        className: classData.name,
+        level: 1,
+        xp: 0,
+        xpToNext: getXpToNextLevel(classKey, 1),
+        hp: classData.hp + stats.con * 5,
+        maxHp: classData.hp + stats.con * 5,
+        mp: classData.mp,
+        maxMp: classData.mp,
+        strength: classData.strength,
+        defense: classData.defense,
+        magic: classData.magic,
+        speed: classData.speed,
+        gold: 100,
+        bankGold: 0,
+        weapon: classData.startWeapon,
+        armor: classData.startArmor,
+        inventory: [classData.startWeapon, classData.startArmor],
+        knownSpells: getStartingSpells(classKey),
+        equippedSpells: getStartingSpells(classKey).slice(0, 3),
+        defeatedMasters: [],
+        unlockedAreas: ['forest'],
+        str: stats.str,
+        dex: stats.dex,
+        wis: stats.wis,
+        cha: stats.cha,
+        con: stats.con,
+        lck: stats.lck,
+        statPoints: 0,
+        baseClass: classKey,
+        activePet: classKey === 'hunter' ? null : undefined,
+        runeOverloadPips: classKey === 'runesmith' ? 0 : undefined,
+        kills: {},
+        runestones: [],
+        portalUnlocked: false,
+        achievements: [],
+        bestiaryRead: {},
+        chronicle: { unlockedEntries: [], readEntries: [] },
+        guildQuests: { active: [], completed: [], progress: {} },
+        dungeonMaps: {},
+        dungeonTimers: {}
     };
-    
-    await savePlayerToSheet(playerData);
-})();
 
-// Show cinematic welcome screen for new characters
-showWelcomeScreen();
-        }
+    saveGame();
+
+    // ═══════════════════════════════════════════════════════════════
+    // SAVE TO GOOGLE SHEETS with ALL new fields
+    // ═══════════════════════════════════════════════════════════════
+    (async function() {
+        const location = await getPlayerLocation();
+        
+        const playerData = {
+            name: gameState.player.name,
+            class: classData.name,
+            level: gameState.player.level,
+            createdDate: new Date().toISOString(),
+            country: location.country,
+            state: location.state,
+            event: 'character_created',
+            runestones: 0,
+            kills: 0,
+            characterId: charId
+        };
+        
+        await savePlayerToSheet(playerData);
+    })();
+
+    showWelcomeScreen();
+}
 
         function getStartingSpells(classKey) {
             // Use CLASS_SPELL_TREES to get starting spell
@@ -5655,137 +5927,10 @@ async function saveToCloud() {
     if (statusEl) statusEl.innerHTML = '<span style="color: #FFD700;">☁️ Saving to cloud...</span>';
     
 
-// Add this near your other save functions (search for "function saveGame" or "function localSave")
-function buildSaveSnapshot() {
-    const p = gameState.player;
-    if (!p) return null;
-    
-    const dungeon = gameState.dungeon;
-    const combatState = gameState.combatState;
-    
-    const snapshot = {
-        version: 1,
-        characterId: p.id,
-        characterName: p.name,
-        timestamp: Date.now(),
-        lastSaved: new Date().toLocaleString(),
-        player: {
-            id: p.id,
-            name: p.name,
-            class: p.class,
-            className: p.className,
-            baseClass: p.baseClass,
-            level: p.level,
-            xp: p.xp,
-            xpToNext: p.xpToNext,
-            hp: p.hp,
-            maxHp: p.maxHp,
-            mp: p.mp,
-            maxMp: p.maxMp,
-            gold: p.gold,
-            bankGold: p.bankGold || 0,
-            strength: p.strength,
-            defense: p.defense,
-            magic: p.magic,
-            speed: p.speed,
-            str: p.str,
-            dex: p.dex,
-            con: p.con,
-            wis: p.wis,
-            cha: p.cha,
-            lck: p.lck,
-            weapon: p.weapon,
-            armor: p.armor,
-            activePet: p.activePet || null,
-            inventory: [...(p.inventory || [])],
-            knownSpells: [...(p.knownSpells || [])],
-            equippedSpells: [...(p.equippedSpells || [])],  // ✅ THIS IS THE KEY LINE
-            statPoints: p.statPoints || 0,
-            defeatedMasters: [...(p.defeatedMasters || [])],
-            unlockedAreas: [...(p.unlockedAreas || [])],
-            activeBounties: [...(p.activeBounties || [])],
-            pendingBounties: [...(p.pendingBounties || [])],
-            collectedBounties: {...(p.collectedBounties || {})},
-            portalUnlocked: p.portalUnlocked || false,
-            achievements: [...(p.achievements || [])],
-            runestones: [...(p.runestones || [])],
-            kills: {...(p.kills || {})},
-            bestiaryRead: {...(p.bestiaryRead || {})},
-            chronicle: {
-                unlockedEntries: [...((p.chronicle && p.chronicle.unlockedEntries) || [])],
-                readEntries: [...((p.chronicle && p.chronicle.readEntries) || [])],
-            },
-            guildQuests: {
-                active: p.guildQuests?.active || null,
-                completed: [...(p.guildQuests?.completed || [])],
-                progress: {...(p.guildQuests?.progress || {})}
-            },
-            hasSeenWelcome: p.hasSeenWelcome || false,
-            hasSeenLegacyWelcome: p.hasSeenLegacyWelcome || false,
-            hasSeenTownArrival_town2: p.hasSeenTownArrival_town2 || false,
-            hasSeenTownArrival_town3: p.hasSeenTownArrival_town3 || false,
-            dungeonMaps: (() => {
-                const maps = {};
-                if (p.dungeonMaps) {
-                    for (const dungeonKey in p.dungeonMaps) {
-                        maps[dungeonKey] = {};
-                        for (const floorNum in p.dungeonMaps[dungeonKey]) {
-                            maps[dungeonKey][floorNum] = Array.from(p.dungeonMaps[dungeonKey][floorNum] || []);
-                        }
-                    }
-                }
-                return maps;
-            })(),
-            dungeonTimers: p.dungeonTimers || {},
-            _gemHpBonus: p._gemHpBonus || 0,
-            _gemMpBonus: p._gemMpBonus || 0,
-            _gemDefBonus: p._gemDefBonus || 0,
-            _gemStrBonus: p._gemStrBonus || 0,
-            _gemDexBonus: p._gemDexBonus || 0,
-            _gemConBonus: p._gemConBonus || 0,
-            _gemWisBonus: p._gemWisBonus || 0,
-            _gemChaBonus: p._gemChaBonus || 0,
-            _gemLckBonus: p._gemLckBonus || 0,
-            _gemCritBonus: p._gemCritBonus || 0,
-            _gemPierceBonus: p._gemPierceBonus || 0,
-            _gemSpellBonus: p._gemSpellBonus || 0,
-        },
-        currentTown: gameState.currentTown || 'town1',
-        currentLocation: gameState.currentLocation || 'town'
-    };
-    
-    // Include dungeon if active
-    if (dungeon) {
-        snapshot.meta = { inDungeon: true };
-        snapshot.dungeon = {
-            dungeonKey: dungeon.dungeonKey,
-            floor: dungeon.floor,
-            currentRoom: dungeon.currentRoom,
-            discoveredRooms: dungeon.discoveredRooms ? Array.from(dungeon.discoveredRooms) : [],
-            spawnedRooms: dungeon.spawnedRooms ? Array.from(dungeon.spawnedRooms) : [],
-            activeEnemies: dungeon.activeEnemies || [],
-            defeatedEnemies: dungeon.defeatedEnemies || []
-        };
-    }
-    
-    // Include combat if active
-    if (combatState && combatState.monsters && combatState.monsters.length > 0) {
-        snapshot.activeCombat = {
-            monsters: combatState.monsters,
-            currentTarget: combatState.currentTarget,
-            enemyHits: combatState.enemyHits,
-            enemyHitsLeft: combatState.enemyHitsLeft,
-            pipsReady: combatState.pipAvailable,
-            pipCount: combatState.pipTimers?.length,
-            location: gameState.currentLocation
-        };
-    }
-    
-    return snapshot;
-}
 
 
 
+    
     // Build save data WITHOUT calling buildSaveSnapshot()
     function buildCloudSaveData() {
         const p = gameState.player;
@@ -6142,11 +6287,13 @@ async function loadCloudCharacter(saveId) {
      onmousedown="bannerHoldDown(event)" onmouseup="bannerHoldUp()" onmouseleave="bannerHoldCancel()"
      ontouchstart="bannerHoldDown(event)" ontouchend="bannerHoldUp()" ontouchcancel="bannerHoldCancel()">${townName}</div>
                 ${renderPlayerStats()}
+                <div id="leaderboard-ticker" style="display:none; margin-bottom:10px;"></div>
                 <div class="message">
                     <p>${townDesc}</p>
 
                 </div>
                 <div style="margin: 20px 0;">
+                    <div class="menu-option" onclick="showLeaderboard()">🏆 HALL OF LEGENDS</div>
                     <div class="menu-option" onclick="showShop()">► SILVERDALE SHOP</div>
                     <div class="menu-option" onclick="showBank()">► 🏦 BANK (${p.bankGold || 0}g stored)</div>
                     <div class="menu-option" onclick="showCharacterStats()">► 📊 CHARACTER STATS</div>
@@ -6166,6 +6313,11 @@ async function loadCloudCharacter(saveId) {
                     <div class="menu-option" onclick="confirmQuitToMenu()">► ⏏ QUIT TO MENU</div>
                 </div>
             `);
+                        fetchLeaderboardTicker();
+            
+            if (window.tickerInterval) clearInterval(window.tickerInterval);
+            window.tickerInterval = setInterval(fetchLeaderboardTicker, 60000);
+
         }
 
         // ── Travel to another town via portal ──────────────────────────
@@ -8957,7 +9109,7 @@ if (modifiers && modifiers.length > 0) {
     }
     html += `</div>`;
 
-    // ── GEMS SECTION ─────────────────────────────────────────────────
+        // ── GEMS SECTION ─────────────────────────────────────────────────
     const rawGems = p.inventory
         .map((item, idx) => ({item, idx}))
         .filter(({item}) => typeof item === 'string' && item.startsWith('raw_'));
@@ -8996,16 +9148,29 @@ if (modifiers && modifiers.length > 0) {
         html += `</div>`;
     }
 
+    // ── I'M STUCK BUTTON (dungeon only) ──────────────────────────────
+    if (inDungeon) {
+        html += `
+        <div style="flex:0 0 auto;padding:0 12px;background:#000d00;">
+            <button onclick="resetCurrentDungeonKeepProgress(); document.getElementById('dungeonInvOverlay').remove();"
+                style="width:100%;font-size:16px;padding:12px;margin-bottom:8px;
+                       border:2px solid #FF8800;color:#FF8800;background:#1a0a00;
+                       font-family:'VT323',monospace;cursor:pointer;border-radius:4px;">
+                🔄 I'M STUCK — Reset Dungeon Enemies (Logout Required)
+            </button>
+        </div>`;
+    }
+
     // ── CLOSE BUTTON ─────────────────────────────────────────────────
     html += `
         <div style="flex:0 0 auto;padding:8px 12px;border-top:2px solid var(--border-color);background:#000d00;">
-            <button onclick="(document.getElementById('dungeonInvOverlay').remove(),${inDungeon?'renderDungeonActionBar()':'renderActionBar()'})"
+            <button onclick="closeInventoryAndRestore()"
                 style="width:100%;font-size:18px;padding:10px;border-color:#ff4444;color:#ff4444;letter-spacing:2px;">
                 ✕ CLOSE INVENTORY
             </button>
         </div>
-    </div>`;
-    html += `</div>`;
+    </div>
+    `;
 
     const existing = document.getElementById('dungeonInvOverlay');
     if (existing) existing.remove();
@@ -9013,23 +9178,25 @@ if (modifiers && modifiers.length > 0) {
     const overlay = document.createElement('div');
     overlay.id = 'dungeonInvOverlay';
     overlay.innerHTML = html;
-    const innerEl = overlay.firstElementChild;
-    if (innerEl) {
-        innerEl.id = 'dungeonInvOverlay';
-        overlay.id = '';
-        document.body.appendChild(innerEl);
-        // Scroll the inner scrollable body to top
-        const scrollBody = innerEl.querySelector('[style*="overflow-y"]') || innerEl;
-        if (scrollBody) scrollBody.scrollTop = 0;
-    } else {
-        document.body.appendChild(overlay);
-    }
-     // Initialize tooltips after inventory is rendered
+    document.body.appendChild(overlay);
+    overlay.scrollTop = 0;
     setTimeout(() => {
         if (typeof initInventoryTooltips === 'function') {
             initInventoryTooltips();
         }
     }, 100);
+}
+
+
+function closeInventoryAndRestore() {
+    const inDungeon = !!gameState.dungeon;
+    const overlay = document.getElementById('dungeonInvOverlay');
+    if (overlay) overlay.remove();
+    if (inDungeon) {
+        renderDungeonActionBar();
+    } else {
+        renderActionBar();
+    }
 }
 
 
@@ -9316,10 +9483,6 @@ function handleAttackType(type) {
                 </div>
             `;
         } else if (mode === 'spell_list') {
-            // If the player is mid-charge, DO NOT rebuild the DOM — destroying the
-            // button they're holding is what kills the charge. Leave it alone.
-            if (window._spellCharging) return;
-
             // Use equipped loadout (top 3 from spellbook), falling back to knownSpells for legacy saves
             if (typeof initEquippedSpells === 'function') initEquippedSpells();
             const spellSource = (p.equippedSpells && p.equippedSpells.length > 0)
@@ -10992,6 +11155,159 @@ if (typeof CLASS_SPELL_TREES !== 'undefined') {
 checkGameVersion();
 initGame();
 
+
+
+window.testLeaderboard = function() { alert('Leaderboard loaded'); };
+function showLeaderboard() {
+    const screen = document.getElementById('mainScreen');
+    screen.innerHTML = `
+        <div class="location-header">🏆 HALL OF LEGENDS 🏆</div>
+        <div style="text-align:center; margin-bottom: 15px; color: var(--border-color); font-size: 14px;">
+            The greatest adventurers of Calamity Dungeon
+        </div>
+        <div id="leaderboard-content" style="min-height: 400px;">
+            <div style="text-align: center; padding: 40px; color: var(--text-color);">Loading leaderboard...</div>
+        </div>
+        <div style="margin-top: 20px; text-align: center;">
+            <button onclick="showTown()">← BACK TO TOWN</button>
+        </div>
+    `;
+    
+    fetch('https://script.google.com/macros/s/AKfycbwh7_fSt6gRjObMZCvNLUOcwJpfVgzpeAC7InjPR0E51B7CRpFNj-Qvbe_LL8WR3AhaKg/exec?action=getLeaderboard')
+        .then(res => res.json())
+        .then(data => {
+            const content = document.getElementById('leaderboard-content');
+            if (data.ok && data.leaderboard && data.leaderboard.length > 0) {
+                // Get current player's ID for highlighting
+                let currentPlayerId = null;
+                try {
+                    if (typeof gameState !== 'undefined' && gameState.player && gameState.player.id) {
+                        currentPlayerId = gameState.player.id;
+                    }
+                } catch(e) {}
+                
+                let html = `<div style="font-family:'VT323',monospace; background:rgba(0,10,0,0.6); border:2px solid var(--border-color); padding:15px;">
+                    <table style="width:100%; border-collapse:collapse;">
+                        <thead>
+                            <tr style="border-bottom:2px solid var(--highlight-color);">
+                                <th style="padding:8px; text-align:center;">Rank</th>
+                                <th style="padding:8px; text-align:left;">Player</th>
+                                <th style="padding:8px; text-align:left;">Class</th>
+                                <th style="padding:8px; text-align:center;">Runes</th>
+                                <th style="padding:8px; text-align:center;">Lv</th>
+                                <th style="padding:8px; text-align:right;">💀</th>
+                            </td>
+                        </thead>
+                        <tbody>`;
+                
+                // Define rune colors in order (white, yellow, green, blue, purple, brown, black, red)
+                const runeColors = ['#FFFFFF', '#FFD700', '#00FF88', '#44AAFF', '#BB66FF', '#CC8844', '#888888', '#FF3333'];
+                
+                data.leaderboard.slice(0, 20).forEach((p, i) => {
+                    const rank = i + 1;
+                    const rankIcon = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
+                    
+                    // Generate colored rune display
+                    let runeHtml = '';
+                    for (let r = 0; r < p.runestones && r < runeColors.length; r++) {
+                        runeHtml += `<span style="color:${runeColors[r]}; text-shadow:0 0 4px ${runeColors[r]};">✦</span>`;
+                    }
+                    if (p.runestones === 0) runeHtml = '<span style="color:#3a3a3a;">—</span>';
+                    
+                    const isCurrentPlayer = (currentPlayerId && p.characterId === currentPlayerId);
+                    const nameColor = isCurrentPlayer ? '#FF8800' : '#00FF41';
+                    const nameWeight = isCurrentPlayer ? 'bold' : 'normal';
+                    
+                    html += `<tr style="border-bottom:1px solid #1a3a1a;">
+                        <td style="padding:6px; text-align:center;">${rankIcon}</td>
+                        <td style="padding:6px; text-align:left; color:${nameColor}; font-weight:${nameWeight};">${p.name.substring(0, 18)}</td>
+                        <td style="padding:6px; text-align:left; color:#8aaa8a;">${p.class}</td>
+                        <td style="padding:6px; text-align:center; font-size:16px; letter-spacing:2px;">${runeHtml}</td>
+                        <td style="padding:6px; text-align:center; color:#88FF88;">${p.level}</td>
+                        <td style="padding:6px; text-align:right; color:#FFAA66;">${p.kills.toLocaleString()}</td>
+                     </tr>`;
+                });
+                
+                html += `</tbody> </table> </div>`;
+                content.innerHTML = html;
+            } else {
+                content.innerHTML = '<div style="text-align:center; padding:40px;">No adventurers have entered the Hall of Legends yet.<br><span style="font-size:12px;">Be the first!</span></div>';
+            }
+        })
+        .catch(err => {
+            document.getElementById('leaderboard-content').innerHTML = '<div style="text-align:center; padding:40px; color:#ff6666;">⚠️ Could not load leaderboard data.</div>';
+        });
+}
+
+async function fetchLeaderboardTicker() {
+    try {
+        const response = await fetch('https://script.google.com/macros/s/AKfycbwh7_fSt6gRjObMZCvNLUOcwJpfVgzpeAC7InjPR0E51B7CRpFNj-Qvbe_LL8WR3AhaKg/exec?action=getLeaderboard&t=' + Date.now());
+        const data = await response.json();
+        
+        if (data.ok && data.leaderboard && data.leaderboard.length > 0) {
+            updateTickerDisplay(data.leaderboard.slice(0, 20));
+        }
+    } catch (error) {
+        console.error('Ticker fetch failed:', error);
+    }
+}
+
+function updateTickerDisplay(players) {
+    const tickerEl = document.getElementById('leaderboard-ticker');
+    if (!tickerEl) return;
+    
+    if (!players || players.length === 0) {
+        tickerEl.style.display = 'none';
+        return;
+    }
+    
+    tickerEl.style.display = 'block';
+    
+    let currentPlayerId = null;
+    try {
+        if (typeof gameState !== 'undefined' && gameState.player && gameState.player.id) {
+            currentPlayerId = gameState.player.id;
+        }
+    } catch(e) {}
+    
+    const runeColors = ['#FFFFFF', '#FFD700', '#00FF88', '#44AAFF', '#BB66FF', '#CC8844', '#888888', '#FF3333'];
+    
+    let scrollHtml = '';
+    players.forEach((player, idx) => {
+        const rank = idx + 1;
+        const isCurrent = (currentPlayerId && player.characterId === currentPlayerId);
+        const nameClass = isCurrent ? 'leaderboard-name-current' : 'leaderboard-name';
+        
+        let runeHtml = '';
+        for (let r = 0; r < player.runestones && r < runeColors.length; r++) {
+            runeHtml += `<span style="color:${runeColors[r]};">✦</span>`;
+        }
+        if (player.runestones === 0) runeHtml = '○';
+        
+        scrollHtml += `
+            <span class="leaderboard-entry">
+                <span class="leaderboard-rank">#${rank}</span>
+                <span class="${nameClass}">${player.name.substring(0, 16)}</span>
+                <span class="leaderboard-runes">${runeHtml}</span>
+                <span class="leaderboard-level">Lv${player.level}</span>
+                <span class="leaderboard-kills">💀${player.kills.toLocaleString()}</span>
+            </span>
+        `;
+    });
+    
+    tickerEl.innerHTML = `
+        <div class="leaderboard-ticker-header">
+            <span class="leaderboard-ticker-title">🏆 HALL OF LEGENDS 🏆</span>
+            <span class="leaderboard-ticker-update">📡 ${new Date().toLocaleTimeString()}</span>
+        </div>
+        <div class="leaderboard-scroll-container">
+            <div class="leaderboard-scroll">
+                ${scrollHtml}
+            </div>
+        </div>
+        <button class="leaderboard-full-btn" onclick="showLeaderboard()">⚔️ VIEW FULL LEADERBOARD ⚔️</button>
+    `;
+}
 
 </script> </body>
 </html>

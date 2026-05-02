@@ -2747,6 +2747,22 @@ function showUnifiedInventory(returnCallback = null) {
         invHtml += renderKeyRing(p);
     }
     
+        // Add I'M STUCK button for dungeon only
+    if (origin === 'dungeon') {
+        invHtml += `<button onclick="resetCurrentDungeonKeepProgress(); closeUnifiedInventory();" style="
+            margin-top:20px; 
+            width:100%; 
+            padding:12px;
+            border:2px solid #FF8800;
+            color:#FF8800;
+            background:#1a0a00;
+            font-size:16px;
+            font-family:'VT323',monospace;
+            cursor:pointer;
+            border-radius:4px;
+        ">🔄 I'M STUCK — Reset Dungeon Enemies (Logout Required)</button>`;
+    }
+    
     invHtml += `<button onclick="closeUnifiedInventory()" style="margin-top:20px; width:100%;">← BACK</button>`;
     
     setScreen(invHtml);

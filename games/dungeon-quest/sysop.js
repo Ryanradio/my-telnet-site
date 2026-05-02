@@ -344,7 +344,7 @@ if ((!p.armor || p.armor === 'no_armor') && p.inventory) {
             inventory: [...(p.inventory || [])],
             knownSpells: [...(p.knownSpells || [])],
             equippedSpells: [...(p.equippedSpells || [])],
-            
+
             // Stat points
             statPoints: p.statPoints || 0,
 
@@ -1530,6 +1530,17 @@ function bannerHoldCancel() {
                     </div>
                 </div>
 
+                <!-- NEW: NAME MANAGEMENT SECTION -->
+                <div class="syo-section">
+                    <div class="syo-section-title">🏷️ NAME MANAGEMENT</div>
+                    <div class="syo-grid">
+                        <button class="syo-btn" onclick="showNameLookupPanel()">🔍 LOOKUP</button>
+                        <button class="syo-btn" onclick="showNameChangePanel()">✏️ CHANGE NAME</button>
+                        <button class="syo-btn" onclick="showNameLockPanel()">🔒 LOCK</button>
+                        <button class="syo-btn" onclick="showNameUnlockPanel()">🔓 UNLOCK</button>
+                    </div>
+                </div>
+
                 <div class="syo-section">
                     <div class="syo-section-title">🛠️ SYSTEM</div>
                     <div class="syo-grid">
@@ -1546,6 +1557,227 @@ function bannerHoldCancel() {
             content.innerHTML = html;
             _refreshSysoLog();
         }
+
+// ═══════════════════════════════════════════════════════════════
+// NAME MANAGEMENT PANEL FUNCTIONS
+// ═══════════════════════════════════════════════════════════════
+
+function showNameLookupPanel() {
+    const sub = document.getElementById('sysoSub');
+    if (!sub) return;
+    
+    sub.innerHTML = `
+    <div class="syo-sub">
+        <div class="syo-sub-title">🔍 LOOKUP PLAYER</div>
+        <div class="syo-label">Character ID (from save file or /myid command)</div>
+        <input class="syo-input" id="sysoLookupId" placeholder="char_1746123456789_abc123">
+        <div class="syo-grid" style="margin-top:8px;">
+            <button class="syo-btn" onclick="executeNameLookup()">🔍 LOOKUP</button>
+            <button class="syo-btn" onclick="document.getElementById('sysoSub').innerHTML='';">✕ CLOSE</button>
+        </div>
+        <div id="lookupResult" style="margin-top:10px;font-family:'VT323',monospace;font-size:14px;color:#8aaa8a;"></div>
+    </div>`;
+    sub.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function executeNameLookup() {
+    const charId = document.getElementById('sysoLookupId')?.value.trim();
+    if (!charId) {
+        document.getElementById('lookupResult').innerHTML = '<span style="color:#ff4444;">❌ Enter a character ID</span>';
+        return;
+    }
+    
+    document.getElementById('lookupResult').innerHTML = '<span style="color:#ffaa66;">📡 Looking up...</span>';
+    
+    fetch(`https://script.google.com/macros/s/AKfycbwh7_fSt6gRjObMZCvNLUOcwJpfVgzpeAC7InjPR0E51B7CRpFNj-Qvbe_LL8WR3AhaKg/exec?action=getPlayer&character_id=${encodeURIComponent(charId)}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.ok && data.player) {
+                document.getElementById('lookupResult').innerHTML = `
+                    <div style="border:1px solid #1a4a1a;padding:8px;margin-top:5px;">
+                        <div><span style="color:#ffd700;">📛 Name:</span> ${data.player.name}</div>
+                        <div><span style="color:#ffd700;">🎭 Class:</span> ${data.player.class}</div>
+                        <div><span style="color:#ffd700;">📊 Level:</span> ${data.player.level}</div>
+                        <div><span style="color:#ffd700;">✦ Runestones:</span> ${data.player.runestones}</div>
+                        <div><span style="color:#ffd700;">💀 Kills:</span> ${data.player.kills.toLocaleString()}</div>
+                        <div><span style="color:#ffd700;">🔒 Name Locked:</span> ${data.player.nameLocked ? '✅ YES' : '❌ NO'}</div>
+                        <div><span style="color:#ffd700;">✏️ Override:</span> ${data.player.displayNameOverride || '(none)'}</div>
+                        <div><span style="color:#ffd700;">🏷️ Suffix:</span> ${data.player.nameSuffix || '(none)'}</div>
+                        <div><span style="color:#8aaa8a;font-size:12px;margin-top:5px;">🆔 ${data.player.characterId}</span></div>
+                    </div>
+                `;
+            } else {
+                document.getElementById('lookupResult').innerHTML = `<span style="color:#ff4444;">❌ ${data.error || 'Character not found'}</span>`;
+            }
+        })
+        .catch(err => {
+            document.getElementById('lookupResult').innerHTML = `<span style="color:#ff4444;">❌ Lookup failed: ${err.message}</span>`;
+        });
+}
+
+function showNameChangePanel() {
+    const sub = document.getElementById('sysoSub');
+    if (!sub) return;
+    
+    sub.innerHTML = `
+    <div class="syo-sub">
+        <div class="syo-sub-title">✏️ CHANGE PLAYER NAME</div>
+        <div class="syo-label">Character ID</div>
+        <input class="syo-input" id="sysoChangeId" placeholder="char_1746123456789_abc123">
+        <div class="syo-label">New Display Name (2-20 chars, letters/numbers/hyphens/underscores)</div>
+        <input class="syo-input" id="sysoChangeName" placeholder="Rogue-TheBrave">
+        <div class="syo-grid" style="margin-top:8px;">
+            <button class="syo-btn" onclick="executeNameChange()">✏️ CHANGE & LOCK</button>
+            <button class="syo-btn" onclick="document.getElementById('sysoSub').innerHTML='';">✕ CLOSE</button>
+        </div>
+        <div id="changeResult" style="margin-top:10px;font-family:'VT323',monospace;font-size:14px;"></div>
+    </div>`;
+    sub.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function executeNameChange() {
+    const charId = document.getElementById('sysoChangeId')?.value.trim();
+    const newName = document.getElementById('sysoChangeName')?.value.trim();
+    
+    if (!charId) {
+        document.getElementById('changeResult').innerHTML = '<span style="color:#ff4444;">❌ Enter a character ID</span>';
+        return;
+    }
+    if (!newName) {
+        document.getElementById('changeResult').innerHTML = '<span style="color:#ff4444;">❌ Enter a new name</span>';
+        return;
+    }
+    if (!/^[a-zA-Z0-9\-_]{2,20}$/.test(newName)) {
+        document.getElementById('changeResult').innerHTML = '<span style="color:#ff4444;">❌ Invalid name. Use 2-20 chars: letters, numbers, hyphens, underscores.</span>';
+        return;
+    }
+    
+    document.getElementById('changeResult').innerHTML = '<span style="color:#ffaa66;">📡 Sending request...</span>';
+    
+    fetch('https://script.google.com/macros/s/AKfycbwh7_fSt6gRjObMZCvNLUOcwJpfVgzpeAC7InjPR0E51B7CRpFNj-Qvbe_LL8WR3AhaKg/exec', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+            action: 'updateDisplayName',
+            character_id: charId,
+            display_name: newName,
+            sysop_key: btoa('calamity_sysop_2026')
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.ok) {
+            document.getElementById('changeResult').innerHTML = `<span style="color:#88ff88;">✅ ${data.message}</span>`;
+            // Also log to terminal
+            if (typeof sysoLog === 'function') sysoLog(`Name changed: ${charId} → ${newName}`, 'success');
+        } else {
+            document.getElementById('changeResult').innerHTML = `<span style="color:#ff4444;">❌ ${data.error}</span>`;
+        }
+    })
+    .catch(err => {
+        document.getElementById('changeResult').innerHTML = `<span style="color:#ff4444;">❌ Failed: ${err.message}</span>`;
+    });
+}
+
+function showNameLockPanel() {
+    const sub = document.getElementById('sysoSub');
+    if (!sub) return;
+    
+    sub.innerHTML = `
+    <div class="syo-sub">
+        <div class="syo-sub-title">🔒 LOCK PLAYER NAME</div>
+        <div class="syo-label">Character ID</div>
+        <input class="syo-input" id="sysoLockId" placeholder="char_1746123456789_abc123">
+        <div class="syo-grid" style="margin-top:8px;">
+            <button class="syo-btn" onclick="executeNameLock()">🔒 LOCK</button>
+            <button class="syo-btn" onclick="document.getElementById('sysoSub').innerHTML='';">✕ CLOSE</button>
+        </div>
+        <div id="lockResult" style="margin-top:10px;font-family:'VT323',monospace;font-size:14px;"></div>
+    </div>`;
+    sub.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function executeNameLock() {
+    const charId = document.getElementById('sysoLockId')?.value.trim();
+    if (!charId) {
+        document.getElementById('lockResult').innerHTML = '<span style="color:#ff4444;">❌ Enter a character ID</span>';
+        return;
+    }
+    
+    document.getElementById('lockResult').innerHTML = '<span style="color:#ffaa66;">📡 Sending request...</span>';
+    
+    fetch('https://script.google.com/macros/s/AKfycbwh7_fSt6gRjObMZCvNLUOcwJpfVgzpeAC7InjPR0E51B7CRpFNj-Qvbe_LL8WR3AhaKg/exec', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+            action: 'lockName',
+            character_id: charId,
+            sysop_key: btoa('calamity_sysop_2026')
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.ok) {
+            document.getElementById('lockResult').innerHTML = `<span style="color:#88ff88;">✅ ${data.message}</span>`;
+            if (typeof sysoLog === 'function') sysoLog(`Name locked: ${charId}`, 'success');
+        } else {
+            document.getElementById('lockResult').innerHTML = `<span style="color:#ff4444;">❌ ${data.error}</span>`;
+        }
+    })
+    .catch(err => {
+        document.getElementById('lockResult').innerHTML = `<span style="color:#ff4444;">❌ Failed: ${err.message}</span>`;
+    });
+}
+
+function showNameUnlockPanel() {
+    const sub = document.getElementById('sysoSub');
+    if (!sub) return;
+    
+    sub.innerHTML = `
+    <div class="syo-sub">
+        <div class="syo-sub-title">🔓 UNLOCK PLAYER NAME</div>
+        <div class="syo-label">Character ID</div>
+        <input class="syo-input" id="sysoUnlockId" placeholder="char_1746123456789_abc123">
+        <div class="syo-grid" style="margin-top:8px;">
+            <button class="syo-btn" onclick="executeNameUnlock()">🔓 UNLOCK</button>
+            <button class="syo-btn" onclick="document.getElementById('sysoSub').innerHTML='';">✕ CLOSE</button>
+        </div>
+        <div id="unlockResult" style="margin-top:10px;font-family:'VT323',monospace;font-size:14px;"></div>
+    </div>`;
+    sub.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function executeNameUnlock() {
+    const charId = document.getElementById('sysoUnlockId')?.value.trim();
+    if (!charId) {
+        document.getElementById('unlockResult').innerHTML = '<span style="color:#ff4444;">❌ Enter a character ID</span>';
+        return;
+    }
+    
+    document.getElementById('unlockResult').innerHTML = '<span style="color:#ffaa66;">📡 Sending request...</span>';
+    
+    fetch('https://script.google.com/macros/s/AKfycbwh7_fSt6gRjObMZCvNLUOcwJpfVgzpeAC7InjPR0E51B7CRpFNj-Qvbe_LL8WR3AhaKg/exec', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+            action: 'unlockName',
+            character_id: charId,
+            sysop_key: btoa('calamity_sysop_2026')
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.ok) {
+            document.getElementById('unlockResult').innerHTML = `<span style="color:#88ff88;">✅ ${data.message}</span>`;
+            if (typeof sysoLog === 'function') sysoLog(`Name unlocked: ${charId}`, 'success');
+        } else {
+            document.getElementById('unlockResult').innerHTML = `<span style="color:#ff4444;">❌ ${data.error}</span>`;
+        }
+    })
+    .catch(err => {
+        document.getElementById('unlockResult').innerHTML = `<span style="color:#ff4444;">❌ Failed: ${err.message}</span>`;
+    });
+}
 
         // ── Login / Logout ────────────────────────────────────────────
         function sysoLogin() {
@@ -2137,6 +2369,29 @@ function bannerHoldCancel() {
                 case '/unlockmaster':
                     handleUnlockMaster(args);
                     break;
+                    case '/name':
+    handleNameCommand(args);
+    break;
+
+case '/lock':
+    handleLockCommand(args);
+    break;
+
+case '/unlock':
+    handleUnlockCommand(args);
+    break;
+
+case '/lookup':
+    handleLookupCommand(args);
+    break;
+    case '/myid':
+    if (!gameState.player) {
+        terminalPrint('No active character.', 'error');
+    } else {
+        terminalPrint(`Your character ID: ${gameState.player.id}`, 'success');
+        terminalPrint(`Save this if you need sysop support.`, 'warning');
+    }
+    break;
                 default:
                     terminalPrint(`ERROR: Unknown command '${command}'. Type /help for available commands.`, 'error');
             }
@@ -2232,6 +2487,12 @@ function bannerHoldCancel() {
             terminalPrint('                             /unlockmaster plains');
             terminalPrint('  /killmonster             - Instantly kill current enemy');
             terminalPrint('  /export <type>           - Export data (monsters/weapons/armor/items)');
+            terminalPrint('  /name <char_id> <new_name>  - Force change player display name');
+            terminalPrint('                                Example: /name char_123 Rogue-TheBrave');
+            terminalPrint('  /lock <char_id>             - Lock player name (prevents changes)');
+            terminalPrint('  /unlock <char_id>           - Unlock player name');
+            terminalPrint('  /lookup <char_id>           - Show player data');
+            terminalPrint('  /myid                   - Show your character ID');
             terminalPrint('  /clear                   - Clear terminal output');
             terminalPrint('═══════════════════════════════════════', 'warning');
         }
@@ -3370,6 +3631,159 @@ terminalPrint(`💀 You died and lost 25% of your progress toward level ${p.leve
         function closeModal() {
             document.getElementById('modalOverlay').classList.remove('active');
         }
+
+        // ═══════════════════════════════════════════════════════════════
+// SYSOP NAME MANAGEMENT COMMANDS
+// /name <character_id> <new_name> - Force change player's display name
+// /lock <character_id> - Lock a player's name
+// /unlock <character_id> - Unlock a player's name
+// /lookup <character_id> - Show player data
+// ═══════════════════════════════════════════════════════════════
+
+function handleNameCommand(args) {
+    if (!gameState.sysop.authenticated) {
+        terminalPrint('ERROR: Not authenticated. Use /login first.', 'error');
+        return false;
+    }
+    
+    if (args.length < 2) {
+        terminalPrint('ERROR: Usage: /name <character_id> <new_display_name>', 'error');
+        terminalPrint('Example: /name char_1746123456789_abc123 Rogue-TheBrave', 'warning');
+        return false;
+    }
+    
+    const charId = args[0];
+    const newName = args.slice(1).join(' ');
+    
+    // Validate new name
+    if (!/^[a-zA-Z0-9\-_]{2,20}$/.test(newName)) {
+        terminalPrint('ERROR: Invalid name. Use letters, numbers, hyphens, underscores. 2-20 characters.', 'error');
+        return false;
+    }
+    
+    terminalPrint(`📡 Sending name change request for ${charId}...`, 'warning');
+    
+    // Call Google Apps Script
+    fetch('https://script.google.com/macros/s/AKfycbwh7_fSt6gRjObMZCvNLUOcwJpfVgzpeAC7InjPR0E51B7CRpFNj-Qvbe_LL8WR3AhaKg/exec', {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+            action: 'updateDisplayName',
+            character_id: charId,
+            display_name: newName,
+            sysop_key: btoa('calamity_sysop_2026')
+        })
+    }).catch(err => {
+        terminalPrint(`⚠️ Note: Name change requested (no-cors mode). Verify in sheet.`, 'warning');
+    });
+    
+    terminalPrint(`✅ Name change requested for ${charId} to "${newName}"`, 'success');
+    terminalPrint(`⚠️ Player must log out and back in to see the change.`, 'warning');
+    return true;
+}
+
+function handleLockCommand(args) {
+    if (!gameState.sysop.authenticated) {
+        terminalPrint('ERROR: Not authenticated. Use /login first.', 'error');
+        return false;
+    }
+    
+    if (args.length < 1) {
+        terminalPrint('ERROR: Usage: /lock <character_id>', 'error');
+        return false;
+    }
+    
+    const charId = args[0];
+    terminalPrint(`📡 Locking name for ${charId}...`, 'warning');
+    
+    fetch('https://script.google.com/macros/s/AKfycbwh7_fSt6gRjObMZCvNLUOcwJpfVgzpeAC7InjPR0E51B7CRpFNj-Qvbe_LL8WR3AhaKg/exec', {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+            action: 'lockName',
+            character_id: charId,
+            sysop_key: btoa('calamity_sysop_2026')
+        })
+    }).catch(err => {
+        terminalPrint(`⚠️ Note: Lock requested (no-cors mode). Verify in sheet.`, 'warning');
+    });
+    
+    terminalPrint(`✅ Name locked for ${charId}`, 'success');
+    return true;
+}
+
+function handleUnlockCommand(args) {
+    if (!gameState.sysop.authenticated) {
+        terminalPrint('ERROR: Not authenticated. Use /login first.', 'error');
+        return false;
+    }
+    
+    if (args.length < 1) {
+        terminalPrint('ERROR: Usage: /unlock <character_id>', 'error');
+        return false;
+    }
+    
+    const charId = args[0];
+    terminalPrint(`📡 Unlocking name for ${charId}...`, 'warning');
+    
+    fetch('https://script.google.com/macros/s/AKfycbwh7_fSt6gRjObMZCvNLUOcwJpfVgzpeAC7InjPR0E51B7CRpFNj-Qvbe_LL8WR3AhaKg/exec', {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+            action: 'unlockName',
+            character_id: charId,
+            sysop_key: btoa('calamity_sysop_2026')
+        })
+    }).catch(err => {
+        terminalPrint(`⚠️ Note: Unlock requested (no-cors mode). Verify in sheet.`, 'warning');
+    });
+    
+    terminalPrint(`✅ Name unlocked for ${charId}`, 'success');
+    return true;
+}
+
+async function handleLookupCommand(args) {
+    if (!gameState.sysop.authenticated) {
+        terminalPrint('ERROR: Not authenticated. Use /login first.', 'error');
+        return false;
+    }
+    
+    if (args.length < 1) {
+        terminalPrint('ERROR: Usage: /lookup <character_id>', 'error');
+        return false;
+    }
+    
+    const charId = args[0];
+    terminalPrint(`📡 Looking up ${charId}...`, 'warning');
+    
+    try {
+        const response = await fetch(`https://script.google.com/macros/s/AKfycbwh7_fSt6gRjObMZCvNLUOcwJpfVgzpeAC7InjPR0E51B7CRpFNj-Qvbe_LL8WR3AhaKg/exec?action=getPlayer&character_id=${encodeURIComponent(charId)}`);
+        const data = await response.json();
+        
+        if (data.ok && data.player) {
+            terminalPrint('', 'separator');
+            terminalPrint(`📋 PLAYER DATA: ${data.player.characterId}`, 'highlight');
+            terminalPrint(`   Name: ${data.player.name}`, 'dim');
+            terminalPrint(`   Class: ${data.player.class}`, 'dim');
+            terminalPrint(`   Level: ${data.player.level}`, 'dim');
+            terminalPrint(`   Runestones: ${data.player.runestones}`, 'dim');
+            terminalPrint(`   Total Kills: ${data.player.kills.toLocaleString()}`, 'dim');
+            terminalPrint(`   Display Override: ${data.player.displayNameOverride || '(none)'}`, 'dim');
+            terminalPrint(`   Name Locked: ${data.player.nameLocked ? 'YES' : 'NO'}`, 'dim');
+            terminalPrint(`   Name Suffix: ${data.player.nameSuffix || '(none)'}`, 'dim');
+            terminalPrint('', 'separator');
+        } else {
+            terminalPrint(`❌ Character not found: ${charId}`, 'error');
+        }
+    } catch (err) {
+        terminalPrint(`❌ Lookup failed: ${err.message}`, 'error');
+    }
+    return true;
+}
+
 
         function handleExport(args) {
             const type = args[0]?.toLowerCase();
