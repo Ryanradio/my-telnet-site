@@ -8639,7 +8639,12 @@ ${showSpecial ? `<button onclick="handleAttackType('special')">⭐ Special</butt
     // ── STAFF COLLECTION button (only for AshenDepths dungeon)
     if (ds.dungeonKey === 'AshenDepths') {
         const staffBtn = document.createElement('button');
-        const staffCount = (gameState.player.inventory || []).filter(i => i && typeof i === 'string' && i.startsWith('staff_piece_')).length;
+        const staffCount = (gameState.player.inventory || []).filter(i => {
+    if (!i) return false;
+    if (typeof i === 'string') return i.startsWith('staff_piece_');
+    if (typeof i === 'object') return i.subtype === 'staff_piece';
+    return false;
+}).length;
         staffBtn.innerHTML = `🪄<span style="font-size:9px;">${staffCount}/8</span>`;
         staffBtn.title = 'View collected staff pieces';
         staffBtn.style.cssText = 'padding:4px 6px;font-size:14px;border-color:#a855f7;color:#a855f7;';
@@ -9280,7 +9285,17 @@ function showStaffCollection() {
     ];
     
     const collected = p.inventory || [];
-    const collectedIds = new Set(collected.filter(i => i && typeof i === 'string' && i.startsWith('staff_piece_')));
+    const collectedIds = new Set(collected.map(i => {
+    if (!i) return null;
+    // Get the piece number/ID from the item
+    if (typeof i === 'string' && i.startsWith('staff_piece_')) {
+        return i; // returns 'staff_piece_1'
+    }
+    if (typeof i === 'object' && i.subtype === 'staff_piece') {
+        return `staff_piece_${i.staffPieceNumber}`; // returns 'staff_piece_1'
+    }
+    return null;
+}).filter(id => id !== null));
     
     const collectedCount = collectedIds.size;
     const totalPieces = staffPieces.length;

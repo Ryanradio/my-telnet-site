@@ -666,12 +666,25 @@ function moveInDungeon(direction) {
             if (triggerType === 'enter_room') {
                 shouldTeleport = true;
             } else if (triggerType === 'staff_pieces') {
-                const staffCount = (gameState.player.inventory || []).filter(i => i && typeof i === 'string' && i.startsWith('staff_piece_')).length;
+                // Count staff pieces (supports both string AND object storage)
+                const staffCount = (gameState.player.inventory || []).filter(i => {
+                    if (!i) return false;
+                    if (typeof i === 'string') return i.startsWith('staff_piece_');
+                    if (typeof i === 'object') return i.subtype === 'staff_piece';
+                    return false;
+                }).length;
+                
                 if (staffCount >= 8) {
                     shouldTeleport = true;
                     termAppend(`🪄 The staff pieces resonate with the ancient gate!`, 'term-highlight');
                     
-                    gameState.player.inventory = gameState.player.inventory.filter(i => !(i && typeof i === 'string' && i.startsWith('staff_piece_')));
+                    // Remove ALL staff pieces (both string and object versions)
+                    gameState.player.inventory = gameState.player.inventory.filter(i => {
+                        if (!i) return true;
+                        if (typeof i === 'string') return !i.startsWith('staff_piece_');
+                        if (typeof i === 'object') return i.subtype !== 'staff_piece';
+                        return true;
+                    });
                     termAppend(`🪄 The staff pieces dissolve into the gate, consumed by the teleportation!`, 'term-warning');
                 } else {
                     termAppend(`🪄 The gate requires all 8 staff pieces to activate. (${staffCount}/8 collected)`, 'term-dim');
@@ -871,12 +884,23 @@ function moveInDungeon(direction) {
         if (triggerType === 'enter_room') {
             shouldTeleport = true;
         } else if (triggerType === 'staff_pieces') {
-            const staffCount = (gameState.player.inventory || []).filter(i => i && typeof i === 'string' && i.startsWith('staff_piece_')).length;
+            const staffCount = (gameState.player.inventory || []).filter(i => {
+    if (!i) return false;
+    if (typeof i === 'string') return i.startsWith('staff_piece_');
+    if (typeof i === 'object') return i.subtype === 'staff_piece';
+    return false;
+}).length;
             if (staffCount >= 8) {
                 shouldTeleport = true;
                 termAppend(`🪄 The staff pieces resonate with the ancient gate!`, 'term-highlight');
                 
-                gameState.player.inventory = gameState.player.inventory.filter(i => !(i && typeof i === 'string' && i.startsWith('staff_piece_')));
+                gameState.player.inventory = gameState.player.inventory.filter(i => {
+    if (!i) return true;
+    // Keep if NOT a staff piece
+    if (typeof i === 'string') return !i.startsWith('staff_piece_');
+    if (typeof i === 'object') return i.subtype !== 'staff_piece';
+    return true;
+});
                 termAppend(`🪄 The staff pieces dissolve into the gate, consumed by the teleportation!`, 'term-warning');
             } else {
                 termAppend(`🪄 The gate requires all 8 staff pieces to activate. (${staffCount}/8 collected)`, 'term-dim');

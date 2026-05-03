@@ -402,17 +402,27 @@ function moveInDungeon(direction) {
             if (triggerType === 'enter_room') {
                 shouldTeleport = true;
             } else if (triggerType === 'staff_pieces') {
-                const staffCount = (gameState.player.inventory || []).filter(i => i && typeof i === 'string' && i.startsWith('staff_piece_')).length;
-                if (staffCount >= 8) {
-                    shouldTeleport = true;
-                    termAppend(`🪄 The staff pieces resonate with the ancient gate!`, 'term-highlight');
-                    
-                    gameState.player.inventory = gameState.player.inventory.filter(i => !(i && typeof i === 'string' && i.startsWith('staff_piece_')));
-                    termAppend(`🪄 The staff pieces dissolve into the gate, consumed by the teleportation!`, 'term-warning');
-                } else {
-                    termAppend(`🪄 The gate requires all 8 staff pieces to activate. (${staffCount}/8 collected)`, 'term-dim');
-                }
-            }
+    const staffCount = (gameState.player.inventory || []).filter(i => {
+        if (!i) return false;
+        if (typeof i === 'string') return i.startsWith('staff_piece_');
+        if (typeof i === 'object') return i.subtype === 'staff_piece';
+        return false;
+    }).length;
+    if (staffCount >= 8) {
+        shouldTeleport = true;
+        termAppend(`🪄 The staff pieces resonate with the ancient gate!`, 'term-highlight');
+        
+        gameState.player.inventory = gameState.player.inventory.filter(i => {
+            if (!i) return true;
+            if (typeof i === 'string') return !i.startsWith('staff_piece_');
+            if (typeof i === 'object') return i.subtype !== 'staff_piece';
+            return true;
+        });
+        termAppend(`🪄 The staff pieces dissolve into the gate, consumed by the teleportation!`, 'term-warning');
+    } else {
+        termAppend(`🪄 The gate requires all 8 staff pieces to activate. (${staffCount}/8 collected)`, 'term-dim');
+    }
+}
             
             if (shouldTeleport) {
                 const tpTargetFloor = tpTrigger.targetFloor;
@@ -607,17 +617,27 @@ function moveInDungeon(direction) {
         if (triggerType === 'enter_room') {
             shouldTeleport = true;
         } else if (triggerType === 'staff_pieces') {
-            const staffCount = (gameState.player.inventory || []).filter(i => i && typeof i === 'string' && i.startsWith('staff_piece_')).length;
-            if (staffCount >= 8) {
-                shouldTeleport = true;
-                termAppend(`🪄 The staff pieces resonate with the ancient gate!`, 'term-highlight');
-                
-                gameState.player.inventory = gameState.player.inventory.filter(i => !(i && typeof i === 'string' && i.startsWith('staff_piece_')));
-                termAppend(`🪄 The staff pieces dissolve into the gate, consumed by the teleportation!`, 'term-warning');
-            } else {
-                termAppend(`🪄 The gate requires all 8 staff pieces to activate. (${staffCount}/8 collected)`, 'term-dim');
-            }
-        }
+    const staffCount = (gameState.player.inventory || []).filter(i => {
+        if (!i) return false;
+        if (typeof i === 'string') return i.startsWith('staff_piece_');
+        if (typeof i === 'object') return i.subtype === 'staff_piece';
+        return false;
+    }).length;
+    if (staffCount >= 8) {
+        shouldTeleport = true;
+        termAppend(`🪄 The staff pieces resonate with the ancient gate!`, 'term-highlight');
+        
+        gameState.player.inventory = gameState.player.inventory.filter(i => {
+            if (!i) return true;
+            if (typeof i === 'string') return !i.startsWith('staff_piece_');
+            if (typeof i === 'object') return i.subtype !== 'staff_piece';
+            return true;
+        });
+        termAppend(`🪄 The staff pieces dissolve into the gate, consumed by the teleportation!`, 'term-warning');
+    } else {
+        termAppend(`🪄 The gate requires all 8 staff pieces to activate. (${staffCount}/8 collected)`, 'term-dim');
+    }
+}
         
         if (shouldTeleport) {
             const tpTargetFloor = tpTrigger.targetFloor;
