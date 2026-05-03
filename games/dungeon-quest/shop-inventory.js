@@ -460,56 +460,92 @@ const typeOptions = subtypes.map(t =>
     }
 
     // ── Build potions list ───────────────────────────────────────
-    function buildPotionList() {
-        const potions = ['health_potion','greater_health_potion','superior_health_potion',
-                         'mana_potion','greater_mana_potion','superior_mana_potion','elixir','recall_potion'];
-        return potions.map(key => {
-            if (!ITEMS[key]) return '';
-            const item = ITEMS[key];
-            if (key === 'recall_potion') {
-                const owned = p.inventory.includes('recall_potion');
-                return `
+    // ── Build potions list with quantity selector ─────────────────
+function buildPotionList() {
+    const potions = [
+        { key: 'health_potion', name: 'Health Potion', desc: 'Restores 30 HP', cost: 50 },
+        { key: 'greater_health_potion', name: 'Greater Health Potion', desc: 'Restores 80 HP', cost: 150 },
+        { key: 'superior_health_potion', name: 'Superior Health Potion', desc: 'Restores 150 HP', cost: 400 },
+        { key: 'mana_potion', name: 'Mana Potion', desc: 'Restores 30 MP', cost: 60 },
+        { key: 'greater_mana_potion', name: 'Greater Mana Potion', desc: 'Restores 80 MP', cost: 180 },
+        { key: 'superior_mana_potion', name: 'Superior Mana Potion', desc: 'Restores 150 MP', cost: 450 },
+        { key: 'elixir', name: 'Elixir', desc: 'Fully restores HP & MP', cost: 1000 },
+        { key: 'recall_potion', name: 'Recall Potion', desc: 'Returns to town from dungeon', cost: 5000 }
+    ];
+    
+    const p = gameState.player;
+    const disc = calcChaDiscount(p.cha);
+    let html = '';
+    
+    for (const potion of potions) {
+        const discountedCost = Math.max(1, Math.floor(potion.cost * (1 - disc/100)));
+        const maxStack = ITEMS[potion.key]?.maxStack || 99;
+        const currentHeld = p.inventory.filter(k => k === potion.key).length;
+        const remainingSpace = maxStack - currentHeld;
+        
+        const isRecall = potion.key === 'recall_potion';
+        
+        if (isRecall) {
+            html += `
                 <div style="border:1px solid #1a0a3a;background:#06060f;padding:9px 10px;margin-bottom:3px;">
                     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;">
                         <div style="flex:1;">
-                            <div style="color:#AA88FF;font-size:12px;margin-bottom:2px;">🌀 ${item.name}</div>
-                            <div style="color:#555;font-size:10px;">${item.description}</div>
+                            <div style="color:#AA88FF;font-size:12px;margin-bottom:2px;">🌀 ${potion.name}</div>
+                            <div style="color:#555;font-size:10px;">${potion.desc}</div>
                             <div style="color:#3a2266;font-size:9px;margin-top:2px;">Dungeon only · 1 max</div>
                         </div>
                         <div style="flex-shrink:0;min-width:60px;text-align:right;">
-                            ${owned
+                            ${currentHeld >= 1
                                 ? `<div style="color:#2a1a5c;font-size:10px;font-family:'Courier New',monospace;">OWNED</div>`
-                                : p.gold>=1000
-                                    ? `<button onclick="buyItem('item','recall_potion',1000)" style="background:#06060f;border:1px solid #AA88FF;color:#AA88FF;font-size:10px;padding:3px 8px;cursor:pointer;font-family:'Courier New',monospace;width:100%;">1000g</button>`
-                                    : `<button disabled style="background:#06060f;border:1px solid #1a1a1a;color:#222;font-size:10px;padding:3px 8px;font-family:'Courier New',monospace;width:100%;">1000g</button>`
+                                : p.gold >= discountedCost
+                                    ? `<button onclick="buyItem('item','recall_potion',5000)" style="background:#06060f;border:1px solid #AA88FF;color:#AA88FF;font-size:10px;padding:3px 8px;cursor:pointer;font-family:'Courier New',monospace;width:100%;">${discountedCost}g</button>`
+                                    : `<button disabled style="background:#06060f;border:1px solid #1a1a1a;color:#222;font-size:10px;padding:3px 8px;font-family:'Courier New',monospace;width:100%;">${discountedCost}g</button>`
                             }
                         </div>
                     </div>
                 </div>`;
-            }
-            const held    = item.maxStack ? p.inventory.filter(k=>k===key).length : 0;
-            const capped  = item.maxStack && held >= item.maxStack;
-            const disc    = calcChaDiscount(p.cha);
-            const price   = Math.max(1, Math.floor((item.cost||0) * (1 - disc/100)));
-            return `
+            continue;
+        }
+        
+        const qtyInputId = `qty_${potion.key}`;
+        
+        html += `
             <div style="border:1px solid #0f0f0f;background:#060606;padding:9px 10px;margin-bottom:3px;">
-                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;">
-                    <div style="flex:1;">
-                        <div style="color:#ccc;font-size:12px;margin-bottom:2px;">${item.name}${item.maxStack?` <span style="color:${capped?'#ff4444':'#333'};font-size:9px;">${held}/${item.maxStack}</span>`:''}</div>
-                        <div style="color:#555;font-size:10px;">${item.description}</div>
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;flex-wrap:wrap;">
+                    <div style="flex:2;min-width:140px;">
+                        <div style="color:#ccc;font-size:12px;margin-bottom:2px;">${potion.name} <span style="color:#8aaa8a;font-size:9px;">${currentHeld}/${maxStack}</span></div>
+                        <div style="color:#555;font-size:10px;">${potion.desc}</div>
                     </div>
-                    <div style="flex-shrink:0;min-width:60px;text-align:right;">
-                        ${capped
-                            ? `<div style="color:#ff4444;font-size:10px;font-family:'Courier New',monospace;">FULL</div>`
-                            : p.gold>=price
-                                ? `<button onclick="buyItem('item','${key}',${item.cost})" style="background:#060606;border:1px solid #3a5a3a;color:#8aaa8a;font-size:10px;padding:3px 8px;cursor:pointer;font-family:'Courier New',monospace;width:100%;">${price}g</button>`
-                                : `<button disabled style="background:#060606;border:1px solid #1a1a1a;color:#2a2a2a;font-size:10px;padding:3px 8px;font-family:'Courier New',monospace;width:100%;">${price}g</button>`
-                        }
+                    <div style="text-align:right;min-width:200px;">
+                        <div style="color:#c8a000;font-size:11px;margin-bottom:4px;">${discountedCost}g each</div>
+                        <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end;">
+                            <button onclick="changePotionQuantity('${potion.key}', -1, 99)"  
+                                style="width:28px;height:28px;font-size:18px;background:#0a0a0a;border:1px solid #ff4444;color:#ff4444;cursor:pointer;border-radius:3px;display:flex;align-items:center;justify-content:center;">
+                                −
+                            </button>
+                            <input type="number" id="${qtyInputId}" 
+    value="1" min="1" 
+    style="width:50px;text-align:center;background:#0a0a0a;border:1px solid #c8a000;color:#FFD700;font-size:14px;padding:4px;border-radius:3px;">
+                            <button onclick="changePotionQuantity('${potion.key}', 1, 99)" 
+                                style="width:28px;height:28px;font-size:18px;background:#0a0a0a;border:1px solid #00FF00;color:#00FF00;cursor:pointer;border-radius:3px;display:flex;align-items:center;justify-content:center;">
+                                +
+                            </button>
+                            <button onclick="purchasePotionQuantityFromInput('${potion.key}', ${discountedCost})" 
+                                style="background:#1a3a1a;border:1px solid #00FF00;color:#00FF00;font-size:10px;padding:4px 10px;cursor:pointer;border-radius:3px;font-weight:bold;">
+                                BUY
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>`;
-        }).join('');
     }
+    
+    return html;
+}
+
+
+
+
 
     // ── Section content ──────────────────────────────────────────
     let sectionContent = '';
@@ -2061,6 +2097,9 @@ function showInventory() {
 }
 
 
+
+
+
 // ═══════════════════════════════════════════════════════════════
 // UNIFIED INVENTORY SYSTEM - Works everywhere, returns correctly
 // ═══════════════════════════════════════════════════════════════
@@ -3379,10 +3418,71 @@ if (p.level >= (loc.requiredLevel || 1)) {
     if (tw) tw.classList.toggle('danger-heartbeat', _nowDanger);
 }
 
+// Helper to change quantity via +/- buttons
+function changePotionQuantity(potionKey, delta, maxQty) {
+    const inputEl = document.getElementById(`qty_${potionKey}`);
+    if (!inputEl) return;
+    
+    let newVal = parseInt(inputEl.value) || 1;
+    newVal += delta;
+    
+    if (newVal < 1) newVal = 1;
+    if (newVal > maxQty) newVal = maxQty;
+    
+    inputEl.value = newVal;
+}
 
-
-
-        // ═══════════════════════════════════════════════════════════════
-        // TERMINAL VIEW helpers
-        // ═══════════════════════════════════════════════════════════════
-        
+// Purchase the quantity from the input field - NO LIMIT CHECK
+function purchasePotionQuantityFromInput(potionKey, unitCost) {
+    const inputEl = document.getElementById(`qty_${potionKey}`);
+    if (!inputEl) {
+        console.error('Input element not found!');
+        return;
+    }
+    
+    const quantity = parseInt(inputEl.value) || 1;
+    const p = gameState.player;
+    const potion = ITEMS[potionKey];
+    
+    if (!potion) return;
+    
+    const disc = calcChaDiscount(p.cha);
+    const baseCost = potion.cost || 0;
+    const discountedCost = Math.max(1, Math.floor(baseCost * (1 - disc/100)));
+    const totalCost = discountedCost * quantity;
+    
+    // Check if player can afford
+    if (p.gold < totalCost) {
+        alert(`Not enough gold! Need ${totalCost.toLocaleString()}g, you have ${p.gold.toLocaleString()}g`);
+        return;
+    }
+    
+    // Confirm purchase
+    if (!confirm(`Purchase ${quantity}x ${potion.name} for ${totalCost.toLocaleString()}g?`)) {
+        return;
+    }
+    
+    // Deduct gold and add items (NO LIMIT CHECK)
+    p.gold -= totalCost;
+    for (let i = 0; i < quantity; i++) {
+        p.inventory.push(potionKey);
+    }
+    
+    saveGame();
+    updateHud();
+    
+    // Show success message
+    const flashDiv = document.createElement('div');
+    flashDiv.style.cssText = `
+        position:fixed;top:30%;left:50%;transform:translate(-50%,-50%);
+        background:#0a0a0a;border:2px solid #00FF00;padding:12px 24px;
+        color:#00FF00;font-family:'VT323',monospace;font-size:18px;
+        z-index:10000;text-align:center;border-radius:4px;
+    `;
+    flashDiv.innerHTML = `✅ Purchased ${quantity}x ${potion.name}!<br>-${totalCost.toLocaleString()}g`;
+    document.body.appendChild(flashDiv);
+    setTimeout(() => flashDiv.remove(), 1500);
+    
+    // Refresh the shop view
+    renderShop('buy', 'potions', 'all', 'near');
+}

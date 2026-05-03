@@ -1269,10 +1269,10 @@ async function silentCloudSave() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// ENCHANT TRAINER — Temple section for melee classes
+// ENCHANT TRAINER — Temple
 // ═══════════════════════════════════════════════════════════════
 function showEnchantTrainer() {
-    const p = gameState.player;
+    const p        = gameState.player;
     const classKey = p.baseClass || p.class;
     const enchantDef = typeof MELEE_ENCHANTS !== 'undefined' ? MELEE_ENCHANTS[classKey] : null;
 
@@ -1288,78 +1288,58 @@ function showEnchantTrainer() {
         return;
     }
 
-    const currentTier = p.enchant ? (p.enchant.tier || 0) : 0;
-    const nextTier = currentTier + 1;
-    const maxTier = enchantDef.tiers.length;
+    const currentTier  = p.enchant ? (p.enchant.tier || 0) : 0;
+    const nextTier     = currentTier + 1;
+    const maxTier      = enchantDef.tiers.length;
     const alreadyMaxed = currentTier >= maxTier;
     const nextTierData = !alreadyMaxed ? enchantDef.tiers[nextTier - 1] : null;
+    const upgradeCost  = nextTierData ? 500 * nextTier * nextTierData.level : 0;
+    const meetsLevel   = nextTierData ? p.level >= nextTierData.level : false;
+    const canAfford    = p.gold >= upgradeCost;
+    const canUpgrade   = nextTierData && meetsLevel && canAfford;
 
-    // Cost formula: 500g * tier * player level
-    const upgradeCost = nextTierData ? 500 * nextTier * nextTierData.level : 0;
-    const meetsLevel  = nextTierData ? p.level >= nextTierData.level : false;
-    const canAfford   = p.gold >= upgradeCost;
-    const canUpgrade  = nextTierData && meetsLevel && canAfford;
-
-    // Build tier display
     let tiersHtml = '';
     enchantDef.tiers.forEach((tier, i) => {
-        const tierNum = i + 1;
-        const isOwned = currentTier >= tierNum;
-        const isNext  = tierNum === nextTier;
-        const cost    = 500 * tierNum * tier.level;
+        const tierNum  = i + 1;
+        const isOwned  = currentTier >= tierNum;
+        const isNext   = tierNum === nextTier;
+        const cost     = 500 * tierNum * tier.level;
         const meetsLvl = p.level >= tier.level;
 
-        let borderCol = '#333';
-        let bgCol     = '#0a0a0a';
-        let statusTxt = '';
-        let statusCol = '#888';
-        let opacity   = '1';
-
+        let borderCol = '#333', bgCol = '#0a0a0a', statusTxt = '', statusCol = '#888', opacity = '1';
         if (isOwned) {
-            borderCol = '#00FF00'; bgCol = '#0a1a0a';
-            statusTxt = '✓ LEARNED'; statusCol = '#00FF00'; opacity = '0.7';
+            borderCol = '#00FF00'; bgCol = '#0a1a0a'; statusTxt = '✓ LEARNED'; statusCol = '#00FF00'; opacity = '0.7';
         } else if (isNext && !meetsLvl) {
             borderCol = '#444'; statusTxt = `🔒 Requires Lv ${tier.level}`; statusCol = '#666'; opacity = '0.5';
         } else if (isNext && !canAfford) {
-            borderCol = '#8B0000'; bgCol = '#1a0a0a';
-            statusTxt = `💰 Need ${(cost - p.gold).toLocaleString()}g more`; statusCol = '#FF6666';
+            borderCol = '#8B0000'; bgCol = '#1a0a0a'; statusTxt = `Need ${(cost - p.gold).toLocaleString()}g more`; statusCol = '#FF6666';
         } else if (isNext) {
-            borderCol = '#FFD700'; bgCol = '#1a1a0a';
-            statusTxt = `💰 ${cost.toLocaleString()}g`; statusCol = '#FFD700';
+            borderCol = '#FFD700'; bgCol = '#1a1a0a'; statusTxt = `💰 ${cost.toLocaleString()}g`; statusCol = '#FFD700';
         } else {
-            opacity = '0.4';
-            statusTxt = `🔒 Learn Tier ${tierNum - 1} first`; statusCol = '#555';
+            opacity = '0.4'; statusTxt = `🔒 Learn Tier ${tierNum - 1} first`; statusCol = '#555';
         }
 
-        // Build stat line for this tier
         let statLine = '';
-        if (tier.swings)       statLine += `${tier.swings} swings | `;
-        if (tier.healPct)      statLine += `${Math.round(tier.healPct*100)}% heal | `;
-        if (tier.defStrip)     statLine += `${tier.defStrip} armor stripped/hit | `;
-        if (tier.aoePct)       statLine += `${Math.round(tier.aoePct*100)}% AOE hit | `;
-        if (tier.tickDmg)      statLine += `${tier.tickDmg} dmg/tick | `;
-        if (tier.mpPerTick)    statLine += `${tier.mpPerTick} MP/tick | `;
-        if (tier.primaryBonus) statLine += `+${Math.round((tier.primaryBonus-1)*100)}% primary | `;
-        if (tier.splashPct)    statLine += `${Math.round(tier.splashPct*100)}% splash | `;
-        if (tier.mpCostPct)    statLine += `${Math.round(tier.mpCostPct*100)}% MP cost | `;
-        if (tier.mpCost && tier.mpCost > 1) statLine += `${tier.mpCost} MP/use | `;
-        if (tier.wisMult)      statLine += `${tier.wisMult}× WIS dmg | `;
-        if (tier.mpPerBounce)  statLine += `${tier.mpPerBounce} MP/bounce | `;
-        if (tier.bounceMs)     statLine += `${tier.bounceMs}ms bounce | `;
+        if (tier.swings)        statLine += `${tier.swings} swings | `;
+        if (tier.healPct)       statLine += `${Math.round(tier.healPct*100)}% heal/hit | `;
+        if (tier.defStrip)      statLine += `${tier.defStrip} armor stripped/hit | `;
+        if (tier.aoePct)        statLine += `${Math.round(tier.aoePct*100)}% AOE hit | `;
+        if (tier.tickDmg)       statLine += `${tier.tickDmg} dmg/tick | `;
+        if (tier.mpPerTick)     statLine += `${tier.mpPerTick} MP/tick | `;
+        if (tier.primaryBonus)  statLine += `+${Math.round((tier.primaryBonus-1)*100)}% primary dmg | `;
+        if (tier.splashPct)     statLine += `${Math.round(tier.splashPct*100)}% splash | `;
+        if (tier.mpCostPct)     statLine += `${Math.round(tier.mpCostPct*100)}% MP cost | `;
+        if (tier.mpCost > 1)    statLine += `${tier.mpCost} MP/use | `;
+        if (tier.wisMult)       statLine += `${tier.wisMult}× WIS dmg | `;
+        if (tier.mpPerBounce)   statLine += `${tier.mpPerBounce} MP/bounce | `;
         statLine = statLine.replace(/\| $/, '').trim();
 
         tiersHtml += `
-            <div style="
-                border: 2px solid ${borderCol};
-                background: ${bgCol};
-                border-radius: 6px;
-                padding: 12px 15px;
-                margin-bottom: 8px;
-                opacity: ${opacity};
-            ">
+            <div style="border:2px solid ${borderCol};background:${bgCol};border-radius:6px;
+                        padding:12px 15px;margin-bottom:8px;opacity:${opacity};">
                 <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
                     <div style="flex:2;">
-                        <div style="color:#FFD700;font-size:16px;font-weight:bold;">
+                        <div style="color:#FFD700;font-size:15px;font-weight:bold;">
                             ${enchantDef.icon} Tier ${tierNum}
                             <span style="color:#888;font-size:11px;margin-left:8px;">Lv ${tier.level}+</span>
                         </div>
@@ -1367,12 +1347,10 @@ function showEnchantTrainer() {
                         <div style="color:#88AAFF;font-size:12px;margin-top:6px;">${statLine}</div>
                     </div>
                     <div style="text-align:right;min-width:120px;">
-                        <div style="color:${statusCol};font-size:14px;font-weight:bold;">${statusTxt}</div>
-                        ${isNext && canUpgrade ? `<div style="color:#FFD700;font-size:11px;margin-top:4px;">▼ Click to upgrade</div>` : ''}
+                        <div style="color:${statusCol};font-size:13px;font-weight:bold;">${statusTxt}</div>
                     </div>
                 </div>
-            </div>
-        `;
+            </div>`;
     });
 
     const currentTierData = currentTier > 0 ? enchantDef.tiers[currentTier - 1] : null;
@@ -1381,7 +1359,6 @@ function showEnchantTrainer() {
         <div class="location-header" style="color:#FFD700;">⚡ ENCHANT TRAINING</div>
         <button onclick="showTemple()" style="margin-bottom:10px;">← BACK TO TEMPLE</button>
         ${renderPlayerStats()}
-
         <div class="message" style="border-color:#c8a000;text-align:center;">
             <div style="font-size:20px;margin-bottom:4px;">${enchantDef.icon} ${enchantDef.name}</div>
             <p style="color:#aaa;font-size:13px;">${enchantDef.description}</p>
@@ -1391,57 +1368,37 @@ function showEnchantTrainer() {
                 : `<p style="color:#888;">Not yet learned.</p>`}
             ${alreadyMaxed ? `<p style="color:#FF8800;">✦ FULLY MASTERED ✦</p>` : ''}
         </div>
-
-        <div style="margin:15px 0;">
-            ${tiersHtml}
-        </div>
-
+        <div style="margin:15px 0;">${tiersHtml}</div>
         ${canUpgrade ? `
             <div style="text-align:center;margin:20px 0;">
-                <button onclick="upgradeEnchant()" style="
-                    border-color:#FFD700;
-                    background:rgba(255,215,0,0.1);
-                    font-size:16px;
-                    padding:12px 24px;
-                ">
+                <button onclick="upgradeEnchant()"
+                    style="border-color:#FFD700;background:rgba(255,215,0,0.1);font-size:16px;padding:12px 24px;">
                     ⚡ LEARN TIER ${nextTier} — ${upgradeCost.toLocaleString()}g
                 </button>
-            </div>
-        ` : !alreadyMaxed ? `
-            <div style="text-align:center;color:#666;margin:15px 0;">
-                ${!meetsLevel ? `Reach level ${nextTierData.level} to unlock Tier ${nextTier}.`
-                              : `Need ${(upgradeCost - p.gold).toLocaleString()}g more gold.`}
-            </div>
-        ` : ''}
-
+            </div>` :
+        !alreadyMaxed ? `<div style="text-align:center;color:#666;margin:15px 0;">
+            ${!meetsLevel ? `Reach level ${nextTierData.level} to unlock Tier ${nextTier}.`
+                          : `Need ${(upgradeCost - p.gold).toLocaleString()}g more gold.`}
+        </div>` : ''}
         <button onclick="showTemple()">← BACK TO TEMPLE</button>
     `);
 }
 
 function upgradeEnchant() {
-    const p = gameState.player;
+    const p        = gameState.player;
     const classKey = p.baseClass || p.class;
     const enchantDef = MELEE_ENCHANTS[classKey];
     if (!enchantDef) return;
 
     const currentTier = p.enchant ? (p.enchant.tier || 0) : 0;
-    const nextTier = currentTier + 1;
-    if (nextTier > enchantDef.tiers.length) {
-        alert('Already fully mastered!');
-        return;
-    }
+    const nextTier    = currentTier + 1;
+    if (nextTier > enchantDef.tiers.length) { alert('Already fully mastered!'); return; }
 
     const tierData = enchantDef.tiers[nextTier - 1];
-    const cost = 500 * nextTier * tierData.level;
+    const cost     = 500 * nextTier * tierData.level;
 
-    if (p.level < tierData.level) {
-        alert(`Requires level ${tierData.level}!`);
-        return;
-    }
-    if (p.gold < cost) {
-        alert(`Not enough gold! Need ${cost.toLocaleString()}g.`);
-        return;
-    }
+    if (p.level < tierData.level) { alert(`Requires level ${tierData.level}!`); return; }
+    if (p.gold < cost)            { alert(`Need ${cost.toLocaleString()}g!`); return; }
 
     p.gold -= cost;
     if (!p.enchant) p.enchant = { key: enchantDef.key, tier: 0 };

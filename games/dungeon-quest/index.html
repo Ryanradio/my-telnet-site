@@ -5260,8 +5260,11 @@ function validateAndGoToStatAlloc() {
         baseClass: classKey,
         activePet: classKey === 'hunter' ? null : undefined,
         runeOverloadPips: classKey === 'runesmith' ? 0 : undefined,
-        enchant: MELEE_CLASSES && MELEE_CLASSES.includes(classKey)
-            ? { tier: 0, key: MELEE_ENCHANTS[classKey]?.key || null }
+        enchant: (typeof MELEE_CLASSES !== 'undefined' && MELEE_CLASSES.includes(classKey))
+            ? { tier: 0, key: (typeof MELEE_ENCHANTS !== 'undefined' && MELEE_ENCHANTS[classKey]) ? MELEE_ENCHANTS[classKey].key : null }
+            : undefined,
+        enchant: (typeof MELEE_CLASSES !== 'undefined' && MELEE_CLASSES.includes(classKey))
+            ? { tier: 0, key: (typeof MELEE_ENCHANTS !== 'undefined' && MELEE_ENCHANTS[classKey]) ? MELEE_ENCHANTS[classKey].key : null }
             : undefined,
         kills: {},
         runestones: [],
@@ -8312,6 +8315,42 @@ function renderDungeonActionBar() {
         const isRunesmith = (p.baseClass || p.class) === 'runesmith';
         const trapBtn   = isHunter  ? `<button onclick="(castTrap())" ${p.mp < 10 ? 'disabled' : ''} class="pip-btn" title="Set Trap [T]" style="border-color:#8B4513;">🪤<span class="kb-hint">T</span></button>` : '';
         const shieldBtn = isWarrior ? `<button onclick="playerDefend()" ${!canAct ? 'disabled' : ''} title="Shield — 70% to halve damage">🛡️</button>` : '';
+        // ── Melee Enchant button ──────────────────────────────────────
+        const _mClassKey   = p.baseClass || p.class;
+        const _isMelee     = typeof MELEE_CLASSES !== 'undefined' && MELEE_CLASSES.includes(_mClassKey);
+        const _enchDef     = _isMelee && typeof MELEE_ENCHANTS !== 'undefined' ? MELEE_ENCHANTS[_mClassKey] : null;
+        const _enchHasIt   = _enchDef && p.enchant && p.enchant.tier >= 1;
+        const _enchTierDat = _enchHasIt ? _enchDef.tiers[(p.enchant.tier - 1)] : null;
+        // MP cost varies per enchant type
+        const _enchMpCost  = _enchTierDat
+            ? (_enchTierDat.mpCostPct  ? Math.floor(p.maxMp * _enchTierDat.mpCostPct)
+             : _enchTierDat.mpPerTick  ? 1                 // consecrated/mjolnir — just needs >0 MP
+             : _enchTierDat.mpPerBounce ? 1
+             : _enchTierDat.mpCost     ? _enchTierDat.mpCost
+             : 0)
+            : 0;
+        const _enchReady   = _enchHasIt && canAct && p.mp >= _enchMpCost;
+        const _enchLabel   = _enchHasIt ? `${_enchDef.icon}` : '';
+        const _enchTitle   = _enchHasIt
+            ? `${_enchDef.name} — ${_enchMpCost > 0 ? _enchMpCost + ' MP' : '1 pip'}`
+            : '';
+        const enchantBtn   = _enchHasIt
+            ? `<button onclick="showEnchantTargetMenu()"
+                ${!_enchReady ? 'disabled' : ''}
+                class="pip-btn"
+                style="border-color:#c8a000;${_enchReady ? 'box-shadow:0 0 6px #c8a000;' : ''}"
+                title="${_enchTitle}">${_enchLabel}</button>`
+            : '';
+
+        // ── Scatter Shot for hunters (2 pips, no MP) ─────────────────
+        const _scatterOk  = isHunter && hitsLeft >= 2;
+        const scatterBtn  = isHunter
+            ? `<button onclick="executeScatterShot()"
+                ${!_scatterOk ? 'disabled' : ''}
+                class="pip-btn"
+                style="border-color:#CCCC44;"
+                title="Scatter Shot — 2 pips">🏹</button>`
+            : '';
 
         // Runesmith: overload pip display on spell button, fire glow on attack when charged
         const overloadPips = isRunesmith ? (p.runeOverloadPips || 0) : 0;
@@ -8333,6 +8372,8 @@ function renderDungeonActionBar() {
                 ${spellBtn}
                 ${shieldBtn}
                 ${trapBtn}
+                ${enchantBtn}
+                ${scatterBtn}
                 <button onclick="attemptFlee()"    ${!canAct ? 'disabled' : ''} title="Flee">🏃</button>
                 <button onclick="printStatsToTerminal()" title="Show Stats" style="border-color:#4488ff;">📊</button>
             </div>
@@ -8364,18 +8405,20 @@ ${showSpecial ? `<button onclick="handleAttackType('special')">⭐ Special</butt
 
     /* ───────── ENCHANT TARGET SELECTION ───────── */
     else if (mode === 'enchant_target') {
-        const enchTargetBtns = cs.monsters.map((m, i) => `
-            <button onclick="activateEnchant(${i})">
-                #${i + 1} ${m.name}<br>
-                <span style="font-size:11px;">HP ${m.hp}/${m.maxHp}</span>
-            </button>
-        `).join('');
+        const _etBtns = (cs.monsters || []).map((m, i) =>
+            m.hp > 0
+                ? `<button onclick="activateEnchant(${i})">
+                    ${m.name}<br>
+                    <span style="font-size:11px;color:#aaa;">HP ${m.hp}/${m.maxHp}</span>
+                   </button>`
+                : ''
+        ).join('');
         combatDiv.innerHTML = `
             <div style="color:#c8a000;font-size:14px;margin-bottom:4px;text-align:center;">
                 🎯 SELECT ENCHANT TARGET
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;">
-                ${enchTargetBtns}
+                ${_etBtns}
                 <button onclick="cancelAction()">❌</button>
             </div>
         `;
@@ -8416,47 +8459,12 @@ ${showSpecial ? `<button onclick="handleAttackType('special')">⭐ Special</butt
             `;
         }).join('');
 
-        // Enchant button for melee classes
-        const _pSL = gameState.player;
-        const _clsSL = _pSL.baseClass || _pSL.class;
-        const _hasMeleeEnchant = typeof MELEE_CLASSES !== 'undefined' && MELEE_CLASSES.includes(_clsSL)
-            && _pSL.enchant && _pSL.enchant.tier >= 1;
-        const _enchDef = _hasMeleeEnchant ? MELEE_ENCHANTS[_clsSL] : null;
-        const _enchTierData = _hasMeleeEnchant ? MELEE_ENCHANTS[_clsSL].tiers[(_pSL.enchant.tier||1)-1] : null;
-        const _enchMpCost = _enchTierData
-            ? (_enchTierData.mpCostPct ? Math.floor(_pSL.maxMp * _enchTierData.mpCostPct)
-               : _enchTierData.mpCost !== undefined ? (_enchTierData.mpCost <= 1 && _enchTierData.mpCost > 0
-                   ? Math.floor(_pSL.maxMp * _enchTierData.mpCost) : _enchTierData.mpCost)
-               : 0)
-            : 0;
-        const _enchCanAct = _hasMeleeEnchant && _pSL.mp >= _enchMpCost;
-        const enchantBtn = _hasMeleeEnchant ? `
-            <button onclick="showEnchantTargetMenu()" ${!_enchCanAct ? 'disabled' : ''}
-                style="border-color:#c8a000;background:rgba(200,160,0,0.1);"
-                title="${_enchDef.name} — ${_enchMpCost} MP">
-                ${_enchDef.icon} ${_enchDef.name}<br>
-                <span style="font-size:10px;color:#c8a000;">${_enchMpCost} MP</span>
-            </button>` : '';
-
-        // Scatter Shot for hunters (2 pips, no mp)
-        const _isHunterSL = _clsSL === 'hunter';
-        const _scatterAvail = _isHunterSL && hitsLeft >= 2;
-        const scatterBtn = _isHunterSL ? `
-            <button onclick="executeScatterShot()" ${!_scatterAvail ? 'disabled' : ''}
-                style="border-color:#CCCC44;background:rgba(200,200,0,0.1);"
-                title="Scatter Shot — 2 pips">
-                🏹 Scatter Shot<br>
-                <span style="font-size:10px;color:#CCCC44;">2 pips</span>
-            </button>` : '';
-
         combatDiv.innerHTML = `
             <div style="color:var(--highlight-color);font-size:14px;margin-bottom:4px;text-align:center;">
                 SPELL
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;">
                 ${spellBtns}
-                ${enchantBtn}
-                ${scatterBtn}
                 <button onclick="cancelAction()">❌</button>
             </div>
         `;
@@ -9492,6 +9500,42 @@ function handleAttackType(type) {
             const isRunesmith = (p.baseClass || p.class) === 'runesmith';
             const trapBtn   = isHunter  ? `<button onclick="(castTrap())" ${p.mp < 10 ? 'disabled' : ''} class="action-icon-btn" title="Set Trap [T] - 10 MP" style="border-color:#8B4513;">🪤<span class="kb-hint">T</span></button>` : '';
             const shieldBtn = isWarrior ? `<button onclick="playerDefend()" ${!canAct?'disabled':''} class="action-icon-btn" title="Shield [4] — Raise defense by 50% this turn" style="border-color:#00CCFF;">🛡️<span class="kb-hint">4</span></button>` : '';
+        // ── Melee Enchant button ──────────────────────────────────────
+        const _mClassKey   = p.baseClass || p.class;
+        const _isMelee     = typeof MELEE_CLASSES !== 'undefined' && MELEE_CLASSES.includes(_mClassKey);
+        const _enchDef     = _isMelee && typeof MELEE_ENCHANTS !== 'undefined' ? MELEE_ENCHANTS[_mClassKey] : null;
+        const _enchHasIt   = _enchDef && p.enchant && p.enchant.tier >= 1;
+        const _enchTierDat = _enchHasIt ? _enchDef.tiers[(p.enchant.tier - 1)] : null;
+        // MP cost varies per enchant type
+        const _enchMpCost  = _enchTierDat
+            ? (_enchTierDat.mpCostPct  ? Math.floor(p.maxMp * _enchTierDat.mpCostPct)
+             : _enchTierDat.mpPerTick  ? 1                 // consecrated/mjolnir — just needs >0 MP
+             : _enchTierDat.mpPerBounce ? 1
+             : _enchTierDat.mpCost     ? _enchTierDat.mpCost
+             : 0)
+            : 0;
+        const _enchReady   = _enchHasIt && canAct && p.mp >= _enchMpCost;
+        const _enchLabel   = _enchHasIt ? `${_enchDef.icon}` : '';
+        const _enchTitle   = _enchHasIt
+            ? `${_enchDef.name} — ${_enchMpCost > 0 ? _enchMpCost + ' MP' : '1 pip'}`
+            : '';
+        const enchantBtn   = _enchHasIt
+            ? `<button onclick="showEnchantTargetMenu()"
+                ${!_enchReady ? 'disabled' : ''}
+                class="action-icon-btn"
+                style="border-color:#c8a000;${_enchReady ? 'box-shadow:0 0 6px #c8a000;' : ''}"
+                title="${_enchTitle}">${_enchLabel}</button>`
+            : '';
+
+        // ── Scatter Shot for hunters (2 pips, no MP) ─────────────────
+        const _scatterOk  = isHunter && hitsLeft >= 2;
+        const scatterBtn  = isHunter
+            ? `<button onclick="executeScatterShot()"
+                ${!_scatterOk ? 'disabled' : ''}
+                class="action-icon-btn"
+                style="border-color:#CCCC44;"
+                title="Scatter Shot — 2 pips">🏹</button>`
+            : '';
 
             // Runesmith overload UI
             const rsPips = isRunesmith ? (p.runeOverloadPips || 0) : 0;
@@ -9512,6 +9556,8 @@ function handleAttackType(type) {
                     <button onclick="showCombatInventory()" class="action-icon-btn" title="Inventory [3]" style="border-color:#00FF88;">🎒<span class="kb-hint">3</span></button>
                     ${trapBtn}
                     ${shieldBtn}
+                    ${enchantBtn}
+                    ${scatterBtn}
                     <button onclick="attemptFlee()"    ${!canAct?'disabled':''} class="action-icon-btn" title="Flee [5]">🏃<span class="kb-hint">5</span></button>
                     <button onclick="printStatsToTerminal()" class="action-icon-btn" title="Show Stats [6]" style="border-color:#4488ff;">📊<span class="kb-hint">6</span></button>
                 </div>
