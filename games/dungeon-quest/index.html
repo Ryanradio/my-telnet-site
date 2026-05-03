@@ -2235,6 +2235,7 @@ async function loadCharacter(characterId) {
             achievements: data.player.achievements || [],
             runestones: data.player.runestones || [],
             portalUnlocked: data.player.portalUnlocked || false,
+            enchant: data.player.enchant || null,
             dungeonMaps: (() => {
                 const maps = {};
                 if (data.player.dungeonMaps) {

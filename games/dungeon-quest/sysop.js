@@ -339,6 +339,9 @@ if ((!p.armor || p.armor === 'no_armor') && p.inventory) {
             weapon: p.weapon,
             armor: p.armor,
             activePet: p.activePet || null,
+
+            // Save melee class enchantment
+            enchant: p.enchant || null, 
             
             // Inventory & spells
             inventory: [...(p.inventory || [])],
