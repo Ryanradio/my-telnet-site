@@ -439,7 +439,8 @@ function initInventoryTooltips() {
         if (!container) return;
         
         // Find all elements that contain item data (⚔️ or 🛡️)
-        const itemElements = container.querySelectorAll('.item-card, button');
+        // Also include equipped items with data-equipped-key attribute
+        const itemElements = container.querySelectorAll('.item-card, button, [data-equipped-key]');
         
         itemElements.forEach(el => {
             const text = el.innerText;
@@ -448,6 +449,7 @@ function initInventoryTooltips() {
             // Skip equip/unequip and close buttons
             if (text === 'EQUIP' || text === 'UNEQUIP' || text === 'CANNOT EQUIP') return;
             if (text.includes('CLOSE INVENTORY')) return;
+            if (text.includes('BACK')) return;
             
             let pressTimer;
             
@@ -468,6 +470,23 @@ function initInventoryTooltips() {
             });
             
             el.addEventListener('touchcancel', () => {
+                clearTimeout(pressTimer);
+                removeTooltip();
+            });
+            
+            // Also add mouse events for desktop testing
+            el.addEventListener('mousedown', (e) => {
+                pressTimer = setTimeout(() => {
+                    showItemTooltip(el, e);
+                }, 500);
+            });
+            
+            el.addEventListener('mouseup', () => {
+                clearTimeout(pressTimer);
+                removeTooltip();
+            });
+            
+            el.addEventListener('mouseleave', () => {
                 clearTimeout(pressTimer);
                 removeTooltip();
             });
@@ -1358,7 +1377,7 @@ if (typeof ADVENTURE_ENEMIES !== 'undefined') {
             'instant': -1  // No delay
         };
         
-        let currentModemSpeed = '14.4k'; // Default to 14.4k modem (authentic BBS experience)
+        let currentModemSpeed = '56k'; // Default to 56k modem (authentic BBS experience)
 
         // ═════════════════════════════════════════════════════════════════════
         //  HAPTIC FEEDBACK ENGINE
@@ -8320,27 +8339,35 @@ function renderDungeonActionBar() {
         const _mClassKey   = p.baseClass || p.class;
         const _isMelee     = typeof MELEE_CLASSES !== 'undefined' && MELEE_CLASSES.includes(_mClassKey);
         const _enchDef     = _isMelee && typeof MELEE_ENCHANTS !== 'undefined' ? MELEE_ENCHANTS[_mClassKey] : null;
-        const _enchHasIt   = _enchDef && p.enchant && p.enchant.tier >= 1;
-        const _enchTierDat = _enchHasIt ? _enchDef.tiers[(p.enchant.tier - 1)] : null;
-        // MP cost varies per enchant type
+        if (_isMelee && !p.enchant) p.enchant = { tier: 0, key: _enchDef ? _enchDef.key : null };
+        const _enchTier    = p.enchant ? (p.enchant.tier || 0) : 0;
+        const _enchLearned = _enchDef && _enchTier >= 1;
+        const _enchTierDat = _enchLearned ? _enchDef.tiers[_enchTier - 1] : null;
         const _enchMpCost  = _enchTierDat
-            ? (_enchTierDat.mpCostPct  ? Math.floor(p.maxMp * _enchTierDat.mpCostPct)
-             : _enchTierDat.mpPerTick  ? 1                 // consecrated/mjolnir — just needs >0 MP
+            ? (_enchTierDat.mpCostPct   ? Math.floor(p.maxMp * _enchTierDat.mpCostPct)
+             : _enchTierDat.mpPerTick   ? 1
              : _enchTierDat.mpPerBounce ? 1
-             : _enchTierDat.mpCost     ? _enchTierDat.mpCost
+             : _enchTierDat.mpCost      ? _enchTierDat.mpCost
              : 0)
             : 0;
-        const _enchReady   = _enchHasIt && canAct && p.mp >= _enchMpCost;
-        const _enchLabel   = _enchHasIt ? `${_enchDef.icon}` : '';
-        const _enchTitle   = _enchHasIt
-            ? `${_enchDef.name} — ${_enchMpCost > 0 ? _enchMpCost + ' MP' : '1 pip'}`
-            : '';
-        const enchantBtn   = _enchHasIt
-            ? `<button onclick="showEnchantTargetMenu()"
-                ${!_enchReady ? 'disabled' : ''}
+        const _csCh        = gameState.combatState;
+        const _enchActive  = _csCh && (_csCh.consecratedTimer || _csCh.mjolnirTimer);
+        const _enchReady   = _enchLearned && canAct && (p.mp >= _enchMpCost || _enchActive);
+        const enchantBtn   = _enchDef
+            ? `<button
+                onclick="${_enchLearned ? 'showEnchantTargetMenu()' : 'termAppend(\'⚡ Enchant not learned — must be level 5. Train at the Temple!\', \'term-error\')'}"
                 class="pip-btn"
-                style="border-color:#c8a000;${_enchReady ? 'box-shadow:0 0 6px #c8a000;' : ''}"
-                title="${_enchTitle}">${_enchLabel}</button>`
+                style="border-color:#c8a000;${_enchActive
+                    ? 'box-shadow:0 0 8px #FFD700;animation:runeOverloadPulse 1s ease-in-out infinite;background:rgba(200,160,0,0.2);'
+                    : _enchReady ? 'box-shadow:0 0 4px #c8a000;' : 'opacity:0.4;'}"
+                title="${_enchLearned
+                    ? (_enchActive ? 'Turn OFF ' : 'Activate ') + _enchDef.name + (_enchMpCost > 0 ? ' (' + _enchMpCost + ' MP)' : ' (1 pip)')
+                    : _enchDef.name + ' — Learn at the Temple (Lv 5)'}"
+                >${_enchDef.icon}${!_enchLearned
+                    ? '<span style=\'font-size:9px;display:block;line-height:1;\'>LV5</span>'
+                    : _enchActive
+                        ? '<span style=\'font-size:8px;display:block;line-height:1;color:#FFD700;\'>ON</span>'
+                        : ''}</button>`
             : '';
 
         // ── Scatter Shot for hunters (2 pips, no MP) ─────────────────
@@ -9520,27 +9547,35 @@ function handleAttackType(type) {
         const _mClassKey   = p.baseClass || p.class;
         const _isMelee     = typeof MELEE_CLASSES !== 'undefined' && MELEE_CLASSES.includes(_mClassKey);
         const _enchDef     = _isMelee && typeof MELEE_ENCHANTS !== 'undefined' ? MELEE_ENCHANTS[_mClassKey] : null;
-        const _enchHasIt   = _enchDef && p.enchant && p.enchant.tier >= 1;
-        const _enchTierDat = _enchHasIt ? _enchDef.tiers[(p.enchant.tier - 1)] : null;
-        // MP cost varies per enchant type
+        if (_isMelee && !p.enchant) p.enchant = { tier: 0, key: _enchDef ? _enchDef.key : null };
+        const _enchTier    = p.enchant ? (p.enchant.tier || 0) : 0;
+        const _enchLearned = _enchDef && _enchTier >= 1;
+        const _enchTierDat = _enchLearned ? _enchDef.tiers[_enchTier - 1] : null;
         const _enchMpCost  = _enchTierDat
-            ? (_enchTierDat.mpCostPct  ? Math.floor(p.maxMp * _enchTierDat.mpCostPct)
-             : _enchTierDat.mpPerTick  ? 1                 // consecrated/mjolnir — just needs >0 MP
+            ? (_enchTierDat.mpCostPct   ? Math.floor(p.maxMp * _enchTierDat.mpCostPct)
+             : _enchTierDat.mpPerTick   ? 1
              : _enchTierDat.mpPerBounce ? 1
-             : _enchTierDat.mpCost     ? _enchTierDat.mpCost
+             : _enchTierDat.mpCost      ? _enchTierDat.mpCost
              : 0)
             : 0;
-        const _enchReady   = _enchHasIt && canAct && p.mp >= _enchMpCost;
-        const _enchLabel   = _enchHasIt ? `${_enchDef.icon}` : '';
-        const _enchTitle   = _enchHasIt
-            ? `${_enchDef.name} — ${_enchMpCost > 0 ? _enchMpCost + ' MP' : '1 pip'}`
-            : '';
-        const enchantBtn   = _enchHasIt
-            ? `<button onclick="showEnchantTargetMenu()"
-                ${!_enchReady ? 'disabled' : ''}
+        const _csCh        = gameState.combatState;
+        const _enchActive  = _csCh && (_csCh.consecratedTimer || _csCh.mjolnirTimer);
+        const _enchReady   = _enchLearned && canAct && (p.mp >= _enchMpCost || _enchActive);
+        const enchantBtn   = _enchDef
+            ? `<button
+                onclick="${_enchLearned ? 'showEnchantTargetMenu()' : 'termAppend(\'⚡ Enchant not learned — must be level 5. Train at the Temple!\', \'term-error\')'}"
                 class="action-icon-btn"
-                style="border-color:#c8a000;${_enchReady ? 'box-shadow:0 0 6px #c8a000;' : ''}"
-                title="${_enchTitle}">${_enchLabel}</button>`
+                style="border-color:#c8a000;${_enchActive
+                    ? 'box-shadow:0 0 8px #FFD700;animation:runeOverloadPulse 1s ease-in-out infinite;background:rgba(200,160,0,0.2);'
+                    : _enchReady ? 'box-shadow:0 0 4px #c8a000;' : 'opacity:0.4;'}"
+                title="${_enchLearned
+                    ? (_enchActive ? 'Turn OFF ' : 'Activate ') + _enchDef.name + (_enchMpCost > 0 ? ' (' + _enchMpCost + ' MP)' : ' (1 pip)')
+                    : _enchDef.name + ' — Learn at the Temple (Lv 5)'}"
+                >${_enchDef.icon}${!_enchLearned
+                    ? '<span style=\'font-size:9px;display:block;line-height:1;\'>LV5</span>'
+                    : _enchActive
+                        ? '<span style=\'font-size:8px;display:block;line-height:1;color:#FFD700;\'>ON</span>'
+                        : ''}</button>`
             : '';
 
         // ── Scatter Shot for hunters (2 pips, no MP) ─────────────────

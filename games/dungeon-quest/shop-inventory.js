@@ -2108,7 +2108,34 @@ function showInventory() {
 let _inventoryReturnCallback = null;
 
 function showUnifiedInventory(returnCallback = null) {
-        // DETECT ORIGIN - where is this being called from?
+
+    if (!document.getElementById('inventory-card-styles')) {
+        const style = document.createElement('style');
+        style.id = 'inventory-card-styles';
+        style.textContent = `
+            .inventory-card {
+                font-size: 11px !important;
+            }
+            .inventory-card .item-name {
+                font-size: 13px !important;
+            }
+            .inventory-card .item-stats {
+                font-size: 10px !important;
+            }
+            .inventory-card button {
+                font-size: 10px !important;
+                padding: 4px 8px !important;
+            }
+            .inventory-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+                gap: 8px;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    // DETECT ORIGIN - where is this being called from?
     let origin = 'unknown';
     
     // Check DUNGEON FIRST (since it also has _currentExploreArea)
@@ -2249,7 +2276,7 @@ function showUnifiedInventory(returnCallback = null) {
         return WEAPONS[p.weapon];
     })();
     
-    invHtml += `<div class="equipped-card weapon">`;
+    invHtml += `<div class="equipped-card weapon item-card" style="text-align:left;">`;
     if (!eqWeapon || !!eqWeapon.unarmed) {
         invHtml += `<div class="item-name">✊ Bare Fists</div>
                     <div class="item-stats">No weapon equipped</div>
@@ -2263,10 +2290,49 @@ function showUnifiedInventory(returnCallback = null) {
         const qualityColor = qc?.color || '#0f0';
         const qualityName = qc?.name || displayQuality;
         
-        invHtml += `<div class="item-name" style="color:${qualityColor};">⚔️ ${equippedInstance?.name || eqWeapon.name}</div>
-                    <div class="item-stats">${eqWeapon.weaponSubtype || eqWeapon.type || 'Weapon'} | Lv${eqWeapon.level || 1}</div>
-                    <div class="item-stats">${buildWeaponDmgLine({...eqWeapon, quality: displayQuality}, displayQuality, p)}</div>
-                    <button class="inv-btn-small unequip" onclick="unequipItem('weapon'); showUnifiedInventory(_inventoryReturnCallback);">UNEQUIP</button>`;
+        // Build modifiers HTML
+        let eqModifierHtml = '';
+        const modifiers = equippedInstance?.modifiers || eqWeapon.modifiers || [];
+        if (modifiers.length > 0) {
+            eqModifierHtml = '<div style="margin-top:5px;font-size:10px;text-align:left;">';
+            modifiers.forEach(mod => {
+                const modColor = mod.color || '#FFD700';
+                eqModifierHtml += `<div style="color:${modColor};">✨ ${mod.name}`;
+                if (mod.minDamage) eqModifierHtml += ` (+${mod.minDamage}-${mod.maxDamage})`;
+                if (mod.critBonus) eqModifierHtml += ` (+${mod.critBonus}% crit)`;
+                if (mod.lifestealPercent) eqModifierHtml += ` (${mod.lifestealPercent}% lifesteal)`;
+                eqModifierHtml += `</div>`;
+            });
+            eqModifierHtml += '</div>';
+        }
+        
+        // Build gem slot HTML
+        const gemSlots = eqWeapon.gemSlots || 3;
+        const gems = equippedInstance?.gems || eqWeapon.gems || [];
+        let gemSlotHtml = '';
+        if (gemSlots > 0) {
+            gemSlotHtml = '<div style="margin-top:5px;font-size:10px;text-align:left;">';
+            for (let i = 0; i < gemSlots; i++) {
+                const gem = gems[i];
+                if (gem) {
+                    gemSlotHtml += `<div style="display:flex;align-items:center;gap:5px;margin:2px 0;">
+                        <span style="color:${gem.color};">⬤</span>
+                        <span style="color:${gem.color};">${gem.emoji || '💎'} ${gem.name}</span>
+                        <span style="color:#888;font-size:9px;">${gem.description || ''}</span>
+                    </div>`;
+                } else {
+                    gemSlotHtml += `<div style="color:#444;margin:2px 0;">⬤ EMPTY SLOT ${i+1}</div>`;
+                }
+            }
+            gemSlotHtml += '</div>';
+        }
+        
+        invHtml += `<div class="item-name" style="color:${qualityColor};text-align:left;">⚔️ ${equippedInstance?.name || eqWeapon.name}</div>
+                    <div class="item-stats" style="text-align:left;">${eqWeapon.weaponSubtype || eqWeapon.type || 'Weapon'} | Lv${eqWeapon.level || 1}</div>
+                    <div class="item-stats" style="text-align:left;">${buildWeaponDmgLine({...eqWeapon, quality: displayQuality}, displayQuality, p)}</div>
+                    ${eqModifierHtml}
+                    ${gemSlotHtml}
+                    <button class="inv-btn-small unequip" onclick="unequipItem('weapon'); showUnifiedInventory(_inventoryReturnCallback);" style="display:inline-block;margin-top:6px;">UNEQUIP</button>`;
     }
     invHtml += `</div>`;
     
@@ -2282,10 +2348,10 @@ function showUnifiedInventory(returnCallback = null) {
         return ARMOR[p.armor];
     })();
     
-    invHtml += `<div class="equipped-card armor">`;
+    invHtml += `<div class="equipped-card armor item-card" style="text-align:left;">`;
     if (!eqArmor || !!eqArmor.unarmored) {
-        invHtml += `<div class="item-name">🫥 No Armor</div>
-                    <div class="item-stats">No armor equipped</div>
+        invHtml += `<div class="item-name" style="text-align:left;">🫥 No Armor</div>
+                    <div class="item-stats" style="text-align:left;">No armor equipped</div>
                     <button class="inv-btn-small" disabled>UNEQUIP</button>`;
     } else {
         const equippedInstance = p.inventory.find(item => 
@@ -2295,10 +2361,41 @@ function showUnifiedInventory(returnCallback = null) {
         const aqc = QUALITY_CONFIG[displayQuality];
         const qualityColor = aqc?.color || '#0f0';
         
-        invHtml += `<div class="item-name" style="color:${qualityColor};">🛡️ ${eqArmor.name}</div>
-                    <div class="item-stats">${eqArmor.armorSubtype || eqArmor.type || 'Armor'} | Lv${eqArmor.level || 1}</div>
-                    <div class="item-stats">DEF: ${eqArmor.baseDefense + (aqc?.bonusPct ? Math.floor(eqArmor.baseDefense * aqc.bonusPct) : 0)}</div>
-                    <button class="inv-btn-small unequip" onclick="unequipItem('armor'); showUnifiedInventory(_inventoryReturnCallback);">UNEQUIP</button>`;
+        // Build HP/MP display (use equippedInstance for bonuses)
+        let hpMpDisplay = '';
+        // Check both equippedInstance and eqArmor for bonuses
+        const bonusHp = equippedInstance?.bonusHp || eqArmor.bonusHp || 0;
+        const bonusMp = equippedInstance?.bonusMp || eqArmor.bonusMp || 0;
+        if (bonusHp > 0 || bonusMp > 0) {
+            hpMpDisplay = '<div style="margin-top:3px;font-size:10px;color:#88ff88;text-align:left;">';
+            if (bonusHp > 0) hpMpDisplay += `❤️ +${bonusHp} HP `;
+            if (bonusMp > 0) hpMpDisplay += `✨ +${bonusMp} MP`;
+            hpMpDisplay += '</div>';
+        }
+        
+        // Build modifiers display (use equippedInstance for modifiers)
+        let modifierDisplay = '';
+        const modifiers = equippedInstance?.modifiers || eqArmor.modifiers || [];
+        if (modifiers.length > 0) {
+            modifierDisplay = '<div style="margin-top:5px;font-size:10px;text-align:left;">';
+            modifiers.forEach(mod => {
+                const valueStr = mod.statType === 'percent' ? `${mod.value}%` : `+${mod.value}`;
+                const icon = mod.icon || '✨';
+                modifierDisplay += `<div style="color:${mod.color || '#FFD700'};">${icon} ${mod.name}: ${valueStr}</div>`;
+            });
+            modifierDisplay += '</div>';
+        }
+        
+        // Calculate total defense with quality bonus
+        const qualityBonus = aqc?.bonusPct ? Math.floor(eqArmor.baseDefense * aqc.bonusPct) : 0;
+        const totalDef = eqArmor.baseDefense + qualityBonus;
+        
+        invHtml += `<div class="item-name" style="color:${qualityColor};text-align:left;">🛡️ ${equippedInstance?.name || eqArmor.name}</div>
+                    <div class="item-stats" style="text-align:left;">${eqArmor.armorSubtype || eqArmor.type || 'Armor'} | Lv${eqArmor.level || 1}</div>
+                    <div class="item-stats" style="text-align:left;">DEF: ${totalDef}</div>
+                    ${hpMpDisplay}
+                    ${modifierDisplay}
+                    <button class="inv-btn-small unequip" onclick="unequipItem('armor'); showUnifiedInventory(_inventoryReturnCallback);" style="display:inline-block;margin-top:6px;">UNEQUIP</button>`;
     }
     invHtml += `</div></div></div>`;
     
@@ -2324,9 +2421,42 @@ function showUnifiedInventory(returnCallback = null) {
         const qualityColor = qc?.color || '#0f0';
         const canEquip = canUseWeapon(p.baseClass || p.class, weaponData);
         
+        // Build modifier display for unequipped weapons
+        let modDisplay = '';
+        const modifiers = item.modifiers || [];
+        if (modifiers.length > 0) {
+            modDisplay = '<div style="margin-top:3px;font-size:9px;">';
+            modifiers.forEach(mod => {
+                modDisplay += `<div style="color:${mod.color || '#FFD700'};">✨ ${mod.name}`;
+                if (mod.minDamage) modDisplay += ` (${mod.minDamage}-${mod.maxDamage})`;
+                if (mod.critBonus) modDisplay += ` (+${mod.critBonus}% crit)`;
+                modDisplay += `</div>`;
+            });
+            modDisplay += '</div>';
+        }
+        
+        // Build gem slot display for unequipped weapons
+        const gemSlots = weaponData.gemSlots || 0;
+        const gems = item.gems || [];
+        let gemDisplay = '';
+        if (gemSlots > 0) {
+            gemDisplay = '<div style="margin-top:3px;font-size:9px;">';
+            for (let i = 0; i < gemSlots; i++) {
+                const gem = gems[i];
+                if (gem) {
+                    gemDisplay += `<div style="color:${gem.color};">⬤ ${gem.name}</div>`;
+                } else {
+                    gemDisplay += `<div style="color:#444;">⬤ Empty Slot ${i+1}</div>`;
+                }
+            }
+            gemDisplay += '</div>';
+        }
+        
         invHtml += `<div class="item-card ${qualityClass}" data-item-id="${item.instanceId}">
             <div class="item-name" style="color:${qualityColor};">⚔️ ${item.name}</div>
             <div class="item-stats">Lv${weaponData.level || 1} | ${buildWeaponDmgLine({...weaponData, quality: displayQuality}, displayQuality, p)}</div>
+            ${modDisplay}
+            ${gemDisplay}
             ${canEquip ? `<button class="inv-btn-equip" onclick="equipItem('weapon', '${item.instanceId}'); showUnifiedInventory(_inventoryReturnCallback);">EQUIP</button>` : `<button class="inv-btn-equip disabled" disabled>CANNOT EQUIP</button>`}
         </div>`;
     });
@@ -2358,9 +2488,31 @@ function showUnifiedInventory(returnCallback = null) {
         const qualityColor = qc?.color || '#0f0';
         const canEquip = canUseArmor(p.baseClass || p.class, armorData);
         
+        // Build HP/MP display for unequipped armor
+        let hpMpDisplay = '';
+        if ((item.bonusHp && item.bonusHp > 0) || (item.bonusMp && item.bonusMp > 0)) {
+            hpMpDisplay = '<div style="margin-top:3px;font-size:9px;color:#88ff88;">';
+            if (item.bonusHp && item.bonusHp > 0) hpMpDisplay += `❤️ +${item.bonusHp} HP `;
+            if (item.bonusMp && item.bonusMp > 0) hpMpDisplay += `✨ +${item.bonusMp} MP`;
+            hpMpDisplay += '</div>';
+        }
+        
+        // Build modifiers display for unequipped armor
+        let modifierDisplay = '';
+        if (item.modifiers && item.modifiers.length > 0) {
+            modifierDisplay = '<div style="margin-top:3px;font-size:9px;">';
+            item.modifiers.forEach(mod => {
+                const valueStr = mod.statType === 'percent' ? `${mod.value}%` : `+${mod.value}`;
+                modifierDisplay += `<div style="color:${mod.color};">${mod.icon || '✨'} ${mod.name}: ${valueStr}</div>`;
+            });
+            modifierDisplay += '</div>';
+        }
+        
         invHtml += `<div class="item-card ${qualityClass}" data-item-id="${item.instanceId}">
             <div class="item-name" style="color:${qualityColor};">🛡️ ${item.name}</div>
             <div class="item-stats">Lv${armorData.level || 1} | DEF: ${armorData.baseDefense + (qc?.bonusPct ? Math.floor(armorData.baseDefense * qc.bonusPct) : 0)}</div>
+            ${hpMpDisplay}
+            ${modifierDisplay}
             ${canEquip ? `<button class="inv-btn-equip" onclick="equipItem('armor', '${item.instanceId}'); showUnifiedInventory(_inventoryReturnCallback);">EQUIP</button>` : `<button class="inv-btn-equip disabled" disabled>CANNOT EQUIP</button>`}
         </div>`;
     });

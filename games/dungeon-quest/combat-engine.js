@@ -5692,19 +5692,38 @@ if (cs.isBountyFight) {
             );
 
             if (defeatedDungeonEnemy && defeatedDungeonEnemy.drop) {
-                const dropKey = defeatedDungeonEnemy.drop;
-                if (dropKey && ITEMS[dropKey]) {
-                    gameState.player.inventory.push(dropKey);
-                    const dropItem = ITEMS[dropKey];
-                    const dropIcon = dropItem.icon || '📦';
-                    const keyColor = dropItem.subtype === 'dungeon_key' ? '#e8b84a' : '#00FF88';
-                    termAppend(
-                        `${dropIcon} <span style="color:${keyColor};">${dropItem.name}</span> found on the body!`,
-                        'term-loot'
-                    );
-                }
-            }
-        });
+    const dropKey = defeatedDungeonEnemy.drop;
+    
+    // Check if this is a weapon (exists in WEAPONS and not unarmed)
+    if (WEAPONS[dropKey] && !WEAPONS[dropKey].unarmed) {
+        // Generate a proper weapon object
+        const weaponDrop = generateWeaponDrop(gameState.player, defeatedDungeonEnemy.level || gameState.player.level, 'common', true, null, true);
+        if (weaponDrop && typeof weaponDrop === 'object') {
+            gameState.player.inventory.push(weaponDrop);
+            termAppend(`⚔️ <span style="color:#FFD700;">${weaponDrop.name}</span> found on the body!`, 'term-loot');
+        }
+    }
+    // Check if this is armor
+    else if (ARMOR[dropKey] && !ARMOR[dropKey].unarmored) {
+        // Generate a proper armor object
+        const armorDrop = generateArmorDrop(gameState.player, defeatedDungeonEnemy.level || gameState.player.level, 'common', true, null, true);
+        if (armorDrop && typeof armorDrop === 'object') {
+            gameState.player.inventory.push(armorDrop);
+            termAppend(`🛡️ <span style="color:#44AAFF;">${armorDrop.name}</span> found on the body!`, 'term-loot');
+        }
+    }
+    // Regular item (potion, key, etc.)
+    else if (dropKey && ITEMS[dropKey]) {
+        gameState.player.inventory.push(dropKey);
+        const dropItem = ITEMS[dropKey];
+        const dropIcon = dropItem.icon || '📦';
+        const keyColor = dropItem.subtype === 'dungeon_key' ? '#e8b84a' : '#00FF88';
+        termAppend(
+            `${dropIcon} <span style="color:${keyColor};">${dropItem.name}</span> found on the body!`,
+            'term-loot'
+        );
+    }
+    }});
 
         if (linkedIds.length > 0) {
             if (!gameState.dungeon.defeatedEnemies) gameState.dungeon.defeatedEnemies = [];
@@ -6404,6 +6423,16 @@ function applyExposeWeakness(cs, enemy) {
 // 3. CONSECRATED GROUND — Paladin
 // ─────────────────────────────────────────────────────────────
 function activateConsecratedGround(p, cs, tier) {
+    // ── TOGGLE OFF if already active ─────────────────────────
+    if (cs.consecratedTimer) {
+        clearInterval(cs.consecratedTimer);
+        cs.consecratedTimer = null;
+        if (cs.monsters) cs.monsters.forEach(e => { e._consecrated = false; });
+        termAppend('🔥 <span style="color:#888;">Consecrated Ground extinguished.</span>', 'term-dim');
+        updateHud();
+        renderActionBar();
+        return;
+    }
     if (p.mp <= 0) {
         termAppend('No mana! Consecrated Ground needs mana to channel.', 'term-error');
         return;
@@ -6589,6 +6618,15 @@ function activateSavageBite(p, cs, tier, targetIndex) {
 // 6. MJOLNIR'S WRATH — Runesmith
 // ─────────────────────────────────────────────────────────────
 function activateMjolnirsWrath(p, cs, tier) {
+    // ── TOGGLE OFF if already active ─────────────────────────
+    if (cs.mjolnirTimer) {
+        clearInterval(cs.mjolnirTimer);
+        cs.mjolnirTimer = null;
+        termAppend('⚡ <span style="color:#888;">The lightning fades as you lower your hammer.</span>', 'term-dim');
+        updateHud();
+        renderActionBar();
+        return;
+    }
     if (p.mp <= 0) {
         termAppend("No mana! Mjolnir's Wrath needs mana to channel.", 'term-error');
         return;
@@ -6599,8 +6637,6 @@ function activateMjolnirsWrath(p, cs, tier) {
     if (pipIdx === -1) { termAppend('No pips available!', 'term-error'); return; }
     cs.pipAvailable[pipIdx] = false;
     cs.pipTimers[pipIdx]    = getPipCooldown(p);
-
-    if (cs.mjolnirTimer) { clearInterval(cs.mjolnirTimer); cs.mjolnirTimer = null; }
 
     termAppend('', 'term-separator');
     termAppend(`⚡ <span style="color:#FFFF00;font-weight:bold;">MJOLNIR'S WRATH!</span> <em>${tier.label}</em>`, 'term-highlight');
