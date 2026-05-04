@@ -2194,64 +2194,92 @@ function showUnifiedInventory(returnCallback = null) {
         ${statsHtml}
     `;
     
-    // ── POTIONS SECTION (compact, at the top) ──────────────────────────────
-    const potionItems = [];
-    let recallPotion = null;
-    
-    p.inventory.forEach(item => {
-        if (item === 'recall_potion') {
-            recallPotion = item;
-        } else if (typeof item === 'string' && ITEMS[item] && 
-            (ITEMS[item].subtype === 'heal_hp' || ITEMS[item].subtype === 'heal_mp' || ITEMS[item].subtype === 'full_restore')) {
-            potionItems.push(item);
-        }
-    });
-    
+    // ── POTIONS SECTION (fixed order, whole pill clickable) ──────────────────────────────
     invHtml += `<div class="inv-section">
         <div class="inv-section-title">🧪 POTIONS</div>
         <div class="potion-container">`;
     
-    // Recall Potion (purple, prominent)
-    if (recallPotion) {
-        const recallItem = ITEMS['recall_potion'];
-        invHtml += `
-            <div class="potion-item recall">
-                <span>🌀</span>
-                <div>
-                    <div class="potion-name">${recallItem.name}</div>
-                    <div class="potion-desc">Returns to town</div>
-                </div>
-                <button class="potion-use" onclick="useRecallPotion()">USE</button>
-            </div>
-        `;
-    }
+    // Fixed order: Healing (weak→strong), Mana (weak→strong), Elixirs
+    const fixedPotions = [
+        { key: 'health_potion', type: 'heal_hp', name: 'Health Potion', power: 30 },
+        { key: 'greater_health_potion', type: 'heal_hp', name: 'Greater Health Potion', power: 60 },
+        { key: 'superior_health_potion', type: 'heal_hp', name: 'Superior Health Potion', power: 100 },
+        { key: 'mana_potion', type: 'heal_mp', name: 'Mana Potion', power: 30 },
+        { key: 'greater_mana_potion', type: 'heal_mp', name: 'Greater Mana Potion', power: 60 },
+        { key: 'superior_mana_potion', type: 'heal_mp', name: 'Superior Mana Potion', power: 100 },
+        { key: 'elixir', type: 'full_restore', name: 'Elixir', power: 'full' }
+    ];
     
-    // Regular potions (compact)
+    // Count potions in inventory
     const potionCounts = {};
-    potionItems.forEach(potion => { potionCounts[potion] = (potionCounts[potion] || 0) + 1; });
-    
-    Object.keys(potionCounts).forEach(potionKey => {
-        const item = ITEMS[potionKey];
-        const count = potionCounts[potionKey];
-        const isHeal = item.subtype === 'heal_hp';
-        const isMana = item.subtype === 'heal_mp';
-        const isFull = item.subtype === 'full_restore';
-        let potionClass = isHeal ? 'health' : isMana ? 'mana' : 'full';
-        let icon = isHeal ? '❤️' : isMana ? '💙' : '✨';
-        
-        invHtml += `
-            <div class="potion-item ${potionClass}">
-                <span>${icon}</span>
-                <div>
-                    <div class="potion-name">${item.name} ${count > 1 ? `x${count}` : ''}</div>
-                    <div class="potion-desc">${item.description.substring(0, 25)}</div>
-                </div>
-                <button class="potion-use" onclick="useInventoryPotion('${potionKey}'); showUnifiedInventory(_inventoryReturnCallback);">USE</button>
-            </div>
-        `;
+    p.inventory.forEach(item => {
+        if (typeof item === 'string' && ITEMS[item]) {
+            const itemData = ITEMS[item];
+            if (itemData.subtype === 'heal_hp' || itemData.subtype === 'heal_mp' || itemData.subtype === 'full_restore') {
+                potionCounts[item] = (potionCounts[item] || 0) + 1;
+            }
+        }
     });
     
-    if (potionItems.length === 0 && !recallPotion) {
+    // Render each potion in fixed order
+    fixedPotions.forEach(potion => {
+        const count = potionCounts[potion.key] || 0;
+        const hasPotion = count > 0;
+        
+        // Check if potion can be used
+        let canUse = true;
+        let disabledReason = '';
+        if (potion.type === 'heal_hp' && p.hp >= p.maxHp) {
+            canUse = false;
+            disabledReason = 'Full HP';
+        } else if (potion.type === 'heal_mp' && p.mp >= p.maxMp) {
+            canUse = false;
+            disabledReason = 'Full MP';
+        } else if (potion.type === 'full_restore' && p.hp >= p.maxHp && p.mp >= p.maxMp) {
+            canUse = false;
+            disabledReason = 'Already full';
+        }
+        
+        // Set styling
+        let potionClass = '';
+        let icon = '';
+        if (potion.type === 'heal_hp') {
+            potionClass = 'health';
+            icon = '❤️';
+        } else if (potion.type === 'heal_mp') {
+            potionClass = 'mana';
+            icon = '💙';
+        } else {
+            potionClass = 'full';
+            icon = '✨';
+        }
+        
+        const isDisabled = !hasPotion || !canUse;
+        const opacityStyle = isDisabled ? 'opacity: 0.4;' : '';
+        const cursorStyle = isDisabled ? 'cursor: not-allowed;' : 'cursor: pointer;';
+        
+        invHtml += `<div class="potion-item ${potionClass}" style="${opacityStyle} ${cursorStyle}" 
+                    onclick="${hasPotion && canUse ? `useInventoryPotion('${potion.key}'); showUnifiedInventory(_inventoryReturnCallback);` : ''}">
+            <span>${icon}</span>
+            <div>
+                <div class="potion-name">${potion.name} ${count > 0 ? `x${count}` : ''}</div>
+                <div class="potion-desc">${!hasPotion ? 'None in inventory' : (disabledReason || (potion.power === 'full' ? 'Fully restores HP & MP' : `Restores ${potion.power} ${potion.type === 'heal_hp' ? 'HP' : 'MP'}`))}</div>
+            </div>
+        </div>`;
+    });
+    
+    // Recall Potion (special case)
+    const hasRecall = p.inventory.includes('recall_potion');
+    invHtml += `<div class="potion-item recall" style="${!hasRecall ? 'opacity: 0.4;' : ''} ${hasRecall ? 'cursor: pointer;' : 'cursor: not-allowed;'}"
+                onclick="${hasRecall ? `useRecallPotion(); showUnifiedInventory(_inventoryReturnCallback);` : ''}">
+        <span>🌀</span>
+        <div>
+            <div class="potion-name">Recall Potion ${hasRecall ? '' : '(None)'}</div>
+            <div class="potion-desc">Returns to town (Dungeon only)</div>
+        </div>
+    </div>`;
+    
+    if (Object.keys(potionCounts).length === 0 && !hasRecall) {
         invHtml += `<div class="empty-message">No potions</div>`;
     }
     invHtml += `</div></div>`;
@@ -2336,7 +2364,7 @@ function showUnifiedInventory(returnCallback = null) {
     }
     invHtml += `</div>`;
     
-    // Equipped armor
+        // Equipped armor
     const eqArmor = (() => {
         if (!p.armor || p.armor === 'no_armor') return null;
         if (typeof p.armor === 'string' && p.armor.includes('_')) {
@@ -2348,7 +2376,18 @@ function showUnifiedInventory(returnCallback = null) {
         return ARMOR[p.armor];
     })();
     
-    invHtml += `<div class="equipped-card armor item-card" style="text-align:left;">`;
+// Get armor color FIRST
+let armorBorderColor = '#0f0';
+if (eqArmor && !eqArmor.unarmored) {
+    const tempInstance = p.inventory.find(item => 
+        item && typeof item === 'object' && item.instanceId === p.armor
+    );
+    const tempQuality = tempInstance?.quality || eqArmor.quality;
+    const tempAqc = QUALITY_CONFIG[tempQuality];
+    armorBorderColor = tempAqc?.color || '#0f0';
+}
+
+invHtml += `<div class="equipped-card armor item-card" style="text-align:left; border: 2px solid ${armorBorderColor} !important;">`;
     if (!eqArmor || !!eqArmor.unarmored) {
         invHtml += `<div class="item-name" style="text-align:left;">🫥 No Armor</div>
                     <div class="item-stats" style="text-align:left;">No armor equipped</div>
@@ -2361,23 +2400,22 @@ function showUnifiedInventory(returnCallback = null) {
         const aqc = QUALITY_CONFIG[displayQuality];
         const qualityColor = aqc?.color || '#0f0';
         
-        // Build HP/MP display (use equippedInstance for bonuses)
+        // Build HP/MP display
         let hpMpDisplay = '';
-        // Check both equippedInstance and eqArmor for bonuses
         const bonusHp = equippedInstance?.bonusHp || eqArmor.bonusHp || 0;
         const bonusMp = equippedInstance?.bonusMp || eqArmor.bonusMp || 0;
         if (bonusHp > 0 || bonusMp > 0) {
-            hpMpDisplay = '<div style="margin-top:3px;font-size:10px;color:#88ff88;text-align:left;">';
+            hpMpDisplay = '<div style="margin-top:3px;font-size:10px;color:#88ff88;">';
             if (bonusHp > 0) hpMpDisplay += `❤️ +${bonusHp} HP `;
             if (bonusMp > 0) hpMpDisplay += `✨ +${bonusMp} MP`;
             hpMpDisplay += '</div>';
         }
         
-        // Build modifiers display (use equippedInstance for modifiers)
+        // Build modifiers display
         let modifierDisplay = '';
         const modifiers = equippedInstance?.modifiers || eqArmor.modifiers || [];
         if (modifiers.length > 0) {
-            modifierDisplay = '<div style="margin-top:5px;font-size:10px;text-align:left;">';
+            modifierDisplay = '<div style="margin-top:5px;font-size:10px;">';
             modifiers.forEach(mod => {
                 const valueStr = mod.statType === 'percent' ? `${mod.value}%` : `+${mod.value}`;
                 const icon = mod.icon || '✨';
@@ -2386,16 +2424,16 @@ function showUnifiedInventory(returnCallback = null) {
             modifierDisplay += '</div>';
         }
         
-        // Calculate total defense with quality bonus
+        // Calculate total defense
         const qualityBonus = aqc?.bonusPct ? Math.floor(eqArmor.baseDefense * aqc.bonusPct) : 0;
         const totalDef = eqArmor.baseDefense + qualityBonus;
         
-        invHtml += `<div class="item-name" style="color:${qualityColor};text-align:left;">🛡️ ${equippedInstance?.name || eqArmor.name}</div>
-                    <div class="item-stats" style="text-align:left;">${eqArmor.armorSubtype || eqArmor.type || 'Armor'} | Lv${eqArmor.level || 1}</div>
-                    <div class="item-stats" style="text-align:left;">DEF: ${totalDef}</div>
+        invHtml += `<div class="item-name" style="color:${qualityColor};">🛡️ ${equippedInstance?.name || eqArmor.name}</div>
+                    <div class="item-stats">${eqArmor.armorSubtype || eqArmor.type || 'Armor'} | Lv${eqArmor.level || 1}</div>
+                    <div class="item-stats">DEF: ${totalDef}</div>
                     ${hpMpDisplay}
                     ${modifierDisplay}
-                    <button class="inv-btn-small unequip" onclick="unequipItem('armor'); showUnifiedInventory(_inventoryReturnCallback);" style="display:inline-block;margin-top:6px;">UNEQUIP</button>`;
+                    <button class="inv-btn-small unequip" onclick="unequipItem('armor'); showUnifiedInventory(_inventoryReturnCallback);" style="margin-top:6px;">UNEQUIP</button>`;
     }
     invHtml += `</div></div></div>`;
     
@@ -3062,16 +3100,15 @@ function unequipItem(type) {
 }
 
 
-               // ═══════════════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════════════════════
         // USE POTION FROM INVENTORY
         // ═══════════════════════════════════════════════════════════════
-        function useInventoryPotion(potionKey) {
+    function useInventoryPotion(potionKey) {
     const potion = ITEMS[potionKey];
     const p = gameState.player;
     
     if (!potion) {
-        alert('Invalid potion!');
-        return;
+        return; // Silent fail, button should be greyed out
     }
 
     // ── Recall Potion - redirect to dedicated function ──────────────────────────────
@@ -3083,11 +3120,10 @@ function unequipItem(type) {
     let msg = '';
     let used = false;
     
-    // Handle different potion types
+    // Handle different potion types - NO ALERTS, just return silently if can't use
     if (potion.subtype === 'heal_hp') {
         if (p.hp >= p.maxHp) {
-            alert("You're already at full HP!");
-            return;
+            return; // Silent fail - button is greyed out
         }
         const actual = Math.min(p.maxHp - p.hp, potion.power);
         p.hp = Math.min(p.maxHp, p.hp + potion.power);
@@ -3096,8 +3132,7 @@ function unequipItem(type) {
     } 
     else if (potion.subtype === 'heal_mp') {
         if (p.mp >= p.maxMp) {
-            alert("You're already at full MP!");
-            return;
+            return; // Silent fail - button is greyed out
         }
         const actual = Math.min(p.maxMp - p.mp, potion.power);
         p.mp = Math.min(p.maxMp, p.mp + potion.power);
@@ -3106,8 +3141,7 @@ function unequipItem(type) {
     } 
     else if (potion.subtype === 'full_restore') {
         if (p.hp >= p.maxHp && p.mp >= p.maxMp) {
-            alert("You're already fully restored!");
-            return;
+            return; // Silent fail - button is greyed out
         }
         const hpR = p.maxHp - p.hp;
         const mpR = p.maxMp - p.mp;
@@ -3128,8 +3162,7 @@ function unequipItem(type) {
             // Check if we can stack
             const currentStacks = p.activeBuffs[buffType].stacks || 1;
             if (currentStacks >= 3) {
-                alert(`${potion.name} is already at maximum stacks (3x)!`);
-                return;
+                return; // Silent fail - at max stacks
             }
             // Stack the buff
             p.activeBuffs[buffType].stacks = currentStacks + 1;
@@ -3161,7 +3194,7 @@ function unequipItem(type) {
         // Save game
         saveGame();
         
-        // Show message and refresh inventory
+        // Show message
         if (gameState.dungeon || document.body.classList.contains('terminal-mode')) {
             termAppend(msg, 'term-info');
         } else {
@@ -3170,13 +3203,19 @@ function unequipItem(type) {
                     termAppend(msg, 'term-info');
                 }
             } else {
-                alert(msg);
+                // Only show alert if not in combat/explore AND message exists
+                if (msg) alert(msg);
             }
         }
-        showInventory();
-    
-            }
+        
+        // Refresh the current view
+        if (typeof showUnifiedInventory === 'function') {
+            showUnifiedInventory(_inventoryReturnCallback);
+        } else if (typeof showInventory === 'function') {
+            showInventory();
         }
+    }
+}
 
         // FIX: Override potion usage to stay in dungeon (prevents being kicked to town)
         const originalUseInventoryPotion = useInventoryPotion;
