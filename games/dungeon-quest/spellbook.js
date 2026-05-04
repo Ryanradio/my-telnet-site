@@ -241,6 +241,13 @@ ${spell.minPower !== undefined ? `
 ` : ''}
             <div style="color:#555;font-size:11px;">${spell.description || ''}</div>
             <div style="position:absolute;top:4px;right:4px;color:#333;font-size:10px;letter-spacing:1px;">SLOT ${idx + 1}</div>
+            <button class="sb-remove-btn" data-slot="${idx}"
+                style="position:absolute;bottom:5px;right:6px;
+                    padding:1px 8px;font-size:11px;font-family:'VT323',monospace;
+                    border:1px solid #550000;color:#883333;background:rgba(80,0,0,0.35);
+                    border-radius:3px;cursor:pointer;letter-spacing:1px;line-height:1.5;
+                    pointer-events:all;"
+                title="Remove from loadout">✕</button>
         </div>`;
     }
 
@@ -473,55 +480,55 @@ function _animateBookOpen(theme) {
 
 function _initDragAndDrop(theme) {
     const p = gameState.player;
-    let dragGhost = null;
+
+    // ── Drag state ────────────────────────────────────────────────
+    let dragGhost    = null;
     let dragSpellKey = null;
-    let dragSource = null;
-    let dragSlotIdx = null;
-    let activeSlot = null;
+    let dragSource   = null;   // 'card' | 'slot'
+    let dragSlotIdx  = null;
+    let dragEl       = null;   // the element being dragged
+    let activeSlot   = null;
+    let dragStartX   = 0;
+    let dragStartY   = 0;
+    let isDragging   = false;  // true only after movement threshold crossed
+    const DRAG_THRESHOLD = 8; // px before drag activates (prevents iOS freeze)
 
-    function _startGhost(e, sourceEl) {
+    // ── Helpers ───────────────────────────────────────────────────
+    function _getXY(e) {
+        if (e.changedTouches && e.changedTouches.length > 0) {
+            return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+        }
+        return { x: e.clientX, y: e.clientY };
+    }
+
+    function _createGhost(x, y) {
         const spell = SPELLS[dragSpellKey];
-        if (!spell) return;
-
+        if (!spell || dragGhost) return;
+        const tl = _sbSpellTypeLabel(spell.type);
         dragGhost = document.createElement('div');
         dragGhost.style.cssText = `
             position:fixed;z-index:9999;pointer-events:none;
             width:200px;padding:10px 12px;
             background:#050505;
             border:2px solid ${theme.slotColor};
-            box-shadow:0 0 24px ${theme.slotGlow}, 0 8px 30px rgba(0,0,0,0.7);
+            box-shadow:0 0 24px ${theme.slotGlow},0 8px 30px rgba(0,0,0,0.7);
             border-radius:6px;font-family:'VT323',monospace;
             opacity:0.92;transform:rotate(-2deg) scale(1.04);
-            transition:none;
+            left:${x - 100}px;top:${y - 30}px;
         `;
-        const tl = _sbSpellTypeLabel(spell.type);
         dragGhost.innerHTML = `
             <div style="color:${theme.titleColor};font-size:15px;">${spell.name}</div>
             <div style="color:${tl.color};font-size:12px;">${tl.icon} ${tl.label} · 💙${spell.mpCost}</div>
         `;
         document.body.appendChild(dragGhost);
-        _moveGhost(e);
-        sourceEl.style.opacity = '0.3';
+        if (dragEl) dragEl.style.opacity = '0.3';
     }
 
-    function _moveGhost(e) {
+    function _moveGhost(x, y) {
         if (!dragGhost) return;
-        
-        // Get coordinates for both mouse and touch
-        let clientX = e.clientX;
-        let clientY = e.clientY;
-        if (e.touches && e.touches.length > 0) {
-            clientX = e.touches[0].clientX;
-            clientY = e.touches[0].clientY;
-        } else if (e.changedTouches && e.changedTouches.length > 0) {
-            clientX = e.changedTouches[0].clientX;
-            clientY = e.changedTouches[0].clientY;
-        }
-        
-        dragGhost.style.left = (clientX - 100) + 'px';
-        dragGhost.style.top = (clientY - 30) + 'px';
-
-        const el = document.elementFromPoint(clientX, clientY);
+        dragGhost.style.left = (x - 100) + 'px';
+        dragGhost.style.top  = (y - 30)  + 'px';
+        const el   = document.elementFromPoint(x, y);
         const slot = el ? el.closest('.sb-slot') : null;
         if (slot !== activeSlot) {
             if (activeSlot) activeSlot.style.borderStyle = activeSlot.classList.contains('sb-slot-empty') ? 'dashed' : 'solid';
@@ -530,136 +537,115 @@ function _initDragAndDrop(theme) {
         }
     }
 
-    function _endDrag(e) {
-        const theme = _getCurrentTheme();
-        if (!dragGhost) {
-            dragSpellKey = null;
-            return;
-        }
-
-        dragGhost.remove();
-        dragGhost = null;
-
-        // Get coordinates for both mouse and touch
-        let clientX = e.clientX;
-        let clientY = e.clientY;
-        if (e.changedTouches && e.changedTouches.length > 0) {
-            clientX = e.changedTouches[0].clientX;
-            clientY = e.changedTouches[0].clientY;
-        }
-
-        const el = document.elementFromPoint(clientX, clientY);
-        const slot = el ? el.closest('.sb-slot') : null;
-
-        if (slot && dragSource === 'card') {
-            const slotIdx = parseInt(slot.dataset.slot);
-            _equipSpell(dragSpellKey, slotIdx, theme);
-        } else if (slot && dragSource === 'slot' && parseInt(slot.dataset.slot) !== dragSlotIdx) {
-            const targetIdx = parseInt(slot.dataset.slot);
-            _swapSlots(dragSlotIdx, targetIdx, theme);
-        } else if (!slot && dragSource === 'slot') {
-            _unequipSpell(dragSlotIdx, theme);
-        } else {
-            _refreshPages(theme);
-        }
-
-        // Reset source element opacity
-        if (dragSource === 'card') {
-            document.querySelectorAll('.sb-spell-card').forEach(c => c.style.opacity = '');
-        } else if (dragSource === 'slot') {
-            document.querySelectorAll('.sb-slot-filled').forEach(s => s.style.opacity = '');
-        }
-
+    function _cancelDrag() {
+        if (dragGhost) { dragGhost.remove(); dragGhost = null; }
+        if (dragEl)    { dragEl.style.opacity = ''; }
         if (activeSlot) {
             activeSlot.style.borderStyle = activeSlot.classList.contains('sb-slot-empty') ? 'dashed' : 'solid';
             activeSlot = null;
         }
-        dragSpellKey = null;
-        dragSource = null;
-        dragSlotIdx = null;
+        document.querySelectorAll('.sb-spell-card,.sb-slot-filled').forEach(el => el.style.opacity = '');
+        dragSpellKey = null; dragSource = null; dragSlotIdx = null;
+        dragEl = null; isDragging = false;
     }
 
-    // Attach to spell cards (only non-equipped ones)
-    const cards = document.querySelectorAll('.sb-spell-card:not(.sb-spell-equipped)');
-    cards.forEach(card => {
-        // Remove existing listeners
-        card.removeEventListener('pointerdown', null);
-        card.removeEventListener('pointermove', null);
-        card.removeEventListener('pointerup', null);
-        card.removeEventListener('pointercancel', null);
-        
-        // Prevent touch scrolling while dragging
-        card.style.touchAction = 'none';
-        
-        card.addEventListener('pointerdown', e => {
+    function _commitDrop(x, y) {
+        const el   = document.elementFromPoint(x, y);
+        const slot = el ? el.closest('.sb-slot') : null;
+        const th   = _getCurrentTheme();
+
+        if (slot && dragSource === 'card') {
+            _equipSpell(dragSpellKey, parseInt(slot.dataset.slot), th);
+        } else if (slot && dragSource === 'slot' && parseInt(slot.dataset.slot) !== dragSlotIdx) {
+            _swapSlots(dragSlotIdx, parseInt(slot.dataset.slot), th);
+        } else if (!slot && dragSource === 'slot') {
+            _unequipSpell(dragSlotIdx, th);
+        } else {
+            _refreshPages(th);
+        }
+    }
+
+    // ── Shared pointer handlers (attached per element) ────────────
+    function _onDown(e, spellKey, source, slotIdx, el) {
+        // Don't block remove buttons
+        if (e.target.classList && e.target.classList.contains('sb-remove-btn')) return;
+        dragSpellKey = spellKey;
+        dragSource   = source;
+        dragSlotIdx  = slotIdx;
+        dragEl       = el;
+        isDragging   = false;
+        const { x, y } = _getXY(e);
+        dragStartX = x; dragStartY = y;
+        // NOTE: do NOT call setPointerCapture or preventDefault here on iOS —
+        // that is what causes the freeze. We capture only after threshold.
+    }
+
+    function _onMove(e) {
+        if (!dragSpellKey) return;
+        const { x, y } = _getXY(e);
+        if (!isDragging) {
+            const dist = Math.sqrt((x - dragStartX) ** 2 + (y - dragStartY) ** 2);
+            if (dist < DRAG_THRESHOLD) return;
+            // Threshold crossed — now start the drag properly
+            isDragging = true;
             e.preventDefault();
-            dragSpellKey = card.dataset.spellKey;
-            dragSource = 'card';
-            dragSlotIdx = null;
-            _startGhost(e, card);
-            card.setPointerCapture(e.pointerId);
-        });
-        card.addEventListener('pointermove', e => { 
-            if (dragSpellKey) {
-                e.preventDefault();
-                _moveGhost(e);
+            try { dragEl && dragEl.setPointerCapture(e.pointerId); } catch(_) {}
+            _createGhost(x, y);
+        } else {
+            e.preventDefault();
+            _moveGhost(x, y);
+        }
+    }
+
+    function _onUp(e) {
+        if (!dragSpellKey) return;
+        if (isDragging) {
+            // It was a real drag — commit the drop
+            if (dragGhost) { dragGhost.remove(); dragGhost = null; }
+            const { x, y } = _getXY(e);
+            _commitDrop(x, y);
+        } else {
+            // It was a tap — handle tap-to-equip (cards) or do nothing (slots, use ✕)
+            if (dragSource === 'card') {
+                const pp = gameState.player;
+                initEquippedSpells();
+                let targetSlot = pp.equippedSpells.findIndex(s => !s);
+                if (targetSlot === -1) targetSlot = 0;
+                _equipSpell(dragSpellKey, targetSlot, _getCurrentTheme());
             }
-        });
-        card.addEventListener('pointerup', e => { 
-            if (dragSpellKey) {
-                e.preventDefault();
-                _endDrag(e);
-            }
-        });
-        card.addEventListener('pointercancel', e => {
-            if (dragSpellKey) {
-                if (dragGhost) dragGhost.remove();
-                dragGhost = null;
-                dragSpellKey = null;
-                document.querySelectorAll('.sb-spell-card').forEach(c => c.style.opacity = '');
-                _refreshPages(theme);
-            }
-        });
+        }
+        _cancelDrag();
+    }
+
+    function _onCancel() { _cancelDrag(); _refreshPages(_getCurrentTheme()); }
+
+    // ── Attach to spell cards ─────────────────────────────────────
+    document.querySelectorAll('.sb-spell-card:not(.sb-spell-equipped)').forEach(card => {
+        const sk = card.dataset.spellKey;
+        card.style.touchAction = 'none';
+        card.addEventListener('pointerdown',   e => _onDown(e, sk, 'card', null, card));
+        card.addEventListener('pointermove',   _onMove, { passive: false });
+        card.addEventListener('pointerup',     _onUp);
+        card.addEventListener('pointercancel', _onCancel);
     });
 
-    // Attach to filled slots
-    const filledSlots = document.querySelectorAll('.sb-slot-filled');
-    filledSlots.forEach(slot => {
-        slot.removeEventListener('pointerdown', null);
-        slot.removeEventListener('pointermove', null);
-        slot.removeEventListener('pointerup', null);
-        slot.removeEventListener('pointercancel', null);
-        
+    // ── Attach to filled slots ────────────────────────────────────
+    document.querySelectorAll('.sb-slot-filled').forEach(slot => {
+        const sk  = slot.dataset.spellKey;
+        const idx = parseInt(slot.dataset.slot);
         slot.style.touchAction = 'none';
-        
-        slot.addEventListener('pointerdown', e => {
-            e.preventDefault();
-            dragSpellKey = slot.dataset.spellKey;
-            dragSource = 'slot';
-            dragSlotIdx = parseInt(slot.dataset.slot);
-            _startGhost(e, slot);
-            slot.setPointerCapture(e.pointerId);
-        });
-        slot.addEventListener('pointermove', e => { 
-            if (dragSpellKey) {
-                e.preventDefault();
-                _moveGhost(e);
-            }
-        });
-        slot.addEventListener('pointerup', e => { 
-            if (dragSpellKey) {
-                e.preventDefault();
-                _endDrag(e);
-            }
-        });
-        slot.addEventListener('pointercancel', e => {
-            if (dragSpellKey) {
-                if (dragGhost) dragGhost.remove();
-                dragGhost = null;
-                dragSpellKey = null;
-                document.querySelectorAll('.sb-slot-filled').forEach(s => s.style.opacity = '');
-                _refreshPages(theme);
-            }
+        slot.addEventListener('pointerdown',   e => _onDown(e, sk, 'slot', idx, slot));
+        slot.addEventListener('pointermove',   _onMove, { passive: false });
+        slot.addEventListener('pointerup',     _onUp);
+        slot.addEventListener('pointercancel', _onCancel);
+    });
+
+    // ── Attach ✕ remove buttons ───────────────────────────────────
+    document.querySelectorAll('.sb-remove-btn').forEach(btn => {
+        btn.addEventListener('pointerdown', e => e.stopPropagation());
+        btn.addEventListener('click', e => {
+            e.stopPropagation();
+            _unequipSpell(parseInt(btn.dataset.slot), _getCurrentTheme());
         });
     });
 }
