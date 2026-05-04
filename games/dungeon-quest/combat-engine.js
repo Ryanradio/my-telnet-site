@@ -2113,7 +2113,7 @@ if (type === 'magic' && defender.magicResist) {
 // Heal spells: multiplier instead maps charge % across min→max power range.
 // AOE / single-target: multiplier scales final damage.
 // ═══════════════════════════════════════════════════════════════
-const SPELL_CHARGE_CLASSES = new Set(['mage', 'cleric', 'warlock']);
+const SPELL_CHARGE_CLASSES = new Set(['mage', 'cleric', 'warlock', 'paladin']);
 const SPELL_CHARGE_DURATION = 1000; // ms to reach 100%
 const SPELL_OVERCHARGE_PCT  = 130;  // % at which spell fizzles
 
@@ -5392,7 +5392,8 @@ function checkCombatEnd() {
             );
             
             if (weaponDrop) {
-                gameState.player.inventory.push(weaponDrop.instanceId);
+                gameState.player.inventory.push(weaponDrop); 
+
                 const qualityColor = QUALITY_CONFIG[weaponDrop.quality]?.color || '#00FF00';
                 termAppend('', 'term-separator');
                 termAppend(`💎 <span style="color:${qualityColor};font-size:18px;font-weight:bold;">WEAPON DROP!</span>`, 'term-victory');
@@ -5430,6 +5431,7 @@ function checkCombatEnd() {
             );
             
             if (armorDrop) {
+                gameState.player.inventory.push(armorDrop);
                 const qColor = QUALITY_CONFIG[armorDrop.quality]?.color || '#00FF00';
                 termAppend('', 'term-separator');
                 termAppend(`🛡️ <span style="color:${qColor};font-size:18px;font-weight:bold;">ARMOR DROP!</span>`, 'term-victory');
