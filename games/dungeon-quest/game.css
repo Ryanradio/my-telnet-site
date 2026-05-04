@@ -2671,15 +2671,22 @@ body.terminal-mode #menuContainer {
 
 .leaderboard-scroll-container {
     overflow: hidden;
-    height: 28px;
+    height: 32px;
     position: relative;
+    cursor: pointer;
 }
 
 .leaderboard-scroll {
     white-space: nowrap;
-    animation: scrollTicker 40s linear infinite;
+    animation: scrollTicker linear infinite;
     display: inline-block;
-    padding-right: 50px;
+    will-change: transform;
+}
+
+/* Smooth infinite scroll - no gaps because content is doubled */
+@keyframes scrollTicker {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
 }
 
 @keyframes scrollTicker {
@@ -3022,3 +3029,136 @@ body.terminal-mode #menuContainer {
 }
 
 
+/* =====================================================
+   LEADERBOARD FIX - Remove blue border & responsive table
+   ===================================================== */
+
+/* Remove blue tap highlight on iOS for all leaderboard elements */
+.leaderboard-ticker,
+.leaderboard-ticker *,
+.leaderboard-container,
+.leaderboard-table-wrapper,
+.leaderboard-table,
+.leaderboard-table th,
+.leaderboard-table td {
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+}
+
+/* Fix for the full leaderboard screen (the one that opens when you click "View Full Leaderboard") */
+.leaderboard-container {
+    width: 100%;
+    overflow-x: auto;
+    background: rgba(0, 10, 0, 0.6);
+    border: 2px solid #2a5a2a;
+    border-radius: 4px;
+    padding: 12px;
+    margin: 0 auto;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
+}
+
+.leaderboard-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.leaderboard-table {
+    width: 100%;
+    min-width: 380px;
+    border-collapse: collapse;
+    font-family: 'VT323', monospace;
+}
+
+.leaderboard-table th,
+.leaderboard-table td {
+    padding: 8px 6px;
+    border-bottom: 1px solid #1a3a1a;
+    white-space: nowrap;
+}
+
+.leaderboard-table th {
+    color: #FFD700;
+    border-bottom: 2px solid #FFD700;
+}
+
+/* Current player highlight */
+.current-player-row {
+    background: rgba(255, 136, 0, 0.2);
+}
+
+.current-player-row td {
+    font-weight: bold;
+    color: #FFD700;
+}
+
+/* Shrink font on small screens to prevent horizontal scroll */
+@media (max-width: 550px) {
+    .leaderboard-table th,
+    .leaderboard-table td {
+        font-size: clamp(10px, 3vw, 14px);
+        padding: 6px 4px;
+    }
+    .leaderboard-table {
+        min-width: 340px;
+    }
+}
+
+@media (max-width: 420px) {
+    .leaderboard-table th,
+    .leaderboard-table td {
+        font-size: clamp(8px, 2.8vw, 12px);
+        padding: 5px 3px;
+    }
+    .leaderboard-table {
+        min-width: 300px;
+    }
+}
+
+/* Fix any blue border on scrollable areas in iOS */
+* {
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Remove blue outline from any focused element in leaderboard */
+.leaderboard-table td:focus,
+.leaderboard-table th:focus,
+.leaderboard-container:focus-visible,
+.leaderboard-table-wrapper:focus-visible {
+    outline: none;
+    box-shadow: none;
+}
+
+/* Ensure the ticker also has no blue tap highlight */
+.leaderboard-scroll {
+    -webkit-tap-highlight-color: transparent;
+}
+
+
+/* Hide the satellite dish and timestamp from leaderboard ticker */
+.leaderboard-ticker-update {
+    display: none !important;
+}
+
+/* Fix ticker header spacing on mobile */
+.leaderboard-ticker-header {
+    justify-content: center !important;
+    gap: 8px;
+}
+
+/* Ensure ticker loads immediately (no flash/delay) */
+.leaderboard-ticker {
+    display: block !important;
+}
+
+/* Spin animation for refresh icon */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.refresh-icon {
+    display: inline-block;
+    animation: spin 1s linear infinite;
+}
