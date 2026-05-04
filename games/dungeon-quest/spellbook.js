@@ -519,6 +519,7 @@ function _initDragAndDrop(theme) {
     }
 
     function _endDrag(e) {
+        const theme = _getCurrentTheme();
         if (!dragGhost) {
             dragSpellKey = null;
             return;
