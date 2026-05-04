@@ -506,10 +506,22 @@ function _initDragAndDrop(theme) {
 
     function _moveGhost(e) {
         if (!dragGhost) return;
-        dragGhost.style.left = (e.clientX - 100) + 'px';
-        dragGhost.style.top = (e.clientY - 30) + 'px';
+        
+        // Get coordinates for both mouse and touch
+        let clientX = e.clientX;
+        let clientY = e.clientY;
+        if (e.touches && e.touches.length > 0) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else if (e.changedTouches && e.changedTouches.length > 0) {
+            clientX = e.changedTouches[0].clientX;
+            clientY = e.changedTouches[0].clientY;
+        }
+        
+        dragGhost.style.left = (clientX - 100) + 'px';
+        dragGhost.style.top = (clientY - 30) + 'px';
 
-        const el = document.elementFromPoint(e.clientX, e.clientY);
+        const el = document.elementFromPoint(clientX, clientY);
         const slot = el ? el.closest('.sb-slot') : null;
         if (slot !== activeSlot) {
             if (activeSlot) activeSlot.style.borderStyle = activeSlot.classList.contains('sb-slot-empty') ? 'dashed' : 'solid';
@@ -528,7 +540,15 @@ function _initDragAndDrop(theme) {
         dragGhost.remove();
         dragGhost = null;
 
-        const el = document.elementFromPoint(e.clientX, e.clientY);
+        // Get coordinates for both mouse and touch
+        let clientX = e.clientX;
+        let clientY = e.clientY;
+        if (e.changedTouches && e.changedTouches.length > 0) {
+            clientX = e.changedTouches[0].clientX;
+            clientY = e.changedTouches[0].clientY;
+        }
+
+        const el = document.elementFromPoint(clientX, clientY);
         const slot = el ? el.closest('.sb-slot') : null;
 
         if (slot && dragSource === 'card') {
@@ -543,6 +563,13 @@ function _initDragAndDrop(theme) {
             _refreshPages(theme);
         }
 
+        // Reset source element opacity
+        if (dragSource === 'card') {
+            document.querySelectorAll('.sb-spell-card').forEach(c => c.style.opacity = '');
+        } else if (dragSource === 'slot') {
+            document.querySelectorAll('.sb-slot-filled').forEach(s => s.style.opacity = '');
+        }
+
         if (activeSlot) {
             activeSlot.style.borderStyle = activeSlot.classList.contains('sb-slot-empty') ? 'dashed' : 'solid';
             activeSlot = null;
@@ -555,9 +582,14 @@ function _initDragAndDrop(theme) {
     // Attach to spell cards (only non-equipped ones)
     const cards = document.querySelectorAll('.sb-spell-card:not(.sb-spell-equipped)');
     cards.forEach(card => {
+        // Remove existing listeners
         card.removeEventListener('pointerdown', null);
         card.removeEventListener('pointermove', null);
         card.removeEventListener('pointerup', null);
+        card.removeEventListener('pointercancel', null);
+        
+        // Prevent touch scrolling while dragging
+        card.style.touchAction = 'none';
         
         card.addEventListener('pointerdown', e => {
             e.preventDefault();
@@ -567,8 +599,27 @@ function _initDragAndDrop(theme) {
             _startGhost(e, card);
             card.setPointerCapture(e.pointerId);
         });
-        card.addEventListener('pointermove', e => { if (dragSpellKey) _moveGhost(e); });
-        card.addEventListener('pointerup', e => { if (dragSpellKey) _endDrag(e); });
+        card.addEventListener('pointermove', e => { 
+            if (dragSpellKey) {
+                e.preventDefault();
+                _moveGhost(e);
+            }
+        });
+        card.addEventListener('pointerup', e => { 
+            if (dragSpellKey) {
+                e.preventDefault();
+                _endDrag(e);
+            }
+        });
+        card.addEventListener('pointercancel', e => {
+            if (dragSpellKey) {
+                if (dragGhost) dragGhost.remove();
+                dragGhost = null;
+                dragSpellKey = null;
+                document.querySelectorAll('.sb-spell-card').forEach(c => c.style.opacity = '');
+                _refreshPages(theme);
+            }
+        });
     });
 
     // Attach to filled slots
@@ -577,6 +628,9 @@ function _initDragAndDrop(theme) {
         slot.removeEventListener('pointerdown', null);
         slot.removeEventListener('pointermove', null);
         slot.removeEventListener('pointerup', null);
+        slot.removeEventListener('pointercancel', null);
+        
+        slot.style.touchAction = 'none';
         
         slot.addEventListener('pointerdown', e => {
             e.preventDefault();
@@ -586,8 +640,27 @@ function _initDragAndDrop(theme) {
             _startGhost(e, slot);
             slot.setPointerCapture(e.pointerId);
         });
-        slot.addEventListener('pointermove', e => { if (dragSpellKey) _moveGhost(e); });
-        slot.addEventListener('pointerup', e => { if (dragSpellKey) _endDrag(e); });
+        slot.addEventListener('pointermove', e => { 
+            if (dragSpellKey) {
+                e.preventDefault();
+                _moveGhost(e);
+            }
+        });
+        slot.addEventListener('pointerup', e => { 
+            if (dragSpellKey) {
+                e.preventDefault();
+                _endDrag(e);
+            }
+        });
+        slot.addEventListener('pointercancel', e => {
+            if (dragSpellKey) {
+                if (dragGhost) dragGhost.remove();
+                dragGhost = null;
+                dragSpellKey = null;
+                document.querySelectorAll('.sb-slot-filled').forEach(s => s.style.opacity = '');
+                _refreshPages(theme);
+            }
+        });
     });
 }
 
