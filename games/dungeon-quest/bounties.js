@@ -505,6 +505,8 @@ if (_debug && typeof termAppend === 'function') {
 // ─────────────────────────────────────────────────────────────────────────
 //  SPAWN THE BOUNTY MONSTER AND START COMBAT
 // ─────────────────────────────────────────────────────────────────────────
+// Fix in bounties.js - replace the startBountyCombat function
+
 function startBountyCombat(bountyId, b) {
     const p = gameState.player;
 
@@ -529,7 +531,14 @@ function startBountyCombat(bountyId, b) {
         isBounty:   true,
         bountyId:   bountyId,
         isBoss:     false,
+        // ⭐ CRITICAL FIX: Add timer and telegraph properties
+        timer:      10 + Math.floor(Math.random() * 6),  // First attack: 5-10 seconds
+        delay:      10 + Math.floor(Math.random() * 6),
+        _telegraphShown: false,
+        _pendingIntent: null,
+        index: 0,  // Will be set when combat starts
     };
+    
     // Give it enough MP for abilities
     const _maxMp = (b.abilities || []).reduce((mx, a) => Math.max(mx, a.mpCost || 0), 0);
     bountyMonster.baseMp = _maxMp * 3;
@@ -545,16 +554,26 @@ function startBountyCombat(bountyId, b) {
         defeatedMonsters: [],
         pipTimers:     pipTimers,
         pipAvailable:  pipTimers.map(() => true),
-        enemyTimer:    16,
-        enemyDelay:    16,
-        enemyHits:     2,
-        enemyHitsLeft: 2,
+        // enemyTimer:    10,  // Not used with per-enemy timers
+        // enemyDelay:    10,  // Not used with per-enemy timers
+        enemyHits:     1,
+        enemyHitsLeft: 1,
         playerStatusEffects:  [],
         monsterStatusEffects: {},
         dotTimers:            {},
         isBountyFight:  true,
         bountyId:       bountyId,
+        // ⭐ Add dungeonEnemyIds for proper cleanup
+        dungeonEnemyIds: [bountyId],
+        // Basic pip state
+        enemyInterrupted: false,
+        combatOver: false,
     };
+
+    // ⭐ Set index on the monster
+    if (gameState.combatState.monsters[0]) {
+        gameState.combatState.monsters[0].index = 0;
+    }
 
     // Open combat terminal
     openTerminalView(gameState.currentLocation);
