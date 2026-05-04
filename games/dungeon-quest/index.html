@@ -1905,92 +1905,89 @@ async function fetchLeaderboard(silent = false) {
 function renderLeaderboard() {
     const contentEl = document.getElementById('leaderboard-content');
     if (!contentEl) return;
-    
+
     if (!leaderboardData || leaderboardData.length === 0) {
         contentEl.innerHTML = `
-            <div style="text-align: center; padding: 40px; color: #8aaa8a;">
+            <div style="text-align:center;padding:40px;color:#8aaa8a;font-family:'VT323',monospace;">
                 No adventurers have entered the Hall of Legends yet.<br>
-                <span style="font-size: 12px;">Be the first!</span>
+                <span style="font-size:12px;">Be the first!</span>
             </div>
         `;
         return;
     }
-    
+
     const currentPlayerId = gameState.player?.id;
     const topPlayers = leaderboardData.slice(0, 20);
-    
-    let html = `
-        <div style="
-            font-family: 'VT323', monospace;
-            background: rgba(0, 10, 0, 0.6);
-            border: 2px solid var(--border-color);
-            padding: 15px;
-            overflow-x: auto;
-        ">
-            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                <thead>
-                    <tr style="border-bottom: 2px solid var(--highlight-color); color: var(--highlight-color);">
-                        <th style="padding: 10px 5px; text-align: center;">Rank</th>
-                        <th style="padding: 10px 5px; text-align: left;">Player</th>
-                        <th style="padding: 10px 5px; text-align: left;">Class</th>
-                        <th style="padding: 10px 5px; text-align: center;">Runes</th>
-                        <th style="padding: 10px 5px; text-align: center;">Lv</th>
-                        <th style="padding: 10px 5px; text-align: right;">Kills</th>
-                     </tr>
-                </thead>
-                <tbody>
-    `;
-    
+
+    // ── Card-based layout — no horizontal scroll, works on all screen sizes ──
+    let html = '<div style="font-family:VT323,monospace;display:flex;flex-direction:column;gap:6px;padding:4px 0;">';
+
     topPlayers.forEach((player, idx) => {
         const rank = idx + 1;
-        let rankDisplay = '';
-        let rankColor = '';
-        
-        if (rank === 1) { rankDisplay = '🥇'; rankColor = '#FFD700'; }
-        else if (rank === 2) { rankDisplay = '🥈'; rankColor = '#C0C0C0'; }
-        else if (rank === 3) { rankDisplay = '🥉'; rankColor = '#CD7F32'; }
-        else { rankDisplay = `#${rank}`; rankColor = '#8aaa8a'; }
-        
-        // Check if this is the current player
+        let rankDisplay, rankColor, rowBg;
+
+        if      (rank === 1) { rankDisplay = '🥇'; rankColor = '#FFD700'; rowBg = 'rgba(255,215,0,0.06)'; }
+        else if (rank === 2) { rankDisplay = '🥈'; rankColor = '#C0C0C0'; rowBg = 'rgba(192,192,192,0.05)'; }
+        else if (rank === 3) { rankDisplay = '🥉'; rankColor = '#CD7F32'; rowBg = 'rgba(205,127,50,0.05)'; }
+        else                 { rankDisplay = `#${rank}`; rankColor = '#6a8a6a'; rowBg = 'transparent'; }
+
         const isCurrentPlayer = (player.characterId === currentPlayerId);
-        
-        // Generate rune icons (✦)
-        const runeIcons = '✦'.repeat(Math.min(player.runestones, 12)) + (player.runestones > 12 ? '+' : '');
-        
-        // Truncate long names
-        const displayName = player.name.length > 18 ? player.name.substring(0, 16) + '...' : player.name;
-        const displayClass = player.class.length > 12 ? player.class.substring(0, 10) + '...' : player.class;
-        
-        // Name color: orange for current player, green for others
-        const nameColor = isCurrentPlayer ? '#FF8800' : 'var(--text-color)';
-        const nameWeight = isCurrentPlayer ? 'bold' : 'normal';
-        
+        const nameColor  = isCurrentPlayer ? '#FF8800' : 'var(--text-color)';
+        const nameBold   = isCurrentPlayer ? 'bold'    : 'normal';
+        const borderLeft = isCurrentPlayer ? '3px solid #FF8800' : '3px solid transparent';
+
+        // Rune dots — max 8 shown, then +N
+        const maxRunes   = Math.min(player.runestones || 0, 8);
+        const extraRunes = (player.runestones || 0) > 8 ? `+${player.runestones - 8}` : '';
+        const runeDots   = '✦'.repeat(maxRunes) + (extraRunes ? `<span style="font-size:11px;">${extraRunes}</span>` : '');
+
+        // Truncate for mobile
+        const displayName  = (player.name  || '???').length > 14 ? player.name.substring(0, 13)  + '…' : player.name;
+        const displayClass = (player.class || '???').length > 12 ? player.class.substring(0, 11) + '…' : player.class;
+
         html += `
-            <tr style="border-bottom: 1px solid #1a3a1a;">
-                <td style="padding: 8px 5px; text-align: center; color: ${rankColor}; font-weight: bold;">${rankDisplay}</td>
-                <td style="padding: 8px 5px; text-align: left; color: ${nameColor}; font-weight: ${nameWeight};">${escapeHtml(displayName)}</td>
-                <td style="padding: 8px 5px; text-align: left; color: #8aaa8a;">${escapeHtml(displayClass)}</td>
-                <td style="padding: 8px 5px; text-align: center; color: #FFD700; font-size: 16px; letter-spacing: 2px;">${runeIcons || '—'}</td>
-                <td style="padding: 8px 5px; text-align: center; color: #88FF88;">${player.level}</td>
-                <td style="padding: 8px 5px; text-align: right; color: #FFAA66;">${player.kills.toLocaleString()}</td>
-             </tr>
-        `;
+        <div style="
+            background:${rowBg};
+            border-bottom:1px solid #1a2a1a;
+            border-left:${borderLeft};
+            padding:8px 10px;
+            display:grid;
+            grid-template-columns:36px 1fr auto;
+            grid-template-rows:auto auto;
+            gap:0 8px;
+            align-items:center;
+        ">
+            <!-- Rank -->
+            <div style="grid-row:1/3;text-align:center;color:${rankColor};font-size:${rank<=3?'22px':'15px'};font-weight:bold;line-height:1;">
+                ${rankDisplay}
+            </div>
+            <!-- Name + Class -->
+            <div style="grid-column:2;grid-row:1;">
+                <span style="color:${nameColor};font-weight:${nameBold};font-size:16px;">${escapeHtml(displayName)}</span>
+                <span style="color:#556655;font-size:13px;margin-left:6px;">${escapeHtml(displayClass)}</span>
+            </div>
+            <!-- Stats row -->
+            <div style="grid-column:2;grid-row:2;display:flex;gap:12px;align-items:center;margin-top:2px;">
+                <span style="color:#88FF88;font-size:13px;" title="Level">Lv${player.level}</span>
+                <span style="color:#FFAA66;font-size:13px;" title="Kills">⚔️${(player.kills||0).toLocaleString()}</span>
+                ${runeDots ? `<span style="color:#FFD700;font-size:13px;letter-spacing:1px;" title="Runestones">${runeDots}</span>` : ''}
+            </div>
+            <!-- Kills (right side, top) -->
+            <div style="grid-column:3;grid-row:1/3;text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
+            </div>
+        </div>`;
     });
-    
-    html += `
-                </tbody>
-             </table>
-        </div>
-    `;
-    
+
+    html += '</div>';
+
     if (leaderboardData.length > 20) {
         html += `
-            <div style="text-align: center; margin-top: 12px; color: #6a6a6a; font-size: 12px;">
+            <div style="text-align:center;margin-top:10px;color:#6a6a6a;font-size:12px;font-family:'VT323',monospace;">
                 Showing top 20 of ${leaderboardData.length} adventurers
             </div>
         `;
     }
-    
+
     contentEl.innerHTML = html;
 }
 
