@@ -103,26 +103,31 @@ function openSpellbook() {
         font-family:'VT323',monospace;
     `;
 
+    // Mobile detection for layout
+    const isMobile = window.innerWidth <= 768;
+
     overlay.innerHTML = `
         <div id="sbContainer" style="
             width:100%;max-width:820px;height:100%;
             display:flex;flex-direction:column;
-            align-items:center;justify-content:center;
+            align-items:center;justify-content:${isMobile ? 'flex-start' : 'center'};
             padding:16px;box-sizing:border-box;
             position:relative;
+            overflow-y:auto;
         ">
             <button id="sbCloseBtn" style="
-                position:absolute;top:12px;right:12px;
-                padding:6px 16px;font-size:16px;
+                position:fixed;top:12px;right:12px;
+                padding:10px 20px;font-size:18px;
                 border-color:#ff4444;color:#ff4444;
+                background:#0a0a0a;
                 font-family:'VT323',monospace;
-                z-index:10;
+                z-index:100;border-radius:8px;
             ">✕ CLOSE</button>
 
             <div id="sbBook" style="
-                width:100%;max-width:760px;
-                perspective:1200px;
-                flex:1;display:flex;align-items:center;
+                width:100%;
+                max-width:760px;
+                margin:${isMobile ? '60px auto 20px auto' : '0 auto'};
             ">
                 <div id="sbCover" style="width:100%;display:flex;align-items:center;justify-content:center;">
                     <div id="sbCoverInner" style="
@@ -148,42 +153,31 @@ function openSpellbook() {
                     </div>
                 </div>
 
-                <div id="sbPages" style="width:100%;display:none;gap:0;min-height:500px;">
-                    <div id="sbLeftPage" style="
-                        flex:1;
+                <div id="sbPages" style="width:100%;display:none;flex-direction:column;gap:16px;">
+                    <!-- COMBAT LOADOUT SECTION (top on mobile) -->
+                    <div id="sbLoadoutSection" style="
                         background:${theme.pageLeft};
                         border:2px solid ${theme.borderColor};
-                        border-right:1px solid ${theme.borderColor};
-                        border-radius:8px 0 0 8px;
+                        border-radius:12px;
                         padding:16px;
-                        box-shadow:inset -8px 0 20px rgba(0,0,0,0.4);
-                        display:flex;flex-direction:column;
-                        gap:12px;
-                        box-sizing:border-box;
+                        box-shadow:inset 0 0 20px rgba(0,0,0,0.4);
                     ">
-                        <div style="color:${theme.accentColor};font-size:14px;letter-spacing:3px;text-align:center;text-shadow:0 0 8px ${theme.accentColor};border-bottom:1px solid ${theme.borderColor};padding-bottom:8px;">— COMBAT LOADOUT —</div>
-                        <div style="color:#666;font-size:11px;text-align:center;margin-top:-6px;">Drag spells here from the right</div>
-                        <div id="sbSlots" style="display:flex;flex-direction:column;gap:10px;flex:1;"></div>
-                        <div style="color:#444;font-size:11px;text-align:center;border-top:1px solid #1a1a1a;padding-top:8px;letter-spacing:1px;">DRAG SPELL OUT TO UNEQUIP</div>
+                        <div style="color:${theme.accentColor};font-size:16px;letter-spacing:3px;text-align:center;text-shadow:0 0 8px ${theme.accentColor};padding-bottom:8px;">⚔️ COMBAT LOADOUT ⚔️</div>
+                        <div style="color:#888;font-size:12px;text-align:center;margin-bottom:12px;">Tap a spell to equip | Tap equipped to remove</div>
+                        <div id="sbSlots" style="display:flex;flex-direction:row;flex-wrap:wrap;gap:10px;justify-content:center;"></div>
                     </div>
 
-                    <div style="width:12px;flex:0 0 12px;background:linear-gradient(90deg, ${theme.spine}44, ${theme.spine}, ${theme.spine}44);box-shadow:0 0 10px ${theme.glowSoft};"></div>
-
-                    <div id="sbRightPage" style="
-                        flex:1;
+                    <!-- SPELL LIBRARY SECTION (bottom on mobile) -->
+                    <div id="sbLibrarySection" style="
                         background:${theme.pageRight};
                         border:2px solid ${theme.borderColor};
-                        border-left:none;
-                        border-radius:0 8px 8px 0;
+                        border-radius:12px;
                         padding:16px;
-                        box-shadow:inset 8px 0 20px rgba(0,0,0,0.4);
-                        display:flex;flex-direction:column;
-                        gap:10px;
-                        overflow-y:auto;
-                        box-sizing:border-box;
+                        box-shadow:inset 0 0 20px rgba(0,0,0,0.4);
+                        flex:1;
                     ">
-                        <div id="sbTabs" style="display:flex; gap:4px; margin-bottom:12px; border-bottom:1px solid ${theme.borderColor};"></div>
-                        <div id="sbSpellGrid" style="display:flex;flex-direction:column;gap:8px;overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;"></div>
+                        <div id="sbTabs" style="display:flex; gap:8px; margin-bottom:16px; border-bottom:2px solid ${theme.borderColor}; flex-wrap:wrap; justify-content:center;"></div>
+                        <div id="sbSpellGrid" style="display:flex;flex-direction:column;gap:10px;max-height:${isMobile ? '400px' : '500px'};overflow-y:auto;padding:4px;"></div>
                     </div>
                 </div>
             </div>
@@ -205,6 +199,15 @@ function openSpellbook() {
         coverInner.style.transform = 'rotateY(0deg)';
         coverInner.style.boxShadow = `-6px 0 0 ${theme.spine}, 0 0 40px ${theme.glowSoft}, inset 0 0 30px rgba(0,0,0,0.6)`;
     });
+
+    // Also update the slot rendering to be mobile-friendly
+    // The existing renderSpellbookSlots function will populate sbSlots
+    if (typeof renderSpellbookSlots === 'function') {
+        renderSpellbookSlots();
+    }
+    if (typeof renderSpellbookSpells === 'function') {
+        renderSpellbookSpells();
+    }
 }
 
 function _buildSlotHTML(p, theme, idx) {
