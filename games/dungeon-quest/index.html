@@ -807,6 +807,7 @@ async function savePlayerToSheet(playerData) {
     params.append('event', playerData.event || 'character_created');
     params.append('runestones', playerData.runestones || 0);
     params.append('kills', playerData.kills || 0);
+    params.append('xp', playerData.xp || 0);
     params.append('character_id', playerData.characterId || '');
     params.append('user_id', userId);
     // params.append('name_suffix', playerData.nameSuffix || '');
@@ -820,11 +821,10 @@ async function savePlayerToSheet(playerData) {
     try {
         const response = await fetch(scriptURL, {
             method: 'GET',
-            mode: 'no-cors',  // Add this to bypass CORS for testing
+            mode: 'no-cors',
             redirect: 'follow'
         });
         
-        // With no-cors, we can't read the response, so just assume success
         console.log('✅ Request sent (no-cors mode)');
         return true;
         
@@ -1867,14 +1867,9 @@ let leaderboardRefreshInterval = null;
 
 
 async function fetchLeaderboardTicker() {
-    console.log('🟢 1. fetchLeaderboardTicker START at', new Date().toLocaleTimeString());
-    
     const tickerEl = document.getElementById('leaderboard-ticker');
     if (!tickerEl) return;
     
-    const startTime = performance.now();
-    
-    // Only show loading if ticker is empty or has no data
     if (!tickerEl.innerHTML.includes('leaderboard-entry')) {
         tickerEl.innerHTML = `
             <div class="leaderboard-ticker">
@@ -1890,25 +1885,17 @@ async function fetchLeaderboardTicker() {
                 <button class="leaderboard-full-btn" style="opacity:0.6;" disabled>⚔️ VIEW FULL LEADERBOARD ⚔️</button>
             </div>
         `;
-        console.log('🟢 2. Loading message displayed at', new Date().toLocaleTimeString());
     }
     
     try {
-        console.log('🟢 3. Starting fetch at', new Date().toLocaleTimeString());
         const response = await fetch('https://script.google.com/macros/s/AKfycbwh7_fSt6gRjObMZCvNLUOcwJpfVgzpeAC7InjPR0E51B7CRpFNj-Qvbe_LL8WR3AhaKg/exec?action=getLeaderboard&t=' + Date.now());
         const data = await response.json();
         
-        const endTime = performance.now();
-        const timeTaken = ((endTime - startTime) / 1000).toFixed(2);
-        console.log(`🟢 4. Fetch COMPLETED in ${timeTaken} seconds at`, new Date().toLocaleTimeString());
-        
         if (data.ok && data.leaderboard && data.leaderboard.length > 0) {
-            console.log('🟢 5. Calling updateTickerDisplay NOW at', new Date().toLocaleTimeString());
             updateTickerDisplay(data.leaderboard.slice(0, 20));
-            console.log('🟢 6. updateTickerDisplay FINISHED at', new Date().toLocaleTimeString());
         }
     } catch (error) {
-        console.error('❌ Fetch failed:', error);
+        // Silent fail - keep loading message
     }
 }
 
@@ -3971,6 +3958,9 @@ fixMissingInstanceIds(p);
                 // Apply gem stats
         recalcGemStats(gameState.player);
 
+         // Calculate spell resistance
+        calculateAndSetSpellResistance(gameState.player);
+
         // Apply gem stats
         const gemResult = recalcGemStats(gameState.player);
         
@@ -4174,6 +4164,7 @@ validateAndRepairInventory();
         event: 'character_login',
         runestones: runestoneCount,
         kills: totalKills,
+        xp: gameState.player.xp || 0,
         characterId: gameState.player.id
     };
     await savePlayerToSheet(loginData);
@@ -5313,23 +5304,24 @@ function validateAndGoToStatAlloc() {
     // SAVE TO GOOGLE SHEETS with ALL new fields
     // ═══════════════════════════════════════════════════════════════
     (async function() {
-        const location = await getPlayerLocation();
-        
-        const playerData = {
-            name: gameState.player.name,
-            class: classData.name,
-            level: gameState.player.level,
-            createdDate: new Date().toISOString(),
-            country: location.country,
-            state: location.state,
-            event: 'character_created',
-            runestones: 0,
-            kills: 0,
-            characterId: charId
-        };
-        
-        await savePlayerToSheet(playerData);
-    })();
+    const location = await getPlayerLocation();
+    
+    const playerData = {
+        name: gameState.player.name,
+        class: classData.name,
+        level: gameState.player.level,
+        createdDate: new Date().toISOString(),
+        country: location.country,
+        state: location.state,
+        event: 'character_created',
+        runestones: 0,
+        kills: 0,
+        xp: 0,
+        characterId: charId
+    };
+    
+    await savePlayerToSheet(playerData);
+})();
 
     showWelcomeScreen();
 }
@@ -7954,6 +7946,7 @@ function spawnMonsterWithRarity(enemyKey, zoneLevel = null, forcedRarity = null)
             dropRates: template.dropRates,
             abilities: template.abilities || [],
             isBoss: template.isBoss || false,
+            spellResist: template.baseSpellResist || 0,
             magicAttack: template.magicAttack || false,
             baseMp: baseMp,
             mp: baseMp,
@@ -8007,6 +8000,7 @@ maxHp: getScaledEnemyHP(Math.floor(template.baseHp * mult), monsterLevel),
         dropRates: template.dropRates,
         abilities: template.abilities || [],
         isBoss: template.isBoss || false,
+        spellResist: template.baseSpellResist || 0,
         magicAttack: template.magicAttack || false,
         baseMp: baseMp,
         mp: baseMp,
@@ -11341,10 +11335,11 @@ function showLeaderboard() {
                             <th style="padding:8px 6px; text-align:center; border-bottom:2px solid #FFD700; color:#FFD700;">Runes</th>
                             <th style="padding:8px 6px; text-align:center; border-bottom:2px solid #FFD700; color:#FFD700;">Lv</th>
                             <th style="padding:8px 6px; text-align:right; border-bottom:2px solid #FFD700; color:#FFD700;">💀</th>
+                            <th style="padding:8px 6px; text-align:right; border-bottom:2px solid #FFD700; color:#FFD700;">⭐ XP</th>
                         </tr>
                     </thead>
                     <tbody id="leaderboard-tbody">
-                        <tr><td colspan="6" style="text-align:center; padding:40px;">Loading leaderboard...</td></tr>
+                        <tr><td colspan="7" style="text-align:center; padding:40px;">Loading leaderboard...<\/td></tr>
                     </tbody>
                 </table>
             </div>
@@ -11361,7 +11356,7 @@ function showLeaderboard() {
         if (!tbody) return;
         
         if (!players || players.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px;">No adventurers have entered the Hall of Legends yet.<br><span style="font-size:12px;">Be the first!</span></td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:40px;">No adventurers have entered the Hall of Legends yet.<br><span style="font-size:12px;">Be the first!</span><\/td><\/tr>';
             return;
         }
         
@@ -11391,13 +11386,14 @@ function showLeaderboard() {
             if (displayClass.length > 14) displayClass = displayClass.substring(0, 12) + '..';
             
             html += `<tr style="border-bottom:1px solid #1a3a1a; ${rowBg}">
-                <td style="padding:8px 6px; text-align:center; font-weight:bold;">${rankDisplay}</td>
-                <td style="padding:8px 6px; text-align:left; color:${nameColor}; font-weight:${nameWeight};">${escapeHtml(displayName)}</td>
-                <td style="padding:8px 6px; text-align:left; color:#8aaa8a;">${escapeHtml(displayClass)}</td>
-                <td style="padding:8px 6px; text-align:center;">${runeHtml}</td>
-                <td style="padding:8px 6px; text-align:center; color:#88FF88;">${p.level || 1}</td>
-                <td style="padding:8px 6px; text-align:right; color:#FFAA66;">${(p.kills || 0).toLocaleString()}</td>
-              </tr>`;
+                <td style="padding:8px 6px; text-align:center; font-weight:bold;">${rankDisplay}<\/td>
+                <td style="padding:8px 6px; text-align:left; color:${nameColor}; font-weight:${nameWeight};">${escapeHtml(displayName)}<\/td>
+                <td style="padding:8px 6px; text-align:left; color:#8aaa8a;">${escapeHtml(displayClass)}<\/td>
+                <td style="padding:8px 6px; text-align:center;">${runeHtml}<\/td>
+                <td style="padding:8px 6px; text-align:center; color:#88FF88;">${p.level || 1}<\/td>
+                <td style="padding:8px 6px; text-align:right; color:#FFAA66;">${(p.kills || 0).toLocaleString()}<\/td>
+                <td style="padding:8px 6px; text-align:right; color:#FFD700;">${(p.xp || 0).toLocaleString()}<\/td>
+            <\/tr>`;
         });
         tbody.innerHTML = html;
     }
@@ -11411,6 +11407,28 @@ function showLeaderboard() {
             return m;
         });
     }
+    
+    fetch('https://script.google.com/macros/s/AKfycbwh7_fSt6gRjObMZCvNLUOcwJpfVgzpeAC7InjPR0E51B7CRpFNj-Qvbe_LL8WR3AhaKg/exec?action=getLeaderboard&_cb=' + Date.now())
+        .then(res => res.json())
+        .then(data => {
+            if (data.ok && data.leaderboard && data.leaderboard.length > 0) {
+                let currentPlayerId = null;
+                try {
+                    if (typeof gameState !== 'undefined' && gameState.player && gameState.player.id) {
+                        currentPlayerId = gameState.player.id;
+                    }
+                } catch(e) {}
+                renderTable(data.leaderboard, currentPlayerId);
+            } else {
+                const tbody = document.getElementById('leaderboard-tbody');
+                if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:40px;">No adventurers have entered the Hall of Legends yet.<br><span style="font-size:12px;">Be the first!</span><\/td><\/tr>';
+            }
+        })
+        .catch(err => {
+            const tbody = document.getElementById('leaderboard-tbody');
+            if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:40px; color:#ff6666;">⚠️ Could not load leaderboard data.<\/td><\/tr>';
+        });
+
     
     fetch('https://script.google.com/macros/s/AKfycbwh7_fSt6gRjObMZCvNLUOcwJpfVgzpeAC7InjPR0E51B7CRpFNj-Qvbe_LL8WR3AhaKg/exec?action=getLeaderboard&_cb=' + Date.now())
         .then(res => res.json())
