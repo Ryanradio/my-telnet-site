@@ -2193,6 +2193,38 @@ setTimeout(() => {
 }, 1000);
 
 
+function calculateAndSetSpellResistance(player) {
+    if (!player) return 0;
+    
+    const baseResistByClass = {
+        warrior: 5, paladin: 10, rogue: 8, mage: 25,
+        warlock: 25, cleric: 20, hunter: 10, runesmith: 15
+    };
+    
+    const className = player.baseClass || player.class;
+    const classResist = baseResistByClass[className] || 10;
+    const conBonus = Math.min(15, Math.floor((player.con || 0) * 0.5));
+    
+    let armorResist = 0;
+    if (player.armor && player.armor !== 'no_armor') {
+        let armorKey = player.armor;
+        let armor = ARMOR[armorKey];
+        if (!armor && typeof armorKey === 'string' && armorKey.includes('_')) {
+            const baseKey = armorKey.split('_')[0];
+            armor = ARMOR[baseKey];
+        }
+        if (armor && armor.magicResist) {
+            armorResist = armor.magicResist;
+        }
+    }
+    
+    const totalResist = Math.min(60, classResist + conBonus + armorResist);
+    player.spellResist = totalResist;
+    
+    return totalResist;
+}
+
+
 // ═══════════════════════════════════════════════════════════════
 // YOUR ORIGINAL loadCharacter FUNCTION - WITH ONLY STEP 3.5 COMMENTED OUT
 // ═══════════════════════════════════════════════════════════════
