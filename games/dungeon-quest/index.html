@@ -428,104 +428,481 @@ function resetCurrentDungeonKeepProgress() {
 }
 
 
+// ═══════════════════════════════════════════════════════════════
+// PRESS-AND-HOLD TOOLTIP — inventory (.item-card) + shop (.shop-item)
+// ═══════════════════════════════════════════════════════════════
+
+// ── Shared press-hold wiring ─────────────────────────────────────
+function _attachPressHold(el, getEventFn) {
+    if (el.hasAttribute('data-tooltip-initialized')) return;
+    el.setAttribute('data-tooltip-initialized', 'true');
+
+    let pressTimer = null;
+    // Snapshot coordinates immediately on press — Touch objects go stale after the event
+    let _cx = 0, _cy = 0;
+
+    const startPress = (e) => {
+        if (e.target.tagName === 'BUTTON') return;
+        if (e.touches && e.touches.length > 0) {
+            _cx = e.touches[0].clientX;
+            _cy = e.touches[0].clientY;
+        } else {
+            _cx = e.clientX || 0;
+            _cy = e.clientY || 0;
+        }
+        pressTimer = setTimeout(() => {
+            // Pass a plain coord object — always valid when the timer fires
+            getEventFn(el, { clientX: _cx, clientY: _cy });
+        }, 500);
+    };
+    const endPress = () => {
+        if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+        removeTooltip();
+    };
+
+    el.addEventListener('touchstart',  startPress, { passive: false });
+    el.addEventListener('touchend',    endPress);
+    el.addEventListener('touchmove',   endPress);
+    el.addEventListener('touchcancel', endPress);
+    el.addEventListener('mousedown',   startPress);
+    el.addEventListener('mouseup',     endPress);
+    el.addEventListener('mouseleave',  endPress);
+}
+
+// ── Inventory tooltips (.item-card in mainScreen / dungeonInvOverlay) ──
 function initInventoryTooltips() {
-    // Check both town inventory (mainScreen) and dungeon inventory (dungeonInvOverlay)
     const containers = [
         document.getElementById('mainScreen'),
         document.getElementById('dungeonInvOverlay')
     ];
-    
     containers.forEach(container => {
         if (!container) return;
-        
-        // Find all elements that contain item data (⚔️ or 🛡️)
-        // Also include equipped items with data-equipped-key attribute
-        const itemElements = container.querySelectorAll('.item-card, button, [data-equipped-key]');
-        
-        itemElements.forEach(el => {
-            const text = el.innerText;
-            // Only attach to elements that look like items
-            if (!text.includes('⚔️') && !text.includes('🛡️')) return;
-            // Skip equip/unequip and close buttons
-            if (text === 'EQUIP' || text === 'UNEQUIP' || text === 'CANNOT EQUIP') return;
-            if (text.includes('CLOSE INVENTORY')) return;
-            if (text.includes('BACK')) return;
-            
-            let pressTimer;
-            
-            el.addEventListener('touchstart', (e) => {
-                pressTimer = setTimeout(() => {
-                    showItemTooltip(el, e.touches[0]);
-                }, 500);
-            });
-            
-            el.addEventListener('touchend', () => {
-                clearTimeout(pressTimer);
-                removeTooltip();
-            });
-            
-            el.addEventListener('touchmove', () => {
-                clearTimeout(pressTimer);
-                removeTooltip();
-            });
-            
-            el.addEventListener('touchcancel', () => {
-                clearTimeout(pressTimer);
-                removeTooltip();
-            });
-            
-            // Also add mouse events for desktop testing
-            el.addEventListener('mousedown', (e) => {
-                pressTimer = setTimeout(() => {
-                    showItemTooltip(el, e);
-                }, 500);
-            });
-            
-            el.addEventListener('mouseup', () => {
-                clearTimeout(pressTimer);
-                removeTooltip();
-            });
-            
-            el.addEventListener('mouseleave', () => {
-                clearTimeout(pressTimer);
-                removeTooltip();
-            });
+        container.querySelectorAll('.item-card').forEach(card => {
+            _attachPressHold(card, showItemTooltip);
         });
     });
 }
 
-function showItemTooltip(btnElement, touch) {
-    removeTooltip();
-    
-    // Get the button's existing text (already has correct stats)
-    const btnText = btnElement.innerText;
-    
-    const tooltip = document.createElement('div');
-    tooltip.id = 'item-tooltip';
-    tooltip.style.cssText = `
+// ── Shop tooltips (.shop-item anywhere on the page) ──────────────
+function initShopTooltips() {
+    document.querySelectorAll('.shop-item').forEach(el => {
+        _attachPressHold(el, showShopItemTooltip);
+    });
+}
+
+// ── Build a rich equipped-weapon card HTML ────────────────────────
+function _buildEquippedWeaponCard() {
+    const p = gameState.player;
+    if (!p.weapon || p.weapon === 'bare_fists') return null;
+
+    // Resolve weapon data — could be a base-key or an instance ID
+    const equippedInst = p.inventory
+        ? p.inventory.find(i => i && typeof i === 'object' && i.instanceId === p.weapon)
+        : null;
+    const equippedWeapon = equippedInst
+        ? (WEAPONS[equippedInst.instanceId] || WEAPONS[equippedInst.weaponId])
+        : WEAPONS[p.weapon];
+
+    if (!equippedWeapon || equippedWeapon.unarmed) return null;
+
+    const displayQuality = equippedInst?.quality || equippedWeapon.quality || 'normal';
+    const eqColor = QUALITY_CONFIG[displayQuality]?.color || '#0f0';
+
+    // Damage line (same helper used by inventory)
+    const dmgLine = (typeof buildWeaponDmgLine === 'function')
+        ? buildWeaponDmgLine({ ...equippedWeapon, quality: displayQuality }, displayQuality, p)
+        : `Dmg: ${equippedWeapon.baseDamage}–${equippedWeapon.maxDamage || equippedWeapon.baseDamage}`;
+
+    // Modifiers
+    const mods = equippedInst?.modifiers || equippedWeapon.modifiers || [];
+    let modHtml = '';
+    if (mods.length) {
+        modHtml = '<div style="margin-top:5px;font-size:11px;">';
+        mods.forEach(mod => {
+            const mc = mod.color || '#FFD700';
+            modHtml += `<div style="color:${mc};">✨ ${mod.name}`;
+            if (mod.minDamage) modHtml += ` (${mod.minDamage}–${mod.maxDamage})`;
+            if (mod.critBonus) modHtml += ` (+${mod.critBonus}% crit)`;
+            if (mod.lifestealPercent) modHtml += ` (${mod.lifestealPercent}% lifesteal)`;
+            if (mod.statusEffect) modHtml += ` — ${mod.statusEffect}`;
+            modHtml += `</div>`;
+        });
+        modHtml += '</div>';
+    }
+
+    // Gem slots
+    const gemHtml = (typeof buildGemSlotHtml === 'function')
+        ? buildGemSlotHtml({ ...equippedWeapon, quality: displayQuality,
+                             gems: WEAPONS[p.weapon]?.gems || equippedInst?.gems || [] })
+        : '';
+
+    return `
+        <div style="background:#0a1a0a;border:2px solid ${eqColor};border-radius:6px;padding:8px 10px;min-width:150px;max-width:220px;">
+            <div style="color:${eqColor};font-size:11px;font-weight:bold;letter-spacing:1px;margin-bottom:5px;font-family:'Courier New',monospace;">★ EQUIPPED ★</div>
+            <div style="display:inline-block;background:${eqColor}18;border:1px solid ${eqColor}44;color:${eqColor};font-size:9px;letter-spacing:1px;padding:1px 5px;margin-bottom:4px;font-family:'Courier New',monospace;">${displayQuality.toUpperCase()}</div>
+            <div style="color:${eqColor};font-size:13px;font-weight:bold;">⚔️ ${equippedInst?.name || equippedWeapon.name}</div>
+            <div style="font-size:11px;margin-top:2px;">${dmgLine}</div>
+            <div style="color:#666;font-size:10px;margin-top:2px;font-family:'Courier New',monospace;">LV${equippedWeapon.level || 1}</div>
+            ${modHtml}
+            ${gemHtml}
+        </div>`;
+}
+
+// ── Build a rich equipped-armor card HTML ─────────────────────────
+function _buildEquippedArmorCard() {
+    const p = gameState.player;
+    if (!p.armor || p.armor === 'no_armor') return null;
+
+    const equippedInst = p.inventory
+        ? p.inventory.find(i => i && typeof i === 'object' && i.instanceId === p.armor)
+        : null;
+    const equippedArmor = equippedInst
+        ? (ARMOR[equippedInst.instanceId] || ARMOR[equippedInst.armorId])
+        : ARMOR[p.armor];
+
+    if (!equippedArmor || equippedArmor.unarmored) return null;
+
+    const displayQuality = equippedInst?.quality || equippedArmor.quality || 'normal';
+    const eqColor = QUALITY_CONFIG[displayQuality]?.color || '#0f0';
+
+    // Defense line (same helper used by inventory)
+    const defLine = (typeof buildArmorDefLine === 'function')
+        ? buildArmorDefLine({ ...equippedArmor, quality: displayQuality }, p)
+        : (() => {
+            const qb = (typeof getQualityBonus === 'function') ? getQualityBonus(displayQuality, equippedArmor.baseDefense) : 0;
+            const tDef = equippedArmor.baseDefense + qb;
+            const tMag = (equippedArmor.baseMagicBonus || 0) + ((typeof getQualityBonus === 'function') ? getQualityBonus(displayQuality, equippedArmor.baseMagicBonus || 0) : 0);
+            return `DEF: ${tDef}${tMag > 0 ? ` | MAG: +${tMag}` : ''}`;
+        })();
+
+    // HP/MP bonus
+    const inst = equippedInst;
+    let hpMpHtml = '';
+    if (inst && ((inst.bonusHp > 0) || (inst.bonusMp > 0))) {
+        hpMpHtml = '<div style="margin-top:3px;font-size:10px;color:#88ff88;">';
+        if (inst.bonusHp > 0) hpMpHtml += `❤️ +${inst.bonusHp} HP `;
+        if (inst.bonusMp > 0) hpMpHtml += `✨ +${inst.bonusMp} MP`;
+        hpMpHtml += '</div>';
+    }
+
+    // Modifiers
+    const mods = (inst?.modifiers) || equippedArmor.modifiers || [];
+    let modHtml = '';
+    if (mods.length) {
+        modHtml = '<div style="margin-top:5px;font-size:11px;">';
+        mods.forEach(mod => {
+            const mc = mod.color || '#FFD700';
+            const valStr = mod.statType === 'percent' ? `${mod.value}%` : `+${mod.value}`;
+            // weapon-style mods (minDamage) vs armor-style (value)
+            if (mod.value !== undefined) {
+                modHtml += `<div style="color:${mc};">${mod.icon || '✨'} ${mod.name}: ${valStr}</div>`;
+            } else {
+                modHtml += `<div style="color:${mc};">✨ ${mod.name}`;
+                if (mod.minDamage) modHtml += ` (${mod.minDamage}–${mod.maxDamage})`;
+                if (mod.statusEffect) modHtml += ` — ${mod.statusEffect}`;
+                modHtml += `</div>`;
+            }
+        });
+        modHtml += '</div>';
+    }
+
+    // Gem slots
+    const gemHtml = (typeof buildGemSlotHtml === 'function')
+        ? buildGemSlotHtml({ ...equippedArmor, quality: displayQuality,
+                             gems: ARMOR[p.armor]?.gems || equippedInst?.gems || [] })
+        : '';
+
+    return `
+        <div style="background:#0a1a0a;border:2px solid ${eqColor};border-radius:6px;padding:8px 10px;min-width:150px;max-width:220px;">
+            <div style="color:${eqColor};font-size:11px;font-weight:bold;letter-spacing:1px;margin-bottom:5px;font-family:'Courier New',monospace;">★ EQUIPPED ★</div>
+            <div style="display:inline-block;background:${eqColor}18;border:1px solid ${eqColor}44;color:${eqColor};font-size:9px;letter-spacing:1px;padding:1px 5px;margin-bottom:4px;font-family:'Courier New',monospace;">${displayQuality.toUpperCase()}</div>
+            <div style="color:${eqColor};font-size:13px;font-weight:bold;">🛡️ ${equippedArmor.name}</div>
+            <div style="font-size:11px;margin-top:2px;">${defLine}</div>
+            <div style="color:#666;font-size:10px;margin-top:2px;font-family:'Courier New',monospace;">LV${equippedArmor.level || 1}</div>
+            ${hpMpHtml}
+            ${modHtml}
+            ${gemHtml}
+        </div>`;
+}
+
+// ── Position and show the tooltip container ───────────────────────
+function _positionAndShow(tooltip, touchEvt) {
+    // Append off-screen first so we can measure it
+    tooltip.style.visibility = 'hidden';
+    tooltip.style.left = '0px';
+    tooltip.style.top  = '0px';
+    document.body.appendChild(tooltip);
+
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const isMobile = vw <= 480;
+    const MARGIN = 8;
+
+    // Stack vertically on mobile or when side-by-side would overflow
+    const twoCards = tooltip.children.length > 1;
+    if (twoCards && (isMobile || tooltip.scrollWidth > vw * 0.82)) {
+        tooltip.style.flexDirection = 'column';
+    }
+
+    // On mobile with two stacked cards, cap each card's content height
+    if (isMobile && twoCards) {
+        Array.from(tooltip.children).forEach(card => {
+            card.style.maxHeight = Math.floor((vh * 0.82) / 2) - 12 + 'px';
+            card.style.overflowY = 'auto';
+            card.style.minWidth  = '0';
+            card.style.maxWidth  = '100%';
+            // Shrink inner text a bit more on very small phones
+            card.style.fontSize  = '11px';
+        });
+    }
+
+    // Re-measure after layout adjustments
+    const tw = tooltip.offsetWidth;
+    const th = tooltip.offsetHeight;
+
+    const cx = touchEvt.clientX || 0;
+    const cy = touchEvt.clientY || 0;
+
+    let left, top;
+
+    if (isMobile) {
+        // On mobile: centre horizontally, position above finger if it fits, else below
+        left = Math.max(MARGIN, Math.min((vw - tw) / 2, vw - tw - MARGIN));
+        top  = cy - th - 20; // try above finger
+        if (top < MARGIN) top = cy + 24; // fall back to below
+        if (top + th > vh - MARGIN) top = Math.max(MARGIN, vh - th - MARGIN);
+    } else {
+        // Desktop: right of cursor, flip left if needed
+        left = cx + 15;
+        top  = cy - th / 2;
+        if (left + tw > vw - MARGIN) left = cx - tw - 15;
+        if (left < MARGIN) left = MARGIN;
+        if (top  < MARGIN) top  = MARGIN;
+        if (top + th > vh - MARGIN) top = vh - th - MARGIN;
+    }
+
+    tooltip.style.left = left + 'px';
+    tooltip.style.top  = top  + 'px';
+    tooltip.style.visibility = 'visible';
+}
+
+// ── Build the tooltip shell ───────────────────────────────────────
+function _makeTooltipShell() {
+    const isMobile = window.innerWidth <= 480;
+    const t = document.createElement('div');
+    t.id = 'item-tooltip';
+    t.style.cssText = `
         position: fixed;
         background: #0a0a0a;
         border: 2px solid #FFD700;
         border-radius: 8px;
-        padding: 12px 16px;
-        max-width: 280px;
+        padding: ${isMobile ? '7px' : '12px'};
         z-index: 10000;
         font-family: 'VT323', monospace;
-        font-size: 14px;
+        font-size: ${isMobile ? '11px' : '14px'};
         color: #00FF00;
         box-shadow: 0 0 30px rgba(0,0,0,0.9);
         pointer-events: none;
-        white-space: pre-wrap;
+        display: flex;
+        flex-direction: row;
+        gap: ${isMobile ? '6px' : '12px'};
+        max-width: 96vw;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-sizing: border-box;
     `;
-    
-    // Display the button's text exactly as it appears
-    tooltip.innerHTML = btnText;
-    document.body.appendChild(tooltip);
-    
-    tooltip.style.left = Math.min(touch.clientX + 15, window.innerWidth - tooltip.offsetWidth - 10) + 'px';
-    tooltip.style.top = Math.max(10, touch.clientY - tooltip.offsetHeight - 10) + 'px';
+    return t;
 }
 
+// ── INVENTORY tooltip (item-card) ─────────────────────────────────
+// Reads a sanitised clone of the card; type detected from emoji
+function showItemTooltip(cardEl, touchEvt) {
+    removeTooltip();
+
+    // Clone the card and strip interactive elements (buttons, onclick attrs)
+    // so the tooltip shows only the stat display, not the equip/unequip buttons
+    const clone = cardEl.cloneNode(true);
+    clone.querySelectorAll('button, input, select').forEach(el => el.remove());
+    // Also remove the EQUIPPED/UNEQUIP label divs (they clutter the tooltip)
+    clone.querySelectorAll('div').forEach(el => {
+        const txt = el.textContent.trim();
+        if (txt === 'EQUIPPED' || txt === 'UNEQUIP') el.remove();
+    });
+    const cardHtml = clone.innerHTML;
+
+    const rawHtml  = cardEl.innerHTML;
+    const isWeapon = rawHtml.includes('⚔️');
+    const isArmor  = rawHtml.includes('🛡️');
+    const isEquippedCard = cardEl.classList.contains('equipped') ||
+                           cardEl.classList.contains('equipped-card');
+
+    const tooltip = _makeTooltipShell();
+
+    // Card A — the item being held (sanitised)
+    const cardA = document.createElement('div');
+    cardA.style.cssText = 'background:#0d0d0d;border:1px solid #555;border-radius:6px;padding:8px 10px;min-width:150px;max-width:220px;';
+    cardA.innerHTML = cardHtml;
+    tooltip.appendChild(cardA);
+
+    // Card B — equipped comparison (only for unequipped inventory items)
+    if (!isEquippedCard) {
+        const equippedHtml = isWeapon ? _buildEquippedWeaponCard()
+                           : isArmor  ? _buildEquippedArmorCard()
+                           : null;
+        if (equippedHtml) {
+            const cardB = document.createElement('div');
+            cardB.innerHTML = equippedHtml;
+            tooltip.appendChild(cardB);
+        }
+    }
+
+    _positionAndShow(tooltip, touchEvt);
+}
+
+// ── SHOP tooltip (.shop-item with data-item-key / data-item-type) ─
+// Builds a fresh rich card from the item data directly
+function showShopItemTooltip(el, touchEvt) {
+    removeTooltip();
+
+    const itemKey  = el.dataset.itemKey;
+    const itemType = el.dataset.itemType; // 'weapon' | 'armor'
+    if (!itemKey || !itemType) return;
+
+    const p = gameState.player;
+
+    const tooltip = _makeTooltipShell();
+
+    // ── Card A: the shop item ────────────────────────────────────
+    const cardA = document.createElement('div');
+    cardA.style.cssText = 'background:#0d0d0d;border:1px solid #555;border-radius:6px;padding:8px 10px;min-width:150px;max-width:220px;';
+
+    if (itemType === 'weapon') {
+        // Item could be a base WEAPONS key OR a featured instanceId
+        const weapon = WEAPONS[itemKey];
+        if (!weapon) { tooltip.remove(); return; }
+
+        const displayQuality = weapon.quality || 'normal';
+        const qColor = QUALITY_CONFIG[displayQuality]?.color || '#0f0';
+        const dmgLine = (typeof buildWeaponDmgLine === 'function')
+            ? buildWeaponDmgLine({ ...weapon, quality: displayQuality }, displayQuality, p)
+            : `Dmg: ${weapon.baseDamage}–${weapon.maxDamage || weapon.baseDamage}`;
+
+        const mods = weapon.modifiers || [];
+        let modHtml = '';
+        if (mods.length) {
+            modHtml = '<div style="margin-top:5px;font-size:11px;">';
+            mods.forEach(mod => {
+                const mc = mod.color || '#FFD700';
+                modHtml += `<div style="color:${mc};">✨ ${mod.name}`;
+                if (mod.minDamage) modHtml += ` (${mod.minDamage}–${mod.maxDamage})`;
+                if (mod.critBonus) modHtml += ` (+${mod.critBonus}% crit)`;
+                if (mod.lifestealPercent) modHtml += ` (${mod.lifestealPercent}% lifesteal)`;
+                if (mod.statusEffect) modHtml += ` — ${mod.statusEffect}`;
+                modHtml += `</div>`;
+            });
+            modHtml += '</div>';
+        }
+
+        const gemHtml = (typeof buildGemSlotHtml === 'function')
+            ? buildGemSlotHtml({ ...weapon, quality: displayQuality, gems: weapon.gems || [] })
+            : '';
+
+        cardA.innerHTML = `
+            <div style="display:inline-block;background:${qColor}18;border:1px solid ${qColor}44;color:${qColor};font-size:9px;letter-spacing:1px;padding:1px 5px;margin-bottom:4px;font-family:'Courier New',monospace;">${displayQuality.toUpperCase()}</div>
+            <div style="color:${qColor};font-size:13px;font-weight:bold;">⚔️ ${weapon.name}</div>
+            <div style="font-size:11px;margin-top:2px;">${dmgLine}</div>
+            <div style="color:#666;font-size:10px;margin-top:2px;font-family:'Courier New',monospace;">LV${weapon.level || 1}</div>
+            ${modHtml}
+            ${gemHtml}`;
+
+        tooltip.appendChild(cardA);
+
+        // Card B — currently equipped weapon
+        const equippedHtml = _buildEquippedWeaponCard();
+        if (equippedHtml) {
+            // Don't show comparison if it IS the equipped item
+            const eqWeapon = WEAPONS[p.weapon];
+            const isSame = eqWeapon && (eqWeapon.name === weapon.name || p.weapon === itemKey);
+            if (!isSame) {
+                const cardB = document.createElement('div');
+                cardB.innerHTML = equippedHtml;
+                tooltip.appendChild(cardB);
+            }
+        }
+
+    } else if (itemType === 'armor') {
+        const armor = ARMOR[itemKey];
+        if (!armor) { tooltip.remove(); return; }
+
+        const displayQuality = armor.quality || 'normal';
+        const qColor = QUALITY_CONFIG[displayQuality]?.color || '#0f0';
+        const defLine = (typeof buildArmorDefLine === 'function')
+            ? buildArmorDefLine({ ...armor, quality: displayQuality }, p)
+            : (() => {
+                const qb = (typeof getQualityBonus === 'function') ? getQualityBonus(displayQuality, armor.baseDefense) : 0;
+                const tDef = armor.baseDefense + qb;
+                const tMag = (armor.baseMagicBonus || 0) + ((typeof getQualityBonus === 'function') ? getQualityBonus(displayQuality, armor.baseMagicBonus || 0) : 0);
+                return `DEF: ${tDef}${tMag > 0 ? ` | MAG: +${tMag}` : ''}`;
+            })();
+
+        const mods = armor.modifiers || [];
+        let modHtml = '';
+        if (mods.length) {
+            modHtml = '<div style="margin-top:5px;font-size:11px;">';
+            mods.forEach(mod => {
+                const mc = mod.color || '#FFD700';
+                const valStr = mod.statType === 'percent' ? `${mod.value}%` : `+${mod.value}`;
+                if (mod.value !== undefined) {
+                    modHtml += `<div style="color:${mc};">${mod.icon || '✨'} ${mod.name}: ${valStr}</div>`;
+                } else {
+                    modHtml += `<div style="color:${mc};">✨ ${mod.name}`;
+                    if (mod.minDamage) modHtml += ` (${mod.minDamage}–${mod.maxDamage})`;
+                    if (mod.statusEffect) modHtml += ` — ${mod.statusEffect}`;
+                    modHtml += `</div>`;
+                }
+            });
+            modHtml += '</div>';
+        }
+
+        const gemHtml = (typeof buildGemSlotHtml === 'function')
+            ? buildGemSlotHtml({ ...armor, quality: displayQuality, gems: armor.gems || [] })
+            : '';
+
+        // HP/MP bonus from the armor def
+        let hpMpHtml = '';
+        if ((armor.bonusHp > 0) || (armor.bonusMp > 0)) {
+            hpMpHtml = '<div style="margin-top:3px;font-size:10px;color:#88ff88;">';
+            if (armor.bonusHp > 0) hpMpHtml += `❤️ +${armor.bonusHp} HP `;
+            if (armor.bonusMp > 0) hpMpHtml += `✨ +${armor.bonusMp} MP`;
+            hpMpHtml += '</div>';
+        }
+
+        cardA.innerHTML = `
+            <div style="display:inline-block;background:${qColor}18;border:1px solid ${qColor}44;color:${qColor};font-size:9px;letter-spacing:1px;padding:1px 5px;margin-bottom:4px;font-family:'Courier New',monospace;">${displayQuality.toUpperCase()}</div>
+            <div style="color:${qColor};font-size:13px;font-weight:bold;">🛡️ ${armor.name}</div>
+            <div style="font-size:11px;margin-top:2px;">${defLine}</div>
+            <div style="color:#666;font-size:10px;margin-top:2px;font-family:'Courier New',monospace;">LV${armor.level || 1}</div>
+            ${hpMpHtml}
+            ${modHtml}
+            ${gemHtml}`;
+
+        tooltip.appendChild(cardA);
+
+        // Card B — currently equipped armor
+        const equippedHtml = _buildEquippedArmorCard();
+        if (equippedHtml) {
+            const eqArmor = ARMOR[p.armor];
+            const isSame = eqArmor && (eqArmor.name === armor.name || p.armor === itemKey);
+            if (!isSame) {
+                const cardB = document.createElement('div');
+                cardB.innerHTML = equippedHtml;
+                tooltip.appendChild(cardB);
+            }
+        }
+    }
+
+    _positionAndShow(tooltip, touchEvt);
+}
 
 function removeTooltip() {
     const existing = document.getElementById('item-tooltip');
@@ -533,6 +910,7 @@ function removeTooltip() {
 }
 
 window.initInventoryTooltips = initInventoryTooltips;
+window.initShopTooltips = initShopTooltips;
 </script>
     <script src="combat-engine.js"></script>
     <script src="spellbook.js"></script>

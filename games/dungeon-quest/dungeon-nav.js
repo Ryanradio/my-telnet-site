@@ -402,25 +402,41 @@ function moveInDungeon(direction) {
             if (triggerType === 'enter_room') {
                 shouldTeleport = true;
             } else if (triggerType === 'staff_pieces') {
-    const staffCount = (gameState.player.inventory || []).filter(i => {
+    // Count UNIQUE staff pieces by piece number (requires 1-8, not 8 of same)
+    const allStaffPieces = (gameState.player.inventory || []).filter(i => {
         if (!i) return false;
         if (typeof i === 'string') return i.startsWith('staff_piece_');
         if (typeof i === 'object') return i.subtype === 'staff_piece';
         return false;
-    }).length;
-    if (staffCount >= 8) {
+    });
+    
+    // Get unique piece numbers (1-8)
+    const uniquePieceNumbers = new Set();
+    allStaffPieces.forEach(piece => {
+        if (typeof piece === 'object' && piece.staffPieceNumber) {
+            uniquePieceNumbers.add(piece.staffPieceNumber);
+        } else if (typeof piece === 'string') {
+            const match = piece.match(/staff_piece_(\d+)/);
+            if (match) uniquePieceNumbers.add(parseInt(match[1]));
+        }
+    });
+    
+    const uniqueCount = uniquePieceNumbers.size;
+    
+    if (uniqueCount >= 8) {
         shouldTeleport = true;
-        termAppend(`🪄 The staff pieces resonate with the ancient gate!`, 'term-highlight');
+        termAppend(`🪄 The eight UNIQUE staff pieces resonate with the ancient gate!`, 'term-highlight');
         
+        // Remove ALL staff pieces
         gameState.player.inventory = gameState.player.inventory.filter(i => {
             if (!i) return true;
             if (typeof i === 'string') return !i.startsWith('staff_piece_');
             if (typeof i === 'object') return i.subtype !== 'staff_piece';
             return true;
         });
-        termAppend(`🪄 The staff pieces dissolve into the gate, consumed by the teleportation!`, 'term-warning');
+        termAppend(`🪄 All staff pieces dissolve into the gate, consumed by the teleportation!`, 'term-warning');
     } else {
-        termAppend(`🪄 The gate requires all 8 staff pieces to activate. (${staffCount}/8 collected)`, 'term-dim');
+        termAppend(`🪄 The gate requires all 8 UNIQUE staff pieces to activate. (${uniqueCount}/8 unique pieces)`, 'term-dim');
     }
 }
             
@@ -617,25 +633,41 @@ function moveInDungeon(direction) {
         if (triggerType === 'enter_room') {
             shouldTeleport = true;
         } else if (triggerType === 'staff_pieces') {
-    const staffCount = (gameState.player.inventory || []).filter(i => {
+    // Count UNIQUE staff pieces by piece number (requires 1-8, not 8 of same)
+    const allStaffPieces = (gameState.player.inventory || []).filter(i => {
         if (!i) return false;
         if (typeof i === 'string') return i.startsWith('staff_piece_');
         if (typeof i === 'object') return i.subtype === 'staff_piece';
         return false;
-    }).length;
-    if (staffCount >= 8) {
+    });
+    
+    // Get unique piece numbers (1-8)
+    const uniquePieceNumbers = new Set();
+    allStaffPieces.forEach(piece => {
+        if (typeof piece === 'object' && piece.staffPieceNumber) {
+            uniquePieceNumbers.add(piece.staffPieceNumber);
+        } else if (typeof piece === 'string') {
+            const match = piece.match(/staff_piece_(\d+)/);
+            if (match) uniquePieceNumbers.add(parseInt(match[1]));
+        }
+    });
+    
+    const uniqueCount = uniquePieceNumbers.size;
+    
+    if (uniqueCount >= 8) {
         shouldTeleport = true;
-        termAppend(`🪄 The staff pieces resonate with the ancient gate!`, 'term-highlight');
+        termAppend(`🪄 The eight UNIQUE staff pieces resonate with the ancient gate!`, 'term-highlight');
         
+        // Remove ALL staff pieces
         gameState.player.inventory = gameState.player.inventory.filter(i => {
             if (!i) return true;
             if (typeof i === 'string') return !i.startsWith('staff_piece_');
             if (typeof i === 'object') return i.subtype !== 'staff_piece';
             return true;
         });
-        termAppend(`🪄 The staff pieces dissolve into the gate, consumed by the teleportation!`, 'term-warning');
+        termAppend(`🪄 All staff pieces dissolve into the gate, consumed by the teleportation!`, 'term-warning');
     } else {
-        termAppend(`🪄 The gate requires all 8 staff pieces to activate. (${staffCount}/8 collected)`, 'term-dim');
+        termAppend(`🪄 The gate requires all 8 UNIQUE staff pieces to activate. (${uniqueCount}/8 unique pieces)`, 'term-dim');
     }
 }
         

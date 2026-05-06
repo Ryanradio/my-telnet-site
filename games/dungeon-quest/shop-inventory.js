@@ -224,7 +224,8 @@ function renderShop(tab, section, typeFilter, levelFilter) {
             }
             
             html += `
-            <div style="background:#080800;padding:10px 12px;position:relative;overflow:hidden;${isSpecial?`box-shadow:inset 0 0 20px ${color}08;`:''}">
+            <div class="shop-item" data-item-key="${weapon.instanceId || ''}" data-item-type="weapon"
+                 style="background:#080800;padding:10px 12px;position:relative;overflow:hidden;${isSpecial?`box-shadow:inset 0 0 20px ${color}08;`:''}">
                 ${isSpecial ? `<div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,${color}66,transparent);"></div>` : ''}
                 <div style="display:flex;align-items:center;gap:5px;margin-bottom:4px;flex-wrap:wrap;">
                     <span style="color:${color};font-size:12px;font-weight:bold;">⚔️ ${weapon.name}</span>
@@ -274,7 +275,8 @@ function renderShop(tab, section, typeFilter, levelFilter) {
             }
             
             html += `
-            <div style="background:#080800;padding:10px 12px;position:relative;overflow:hidden;${isSpecial?`box-shadow:inset 0 0 20px ${color}08;`:''}">
+            <div class="shop-item" data-item-key="${armor.instanceId || ''}" data-item-type="armor"
+                 style="background:#080800;padding:10px 12px;position:relative;overflow:hidden;${isSpecial?`box-shadow:inset 0 0 20px ${color}08;`:''}">
                 ${isSpecial ? `<div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,${color}66,transparent);"></div>` : ''}
                 <div style="display:flex;align-items:center;gap:5px;margin-bottom:4px;flex-wrap:wrap;">
                     <span style="color:${color};font-size:12px;font-weight:bold;">🛡️ ${armor.name}</span>
@@ -380,12 +382,13 @@ const typeOptions = subtypes.map(t =>
             const canAfford = p.gold >= price;
 
             return `
-            <div style="border:1px solid ${isEquipped?'#3a3000':'#0f0f0f'};background:${isEquipped?'#0a0800':'#060606'};padding:9px 10px;margin-bottom:3px;opacity:${isFuture?'0.55':'1'};">
+            <div class="shop-item" data-item-key="${key}" data-item-type="weapon"
+                 style="border:1px solid ${isEquipped?'#3a3000':'#0f0f0f'};background:${isEquipped?'#0a0800':'#060606'};padding:9px 10px;margin-bottom:3px;opacity:${isFuture?'0.55':'1'};">
                 <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;">
                     <div style="flex:1;min-width:0;">
                         <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px;flex-wrap:wrap;">
                             <span style="color:#555;font-size:9px;border:1px solid #1a1a1a;padding:1px 4px;font-family:'Courier New',monospace;">LV${item.level||1}</span>
-                            <span style="color:${isFuture?'#444':'#ccc'};font-size:12px;">${item.name}</span>
+                            <span style="color:${isFuture?'#444':'#ccc'};font-size:12px;">⚔️ ${item.name}</span>
                             ${item.weaponSubtype?`<span style="color:#2a2a2a;font-size:9px;font-family:'Courier New',monospace;">${item.weaponSubtype}</span>`:''}
                         </div>
                         <div style="font-size:10px;">${buildWeaponDmgLine(item, null, p)}</div>
@@ -436,12 +439,13 @@ const typeOptions = subtypes.map(t =>
             const canAfford = p.gold >= price;
 
             return `
-            <div style="border:1px solid ${isEquipped?'#3a3000':'#0f0f0f'};background:${isEquipped?'#0a0800':'#060606'};padding:9px 10px;margin-bottom:3px;opacity:${isFuture?'0.55':'1'};">
+            <div class="shop-item" data-item-key="${key}" data-item-type="armor"
+                 style="border:1px solid ${isEquipped?'#3a3000':'#0f0f0f'};background:${isEquipped?'#0a0800':'#060606'};padding:9px 10px;margin-bottom:3px;opacity:${isFuture?'0.55':'1'};">
                 <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;">
                     <div style="flex:1;min-width:0;">
                         <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px;flex-wrap:wrap;">
                             <span style="color:#555;font-size:9px;border:1px solid #1a1a1a;padding:1px 4px;font-family:'Courier New',monospace;">LV${item.level||1}</span>
-                            <span style="color:${isFuture?'#444':'#ccc'};font-size:12px;">${item.name}</span>
+                            <span style="color:${isFuture?'#444':'#ccc'};font-size:12px;">🛡️ ${item.name}</span>
                         </div>
                         <div style="font-size:10px;">${buildArmorDefLine(item, p)}</div>
                     </div>
@@ -605,6 +609,11 @@ function buildPotionList() {
     `;
     screen.innerHTML = shopHtml;
 
+    // Wire up press-and-hold comparison tooltips for all shop items
+    if (typeof initShopTooltips === 'function') {
+        setTimeout(initShopTooltips, 50);
+    }
+
     // Timer tick
     window._shopTimerInterval = setInterval(() => {
         const el = document.getElementById('shopTimer');
@@ -612,6 +621,7 @@ function buildPotionList() {
         else clearInterval(window._shopTimerInterval);
     }, 1000);
 
+  
     if (tab === 'sell') setTimeout(showShopSell, 50);
 }
 
@@ -1053,6 +1063,7 @@ Object.entries(items).forEach(([key, data]) => {
 
     sellHtml += `</div>`;
     document.getElementById('shopContent').innerHTML = sellHtml;
+    
 }
 
 
@@ -2094,10 +2105,10 @@ function showInventory() {
     `;
 
     setScreen(invHtml);
+    if (typeof initInventoryTooltips === 'function') {
+        setTimeout(initInventoryTooltips, 50);
+    }
 }
-
-
-
 
 
 // ═══════════════════════════════════════════════════════════════
@@ -2626,6 +2637,7 @@ invHtml += `<div class="equipped-card armor item-card" style="text-align:left; b
     invHtml += `<button class="inv-close-btn" onclick="closeUnifiedInventory()">← BACK</button>`;
     
     setScreen(invHtml);
+   
 }
 
 // Replace the old inventory overlay with unified inventory
@@ -2969,6 +2981,7 @@ function equipItem(type, key) {
         weapon.isEquipped = true;
         
         recalcGemStats(p);
+        calculateAndSetSpellResistance(p);
         saveGame();
         updateHud();
         
@@ -3022,6 +3035,7 @@ function equipItem(type, key) {
         armor.isEquipped = true;
         
         recalcGemStats(p);
+        calculateAndSetSpellResistance(p);
         saveGame();
         updateHud();
         
@@ -3086,6 +3100,7 @@ function unequipItem(type) {
     }
     
     recalcGemStats(p);
+    calculateAndSetSpellResistance(p);
     saveGame();
     updateHud();
     
