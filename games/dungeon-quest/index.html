@@ -925,6 +925,14 @@ window.initShopTooltips = initShopTooltips;
     <script src="dungeon-nav.js"></script>
     <script src="char-stats.js"></script>
     <script src="blacksmith.js"></script>
+    <script>
+    // Start the revision checker after gameversion.js loads
+    setTimeout(function() {
+        if (typeof initRevisionChecker === 'function') {
+            initRevisionChecker();
+        }
+    }, 2000);
+</script>
 
 
     <script>
