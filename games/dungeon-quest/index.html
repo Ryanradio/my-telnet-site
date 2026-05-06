@@ -11367,10 +11367,11 @@ function showLeaderboard() {
                             <th style="padding:8px 6px; text-align:center; border-bottom:2px solid #FFD700; color:#FFD700;">Runes</th>
                             <th style="padding:8px 6px; text-align:center; border-bottom:2px solid #FFD700; color:#FFD700;">Lv</th>
                             <th style="padding:8px 6px; text-align:right; border-bottom:2px solid #FFD700; color:#FFD700;">💀</th>
+                            <th style="padding:8px 6px; text-align:right; border-bottom:2px solid #FFD700; color:#FFD700;">⭐ XP</th>
                         </tr>
                     </thead>
                     <tbody id="leaderboard-tbody">
-                        <tr><td colspan="6" style="text-align:center; padding:40px;">Loading leaderboard...</td></tr>
+                        <tr><td colspan="7" style="text-align:center; padding:40px;">Loading leaderboard...<\/td><\/tr>
                     </tbody>
                 </table>
             </div>
@@ -11387,7 +11388,7 @@ function showLeaderboard() {
         if (!tbody) return;
         
         if (!players || players.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px;">No adventurers have entered the Hall of Legends yet.<br><span style="font-size:12px;">Be the first!</span></td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:40px;">No adventurers have entered the Hall of Legends yet.<br><span style="font-size:12px;">Be the first!</span><\/td><\/tr>';
             return;
         }
         
@@ -11417,13 +11418,14 @@ function showLeaderboard() {
             if (displayClass.length > 14) displayClass = displayClass.substring(0, 12) + '..';
             
             html += `<tr style="border-bottom:1px solid #1a3a1a; ${rowBg}">
-                <td style="padding:8px 6px; text-align:center; font-weight:bold;">${rankDisplay}</td>
-                <td style="padding:8px 6px; text-align:left; color:${nameColor}; font-weight:${nameWeight};">${escapeHtml(displayName)}</td>
-                <td style="padding:8px 6px; text-align:left; color:#8aaa8a;">${escapeHtml(displayClass)}</td>
-                <td style="padding:8px 6px; text-align:center;">${runeHtml}</td>
-                <td style="padding:8px 6px; text-align:center; color:#88FF88;">${p.level || 1}</td>
-                <td style="padding:8px 6px; text-align:right; color:#FFAA66;">${(p.kills || 0).toLocaleString()}</td>
-              </tr>`;
+                <td style="padding:8px 6px; text-align:center; font-weight:bold;">${rankDisplay}<\/td>
+                <td style="padding:8px 6px; text-align:left; color:${nameColor}; font-weight:${nameWeight};">${escapeHtml(displayName)}<\/td>
+                <td style="padding:8px 6px; text-align:left; color:#8aaa8a;">${escapeHtml(displayClass)}<\/td>
+                <td style="padding:8px 6px; text-align:center;">${runeHtml}<\/td>
+                <td style="padding:8px 6px; text-align:center; color:#88FF88;">${p.level || 1}<\/td>
+                <td style="padding:8px 6px; text-align:right; color:#FFAA66;">${(p.kills || 0).toLocaleString()}<\/td>
+                <td style="padding:8px 6px; text-align:right; color:#FFD700;">${(p.xp || 0).toLocaleString()}<\/td>
+            <\/tr>`;
         });
         tbody.innerHTML = html;
     }
@@ -11437,6 +11439,28 @@ function showLeaderboard() {
             return m;
         });
     }
+    
+    fetch('https://script.google.com/macros/s/AKfycbwh7_fSt6gRjObMZCvNLUOcwJpfVgzpeAC7InjPR0E51B7CRpFNj-Qvbe_LL8WR3AhaKg/exec?action=getLeaderboard&_cb=' + Date.now())
+        .then(res => res.json())
+        .then(data => {
+            if (data.ok && data.leaderboard && data.leaderboard.length > 0) {
+                let currentPlayerId = null;
+                try {
+                    if (typeof gameState !== 'undefined' && gameState.player && gameState.player.id) {
+                        currentPlayerId = gameState.player.id;
+                    }
+                } catch(e) {}
+                renderTable(data.leaderboard, currentPlayerId);
+            } else {
+                const tbody = document.getElementById('leaderboard-tbody');
+                if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:40px;">No adventurers have entered the Hall of Legends yet.<br><span style="font-size:12px;">Be the first!</span><\/td><\/tr>';
+            }
+        })
+        .catch(err => {
+            const tbody = document.getElementById('leaderboard-tbody');
+            if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:40px; color:#ff6666;">⚠️ Could not load leaderboard data.<\/td><\/tr>';
+        });
+
     
     fetch('https://script.google.com/macros/s/AKfycbwh7_fSt6gRjObMZCvNLUOcwJpfVgzpeAC7InjPR0E51B7CRpFNj-Qvbe_LL8WR3AhaKg/exec?action=getLeaderboard&_cb=' + Date.now())
         .then(res => res.json())
