@@ -11,7 +11,7 @@ const AH_ENABLED = true; // ← flip to true when ready to deploy
 
 // ── Replace with your deployed Apps Script Web App URL ───────────────────
 // This is the SAME URL you already use for leaderboard/player tracking.
-const AH_SCRIPT_URL = 'https://script.google.com/macros/s/YOUR_ACTUAL_ID/exec';
+const AH_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwh7_fSt6gRjObMZCvNLUOcwJpfVgzpeAC7InjPR0E51B7CRpFNj-Qvbe_LL8WR3AhaKg/exec';
 
 // ── Listing fee table (must match Apps Script AH_LISTING_FEES) ────────────
 const AH_LISTING_FEES = {
