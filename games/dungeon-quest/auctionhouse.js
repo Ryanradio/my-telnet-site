@@ -462,7 +462,7 @@ function _ahRenderSellConfirm() {
             ${icon} ${name}
           </span>
         </div>
-        <button onclick="_ahShowItemModal()"
+        <button id="ahPreviewBtn"
           style="background:#0a0a00;border:1px solid #2a3a2a;color:#668866;
                  font-family:'VT323',monospace;font-size:12px;padding:3px 8px;
                  cursor:pointer;flex-shrink:0;white-space:nowrap;">
@@ -536,122 +536,189 @@ function _ahOnDurationChange(val) {
 }
 
 // ── Item preview modal ────────────────────────────────────────────────────
-function _ahShowItemModal() {
-  const existing = document.getElementById('ahItemModal');
-  if (existing) existing.remove();
+function _ahShowItemModal(itemObj) {
+  try {
+    const existing = document.getElementById('ahItemModal');
+    if (existing) existing.remove();
 
-  const item     = _ahSellItem;
-  if (!item) return;
-  const p        = gameState.player;
-  const isWeapon = !!(item.weaponId || item.type === 'weapon');
-  const baseData = isWeapon
-    ? (typeof WEAPONS !== 'undefined' ? WEAPONS[item.weaponId || item.instanceId] : null)
-    : (typeof ARMOR   !== 'undefined' ? ARMOR[item.armorId   || item.instanceId] : null);
-  const quality  = item.quality || baseData?.quality || 'normal';
-  const qc       = (typeof QUALITY_CONFIG !== 'undefined' && QUALITY_CONFIG[quality]) || {};
-  const color    = qc.color || '#888';
-  const name     = item.name || baseData?.name || 'Unknown';
-  const level    = baseData?.level || item.level || 1;
-  const subtype  = baseData?.weaponSubtype || baseData?.armorType || '';
-  const icon     = isWeapon ? '⚔️' : '🛡️';
+    let item = itemObj || _ahSellItem;
+    if (!item) { console.warn('_ahShowItemModal: no item to show'); return; }
 
-  // Stat line
-  let statLine = '';
-  if (isWeapon && typeof buildWeaponDmgLine === 'function') {
-    try { statLine = buildWeaponDmgLine({...baseData, quality}, quality, p); } catch(e) {}
-  } else if (!isWeapon && typeof buildArmorDefLine === 'function') {
-    try { statLine = buildArmorDefLine({...baseData, quality}, p); } catch(e) {}
-  }
+    // If it came from a browse listing, parse item_data JSON
+    if (item.item_data && typeof item.item_data === 'string') {
+      try { item = JSON.parse(item.item_data); } catch(e) {}
+    }
 
-  // Modifiers
-  let modHtml = '';
-  const mods = item.modifiers || baseData?.modifiers || [];
-  if (mods.length > 0) {
-    modHtml = '<div style="margin-top:6px;border-top:1px solid ' + color + '22;padding-top:6px;">';
-    mods.forEach(mod => {
-      const mc  = mod.color || '#FFD700';
-      let   txt = mod.name  || '';
-      if (mod.minDamage)        txt += ' (' + mod.minDamage + '–' + mod.maxDamage + ')';
-      if (mod.critBonus)        txt += ' (+' + mod.critBonus + '% crit)';
-      if (mod.lifestealPercent) txt += ' (' + mod.lifestealPercent + '% lifesteal)';
-      if (mod.statusEffect)     txt += ' — ' + mod.statusEffect;
-      if (mod.value)            txt += ': ' + mod.value + (mod.statType === 'percent' ? '%' : '');
-      modHtml += '<div style="color:' + mc + ';font-size:12px;margin-bottom:2px;">✨ ' + txt + '</div>';
-    });
-    modHtml += '</div>';
-  }
+    const p        = gameState.player;
+    const isWeapon = !!(item.weaponId || item.type === 'weapon'
+                        || item.baseDamage !== undefined);
 
-  // HP/MP bonus (armor)
-  let hpMpHtml = '';
-  if (!isWeapon && item) {
-    const hasHp = item.bonusHp && item.bonusHp > 0;
-    const hasMp = item.bonusMp && item.bonusMp > 0;
-    if (hasHp || hasMp) {
+    // Resolve base data
+    let baseData = null;
+    if (isWeapon) {
+      const key = item.weaponId || item.instanceId || '';
+      if (typeof WEAPONS !== 'undefined' && WEAPONS[key]) baseData = WEAPONS[key];
+    } else {
+      const key = item.armorId || item.instanceId || '';
+      if (typeof ARMOR !== 'undefined' && ARMOR[key]) baseData = ARMOR[key];
+    }
+    const merged  = baseData ? Object.assign({}, baseData, item) : item;
+
+    const quality = merged.quality || 'normal';
+    const qc      = (typeof QUALITY_CONFIG !== 'undefined' && QUALITY_CONFIG[quality]) || {};
+    const color   = qc.color || '#888888';
+    const name    = merged.name || 'Unknown Item';
+    const level   = merged.level || 1;
+    const subtype = merged.weaponSubtype || merged.armorType || merged.subtype || '';
+    const icon    = isWeapon ? '⚔️' : '🛡️';
+
+    // ── Stat line ─────────────────────────────────────────────────────────
+    let statLine = '';
+    if (isWeapon) {
+      if (typeof buildWeaponDmgLine === 'function') {
+        try { statLine = buildWeaponDmgLine(merged, quality, p); } catch(e) {
+          statLine = '<span style="color:#aaa;">DMG: '
+            + (merged.baseDamage||0) + '–' + (merged.maxDamage||0) + '</span>';
+        }
+      } else {
+        statLine = '<span style="color:#aaa;">DMG: '
+          + (merged.baseDamage||0) + '–' + (merged.maxDamage||0) + '</span>';
+      }
+    } else {
+      if (typeof buildArmorDefLine === 'function') {
+        try { statLine = buildArmorDefLine(merged, p); } catch(e) {
+          statLine = '<span style="color:#aaa;">DEF: ' + (merged.baseDefense||0) + '</span>';
+        }
+      } else {
+        statLine = '<span style="color:#aaa;">DEF: ' + (merged.baseDefense||0) + '</span>';
+      }
+    }
+
+    // ── HP/MP bonus ───────────────────────────────────────────────────────
+    let hpMpHtml = '';
+    if (merged.bonusHp > 0 || merged.bonusMp > 0) {
       hpMpHtml = '<div style="margin-top:4px;font-size:12px;color:#88ff88;">';
-      if (hasHp) hpMpHtml += '❤️ +' + item.bonusHp + ' HP &nbsp;';
-      if (hasMp) hpMpHtml += '✨ +' + item.bonusMp + ' MP';
+      if (merged.bonusHp > 0) hpMpHtml += '❤️ +' + merged.bonusHp + ' HP &nbsp;';
+      if (merged.bonusMp > 0) hpMpHtml += '✨ +' + merged.bonusMp + ' MP';
       hpMpHtml += '</div>';
     }
+
+    // ── Modifiers ─────────────────────────────────────────────────────────
+    let modHtml = '';
+    const mods = merged.modifiers || [];
+    if (mods.length > 0) {
+      modHtml = '<div style="margin-top:6px;border-top:1px solid '
+        + color + '33;padding-top:6px;">';
+      mods.forEach(function(mod) {
+        const mc  = mod.color || '#FFD700';
+        let   txt = mod.name  || '';
+        if (mod.minDamage !== undefined)  txt += ' (' + mod.minDamage + '–' + mod.maxDamage + ')';
+        if (mod.critBonus)                txt += ' (+' + mod.critBonus + '% crit)';
+        if (mod.lifestealPercent)         txt += ' (' + mod.lifestealPercent + '% lifesteal)';
+        if (mod.statusEffect)             txt += ' — ' + mod.statusEffect;
+        if (mod.value !== undefined)      txt += ': ' + mod.value + (mod.statType === 'percent' ? '%' : '');
+        modHtml += '<div style="color:' + mc + ';font-size:12px;margin-bottom:3px;">'
+          + (mod.icon || '✨') + ' ' + txt + '</div>';
+      });
+      modHtml += '</div>';
+    }
+
+    // ── Gems ──────────────────────────────────────────────────────────────
+    let gemHtml = '';
+    if (typeof buildGemSlotHtml === 'function') {
+      try {
+        gemHtml = buildGemSlotHtml(
+          Object.assign({}, merged, { gems: merged.gems || [] })
+        );
+      } catch(e) {}
+    }
+
+    // ── Class restriction ─────────────────────────────────────────────────
+    let classHtml = '';
+    if (merged.classRestriction) {
+      const cr = Array.isArray(merged.classRestriction)
+        ? merged.classRestriction.join(', ')
+        : merged.classRestriction;
+      if (cr && cr !== 'all') {
+        classHtml = '<div style="color:#446644;font-size:11px;margin-top:4px;'
+          + 'font-family:'Courier New',monospace;">Class: ' + cr + '</div>';
+      }
+    }
+
+    // ── Build modal using DOM (not innerHTML) to avoid CSP issues ─────────
+    const modal = document.createElement('div');
+    modal.id = 'ahItemModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:#000000dd;z-index:10001;'
+      + 'display:flex;align-items:center;justify-content:center;'
+      + 'padding:16px;box-sizing:border-box;';
+
+    const inner = document.createElement('div');
+    inner.style.cssText = 'background:#070f07;border:2px solid ' + color + ';'
+      + 'border-radius:8px;padding:14px 16px;max-width:320px;width:100%;'
+      + 'font-family:VT323,monospace;position:relative;'
+      + 'box-shadow:0 0 40px ' + color + '44;max-height:85vh;overflow-y:auto;';
+
+    // Build inner HTML as a string — safer than many DOM calls
+    inner.innerHTML = ''
+      // Close button
+      + '<button id="ahModalClose" style="position:absolute;top:8px;right:10px;'
+      + 'background:none;border:none;color:#666;font-size:20px;cursor:pointer;'
+      + 'line-height:1;z-index:1;">✕</button>'
+      // Quality badge
+      + '<div style="display:inline-block;background:' + color + '18;'
+      + 'border:1px solid ' + color + '44;color:' + color + ';font-size:9px;'
+      + 'letter-spacing:1px;padding:1px 6px;font-family:Courier New,monospace;'
+      + 'margin-bottom:6px;">' + quality.toUpperCase() + '</div>'
+      // Name
+      + '<div style="color:' + color + ';font-size:19px;font-weight:bold;'
+      + 'margin-bottom:4px;padding-right:28px;">' + icon + ' ' + name + '</div>'
+      // Level / subtype
+      + '<div style="color:#555;font-size:11px;font-family:Courier New,monospace;'
+      + 'margin-bottom:6px;">LV' + level + (subtype ? ' · ' + subtype : '') + '</div>'
+      // Stats
+      + '<div style="font-size:13px;margin-bottom:4px;">' + statLine + '</div>'
+      + hpMpHtml
+      + classHtml
+      + modHtml
+      + gemHtml
+      // Dismiss hint
+      + '<div style="color:#2a2a2a;font-size:10px;margin-top:12px;text-align:center;'
+      + 'font-family:Courier New,monospace;">tap outside to close</div>';
+
+    modal.appendChild(inner);
+
+    // Wire close button via addEventListener (avoids inline onclick CSP issues)
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) modal.remove();
+    });
+
+    document.body.appendChild(modal);
+
+    // Wire the ✕ button after append
+    const closeBtn = document.getElementById('ahModalClose');
+    if (closeBtn) closeBtn.addEventListener('click', function() { modal.remove(); });
+
+  } catch(err) {
+    console.error('_ahShowItemModal failed:', err);
+    // Last-resort fallback: simple alert-style modal
+    const fb = document.createElement('div');
+    fb.id = 'ahItemModal';
+    fb.style.cssText = 'position:fixed;inset:0;background:#000c;z-index:10001;'
+      + 'display:flex;align-items:center;justify-content:center;padding:20px;';
+    fb.innerHTML = '<div style="background:#111;border:1px solid #888;padding:16px;'
+      + 'font-family:VT323,monospace;color:#aaa;max-width:300px;width:100%;">'
+      + '<div style="font-size:16px;margin-bottom:8px;">Item Preview</div>'
+      + '<div style="font-size:13px;color:#666;">Could not load full details.<br>'
+      + 'Check browser console for errors.</div>'
+      + '<button onclick="document.getElementById('ahItemModal').remove()" '
+      + 'style="margin-top:12px;background:none;border:1px solid #444;color:#888;'
+      + 'font-family:VT323,monospace;font-size:14px;padding:4px 12px;cursor:pointer;">'
+      + 'Close</button></div>';
+    fb.addEventListener('click', function(e) { if (e.target === fb) fb.remove(); });
+    document.body.appendChild(fb);
   }
-
-  // Gems
-  let gemHtml = '';
-  if (typeof buildGemSlotHtml === 'function') {
-    try { gemHtml = buildGemSlotHtml({...baseData, quality, gems: item.gems || []}); } catch(e) {}
-  }
-
-  // Build modal
-  const modal = document.createElement('div');
-  modal.id = 'ahItemModal';
-  modal.style.cssText = `
-    position:fixed;inset:0;background:#000000cc;z-index:10001;
-    display:flex;align-items:center;justify-content:center;
-    padding:20px;box-sizing:border-box;
-  `;
-  modal.innerHTML = `
-    <div style="background:#070f07;border:2px solid ${color};border-radius:8px;
-                padding:14px 16px;max-width:320px;width:100%;
-                font-family:'VT323',monospace;position:relative;
-                box-shadow:0 0 40px ${color}33;">
-      <!-- Close -->
-      <button onclick="document.getElementById('ahItemModal').remove()"
-        style="position:absolute;top:8px;right:10px;background:none;border:none;
-               color:#555;font-size:16px;cursor:pointer;font-family:'VT323',monospace;">
-        ✕
-      </button>
-      <!-- Quality badge -->
-      <div style="display:inline-block;background:${color}18;border:1px solid ${color}44;
-                  color:${color};font-size:9px;letter-spacing:1px;padding:1px 6px;
-                  font-family:'Courier New',monospace;margin-bottom:6px;">
-        ${quality.toUpperCase()}
-      </div>
-      <!-- Name -->
-      <div style="color:${color};font-size:18px;font-weight:bold;margin-bottom:4px;">
-        ${icon} ${name}
-      </div>
-      <!-- Level / subtype -->
-      <div style="color:#555;font-size:11px;font-family:'Courier New',monospace;margin-bottom:6px;">
-        LV${level}${subtype ? ' · ' + subtype : ''}
-      </div>
-      <!-- Stat line -->
-      <div style="font-size:13px;margin-bottom:4px;">${statLine}</div>
-      ${hpMpHtml}
-      ${modHtml}
-      ${gemHtml}
-      <!-- Dismiss hint -->
-      <div style="color:#333;font-size:11px;margin-top:10px;text-align:center;
-                  font-family:'Courier New',monospace;">
-        Tap anywhere outside to close
-      </div>
-    </div>`;
-
-  // Tap backdrop to dismiss
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) modal.remove();
-  });
-
-  document.body.appendChild(modal);
 }
+
 
 // ── Duration pill selector (kept for compatibility) ───────────────────────
 let _ahSelectedMinutes = 720; // default 12h
@@ -1116,7 +1183,14 @@ function _ahSetStatus(msg, isError) {
 
 function _ahUpdateBody() {
   const body = document.getElementById('ahBody');
-  if (body) body.innerHTML = _ahRenderTab();
+  if (body) {
+    body.innerHTML = _ahRenderTab();
+    // Wire preview button via addEventListener (works regardless of CSP)
+    const previewBtn = document.getElementById('ahPreviewBtn');
+    if (previewBtn) {
+      previewBtn.addEventListener('click', function() { _ahShowItemModal(null); });
+    }
+  }
 }
 
 function _ahRemoveOverlay() {

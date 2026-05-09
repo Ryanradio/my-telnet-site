@@ -15,6 +15,13 @@
 //             gameState.player.inventory, saveGame(), AH_SCRIPT_URL
 // ═══════════════════════════════════════════════════════════════════════════
 
+// ── Script URL — defined here at top so all functions can use it ─────────
+// Uses AH_SCRIPT_URL if auctionhouse.js is loaded, otherwise uses own copy.
+// If you change your Apps Script URL, update it here AND in auctionhouse.js.
+const _MAIL_SCRIPT_URL = (typeof AH_SCRIPT_URL !== 'undefined' && AH_SCRIPT_URL)
+  ? AH_SCRIPT_URL
+  : 'https://script.google.com/macros/s/AKfycbwh7_fSt6gRjObMZCvNLUOcwJpfVgzpeAC7InjPR0E51B7CRpFNj-Qvbe_LL8WR3AhaKg/exec';
+
 // ── Internal state ────────────────────────────────────────────────────────
 let _mailUnreadCount  = 0;
 let _mailItems        = [];       // cached fetch results
@@ -42,7 +49,7 @@ function initMailbox() {
     character_id: charId,
   });
 
-  fetch(AH_SCRIPT_URL + '?' + params.toString())
+  fetch(_MAIL_SCRIPT_URL + '?' + params.toString(), { redirect: 'follow' })
     .then(r => r.json())
     .then(data => {
       if (data.ok) {
@@ -304,7 +311,7 @@ function _mailFetch() {
     character_id: charId,
   });
 
-  fetch(AH_SCRIPT_URL + '?' + params.toString())
+  fetch(_MAIL_SCRIPT_URL + '?' + params.toString(), { redirect: 'follow' })
     .then(r => r.json())
     .then(data => {
       _mailLoading = false;
@@ -340,7 +347,7 @@ function _mailClaim(mailId) {
     character_id: charId,
   });
 
-  fetch(AH_SCRIPT_URL + '?' + params.toString())
+  fetch(_MAIL_SCRIPT_URL + '?' + params.toString(), { redirect: 'follow' })
     .then(r => r.json())
     .then(data => {
       if (data.ok) {
@@ -384,7 +391,7 @@ function _mailMarkRead(mailId) {
     character_id: charId,
   });
 
-  fetch(AH_SCRIPT_URL + '?' + params.toString())
+  fetch(_MAIL_SCRIPT_URL + '?' + params.toString(), { redirect: 'follow' })
     .then(r => r.json())
     .then(data => {
       if (data.ok) {
@@ -439,7 +446,7 @@ function _mailClaimAll() {
       character_id: _mailCharId(),
     });
 
-    fetch(AH_SCRIPT_URL + '?' + params.toString())
+    fetch(_MAIL_SCRIPT_URL + '?' + params.toString(), { redirect: 'follow' })
       .then(r => r.json())
       .then(data => {
         if (data.ok) {
