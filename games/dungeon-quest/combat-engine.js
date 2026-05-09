@@ -6114,32 +6114,16 @@ function playerIsExhausted() {
     if (player.level !== 20) return false;
     if (player.hasEvolved) return false;
     
-    // Get the original class key (not the display name)
-    const classKey = player.baseClass || player.class;
-    const evolution = ADVANCED_CLASSES[classKey];
+    const baseClass = player.baseClass || player.class;
+    const evolution = ADVANCED_CLASSES[baseClass];
     
-    if (!evolution) {
-        console.error(`No evolution found for class: ${classKey}`);
-        return false;
-    }
-    
-    console.log(`⭐ EVOLUTION TRIGGERED: ${classKey} -> ${evolution.advancedName}`);
+    if (!evolution) return false;
     
     // Store original class
-    player.baseClass = classKey;
+    player.baseClass = baseClass;
     player.class = evolution.advancedClass;
     player.className = evolution.advancedName;
     player.hasEvolved = true;
-    
-    // Apply bonus stats (DOUBLE them for rogue)
-    const statMultiplier = (classKey === 'rogue') ? 2.5 : 2.0;
-    Object.keys(evolution.bonusStats).forEach(stat => {
-        if (player[stat] !== undefined) {
-            const bonus = Math.floor(evolution.bonusStats[stat] * statMultiplier);
-            player[stat] += bonus;
-            console.log(`   ${stat.toUpperCase()}: +${bonus}`);
-        }
-    });
     
     // Apply damage multiplier
     player.advancedClassMultiplier = evolution.damageMultiplier;
@@ -6153,19 +6137,15 @@ function playerIsExhausted() {
         });
     }
     
-    // DOUBLE HP and MP (not just 1.5x)
-    const oldHp = player.maxHp;
-    const oldMp = player.maxMp;
-    player.maxHp = Math.floor(player.maxHp * 2);
-    player.maxMp = Math.floor(player.maxMp * 2);
+    // HP and MP boost (1.5x)
+    player.maxHp = Math.floor(player.maxHp * 1.5);
+    player.maxMp = Math.floor(player.maxMp * 1.5);
     player.hp = player.maxHp;
     player.mp = player.maxMp;
     
-    console.log(`   HP: ${oldHp} → ${player.maxHp}`);
-    console.log(`   MP: ${oldMp} → ${player.maxMp}`);
-    
-    // Give extra stat points for evolution (10 bonus points)
-    player.statPoints = (player.statPoints || 0) + 10;
+    console.log(`⭐ ${player.name} has evolved to ${evolution.advancedName}!`);
+    console.log(`   Damage Multiplier: ${evolution.damageMultiplier}x`);
+    console.log(`   HP: ${player.maxHp} | MP: ${player.maxMp}`);
     
     return true;
 }

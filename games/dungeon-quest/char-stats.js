@@ -114,58 +114,39 @@ function _saveStatChanges(backFn) {
         }
     });
     
-    // If CON changed, recalculate HP using class-based formula (retroactive!)
+    // If CON changed, recalculate HP using the SAME formula as levelUp
     if (conChanged) {
-        const playerClass = p.baseClass || p.class;
         const level = p.level || 1;
         const con = p.con || 0;
         const isEvolved = p.hasEvolved === true;
         
-        // Class HP Multipliers
-        const conMultipliers = {
-            warrior: 1.5, paladin: 1.3, cleric: 1.0, runesmith: 1.1,
-            hunter: 0.9, rogue: 0.8, warlock: 0.7, mage: 0.6, default: 0.8
-        };
-        
-        // Base HP at level 1 by class
-        const baseHP = {
-            warrior: 120, paladin: 100, cleric: 85, runesmith: 90,
-            hunter: 80, rogue: 75, warlock: 65, mage: 55, default: 80
-        };
-        
-        let multiplier = conMultipliers[playerClass] || conMultipliers.default;
-        let base = baseHP[playerClass] || baseHP.default;
-        
-        // ⭐ EVOLUTION BONUS: If evolved, double the HP formula results
-        if (isEvolved) {
-            // For evolved characters, use evolved multipliers (roughly 2x)
-            if (playerClass === 'mage' || playerClass === 'warlock') {
-                multiplier = multiplier * 1.8;
-                base = Math.floor(base * 1.8);
-            } else if (playerClass === 'cleric') {
-                multiplier = multiplier * 1.9;
-                base = Math.floor(base * 1.9);
-            } else {
-                multiplier = multiplier * 2.0;
-                base = Math.floor(base * 2.0);
-            }
-            console.log(`⭐ Evolved character - using ${multiplier}x CON multiplier and base HP ${base}`);
-        }
+        // ⭐ Use the SAME base HP as your levelUp function (80 for rogue, not 75)
+        let baseHp = 80; // rogue base
+        if (p.baseClass === 'warrior') baseHp = 120;
+        else if (p.baseClass === 'paladin') baseHp = 100;
+        else if (p.baseClass === 'mage') baseHp = 55;
+        else if (p.baseClass === 'warlock') baseHp = 65;
+        else if (p.baseClass === 'cleric') baseHp = 85;
+        else if (p.baseClass === 'hunter') baseHp = 80;
+        else if (p.baseClass === 'runesmith') baseHp = 90;
         
         const levelBonus = (level - 1) * 15;
-        const conBonus = Math.floor(con * multiplier * (level - 1));
-        const newMaxHP = base + levelBonus + conBonus;
+        const conBonus = Math.floor(con * 0.8 * (level - 1));  // 0.8 multiplier for rogue
+        let newMaxHp = baseHp + levelBonus + conBonus;
         
-        // ⭐ CRITICAL: Ensure HP never decreases from stat allocation
-        // Only increase HP if the new calculation is higher
-        if (newMaxHP > p.maxHp) {
-            const hpGain = newMaxHP - p.maxHp;
-            p.maxHp = newMaxHP;
-            p.hp = p.hp + hpGain;  // Add the same gain to current HP
+        // Apply evolution multiplier (1.5x for evolved characters)
+        if (isEvolved) {
+            newMaxHp = Math.floor(newMaxHp * 1.5);
+        }
+        
+        // Only increase HP (never decrease)
+        if (newMaxHp > p.maxHp) {
+            const hpGain = newMaxHp - p.maxHp;
+            p.maxHp = newMaxHp;
+            p.hp = p.hp + hpGain;
             console.log(`❤️ CON changed from ${oldCon} to ${con}. HP increased by ${hpGain} to ${p.maxHp}`);
         } else {
-            console.log(`❤️ CON changed from ${oldCon} to ${con}. HP calculation would decrease (${newMaxHP} vs ${p.maxHp}) - preserving current HP.`);
-            // Keep existing HP - don't let it drop
+            console.log(`❤️ CON changed from ${oldCon} to ${con}. HP unchanged (${p.maxHp})`);
         }
     }
     

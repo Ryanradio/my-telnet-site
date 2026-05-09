@@ -1477,3 +1477,43 @@ if (typeof window !== 'undefined') {
     }
     _injectAdvancedSpells();
 }
+
+// Apply 85% discount to ALL spell costs
+if (typeof CLASS_SPELL_TREES !== 'undefined') {
+    for (let classKey in CLASS_SPELL_TREES) {
+        const tree = CLASS_SPELL_TREES[classKey].spellTree;
+        for (let spellKey in tree) {
+            if (tree[spellKey].cost) {
+                tree[spellKey].cost = Math.floor(tree[spellKey].cost * 0.15);
+            }
+        }
+    }
+}
+
+// Apply 50% discount to ALL weapons and armor in the shop
+(function applyWeaponArmorDiscount() {
+    // Helper to recursively find and discount weapon/armor prices
+    function discountPrices(obj) {
+        for (let key in obj) {
+            if (obj[key] && typeof obj[key] === 'object') {
+                // Check if this looks like a weapon or armor item (has cost property)
+                if (obj[key].cost !== undefined && (obj[key].weaponId || obj[key].armorId || obj[key].type === 'weapon' || obj[key].type === 'armor')) {
+                    obj[key].cost = Math.floor(obj[key].cost * 0.5);
+                    if (obj[key].cost < 1) obj[key].cost = 1;
+                }
+                // Recursively check nested objects
+                discountPrices(obj[key]);
+            }
+        }
+    }
+    
+    // Apply to WEAPONS and ARMOR global objects if they exist
+    if (typeof WEAPONS !== 'undefined') discountPrices(WEAPONS);
+    if (typeof ARMOR !== 'undefined') discountPrices(ARMOR);
+    
+    // Also apply to featured items cache if it exists
+    if (window._currentFeaturedWeapon) window._currentFeaturedWeapon.cost = Math.floor(window._currentFeaturedWeapon.cost * 0.5);
+    if (window._currentFeaturedArmor) window._currentFeaturedArmor.cost = Math.floor(window._currentFeaturedArmor.cost * 0.5);
+    
+    console.log('✅ Weapons and armor prices reduced by 50%');
+})();
