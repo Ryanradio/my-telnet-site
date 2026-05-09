@@ -14,14 +14,14 @@ const AH_ENABLED = true;
 const AH_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwh7_fSt6gRjObMZCvNLUOcwJpfVgzpeAC7InjPR0E51B7CRpFNj-Qvbe_LL8WR3AhaKg/exec';
 
 // ── Listing fee table (must match Apps Script AH_LISTING_FEES) ────────────
+// Keys are duration in MINUTES (integers) to avoid float key ordering issues.
+// Server receives duration_minutes and converts to hours internally.
 const AH_LISTING_FEES = {
-  // sysop test only — hidden from regular players
-  0.0167: { label: '1 Min (TEST)', fee: 1,  sysopOnly: true  },
-  // normal durations
-  12:  { label: '12 Hours', fee: 25  },
-  24:  { label: '1 Day',    fee: 50  },
-  72:  { label: '3 Days',   fee: 120 },
-  168: { label: '7 Days',   fee: 380 },
+  1:    { label: '1 Min (TEST)', fee: 1,   sysopOnly: true  }, // sysop only
+  720:  { label: '12 Hours',     fee: 25                    },
+  1440: { label: '1 Day',        fee: 50                    },
+  4320: { label: '3 Days',       fee: 120                   },
+  10080:{ label: '7 Days',       fee: 380                   },
 };
 
 const AH_SALE_FEE_PCT  = 10;   // % house takes on sale
@@ -427,7 +427,7 @@ function _ahRenderSellConfirm() {
     .filter(([, info]) => !info.sysopOnly || isSysop)
     .map(([hours, info]) => {
       const canAfford = p.gold >= info.fee;
-      const sel       = parseFloat(hours) === _ahSelectedHours ? 'selected' : '';
+      const sel       = parseInt(hours) === _ahSelectedMinutes ? 'selected' : '';
       return `<option value="${hours}" ${sel} ${canAfford ? '' : 'disabled'}>
         ${info.label} — ${info.fee}g listing fee${canAfford ? '' : ' (need more gold)'}
       </option>`;
@@ -437,13 +437,13 @@ function _ahRenderSellConfirm() {
   const firstValid = Object.entries(AH_LISTING_FEES)
     .filter(([, info]) => !info.sysopOnly || isSysop)
     .find(([, info]) => p.gold >= info.fee);
-  if (firstValid && !AH_LISTING_FEES[_ahSelectedHours]) {
-    _ahSelectedHours = parseFloat(firstValid[0]);
+  if (firstValid && !AH_LISTING_FEES[_ahSelectedMinutes]) {
+    _ahSelectedMinutes = parseInt(firstValid[0]);
   }
-  const currentFeeInfo = AH_LISTING_FEES[_ahSelectedHours] || Object.values(AH_LISTING_FEES)[1];
+  const currentFeeInfo = AH_LISTING_FEES[_ahSelectedMinutes] || Object.values(AH_LISTING_FEES)[1];
 
   return `
-    <button onclick="_ahSellStep='pick';_ahSelectedHours=12;_ahUpdateBody();"
+    <button onclick="_ahSellStep='pick';_ahSelectedMinutes=720;_ahUpdateBody();"
       style="background:none;border:none;color:#555;font-family:'VT323',monospace;
              font-size:13px;cursor:pointer;margin-bottom:10px;">← Back</button>
 
@@ -515,7 +515,7 @@ function _ahRenderSellConfirm() {
                padding:8px 20px;cursor:pointer;">
         📦 LIST ITEM
       </button>
-      <button onclick="_ahSellStep='pick';_ahSelectedHours=12;_ahUpdateBody();"
+      <button onclick="_ahSellStep='pick';_ahSelectedMinutes=720;_ahUpdateBody();"
         style="background:none;border:1px solid #2a2a2a;color:#444;
                font-family:'VT323',monospace;font-size:15px;
                padding:8px 14px;cursor:pointer;">
@@ -526,8 +526,8 @@ function _ahRenderSellConfirm() {
 
 // ── Duration dropdown change handler ──────────────────────────────────────
 function _ahOnDurationChange(val) {
-  _ahSelectedHours  = parseFloat(val);
-  const info        = AH_LISTING_FEES[_ahSelectedHours];
+  _ahSelectedMinutes = parseInt(val);
+  const info         = AH_LISTING_FEES[_ahSelectedMinutes];
   if (!info) return;
   const preview = document.getElementById('ahFeePreview');
   if (preview) {
@@ -604,7 +604,7 @@ function _ahShowItemModal() {
   const modal = document.createElement('div');
   modal.id = 'ahItemModal';
   modal.style.cssText = `
-    position:fixed;inset:0;background:#000000cc;z-index:9999;
+    position:fixed;inset:0;background:#000000cc;z-index:10001;
     display:flex;align-items:center;justify-content:center;
     padding:20px;box-sizing:border-box;
   `;
@@ -654,7 +654,7 @@ function _ahShowItemModal() {
 }
 
 // ── Duration pill selector (kept for compatibility) ───────────────────────
-let _ahSelectedHours = 12;
+let _ahSelectedMinutes = 720; // default 12h
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TAB: MY LISTINGS
@@ -950,8 +950,8 @@ function _ahSubmitListing() {
     return;
   }
 
-  const durationHours = _ahSelectedHours || 24;
-  const listingFee    = AH_LISTING_FEES[durationHours]?.fee || 50;
+  const durationMinutes = _ahSelectedMinutes || 720;
+  const listingFee      = AH_LISTING_FEES[durationMinutes]?.fee || 50;
 
   if (p.gold < listingFee) {
     _ahSetStatus('Not enough gold for listing fee (' + listingFee + 'g needed).', true);
@@ -990,7 +990,7 @@ function _ahSubmitListing() {
     item_class_req: classReq,
     item_subtype:   subtype,
     buy_now_price:  price,
-    duration_hours: durationHours,
+    duration_minutes: durationMinutes,
     player_gold:    p.gold, // post-deduction (server validates)
   });
 
