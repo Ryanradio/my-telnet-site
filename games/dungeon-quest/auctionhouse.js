@@ -7,7 +7,7 @@
 //            The button stays hidden until AH_ENABLED is true.
 // ═══════════════════════════════════════════════════════════════════════════
 
-const AH_ENABLED = true; // ← flip to true when ready to deploy
+const AH_ENABLED = true;
 
 // ── Replace with your deployed Apps Script Web App URL ───────────────────
 // This is the SAME URL you already use for leaderboard/player tracking.
@@ -15,12 +15,12 @@ const AH_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwh7_fSt6gRjObMZC
 
 // ── Listing fee table (must match Apps Script AH_LISTING_FEES) ────────────
 const AH_LISTING_FEES = {
+  // sysop test only — hidden from regular players
+  0.0167: { label: '1 Min (TEST)', fee: 1,  sysopOnly: true  },
+  // normal durations
+  12:  { label: '12 Hours', fee: 25  },
   24:  { label: '1 Day',    fee: 50  },
-  48:  { label: '2 Days',   fee: 80  },
   72:  { label: '3 Days',   fee: 120 },
-  96:  { label: '4 Days',   fee: 170 },
-  120: { label: '5 Days',   fee: 230 },
-  144: { label: '6 Days',   fee: 300 },
   168: { label: '7 Days',   fee: 380 },
 };
 
@@ -420,78 +420,241 @@ function _ahRenderSellConfirm() {
     ? (Array.isArray(baseData.classRestriction) ? baseData.classRestriction.join(',') : baseData.classRestriction)
     : 'all';
   const icon      = isWeapon ? '⚔️' : '🛡️';
+  const isSysop   = !!(gameState.sysop && gameState.sysop.authenticated);
 
-  const durationRows = Object.entries(AH_LISTING_FEES).map(([hours, info]) => {
-    const canAfford = p.gold >= info.fee;
-    return `
-      <label style="display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;">
-        <input type="radio" name="ahDuration" value="${hours}"
-          ${hours == 24 ? 'checked' : ''} ${canAfford ? '' : 'disabled'}
-          onchange="document.getElementById('ahFeePreview').textContent='Listing fee: ${info.fee}g';"
-          style="accent-color:#c8a000;">
-        <span style="color:${canAfford ? '#aaa' : '#333'};font-size:14px;">
-          ${info.label}
-          <span style="color:${canAfford ? '#c8a000' : '#2a2a00'};font-family:'Courier New',monospace;"> — ${info.fee}g</span>
-        </span>
-      </label>`;
-  }).join('');
+  // ── Duration dropdown options ──────────────────────────────────────────
+  const durationOpts = Object.entries(AH_LISTING_FEES)
+    .filter(([, info]) => !info.sysopOnly || isSysop)
+    .map(([hours, info]) => {
+      const canAfford = p.gold >= info.fee;
+      const sel       = parseFloat(hours) === _ahSelectedHours ? 'selected' : '';
+      return `<option value="${hours}" ${sel} ${canAfford ? '' : 'disabled'}>
+        ${info.label} — ${info.fee}g listing fee${canAfford ? '' : ' (need more gold)'}
+      </option>`;
+    }).join('');
+
+  // Reset selected hours to first affordable option if current isn't valid
+  const firstValid = Object.entries(AH_LISTING_FEES)
+    .filter(([, info]) => !info.sysopOnly || isSysop)
+    .find(([, info]) => p.gold >= info.fee);
+  if (firstValid && !AH_LISTING_FEES[_ahSelectedHours]) {
+    _ahSelectedHours = parseFloat(firstValid[0]);
+  }
+  const currentFeeInfo = AH_LISTING_FEES[_ahSelectedHours] || Object.values(AH_LISTING_FEES)[1];
 
   return `
-    <button onclick="_ahSellStep='pick';_ahUpdateBody();"
+    <button onclick="_ahSellStep='pick';_ahSelectedHours=12;_ahUpdateBody();"
       style="background:none;border:none;color:#555;font-family:'VT323',monospace;
-             font-size:13px;cursor:pointer;margin-bottom:10px;">← Back to inventory</button>
+             font-size:13px;cursor:pointer;margin-bottom:10px;">← Back</button>
 
-    <div style="background:#080800;border:1px solid #2a2a00;padding:10px 12px;margin-bottom:12px;">
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap;">
-        <span style="display:inline-block;background:${color}18;border:1px solid ${color}44;
-                     color:${color};font-size:9px;letter-spacing:1px;padding:0 4px;
-                     font-family:'Courier New',monospace;">${quality.toUpperCase()}</span>
-        <span style="color:${color};font-size:15px;font-weight:bold;">${icon} ${name}</span>
+    <!-- Item row — tap name to open modal preview -->
+    <div style="background:#080800;border:1px solid #2a2a00;padding:9px 12px;
+                margin-bottom:10px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1;min-width:0;">
+          <span style="display:inline-block;background:${color}18;border:1px solid ${color}44;
+                       color:${color};font-size:9px;letter-spacing:1px;padding:0 4px;
+                       font-family:'Courier New',monospace;flex-shrink:0;">
+            ${quality.toUpperCase()}
+          </span>
+          <span style="color:${color};font-size:14px;font-weight:bold;
+                       white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            ${icon} ${name}
+          </span>
+        </div>
+        <button onclick="_ahShowItemModal()"
+          style="background:#0a0a00;border:1px solid #2a3a2a;color:#668866;
+                 font-family:'VT323',monospace;font-size:12px;padding:3px 8px;
+                 cursor:pointer;flex-shrink:0;white-space:nowrap;">
+          🔍 Preview
+        </button>
       </div>
-      <div style="color:#555;font-size:11px;font-family:'Courier New',monospace;">
+      <div style="color:#555;font-size:10px;font-family:'Courier New',monospace;margin-top:3px;">
         LV${level}${subtype ? ' · ' + subtype : ''}${classReq !== 'all' ? ' · ' + classReq : ''}
       </div>
     </div>
 
-    <div style="margin-bottom:12px;">
-      <label style="display:block;color:#888;font-size:13px;margin-bottom:5px;">
-        Buy Now Price (gold):
-      </label>
-      <input type="number" id="ahPriceInput" min="1" placeholder="Enter price..."
+    <!-- Price input — text field, numeric keyboard, no spinner -->
+    <div style="margin-bottom:10px;">
+      <div style="color:#888;font-size:13px;margin-bottom:4px;">Buy Now Price (gold):</div>
+      <input type="text" inputmode="numeric" pattern="[0-9]*"
+        id="ahPriceInput" placeholder="Enter amount..."
         style="background:#0a0a00;border:1px solid #3a3a00;color:#c8a000;
-               font-family:'VT323',monospace;font-size:18px;padding:6px 10px;width:160px;">
+               font-family:'VT323',monospace;font-size:18px;
+               padding:6px 10px;width:150px;box-sizing:border-box;"
+        oninput="this.value=this.value.replace(/[^0-9]/g,'')">
     </div>
 
-    <div style="margin-bottom:12px;">
-      <div style="color:#888;font-size:13px;margin-bottom:5px;">Listing Duration:</div>
-      ${durationRows}
-      <div id="ahFeePreview" style="color:#c8a000;font-size:13px;margin-top:6px;
-                                     font-family:'Courier New',monospace;">
-        Listing fee: ${AH_LISTING_FEES[24].fee}g
+    <!-- Duration dropdown -->
+    <div style="margin-bottom:10px;">
+      <div style="color:#888;font-size:13px;margin-bottom:4px;">Duration:</div>
+      <select id="ahDurationSelect"
+        onchange="_ahOnDurationChange(this.value)"
+        style="background:#0a0a00;border:1px solid #3a3a00;color:#c8a000;
+               font-family:'VT323',monospace;font-size:14px;
+               padding:5px 8px;width:100%;box-sizing:border-box;cursor:pointer;">
+        ${durationOpts}
+      </select>
+      <div id="ahFeePreview"
+        style="color:#555;font-size:11px;margin-top:4px;
+               font-family:'Courier New',monospace;">
+        ${currentFeeInfo.label} · Fee: ${currentFeeInfo.fee}g · Charged immediately
       </div>
     </div>
 
-    <div style="background:#040400;border:1px solid #1a1a00;padding:8px 10px;
-                margin-bottom:12px;font-size:12px;color:#555;">
-      <div>• Listing fee is charged immediately and is <span style="color:#888;">non-refundable</span>.</div>
-      <div>• If sold, you receive <span style="color:#8aaa00;">90%</span> of the sale price (10% house fee).</div>
-      <div>• If unsold, the item is returned to your inventory when you next open the AH.</div>
-      <div>• You can cancel your listing at any time for free.</div>
+    <!-- Fine print — one line -->
+    <div style="border-top:1px solid #1a1a00;padding-top:6px;margin-bottom:10px;
+                font-size:11px;color:#444;line-height:1.6;">
+      10% house cut on sale · Unsold items returned via mailbox · Cancel anytime
     </div>
 
     <div style="display:flex;gap:8px;">
       <button onclick="_ahSubmitListing()"
         style="background:#0a0a00;border:1px solid #3a5a00;color:#8aaa00;
-               font-family:'VT323',monospace;font-size:15px;padding:8px 20px;cursor:pointer;">
+               font-family:'VT323',monospace;font-size:15px;
+               padding:8px 20px;cursor:pointer;">
         📦 LIST ITEM
       </button>
-      <button onclick="_ahSellStep='pick';_ahUpdateBody();"
+      <button onclick="_ahSellStep='pick';_ahSelectedHours=12;_ahUpdateBody();"
         style="background:none;border:1px solid #2a2a2a;color:#444;
-               font-family:'VT323',monospace;font-size:15px;padding:8px 16px;cursor:pointer;">
+               font-family:'VT323',monospace;font-size:15px;
+               padding:8px 14px;cursor:pointer;">
         Cancel
       </button>
     </div>`;
 }
+
+// ── Duration dropdown change handler ──────────────────────────────────────
+function _ahOnDurationChange(val) {
+  _ahSelectedHours  = parseFloat(val);
+  const info        = AH_LISTING_FEES[_ahSelectedHours];
+  if (!info) return;
+  const preview = document.getElementById('ahFeePreview');
+  if (preview) {
+    preview.textContent = info.label + ' · Fee: ' + info.fee + 'g · Charged immediately';
+  }
+}
+
+// ── Item preview modal ────────────────────────────────────────────────────
+function _ahShowItemModal() {
+  const existing = document.getElementById('ahItemModal');
+  if (existing) existing.remove();
+
+  const item     = _ahSellItem;
+  if (!item) return;
+  const p        = gameState.player;
+  const isWeapon = !!(item.weaponId || item.type === 'weapon');
+  const baseData = isWeapon
+    ? (typeof WEAPONS !== 'undefined' ? WEAPONS[item.weaponId || item.instanceId] : null)
+    : (typeof ARMOR   !== 'undefined' ? ARMOR[item.armorId   || item.instanceId] : null);
+  const quality  = item.quality || baseData?.quality || 'normal';
+  const qc       = (typeof QUALITY_CONFIG !== 'undefined' && QUALITY_CONFIG[quality]) || {};
+  const color    = qc.color || '#888';
+  const name     = item.name || baseData?.name || 'Unknown';
+  const level    = baseData?.level || item.level || 1;
+  const subtype  = baseData?.weaponSubtype || baseData?.armorType || '';
+  const icon     = isWeapon ? '⚔️' : '🛡️';
+
+  // Stat line
+  let statLine = '';
+  if (isWeapon && typeof buildWeaponDmgLine === 'function') {
+    try { statLine = buildWeaponDmgLine({...baseData, quality}, quality, p); } catch(e) {}
+  } else if (!isWeapon && typeof buildArmorDefLine === 'function') {
+    try { statLine = buildArmorDefLine({...baseData, quality}, p); } catch(e) {}
+  }
+
+  // Modifiers
+  let modHtml = '';
+  const mods = item.modifiers || baseData?.modifiers || [];
+  if (mods.length > 0) {
+    modHtml = '<div style="margin-top:6px;border-top:1px solid ' + color + '22;padding-top:6px;">';
+    mods.forEach(mod => {
+      const mc  = mod.color || '#FFD700';
+      let   txt = mod.name  || '';
+      if (mod.minDamage)        txt += ' (' + mod.minDamage + '–' + mod.maxDamage + ')';
+      if (mod.critBonus)        txt += ' (+' + mod.critBonus + '% crit)';
+      if (mod.lifestealPercent) txt += ' (' + mod.lifestealPercent + '% lifesteal)';
+      if (mod.statusEffect)     txt += ' — ' + mod.statusEffect;
+      if (mod.value)            txt += ': ' + mod.value + (mod.statType === 'percent' ? '%' : '');
+      modHtml += '<div style="color:' + mc + ';font-size:12px;margin-bottom:2px;">✨ ' + txt + '</div>';
+    });
+    modHtml += '</div>';
+  }
+
+  // HP/MP bonus (armor)
+  let hpMpHtml = '';
+  if (!isWeapon && item) {
+    const hasHp = item.bonusHp && item.bonusHp > 0;
+    const hasMp = item.bonusMp && item.bonusMp > 0;
+    if (hasHp || hasMp) {
+      hpMpHtml = '<div style="margin-top:4px;font-size:12px;color:#88ff88;">';
+      if (hasHp) hpMpHtml += '❤️ +' + item.bonusHp + ' HP &nbsp;';
+      if (hasMp) hpMpHtml += '✨ +' + item.bonusMp + ' MP';
+      hpMpHtml += '</div>';
+    }
+  }
+
+  // Gems
+  let gemHtml = '';
+  if (typeof buildGemSlotHtml === 'function') {
+    try { gemHtml = buildGemSlotHtml({...baseData, quality, gems: item.gems || []}); } catch(e) {}
+  }
+
+  // Build modal
+  const modal = document.createElement('div');
+  modal.id = 'ahItemModal';
+  modal.style.cssText = `
+    position:fixed;inset:0;background:#000000cc;z-index:9999;
+    display:flex;align-items:center;justify-content:center;
+    padding:20px;box-sizing:border-box;
+  `;
+  modal.innerHTML = `
+    <div style="background:#070f07;border:2px solid ${color};border-radius:8px;
+                padding:14px 16px;max-width:320px;width:100%;
+                font-family:'VT323',monospace;position:relative;
+                box-shadow:0 0 40px ${color}33;">
+      <!-- Close -->
+      <button onclick="document.getElementById('ahItemModal').remove()"
+        style="position:absolute;top:8px;right:10px;background:none;border:none;
+               color:#555;font-size:16px;cursor:pointer;font-family:'VT323',monospace;">
+        ✕
+      </button>
+      <!-- Quality badge -->
+      <div style="display:inline-block;background:${color}18;border:1px solid ${color}44;
+                  color:${color};font-size:9px;letter-spacing:1px;padding:1px 6px;
+                  font-family:'Courier New',monospace;margin-bottom:6px;">
+        ${quality.toUpperCase()}
+      </div>
+      <!-- Name -->
+      <div style="color:${color};font-size:18px;font-weight:bold;margin-bottom:4px;">
+        ${icon} ${name}
+      </div>
+      <!-- Level / subtype -->
+      <div style="color:#555;font-size:11px;font-family:'Courier New',monospace;margin-bottom:6px;">
+        LV${level}${subtype ? ' · ' + subtype : ''}
+      </div>
+      <!-- Stat line -->
+      <div style="font-size:13px;margin-bottom:4px;">${statLine}</div>
+      ${hpMpHtml}
+      ${modHtml}
+      ${gemHtml}
+      <!-- Dismiss hint -->
+      <div style="color:#333;font-size:11px;margin-top:10px;text-align:center;
+                  font-family:'Courier New',monospace;">
+        Tap anywhere outside to close
+      </div>
+    </div>`;
+
+  // Tap backdrop to dismiss
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.remove();
+  });
+
+  document.body.appendChild(modal);
+}
+
+// ── Duration pill selector (kept for compatibility) ───────────────────────
+let _ahSelectedHours = 12;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TAB: MY LISTINGS
@@ -625,7 +788,7 @@ function _ahFetchBrowse(force) {
     sort_by:          _ahFilters.sort,
   });
 
-  fetch(AH_SCRIPT_URL + '?' + params.toString())
+  fetch(AH_SCRIPT_URL + '?' + params.toString(), { redirect: 'follow' })
     .then(r => r.json())
     .then(data => {
       _ahLoading    = false;
@@ -655,7 +818,7 @@ function _ahFetchMyListings() {
     character_id: p.characterId || p.id || '',
   });
 
-  fetch(AH_SCRIPT_URL + '?' + params.toString())
+  fetch(AH_SCRIPT_URL + '?' + params.toString(), { redirect: 'follow' })
     .then(r => r.json())
     .then(data => {
       _ahLoading = false;
@@ -684,7 +847,7 @@ function _ahFetchHistory() {
     character_id: p.characterId || p.id || '',
   });
 
-  fetch(AH_SCRIPT_URL + '?' + params.toString())
+  fetch(AH_SCRIPT_URL + '?' + params.toString(), { redirect: 'follow' })
     .then(r => r.json())
     .then(data => {
       _ahLoading = false;
@@ -714,7 +877,7 @@ function _ahClaimExpired() {
     character_name:  pName,
   });
 
-  fetch(AH_SCRIPT_URL + '?' + params.toString())
+  fetch(AH_SCRIPT_URL + '?' + params.toString(), { redirect: 'follow' })
     .then(r => r.json())
     .then(data => {
       if (data.ok && data.count > 0) {
@@ -749,7 +912,7 @@ function _ahConfirmBuy(listingId, itemName, price) {
     player_gold:  p.gold,
   });
 
-  fetch(AH_SCRIPT_URL + '?' + params.toString())
+  fetch(AH_SCRIPT_URL + '?' + params.toString(), { redirect: 'follow' })
     .then(r => r.json())
     .then(data => {
       if (data.ok) {
@@ -787,8 +950,7 @@ function _ahSubmitListing() {
     return;
   }
 
-  const durationRadio = document.querySelector('input[name="ahDuration"]:checked');
-  const durationHours = parseInt(durationRadio?.value) || 24;
+  const durationHours = _ahSelectedHours || 24;
   const listingFee    = AH_LISTING_FEES[durationHours]?.fee || 50;
 
   if (p.gold < listingFee) {
@@ -832,7 +994,7 @@ function _ahSubmitListing() {
     player_gold:    p.gold, // post-deduction (server validates)
   });
 
-  fetch(AH_SCRIPT_URL + '?' + params.toString())
+  fetch(AH_SCRIPT_URL + '?' + params.toString(), { redirect: 'follow' })
     .then(r => r.json())
     .then(data => {
       if (data.ok) {
@@ -874,7 +1036,7 @@ function _ahConfirmCancel(listingId, itemName) {
     character_id: charId,
   });
 
-  fetch(AH_SCRIPT_URL + '?' + params.toString())
+  fetch(AH_SCRIPT_URL + '?' + params.toString(), { redirect: 'follow' })
     .then(r => r.json())
     .then(data => {
       if (data.ok) {
@@ -977,3 +1139,5 @@ window._ahSubmitListing          = _ahSubmitListing;
 window._ahConfirmBuy             = _ahConfirmBuy;
 window._ahConfirmCancel          = _ahConfirmCancel;
 window._ahClose                  = _ahClose;
+window._ahShowItemModal          = _ahShowItemModal;
+window._ahOnDurationChange       = _ahOnDurationChange;
