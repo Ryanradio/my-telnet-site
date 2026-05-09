@@ -921,6 +921,8 @@ window.initShopTooltips = initShopTooltips;
     <script src="chronicle.js"></script>
     <script src="validation.js"></script>
     <script src="sysop.js"></script>
+    <script src="auctionhouse.js"></script>
+    <script src="mailbox.js"></script>
     <script src="shop-inventory.js"></script>
     <script src="dungeon-nav.js"></script>
     <script src="char-stats.js"></script>
@@ -4855,6 +4857,9 @@ if (!gameState.dungeon) {
 
     } else {
         showTown();
+        // Init mailbox badge + login toast (sysop-only feature — safe to call always,
+        // renderMailboxButton gates visibility via gameState.sysop.authenticated)
+        if (typeof initMailbox === 'function') initMailbox();
     }
 } else {
     document.body.classList.add("terminal-mode");
@@ -6762,8 +6767,27 @@ async function loadCloudCharacter(saveId) {
                     <div class="menu-option" onclick="cloudSave()" style="border-color: #AA88FF;">► ☁️ SAVE TO CLOUD</div>
                     <div class="menu-option" onclick="manualCloudSync()" style="border-color: #AA88FF;">► ☁️ SYNC TO CLOUD</div>
                     <div class="menu-option" onclick="confirmQuitToMenu()">► ⏏ QUIT TO MENU</div>
+                    ${tid === 'town1' && gameState.sysop && gameState.sysop.authenticated ? `
+                    <div style="margin-top:12px;padding-top:10px;border-top:1px solid #1a1a00;">
+                        <div style="color:#c8a000;font-size:10px;letter-spacing:2px;
+                                    font-family:'Courier New',monospace;margin-bottom:6px;
+                                    text-align:center;">
+                            ⚙ SYSOP — BETA FEATURES
+                        </div>
+                        <div class="menu-option" onclick="openAuctionHouse()"
+                             style="border-color:#c8a000;background:rgba(200,160,0,0.05);color:#c8a000;">
+                            ► 🏛️ AUCTION HOUSE <span style="font-size:10px;color:#664400;">[BETA]</span>
+                        </div>
+                        <div style="margin-top:4px;">${typeof renderMailboxButton === 'function' ? renderMailboxButton() : ''}</div>
+                    </div>` : ''}
                 </div>
             `);
+            // Re-init mailbox badge each time town renders (picks up new mail count)
+            if (tid === 'town1' && typeof resetMailboxInit === 'function'
+                && gameState.sysop && gameState.sysop.authenticated) {
+                resetMailboxInit();
+                if (typeof initMailbox === 'function') initMailbox();
+            }
                         fetchLeaderboardTicker();
             
             if (window.tickerInterval) clearInterval(window.tickerInterval);
