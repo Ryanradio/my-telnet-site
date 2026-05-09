@@ -2048,13 +2048,22 @@ function getArmorType(armor) {
     // Get defender's armor info
   const defenderArmor = defender.armor ? ARMOR[defender.armor] : null;
 
-  if (type === 'magic') {
-    // Magic damage uses magic defense directly
+    if (type === 'magic') {
+    // Get target's spell resistance (for players) or magicDefense (for enemies)
+    let targetSpellResist = defender.spellResist || 0;
     let rawDefense = defender.magicDefense || 0;
+    
+    // Apply spell resistance: each point = 1% damage reduction
+    const resistMult = Math.max(0.25, 1 - (targetSpellResist / 100));
+    
+    // Apply magic defense (armor-based reduction)
     const DR_PER_POINT = 0.028;
     const DR_CAP = 0.75;
     const effectiveDR = Math.min(DR_CAP, rawDefense * DR_PER_POINT) * (1 - armorPiercing);
-    damage = Math.max(1, Math.floor(damage * (1 - effectiveDR)));
+    
+    console.log('DEBUG - Before resist:', damage, 'Resist mult:', resistMult);
+    damage = Math.max(1, Math.floor(damage * (1 - effectiveDR) * resistMult));
+    console.log('DEBUG - After resist:', damage);
   } else {
     // Physical damage with armor type multiplier
     // Calculate total defense from armor, CON, and gems
@@ -2084,10 +2093,6 @@ function getArmorType(armor) {
   }
 
 
-  // Apply magic resistance if this is a magic attack
-if (type === 'magic' && defender.magicResist) {
-    damage = Math.floor(damage * (1 - defender.magicResist / 100));
-}
 
   // Crit check
   let crit = false;
@@ -3429,6 +3434,7 @@ function cancelSpellMenu() {
     const p  = gameState.player;
     const cs = gameState.combatState;
     const spellKey = cs.pendingSpellKey;
+    const weapon = WEAPONS[p.weapon];
     
     if (p.mp < spell.mpCost) {
         termAppend('Not enough MP!', 'term-error');
@@ -3610,6 +3616,19 @@ function cancelSpellMenu() {
                 const _aoeCritChance = calcCritChance(p.lck || 0, p) + gemSpellCrit;
                 // UPDATED: include gemSpellBonus + gemSpellUniversal
                 let dmg = Math.max(1, (spellRoll + p.magic + (p.wis || 0) + modifierBonus + gemSpellBonus + gemSpellUniversal) - Math.floor(enemy.defense / 2));
+                        
+                        // Apply spell resistance with penetration
+        let enemySpellResist = enemy.spellResist || 0;
+        
+        // Get spell penetration from equipped weapon
+        
+        const spellPen = weapon?.spellPen || 0;
+        
+        // Reduce enemy resistance by spell penetration (minimum 0)
+        const effectiveResist = Math.max(0, enemySpellResist - spellPen);
+        const resistMult = Math.max(0.25, 1 - (effectiveResist / 100));
+        dmg = Math.floor(dmg * resistMult);
+
                 let crit = false;
                 if (_aoeCritRoll < _aoeCritChance) { 
                     dmg = Math.floor(dmg * 1.75); 
@@ -3624,7 +3643,7 @@ function cancelSpellMenu() {
                     + '</span>', 'term-dim');
                 
                 // Apply weapon modifiers to spell (status effects + elemental damage)
-                const weapon = WEAPONS[p.weapon];
+                weapon = WEAPONS[p.weapon];
                 const modifierResult = weapon ? applyWeaponModifiers(p, enemy, dmg, weapon) : { totalDamage: dmg, messages: [] };
                 const finalDamage = modifierResult.totalDamage;
                 
@@ -3723,6 +3742,19 @@ function cancelSpellMenu() {
         const _lsCritRoll = Math.random() * 100;
         const spellCritChance = Math.min(75, calcCritChance(p.lck || 0, p) + gemSpellCrit);
         let dmg = Math.max(1, (spellRoll + p.magic + (p.wis || 0) + modifierBonus + gemSpellBonus + gemSpellUniversal) - Math.floor(enemy.defense / 2));
+        
+                // Apply spell resistance with penetration
+        let enemySpellResist = enemy.spellResist || 0;
+        
+        // Get spell penetration from equipped weapon
+        
+        const spellPen = weapon?.spellPen || 0;
+        
+        // Reduce enemy resistance by spell penetration (minimum 0)
+        const effectiveResist = Math.max(0, enemySpellResist - spellPen);
+        const resistMult = Math.max(0.25, 1 - (effectiveResist / 100));
+        dmg = Math.floor(dmg * resistMult);
+
         let crit = false;
         if (_lsCritRoll < spellCritChance) { dmg = Math.floor(dmg * 1.75); crit = true; }
         if (_lsDbg) termAppend('<span style="color:#004466;">  roll: ' + spellRoll
@@ -3735,7 +3767,7 @@ function cancelSpellMenu() {
             + '</span>', 'term-dim');
         
         // Apply weapon modifiers to spell (status effects + elemental damage)
-        const weapon = WEAPONS[p.weapon];
+        
         const modifierResult = weapon ? applyWeaponModifiers(p, enemy, dmg, weapon) : { totalDamage: dmg, messages: [] };
         const finalDamage = modifierResult.totalDamage;
 
@@ -3852,6 +3884,19 @@ function cancelSpellMenu() {
         const _regCritChance = calcCritChance(p.lck||0, p) + gemSpellCrit;
         // UPDATED: include gemSpellBonus + gemSpellUniversal
         let dmg = Math.max(1, (spellRoll + p.magic + (p.wis||0) + modifierBonus + gemSpellBonus + gemSpellUniversal) - Math.floor(enemy.defense / 2));
+        
+                // Apply spell resistance with penetration
+        let enemySpellResist = enemy.spellResist || 0;
+        
+        // Get spell penetration from equipped weapon
+        
+        const spellPen = weapon?.spellPen || 0;
+        
+        // Reduce enemy resistance by spell penetration (minimum 0)
+        const effectiveResist = Math.max(0, enemySpellResist - spellPen);
+        const resistMult = Math.max(0.25, 1 - (effectiveResist / 100));
+        dmg = Math.floor(dmg * resistMult);
+
         let crit = false;
         if (_regCritRoll < _regCritChance) { dmg = Math.floor(dmg*1.75); crit = true; }
         if (_regDbg) termAppend('<span style="color:#004466;">  roll: ' + spellRoll
@@ -3864,7 +3909,7 @@ function cancelSpellMenu() {
             + '</span>', 'term-dim');
         
         // Apply weapon modifiers to spell (status effects + elemental damage)
-        const weapon = WEAPONS[p.weapon];
+        
         const modifierResult = weapon ? applyWeaponModifiers(p, enemy, dmg, weapon) : { totalDamage: dmg, messages: [] };
         const finalDamage = modifierResult.totalDamage;
         
@@ -6066,45 +6111,64 @@ function playerIsExhausted() {
         };
 
         function evolveClass(player) {
-            if (player.level !== 20) return false;
-            if (player.hasEvolved) return false; // Already evolved
-            
-            const baseClass = player.class;
-            const evolution = ADVANCED_CLASSES[baseClass];
-            
-            if (!evolution) return false;
-            
-            // Store original class
-            player.baseClass = baseClass;
-            player.class = evolution.advancedClass;
-            player.className = evolution.advancedName;
-            player.hasEvolved = true;
-            
-            // Apply bonus stats
-            Object.keys(evolution.bonusStats).forEach(stat => {
-                if (player[stat] !== undefined) {
-                    player[stat] += evolution.bonusStats[stat];
-                }
-            });
-            
-            // Apply damage multiplier
-            player.advancedClassMultiplier = evolution.damageMultiplier;
-            
-            // Add new spells
-            evolution.newSpells.forEach(spell => {
-                if (!player.knownSpells.includes(spell)) {
-                    player.knownSpells.push(spell);
-                }
-            });
-            
-            // Heal to full and boost HP/MP
-            player.maxHp = Math.floor(player.maxHp * 1.5);
-            player.maxMp = Math.floor(player.maxMp * 1.5);
-            player.hp = player.maxHp;
-            player.mp = player.maxMp;
-            
-            return true;
+    if (player.level !== 20) return false;
+    if (player.hasEvolved) return false;
+    
+    // Get the original class key (not the display name)
+    const classKey = player.baseClass || player.class;
+    const evolution = ADVANCED_CLASSES[classKey];
+    
+    if (!evolution) {
+        console.error(`No evolution found for class: ${classKey}`);
+        return false;
+    }
+    
+    console.log(`⭐ EVOLUTION TRIGGERED: ${classKey} -> ${evolution.advancedName}`);
+    
+    // Store original class
+    player.baseClass = classKey;
+    player.class = evolution.advancedClass;
+    player.className = evolution.advancedName;
+    player.hasEvolved = true;
+    
+    // Apply bonus stats (DOUBLE them for rogue)
+    const statMultiplier = (classKey === 'rogue') ? 2.5 : 2.0;
+    Object.keys(evolution.bonusStats).forEach(stat => {
+        if (player[stat] !== undefined) {
+            const bonus = Math.floor(evolution.bonusStats[stat] * statMultiplier);
+            player[stat] += bonus;
+            console.log(`   ${stat.toUpperCase()}: +${bonus}`);
         }
+    });
+    
+    // Apply damage multiplier
+    player.advancedClassMultiplier = evolution.damageMultiplier;
+    
+    // Add new spells
+    if (evolution.newSpells) {
+        evolution.newSpells.forEach(spell => {
+            if (!player.knownSpells.includes(spell)) {
+                player.knownSpells.push(spell);
+            }
+        });
+    }
+    
+    // DOUBLE HP and MP (not just 1.5x)
+    const oldHp = player.maxHp;
+    const oldMp = player.maxMp;
+    player.maxHp = Math.floor(player.maxHp * 2);
+    player.maxMp = Math.floor(player.maxMp * 2);
+    player.hp = player.maxHp;
+    player.mp = player.maxMp;
+    
+    console.log(`   HP: ${oldHp} → ${player.maxHp}`);
+    console.log(`   MP: ${oldMp} → ${player.maxMp}`);
+    
+    // Give extra stat points for evolution (10 bonus points)
+    player.statPoints = (player.statPoints || 0) + 10;
+    
+    return true;
+}
 
         function getAdvancedClassName(player) {
             if (player.hasEvolved && ADVANCED_CLASSES[player.baseClass]) {
@@ -6280,17 +6344,20 @@ function playerIsExhausted() {
     // ═══════════════════════════════════════════════════════════════
     // CHECK FOR CLASS EVOLUTION AT LEVEL 20
     // ═══════════════════════════════════════════════════════════════
-    if (p.level === 20 && evolveClass(p)) {
-        const evolution = ADVANCED_CLASSES[p.baseClass];
-        // Evolution message will be shown in endCombat
+    // In levelUp function, replace the evolution section with:
+if (p.level === 20) {
+    const evolved = evolveClass(p);
+    if (evolved) {
         p._justEvolved = true;
-        p._evolutionMessage = evolution.announcement;
+        p._evolutionMessage = ADVANCED_CLASSES[p.baseClass]?.announcement || "Your power has doubled!";
         if (typeof termAppend === 'function') {
             termAppend('', 'term-separator');
             termAppend(`<span style="color:#FF00FF;font-size:24px;font-weight:bold;">⚡ CLASS EVOLUTION! ⚡</span>`, 'term-victory');
-            termAppend(evolution.announcement, 'term-victory');
+            termAppend(p._evolutionMessage, 'term-victory');
+            termAppend(`<span style="color:#FFD700;">Your HP and MP have DOUBLED!</span>`, 'term-loot');
         }
     }
+}
 
     // ═══════════════════════════════════════════════════════════════
     // CHRONICLE: unlock entries gated to this level
@@ -6305,7 +6372,13 @@ function playerIsExhausted() {
     }
     
     // Update HUD
+    if (typeof calculateAndSetSpellResistance === 'function') {
+        calculateAndSetSpellResistance(p);
+    }
+    
+    // Update HUD
     if (typeof updateHud === 'function') updateHud();
+
     
     // Save after level up
     if (typeof saveGame === 'function') saveGame();
@@ -6451,7 +6524,7 @@ function activateConsecratedGround(p, cs, tier) {
     termAppend(`🔥 <span style="color:#FFD700;font-weight:bold;">CONSECRATED GROUND!</span> <em>${tier.label}</em>`, 'term-highlight');
 
     // Initial AOE hit
-    const weapon = WEAPONS[p.weapon];
+    let weapon = WEAPONS[p.weapon];
     if (weapon) {
         const qBonus    = getQualityBonus(weapon.quality, weapon.baseDamage);
         const baseWpnDmg = Math.floor(

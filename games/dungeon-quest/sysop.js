@@ -2591,6 +2591,7 @@ function handleGive(args) {
                     baseDamage: baseWeapon.baseDamage + baseDamageBonus,
                     maxDamage: (baseWeapon.maxDamage || baseWeapon.baseDamage) + maxDamageBonus,
                     baseMagicDamage: baseWeapon.baseMagicDamage ? baseWeapon.baseMagicDamage + magicDamageBonus : 0,
+                    spellPen: baseWeapon.spellPen || 0,
                     level: weaponLevel,
                     quality: finalQuality,
                     qualityBonus: bonusPct,
@@ -3893,11 +3894,30 @@ async function handleLookupCommand(args) {
         };
         
         function getXpForLevel(playerClass, level) {
-            const table = XP_TABLES[playerClass] || XP_TABLES.warrior;
-            if (level < 1) return 0;
-            if (level > 25) return table[24]; // Max at level 25
-            return table[level - 1];
-        }
+    // Map evolved class names back to their base class for XP lookup
+    let baseClass = playerClass;
+    const classMapping = {
+        'shadowmaster': 'rogue',
+        'warlord': 'warrior',
+        'crusader': 'paladin',
+        'archmage': 'mage',
+        'demonlord': 'warlock',
+        'beastlord': 'hunter',
+        'deadeye': 'archer',
+        'high_priest': 'acolyte',
+        'lich': 'necrolyte',
+        'archdruid': 'druid'
+    };
+    
+    if (classMapping[baseClass]) {
+        baseClass = classMapping[baseClass];
+    }
+    
+    const table = XP_TABLES[baseClass] || XP_TABLES.warrior;
+    if (level < 1) return 0;
+    if (level > 25) return table[24];
+    return table[level - 1];
+}
         
         function getXpToNextLevel(playerClass, currentLevel) {
             if (currentLevel >= 25) return 999999999; // Max level

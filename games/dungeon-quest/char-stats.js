@@ -55,7 +55,7 @@ function showCharacterStats() {
             ${renderLiveStatRows(p, window._statPending, pointsLeft)}
         </div>
 
-        <div class="message" style="border-color:#005500;margin-top:12px;font-size:15px;">
+                <div class="message" style="border-color:#005500;margin-top:12px;font-size:15px;">
             <span style="color:#8aaa8a;">DERIVED STATS</span><br>
             <span style="color:var(--highlight-color);">Lv ${p.level}</span>
             <span style="color:#8aaa8a;"> | </span>
@@ -64,6 +64,7 @@ function showCharacterStats() {
             <span style="color:#6688ff;">MP ${p.mp}/${p.maxMp}</span><br>
             <span style="color:#aaa;">XP: ${p.xp.toLocaleString()}/${p.xpToNext.toLocaleString()} | Crit: ${calcCritChance(p.lck,p)}% | Dodge: ${calcDodgeChance(p.dex||0)}%</span><br>
             <span style="color:#ffcc88;">Melee: ${calculatePhysicalDamage()} | Magic: ${calculateMagicDamage()} | Def: ${calculateTotalDefense()}</span>
+            <br><span style="color:#aa88ff;">🔮 Spell Resist: ${p.spellResist || calculateAndSetSpellResistance(p)}%</span>
             ${armorBonusHtml}
         </div>
 
@@ -118,6 +119,7 @@ function _saveStatChanges(backFn) {
         const playerClass = p.baseClass || p.class;
         const level = p.level || 1;
         const con = p.con || 0;
+        const isEvolved = p.hasEvolved === true;
         
         // Class HP Multipliers
         const conMultipliers = {
@@ -131,23 +133,46 @@ function _saveStatChanges(backFn) {
             hunter: 80, rogue: 75, warlock: 65, mage: 55, default: 80
         };
         
-        const multiplier = conMultipliers[playerClass] || conMultipliers.default;
-        const base = baseHP[playerClass] || baseHP.default;
+        let multiplier = conMultipliers[playerClass] || conMultipliers.default;
+        let base = baseHP[playerClass] || baseHP.default;
+        
+        // ⭐ EVOLUTION BONUS: If evolved, double the HP formula results
+        if (isEvolved) {
+            // For evolved characters, use evolved multipliers (roughly 2x)
+            if (playerClass === 'mage' || playerClass === 'warlock') {
+                multiplier = multiplier * 1.8;
+                base = Math.floor(base * 1.8);
+            } else if (playerClass === 'cleric') {
+                multiplier = multiplier * 1.9;
+                base = Math.floor(base * 1.9);
+            } else {
+                multiplier = multiplier * 2.0;
+                base = Math.floor(base * 2.0);
+            }
+            console.log(`⭐ Evolved character - using ${multiplier}x CON multiplier and base HP ${base}`);
+        }
+        
         const levelBonus = (level - 1) * 15;
         const conBonus = Math.floor(con * multiplier * (level - 1));
         const newMaxHP = base + levelBonus + conBonus;
         
-        p.maxHp = newMaxHP;
-        p.hp = Math.min(p.hp, p.maxHp);
-        
-        console.log(`❤️ CON changed from ${oldCon} to ${con}. HP recalculated to ${p.maxHp}`);
+        // ⭐ CRITICAL: Ensure HP never decreases from stat allocation
+        // Only increase HP if the new calculation is higher
+        if (newMaxHP > p.maxHp) {
+            const hpGain = newMaxHP - p.maxHp;
+            p.maxHp = newMaxHP;
+            p.hp = p.hp + hpGain;  // Add the same gain to current HP
+            console.log(`❤️ CON changed from ${oldCon} to ${con}. HP increased by ${hpGain} to ${p.maxHp}`);
+        } else {
+            console.log(`❤️ CON changed from ${oldCon} to ${con}. HP calculation would decrease (${newMaxHP} vs ${p.maxHp}) - preserving current HP.`);
+            // Keep existing HP - don't let it drop
+        }
     }
     
     window._statPending = {};
     saveGame();
     if (backFn) backFn();
 }
-
 
         function calculatePhysicalDamage() {
             const p = gameState.player;
@@ -199,9 +224,53 @@ function _saveStatChanges(backFn) {
             return armor.baseDefense + qBonus + (p.con || 0);
         }
         
+// ═══════════════════════════════════════════════════════════════
+// SPELL RESISTANCE CALCULATION
+// Called whenever player stats change (level up, gear change, etc.)
+// ═══════════════════════════════════════════════════════════════
+function calculateAndSetSpellResistance(player) {
+    if (!player) return 0;
+    
+    const baseResistByClass = {
+        warrior: 5,
+        paladin: 10,
+        rogue: 8,
+        mage: 25,
+        warlock: 25,
+        cleric: 20,
+        hunter: 10,
+        runesmith: 15
+    };
+    
+    const className = player.baseClass || player.class;
+    const classResist = baseResistByClass[className] || 10;
+    
+    // CON gives 0.5 resist per point (max 15 from CON)
+    const conBonus = Math.min(15, Math.floor((player.con || 0) * 0.5));
+    
+    // Get equipped armor's magicResist
+    let armorResist = 0;
+    if (player.armor && player.armor !== 'no_armor') {
+        // Handle both instance IDs and strings
+        let armorKey = player.armor;
+        let armor = ARMOR[armorKey];
+        if (!armor && typeof armorKey === 'string' && armorKey.includes('_')) {
+            // Try to find the base armor from instance ID
+            const baseKey = armorKey.split('_')[0];
+            armor = ARMOR[baseKey];
+        }
+        if (armor && armor.magicResist) {
+            armorResist = armor.magicResist;
+        }
+    }
+    
+    // Calculate total, cap at 60 (60% damage reduction maximum from resistance)
+    const totalResist = Math.min(60, classResist + conBonus + armorResist);
+    
+    player.spellResist = totalResist;
+    
+    return totalResist;
+}
 
-        
-// ═══════════════════════════════════════════════════════════════
-// CROSSROADS FORGE - Unique styling for the 3rd town
-// ═══════════════════════════════════════════════════════════════
+
 

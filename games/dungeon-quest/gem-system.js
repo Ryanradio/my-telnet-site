@@ -251,8 +251,7 @@ function recalcGemStats() {
         mpBonus += armor.bonusMp || 0;
     }
 
-    // ── ARMOR MODIFIER: Bulwark (flat max HP bonus) ──
-    // Included here so maxHp is correctly updated on equip/unequip
+    // ARMOR MODIFIER: Bulwark (flat max HP bonus)
     if (typeof getArmorModifierBonus === 'function') {
         hpBonus += getArmorModifierBonus('hpBonus');
     }
@@ -303,8 +302,10 @@ function recalcGemStats() {
     console.log(`🔧 RECALC: class=${baseClass}, level=${p.level}`);
     console.log(`   Base total: ${baseTotal}, Expected total: ${expectedBaseTotal}`);
     
-    // CHECK FOR INFLATED STATS - if base stats are way too high, reset them
-    if (baseTotal > expectedBaseTotal + 20) {
+    // ⭐ STEP 3 FIX: Skip inflation check for evolved characters
+    const isEvolved = p.hasEvolved === true;
+    
+    if (!isEvolved && baseTotal > expectedBaseTotal + 20) {
         console.warn(`⚠️ STAT INFLATION detected! Resetting...`);
         
         // Calculate points to give back
@@ -407,9 +408,12 @@ function recalcGemStats() {
                 showCharacterStats();
             };
         }, 500);
+    } else if (isEvolved && baseTotal > expectedBaseTotal + 20) {
+        // Evolved character with high stats - just log, don't reset
+        console.log(`⭐ Evolved character has base total ${baseTotal} (expected ${expectedBaseTotal}) - this is NORMAL for evolution. No reset performed.`);
     }
     
-    // ── APPLY GEM BONUSES (remove old, add new) ─────────────────────
+    // APPLY GEM BONUSES (remove old, add new)
     const oldHp  = p._gemHpBonus  || 0;
     const oldMp  = p._gemMpBonus  || 0;
     const oldDef = p._gemDefBonus || 0;

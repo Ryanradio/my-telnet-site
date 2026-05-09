@@ -4389,93 +4389,138 @@ fixMissingInstanceIds(p);
         // and resets them to proper values with ALL stat points returned.
         
         (function validateAndResetStatsForNewSystem(player) {
-            if (!player) return false;
-            
-            const baseClass = player.baseClass || player.class;
-            const level = player.level || 1;
-            
-            // Get class preset (level 1 base stats)
-            const preset = CLASS_STAT_PRESETS[baseClass] || CLASS_STAT_PRESETS.warrior;
-            
-            // Total points earned from leveling (3 per level, starting at level 1 with 0 points)
-            const totalPointsEarned = Math.max(0, (level - 1) * 3);
-            
-            // Remove gem bonuses to get base stats
-            const gemStrBonus = player._gemStrBonus || 0;
-            const gemDexBonus = player._gemDexBonus || 0;
-            const gemWisBonus = player._gemWisBonus || 0;
-            const gemChaBonus = player._gemChaBonus || 0;
-            const gemConBonus = player._gemConBonus || 0;
-            const gemLckBonus = player._gemLckBonus || 0;
-            
-            const currentStrBase = (player.str || 0) - gemStrBonus;
-            const currentDexBase = (player.dex || 0) - gemDexBonus;
-            const currentWisBase = (player.wis || 0) - gemWisBonus;
-            const currentChaBase = (player.cha || 0) - gemChaBonus;
-            const currentConBase = (player.con || 0) - gemConBonus;
-            const currentLckBase = (player.lck || 0) - gemLckBonus;
-            
-            // Calculate what stats SHOULD be
-            const presetTotal = preset.str + preset.dex + preset.wis + preset.cha + preset.con + preset.lck;
-            const maxPossibleTotal = presetTotal + totalPointsEarned;
-            const currentTotal = currentStrBase + currentDexBase + currentWisBase + currentChaBase + currentConBase + currentLckBase;
-            
-            // If stats are inflated (more than 5 points above max possible), reset them
-            if (currentTotal > maxPossibleTotal + 5) {
-                console.warn(`⚠️ STAT INFLATION DETECTED! Current total: ${currentTotal}, Max possible: ${maxPossibleTotal}`);
-                console.log('Resetting stats to proper values for the new level-up system...');
-                
-                // SIMPLE RESET: Set stats to class preset (level 1 base stats)
-                player.str = preset.str + gemStrBonus;
-                player.dex = preset.dex + gemDexBonus;
-                player.wis = preset.wis + gemWisBonus;
-                player.cha = preset.cha + gemChaBonus;
-                player.con = preset.con + gemConBonus;
-                player.lck = preset.lck + gemLckBonus;
-                
-                // Give ALL earned stat points back to the player to spend
-                player.statPoints = totalPointsEarned;
-                
-                // Clear any stored allocation tracking
-                if (player._allocatedStats) delete player._allocatedStats;
-                
-                // Recalculate HP based on new CON
-                const classHpBase = (() => {
-                    const hpBases = {
-                        warrior: 120, paladin: 100, rogue: 80, mage: 60,
-                        cleric: 90, ranger: 85, hunter: 85, warlock: 70, runesmith: 95
-                    };
-                    return hpBases[baseClass] || 90;
-                })();
-                const expectedHp = classHpBase + (level - 1) * 15 + (level - 1) * Math.max(0, (player.con - 10));
-                player.maxHp = Math.max(1, expectedHp);
-                player.hp = player.maxHp;  // Full heal on reset
-                
-                // Recalculate MP based on new stats
-                const classMpBase = (() => {
-                    const mpBases = {
-                        warrior: 20, paladin: 50, rogue: 30, mage: 100,
-                        cleric: 100, ranger: 40, hunter: 40, warlock: 90, runesmith: 70
-                    };
-                    return mpBases[baseClass] || 50;
-                })();
-                const expectedMp = classMpBase + (level - 1) * 10;
-                player.maxMp = Math.max(0, expectedMp);
-                player.mp = player.maxMp;  // Full mana on reset
-                
-                console.log('✅ Stats reset to class preset!');
-                console.log(`   Base Stats (without gems): STR:${preset.str} DEX:${preset.dex} WIS:${preset.wis} CHA:${preset.cha} CON:${preset.con} LCK:${preset.lck}`);
-                console.log(`   Stat points given back: ${player.statPoints}`);
-                console.log(`   HP: ${player.hp}/${player.maxHp} | MP: ${player.mp}/${player.maxMp}`);
-                
-                // Set a flag to show notification and redirect
-                window._statsJustReset = true;
-                
-                return true;
+    if (!player) return false;
+    
+    const baseClass = player.baseClass || player.class;
+    const level = player.level || 1;
+    const isEvolved = player.hasEvolved === true;
+    
+    // Get class preset (level 1 base stats)
+    const preset = CLASS_STAT_PRESETS[baseClass] || CLASS_STAT_PRESETS.warrior;
+    
+    // Total points earned from leveling (3 per level, starting at level 1 with 0 points)
+    const totalPointsEarned = Math.max(0, (level - 1) * 3);
+    
+    // EVOLUTION BONUS: Evolved characters get roughly double stats
+    // Warrior/Rogue/Paladin = 2.0x, Mages = 1.8x, etc.
+    let evolutionMultiplier = 1.0;
+    if (isEvolved) {
+        if (baseClass === 'mage' || baseClass === 'warlock') evolutionMultiplier = 1.8;
+        else if (baseClass === 'cleric') evolutionMultiplier = 1.9;
+        else evolutionMultiplier = 2.0;  // Warrior, Rogue, Paladin, Hunter, Runesmith
+    }
+    
+    // Remove gem bonuses to get base stats
+    const gemStrBonus = player._gemStrBonus || 0;
+    const gemDexBonus = player._gemDexBonus || 0;
+    const gemWisBonus = player._gemWisBonus || 0;
+    const gemChaBonus = player._gemChaBonus || 0;
+    const gemConBonus = player._gemConBonus || 0;
+    const gemLckBonus = player._gemLckBonus || 0;
+    
+    const currentStrBase = (player.str || 0) - gemStrBonus;
+    const currentDexBase = (player.dex || 0) - gemDexBonus;
+    const currentWisBase = (player.wis || 0) - gemWisBonus;
+    const currentChaBase = (player.cha || 0) - gemChaBonus;
+    const currentConBase = (player.con || 0) - gemConBonus;
+    const currentLckBase = (player.lck || 0) - gemLckBonus;
+    
+    // Calculate what stats SHOULD be (with evolution multiplier)
+    const presetTotal = preset.str + preset.dex + preset.wis + preset.cha + preset.con + preset.lck;
+    let maxPossibleTotal = presetTotal + totalPointsEarned;
+    
+    // Apply evolution multiplier if evolved
+    if (isEvolved) {
+        maxPossibleTotal = Math.floor(maxPossibleTotal * evolutionMultiplier);
+        console.log(`⭐ Evolved character detected - using ${evolutionMultiplier}x stat cap (${maxPossibleTotal} total points allowed)`);
+    }
+    
+    const currentTotal = currentStrBase + currentDexBase + currentWisBase + currentChaBase + currentConBase + currentLckBase;
+    
+    // Allow a larger buffer for evolved characters (10 points instead of 5)
+    const inflationThreshold = isEvolved ? 10 : 5;
+    
+    // If stats are inflated beyond evolved cap, reset them
+    if (currentTotal > maxPossibleTotal + inflationThreshold) {
+        console.warn(`⚠️ STAT INFLATION DETECTED! Current total: ${currentTotal}, Max possible: ${maxPossibleTotal}`);
+        console.log('Resetting stats to proper values for the new level-up system...');
+        
+        // For evolved characters, double the preset stats
+        let targetStr = preset.str;
+        let targetDex = preset.dex;
+        let targetWis = preset.wis;
+        let targetCha = preset.cha;
+        let targetCon = preset.con;
+        let targetLck = preset.lck;
+        
+        if (isEvolved) {
+            targetStr = Math.floor(preset.str * evolutionMultiplier);
+            targetDex = Math.floor(preset.dex * evolutionMultiplier);
+            targetWis = Math.floor(preset.wis * evolutionMultiplier);
+            targetCha = Math.floor(preset.cha * evolutionMultiplier);
+            targetCon = Math.floor(preset.con * evolutionMultiplier);
+            targetLck = Math.floor(preset.lck * evolutionMultiplier);
+            console.log(`⭐ Setting evolved base stats to ${evolutionMultiplier}x class preset`);
+        }
+        
+        player.str = targetStr + gemStrBonus;
+        player.dex = targetDex + gemDexBonus;
+        player.wis = targetWis + gemWisBonus;
+        player.cha = targetCha + gemChaBonus;
+        player.con = targetCon + gemConBonus;
+        player.lck = targetLck + gemLckBonus;
+        
+        // Give points back (including evolution bonus points)
+        let pointsToGive = totalPointsEarned;
+        if (isEvolved) {
+            // Evolved characters should have had bonus points from evolution
+            pointsToGive = Math.floor(totalPointsEarned * evolutionMultiplier);
+        }
+        player.statPoints = pointsToGive;
+        
+        // Clear any stored allocation tracking
+        if (player._allocatedStats) delete player._allocatedStats;
+        
+        // Recalculate HP based on new CON
+        const classHpBase = (() => {
+            const hpBases = {
+                warrior: 120, paladin: 100, rogue: 80, mage: 60,
+                cleric: 90, ranger: 85, hunter: 85, warlock: 70, runesmith: 95
+            };
+            let base = hpBases[baseClass] || 90;
+            if (isEvolved) base = Math.floor(base * evolutionMultiplier);
+            return base;
+        })();
+        const expectedHp = classHpBase + (level - 1) * 15 + (level - 1) * Math.max(0, (player.con - 10));
+        player.maxHp = Math.max(1, expectedHp);
+        player.hp = player.maxHp;
+        
+        // Recalculate MP
+        const classMpBase = (() => {
+            const mpBases = {
+                warrior: 20, paladin: 50, rogue: 30, mage: 100,
+                cleric: 100, ranger: 40, hunter: 40, warlock: 90, runesmith: 70
+            };
+            let base = mpBases[baseClass] || 50;
+            if (isEvolved && (baseClass === 'mage' || baseClass === 'warlock' || baseClass === 'cleric')) {
+                base = Math.floor(base * 1.5);  // Casters get extra MP on evolution
             }
-            
-            return false;
-        })(gameState.player);
+            return base;
+        })();
+        const expectedMp = classMpBase + (level - 1) * 10;
+        player.maxMp = Math.max(0, expectedMp);
+        player.mp = player.maxMp;
+        
+        console.log('✅ Stats reset to evolved-appropriate values!');
+        console.log(`   Target stats: STR:${targetStr} DEX:${targetDex} WIS:${targetWis} CHA:${targetCha} CON:${targetCon} LCK:${targetLck}`);
+        console.log(`   Stat points given back: ${player.statPoints}`);
+        
+        window._statsJustReset = true;
+        return true;
+    }
+    
+    return false;
+})(gameState.player);
         
         // Check if stats were reset (detect by looking for a flag we set)
         if (window._statsJustReset) {
