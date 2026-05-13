@@ -29,6 +29,12 @@ let _mailLoading      = false;
 let _mailStatusMsg    = '';
 let _mailStatusIsErr  = false;
 let _mailInitDone     = false;    // prevent double-init on same session
+let _mailActiveTab    = 'mail';   // 'mail' | 'announcements'
+
+// Announcements state
+let _annItems         = [];       // cached announcements
+let _annUnreadCount   = 0;
+let _annLoading       = false;
 
 // ── Toast timeout handle ──────────────────────────────────────────────────
 let _mailToastTimer = null;
@@ -55,12 +61,24 @@ function initMailbox() {
       if (data.ok) {
         _mailUnreadCount = data.count || 0;
         _mailUpdateBadge();
-        if (_mailUnreadCount > 0) {
-          _mailShowLoginToast(_mailUnreadCount);
-        }
       }
     })
-    .catch(() => {}); // silent — non-critical on init
+    .catch(() => {});
+
+  // Also fetch announcement unread count
+  const annParams = new URLSearchParams({
+    action:       'ann_count',
+    character_id: charId,
+  });
+  fetch(_MAIL_SCRIPT_URL + '?' + annParams.toString(), { redirect: 'follow' })
+    .then(r => r.json())
+    .then(data => {
+      if (data.ok) {
+        _annUnreadCount = data.count || 0;
+        _mailUpdateBadge();
+      }
+    })
+    .catch(() => {});
 }
 
 // Call this whenever the town screen re-renders to reset the init gate
@@ -99,11 +117,13 @@ function renderMailboxButton() {
 // ═══════════════════════════════════════════════════════════════════════════
 // OPEN MAILBOX OVERLAY
 // ═══════════════════════════════════════════════════════════════════════════
-function openMailbox() {
-  _mailStatusMsg  = '';
-  _mailItems      = [];
+function openMailbox(startTab) {
+  _mailStatusMsg = '';
+  _mailItems     = [];
+  _mailActiveTab = startTab || 'mail';
   _mailRender();
   _mailFetch();
+  _annFetch();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -138,7 +158,7 @@ function _mailRender() {
           style="background:#040a04;border:1px solid #2a4a2a;color:#669966;
                  font-family:'VT323',monospace;font-size:13px;
                  padding:4px 12px;cursor:pointer;
-                 display:${_mailUnreadCount > 0 ? 'block' : 'none'};">
+                 display:${_mailActiveTab === 'mail' && _mailUnreadCount > 0 ? 'block' : 'none'};">
           ✅ CLAIM ALL
         </button>
         <button onclick="_mailClose()"
@@ -146,6 +166,26 @@ function _mailRender() {
                  font-family:'VT323',monospace;font-size:16px;
                  padding:3px 10px;cursor:pointer;">✕ CLOSE</button>
       </div>
+    </div>
+
+    <!-- Tabs -->
+    <div style="display:flex;background:#020802;border-bottom:1px solid #1a2a1a;flex-shrink:0;">
+      <button onclick="_mailSwitchTab('mail')"
+        style="background:${_mailActiveTab==='mail'?'#040a04':'none'};
+               border:none;border-bottom:2px solid ${_mailActiveTab==='mail'?'#446644':'transparent'};
+               color:${_mailActiveTab==='mail'?'#88aa88':'#446644'};
+               font-family:'VT323',monospace;font-size:14px;
+               padding:7px 16px;cursor:pointer;flex:1;">
+        📬 Mail${_mailUnreadCount > 0 ? ' (' + _mailUnreadCount + ')' : ''}
+      </button>
+      <button onclick="_mailSwitchTab('announcements')"
+        style="background:${_mailActiveTab==='announcements'?'#0a0800':'none'};
+               border:none;border-bottom:2px solid ${_mailActiveTab==='announcements'?'#c8a000':'transparent'};
+               color:${_mailActiveTab==='announcements'?'#c8a000':'#664400'};
+               font-family:'VT323',monospace;font-size:14px;
+               padding:7px 16px;cursor:pointer;flex:1;">
+        📢 News${_annUnreadCount > 0 ? ' (' + _annUnreadCount + ')' : ''}
+      </button>
     </div>
 
     <!-- Status bar -->
@@ -159,7 +199,7 @@ function _mailRender() {
     <!-- Body -->
     <div id="mailBody"
       style="flex:1;overflow-y:auto;padding:10px 12px;">
-      <div style="color:#333;text-align:center;padding:30px;">Loading mail...</div>
+      <div style="color:#333;text-align:center;padding:30px;">Loading...</div>
     </div>
   `;
 
@@ -167,6 +207,8 @@ function _mailRender() {
 }
 
 function _mailRenderBody() {
+  if (_mailActiveTab === 'announcements') { _annRenderBody(); return; }
+
   const body = document.getElementById('mailBody');
   if (!body) return;
 
@@ -520,23 +562,23 @@ function _mailApplyReward(claimData) {
 // BADGE — updates the red unread counter on the mailbox button
 // ═══════════════════════════════════════════════════════════════════════════
 function _mailUpdateBadge() {
+  const totalUnread = _mailUnreadCount + _annUnreadCount;
   const badges = document.querySelectorAll('#mailBadge');
   const btn    = document.getElementById('mailboxBtn');
-  const count  = _mailUnreadCount > 99 ? '99+' : _mailUnreadCount;
+  const count  = totalUnread > 99 ? '99+' : totalUnread;
 
   badges.forEach(badge => {
-    if (_mailUnreadCount > 0) {
-      badge.textContent    = count;
-      badge.style.display  = 'inline-block';
+    if (totalUnread > 0) {
+      badge.textContent   = count;
+      badge.style.display = 'inline-block';
     } else {
-      badge.style.display  = 'none';
+      badge.style.display = 'none';
     }
   });
 
-  // Also update button border/color to signal unread mail
   if (btn) {
-    btn.style.borderColor = _mailUnreadCount > 0 ? '#ff4444' : '#446644';
-    btn.style.color       = _mailUnreadCount > 0 ? '#ff8888' : '#88aa88';
+    btn.style.borderColor = totalUnread > 0 ? '#ff4444' : '#446644';
+    btn.style.color       = totalUnread > 0 ? '#ff8888' : '#88aa88';
   }
 }
 
@@ -658,6 +700,189 @@ function _mailClose() {
   _mailRemoveOverlay();
 }
 
+// ── Tab switcher ─────────────────────────────────────────────────────────
+function _mailSwitchTab(tab) {
+  _mailActiveTab = tab;
+  _mailRender();
+  if (tab === 'mail')          _mailFetch();
+  if (tab === 'announcements') _annFetch();
+}
+
+// ── Update _mailRenderBody to route by active tab ─────────────────────────
+// (Wraps the existing _mailRenderBody — we replace it below in the expose section)
+
+// ── Announcements fetch ───────────────────────────────────────────────────
+function _annFetch() {
+  _annLoading = true;
+  _annRenderBody();
+
+  const charId = _mailCharId();
+  if (!charId) { _annLoading = false; _annRenderBody(); return; }
+
+  const params = new URLSearchParams({
+    action:       'ann_fetch',
+    character_id: charId,
+  });
+
+  fetch(_MAIL_SCRIPT_URL + '?' + params.toString(), { redirect: 'follow' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      _annLoading = false;
+      if (data.ok) {
+        _annItems       = data.announcements || [];
+        _annUnreadCount = data.unread_count  || 0;
+        _mailUpdateBadge();
+        _mailUpdateHeaderCount();
+      }
+      _annRenderBody();
+    })
+    .catch(function() {
+      _annLoading = false;
+      _annRenderBody();
+    });
+}
+
+// ── Mark announcement as opened ────────────────────────────────────────────
+function _annOpen(messageId) {
+  const charId = _mailCharId();
+  if (!charId || !messageId) return;
+
+  // Mark opened in local state immediately
+  const ann = _annItems.find(function(a) { return a.message_id === messageId; });
+  if (ann && !ann.is_opened) {
+    ann.is_opened = true;
+    _annUnreadCount = Math.max(0, _annUnreadCount - 1);
+    _mailUpdateBadge();
+    _mailUpdateHeaderCount();
+    // Re-render the tab button counts
+    // Update tab button text directly by finding it
+    const allBtns = document.querySelectorAll('button');
+    allBtns.forEach(function(btn) {
+      if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes('announcements')) {
+        btn.textContent = '📢 News' + (_annUnreadCount > 0 ? ' (' + _annUnreadCount + ')' : '');
+      }
+    });
+  }
+
+  // Tell server (fire-and-forget)
+  const params = new URLSearchParams({
+    action:       'ann_open',
+    character_id: charId,
+    message_id:   messageId,
+  });
+  fetch(_MAIL_SCRIPT_URL + '?' + params.toString(), { redirect: 'follow' })
+    .catch(function() {});
+}
+
+// ── Render announcements body ─────────────────────────────────────────────
+function _annRenderBody() {
+  if (_mailActiveTab !== 'announcements') return;
+  const body = document.getElementById('mailBody');
+  if (!body) return;
+
+  if (_annLoading) {
+    body.innerHTML = '<div style="color:#333;text-align:center;padding:30px;">Loading announcements...</div>';
+    return;
+  }
+
+  if (_annItems.length === 0) {
+    body.innerHTML = '<div style="color:#2a2a2a;text-align:center;padding:40px;font-size:16px;">'
+      + '📢 No announcements right now.<br>'
+      + '<span style="font-size:12px;color:#1a1a1a;">Check back after updates!</span></div>';
+    return;
+  }
+
+  body.innerHTML = _annItems.map(function(ann) {
+    return _annRenderRow(ann);
+  }).join('');
+
+  // Wire open tracking — mark as opened when clicked/expanded
+  body.querySelectorAll('[data-ann-id]').forEach(function(el) {
+    el.addEventListener('click', function() {
+      const msgId = el.getAttribute('data-ann-id');
+      _annOpen(msgId);
+      // Toggle body visibility
+      const bodyEl = document.getElementById('annBody_' + msgId);
+      if (bodyEl) {
+        bodyEl.style.display = bodyEl.style.display === 'none' ? 'block' : 'none';
+      }
+    });
+  });
+}
+
+function _annRenderRow(ann) {
+  const priority   = ann.priority || 2;
+  const isOpened   = ann.is_opened;
+
+  // Priority colors
+  const borderColor = priority === 1 ? '#660000' : priority === 2 ? '#5a4a00' : '#1a2a1a';
+  const titleColor  = priority === 1 ? '#ff6666' : priority === 2 ? '#c8a000' : '#668866';
+  const bgColor     = priority === 1 ? '#080000' : priority === 2 ? '#080600' : '#020402';
+  const badge       = priority === 1
+    ? '<span style="background:#440000;border:1px solid #880000;color:#ff6666;'
+      + 'font-size:9px;padding:0 5px;font-family:Courier New,monospace;'
+      + 'letter-spacing:1px;margin-right:5px;">URGENT</span>'
+    : priority === 2
+      ? '<span style="background:#2a2000;border:1px solid #4a3a00;color:#c8a000;'
+        + 'font-size:9px;padding:0 5px;font-family:Courier New,monospace;'
+        + 'letter-spacing:1px;margin-right:5px;">NEWS</span>'
+      : '';
+
+  // Format body: **word** → bold, \n → line break
+  const rawBody = ann.body || '';
+  // Bold: **text** → <strong>
+  const formattedBody = rawBody
+    .replace(/[*][*](.+?)[*][*]/g, '<strong style="color:' + titleColor + ';">$1</strong>')
+    .split('\\n').join('<br>');
+
+  // Expiry info
+  let expiryLine = '';
+  if (ann.expires_days && ann.posted_at) {
+    const posted  = new Date(ann.posted_at);
+    const expires = new Date(posted.getTime() + ann.expires_days * 86400000);
+    const daysLeft= Math.ceil((expires - new Date()) / 86400000);
+    if (daysLeft > 0) {
+      expiryLine = '<span style="color:#2a2a2a;font-size:10px;font-family:Courier New,monospace;">'
+        + 'Expires in ' + daysLeft + ' day' + (daysLeft !== 1 ? 's' : '') + '</span>';
+    }
+  }
+
+  // Unread dot
+  const unreadDot = !isOpened
+    ? '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;'
+      + 'background:' + titleColor + ';margin-right:6px;flex-shrink:0;'
+      + 'vertical-align:middle;"></span>'
+    : '';
+
+  return '<div style="border:1px solid ' + borderColor + ';background:' + bgColor + ';'
+    + 'margin-bottom:6px;border-radius:2px;">'
+    // Header row — clickable to expand
+    + '<div data-ann-id="' + ann.message_id + '"'
+    + ' style="padding:9px 12px;cursor:pointer;display:flex;'
+    + 'align-items:center;justify-content:space-between;gap:8px;">'
+    + '<div style="display:flex;align-items:center;flex:1;min-width:0;">'
+    + unreadDot
+    + badge
+    + '<span style="color:' + titleColor + ';font-size:14px;font-weight:bold;">'
+    + (ann.title || 'Announcement') + '</span>'
+    + '</div>'
+    + '<span style="color:#333;font-size:12px;flex-shrink:0;">▼</span>'
+    + '</div>'
+    // Body — hidden by default, revealed on click
+    + '<div id="annBody_' + ann.message_id + '" style="display:none;'
+    + 'padding:0 12px 10px 12px;border-top:1px solid ' + borderColor + ';">'
+    + '<div style="color:#888;font-size:13px;line-height:1.6;margin:8px 0;">'
+    + formattedBody + '</div>'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;'
+    + 'margin-top:6px;">'
+    + expiryLine
+    + '<span style="color:#2a2a2a;font-size:10px;font-family:Courier New,monospace;">'
+    + (ann.posted_at ? new Date(ann.posted_at).toLocaleDateString() : '') + '</span>'
+    + '</div>'
+    + '</div>'
+    + '</div>';
+}
+
 // ── Parse deep-link data out of mail body (||key:value|| format) ─────────
 function _mailParseBody(body) {
   if (!body) return { text: '', data: {} };
@@ -707,3 +932,6 @@ window._mailMarkRead       = _mailMarkRead;
 window._mailClaimAll       = _mailClaimAll;
 window._mailClose          = _mailClose;
 window._mailDismissToast   = _mailDismissToast;
+window._mailSwitchTab      = _mailSwitchTab;
+window._annFetch           = _annFetch;
+window._annOpen            = _annOpen;
