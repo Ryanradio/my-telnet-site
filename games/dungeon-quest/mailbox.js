@@ -73,27 +73,27 @@ function resetMailboxInit() {
 // TOWN BUTTON — returns HTML string, call inside your town renderer
 // ═══════════════════════════════════════════════════════════════════════════
 function renderMailboxButton() {
-  const badge = _mailUnreadCount > 0
-    ? `<span id="mailBadge" style="
-        position:absolute;top:-6px;right:-6px;
-        background:#ff4444;color:#fff;
-        font-size:10px;font-family:'Courier New',monospace;
-        border-radius:50%;width:18px;height:18px;
-        display:flex;align-items:center;justify-content:center;
-        font-weight:bold;pointer-events:none;">${_mailUnreadCount > 99 ? '99+' : _mailUnreadCount}</span>`
-    : `<span id="mailBadge" style="display:none;"></span>`;
+  const hasUnread = _mailUnreadCount > 0;
+  const countStr  = _mailUnreadCount > 99 ? '99+' : _mailUnreadCount;
 
   return `
-    <div style="position:relative;display:inline-block;">
-      <button onclick="openMailbox()"
-        style="background:#060606;border:1px solid #446644;color:#88aa88;
-               font-family:'VT323',monospace;font-size:14px;
-               padding:6px 14px;cursor:pointer;letter-spacing:1px;
-               position:relative;">
-        📬 MAILBOX${_mailUnreadCount > 0 ? '' : ''}
-      </button>
-      ${badge}
-    </div>`;
+    <button onclick="openMailbox()" id="mailboxBtn"
+      style="background:#060606;
+             border:1px solid ${hasUnread ? '#ff4444' : '#446644'};
+             color:${hasUnread ? '#ff8888' : '#88aa88'};
+             font-family:'VT323',monospace;font-size:14px;
+             padding:6px 14px;cursor:pointer;letter-spacing:1px;
+             position:relative;white-space:nowrap;">
+      📬 MAILBOX${hasUnread
+        ? ` <span id="mailBadge" style="
+              display:inline-block;
+              background:#ff4444;color:#fff;
+              font-size:10px;font-family:'Courier New',monospace;
+              border-radius:10px;padding:1px 5px;
+              font-weight:bold;vertical-align:middle;
+              margin-left:4px;line-height:1.4;">${countStr}</span>`
+        : `<span id="mailBadge" style="display:none;"></span>`}
+    </button>`;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -171,23 +171,40 @@ function _mailRenderBody() {
   if (!body) return;
 
   if (_mailLoading) {
-    body.innerHTML = `<div style="color:#333;text-align:center;padding:30px;font-size:15px;">
-      Loading mail...
-    </div>`;
+    body.innerHTML = '<div style="color:#333;text-align:center;padding:30px;font-size:15px;">'
+      + 'Loading mail...</div>';
     return;
   }
 
   if (_mailItems.length === 0) {
-    body.innerHTML = `<div style="color:#2a2a2a;text-align:center;padding:40px;font-size:16px;">
-      📭 Your mailbox is empty.<br>
-      <span style="font-size:12px;color:#1a1a1a;">
-        Items and gold from the Auction House will appear here.
-      </span>
-    </div>`;
+    body.innerHTML = '<div style="color:#2a2a2a;text-align:center;padding:40px;font-size:16px;">'
+      + '📭 Your mailbox is empty.<br>'
+      + '<span style="font-size:12px;color:#1a1a1a;">'
+      + 'Items and gold from the Auction House will appear here.</span></div>';
     return;
   }
 
   body.innerHTML = _mailItems.map(mail => _mailRenderRow(mail)).join('');
+
+  // Wire "Bid Again" buttons
+  body.querySelectorAll('[data-bidagain-listing]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      const listingId = btn.getAttribute('data-bidagain-listing');
+      const minBid    = parseInt(btn.getAttribute('data-bidagain-min')) || 1;
+      const itemName  = btn.getAttribute('data-bidagain-name') || 'Item';
+      // Close mailbox, open AH on Browse tab, then open bid modal
+      _mailClose();
+      if (typeof openAuctionHouse === 'function') {
+        openAuctionHouse();
+        // Small delay to let AH render then open the bid modal
+        setTimeout(function() {
+          if (typeof _ahShowBidModal === 'function') {
+            _ahShowBidModal(listingId, minBid, itemName);
+          }
+        }, 600);
+      }
+    });
+  });
 }
 
 function _mailRenderRow(mail) {
@@ -264,8 +281,9 @@ function _mailRenderRow(mail) {
             ? `<div style="color:#444;font-size:12px;margin-bottom:4px;
                            font-family:'Courier New',monospace;
                            border-left:2px solid #1a1a1a;padding-left:6px;">
-                 ${mail.body}
-               </div>`
+                 ${_mailParseBody(mail.body).text}
+               </div>
+               ${_mailBidAgainBtn(mail.body)}`
             : ''}
           ${goldLine}
           ${itemLine}
@@ -502,16 +520,24 @@ function _mailApplyReward(claimData) {
 // BADGE — updates the red unread counter on the mailbox button
 // ═══════════════════════════════════════════════════════════════════════════
 function _mailUpdateBadge() {
-  // Update any badge elements already in the DOM
   const badges = document.querySelectorAll('#mailBadge');
+  const btn    = document.getElementById('mailboxBtn');
+  const count  = _mailUnreadCount > 99 ? '99+' : _mailUnreadCount;
+
   badges.forEach(badge => {
     if (_mailUnreadCount > 0) {
-      badge.textContent = _mailUnreadCount > 99 ? '99+' : _mailUnreadCount;
-      badge.style.display = 'flex';
+      badge.textContent    = count;
+      badge.style.display  = 'inline-block';
     } else {
-      badge.style.display = 'none';
+      badge.style.display  = 'none';
     }
   });
+
+  // Also update button border/color to signal unread mail
+  if (btn) {
+    btn.style.borderColor = _mailUnreadCount > 0 ? '#ff4444' : '#446644';
+    btn.style.color       = _mailUnreadCount > 0 ? '#ff8888' : '#88aa88';
+  }
 }
 
 function _mailUpdateHeaderCount() {
@@ -630,6 +656,43 @@ function _mailRemoveOverlay() {
 
 function _mailClose() {
   _mailRemoveOverlay();
+}
+
+// ── Parse deep-link data out of mail body (||key:value|| format) ─────────
+function _mailParseBody(body) {
+  if (!body) return { text: '', data: {} };
+  // Split on || markers
+  const parts = body.split('||');
+  const text  = parts[0].trim();
+  const data  = {};
+  for (var i = 1; i < parts.length; i++) {
+    var colonIdx = parts[i].indexOf(':');
+    if (colonIdx > 0) {
+      var k = parts[i].substring(0, colonIdx).trim();
+      var v = parts[i].substring(colonIdx + 1).trim();
+      data[k] = v;
+    }
+  }
+  return { text: text, data: data };
+}
+
+// ── Render "Bid Again" button if mail body has a listing_id deep-link ─────
+function _mailBidAgainBtn(body) {
+  if (!body || !body.includes('||listing_id:')) return '';
+  const parsed     = _mailParseBody(body);
+  const listingId  = parsed.data['listing_id']  || '';
+  const itemName   = parsed.data['item_name']   || 'item';
+  const minNextBid = parseInt(parsed.data['min_next_bid']) || 1;
+  if (!listingId) return '';
+
+  return '<button data-bidagain-listing="' + listingId + '"'
+    + ' data-bidagain-min="' + minNextBid + '"'
+    + ' data-bidagain-name="' + itemName.replace(/"/g, '&quot;') + '"'
+    + ' style="background:#030800;border:1px solid #2a4a00;color:#6a9a00;'
+    + 'font-family:VT323,monospace;font-size:13px;padding:3px 10px;'
+    + 'cursor:pointer;margin-top:4px;letter-spacing:1px;">'
+    + 'BID AGAIN on ' + itemName + ' (' + minNextBid.toLocaleString() + 'g+)'
+    + '</button>';
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

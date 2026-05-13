@@ -5463,7 +5463,7 @@ function checkCombatEnd() {
                     });
                 }
             }
-            
+           
             // ═══════════════════════════════════════════════════════════════
             // ⭐ ARMOR DROP ⭐
             // ═══════════════════════════════════════════════════════════════
@@ -5499,7 +5499,8 @@ function checkCombatEnd() {
                         termAppend(modText, 'term-loot');
                     });
                 }
-            }
+            } 
+                
             
             // Track for endCombat kill summary (name, rarityColor, etc.)
             if (!cs.defeatedMonsters) cs.defeatedMonsters = [];
@@ -5750,6 +5751,7 @@ if (cs.isBountyFight) {
             termAppend(`⚔️ <span style="color:#FFD700;">${weaponDrop.name}</span> found on the body!`, 'term-loot');
         }
     }
+    /*
     // Check if this is armor
     else if (ARMOR[dropKey] && !ARMOR[dropKey].unarmored) {
         // Generate a proper armor object
@@ -5759,6 +5761,7 @@ if (cs.isBountyFight) {
             termAppend(`🛡️ <span style="color:#44AAFF;">${armorDrop.name}</span> found on the body!`, 'term-loot');
         }
     }
+        */
     // Regular item (potion, key, etc.)
     else if (dropKey && ITEMS[dropKey]) {
         gameState.player.inventory.push(dropKey);
