@@ -2180,9 +2180,14 @@ window.DUNGEONS.AshenDepths = {
             "w": "R104",
             "e": "R106"
           },
-          "contents": {},
-          "flags": {
-            "discovered": false
+          "contents": {
+            "enemies": [
+              {
+                "key": "runic_guardian",
+                "drop": "",
+                "rarity": "legendary"
+              }
+            ]
           }
         },
         "R106": {
@@ -2206,9 +2211,6 @@ window.DUNGEONS.AshenDepths = {
                 "icon": "🪄"
               }
             ]
-          },
-          "flags": {
-            "discovered": false
           }
         },
         "R107": {
@@ -4894,17 +4896,15 @@ window.DUNGEONS.AshenDepths = {
               {
                 "key": "shadow_dragon",
                 "drop": "staff_piece_4",
-                "rarity": "epic"
+                "rarity": "legendary",
+                "dropAlways": true
               },
               {
                 "key": "magma_elemental",
                 "drop": "health_potion",
-                "rarity": "uncommon"
+                "rarity": "rare"
               }
             ]
-          },
-          "flags": {
-            "discovered": false
           }
         },
         "R236": {
@@ -5803,12 +5803,13 @@ window.DUNGEONS.AshenDepths = {
               {
                 "key": "shadow_dragon",
                 "drop": "",
-                "rarity": "rare"
+                "rarity": "epic"
               },
               {
                 "key": "shadow_dragon",
                 "drop": "staff_piece_7",
-                "rarity": "rare"
+                "rarity": "legendary",
+                "dropAlways": true
               },
               {
                 "key": "void_sprite",
@@ -5821,9 +5822,6 @@ window.DUNGEONS.AshenDepths = {
                 "rarity": "uncommon"
               }
             ]
-          },
-          "flags": {
-            "discovered": false
           }
         },
         "R278": {
@@ -6052,12 +6050,13 @@ window.DUNGEONS.AshenDepths = {
               {
                 "key": "shadow_dragon",
                 "drop": "",
-                "rarity": "rare"
+                "rarity": "epic"
               },
               {
                 "key": "shadow_dragon",
                 "drop": "staff_piece_6",
-                "rarity": "rare"
+                "rarity": "legendary",
+                "dropAlways": true
               },
               {
                 "key": "abyssal_hound",
@@ -6070,9 +6069,6 @@ window.DUNGEONS.AshenDepths = {
                 "rarity": "uncommon"
               }
             ]
-          },
-          "flags": {
-            "discovered": false
           }
         },
         "R289": {
@@ -6520,17 +6516,15 @@ window.DUNGEONS.AshenDepths = {
               {
                 "key": "shadow_dragon",
                 "drop": "staff_piece_5",
-                "rarity": "epic"
+                "rarity": "legendary",
+                "dropAlways": true
               },
               {
                 "key": "magma_elemental",
                 "drop": "health_potion",
-                "rarity": "uncommon"
+                "rarity": "rare"
               }
             ]
-          },
-          "flags": {
-            "discovered": false
           }
         },
         "R310": {
@@ -6573,12 +6567,13 @@ window.DUNGEONS.AshenDepths = {
               {
                 "key": "shadow_dragon",
                 "drop": "staff_piece_3",
-                "rarity": "epic"
+                "rarity": "legendary",
+                "dropAlways": true
               },
               {
                 "key": "doom_cultist",
                 "drop": "health_potion",
-                "rarity": "uncommon"
+                "rarity": "rare"
               }
             ]
           }
@@ -7280,7 +7275,8 @@ window.DUNGEONS.AshenDepths = {
               {
                 "key": "shadow_dragon",
                 "drop": "staff_piece_8",
-                "rarity": "rare"
+                "rarity": "legendary",
+                "dropAlways": true
               },
               {
                 "key": "revenant",
@@ -7293,9 +7289,6 @@ window.DUNGEONS.AshenDepths = {
                 "rarity": "uncommon"
               }
             ]
-          },
-          "flags": {
-            "discovered": false
           }
         },
         "R343": {
@@ -7314,12 +7307,14 @@ window.DUNGEONS.AshenDepths = {
               {
                 "key": "revenant",
                 "drop": "",
-                "rarity": "common"
+                "rarity": "legendary"
+              },
+              {
+                "key": "doom_cultist",
+                "drop": "",
+                "rarity": "epic"
               }
             ]
-          },
-          "flags": {
-            "discovered": false
           }
         },
         "R344": {
@@ -7438,7 +7433,13 @@ window.DUNGEONS.AshenDepths = {
               {
                 "key": "doom_knight",
                 "drop": "bone_key",
-                "rarity": "legendary"
+                "rarity": "mythic",
+                "dropAlways": true
+              },
+              {
+                "key": "runic_guardian",
+                "drop": "",
+                "rarity": "mythic"
               }
             ]
           }
