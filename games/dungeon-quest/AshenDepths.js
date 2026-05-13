@@ -3626,7 +3626,7 @@ window.DUNGEONS.AshenDepths = {
             "enemies": [
               {
                 "key": "black_knight",
-                "drop": "staff_piece_2",
+                "drop": "",
                 "rarity": "rare"
               },
               {
@@ -3635,9 +3635,6 @@ window.DUNGEONS.AshenDepths = {
                 "rarity": "uncommon"
               }
             ]
-          },
-          "flags": {
-            "discovered": false
           }
         },
         "R175": {
@@ -3779,12 +3776,9 @@ window.DUNGEONS.AshenDepths = {
               {
                 "key": "necromancer",
                 "drop": "",
-                "rarity": "uncommon"
+                "rarity": "epic"
               }
             ]
-          },
-          "flags": {
-            "discovered": false
           }
         },
         "R182": {
@@ -3819,17 +3813,14 @@ window.DUNGEONS.AshenDepths = {
               {
                 "key": "gargoyle",
                 "drop": "",
-                "rarity": "uncommon"
+                "rarity": "epic"
               },
               {
                 "key": "phantom_mage",
                 "drop": "health_potion",
-                "rarity": "common"
+                "rarity": "epic"
               }
             ]
-          },
-          "flags": {
-            "discovered": false
           }
         },
         "R184": {
@@ -3864,12 +3855,14 @@ window.DUNGEONS.AshenDepths = {
               {
                 "key": "demon_hound",
                 "drop": "",
-                "rarity": "common"
+                "rarity": "epic"
+              },
+              {
+                "key": "demon_hound",
+                "drop": "",
+                "rarity": "epic"
               }
             ]
-          },
-          "flags": {
-            "discovered": false
           }
         },
         "R186": {
@@ -3904,12 +3897,14 @@ window.DUNGEONS.AshenDepths = {
               {
                 "key": "chaos_knight",
                 "drop": "",
-                "rarity": "uncommon"
+                "rarity": "legendary"
+              },
+              {
+                "key": "demon_hound",
+                "drop": "",
+                "rarity": "epic"
               }
             ]
-          },
-          "flags": {
-            "discovered": false
           }
         },
         "R188": {
@@ -3923,9 +3918,13 @@ window.DUNGEONS.AshenDepths = {
             "n": "R187",
             "s": "R189"
           },
-          "contents": {},
-          "flags": {
-            "discovered": false
+          "contents": {
+            "doors": {
+              "s": {
+                "type": "obsidian",
+                "locked": true
+              }
+            }
           }
         },
         "R189": {
@@ -4685,18 +4684,17 @@ window.DUNGEONS.AshenDepths = {
             "enemies": [
               {
                 "key": "black_knight",
-                "drop": "staff_piece_3",
-                "rarity": "rare"
+                "drop": "staff_piece_2",
+                "rarity": "legendary",
+                "dropAlways": true
               },
               {
                 "key": "chaos_knight",
-                "drop": "health_potion",
-                "rarity": "uncommon"
+                "drop": "obsidian_key",
+                "rarity": "legendary",
+                "dropAlways": true
               }
             ]
-          },
-          "flags": {
-            "discovered": false
           }
         },
         "R226": {
@@ -6574,7 +6572,7 @@ window.DUNGEONS.AshenDepths = {
             "enemies": [
               {
                 "key": "shadow_dragon",
-                "drop": "staff_piece_5",
+                "drop": "staff_piece_3",
                 "rarity": "epic"
               },
               {
@@ -6583,9 +6581,6 @@ window.DUNGEONS.AshenDepths = {
                 "rarity": "uncommon"
               }
             ]
-          },
-          "flags": {
-            "discovered": false
           }
         },
         "R312": {
