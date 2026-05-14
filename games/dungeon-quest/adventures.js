@@ -6894,23 +6894,23 @@ const ADVENTURE_RARITY_CHANCES = {
 
 // Helper function to roll for random adventure
 function rollForAdventure(playerLevel) {
-    // Global adventure chance (30% = 0.30)
-    const GLOBAL_ADVENTURE_CHANCE = 0.10; // 10%
-    
-    const roll = Math.random();
-    
-    if (roll > GLOBAL_ADVENTURE_CHANCE) {
-        return null; // No adventure
-    }
-    
-    // Get all adventures the player qualifies for (any rarity)
+    // The zone's adventureChance already gates whether we get here.
+    // Just pick a random eligible adventure for this player's level.
     const eligibleAdventures = Object.values(ADVENTURES)
         .filter(adv => playerLevel >= (adv.minLevel || 1));
-    
+
     if (eligibleAdventures.length === 0) return null;
-    
-    // Pick a random adventure from all eligible ones
-    return eligibleAdventures[Math.floor(Math.random() * eligibleAdventures.length)];
+
+    // Weight selection by rarity so legendary adventures are still rare
+    // even when the zone gate has already fired
+    const rarityWeights = { legendary: 1, rare: 5, uncommon: 15, common: 30 };
+    const weighted = [];
+    eligibleAdventures.forEach(adv => {
+        const w = rarityWeights[adv.rarity] || 10;
+        for (let i = 0; i < w; i++) weighted.push(adv);
+    });
+
+    return weighted[Math.floor(Math.random() * weighted.length)];
 }
 
 // Export

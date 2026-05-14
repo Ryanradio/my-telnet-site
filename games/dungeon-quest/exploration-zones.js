@@ -23,8 +23,8 @@ const EXPLORATION_ZONES = {
                      'goblin_shaman', 'wild_lynx', 'plague_rat'],
         requiredLevel: 1,
         locked: false,
-        town: 'town1'
-       
+        town: 'town1',
+        adventureChance: 0.05
     },
 
     riverside: {
@@ -37,8 +37,8 @@ const EXPLORATION_ZONES = {
         requiredLevel: 4,
         locked: false,
         town: 'town1',
-        unlockMessage: 'Defeat your class master in the forest to unlock this area!'
-        
+        unlockMessage: 'Defeat your class master in the forest to unlock this area!',
+        adventureChance: 0.05
     },
 
     // ═══════════════════════════════════════════════════════════════
@@ -56,8 +56,8 @@ const EXPLORATION_ZONES = {
                      'death_cultist', 'flesh_golem', 'specter', 'vampire_thrall'],
         requiredLevel: 7,
         locked: false,
-        town: 'town2'
-        
+        town: 'town2',
+        adventureChance: 0.05
     },
 
     dark_swamp: {
@@ -70,8 +70,8 @@ const EXPLORATION_ZONES = {
         requiredLevel: 10,
         locked: true,
         town: 'town2',
-        unlockMessage: 'Defeat your class master in the haunted graveyard to unlock this area!'
-        
+        unlockMessage: 'Defeat your class master in the haunted graveyard to unlock this area!',
+        adventureChance: 0.05
     },
 
     cursed_ruins: {
@@ -84,8 +84,8 @@ const EXPLORATION_ZONES = {
         requiredLevel: 13,
         locked: true,
         town: 'town3',
-        unlockMessage: 'Defeat your class master in the swamp to unlock this area!'
-        
+        unlockMessage: 'Defeat your class master in the swamp to unlock this area!',
+        adventureChance: 0.05
     },
 
     cave: {
@@ -98,8 +98,8 @@ const EXPLORATION_ZONES = {
         requiredLevel: 16,
         locked: true,
         town: 'town3',
-        unlockMessage: 'Defeat your class master in the cursed ruins to unlock this area!'
-        
+        unlockMessage: 'Defeat your class master in the cursed ruins to unlock this area!',
+        adventureChance: 0.05
     },
 
     crypt: {
@@ -112,8 +112,8 @@ const EXPLORATION_ZONES = {
         requiredLevel: 19,
         locked: true,
         town: 'town3',
-        unlockMessage: 'Defeat your class master in the shadow cavern to unlock this area!'
-        
+        unlockMessage: 'Defeat your class master in the shadow cavern to unlock this area!',
+        adventureChance: 0.05
     },
 
     demon_portal: {
@@ -126,8 +126,8 @@ const EXPLORATION_ZONES = {
         requiredLevel: 22,
         locked: true,
         town: 'town3',
-        unlockMessage: 'Defeat your class master in the ancient crypt to unlock this area!'
-        
+        unlockMessage: 'Defeat your class master in the ancient crypt to unlock this area!',
+        adventureChance: 0.05
     },
 
     corrupted_temple: {
@@ -140,8 +140,8 @@ const EXPLORATION_ZONES = {
         requiredLevel: 25,
         locked: true,
         town: 'town3',
-        unlockMessage: 'Defeat your class master in the demon portal to unlock this area!'
-        
+        unlockMessage: 'Defeat your class master in the demon portal to unlock this area!',
+        adventureChance: 0.05
     },
 
     celestial_spire: {
@@ -153,8 +153,8 @@ const EXPLORATION_ZONES = {
         requiredLevel: 25,
         locked: true,
         town: 'town3',
-        unlockMessage: 'Defeat your class master in the corrupted temple to enter this endgame area!'
-        
+        unlockMessage: 'Defeat your class master in the corrupted temple to enter this endgame area!',
+        adventureChance: 0.05
     },
 
     // ═══════════════════════════════════════════════════════════════
@@ -185,8 +185,8 @@ const EXPLORATION_ZONES = {
         requiredLevel: 22,
         locked: true,
         town: 'town3',
-        unlockMessage: 'Defeat your class master in the Windswept Plains to unlock this area!'
-        
+        unlockMessage: 'Defeat your class master in the Windswept Plains to unlock this area!',
+        adventureChance: 0.05
     }
 };
 
