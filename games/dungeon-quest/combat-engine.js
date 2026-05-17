@@ -532,9 +532,63 @@ function updateDungeonEnemies() {
 
 
 
+// Track last room-change timestamp for trip mechanic
+let _lastMoveTime = 0;
+let _trippedUntil  = 0; // timestamp when trip ends
+
 function moveInDungeon(direction) {
-    // Check if player has full pips (required for movement)
+    // ── Trip mechanic — moving too fast risks tripping ────────────────────
+    const _now = Date.now();
+
+    // Still tripped — can't move yet
+    if (_now < _trippedUntil) {
+        const _remaining = Math.ceil((_trippedUntil - _now) / 1000);
+        termAppend(`🤕 You're still untangling yourself! (${_remaining}s)`, 'term-error');
+        return;
+    }
+
+    // Only check trip risk if in combat (chasing enemy) and moving fast
     const cs = gameState.combatState;
+    const _isChased = gameState.dungeon && gameState.dungeon.activeEnemies &&
+        gameState.dungeon.activeEnemies.some(e => e.isChasing);
+
+    if (_isChased && _lastMoveTime > 0) {
+        const _timeSinceLastMove = _now - _lastMoveTime;
+        // Under 1.5s between moves = "running recklessly"
+        if (_timeSinceLastMove < 1500) {
+            // Trip chance scales with how fast — instant tap = 40%, 1s gap = ~10%
+            const _tripChance = Math.max(0, 0.40 * (1 - _timeSinceLastMove / 1500));
+            if (Math.random() < _tripChance) {
+                const _tripDuration = 10000; // 10 seconds
+                _trippedUntil = _now + _tripDuration;
+                _lastMoveTime = _now;
+                termAppend(
+                    `👟 You trip over your own feet trying to flee! ` +
+                    `<span style="color:#ff8c00;">Stunned for 10 seconds!</span>`,
+                    'term-error'
+                );
+                // Show countdown then auto-clear
+                let _countdownSecs = 10;
+                const _tripTimer = setInterval(() => {
+                    _countdownSecs--;
+                    if (_countdownSecs <= 0 || Date.now() >= _trippedUntil) {
+                        clearInterval(_tripTimer);
+                        termAppend(`🧍 You scramble back to your feet!`, 'term-dim');
+                        renderDungeonActionBar();
+                        return;
+                    }
+                    if (_countdownSecs <= 3) {
+                        termAppend(`⏱️ Getting up in ${_countdownSecs}...`, 'term-dim');
+                    }
+                }, 1000);
+                renderDungeonActionBar();
+                return; // trip blocks the move
+            }
+        }
+    }
+    _lastMoveTime = _now;
+
+    // ── Check if player has full pips (required for movement) ────────────
     if (cs && cs.pipAvailable) {
         const hasFullPips = cs.pipAvailable.every(x => x);
         if (!hasFullPips) {
@@ -666,19 +720,28 @@ function moveInDungeon(direction) {
             if (triggerType === 'enter_room') {
                 shouldTeleport = true;
             } else if (triggerType === 'staff_pieces') {
-                // Count staff pieces (supports both string AND object storage)
-                const staffCount = (gameState.player.inventory || []).filter(i => {
-                    if (!i) return false;
-                    if (typeof i === 'string') return i.startsWith('staff_piece_');
-                    if (typeof i === 'object') return i.subtype === 'staff_piece';
-                    return false;
-                }).length;
-                
-                if (staffCount >= 8) {
+                // Collect UNIQUE piece IDs — duplicates don't count
+                const staffUniqueIds = new Set(
+                    (gameState.player.inventory || []).map(i => {
+                        if (!i) return null;
+                        if (typeof i === 'string' && i.startsWith('staff_piece_')) return i;
+                        if (typeof i === 'object' && i.subtype === 'staff_piece')
+                            return 'staff_piece_' + i.staffPieceNumber;
+                        return null;
+                    }).filter(Boolean)
+                );
+                const requiredPieces = [
+                    'staff_piece_1','staff_piece_2','staff_piece_3','staff_piece_4',
+                    'staff_piece_5','staff_piece_6','staff_piece_7','staff_piece_8'
+                ];
+                const missingPieces = requiredPieces.filter(p => !staffUniqueIds.has(p));
+                const uniqueCount   = staffUniqueIds.size;
+
+                if (missingPieces.length === 0) {
                     shouldTeleport = true;
                     termAppend(`🪄 The staff pieces resonate with the ancient gate!`, 'term-highlight');
-                    
-                    // Remove ALL staff pieces (both string and object versions)
+
+                    // Remove ALL staff pieces (including duplicates) from inventory
                     gameState.player.inventory = gameState.player.inventory.filter(i => {
                         if (!i) return true;
                         if (typeof i === 'string') return !i.startsWith('staff_piece_');
@@ -687,7 +750,7 @@ function moveInDungeon(direction) {
                     });
                     termAppend(`🪄 The staff pieces dissolve into the gate, consumed by the teleportation!`, 'term-warning');
                 } else {
-                    termAppend(`🪄 The gate requires all 8 staff pieces to activate. (${staffCount}/8 collected)`, 'term-dim');
+                    termAppend(`🪄 The gate requires all 8 unique staff pieces. (${uniqueCount}/8 — missing: ${missingPieces.map(p => p.replace('staff_piece_','#')).join(', ')})`, 'term-dim');
                 }
             }
             
@@ -1260,15 +1323,8 @@ function startDungeonCombat(dungeonEnemies) {
     dungeonEnemies.forEach(enemy => {
         enemy.isChasing = true;
         enemy.roomsFollowed = 0;
-    });
-
-// Restore saved HP for each monster (matched by index)
-        dungeonEnemies.forEach(enemy => {
-        enemy.isChasing = true;
-        enemy.roomsFollowed = 0;
         console.log(`👹 ${enemy.name} is now chasing you!`);
     });
-
 
     // Restore saved HP for each monster (matched by index)
     dungeonEnemies.forEach((de, idx) => {
