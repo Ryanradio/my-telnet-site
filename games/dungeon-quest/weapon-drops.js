@@ -11,7 +11,7 @@
 // DROP CHANCE CONFIGURATION
 // ═══════════════════════════════════════════════════════════════
 const WEAPON_DROP_CONFIG = {
-    baseDropChance: 0.04, // 4% base chance for weapon drop
+    baseDropChance: 0.05, // 5% base chance for weapon drop (bumped for cross-class drops)
     
     // Chance increases with monster rarity
     rarityMultipliers: {
@@ -304,7 +304,7 @@ if (skipRoll) {
         if (weapon.level && (weapon.level < weaponLevel - 2 || weapon.level > weaponLevel + 2)) continue;
         
         // Class restriction check
-        if (weapon.allowedClasses && !weapon.allowedClasses.includes(playerClass)) continue;
+        // Class filter removed — all weapons can drop for any class (sell via AH)
         
         candidates.push({
             id: weaponId,
@@ -423,7 +423,7 @@ function generateWeaponDrop(player, enemyLevel, enemyRarity = 'common', skipRoll
         // Calculate drop chance (skip if forced)
         if (!skipRoll) {
             // Base drop chance: 3%
-            let dropChance = 3.0;
+            let dropChance = 3.75; // bumped 25% for cross-class AH economy
             
             // Luck bonus: 0.25% per luck point (matches armor)
             const playerLck = player.lck || 0;
@@ -465,7 +465,7 @@ function generateWeaponDrop(player, enemyLevel, enemyRarity = 'common', skipRoll
             if (weapon.level && (weapon.level < targetMinLevel || weapon.level > targetMaxLevel)) continue;
             
             // Class restriction check
-            if (weapon.allowedClasses && !weapon.allowedClasses.includes(playerClass)) continue;
+            // Class filter removed — all weapons can drop for any class (sell via AH)
             
             candidates.push({
                 id: weaponId,
@@ -531,6 +531,7 @@ const modifiers = typeof generateModifiers === 'function' ? generateModifiers(qu
             baseDamage: baseWeapon.baseDamage + baseDamageBonus,
             maxDamage: (baseWeapon.maxDamage || baseWeapon.baseDamage) + maxDamageBonus,
             baseMagicDamage: baseWeapon.baseMagicDamage ? baseWeapon.baseMagicDamage + magicDamageBonus : 0,
+            spellPen: baseWeapon.spellPen || 0,
             healingBonus: baseWeapon.healingBonus ? baseWeapon.healingBonus + healingBonus : 0,
             level: baseWeapon.level,  // Use the weapon's actual level from weapons.js
             originalLevel: baseWeapon.level,
@@ -791,7 +792,7 @@ console.log('✅ Weapon drop system loaded with generateWeaponDrop function');
 // ═══════════════════════════════════════════════════════════════
 
 const ARMOR_DROP_CONFIG = {
-    baseDropChance: 0.04,
+    baseDropChance: 0.05, // 5% base chance for armor drop (bumped for cross-class drops)
     rarityMultipliers: {
         common: 1.0,
         uncommon: 1.5,
@@ -873,7 +874,7 @@ function rollQualityForDrop(sourceLevel, enemyRarity) {
 function generateArmorDrop(player, sourceLevel, enemyRarity, skipRoll = false, forcedQuality = null, addToInventory = true) {
         if (!skipRoll) {
         const dropRoll = Math.random() * 100;
-        let dropChance = 3.0; // 3% base drop chance
+        let dropChance = 3.75; // 3.75% base drop chance (bumped for cross-class AH economy)
         
         // Luck bonus: 0.20% per luck point (20 luck = 4% bonus)
         const playerLck = player.lck || 0;
@@ -903,36 +904,27 @@ function generateArmorDrop(player, sourceLevel, enemyRarity, skipRoll = false, f
     
       
 
-    // Get player class for armor type selection
-    const playerClass = player.baseClass || player.class;
-    
-    // Determine which armor type to drop
-    const armorType = selectArmorTypeForClass(playerClass);
-    
-    // Find all armors of this type that are level-appropriate
+    // Class filter removed — pick from ALL armor types so any class item can drop
+    // Players can sell off-class drops in the Auction House
+
+    // Find all level-appropriate armors regardless of type
     let candidateArmors = Object.keys(ARMOR).filter(key => {
         const armor = ARMOR[key];
-        // Must be the right type, not unarmored, not an instance
-        if (armor.armorSubtype !== armorType && armor.type !== armorType) return false;
         if (armor.unarmored) return false;
-        if (armor.instanceId) return false; // Skip existing instances
-        
-        // Level range: -2 to +2 of source level
+        if (armor.instanceId) return false;
         const armorLevel = armor.level || 1;
         return armorLevel >= sourceLevel - 2 && armorLevel <= sourceLevel + 2;
     });
-    
+
     if (candidateArmors.length === 0) {
-    // Fallback - still respect armor type!
-    candidateArmors = Object.keys(ARMOR).filter(key => {
-        const armor = ARMOR[key];
-        if (armor.unarmored || armor.instanceId) return false;
-        // Still check armor type - don't give cloth to rogues
-        if (armor.armorSubtype !== armorType && armor.type !== armorType) return false;
-        const armorLevel = armor.level || 1;
-        return armorLevel >= sourceLevel - 2 && armorLevel <= sourceLevel + 2;
-    });
-}
+        // Fallback — widen level range to ±4
+        candidateArmors = Object.keys(ARMOR).filter(key => {
+            const armor = ARMOR[key];
+            if (armor.unarmored || armor.instanceId) return false;
+            const armorLevel = armor.level || 1;
+            return armorLevel >= sourceLevel - 4 && armorLevel <= sourceLevel + 4;
+        });
+    }
     
     if (candidateArmors.length === 0) return null;
     

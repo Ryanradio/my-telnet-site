@@ -25,7 +25,7 @@ const AH_LISTING_FEES = {
 };
 
 const AH_SALE_FEE_PCT  = 10;   // % house takes on sale
-const AH_MAX_LISTINGS  = 5;    // max active listings per player
+const AH_MAX_LISTINGS  = 99;    // max active listings per player
 const AH_CACHE_TTL_MS  = 30000; // 30s browse cache
 
 // ── Internal state ────────────────────────────────────────────────────────
@@ -852,6 +852,7 @@ function _ahShowItemModal(itemObj) {
       modHtml += '</div>';
     }
 
+    // ─── THIS IS THE MISSING GEM SECTION ───
     let gemHtml = '';
     const gems = merged.gems || [];
     if (gems.length > 0) {
@@ -863,8 +864,6 @@ function _ahShowItemModal(itemObj) {
       });
       gemHtml += '</div>';
     }
-    // Note: we don't call buildGemSlotHtml for empty slots —
-    // armor has no gem slots yet, so don't show empty socket UI
 
     let classHtml = '';
     const classReq = merged.classRestriction || merged.allowedClasses;
