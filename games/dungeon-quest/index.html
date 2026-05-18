@@ -6424,6 +6424,10 @@ async function saveToCloud() {
                 armor: p.armor,
                 activePet: p.activePet || null,
                 inventory: [...(p.inventory || [])],
+                socketColors: p.socketColors,  // Note: this is on the item, not player
+                bound: p.bound,
+                boundToCharacterId: p.boundToCharacterId,
+                gemSlots: p.gemSlots,
                 knownSpells: [...(p.knownSpells || [])],
                 statPoints: p.statPoints || 0,
                 defeatedMasters: [...(p.defeatedMasters || [])],
@@ -9142,6 +9146,119 @@ ${showSpecial ? `<button onclick="handleAttackType('special')">⭐ Special</butt
 function showDungeonInventory() { showInventoryOverlay(); }
 
 
+// ═══════════════════════════════════════════════════════════════
+// ITEM BINDING SYSTEM
+// ═══════════════════════════════════════════════════════════════
+
+function showBindWarning(item, itemType, itemKey, onEquip) {
+    const existing = document.getElementById('bindWarningModal');
+    if (existing) existing.remove();
+    
+    const modal = document.createElement('div');
+    modal.id = 'bindWarningModal';
+    modal.style.cssText = `
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.95);
+        z-index: 100000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'VT323', monospace;
+    `;
+    
+    const itemName = item.name || 'This item';
+    const icon = itemType === 'weapon' ? '⚔️' : '🛡️';
+    
+    modal.innerHTML = `
+        <div style="
+            background: #0a0a0a;
+            border: 3px solid #ff8800;
+            border-radius: 12px;
+            max-width: 420px;
+            width: 90%;
+            padding: 24px;
+        ">
+            <div style="color: #ff8800; font-size: 26px; text-align: center; margin-bottom: 16px;">
+                ⚠️ BIND THIS ITEM? ⚠️
+            </div>
+            <div style="text-align: center; font-size: 22px; margin-bottom: 12px;">
+                ${icon} ${itemName}
+            </div>
+            <div style="color: #aaa; font-size: 15px; text-align: center; margin-bottom: 16px;">
+                Once equipped, this item becomes <span style="color: #ffaa66;">BOUND</span> to you.
+            </div>
+            <div style="color: #888; font-size: 13px; text-align: center; margin-bottom: 24px;">
+                ✦ Bound items cannot be sold at the Auction House ✦<br>
+                ✦ They can still be sold to vendors ✦
+            </div>
+            <div style="display: flex; gap: 16px; justify-content: center;">
+                <button id="bindConfirmBtn" style="
+                    background: #1a0a0a;
+                    border: 2px solid #ff8800;
+                    color: #ffaa66;
+                    font-family: 'VT323', monospace;
+                    font-size: 18px;
+                    padding: 8px 24px;
+                    cursor: pointer;
+                ">✓ YES, BIND IT</button>
+                <button id="bindCancelBtn" style="
+                    background: #0a1a0a;
+                    border: 2px solid #44ff44;
+                    color: #88ff88;
+                    font-family: 'VT323', monospace;
+                    font-size: 18px;
+                    padding: 8px 24px;
+                    cursor: pointer;
+                ">✗ NO, KEEP UNBOUND</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    document.getElementById('bindConfirmBtn').onclick = () => {
+        modal.remove();
+        bindItem(item, itemType, itemKey);
+        if (onEquip) onEquip();
+    };
+    
+    document.getElementById('bindCancelBtn').onclick = () => {
+    modal.remove();
+    // Do NOT call onEquip
+};
+}
+
+function bindItem(item, itemType, itemKey) {
+    const p = gameState.player;
+    const charId = p.characterId || p.id;
+    let targetItem;
+    
+    if (itemType === 'weapon') {
+        targetItem = WEAPONS[itemKey];
+    } else {
+        targetItem = ARMOR[itemKey];
+    }
+    
+    if (targetItem && !targetItem.bound) {
+        targetItem.bound = true;
+        targetItem.boundToCharacterId = charId;
+        
+        const invItem = p.inventory.find(i => i && (i.instanceId === itemKey));
+        if (invItem && typeof invItem === 'object') {
+            invItem.bound = true;
+            invItem.boundToCharacterId = charId;
+        }
+        
+        saveGame();
+        
+        if (typeof termAppend === 'function') {
+            termAppend(`<span style="color:#ffaa66;">🔒 ${targetItem.name} is now BOUND to you!</span>`, 'term-warning');
+        }
+    }
+}
+
+
 // ── Unified full-screen inventory overlay (dungeon + exploration, combat + not) ──
 function showInventoryOverlay() {
     const p  = gameState.player;
@@ -9479,7 +9596,8 @@ if (modifiers && modifiers.length > 0) {
                 ${buildGemSlotHtml({
                     ...weapon,
                     quality: displayQuality,
-                    gems: WEAPONS[p.weapon]?.gems || []
+                    gems: WEAPONS[p.weapon]?.gems || [],
+                    socketColors: WEAPONS[p.weapon]?.socketColors || weapon.socketColors
                 })}
                 <div style="color:var(--highlight-color);font-size:12px;">★ EQUIPPED</div>
             </div>`;
@@ -9495,7 +9613,8 @@ if (modifiers && modifiers.length > 0) {
                 ${buildGemSlotHtml({
                     ...weapon,
                     quality: displayQuality,
-                    gems: instanceData?.gems || []
+                    gems: instanceData?.gems || [],
+                    socketColors: WEAPONS[p.weapon]?.socketColors || weapon.socketColors
                 })}
                 <div style="color:${canEquip ? '#FFD700' : '#555'};font-size:12px;">${canEquip ? '▶ EQUIP' : 'CANNOT EQUIP'}</div>
             </button>`;

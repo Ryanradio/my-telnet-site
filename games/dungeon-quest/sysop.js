@@ -282,7 +282,7 @@ function buildSaveSnapshot() {
     }
 
     const p = gameState.player;
-
+/*
     // Ensure p.armor is correctly set before saving
 if ((!p.armor || p.armor === 'no_armor') && p.inventory) {
     const armorInInv = p.inventory.find(item =>
@@ -293,7 +293,7 @@ if ((!p.armor || p.armor === 'no_armor') && p.inventory) {
         p.armor = armorInInv.instanceId;
         console.log(`🔧 Fixed p.armor before save: ${p.armor}`);
     }
-}
+} */
     
     const snapshot = {
         version: 1,
@@ -597,6 +597,9 @@ generatedArmor: (() => {
             originalLevel: armorObj.originalLevel,
             gems: armorObj.gems ? [...armorObj.gems] : [],
             gemSlots: armorObj.gemSlots || 0,
+            socketColors: armorObj.socketColors ? [...armorObj.socketColors] : [],
+            bound: armorObj.bound || false,
+            boundToCharacterId: armorObj.boundToCharacterId || null,
             modifiers: armorObj.modifiers || [],
             cost: armorObj.cost,
             description: armorObj.description,

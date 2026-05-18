@@ -5532,7 +5532,7 @@ function checkCombatEnd() {
             );
             
             if (armorDrop) {
-                gameState.player.inventory.push(armorDrop);
+             //   gameState.player.inventory.push(armorDrop);  Possibly duplicate armor drops
                 const qColor = QUALITY_CONFIG[armorDrop.quality]?.color || '#00FF00';
                 termAppend('', 'term-separator');
                 termAppend(`🛡️ <span style="color:${qColor};font-size:18px;font-weight:bold;">ARMOR DROP!</span>`, 'term-victory');
@@ -5801,9 +5801,9 @@ if (cs.isBountyFight) {
     // Check if this is a weapon (exists in WEAPONS and not unarmed)
     if (WEAPONS[dropKey] && !WEAPONS[dropKey].unarmed) {
         // Generate a proper weapon object
-        const weaponDrop = generateWeaponDrop(gameState.player, defeatedDungeonEnemy.level || gameState.player.level, 'common', true, null, true);
-        if (weaponDrop && typeof weaponDrop === 'object') {
-            gameState.player.inventory.push(weaponDrop);
+        const weaponDrop = generateWeaponDrop(gameState.player, defeatedDungeonEnemy.level || gameState.player.level, 'common', true, null, false);
+if (weaponDrop && typeof weaponDrop === 'object') {
+    gameState.player.inventory.push(weaponDrop);
             termAppend(`⚔️ <span style="color:#FFD700;">${weaponDrop.name}</span> found on the body!`, 'term-loot');
         }
     }

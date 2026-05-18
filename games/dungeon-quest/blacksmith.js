@@ -70,6 +70,65 @@ function showCrossroadsForge() {
 }
 
 
+function updateGemList(socketTarget) {
+    const p = gameState.player;
+    const activeItem = socketTarget === 'armor' ? ARMOR[p.armor] : WEAPONS[p.weapon];
+    const activeSlots = activeItem?.socketColors?.length || getGemSlots(activeItem?.quality || 'normal');
+    
+    let filledCount = 0;
+    if (activeItem?.gems) {
+        for (let i = 0; i < activeSlots; i++) {
+            if (activeItem.gems[i] && activeItem.gems[i].cut) filledCount++;
+        }
+    }
+    const openSlots = activeSlots - filledCount;
+    
+    const cutGems = (p.inventory || []).filter(k => typeof k === 'object' && k && k.cut === true);
+    
+    const tierFilter = document.getElementById('gemTierFilter')?.value || 'all';
+    const typeFilter = document.getElementById('gemTypeFilter')?.value || 'all';
+    
+    let filteredGems = [...cutGems];
+    if (tierFilter !== 'all') {
+        const tierNum = parseInt(tierFilter.replace('t', ''));
+        filteredGems = filteredGems.filter(g => g.tier === tierNum);
+    }
+    if (typeFilter !== 'all') {
+        filteredGems = filteredGems.filter(g => g.type === typeFilter);
+    }
+    
+    let gemListHtml = '';
+    if (openSlots <= 0) {
+        gemListHtml = `<div style="color:#888;text-align:center;padding:15px;">No open slots on this item.</div>`;
+    } else if (filteredGems.length === 0) {
+        gemListHtml = `<div style="color:#888;text-align:center;padding:15px;">No gems match your filters.</div>`;
+    } else {
+        filteredGems.forEach((g) => {
+            const originalIdx = cutGems.findIndex(cg => cg.id === g.id);
+            const canAfford = p.gold >= 100;
+            gemListHtml += `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;margin:4px 0;border:1px solid ${g.color};background:rgba(0,0,0,0.3);">
+                <div style="flex:1;">
+                    <span style="color:${g.color};">⬤ ${g.emoji} ${g.name}</span>
+                    <div style="color:#888;font-size:11px;margin-top:2px;">${g.description}</div>
+                </div>
+                <button onclick="event.stopPropagation(); this.disabled=true; doSocketGem(${originalIdx},'${socketTarget}')" ${canAfford?'':'disabled title="Need 100g"'}
+                    style="border-color:#c8a000;color:#c8a000;font-size:12px;padding:6px 12px;min-width:80px;border-radius:4px;">SOCKET (100g)</button>
+            </div>`;
+        });
+    }
+    
+    const gemContainer = document.getElementById('blacksmithGemContainer');
+    if (gemContainer) {
+        gemContainer.innerHTML = gemListHtml;
+    }
+    
+    const countSpan = document.getElementById('gemCountDisplay');
+    if (countSpan) {
+        countSpan.textContent = `${filteredGems.length} / ${cutGems.length} gems`;
+    }
+}
+
+
 
 // ═══════════════════════════════════════════════════════════════
 // BLACKSMITH — Cut gems (200g) and Socket gems (100g)
@@ -216,6 +275,13 @@ const anvil = `<div style="
         let weaponDisplayQuality = 'normal';
         let weaponName = '';
         let weaponQualityColor = '#0f0';
+
+    // Filter state for gem list
+    if (typeof window._blacksmithGemTierFilter === 'undefined') {
+        window._blacksmithGemTierFilter = 'all';
+        window._blacksmithGemTypeFilter = 'all';
+    }
+
         
         if (p.weapon && p.weapon !== 'bare_fists') {
             weaponInstance = p.inventory.find(item => 
@@ -275,17 +341,36 @@ const anvil = `<div style="
             if (slots === 0) {
                 slotsHtml = `<span style="color:#555;font-size:11px;">No gem slots (need rare+ quality drop)</span>`;
             } else {
-                for (let i = 0; i < slots; i++) {
-                    const gem = (weaponData.gems || [])[i];
-                    if (gem) {
-                        slotsHtml += `<div style="margin:4px 0; padding:2px 0; border-bottom:1px solid #222;">
-                            <span style="color:${gem.color};">⬤ ${gem.emoji} ${gem.name}</span><br>
-                            <span style="color:#888;font-size:11px; margin-left:15px;">${gem.description}</span>
+                            for (let i = 0; i < slots; i++) {
+                const gem = (weaponData.gems || [])[i];
+                const socketColor = weaponData.socketColors ? weaponData.socketColors[i] : null;
+                
+                if (gem) {
+                    slotsHtml += `<div style="margin:4px 0; padding:2px 0; border-bottom:1px solid #222;">
+                        <span style="color:${gem.color};">⬤ ${gem.emoji} ${gem.name}</span><br>
+                        <span style="color:#888;font-size:11px; margin-left:15px;">${gem.description}</span>
+                    </div>`;
+                } else {
+                    // Show colored bracket for empty socket
+                    if (socketColor) {
+                        const colorMap = {
+                            red: '#ff4444', blue: '#4488ff', yellow: '#ffdd44',
+                            green: '#44ff44', purple: '#cc44ff', black: '#888888', white: '#ffffff'
+                        };
+                        const iconMap = {
+                            red: '🔴', blue: '🔵', yellow: '🟡',
+                            green: '🟢', purple: '🟣', black: '⚫', white: '⚪'
+                        };
+                        const bracketColor = colorMap[socketColor] || '#666';
+                        const icon = iconMap[socketColor] || '◻️';
+                        slotsHtml += `<div style="margin:4px 0; padding:2px 0;">
+                            <span style="color:${bracketColor};">[${icon}] EMPTY ${socketColor.toUpperCase()} SOCKET</span>
                         </div>`;
                     } else {
                         slotsHtml += `<div style="margin:4px 0; color:#666; padding:2px 0;">⬤ EMPTY SLOT ${i+1}</div>`;
                     }
                 }
+            }
             }
             return `<div style="padding:10px 16px;border:2px solid ${active ? weaponQualityColor : '#333'};margin:6px 0;cursor:pointer;background:#0a0a0a;"
                         onclick="showBlacksmith('socket','weapon')">
@@ -303,12 +388,23 @@ const anvil = `<div style="
         }
 
 function armorSocketCard() {
+    const active = socketTarget === 'armor';
+    const aqc = QUALITY_CONFIG[armorDisplayQuality];
+    const qualityColor = aqc?.color || '#0f0';
+
     if (!armorData) {
         return `<div style="color:#555;font-size:13px;padding:8px;border:1px solid #333;background:#0a0a0a;">
             No armor equipped.
         </div>`;
     }
-    const slots = getGemSlots(armorDisplayQuality);
+        // Use socketColors if available
+    let slots = 0;
+    let socketColors = armorData.socketColors;
+    if (socketColors && socketColors.length > 0) {
+        slots = socketColors.length;
+    } else {
+        slots = getGemSlots(armorDisplayQuality);
+    }
     const usedSlots = (armorData.gems || []).length;
     let slotsHtml = '';
     if (slots === 0) {
@@ -322,18 +418,37 @@ function armorSocketCard() {
                     <span style="color:#888;font-size:11px; margin-left:15px;">${gem.description}</span>
                 </div>`;
             } else {
-                slotsHtml += `<div style="margin:4px 0; color:#333; padding:2px 0;">⬤ EMPTY SLOT ${i+1}</div>`;
+                // Show colored bracket for empty socket
+                const socketColor = socketColors ? socketColors[i] : null;
+                if (socketColor) {
+                    const colorMap = {
+                        red: '#ff4444', blue: '#4488ff', yellow: '#ffdd44',
+                        green: '#44ff44', purple: '#cc44ff', black: '#888888', white: '#ffffff'
+                    };
+                    const iconMap = {
+                        red: '🔴', blue: '🔵', yellow: '🟡',
+                        green: '🟢', purple: '🟣', black: '⚫', white: '⚪'
+                    };
+                    const bracketColor = colorMap[socketColor] || '#666';
+                    const icon = iconMap[socketColor] || '◻️';
+                    slotsHtml += `<div style="margin:4px 0; padding:2px 0;">
+                        <span style="color:${bracketColor};">[${icon}] EMPTY ${socketColor.toUpperCase()} SOCKET</span>
+                    </div>`;
+                } else {
+                    slotsHtml += `<div style="margin:4px 0; color:#333; padding:2px 0;">⬤ EMPTY SLOT ${i+1}</div>`;
+                }
             }
         }
     }
-    return `<div style="padding:10px 16px;border:2px solid #1a1a1a;margin:6px 0;background:#0a0a0a;opacity:0.55;">
+            return `<div style="padding:10px 16px;border:2px solid ${active ? qualityColor : '#1a1a1a'};margin:6px 0;cursor:pointer;background:#0a0a0a;"
+                onclick="showBlacksmith('socket','armor')">
         <div style="display:flex; justify-content:space-between; align-items:center;">
             <div>
-                <span style="color:#444; font-size:15px; font-weight:bold;">🛡️</span>
-                <span style="color:#444;"> ${armorName}</span>
+                                                <span style="color:${qualityColor}; font-size:15px; font-weight:bold;">🛡️</span>
+                <span style="color:${qualityColor};"> ${armorName}</span>
                 <span style="color:#333; font-size:11px; margin-left:8px;">[${armorDisplayQuality}]</span>
             </div>
-            <span style="color:#333;font-size:10px;font-family:'Courier New',monospace;">COMING SOON</span>
+                        ${active ? '<span style="color:#c8a000; font-size:12px;">▼ SELECTED</span>' : ''}
         </div>
         <div style="font-size:12px; color:#333; margin-top:6px;">Slots: ${usedSlots}/${slots} used</div>
         <div style="margin-top:8px; font-size:12px;">${slotsHtml}</div>
@@ -342,10 +457,25 @@ function armorSocketCard() {
 
         const activeItem = socketTarget === 'armor' ? armorData : weaponData;
         const activeQuality = socketTarget === 'armor' ? armorDisplayQuality : weaponDisplayQuality;
-        const activeSlots = activeItem ? getGemSlots(activeQuality) : 0;
-        const activeGems = activeItem ? (activeItem.gems || []) : [];
-        const activeUsed = activeGems.length;
-        const openSlots = activeSlots - activeUsed;
+
+// Use socketColors if available, otherwise fallback to getGemSlots
+let activeSlots = 0;
+if (activeItem && activeItem.socketColors && activeItem.socketColors.length > 0) {
+    activeSlots = activeItem.socketColors.length;
+} else {
+    activeSlots = activeItem ? getGemSlots(activeQuality) : 0;
+}
+
+// Count ACTUAL filled slots (check each position, not length)
+let activeUsed = 0;
+if (activeItem && activeItem.gems) {
+    for (let i = 0; i < activeSlots; i++) {
+        if (activeItem.gems[i] && activeItem.gems[i].cut) {
+            activeUsed++;
+        }
+    }
+}
+const openSlots = activeSlots - activeUsed;
 
         if (cutGems.length === 0) {
             setScreen(`<div class="location-header">⚒️ SOCKET GEM</div>${anvil}
@@ -357,15 +487,74 @@ function armorSocketCard() {
             return;
         }
 
+
+                // Get unique gem types for dropdown
+        const gemTypes = ['all', ...new Set(cutGems.map(g => g.type).filter(Boolean))];
+        const typeOptions = gemTypes.map(t => 
+            `<option value="${t}" ${window._blacksmithGemTypeFilter === t ? 'selected' : ''}>${t === 'all' ? 'All Types' : t.charAt(0).toUpperCase() + t.slice(1)}</option>`
+        ).join('');
+        
+        const filterBar = `
+            <div style="display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; align-items: center; background: #0a0a0a; padding: 8px; border-radius: 4px;">
+                <span style="color: #aaa; font-size: 12px;">🔍 Filter:</span>
+                <select id="gemTierFilter" onchange="updateGemList('${socketTarget}');" style="background: #1a1a1a; border: 1px solid #c8a000; color: #c8a000; padding: 4px 8px; font-family: 'VT323', monospace;">
+                    <option value="all" ${window._blacksmithGemTierFilter === 'all' ? 'selected' : ''}>All Tiers</option>
+                    <option value="t1" ${window._blacksmithGemTierFilter === 't1' ? 'selected' : ''}>Tier 1</option>
+                    <option value="t2" ${window._blacksmithGemTierFilter === 't2' ? 'selected' : ''}>Tier 2</option>
+                    <option value="t3" ${window._blacksmithGemTierFilter === 't3' ? 'selected' : ''}>Tier 3</option>
+                    <option value="t4" ${window._blacksmithGemTierFilter === 't4' ? 'selected' : ''}>Tier 4</option>
+                </select>
+                <select id="gemTypeFilter" onchange="updateGemList('${socketTarget}');" style="background: #1a1a1a; border: 1px solid #c8a000; color: #c8a000; padding: 4px 8px; font-family: 'VT323', monospace;">
+                    ${typeOptions}
+                </select>
+            </div>
+        `;
+
+
+                // Filter gems by tier and type
+        let filteredGems = [...cutGems];
+        
+        // Tier filter
+        if (window._blacksmithGemTierFilter !== 'all') {
+            const tierNum = parseInt(window._blacksmithGemTierFilter.replace('t', ''));
+            filteredGems = filteredGems.filter(g => g.tier === tierNum);
+        }
+        
+        // Type filter
+        if (window._blacksmithGemTypeFilter !== 'all') {
+            filteredGems = filteredGems.filter(g => g.type === window._blacksmithGemTypeFilter);
+        }
+        
+        const gemCountText = `<span id="gemCountDisplay" style="color: #555; font-size: 11px; margin-left: 8px;">${filteredGems.length} / ${cutGems.length} gems</span>`;
+        
+        // Append count to filter bar (add after the selects)
+        const filterBarWithCount = filterBar.replace('</div>', `${gemCountText}</div>`);
+
+
+       
+        
+        // Tier filter
+        if (window._blacksmithGemTierFilter !== 'all') {
+            const tierNum = parseInt(window._blacksmithGemTierFilter.replace('t', ''));
+            filteredGems = filteredGems.filter(g => g.tier === tierNum);
+        }
+        
+        // Type filter
+        if (window._blacksmithGemTypeFilter !== 'all') {
+            filteredGems = filteredGems.filter(g => g.type === window._blacksmithGemTypeFilter);
+        }
+        
         const gemButtons = (activeItem && openSlots > 0)
-            ? cutGems.map((g, idx) => {
+            ? filteredGems.map((g, idx) => {
+                // Find original index for the gem (to pass to doSocketGem)
+                const originalIdx = cutGems.findIndex(cg => cg.id === g.id);
                 const canAfford = p.gold >= 100;
                 return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;margin:4px 0;border:1px solid ${g.color};background:rgba(0,0,0,0.3);">
                     <div style="flex:1;">
                         <span style="color:${g.color};">⬤ ${g.emoji} ${g.name}</span>
                         <div style="color:#888;font-size:11px;margin-top:2px;">${g.description}</div>
                     </div>
-                    <button onclick="event.stopPropagation(); this.disabled=true; doSocketGem(${idx},'${socketTarget}')" ${canAfford?'':'disabled title="Need 100g"'}
+                    <button onclick="event.stopPropagation(); this.disabled=true; doSocketGem(${originalIdx},'${socketTarget}')" ${canAfford?'':'disabled title="Need 100g"'}
                         style="border-color:#c8a000;color:#c8a000;font-size:12px;padding:6px 12px;min-width:80px;border-radius:4px;">SOCKET (100g)</button>
                 </div>`;
             }).join('')
@@ -376,16 +565,30 @@ function armorSocketCard() {
                         : '⚠️ No open slots — gems are permanent once socketed.')
                     : '👆 Select a weapon or armor above to socket gems.'
               }</div>`;
+        
+        // Show "no matches" message if filters don't match any gems
+        const gemListHtml = (activeItem && openSlots > 0 && filteredGems.length === 0 && cutGems.length > 0)
+            ? `<div style="color:#888;text-align:center;padding:15px;background:#0a0a0a;border:1px solid #333;">No gems match your filters.</div>`
+            : gemButtons;
 
-        setScreen(`
+                setScreen(`
             <div class="location-header">⚒️ SOCKET GEM — ${p.gold}g</div>
             ${anvil}
             <div style="color:#aaa;font-size:12px;margin:4px 0 2px;">Click on an item to select it for socketing:</div>
             ${weaponSocketCard()}
-
-            <div style="margin-top:15px;color:#aaa;font-size:12px;text-align:center;">⚠️ Socketed gems are permanent and cannot be removed.</div>
-            <div style="margin:10px 0; max-height:300px; overflow-y:auto;">${gemButtons}</div>
-            <button onclick="showBlacksmith('main', null, '${returnTo}')" style="margin-top:8px; padding:8px 16px;">← BACK</button>`);
+            ${armorSocketCard()}
+            ${filterBarWithCount}
+            <div id="blacksmithGemContainer" style="margin:10px 0; max-height:300px; overflow-y:auto;">${gemListHtml}</div>
+            <button onclick="showBlacksmith('main', null, '${_returnTo}')" style="margin-top:8px; padding:8px 16px;">← BACK</button>
+        `);
+        
+        // Restore scroll position after filter
+        setTimeout(() => {
+            if (window._blacksmithScrollPos) {
+                document.querySelector('#mainScreen')?.scrollTo(0, window._blacksmithScrollPos);
+                window._blacksmithScrollPos = null;
+            }
+        }, 50);
     }
 
     else if (subview === 'info') {
@@ -467,7 +670,7 @@ function doCutGem(rawGemKey) {
 // Store reference to original blacksmith function to re-render
 const originalShowBlacksmith = showBlacksmith;
 
-// Create a completely new socket function with button disabling
+// Create a completely new socket function with button disabling AND socket color validation
 window.doSocketGem = function(cutGemInventoryIndex, target) {
     console.log(`🔧 Socket called with index ${cutGemInventoryIndex}, target ${target}`);
     
@@ -488,7 +691,6 @@ window.doSocketGem = function(cutGemInventoryIndex, target) {
     
     if (p.gold < cost) { 
         alert(`You need ${cost} gold to socket a gem.`); 
-        // Re-enable buttons
         showBlacksmith('socket', target);
         return; 
     }
@@ -505,12 +707,30 @@ window.doSocketGem = function(cutGemInventoryIndex, target) {
     }
     if (!item.gems) item.gems = [];
     
-    const slots = getGemSlots(item.quality || 'normal');
-    const usedSlots = item.gems.length;
-    const openSlots = slots - usedSlots;
+    // ========== SOCKET COLOR SYSTEM ==========
+    let slots;
+    let socketColors = item.socketColors;
+    
+    if (socketColors && socketColors.length > 0) {
+        slots = socketColors.length;
+        console.log(`🎨 Item has colored sockets: ${socketColors.join(', ')}`);
+    } else {
+        slots = getGemSlots(item.quality || 'normal');
+    }
+    
+    // Count ACTUAL filled slots
+    let filledCount = 0;
+    if (item.gems) {
+        for (let i = 0; i < slots; i++) {
+            if (item.gems[i] && item.gems[i].cut) {
+                filledCount++;
+            }
+        }
+    }
+    const openSlots = slots - filledCount;
     
     if (openSlots <= 0) {
-        alert(`No open slots on this ${itemLabel}. (${usedSlots}/${slots} slots used)`);
+        alert(`No open slots on this ${itemLabel}. (${filledCount}/${slots} slots used)`);
         showBlacksmith('socket', target);
         return;
     }
@@ -530,61 +750,34 @@ window.doSocketGem = function(cutGemInventoryIndex, target) {
         return; 
     }
     
-    // ⭐ CRITICAL: Check if gem is already in the weapon (by checking its unique ID)
-    const alreadyInWeapon = item.gems.some(g => g.id === gem.id);
+    // Check if gem is already socketed
+    const alreadyInWeapon = item.gems.some(g => g && g.id === gem.id);
     if (alreadyInWeapon) {
         alert(`⚠️ ${gem.name} is already socketed!`);
         showBlacksmith('socket', target);
         return;
     }
     
-    const invIdx = p.inventory.findIndex(invItem => invItem && typeof invItem === 'object' && invItem.id === gem.id);
-    if (invIdx === -1) { 
-        alert("Gem not in inventory."); 
-        showBlacksmith('socket', target);
-        return; 
+    // Find empty slots
+    const emptySlots = [];
+    for (let i = 0; i < slots; i++) {
+        if (!item.gems[i]) {
+            emptySlots.push(i);
+        }
     }
     
-    const discountText = discount > 0 ? ` (${discount}% CHA discount)` : '';
-    if (!confirm(`Socket ${gem.name} into ${item.name} for ${cost}g${discountText}? This is permanent and cannot be undone.`)) {
+    if (emptySlots.length === 0) {
+        alert("No empty sockets!");
         showBlacksmith('socket', target);
         return;
     }
     
-    // Deduct gold
-    p.gold -= cost;
+    // Store data for the modal
+    window._pendingSocketData = { gem, item, target, slots, socketColors, cost, discount };
     
-    // Remove gem from inventory
-    p.inventory.splice(invIdx, 1);
-    
-        // Add to weapon
-    item.gems.push(gem);
-    
-    // The inventory reference is the same object, no need to push again
-    // Just make sure invRef.gems points to the same array
-    const invRef = p.inventory.find(i => i && typeof i === 'object' && i.instanceId === instanceId);
-    if (invRef && !invRef.gems) {
-        invRef.gems = item.gems;
-    }
-    
-    recalcGemStats(p);
-    saveGame();
-    
-    // Show success
-    const flash = document.createElement('div');
-    flash.style.cssText = `position:fixed;top:15px;left:50%;transform:translateX(-50%);background:#0a0a0a;border:2px solid ${gem.color};padding:14px 24px;color:${gem.color};font-size:15px;z-index:9999;text-align:center;max-width:340px;`;
-    flash.innerHTML = `⚙️ <strong>Gem Socketed!</strong><br><span style="font-size:12px;color:#ccc;">${gem.name} fused into ${item.name}<br>Slot ${usedSlots + 1}/${slots}<br>Paid: ${cost}g${discountText}</span>`;
-    document.body.appendChild(flash);
-    setTimeout(() => flash.remove(), 3500);
-    
-    // Refresh the blacksmith view (re-enables buttons)
-    showBlacksmith('socket', target);
-    
-    console.log(`✅ Socketed ${gem.name}. Now ${item.gems.length}/${slots} slots filled`);
-};
-
-console.log('✅ New socket function installed with button disabling and duplicate ID check');
-
+    // Show socket selection modal
+    showSocketSelection(gem, item, target, emptySlots, socketColors);
+}
 
 // ═══════════════════════════════════════════════════════════════
 // GEM SOCKETING DUPLICATE PREVENTION & CLEANUP
@@ -624,22 +817,7 @@ function removeDuplicateGemsFromWeapon() {
     return false;
 }
 
-// Store original function
-const _originalDoSocketGem = doSocketGem;
 
-// Override doSocketGem with cleanup
-window.doSocketGem = function(idx, target) {
-    // Call original function
-    const result = _originalDoSocketGem(idx, target);
-    
-    // After socketing, clean up duplicates silently and refresh
-    setTimeout(() => {
-        removeDuplicateGemsFromWeapon();
-        showBlacksmith('socket', target);
-    }, 50);
-    
-    return result;
-};
 
 console.log('✅ Socket duplication prevention active - duplicates will be cleaned up automatically');
 
@@ -1409,3 +1587,190 @@ function upgradeEnchant() {
     alert(`${enchantDef.icon} ${enchantDef.name} Tier ${nextTier} learned!\n"${tierData.label}"`);
     showEnchantTrainer();
 }
+
+
+// Show socket selection modal
+function showSocketSelection(gem, item, target, emptySlots, socketColors) {
+    const modal = document.createElement('div');
+    modal.id = 'socketSelectionModal';
+    modal.style.cssText = `
+        position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100000;
+        display: flex; align-items: center; justify-content: center;
+        font-family: 'VT323', monospace;
+    `;
+    
+    const colorMap = {
+        red: '#ff4444', blue: '#4488ff', yellow: '#ffdd44',
+        green: '#44ff44', purple: '#cc44ff', black: '#888888', white: '#ffffff'
+    };
+    const iconMap = {
+        red: '🔴', blue: '🔵', yellow: '🟡',
+        green: '🟢', purple: '🟣', black: '⚫', white: '⚪'
+    };
+    
+    const colorAcceptMap = {
+        red: ['ruby', 'garnet', 'bloodstone'],
+        blue: ['sapphire', 'stormglass', 'moonstone', 'opal'],
+        yellow: ['topaz', 'sunstone'],
+        green: ['emerald'],
+        purple: ['amethyst', 'voidstone'],
+        black: ['onyx', 'ironheart'],
+        white: 'ALL'
+    };
+    
+    const socketOptions = emptySlots.map(slotIndex => {
+        const socketColor = socketColors[slotIndex];
+        const bracketColor = colorMap[socketColor] || '#aaa';
+        const icon = iconMap[socketColor] || '◻️';
+        const colorName = socketColor.charAt(0).toUpperCase() + socketColor.slice(1);
+        
+        let isCompatible = true;
+        if (socketColor !== 'white') {
+            const allowedGems = colorAcceptMap[socketColor];
+            if (!allowedGems.includes(gem.type)) {
+                isCompatible = false;
+            }
+        }
+        
+        return `
+            <button onclick="${isCompatible ? `selectSocketSlot(${slotIndex})` : ''}" 
+                style="
+                    background: #0a0a0a; border: 2px solid ${bracketColor}; 
+                    color: ${isCompatible ? bracketColor : '#444'};
+                    font-family: 'VT323', monospace; font-size: 18px; padding: 12px 24px;
+                    margin: 5px; cursor: ${isCompatible ? 'pointer' : 'not-allowed'}; 
+                    border-radius: 8px; width: 200px; opacity: ${isCompatible ? 1 : 0.5};
+                " ${!isCompatible ? 'disabled' : ''}>
+                ${icon} Socket ${slotIndex + 1} (${colorName})
+            </button>`;
+    }).join('');
+    
+    modal.innerHTML = `
+        <div style="background: #0a0a0a; border: 3px solid #c8a000; border-radius: 12px; 
+                    padding: 24px; max-width: 450px; width: 90%; text-align: center;">
+            <div style="color: #c8a000; font-size: 24px; margin-bottom: 16px;">
+                🎯 SELECT SOCKET
+            </div>
+            <div style="color: #aaa; font-size: 14px; margin-bottom: 20px;">
+                Socket ${gem.emoji} ${gem.name} into which socket?
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px; align-items: center;">
+                ${socketOptions}
+            </div>
+            <button onclick="closeSocketSelection()" style="
+                background: #1a0a0a; border: 2px solid #ff4444; color: #ff8888;
+                font-family: 'VT323', monospace; font-size: 16px; padding: 8px 16px;
+                margin-top: 20px; cursor: pointer; border-radius: 6px;
+            ">Cancel</button>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+function closeSocketSelection() {
+    const modal = document.getElementById('socketSelectionModal');
+    if (modal) modal.remove();
+    window._pendingSocketGem = null;
+}
+
+function selectSocketSlot(slotIndex, gemId, target) {
+    const pending = window._pendingSocketData;
+    if (!pending) return;
+    
+    const { gem, item, target: savedTarget, socketColors } = pending;
+    
+    closeSocketSelection();
+    
+    // VALIDATE the selected socket color against the gem type
+    const socketColor = socketColors[slotIndex];
+    
+    const colorAcceptMap = {
+        red: ['ruby', 'garnet', 'bloodstone'],
+        blue: ['sapphire', 'stormglass', 'moonstone', 'opal'],
+        yellow: ['topaz', 'sunstone'],
+        green: ['emerald'],
+        purple: ['amethyst', 'voidstone'],
+        black: ['onyx', 'ironheart'],
+        white: 'ALL'
+    };
+    
+    const colorNames = {
+        red: '🔴 Red (Ruby/Garnet/Bloodstone)',
+        blue: '🔵 Blue (Sapphire/Stormglass/Moonstone/Opal)',
+        yellow: '🟡 Yellow (Topaz/Sunstone)',
+        green: '🟢 Green (Emerald)',
+        purple: '🟣 Purple (Amethyst/Voidstone)',
+        black: '⚫ Black (Onyx/Ironheart)',
+        white: '⚪ Universal (any gem)'
+    };
+    
+    // Check compatibility
+    if (socketColor !== 'white') {
+        const allowedGems = colorAcceptMap[socketColor];
+        if (!allowedGems.includes(gem.type)) {
+            alert(`❌ Cannot socket ${gem.name} here!\n\nThis socket requires a ${colorNames[socketColor]} gem.\n\nYour ${gem.type} gem is not compatible with this socket color.`);
+            showBlacksmith('socket', target);
+            return;
+        }
+    } else {
+        const flash = document.createElement('div');
+        flash.style.cssText = `position:fixed;top:15px;left:50%;transform:translateX(-50%);background:#0a0a0a;border:2px solid #ffffff;padding:14px 24px;color:#ffffff;font-size:14px;z-index:9999;text-align:center;max-width:340px;`;
+        flash.innerHTML = `✨ <strong>White Socket!</strong><br><span style="font-size:12px;color:#ccc;">This universal socket accepts any gem!</span>`;
+        document.body.appendChild(flash);
+        setTimeout(() => flash.remove(), 2000);
+    }
+    
+    // Proceed with socketing
+    performSocketGem(gem, item, target, slotIndex);
+}
+
+function performSocketGem(gem, item, target, slotIndex) {
+    const p = gameState.player;
+    const discount = Math.min(30, (p.cha || 0) * 2);
+    const cost = Math.max(1, Math.floor(100 * (1 - discount / 100)));
+    const discountText = discount > 0 ? ` (${discount}% CHA discount)` : '';
+    
+    // Confirm with user
+    const socketColor = item.socketColors?.[slotIndex];
+    const colorName = socketColor ? socketColor.charAt(0).toUpperCase() + socketColor.slice(1) : '';
+    
+    if (!confirm(`Socket ${gem.name} into ${item.name} (${colorName} socket) for ${cost}g${discountText}? This is permanent and cannot be undone.`)) {
+        showBlacksmith('socket', target);
+        return;
+    }
+    
+    // Deduct gold
+    p.gold -= cost;
+    
+    // Remove gem from inventory
+    const invIdx = p.inventory.findIndex(invItem => invItem && typeof invItem === 'object' && invItem.id === gem.id);
+    if (invIdx !== -1) {
+        p.inventory.splice(invIdx, 1);
+    }
+    
+    // Place gem in selected slot
+    if (!item.gems) item.gems = [];
+    item.gems[slotIndex] = gem;
+    
+    // Update inventory reference
+    const invRef = p.inventory.find(i => i && typeof i === 'object' && i.instanceId === (target === 'armor' ? p.armor : p.weapon));
+    if (invRef && !invRef.gems) {
+        invRef.gems = item.gems;
+    }
+    
+    recalcGemStats(p);
+    saveGame();
+    
+    // Show success
+    const flash = document.createElement('div');
+    flash.style.cssText = `position:fixed;top:15px;left:50%;transform:translateX(-50%);background:#0a0a0a;border:2px solid ${gem.color};padding:14px 24px;color:${gem.color};font-size:15px;z-index:9999;text-align:center;max-width:340px;`;
+    flash.innerHTML = `⚙️ <strong>Gem Socketed!</strong><br><span style="font-size:12px;color:#ccc;">${gem.name} fused into ${item.name}<br>Slot ${slotIndex + 1}/${item.socketColors?.length || 0} (${colorName})<br>Paid: ${cost}g${discountText}</span>`;
+    document.body.appendChild(flash);
+    setTimeout(() => flash.remove(), 3500);
+    
+    // Refresh blacksmith view
+    showBlacksmith('socket', target);
+}
+
+

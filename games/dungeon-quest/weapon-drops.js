@@ -138,6 +138,43 @@ const MODIFIER_SUFFIXES = {
 };
 
 
+// Add this near the top of weapon-drops.js after the existing constants
+
+// ═══════════════════════════════════════════════════════════════
+// SOCKET COLOR SYSTEM
+// ═══════════════════════════════════════════════════════════════
+
+const SOCKET_COLOR_MAP = {
+    red:   { name: 'Ruby',      icon: '🔴', acceptGems: ['ruby', 'garnet', 'bloodstone'] },
+    blue:  { name: 'Sapphire',  icon: '🔵', acceptGems: ['sapphire', 'stormglass', 'moonstone', 'opal'] },
+    yellow: { name: 'Topaz',    icon: '🟡', acceptGems: ['topaz', 'sunstone'] },
+    green:  { name: 'Emerald',  icon: '🟢', acceptGems: ['emerald'] },
+    purple: { name: 'Amethyst', icon: '🟣', acceptGems: ['amethyst', 'voidstone'] },
+    black:  { name: 'Onyx',     icon: '⚫', acceptGems: ['onyx', 'ironheart'] },
+    white:  { name: 'Universal',icon: '⚪', acceptGems: 'ALL' }  // Accepts any gem type
+};
+
+const SOCKET_COLORS_LIST = ['red', 'blue', 'yellow', 'green', 'purple', 'black'];
+const SOCKET_WHITE_CHANCE = 0.01; // 1% chance per socket to be white (universal)
+
+// Generate random socket color (white is super rare)
+function getRandomSocketColor() {
+    if (Math.random() < SOCKET_WHITE_CHANCE) {
+        return 'white';
+    }
+    return SOCKET_COLORS_LIST[Math.floor(Math.random() * SOCKET_COLORS_LIST.length)];
+}
+
+// Generate socket colors array for a weapon with given number of slots
+function generateSocketColors(slotCount) {
+    const colors = [];
+    for (let i = 0; i < slotCount; i++) {
+        colors.push(getRandomSocketColor());
+    }
+    return colors;
+}
+
+
 
 // ═══════════════════════════════════════════════════════════════
 // HELPER FUNCTIONS
@@ -516,6 +553,8 @@ const modifiers = typeof generateModifiers === 'function' ? generateModifiers(qu
             legendary: 3,
             godly: 4
         }[quality] || 0;
+
+        const socketColors = generateSocketColors(gemSlots);
         
         const instanceId = `${baseWeaponId}_${quality}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
         const weaponName = generateEnhancedWeaponName(baseWeapon, quality, modifiers);
@@ -539,7 +578,10 @@ const modifiers = typeof generateModifiers === 'function' ? generateModifiers(qu
             qualityBonus: bonusPct,
             modifiers: modifiers,
             gemSlots: gemSlots,
+            socketColors: socketColors,
             gems: [],
+            bound: false,
+            boundToCharacterId: null,
             cost: Math.floor((baseWeapon.level * 40) * (quality === 'godly' ? 10 : quality === 'legendary' ? 8 : quality === 'epic' ? 4 : quality === 'rare' ? 1.5 : 1)),
             description: baseWeapon.description || `A ${quality} quality ${baseWeapon.name}.`,
             allowedClasses: baseWeapon.allowedClasses,
@@ -901,6 +943,21 @@ function generateArmorDrop(player, sourceLevel, enemyRarity, skipRoll = false, f
     } else {
         armorQuality = rollQualityForDrop(sourceLevel, enemyRarity);
     }
+
+        // Calculate gem slots and socket colors based on quality
+    let gemSlots = 0;
+    let socketColors = [];
+    
+    if (armorQuality === 'epic') {
+        gemSlots = 1;
+        socketColors = generateSocketColors(1);
+    } else if (armorQuality === 'legendary') {
+        gemSlots = 2;
+        socketColors = generateSocketColors(2);
+    } else if (armorQuality === 'godly') {
+        gemSlots = 3;
+        socketColors = generateSocketColors(3);
+    }
     
       
 
@@ -994,13 +1051,16 @@ function generateArmorDrop(player, sourceLevel, enemyRarity, skipRoll = false, f
         qualityBonus: qualityBonusPct,
         modifiers: modifiers,
         gems: [],
-        gemSlots: 0, // No gem slots for armor (for now)
+        socketColors: [],
+        gemSlots: 0,
         cost: baseArmor.cost,
         description: buildArmorDescription(baseArmor, modifiers, finalHp, finalMp),
         allowedClasses: baseArmor.allowedClasses,
         isDropped: true,
         dropTimestamp: Date.now(),
-        isEquipped: false
+        isEquipped: false,
+        bound: false,
+        boundToCharacterId: null
     };
     
     // Store in ARMOR object for lookup

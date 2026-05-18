@@ -87,46 +87,8 @@ function getScaledEnemyHP(baseHP, level) {
         // ═══════════════════════════════════════════════════════════════
         
 
-        // ── Build gem slot display for a weapon card ──────────────────
-        function buildGemSlotHtml(weapon) {
-            if (!weapon) return '';
-            // Ensure quality fallback — drop weapons may not have quality set yet
-            const quality = weapon.quality || 'normal';
-            const slots = getGemSlots(quality);
-            if (slots === 0) return '';
-            if (!weapon.gems) weapon.gems = [];  // initialize if missing
-            const socketed = weapon.gems;
-            const filledCount = socketed.length;
-            let html = `<div style="margin-top:5px;font-size:11px;line-height:1.6;">`;
-            for (let i = 0; i < slots; i++) {
-                const gem = socketed[i];
-                if (gem && gem.cut) {
-                    // Filled slot — colored gem circle + stat text
-                    // Reconstruct name/color/emoji if somehow lost (old save migration)
-                    const gemTypeDef = gem.type ? GEM_TYPES[gem.type] : null;
-                    const gemDisplayName = gem.name || (gemTypeDef ? `T${gem.tier||1} ${gemTypeDef.name}` : 'Gem');
-                    const gemColor = gem.color || (gemTypeDef ? gemTypeDef.color : '#aaa');
-                    const gemEmoji = gem.emoji || (gemTypeDef ? gemTypeDef.emoji : '💎');
-                    const gemDesc = gem.description || (gem.stats ? describeGemStats(gem.stats) : '');
-                    html += `<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
-                        <span style="color:${gemColor};font-size:15px;line-height:1;">⬤</span>
-                        <span style="color:${gemColor};font-weight:bold;">${gemEmoji} ${gemDisplayName}</span>
-                        <span style="color:#888;font-size:10px;">${gemDesc}</span>
-                    </div>`;
-                } else {
-                    // Empty slot — dark circle
-                    html += `<div style="display:flex;align-items:center;gap:5px;">
-                        <span style="color:#1a1a1a;font-size:15px;line-height:1;text-shadow:0 0 1px #555;">⬤</span>
-                        <span style="color:#3a3a3a;font-size:10px;font-style:italic;">empty socket</span>
-                    </div>`;
-                }
-            }
-            if (slots > 1) {
-                html += `<div style="color:#555;font-size:10px;margin-top:2px;">${filledCount}/${slots} gems socketed</div>`;
-            }
-            html += '</div>';
-            return html;
-        }
+        
+        
 
         // ── Build damage line for a weapon (MELEE / MAGIC clearly split) ──
         function buildWeaponDmgLine(weapon, quality, p) {

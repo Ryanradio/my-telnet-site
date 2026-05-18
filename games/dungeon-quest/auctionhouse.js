@@ -441,12 +441,13 @@ function _ahRenderSellPick() {
   const inventory = p.inventory || [];
 
   // Gather all sellable items first (unequipped weapons + armor)
-  const allSellable = inventory.filter(item => {
-    if (!item || typeof item !== 'object') return false;
-    if (item.instanceId === p.weapon) return false;
-    if (item.instanceId === p.armor)  return false;
-    return item.weaponId || item.armorId || item.type === 'weapon' || item.type === 'armor';
-  });
+      const allSellable = inventory.filter(item => {
+        if (!item || typeof item !== 'object') return false;
+        if (item.instanceId === p.weapon) return false;
+        if (item.instanceId === p.armor) return false;
+        if (item.bound === true) return false;  // ← ADD THIS LINE
+        return item.weaponId || item.armorId || item.type === 'weapon' || item.type === 'armor';
+    });
 
   if (allSellable.length === 0) {
     return `

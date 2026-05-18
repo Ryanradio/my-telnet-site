@@ -2345,28 +2345,18 @@ function showUnifiedInventory(returnCallback = null) {
             eqModifierHtml += '</div>';
         }
         
-        // Build gem slot HTML
-        const gemSlots = eqWeapon.gemSlots || 3;
-        const gems = equippedInstance?.gems || eqWeapon.gems || [];
+                // Build gem slot HTML using colored socket system
         let gemSlotHtml = '';
-        if (gemSlots > 0) {
-            gemSlotHtml = '<div style="margin-top:5px;font-size:10px;text-align:left;">';
-            for (let i = 0; i < gemSlots; i++) {
-                const gem = gems[i];
-                if (gem) {
-                    gemSlotHtml += `<div style="display:flex;align-items:center;gap:5px;margin:2px 0;">
-                        <span style="color:${gem.color};">⬤</span>
-                        <span style="color:${gem.color};">${gem.emoji || '💎'} ${gem.name}</span>
-                        <span style="color:#888;font-size:9px;">${gem.description || ''}</span>
-                    </div>`;
-                } else {
-                    gemSlotHtml += `<div style="color:#444;margin:2px 0;">⬤ EMPTY SLOT ${i+1}</div>`;
-                }
-            }
-            gemSlotHtml += '</div>';
+        if (typeof buildGemSlotHtml === 'function') {
+            gemSlotHtml = buildGemSlotHtml({
+                ...eqWeapon,
+                quality: displayQuality,
+                gems: equippedInstance?.gems || eqWeapon.gems || [],
+                socketColors: equippedInstance?.socketColors || eqWeapon.socketColors
+            });
         }
         
-        invHtml += `<div class="item-name" style="color:${qualityColor};text-align:left;">⚔️ ${equippedInstance?.name || eqWeapon.name}</div>
+                invHtml += `<div class="item-name" style="color:${qualityColor};text-align:left;">⚔️ ${equippedInstance?.name || eqWeapon.name} ${equippedInstance?.bound ? '<span style="color:#ffaa66; font-size:12px;">🔒 BOUND</span>' : ''}</div>
                     <div class="item-stats" style="text-align:left;">${eqWeapon.weaponSubtype || eqWeapon.type || 'Weapon'} | Lv${eqWeapon.level || 1}</div>
                     <div class="item-stats" style="text-align:left;">${buildWeaponDmgLine({...eqWeapon, quality: displayQuality}, displayQuality, p)}</div>
                     ${eqModifierHtml}
@@ -2439,7 +2429,7 @@ invHtml += `<div class="equipped-card armor item-card" style="text-align:left; b
         const qualityBonus = aqc?.bonusPct ? Math.floor(eqArmor.baseDefense * aqc.bonusPct) : 0;
         const totalDef = eqArmor.baseDefense + qualityBonus;
         
-        invHtml += `<div class="item-name" style="color:${qualityColor};">🛡️ ${equippedInstance?.name || eqArmor.name}</div>
+                invHtml += `<div class="item-name" style="color:${qualityColor};">🛡️ ${equippedInstance?.name || eqArmor.name} ${equippedInstance?.bound ? '<span style="color:#ffaa66; font-size:12px;">🔒 BOUND</span>' : ''}</div>
                     <div class="item-stats">${eqArmor.armorSubtype || eqArmor.type || 'Armor'} | Lv${eqArmor.level || 1}</div>
                     <div class="item-stats">DEF: ${totalDef}</div>
                     ${hpMpDisplay}
@@ -2484,25 +2474,19 @@ invHtml += `<div class="equipped-card armor item-card" style="text-align:left; b
             modDisplay += '</div>';
         }
         
-        // Build gem slot display for unequipped weapons
-        const gemSlots = weaponData.gemSlots || 0;
-        const gems = item.gems || [];
-        let gemDisplay = '';
-        if (gemSlots > 0) {
-            gemDisplay = '<div style="margin-top:3px;font-size:9px;">';
-            for (let i = 0; i < gemSlots; i++) {
-                const gem = gems[i];
-                if (gem) {
-                    gemDisplay += `<div style="color:${gem.color};">⬤ ${gem.name}</div>`;
-                } else {
-                    gemDisplay += `<div style="color:#444;">⬤ Empty Slot ${i+1}</div>`;
-                }
-            }
-            gemDisplay += '</div>';
-        }
+        // Build gem slot display using new colored socket system
+let gemDisplay = '';
+if (typeof buildGemSlotHtml === 'function') {
+    gemDisplay = buildGemSlotHtml({
+        ...weaponData,
+        quality: displayQuality,
+        gems: item.gems || [],
+        socketColors: item.socketColors || weaponData.socketColors
+    });
+}
         
         invHtml += `<div class="item-card ${qualityClass}" data-item-id="${item.instanceId}">
-            <div class="item-name" style="color:${qualityColor};">⚔️ ${item.name}</div>
+                        <div class="item-name" style="color:${qualityColor};">⚔️ ${item.name} ${item.bound ? '<span style="color:#ffaa66; font-size:12px;">🔒 BOUND</span>' : ''}</div>
             <div class="item-stats">Lv${weaponData.level || 1} | ${buildWeaponDmgLine({...weaponData, quality: displayQuality}, displayQuality, p)}</div>
             ${modDisplay}
             ${gemDisplay}
@@ -2558,7 +2542,7 @@ invHtml += `<div class="equipped-card armor item-card" style="text-align:left; b
         }
         
         invHtml += `<div class="item-card ${qualityClass}" data-item-id="${item.instanceId}">
-            <div class="item-name" style="color:${qualityColor};">🛡️ ${item.name}</div>
+            <div class="item-name" style="color:${qualityColor};">🛡️ ${item.name} ${item.bound ? '<span style="color:#ffaa66; font-size:12px;">🔒 BOUND</span>' : ''}</div>
             <div class="item-stats">Lv${armorData.level || 1} | DEF: ${armorData.baseDefense + (qc?.bonusPct ? Math.floor(armorData.baseDefense * qc.bonusPct) : 0)}</div>
             ${hpMpDisplay}
             ${modifierDisplay}
@@ -2976,7 +2960,33 @@ function equipItem(type, key) {
             return i.instanceId !== key && i.weaponId !== key;
         });
         
+
+
+
         // Set new weapon
+
+                // Check if item is already bound to another character
+        if (weapon.bound === true && weapon.boundToCharacterId && weapon.boundToCharacterId !== (p.characterId || p.id)) {
+            alert('❌ This weapon is bound to another character!');
+            return;
+        }
+        
+        // If not bound yet, show warning
+        if (!weapon.bound) {
+            showBindWarning(weapon, 'weapon', key, () => {
+                // After binding decision, actually equip
+                p.weapon = key;
+                weapon.isEquipped = true;
+                recalcGemStats(p);
+                calculateAndSetSpellResistance(p);
+                saveGame();
+                updateHud();
+                if (typeof showUnifiedInventory === 'function') showUnifiedInventory();
+            });
+            return;
+        }
+        
+
         p.weapon = key;
         weapon.isEquipped = true;
         
@@ -3031,6 +3041,28 @@ function equipItem(type, key) {
             return i.instanceId !== key && i.armorId !== key;
         });
         
+
+         // Check if item is already bound to another character
+        if (armor.bound === true && armor.boundToCharacterId && armor.boundToCharacterId !== (p.characterId || p.id)) {
+            alert('❌ This armor is bound to another character!');
+            return;
+        }
+        
+        // If not bound yet, show warning
+        if (!armor.bound) {
+            showBindWarning(armor, 'armor', key, () => {
+                // After binding decision, actually equip
+                p.armor = key;
+                armor.isEquipped = true;
+                recalcGemStats(p);
+                calculateAndSetSpellResistance(p);
+                saveGame();
+                updateHud();
+                if (typeof showUnifiedInventory === 'function') showUnifiedInventory();
+            });
+            return;
+        }
+
         p.armor = key;
         armor.isEquipped = true;
         

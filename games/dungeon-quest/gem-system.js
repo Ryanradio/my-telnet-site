@@ -93,6 +93,141 @@ const GEM_TYPES = {
 // Gem tier multiplier for rolls (higher tier = stronger bonuses)
 const GEM_TIER_MULT = { 1: 1.0, 2: 1.5, 3: 2.2, 4: 3.2 };
 
+
+// ═══════════════════════════════════════════════════════════════
+// SOCKET COLOR VALIDATION
+// ═══════════════════════════════════════════════════════════════
+
+// Check if a gem can be socketed into a specific slot
+function canSocketGemIntoSlot(item, gem, slotIndex) {
+    // Legacy items without socketColors - no restriction (can socket anything)
+    if (!item.socketColors || item.socketColors.length === 0) {
+        return true;
+    }
+    
+    const socketColor = item.socketColors[slotIndex];
+    if (!socketColor) return false;
+    
+    // White sockets accept ANY gem
+    if (socketColor === 'white') return true;
+    
+    // Get the gem's type
+    const gemType = gem.type;
+    
+    // Check if gem type is in the accepted list for this socket color
+    const acceptedGems = SOCKET_COLOR_MAP[socketColor]?.acceptGems;
+    if (!acceptedGems) return false;
+    
+    return acceptedGems.includes(gemType);
+}
+
+// Get the display icon for a socket color
+function getSocketColorIcon(color) {
+    return SOCKET_COLOR_MAP[color]?.icon || '◻️';
+}
+
+// Get the full socket display HTML (colored brackets)
+function getSocketDisplayHtml(item, slotIndex) {
+    const socketColor = item.socketColors?.[slotIndex];
+    if (!socketColor) return '⬚';
+    
+    const icon = getSocketColorIcon(socketColor);
+    const isFilled = item.gems?.[slotIndex] ? true : false;
+    
+    if (isFilled) {
+        const gem = item.gems[slotIndex];
+        return `<span style="color:${gem.color || '#aaa'};">${gem.emoji || '💎'}</span>`;
+    }
+    
+    // Empty socket with colored brackets
+    const colorMap = {
+        red: '#ff4444', blue: '#4488ff', yellow: '#ffdd44',
+        green: '#44ff44', purple: '#cc44ff', black: '#888888',
+        white: '#ffffff'
+    };
+    const bracketColor = colorMap[socketColor] || '#aaa';
+    
+    return `<span style="color:${bracketColor};">[${icon}]</span>`;
+}
+
+// Full socket row display for inventory
+function buildGemSlotHtml(weapon) {
+    if (!weapon) return '';
+    
+    // Check if weapon has socketColors (new system)
+    const hasSocketColors = weapon.socketColors && weapon.socketColors.length > 0;
+    
+    let slots;
+    if (hasSocketColors) {
+        slots = weapon.socketColors.length;
+    } else {
+        // Fallback to old system (legacy items)
+        const quality = weapon.quality || 'normal';
+        slots = getGemSlots(quality);
+    }
+    
+    if (slots === 0) return '';
+    if (!weapon.gems) weapon.gems = [];
+    
+    // Color mapping for brackets
+    const bracketColorMap = {
+        red: '#ff4444', blue: '#4488ff', yellow: '#ffdd44',
+        green: '#44ff44', purple: '#cc44ff', black: '#888888',
+        white: '#ffffff'
+    };
+    
+    const socketIconMap = {
+        red: '🔴', blue: '🔵', yellow: '🟡',
+        green: '🟢', purple: '🟣', black: '⚫', white: '⚪'
+    };
+    
+    let html = `<div style="margin-top:5px;font-size:11px;line-height:1.6;">`;
+    
+    for (let i = 0; i < slots; i++) {
+        const gem = weapon.gems[i];
+        const socketColor = weapon.socketColors ? weapon.socketColors[i] : null;
+        
+        if (gem && gem.cut) {
+            // Filled slot - show gem
+            const gemTypeDef = gem.type ? GEM_TYPES[gem.type] : null;
+            const gemDisplayName = gem.name || (gemTypeDef ? `T${gem.tier||1} ${gemTypeDef.name}` : 'Gem');
+            const gemColor = gem.color || (gemTypeDef ? gemTypeDef.color : '#aaa');
+            const gemEmoji = gem.emoji || (gemTypeDef ? gemTypeDef.emoji : '💎');
+            const gemDesc = gem.description || (gem.stats ? describeGemStats(gem.stats) : '');
+            html += `<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
+                <span style="color:${gemColor};font-size:15px;line-height:1;">⬤</span>
+                <span style="color:${gemColor};font-weight:bold;">${gemEmoji} ${gemDisplayName}</span>
+                <span style="color:#888;font-size:10px;">${gemDesc}</span>
+            </div>`;
+        } else {
+            // Empty socket - show colored bracket if available
+            if (socketColor && socketIconMap[socketColor]) {
+                const bracketColor = bracketColorMap[socketColor] || '#aaa';
+                const icon = socketIconMap[socketColor];
+                const colorName = socketColor.charAt(0).toUpperCase() + socketColor.slice(1);
+                html += `<div style="display:flex;align-items:center;gap:5px;">
+                    <span style="color:${bracketColor};font-size:14px;">[${icon}]</span>
+                    <span style="color:#3a3a3a;font-size:10px;font-style:italic;">empty ${colorName} socket</span>
+                </div>`;
+            } else {
+                // Fallback to old style (legacy items without socketColors)
+                html += `<div style="display:flex;align-items:center;gap:5px;">
+                    <span style="color:#1a1a1a;font-size:15px;line-height:1;text-shadow:0 0 1px #555;">⬤</span>
+                    <span style="color:#3a3a3a;font-size:10px;font-style:italic;">empty socket</span>
+                </div>`;
+            }
+        }
+    }
+    
+    if (slots > 1) {
+        const filledCount = weapon.gems.filter(g => g && g.cut).length;
+        html += `<div style="color:#555;font-size:10px;margin-top:2px;">${filledCount}/${slots} gems socketed</div>`;
+    }
+    html += '</div>';
+    return html;
+}
+
+
 // Get tier from enemy level
 function getGemTier(enemyLevel) {
     if (enemyLevel <= 6)  return 1;
@@ -465,3 +600,5 @@ function recalcGemStats() {
         crit: critBonus, pierce: pierceBonus, spell: spellBonus
     };
 }
+
+console.log("🎯 gem-system.js finished loading, buildGemSlotHtml has hasSocketColors?", buildGemSlotHtml.toString().includes("hasSocketColors"));
