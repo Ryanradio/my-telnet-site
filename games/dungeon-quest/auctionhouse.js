@@ -17,11 +17,11 @@ const AH_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwh7_fSt6gRjObMZC
 // Keys are duration in MINUTES (integers) to avoid float key ordering issues.
 // Server receives duration_minutes and converts to hours internally.
 const AH_LISTING_FEES = {
-  1:    { label: '1 Min (TEST)', fee: 1,   sysopOnly: true  }, // sysop only
-  720:  { label: '12 Hours',     fee: 25                    },
-  1440: { label: '1 Day',        fee: 50                    },
-  4320: { label: '3 Days',       fee: 120                   },
-  10080:{ label: '7 Days',       fee: 380                   },
+  1:    { label: '1 Min (TEST)', feePct: 0.01,  sysopOnly: true },
+  720:  { label: '12 Hours',     feePct: 0.05 },
+  1440: { label: '1 Day',        feePct: 0.08 },
+  4320: { label: '3 Days',       feePct: 0.12 },
+  10080:{ label: '7 Days',       feePct: 0.15 },
 };
 
 const AH_SALE_FEE_PCT  = 10;   // % house takes on sale
@@ -45,6 +45,15 @@ let _ahSellFilters = {
 let _ahLoading     = false;
 let _ahStatusMsg   = '';
 let _ahStatusIsErr = false;
+let _ahLoadingTimeout = null;
+let _ahIsSubmitting = false;
+
+
+
+const AH_TIMEOUT_MS = 30000; // 30 seconds timeout
+
+
+
 
 // ── Quality order for filter dropdown ─────────────────────────────────────
 const AH_QUALITIES = ['','normal','magic','rare','epic','legendary','godly'];
@@ -104,14 +113,19 @@ function _ahRender() {
   overlay.innerHTML = `
     <!-- Header -->
     <div style="background:#0a0a00;border-bottom:2px solid #c8a000;
-                padding:10px 14px;display:flex;align-items:center;
-                justify-content:space-between;flex-shrink:0;">
-      <div style="color:#c8a000;font-size:22px;letter-spacing:2px;">🏛️ AUCTION HOUSE</div>
-      <button onclick="_ahClose()"
-        style="background:none;border:1px solid #444;color:#888;
-               font-family:'VT323',monospace;font-size:16px;
-               padding:3px 10px;cursor:pointer;">✕ CLOSE</button>
+            padding:10px 14px;display:flex;align-items:center;
+            justify-content:space-between;flex-shrink:0;flex-wrap:wrap;gap:8px;">
+  <div style="color:#c8a000;font-size:22px;letter-spacing:2px;">🏛️ AUCTION HOUSE</div>
+  <div style="display:flex;align-items:center;gap:16px;">
+    <div style="color:#FFD700;font-size:16px;font-family:'Courier New',monospace;">
+      💰 ${gameState.player?.gold?.toLocaleString() || 0}g
     </div>
+    <button onclick="_ahClose()"
+      style="background:none;border:1px solid #444;color:#888;
+             font-family:'VT323',monospace;font-size:16px;
+             padding:3px 10px;cursor:pointer;">✕ CLOSE</button>
+  </div>
+</div>
 
     <!-- Tabs -->
     <div style="display:flex;background:#050500;border-bottom:1px solid #1a1a00;
@@ -608,6 +622,334 @@ function _ahSellSetFilter(key, value) {
   _ahUpdateBody();
 }
 
+
+function _ahUpdateFeePreview() {
+    const buyNowInput = document.getElementById('ahBuyNowInput');
+    const buyNowPrice = parseInt(buyNowInput?.value) || 0;
+    const durationSelect = document.getElementById('ahDurationSelect');
+    const durationMinutes = parseInt(durationSelect?.value) || 720;
+    const info = AH_LISTING_FEES[durationMinutes];
+    
+    if (info && buyNowPrice > 0) {
+        const fee = Math.floor(buyNowPrice * info.feePct);
+        const feeSpan = document.getElementById('ahFeeAmount');
+        if (feeSpan) {
+            feeSpan.textContent = fee;
+        }
+        // Update button fee display
+        const buttonFeeSpan = document.getElementById('ahListButtonFee');
+        if (buttonFeeSpan) {
+            buttonFeeSpan.textContent = fee;
+        }
+    } else {
+        const feeSpan = document.getElementById('ahFeeAmount');
+        if (feeSpan) {
+            feeSpan.textContent = '0';
+        }
+        const buttonFeeSpan = document.getElementById('ahListButtonFee');
+        if (buttonFeeSpan) {
+            buttonFeeSpan.textContent = '0';
+        }
+    }
+}
+
+
+function _ahShowListingConfirm(item, startingBid, buyNowPrice, fee, durationMinutes) {
+    // Remove any existing modal
+    const existing = document.getElementById('ahConfirmModal');
+    if (existing) existing.remove();
+    
+    const isWeapon = !!(item.weaponId || item.type === 'weapon');
+    const icon = isWeapon ? '⚔️' : '🛡️';
+    const itemName = item.name || 'Unknown Item';
+    const quality = item.quality || 'normal';
+    const qc = QUALITY_CONFIG[quality];
+    const qualityColor = qc?.color || '#0f0';
+    
+    // Build item preview card
+    let statLine = '';
+    if (isWeapon) {
+        const weapon = WEAPONS[item.weaponId || item.instanceId];
+        if (weapon) {
+            statLine = buildWeaponDmgLine({...weapon, quality: quality}, quality, gameState.player);
+        } else {
+            statLine = `<span style="color:#aaa;">DMG: ${item.baseDamage || 0}-${item.maxDamage || item.baseDamage || 0}</span>`;
+        }
+    } else {
+        const armor = ARMOR[item.armorId || item.instanceId];
+        if (armor) {
+            const qb = getQualityBonus(quality, armor.baseDefense);
+            const tDef = armor.baseDefense + qb;
+            statLine = `<span style="color:#aaa;">DEF: ${tDef}</span>`;
+        } else {
+            statLine = `<span style="color:#aaa;">DEF: ${item.baseDefense || 0}</span>`;
+        }
+    }
+    
+    // Build modifiers HTML
+    let modHtml = '';
+    const modifiers = item.modifiers || [];
+    if (modifiers.length > 0) {
+        modHtml = '<div style="margin-top:6px;font-size:11px;">';
+        modifiers.forEach(mod => {
+            const modColor = mod.color || '#FFD700';
+            modHtml += `<div style="color:${modColor};">✨ ${mod.name}`;
+            if (mod.minDamage) modHtml += ` (${mod.minDamage}-${mod.maxDamage})`;
+            if (mod.critBonus) modHtml += ` (+${mod.critBonus}% crit)`;
+            if (mod.lifestealPercent) modHtml += ` (${mod.lifestealPercent}% lifesteal)`;
+            modHtml += `</div>`;
+        });
+        modHtml += '</div>';
+    }
+    
+    // Build gem HTML
+    let gemHtml = '';
+    const gems = item.gems || [];
+    if (gems.length > 0) {
+        gemHtml = '<div style="margin-top:6px;font-size:11px;">';
+        gems.forEach(gem => {
+            gemHtml += `<div style="color:${gem.color || '#FFD700'};">${gem.emoji || '💎'} ${gem.name}: ${gem.description || ''}</div>`;
+        });
+        gemHtml += '</div>';
+    }
+    
+    const modal = document.createElement('div');
+    modal.id = 'ahConfirmModal';
+    modal.style.cssText = `
+        position: fixed; inset: 0; background: rgba(0,0,0,0.96); z-index: 100000;
+        display: flex; align-items: center; justify-content: center;
+        font-family: 'VT323', monospace; padding: 16px;
+    `;
+    
+    modal.innerHTML = `
+        <div style="
+            background: #0a0a0a;
+            border: 3px solid #c8a000;
+            border-radius: 12px;
+            max-width: 480px;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 0 60px rgba(200,160,0,0.3);
+        ">
+            <div style="
+                background: linear-gradient(90deg, #0a0800, #1a1500, #0a0800);
+                border-bottom: 1px solid #c8a000;
+                padding: 12px 16px;
+                text-align: center;
+                position: sticky;
+                top: 0;
+                z-index: 1;
+            ">
+                <div style="color: #c8a000; font-size: 20px; letter-spacing: 3px;">
+                    ⚔️ CONFIRM LISTING ⚔️
+                </div>
+            </div>
+            
+            <div style="padding: 20px;">
+                <!-- Item Card -->
+                <div style="
+                    background: #0d0d0d;
+                    border: 2px solid ${qualityColor};
+                    border-radius: 8px;
+                    padding: 12px 16px;
+                    margin-bottom: 16px;
+                ">
+                    <div style="display:inline-block;background:${qualityColor}18;border:1px solid ${qualityColor}44;color:${qualityColor};font-size:9px;letter-spacing:1px;padding:1px 6px;margin-bottom:6px;font-family:'Courier New',monospace;">
+                        ${quality.toUpperCase()}
+                    </div>
+                    <div style="color:${qualityColor};font-size:18px;font-weight:bold;">
+                        ${icon} ${itemName}
+                    </div>
+                    <div style="font-size:12px;margin-top:4px;">${statLine}</div>
+                    <div style="color:#666;font-size:10px;margin-top:2px;">Level ${item.level || 1}</div>
+                    ${modHtml}
+                    ${gemHtml}
+                </div>
+                
+                <!-- Listing Details -->
+                <div style="
+                    background: #050a05;
+                    border: 1px solid #2a3a2a;
+                    border-radius: 6px;
+                    padding: 12px;
+                    margin-bottom: 16px;
+                ">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                        <span style="color:#aaa;">Starting Bid:</span>
+                        <span style="color:#FFD700;font-size:16px;">${startingBid.toLocaleString()}g</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                        <span style="color:#aaa;">Buy Now Price:</span>
+                        <span style="color:#FFD700;font-size:16px;">${buyNowPrice.toLocaleString()}g</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                        <span style="color:#aaa;">Duration:</span>
+                        <span style="color:#aaa;">${AH_LISTING_FEES[durationMinutes]?.label || '12 Hours'}</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;margin-top:8px;padding-top:6px;border-top:1px solid #1a3a1a;">
+                        <span style="color:#FF8888;">Listing Fee:</span>
+                        <span style="color:#FF8888;font-size:18px;font-weight:bold;">-${fee.toLocaleString()}g</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;margin-top:6px;">
+                        <span style="color:#aaa;">Your Gold After:</span>
+                        <span style="color:#00FF00;font-size:16px;">${(gameState.player.gold - fee).toLocaleString()}g</span>
+                    </div>
+                </div>
+                
+                <div style="color:#888;font-size:11px;text-align:center;margin-bottom:16px;">
+                    ⚠️ This action cannot be undone. The listing fee is non-refundable.
+                </div>
+                
+                <div style="display:flex;gap:12px;">
+                    <button id="ahConfirmListBtn" style="
+                        flex:1;
+                        background: #0a2a0a;
+                        border: 2px solid #00FF00;
+                        color: #00FF00;
+                        font-family: 'VT323', monospace;
+                        font-size: 18px;
+                        padding: 10px;
+                        cursor: pointer;
+                        border-radius: 6px;
+                    ">✓ CONFIRM LISTING</button>
+                    <button id="ahCancelListBtn" style="
+                        flex:1;
+                        background: #2a0a0a;
+                        border: 2px solid #ff4444;
+                        color: #ff8888;
+                        font-family: 'VT323', monospace;
+                        font-size: 18px;
+                        padding: 10px;
+                        cursor: pointer;
+                        border-radius: 6px;
+                    ">✕ CANCEL</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Store listing data for confirmation
+    window._pendingListing = { item, startingBid, buyNowPrice, fee, durationMinutes };
+    
+    document.getElementById('ahConfirmListBtn').onclick = () => {
+        modal.remove();
+        _ahExecuteListing();
+    };
+    
+    document.getElementById('ahCancelListBtn').onclick = () => {
+        modal.remove();
+        window._pendingListing = null;
+    };
+}
+
+
+function _ahExecuteListing() {
+    const pending = window._pendingListing;
+    if (!pending) return;
+    
+    const { item, startingBid, buyNowPrice, fee, durationMinutes } = pending;
+    const p = gameState.player;
+    
+    // Prevent multiple submissions
+    if (_ahIsSubmitting) {
+        _ahSetStatus('Already submitting... please wait.', true);
+        return;
+    }
+    
+    // Check again that we still have enough gold (in case something changed)
+    if (p.gold < fee) {
+        _ahSetStatus('Not enough gold for listing fee (' + fee + 'g needed).', true);
+        window._pendingListing = null;
+        return;
+    }
+    
+    const isWeapon = !!(item.weaponId || item.type === 'weapon');
+    const baseData = isWeapon
+        ? (typeof WEAPONS !== 'undefined' ? WEAPONS[item.weaponId || item.instanceId] : null)
+        : (typeof ARMOR !== 'undefined' ? ARMOR[item.armorId || item.instanceId] : null);
+    const quality = item.quality || baseData?.quality || 'normal';
+    const name = item.name || baseData?.name || 'Unknown';
+    const level = baseData?.level || item.level || 1;
+    const subtype = baseData?.weaponSubtype || baseData?.armorType || '';
+    const classReq = baseData?.classRestriction
+        ? (Array.isArray(baseData.classRestriction) ? baseData.classRestriction.join(',') : baseData.classRestriction)
+        : 'all';
+    const charId = p.characterId || p.id || '';
+    
+    // Show loading indicator
+    _ahIsSubmitting = true;
+    const loadingOverlay = _ahShowLoading('Posting listing...', () => {
+        _ahIsSubmitting = false;
+        _ahSetStatus('❌ Request timed out after 30 seconds. Please check your connection and try again.', true);
+    });
+    
+    // Remove from inventory immediately (optimistic)
+    _ahRemoveItemFromInventory(item);
+    // Deduct listing fee immediately
+    p.gold -= fee;
+    if (typeof saveGame === 'function') saveGame();
+    
+    const params = new URLSearchParams({
+        action: 'ah_list',
+        character_id: charId,
+        seller_name: p.name || 'Unknown',
+        item_type: isWeapon ? 'weapon' : 'armor',
+        item_key: item.instanceId || item.weaponId || item.armorId || '',
+        item_data: JSON.stringify(item),
+        item_name: name,
+        item_quality: quality,
+        item_level: level,
+        item_class_req: classReq,
+        item_subtype: subtype,
+        starting_bid: startingBid,
+        buy_now_price: buyNowPrice,
+        duration_minutes: durationMinutes,
+        player_gold: p.gold,
+    });
+    
+    fetch(AH_SCRIPT_URL + '?' + params.toString(), { redirect: 'follow' })
+        .then(r => r.json())
+        .then(data => {
+            _ahHideLoading();
+            _ahIsSubmitting = false;
+            window._pendingListing = null;
+            
+            if (data.ok) {
+                _ahSetStatus('✅ ' + name + ' listed! Starting bid: ' + startingBid.toLocaleString() + 'g' 
+                    + (buyNowPrice > 0 ? ' (Buy Now: ' + buyNowPrice.toLocaleString() + 'g)' : '')
+                    + ' · Fee: ' + fee.toLocaleString() + 'g', false);
+                _ahSellItem = null;
+                _ahSellStep = 'pick';
+                _ahTab = 'mylistings';
+                _ahRender();
+                _ahFetchMyListings();
+            } else {
+                // Rollback: return item and gold
+                _ahReturnItemToInventory(JSON.stringify(item), name);
+                p.gold += fee;
+                if (typeof saveGame === 'function') saveGame();
+                _ahSetStatus('Listing failed: ' + (data.error || 'Unknown error'), true);
+                _ahUpdateBody();
+            }
+        })
+        .catch(() => {
+            _ahHideLoading();
+            _ahIsSubmitting = false;
+            window._pendingListing = null;
+            // Rollback on network error
+            _ahReturnItemToInventory(JSON.stringify(item), name);
+            p.gold += fee;
+            if (typeof saveGame === 'function') saveGame();
+            _ahSetStatus('Network error. Your item and gold have been returned.', true);
+            _ahUpdateBody();
+        });
+}
+
+
+
 function _ahRenderSellConfirm() {
   const p         = gameState.player;
   const item      = _ahSellItem;
@@ -628,15 +970,14 @@ function _ahRenderSellConfirm() {
   const isSysop   = !!(gameState.sysop && gameState.sysop.authenticated);
 
   // ── Duration dropdown options ──────────────────────────────────────────
-  const durationOpts = Object.entries(AH_LISTING_FEES)
+  durationOpts = Object.entries(AH_LISTING_FEES)
     .filter(([, info]) => !info.sysopOnly || isSysop)
     .map(([hours, info]) => {
-      const canAfford = p.gold >= info.fee;
-      const sel       = parseInt(hours) === _ahSelectedMinutes ? 'selected' : '';
-      return `<option value="${hours}" ${sel} ${canAfford ? '' : 'disabled'}>
-        ${info.label} — ${info.fee}g listing fee${canAfford ? '' : ' (need more gold)'}
+      const sel = parseInt(hours) === _ahSelectedMinutes ? 'selected' : '';
+      return `<option value="${hours}" ${sel}>
+        ${info.label}
       </option>`;
-    }).join('');
+    }).join('')
 
   // Reset selected hours to first affordable option if current isn't valid
   const firstValid = Object.entries(AH_LISTING_FEES)
@@ -695,24 +1036,25 @@ function _ahRenderSellConfirm() {
         style="background:#0a0a00;border:1px solid #2a3a00;color:#c8a000;
                font-family:'VT323',monospace;font-size:16px;
                padding:6px 10px;width:180px;box-sizing:border-box;"
-        oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+        oninput="this.value=this.value.replace(/[^0-9]/g,''); _ahUpdateFeePreview()">
     </div>
 
     <!-- Duration dropdown -->
     <div style="margin-bottom:10px;">
       <div style="color:#888;font-size:13px;margin-bottom:4px;">Duration:</div>
       <select id="ahDurationSelect"
-        onchange="_ahOnDurationChange(this.value)"
+  onchange="_ahOnDurationChange(this.value); _ahUpdateFeePreview()"
         style="background:#0a0a00;border:1px solid #3a3a00;color:#c8a000;
                font-family:'VT323',monospace;font-size:14px;
                padding:5px 8px;width:100%;box-sizing:border-box;cursor:pointer;">
         ${durationOpts}
       </select>
       <div id="ahFeePreview"
-        style="color:#555;font-size:11px;margin-top:4px;
-               font-family:'Courier New',monospace;">
-        ${currentFeeInfo.label} · Fee: ${currentFeeInfo.fee}g · Charged immediately
-      </div>
+  style="color:#FFD700;font-size:14px;margin-top:6px;font-weight:bold;
+         font-family:'Courier New',monospace;text-shadow:0 0 4px #FFD70066;">
+  ✦ LISTING FEE: <span id="ahFeeAmount" style="color:#FFFFFF;font-size:16px;">0</span>g ✦
+  <span style="color:#888;font-size:11px;font-weight:normal;">(${currentFeeInfo.feePct * 100}% of Buy Now price)</span>
+</div>
     </div>
 
     <!-- Fine print — one line -->
@@ -722,12 +1064,12 @@ function _ahRenderSellConfirm() {
     </div>
 
     <div style="display:flex;gap:8px;">
-      <button onclick="_ahSubmitListing()"
-        style="background:#0a0a00;border:1px solid #3a5a00;color:#8aaa00;
-               font-family:'VT323',monospace;font-size:15px;
-               padding:8px 20px;cursor:pointer;">
-        📦 LIST ITEM
-      </button>
+      <button onclick="_ahSubmitListing()" id="ahListButton"
+  style="background:#0a0a00;border:1px solid #3a5a00;color:#8aaa00;
+         font-family:'VT323',monospace;font-size:15px;
+         padding:8px 20px;cursor:pointer;">
+  📦 LIST ITEM — <span id="ahListButtonFee">0</span>g fee
+</button>
       <button onclick="_ahSellStep='pick';_ahSelectedMinutes=720;_ahUpdateBody();"
         style="background:none;border:1px solid #2a2a2a;color:#444;
                font-family:'VT323',monospace;font-size:15px;
@@ -739,13 +1081,11 @@ function _ahRenderSellConfirm() {
 
 // ── Duration dropdown change handler ──────────────────────────────────────
 function _ahOnDurationChange(val) {
-  _ahSelectedMinutes = parseInt(val);
-  const info         = AH_LISTING_FEES[_ahSelectedMinutes];
-  if (!info) return;
-  const preview = document.getElementById('ahFeePreview');
-  if (preview) {
-    preview.textContent = info.label + ' · Fee: ' + info.fee + 'g · Charged immediately';
-  }
+    _ahSelectedMinutes = parseInt(val);
+    const info = AH_LISTING_FEES[_ahSelectedMinutes];
+    if (!info) return;
+    // Fee preview will be updated by _ahUpdateFeePreview()
+    _ahUpdateFeePreview();
 }
 
 // ── Item preview modal ────────────────────────────────────────────────────
@@ -1223,98 +1563,44 @@ function _ahConfirmBuy(listingId, itemName, price) {
 
 // ── Submit new listing ────────────────────────────────────────────────────
 function _ahSubmitListing() {
-  const p    = gameState.player;
-  const item = _ahSellItem;
-  if (!item) return;
-
-  const startingBidInput = document.getElementById('ahStartingBid');
-  const buyNowInput      = document.getElementById('ahBuyNowInput');
-  const startingBid = parseInt(startingBidInput?.value) || 0;
-  const buyNowPrice = parseInt(buyNowInput?.value)      || 0;
-  if (startingBid < 1) {
-    _ahSetStatus('Please enter a starting bid (minimum 1g).', true);
-    return;
-  }
-  if (buyNowPrice > 0 && buyNowPrice <= startingBid) {
-    _ahSetStatus('Buy It Now price must be higher than the starting bid.', true);
-    return;
-  }
-
-  const durationMinutes = _ahSelectedMinutes || 720;
-  const listingFee      = AH_LISTING_FEES[durationMinutes]?.fee || 50;
-
-  if (p.gold < listingFee) {
-    _ahSetStatus('Not enough gold for listing fee (' + listingFee + 'g needed).', true);
-    return;
-  }
-
-  const isWeapon  = !!(item.weaponId || item.type === 'weapon');
-  const baseData  = isWeapon
-    ? (typeof WEAPONS !== 'undefined' ? WEAPONS[item.weaponId || item.instanceId] : null)
-    : (typeof ARMOR   !== 'undefined' ? ARMOR[item.armorId   || item.instanceId] : null);
-  const quality   = item.quality || baseData?.quality || 'normal';
-  const name      = item.name || baseData?.name || 'Unknown';
-  const level     = baseData?.level || item.level || 1;
-  const subtype   = baseData?.weaponSubtype || baseData?.armorType || '';
-  const classReq  = baseData?.classRestriction
-    ? (Array.isArray(baseData.classRestriction) ? baseData.classRestriction.join(',') : baseData.classRestriction)
-    : 'all';
-  const charId    = p.characterId || p.id || '';
-
-  // Remove from inventory immediately (optimistic)
-  _ahRemoveItemFromInventory(item);
-  // Deduct listing fee immediately
-  p.gold -= listingFee;
-  if (typeof saveGame === 'function') saveGame();
-
-  const params = new URLSearchParams({
-    action:         'ah_list',
-    character_id:   charId,
-    seller_name:    p.name || 'Unknown',
-    item_type:      isWeapon ? 'weapon' : 'armor',
-    item_key:       item.instanceId || item.weaponId || item.armorId || '',
-    item_data:      JSON.stringify(item),
-    item_name:      name,
-    item_quality:   quality,
-    item_level:     level,
-    item_class_req: classReq,
-    item_subtype:   subtype,
-    starting_bid:   startingBid,
-    buy_now_price:  buyNowPrice,
-    duration_minutes: durationMinutes,
-    player_gold:    p.gold, // post-deduction (server validates)
-  });
-
-  fetch(AH_SCRIPT_URL + '?' + params.toString(), { redirect: 'follow' })
-    .then(r => r.json())
-    .then(data => {
-      if (data.ok) {
-        const bidStr = startingBid.toLocaleString() + 'g'
-          + (buyNowPrice > 0 ? ' (Buy Now: ' + buyNowPrice.toLocaleString() + 'g)' : '');
-        _ahSetStatus('✅ ' + name + ' listed! Starting bid: ' + bidStr, false);
-        _ahSellItem = null;
-        _ahSellStep = 'pick';
-        _ahSelectedMinutes = 720;
-        _ahTab      = 'mylistings';
-        _ahRender();
-        _ahFetchMyListings();
-      } else {
-        // Rollback: return item and gold
-        _ahReturnItemToInventory(JSON.stringify(item), name);
-        p.gold += listingFee;
-        if (typeof saveGame === 'function') saveGame();
-        _ahSetStatus('Listing failed: ' + (data.error || 'Unknown error'), true);
-        _ahUpdateBody();
-      }
-    })
-    .catch(() => {
-      // Rollback on network error
-      _ahReturnItemToInventory(JSON.stringify(item), name);
-      p.gold += listingFee;
-      if (typeof saveGame === 'function') saveGame();
-      _ahSetStatus('Network error. Your item and gold have been returned.', true);
-      _ahUpdateBody();
-    });
+    const p = gameState.player;
+    const item = _ahSellItem;
+    if (!item) return;
+    
+    // Check if item is bound
+    if (item.bound === true) {
+        _ahSetStatus('❌ Bound items cannot be sold at the Auction House!', true);
+        return;
+    }
+    
+    // Get starting bid and buy now price
+    const startingBidInput = document.getElementById('ahStartingBid');
+    const buyNowInput = document.getElementById('ahBuyNowInput');
+    
+    const startingBid = parseInt(startingBidInput?.value) || 0;
+    const buyNowPrice = parseInt(buyNowInput?.value) || 0;
+    
+    if (startingBid < 1) {
+        _ahSetStatus('Please enter a valid starting bid (minimum 1g).', true);
+        return;
+    }
+    
+    if (buyNowPrice > 0 && buyNowPrice <= startingBid) {
+        _ahSetStatus('Buy It Now price must be higher than the starting bid.', true);
+        return;
+    }
+    
+    const durationMinutes = _ahSelectedMinutes || 720;
+    const feePct = AH_LISTING_FEES[durationMinutes]?.feePct || 0.05;
+    const listingFee = Math.max(1, Math.floor(buyNowPrice * feePct));
+    
+    if (p.gold < listingFee) {
+        _ahSetStatus('Not enough gold for listing fee (' + listingFee + 'g needed).', true);
+        return;
+    }
+    
+    // Show confirmation modal with item card
+    _ahShowListingConfirm(item, startingBid, buyNowPrice, listingFee, durationMinutes);
 }
 
 // ── Cancel listing ────────────────────────────────────────────────────────
@@ -1557,57 +1843,74 @@ function _ahShowBidModal(listingId, minBid, itemName) {
 }
 
 function _ahPlaceBid(listingId, maxBid, itemName, modal) {
-  const p      = gameState.player;
-  const charId = p.characterId || p.id || '';
-  const confirmBtn = document.getElementById('ahBidConfirmBtn');
-  if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = 'Bidding...'; }
-
-  const params = new URLSearchParams({
-    action:       'ah_bid',
-    listing_id:   listingId,
-    character_id: charId,
-    bidder_name:  p.name || 'Unknown',
-    max_bid:      maxBid,
-    player_gold:  p.gold,
-  });
-
-  fetch(AH_SCRIPT_URL + '?' + params.toString(), { redirect: 'follow' })
-    .then(r => r.json())
-    .then(data => {
-      if (data.ok) {
-        if (data.you_are_winning) {
-          // Deduct full max_bid immediately (escrow model)
-          // Winner gets overpayment back via mailbox when auction ends
-          p.gold -= maxBid;
-          if (typeof saveGame === 'function') saveGame();
-          if (modal) modal.remove();
-          _ahSetStatus('You are the highest bidder on ' + itemName + '!'
-            + ' Current price: ' + data.new_current_bid.toLocaleString() + 'g'
-            + ' | Your max: ' + maxBid.toLocaleString() + 'g held', false);
-        } else {
-          // Lost proxy battle — full maxBid refunded via mailbox immediately
-          if (typeof _mailUnreadCount !== 'undefined' && typeof _mailUpdateBadge === 'function') {
-            _mailUnreadCount = (_mailUnreadCount || 0) + 1;
-            _mailUpdateBadge();
-          }
-          if (modal) modal.remove();
-          _ahSetStatus('You were outbid on ' + itemName + '. Your '
-            + maxBid.toLocaleString() + 'g has been returned to your mailbox.', false);
-        }
-        // Refresh browse list
-        _ahLastFetch = 0;
-        _ahFetchBrowse(true);
-      } else {
-        const statusEl = document.getElementById('ahBidStatus');
-        if (statusEl) statusEl.textContent = data.error || 'Bid failed';
+    // Prevent multiple submissions
+    if (_ahIsSubmitting) {
+        _ahSetStatus('Already submitting... please wait.', true);
+        return;
+    }
+    
+    const p = gameState.player;
+    const charId = p.characterId || p.id || '';
+    const confirmBtn = document.getElementById('ahBidConfirmBtn');
+    if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = 'Bidding...'; }
+    
+    // Show loading indicator
+    _ahIsSubmitting = true;
+    const loadingOverlay = _ahShowLoading('Placing bid...', () => {
+        _ahIsSubmitting = false;
         if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'PLACE BID'; }
-      }
-    })
-    .catch(function() {
-      const statusEl = document.getElementById('ahBidStatus');
-      if (statusEl) statusEl.textContent = 'Network error. Please try again.';
-      if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'PLACE BID'; }
+        _ahSetStatus('❌ Bid timed out after 30 seconds. Please try again.', true);
     });
+    
+    const params = new URLSearchParams({
+        action: 'ah_bid',
+        listing_id: listingId,
+        character_id: charId,
+        bidder_name: p.name || 'Unknown',
+        max_bid: maxBid,
+        player_gold: p.gold,
+    });
+    
+    fetch(AH_SCRIPT_URL + '?' + params.toString(), { redirect: 'follow' })
+        .then(r => r.json())
+        .then(data => {
+            _ahHideLoading();
+            _ahIsSubmitting = false;
+            
+            if (data.ok) {
+                if (data.you_are_winning) {
+                    p.gold -= maxBid;
+                    if (typeof saveGame === 'function') saveGame();
+                    if (modal) modal.remove();
+                    _ahSetStatus('You are the highest bidder on ' + itemName + '!'
+                        + ' Current price: ' + data.new_current_bid.toLocaleString() + 'g'
+                        + ' | Your max: ' + maxBid.toLocaleString() + 'g held', false);
+                } else {
+                    if (typeof _mailUnreadCount !== 'undefined' && typeof _mailUpdateBadge === 'function') {
+                        _mailUnreadCount = (_mailUnreadCount || 0) + 1;
+                        _mailUpdateBadge();
+                    }
+                    if (modal) modal.remove();
+                    _ahSetStatus('You were outbid on ' + itemName + '. Your '
+                        + maxBid.toLocaleString() + 'g has been returned to your mailbox.', false);
+                }
+                _ahLastFetch = 0;
+                _ahFetchBrowse(true);
+            } else {
+                if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'PLACE BID'; }
+                const statusEl = document.getElementById('ahBidStatus');
+                if (statusEl) statusEl.textContent = data.error || 'Bid failed';
+                _ahSetStatus('Bid failed: ' + (data.error || 'Unknown error'), true);
+            }
+        })
+        .catch(() => {
+            _ahHideLoading();
+            _ahIsSubmitting = false;
+            if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'PLACE BID'; }
+            _ahSetStatus('Network error. Please try again.', true);
+            const statusEl = document.getElementById('ahBidStatus');
+            if (statusEl) statusEl.textContent = 'Network error. Please try again.';
+        });
 }
 
 function _ahCloseBidModal() {
@@ -1617,43 +1920,62 @@ function _ahCloseBidModal() {
 
 // ── Buy It Now handler (client-side) ──────────────────────────────────────
 function _ahBuyNow(listingId, price, itemName) {
-  const p = gameState.player;
-  if (p.gold < price) {
-    _ahSetStatus('Not enough gold for Buy It Now (' + price.toLocaleString() + 'g needed).', true);
-    return;
-  }
-  if (!confirm('Buy ' + itemName + ' instantly for ' + price.toLocaleString() + 'g?')) return;
-
-  const charId = p.characterId || p.id || '';
-  const params = new URLSearchParams({
-    action:       'ah_bid',  // server detects buy-it-now when maxBid >= buyNowPrice
-    listing_id:   listingId,
-    character_id: charId,
-    bidder_name:  p.name || 'Unknown',
-    max_bid:      price,
-    player_gold:  p.gold,
-  });
-
-  fetch(AH_SCRIPT_URL + '?' + params.toString(), { redirect: 'follow' })
-    .then(r => r.json())
-    .then(data => {
-      if (data.ok && data.buy_now) {
-        p.gold -= price;
-        if (typeof saveGame === 'function') saveGame();
-        if (typeof _mailUnreadCount !== 'undefined' && typeof _mailUpdateBadge === 'function') {
-          _mailUnreadCount = (_mailUnreadCount || 0) + 1;
-          _mailUpdateBadge();
-        }
-        _ahSetStatus('Purchased! ' + itemName + ' sent to your mailbox. 📬', false);
-        _ahLastFetch = 0;
-        _ahFetchBrowse(true);
-      } else {
-        _ahSetStatus('Purchase failed: ' + (data.error || 'Unknown error'), true);
-      }
-    })
-    .catch(function() {
-      _ahSetStatus('Network error during purchase.', true);
+    // Prevent multiple submissions
+    if (_ahIsSubmitting) {
+        _ahSetStatus('Already submitting... please wait.', true);
+        return;
+    }
+    
+    const p = gameState.player;
+    if (p.gold < price) {
+        _ahSetStatus('Not enough gold for Buy It Now (' + price.toLocaleString() + 'g needed).', true);
+        return;
+    }
+    if (!confirm('Buy ' + itemName + ' instantly for ' + price.toLocaleString() + 'g?')) return;
+    
+    const charId = p.characterId || p.id || '';
+    
+    // Show loading indicator
+    _ahIsSubmitting = true;
+    const loadingOverlay = _ahShowLoading('Processing purchase...', () => {
+        _ahIsSubmitting = false;
+        _ahSetStatus('❌ Purchase timed out after 30 seconds. Please try again.', true);
     });
+    
+    const params = new URLSearchParams({
+        action: 'ah_bid',
+        listing_id: listingId,
+        character_id: charId,
+        bidder_name: p.name || 'Unknown',
+        max_bid: price,
+        player_gold: p.gold,
+    });
+    
+    fetch(AH_SCRIPT_URL + '?' + params.toString(), { redirect: 'follow' })
+        .then(r => r.json())
+        .then(data => {
+            _ahHideLoading();
+            _ahIsSubmitting = false;
+            
+            if (data.ok && data.buy_now) {
+                p.gold -= price;
+                if (typeof saveGame === 'function') saveGame();
+                if (typeof _mailUnreadCount !== 'undefined' && typeof _mailUpdateBadge === 'function') {
+                    _mailUnreadCount = (_mailUnreadCount || 0) + 1;
+                    _mailUpdateBadge();
+                }
+                _ahSetStatus('Purchased! ' + itemName + ' sent to your mailbox. 📬', false);
+                _ahLastFetch = 0;
+                _ahFetchBrowse(true);
+            } else {
+                _ahSetStatus('Purchase failed: ' + (data.error || 'Unknown error'), true);
+            }
+        })
+        .catch(() => {
+            _ahHideLoading();
+            _ahIsSubmitting = false;
+            _ahSetStatus('Network error during purchase.', true);
+        });
 }
 
 // ── Wire bid + buy-now buttons in browse listings ─────────────────────────
@@ -1700,3 +2022,107 @@ window._ahCloseBidModal          = _ahCloseBidModal;
 window._ahWirePreviewButtons     = _ahWirePreviewButtons;
 window._ahSellSetFilter          = _ahSellSetFilter;
 window._ahOnDurationChange       = _ahOnDurationChange;
+
+
+function _ahShowLoading(message, onTimeout) {
+    // Remove any existing loading overlay
+    _ahHideLoading();
+    
+    // Set timeout
+    if (onTimeout) {
+        _ahLoadingTimeout = setTimeout(() => {
+            _ahHideLoading();
+            if (onTimeout) onTimeout();
+        }, AH_TIMEOUT_MS);
+    }
+    
+    // Create loading overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'ahLoadingOverlay';
+    overlay.style.cssText = `
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.85);
+        z-index: 10002;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'VT323', monospace;
+    `;
+    
+    overlay.innerHTML = `
+        <div style="
+            background: #0a0a0a;
+            border: 2px solid #c8a000;
+            border-radius: 8px;
+            padding: 24px 32px;
+            text-align: center;
+            min-width: 250px;
+        ">
+            <div style="color: #c8a000; font-size: 20px; margin-bottom: 16px;">
+                ⏳ ${message}
+            </div>
+            <div style="
+                width: 100%;
+                height: 4px;
+                background: #1a1a1a;
+                border-radius: 2px;
+                overflow: hidden;
+                margin-bottom: 12px;
+            ">
+                <div style="
+                    width: 0%;
+                    height: 100%;
+                    background: #c8a000;
+                    animation: ahLoadingBar 30s linear forwards;
+                "></div>
+            </div>
+            <div style="color: #666; font-size: 12px;">
+                Waiting for server...
+            </div>
+            <button id="ahCancelBtn" style="
+                margin-top: 16px;
+                background: #1a0a0a;
+                border: 1px solid #ff4444;
+                color: #ff8888;
+                font-family: 'VT323', monospace;
+                font-size: 14px;
+                padding: 6px 16px;
+                cursor: pointer;
+                border-radius: 4px;
+            ">Cancel</button>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+    
+    // Add cancel button handler
+    document.getElementById('ahCancelBtn')?.addEventListener('click', () => {
+        _ahHideLoading();
+        if (onTimeout) onTimeout();
+    });
+    
+    // Add keyframe animation
+    if (!document.getElementById('ahLoadingKeyframes')) {
+        const style = document.createElement('style');
+        style.id = 'ahLoadingKeyframes';
+        style.textContent = `
+            @keyframes ahLoadingBar {
+                0% { width: 0%; }
+                100% { width: 100%; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    return overlay;
+}
+
+function _ahHideLoading() {
+    if (_ahLoadingTimeout) {
+        clearTimeout(_ahLoadingTimeout);
+        _ahLoadingTimeout = null;
+    }
+    const overlay = document.getElementById('ahLoadingOverlay');
+    if (overlay) overlay.remove();
+}
