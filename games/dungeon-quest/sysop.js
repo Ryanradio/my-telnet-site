@@ -717,45 +717,46 @@ staticArmorGems: (() => {
         // ACTIVE COMBAT - Save mid-fight state so enemies persist on reload
         // ═══════════════════════════════════════════════════════════════
         activeCombat: (() => {
-            const cs = gameState.combatState;
-            if (!cs || gameState.dungeon) return null; // Only for world exploration combat
+    const cs = gameState.combatState;
+    console.log('💾 SAVING COMBAT - cs:', cs ? 'YES' : 'NO', 'dungeon:', gameState.dungeon ? 'YES' : 'NO');
+if (!cs) return null;
+    if (!cs) return null;
 
-            // DEBUG: Log what we're saving
     console.log('💾 SAVING COMBAT STATE:', cs.monsters.map(m => ({
         name: m.name,
         hp: m.hp,
         maxHp: m.maxHp,
-        key: m.key
+        key: m.key,
+        timer: m.timer
     })));
 
-            return {
-                location: gameState.currentLocation,
-                monsters: cs.monsters.map(m => ({
-                    // All fields needed to fully reconstruct the enemy
-                    key:         m.key,
-                    name:        m.name,
-                    rarity:      m.rarity,
-                    rarityColor: m.rarityColor,
-                    hp:          m.hp,
-                    maxHp:       m.maxHp,
-                    damage:      m.damage,
-                    defense:     m.defense,
-                    xp:          m.xp,
-                    gold:        m.gold,
-                    level:       m.level,
-                    possibleDrops: m.possibleDrops,
-                    dropRates:   m.dropRates,
-                    index:       m.index
-                })),
-                currentTarget:   cs.currentTarget,
-              //  enemyDelay:      cs.enemyDelay,
-                enemyHits:       cs.enemyHits,
-                enemyHitsLeft:   cs.enemyHitsLeft,
-                // Save pip state (how many pips are ready vs cooling down)
-                pipCount:        cs.pipAvailable.length,
-                pipsReady:       cs.pipAvailable.map(x => x),
-            };
-        })(),
+    return {
+        location: gameState.currentLocation,
+        monsters: cs.monsters.map(m => ({
+            key:         m.key,
+            name:        m.name,
+            rarity:      m.rarity,
+            rarityColor: m.rarityColor,
+            hp:          m.hp,
+            maxHp:       m.maxHp,
+            damage:      m.damage,
+            defense:     m.defense,
+            xp:          m.xp,
+            gold:        m.gold,
+            level:       m.level,
+            possibleDrops: m.possibleDrops,
+            dropRates:   m.dropRates,
+            index:       m.index,
+            
+        })),
+        currentTarget:   cs.currentTarget,
+        enemyHits:       cs.enemyHits,
+        enemyHitsLeft:   cs.enemyHitsLeft,
+        pipCount:        cs.pipAvailable.length,
+        pipsReady:       cs.pipAvailable.map(x => x),
+        
+    };
+})(),
 
         // Dungeon state (if in dungeon)
         dungeon: gameState.dungeon ? {
@@ -1175,7 +1176,7 @@ async function reconcileSaves(characterId, characterName) {
     }
 
     // Same level — use timestamp (60 second window to tolerate clock skew)
-    const CLOSE_THRESHOLD = 60 * 1000;
+    const CLOSE_THRESHOLD = 1000;
 
     if (timeDiff < CLOSE_THRESHOLD) {
         console.log('✅ Saves are equal — using local');

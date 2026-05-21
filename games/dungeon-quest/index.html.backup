@@ -2160,12 +2160,11 @@ function initGame() {
                 console.error('Error checking for active characters:', e);
             }
             
-            // REMOVE or COMMENT OUT this entire if block
-            // if (activeChar) {
-            //     console.log('🎮 Found active dungeon session. Taking you back to main menu.');
-            //     showMainMenu();
-            //     return;
-            // }
+                        if (activeChar) {
+                console.log('🎮 Found active dungeon session. Taking you back to main menu.');
+                showMainMenu();
+                return;
+            }
             
             // If single character and not active, auto-load for convenience
             if (characters.length === 1) {
@@ -6019,34 +6018,25 @@ async function loadCloudCharacterToLocal(saveId) {
         return;
     }
     
+    // The character_data contains your FULL save snapshot
     const cloudSave = data.character_data;
+    console.log('📦 Cloud save loaded:', cloudSave.characterName, '| Level:', cloudSave.player?.level);
+    
+    // Player explicitly chose to load from cloud — always use the cloud data.
+    // Do NOT let a stale local timestamp override the cloud save the player just selected.
+    const saveToUse = cloudSave;
+    
     const characterId = cloudSave.characterId;
     const localKey = `dq_save_${characterId}`;
-    
-    // ⭐ CHECK LOCAL SAVE FIRST
-    const localData = localStorage.getItem(localKey);
-    let saveToUse = cloudSave;
-    
-    if (localData) {
-        const localSave = JSON.parse(localData);
-        const localTime = localSave.timestamp || 0;
-        const cloudTime = cloudSave.timestamp || 0;
-        
-        console.log(`📊 Local save timestamp: ${new Date(localTime).toLocaleString()}.${String(localTime % 1000).padStart(3,'0')}`);
-        console.log(`📊 Cloud save timestamp: ${new Date(cloudTime).toLocaleString()}.${String(cloudTime % 1000).padStart(3,'0')}`);
-        
-        // If local is newer, use local instead of cloud
-        if (localTime > cloudTime) {
-            console.log(`✅ Local save is NEWER - using LOCAL save instead of cloud`);
-            saveToUse = localSave;
-        } else {
-            console.log(`📥 Cloud save is newer or equal - using cloud save`);
-        }
-    } else {
-        console.log(`📥 No local save found - using cloud save`);
+
+    // Log what we're overwriting, if anything
+    const existingLocal = localStorage.getItem(localKey);
+    if (existingLocal) {
+        const existingParsed = JSON.parse(existingLocal);
+        console.log(`⚠️ Overwriting local save (Lv ${existingParsed.player?.level}) with cloud save (Lv ${cloudSave.player?.level})`);
     }
     
-    // Write the chosen save to localStorage
+    // Write cloud data to localStorage so loadCharacter() finds it
     localStorage.setItem(localKey, JSON.stringify(saveToUse));
     
     // Update character list
@@ -6057,12 +6047,12 @@ async function loadCloudCharacterToLocal(saveId) {
         name: saveToUse.characterName,
         level: saveToUse.player.level,
         class: saveToUse.player.class,
-        timestamp: saveToUse.timestamp || Date.now(),
-        lastSaved: saveToUse.lastSaved || new Date().toLocaleString()
+        timestamp: Date.now(),
+        lastSaved: new Date().toLocaleString()
     });
     localStorage.setItem('dq_character_list', JSON.stringify(charList));
     
-    // Clean up old cloud_ duplicates
+    // Clean up any old cloud_ duplicates with the same character name
     const keysToRemove = [];
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
@@ -11591,6 +11581,16 @@ document.addEventListener('visibilitychange', async () => {
     }
 });
 
+window.addEventListener('beforeunload', (e) => {
+    if (!gameState || !gameState.player) return;
+    saveGame(); // local save always completes synchronously
+    calamitySupabase.auth.getUser().then(({ data: { user } }) => {
+        if (!user) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+});
 
 // 2. Run whenever a gem is socketed (find your socket function)
 if (typeof window.socketGem === 'function') {
