@@ -1338,6 +1338,14 @@ function startDungeonCombat(dungeonEnemies) {
         }
     });
 
+    // If this is a random dungeon boss fight, apply the boosted stats now.
+    // startCombat() re-spawns from the base template so we patch after.
+    if (gameState.dungeon && gameState.dungeon.dungeonKey === 'random_dungeon') {
+        if (typeof _applyRandomBossOverrides === 'function') {
+            setTimeout(_applyRandomBossOverrides, 50);
+        }
+    }
+
     saveGame();
 }
 
@@ -5694,6 +5702,11 @@ function checkCombatEnd() {
             } 
                 
             
+            // ── RANDOM DUNGEON BOSS: guaranteed loot ──────────────────────
+            if (monster.isRandomBoss && typeof awardRandomBossLoot === 'function') {
+                awardRandomBossLoot(gameState.player);
+            }
+
             // Track for endCombat kill summary (name, rarityColor, etc.)
             if (!cs.defeatedMonsters) cs.defeatedMonsters = [];
             cs.defeatedMonsters.push(monster);

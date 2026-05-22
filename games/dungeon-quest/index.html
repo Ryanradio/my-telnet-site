@@ -334,6 +334,7 @@
     <!-- External Game Data Files -->
     <script src="gameversion.js"></script>
     <script src="dungeon-data.js"></script>
+    <script src="random-dungeon.js"></script>
     <script src="Dungeon1.js"></script>
     <script src="AshenDepths.js"></script>
     <script src="town1.js"></script>
@@ -4798,6 +4799,12 @@ console.log(`🛡️ Final equipped armor: ${gameState.player.armor}`);
 
         // Refresh dungeon terminal if we're in a dungeon
         if (gameState.dungeon) {
+            if (gameState.dungeon.dungeonKey === 'random_dungeon' &&
+                (!DUNGEONS['random_dungeon'] || !DUNGEONS['random_dungeon'].floors)) {
+                if (typeof generateRandomDungeon === 'function') {
+                    generateRandomDungeon(gameState.player ? gameState.player.level : 1);
+                }
+            }
             const dungeon = DUNGEONS[gameState.dungeon.dungeonKey];
             if (dungeon) {
                 const floor = dungeon.floors[gameState.dungeon.floor];
@@ -4862,9 +4869,15 @@ if (!gameState.dungeon) {
         if (typeof initMailbox === 'function') initMailbox();
     }
 } else {
-    document.body.classList.add("terminal-mode");
-    if (typeof renderDungeonActionBar === 'function') {
-        renderDungeonActionBar();
+    if (gameState.dungeon && gameState.dungeon.dungeonKey === 'random_dungeon') {
+        gameState.dungeon = null;
+        gameState.combatState = null;
+        showTown();
+    } else {
+        document.body.classList.add("terminal-mode");
+        if (typeof renderDungeonActionBar === 'function') {
+            renderDungeonActionBar();
+        }
     }
 }
 
@@ -6789,6 +6802,11 @@ async function loadCloudCharacter(saveId) {
                     <div class="menu-option" onclick="cloudSave()" style="border-color: #AA88FF;">► ☁️ SAVE TO CLOUD</div>
                     <div class="menu-option" onclick="manualCloudSync()" style="border-color: #AA88FF;">► ☁️ SYNC TO CLOUD</div>
                     <div class="menu-option" onclick="confirmQuitToMenu()">► ⏏ QUIT TO MENU</div>
+                    ${gameState.sysop && gameState.sysop.authenticated ? `
+                    <div class="menu-option" onclick="startRandomDungeon()"
+                         style="border-color:#aa44ff;color:#cc88ff;background:rgba(170,68,255,0.08);margin-top:12px;">
+                        🌀 [SYSOP] THE SHIFTING LABYRINTH <span style="font-size:11px;color:#8855cc;">(test only)</span>
+                    </div>` : ''}
                 </div>
             `);
                         fetchLeaderboardTicker();
@@ -8758,7 +8776,19 @@ function renderDungeonActionBar() {
         return;
     }
 
+    if (ds.dungeonKey === 'random_dungeon' && (!DUNGEONS['random_dungeon'] || !DUNGEONS['random_dungeon'].floors)) {
+        if (typeof generateRandomDungeon === 'function') {
+            generateRandomDungeon(gameState.player ? gameState.player.level : 1);
+        } else {
+            ab.innerHTML = '<button onclick="returnToTown()">⚠️ Dungeon data missing — Return to Town</button>';
+            return;
+        }
+    }
     const dungeon = DUNGEONS[ds.dungeonKey];
+    if (!dungeon || !dungeon.floors) {
+        ab.innerHTML = '<button onclick="returnToTown()">⚠️ Dungeon data missing — Return to Town</button>';
+        return;
+    }
     const floor = dungeon.floors[ds.floor];
     const room = floor.rooms[ds.currentRoom];
 
