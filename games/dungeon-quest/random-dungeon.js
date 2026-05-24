@@ -10,13 +10,13 @@
 //      and register it as DUNGEONS['random_dungeon'].
 //   2. Call startRandomDungeon() to enter it (shows the warning modal first).
 //   3. On boss kill the game awards a guaranteed weapon or armor drop
-//      and a recall_potion — just like any other dungeon kill, except forced.
+//      and an elixir — just like any other dungeon kill, except forced.
 //
 // ROOM COUNT:    20–30 rooms
 // ENEMY LEVELS:  playerLevel + 0 to +2  (boss is playerLevel + 2)
 // BOSS RARITY:   Epic / Legendary / Godly (random each run)
 // BOSS STATS:    2–3× HP, 1.5× damage
-// GUARANTEED:    Boss drops a random weapon OR armor + a recall_potion
+// GUARANTEED:    Boss drops a random weapon OR armor + an elixir
 //
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -27,9 +27,9 @@
     const MIN_ROOMS        = 20;
     const MAX_ROOMS        = 30;
     const BOSS_RARITIES    = ['epic', 'legendary', 'godly'];
-    const BOSS_HP_MULT_MIN = 2.0;
-    const BOSS_HP_MULT_MAX = 3.0;
-    const BOSS_DMG_MULT    = 1.5;
+    const BOSS_HP_MULT_MIN = 4.0;
+    const BOSS_HP_MULT_MAX = 6.0;
+    const BOSS_DMG_MULT    = 2.5;
     const ENEMY_LEVEL_PAD  = 2;   // enemies spawn up to this many levels above player
 
     // Room name / description pools
@@ -227,56 +227,56 @@
     // ─────────────────────────────────────────────────────────────────────────
 
     function buildBossMonster(playerLevel, pool) {
-        if (typeof ENEMIES === 'undefined' || pool.length === 0) return null;
+    if (typeof ENEMIES === 'undefined' || pool.length === 0) return null;
 
-        // Prefer monsters at or near the top of the level range
-        const bossLevel = playerLevel + ENEMY_LEVEL_PAD;
-        const bossPool  = pool.filter(k => ENEMIES[k].level >= playerLevel)
-                              .sort((a, b) => ENEMIES[b].level - ENEMIES[a].level);
+    // Prefer monsters at or near the top of the level range
+    const bossLevel = playerLevel + ENEMY_LEVEL_PAD;
+    const bossPool  = pool.filter(k => ENEMIES[k].level >= playerLevel)
+                          .sort((a, b) => ENEMIES[b].level - ENEMIES[a].level);
 
-        const baseKey  = bossPool.length > 0 ? pick(bossPool.slice(0, Math.min(5, bossPool.length))) : pick(pool);
-        const template = ENEMIES[baseKey];
-        const rarity   = pick(BOSS_RARITIES);
-        const hpMult   = BOSS_HP_MULT_MIN + Math.random() * (BOSS_HP_MULT_MAX - BOSS_HP_MULT_MIN);
+    const baseKey  = bossPool.length > 0 ? pick(bossPool.slice(0, Math.min(5, bossPool.length))) : pick(pool);
+    const template = ENEMIES[baseKey];
+    const rarity   = pick(BOSS_RARITIES);
+    const hpMult   = BOSS_HP_MULT_MIN + Math.random() * (BOSS_HP_MULT_MAX - BOSS_HP_MULT_MIN);
 
-        const rarityColor = (typeof RARITY_CONFIG !== 'undefined' && RARITY_CONFIG[rarity])
-            ? RARITY_CONFIG[rarity].color
-            : '#cc44ff';
+    const rarityColor = (typeof RARITY_CONFIG !== 'undefined' && RARITY_CONFIG[rarity])
+        ? RARITY_CONFIG[rarity].color
+        : '#cc44ff';
 
-        const minDmg = template.minDamage ?? Math.max(1, Math.round(template.baseDamage * 0.67));
-        const maxDmg = template.maxDamage ?? Math.max(minDmg + 1, Math.round(template.baseDamage * 1.33));
+    const minDmg = template.minDamage ?? Math.max(1, Math.round(template.baseDamage * 0.67));
+    const maxDmg = template.maxDamage ?? Math.max(minDmg + 1, Math.round(template.baseDamage * 1.33));
 
-        const _abils    = template.abilities || [];
-        const _maxMp    = _abils.reduce((m, a) => Math.max(m, a.mpCost || 0), 0) * 2;
+    const _abils    = template.abilities || [];
+    const _maxMp    = _abils.reduce((m, a) => Math.max(m, a.mpCost || 0), 0) * 2;
 
-        return {
-            key:            baseKey,
-            monsterId:      baseKey,
-            name:           `${rarity.charAt(0).toUpperCase() + rarity.slice(1)} ${template.name}`,
-            rarity:         rarity,
-            rarityColor:    rarityColor,
-            hp:             Math.floor(template.baseHp * hpMult),
-            maxHp:          Math.floor(template.baseHp * hpMult),
-            damage:         Math.floor(template.baseDamage * BOSS_DMG_MULT),
-            minDamage:      Math.floor(minDmg * BOSS_DMG_MULT),
-            maxDamage:      Math.floor(maxDmg * BOSS_DMG_MULT),
-            baseDamage:     Math.floor(template.baseDamage * BOSS_DMG_MULT),
-            defense:        template.baseDefense,
-            xp:             Math.floor(template.baseXp * 5),
-            gold:           Math.floor(template.baseGold * 3),
-            level:          bossLevel,
-            possibleDrops:  template.possibleDrops || [],
-            dropRates:      template.dropRates || { common: 0.5, uncommon: 0.3, rare: 0.15, epic: 0.05 },
-            abilities:      template.abilities || [],
-            isBoss:         true,
-            isRandomBoss:   true,   // flag for guaranteed loot
-            spellResist:    template.baseSpellResist || 0,
-            magicAttack:    template.magicAttack || false,
-            baseMp:         _maxMp,
-            mp:             _maxMp,
-            mpDepleted:     false,
-        };
-    }
+    return {
+        key:            baseKey,
+        monsterId:      baseKey,
+        name:           `${rarity.charAt(0).toUpperCase() + rarity.slice(1)} ${template.name}`,
+        rarity:         rarity,
+        rarityColor:    rarityColor,
+        hp:             Math.floor(template.baseHp * hpMult),
+        maxHp:          Math.floor(template.baseHp * hpMult),
+        damage:         Math.floor(template.baseDamage * BOSS_DMG_MULT),
+        minDamage:      Math.floor(minDmg * BOSS_DMG_MULT),
+        maxDamage:      Math.floor(maxDmg * BOSS_DMG_MULT),
+        baseDamage:     Math.floor(template.baseDamage * BOSS_DMG_MULT),
+        defense:        template.baseDefense,
+        xp:             Math.floor(template.baseXp * 5),
+        gold:           Math.floor(template.baseGold * 3),
+        level:          bossLevel,
+        possibleDrops:  template.possibleDrops || [],
+        dropRates:      template.dropRates || { common: 0.5, uncommon: 0.3, rare: 0.15, epic: 0.05 },
+        abilities:      template.abilities || [],
+        isBoss:         true,
+        isRandomBoss:   true,
+        spellResist:    template.baseSpellResist || 0,
+        magicAttack:    template.magicAttack || false,
+        baseMp:         _maxMp,
+        mp:             _maxMp,
+        mpDepleted:     false,
+    };
+}
 
     // ─────────────────────────────────────────────────────────────────────────
     // STEP 5 — Assemble the full floor object (DUNGEONS schema)
@@ -414,117 +414,115 @@
     // ─────────────────────────────────────────────────────────────────────────
 
     function generateRandomDungeon(playerLevel) {
-        if (typeof DUNGEONS === 'undefined') {
-            console.error('random-dungeon.js: DUNGEONS not loaded yet!');
-            return null;
-        }
-
-        playerLevel = Math.max(1, playerLevel || 1);
-        
-        // COMPLETELY replace the random dungeon entry, don't merge
-        delete DUNGEONS['random_dungeon'];
-        
-        const floor1 = buildFloor(playerLevel);
-        const totalRooms = Object.keys(floor1.rooms).length;
-
-        const dungeon = {
-            name:   '🌀 The Shifting Labyrinth',
-            key:    'random_dungeon',
-            floors: {
-                1: floor1,
-            },
-            _generatedForLevel: playerLevel,
-            _generatedAt:       Date.now(),
-        };
-
-        DUNGEONS['random_dungeon'] = dungeon;
-        console.log(`🌀 Random dungeon generated: ${totalRooms} rooms, player level ${playerLevel}, boss room: ${floor1.bossRoom}`);
-        console.log(`🌀 Enemies generated:`, Object.values(floor1.rooms).map(r => `${r.name}: ${r.enemies.length} enemies`));
-        return dungeon;
+    if (typeof DUNGEONS === 'undefined') {
+        console.error('random-dungeon.js: DUNGEONS not loaded yet!');
+        return null;
     }
+
+    playerLevel = Math.max(1, playerLevel || 1);
+    
+    // COMPLETELY replace the random dungeon entry, don't merge
+    delete DUNGEONS['random_dungeon'];
+    
+    const floor1 = buildFloor(playerLevel);
+    const totalRooms = Object.keys(floor1.rooms).length;
+
+    const dungeon = {
+        name:   '🌀 The Shifting Labyrinth',
+        key:    'random_dungeon',
+        floors: {
+            1: floor1,
+        },
+        _generatedForLevel: playerLevel,
+        _generatedAt:       Date.now(),
+    };
+
+    DUNGEONS['random_dungeon'] = dungeon;
+    console.log(`🌀 Random dungeon generated: ${totalRooms} rooms, player level ${playerLevel}, boss room: ${floor1.bossRoom}`);
+    return dungeon;
+}
 
     // ─────────────────────────────────────────────────────────────────────────
     // Populate ds.activeEnemies from room.enemies after startDungeon() runs
     // ─────────────────────────────────────────────────────────────────────────
 
     function _populateRandomDungeonEnemies() {
-        const ds = gameState && gameState.dungeon;
-        if (!ds || ds.dungeonKey !== 'random_dungeon') return;
+    const ds = gameState && gameState.dungeon;
+    if (!ds || ds.dungeonKey !== 'random_dungeon') return;
 
-        const dungeon = DUNGEONS['random_dungeon'];
-        if (!dungeon || !dungeon.floors || !dungeon.floors[1]) return;
+    const dungeon = DUNGEONS['random_dungeon'];
+    if (!dungeon || !dungeon.floors || !dungeon.floors[1]) return;
 
-        // ENSURE a clean slate for this run's active enemies
-        ds.activeEnemies = [];
-        ds.defeatedEnemies = [];
-        
-        // Clear only random dungeon discovered rooms
-        if (ds.discoveredRooms) {
-            const toKeep = new Set();
-            for (const key of ds.discoveredRooms) {
-                // Random dungeon rooms start with "1:r", keep everything else
-                if (!key.startsWith('1:r')) {
-                    toKeep.add(key);
-                }
+    // ENSURE a clean slate for this run's active enemies
+    ds.activeEnemies = [];
+    ds.defeatedEnemies = [];
+    
+    // Clear only random dungeon discovered rooms
+    if (ds.discoveredRooms) {
+        const toKeep = new Set();
+        for (const key of ds.discoveredRooms) {
+            if (!key.startsWith('1:r')) {
+                toKeep.add(key);
             }
-            ds.discoveredRooms = toKeep;
-        } else {
-            ds.discoveredRooms = new Set();
         }
-        
-        // Also clear spawnedRooms for the random dungeon
-        if (ds.spawnedRooms) {
-            const spawnedToKeep = new Set();
-            for (const key of ds.spawnedRooms) {
-                if (!key.startsWith('r')) {
-                    spawnedToKeep.add(key);
-                }
+        ds.discoveredRooms = toKeep;
+    } else {
+        ds.discoveredRooms = new Set();
+    }
+    
+    // Also clear spawnedRooms for the random dungeon
+    if (ds.spawnedRooms) {
+        const spawnedToKeep = new Set();
+        for (const key of ds.spawnedRooms) {
+            if (!key.startsWith('r')) {
+                spawnedToKeep.add(key);
             }
-            ds.spawnedRooms = spawnedToKeep;
-        } else {
-            ds.spawnedRooms = new Set();
         }
+        ds.spawnedRooms = spawnedToKeep;
+    } else {
+        ds.spawnedRooms = new Set();
+    }
 
-        const rooms = dungeon.floors[1].rooms;
-        let idCounter = 1;
-        const activeEnemies = [];
+    const rooms = dungeon.floors[1].rooms;
+    let idCounter = 1;
+    const activeEnemies = [];
 
-        Object.keys(rooms).forEach(roomId => {
-            const room = rooms[roomId];
-            if (!room.enemies || room.enemies.length === 0) return;
+    Object.keys(rooms).forEach(roomId => {
+        const room = rooms[roomId];
+        if (!room.enemies || room.enemies.length === 0) return;
 
-            room.enemies.forEach(monster => {
-                activeEnemies.push({
-                    id:            'rd_' + (idCounter++) + '_' + roomId,
-                    monsterId:     monster.key || monster.monsterId,
-                    name:          monster.name,
-                    rarity:        monster.rarity || 'common',
-                    currentRoom:   roomId,
-                    originalRoom:   roomId,
-                    hp:            monster.hp,
-                    maxHp:         monster.maxHp,
-                    leash:         6,
-                    roomsFollowed: 0,
-                    isChasing:     false,
-                    isBoss:        monster.isBoss || false,
-                    isRandomBoss:  monster.isRandomBoss || false,
-                    drop:          null,
-                    _bossOverrides: monster.isRandomBoss ? {
-                        hp:        monster.hp,
-                        maxHp:     monster.maxHp,
-                        damage:    monster.damage,
-                        minDamage: monster.minDamage,
-                        maxDamage: monster.maxDamage,
-                        name:      monster.name,
-                    } : null,
-                });
+        room.enemies.forEach(monster => {
+            activeEnemies.push({
+                id:            'rd_' + (idCounter++) + '_' + roomId,
+                monsterId:     monster.key || monster.monsterId,
+                name:          monster.name,
+                rarity:        monster.rarity || 'common',
+                currentRoom:   roomId,
+                originalRoom:   roomId,
+                hp:            monster.hp,
+                maxHp:         monster.maxHp,
+                leash:         6,
+                roomsFollowed: 0,
+                isChasing:     false,
+                isBoss:        monster.isBoss || false,
+                isRandomBoss:  monster.isRandomBoss || false,
+                drop:          null,
+                _bossOverrides: monster.isRandomBoss ? {
+                    hp:        monster.hp,
+                    maxHp:     monster.maxHp,
+                    damage:    monster.damage,
+                    minDamage: monster.minDamage,
+                    maxDamage: monster.maxDamage,
+                    name:      monster.name,
+                } : null,
             });
         });
+    });
 
-        ds.activeEnemies = activeEnemies;
-        console.log('Random dungeon: ' + activeEnemies.length + ' enemies loaded into activeEnemies');
-        activeEnemies.forEach(e => console.log(`  - ${e.name} (${e.rarity}) in room ${e.currentRoom}${e.isBoss ? ' [BOSS]' : ''}`));
-    }
+    ds.activeEnemies = activeEnemies;
+    console.log('Random dungeon: ' + activeEnemies.length + ' enemies loaded into activeEnemies');
+    activeEnemies.forEach(e => console.log(`  - ${e.name} (${e.rarity})${e.isRandomBoss ? ' [RANDOM BOSS]' : ''} in room ${e.currentRoom}`));
+}
 
     // Called right after startDungeonCombat for the boss room — patches the
     // freshly-spawned combat monster with the boss boosted stats.
@@ -561,158 +559,69 @@
     // BOSS LOOT — called from index.html's combat victory handler
     // ─────────────────────────────────────────────────────────────────────────
 
-    function awardRandomBossLoot(player) {
-        function log(msg, cls) {
-            if (typeof termAppend === 'function') termAppend(msg, cls || '');
+function awardRandomBossLoot(player) {
+    if (!player) return;
+    
+    function log(msg, cls) {
+        if (typeof termAppend === 'function') {
+            termAppend(msg, cls || '');
+        } else {
+            console.log(msg);
         }
+    }
+    
+    termAppend('', 'term-separator');
+    termAppend(`<span style="color:#FFD700;font-size:20px;font-weight:bold;text-align:center;display:block;">✨ THE GUARDIAN FALLS! ✨</span>`, 'term-victory');
+    termAppend('', 'term-separator');
+    
+    // 1. ALWAYS drop an Elixir
+    if (!player.inventory) player.inventory = [];
+    player.inventory.push('elixir');
+    log('🧪 <strong style="color:#00ff88;">The Labyrinth Guardian dropped an Elixir!</strong>', 'term-loot');
 
-        // 1. Recall Potion
-        if (!player.inventory) player.inventory = [];
-        player.inventory.push('recall_potion');
-        log('🧪 <strong style="color:#00ff88;">The boss dropped a Recall Potion!</strong> You can now escape the Labyrinth.', 'term-loot');
+    // 2. ALWAYS drop a random weapon OR armor (50/50 chance)
+    //    Uses generateWeaponDrop / generateArmorDrop — same system as normal combat,
+    //    guaranteed to always return an item.
+    const giveWeapon = Math.random() < 0.5;
+    const roll = Math.random();
+    let quality;
+    if (roll < 0.20)      quality = 'godly';
+    else if (roll < 0.55) quality = 'legendary';
+    else                  quality = 'epic';
 
-        // 2. Random weapon OR armor
-        const giveWeapon = Math.random() < 0.5;
-        const roll = Math.random();
-        let quality;
-        if (roll < 0.20)      quality = 'godly';
-        else if (roll < 0.55) quality = 'legendary';
-        else                  quality = 'epic';
+    setTimeout(() => {
+        const playerLevel = player.level || 1;
+        let dropped = null;
 
         if (giveWeapon) {
-            _grantBossWeapon(player, quality, log);
+            if (typeof generateWeaponDrop === 'function') {
+                dropped = generateWeaponDrop(player, playerLevel, quality, false, null);
+            }
         } else {
-            _grantBossArmor(player, quality, log);
+            if (typeof generateArmorDrop === 'function') {
+                dropped = generateArmorDrop(player, playerLevel, quality, false, null);
+            }
         }
 
-        if (typeof saveGame === 'function') saveGame();
-    }
-
-    function _grantBossWeapon(player, quality, log) {
-        if (typeof WEAPONS === 'undefined') { log('⚠️ WEAPONS not loaded — skipping weapon drop.'); return; }
-
-        const playerLevel = player.level || 1;
-        const playerClass = player.baseClass || player.class || '';
-        const candidates  = Object.values(WEAPONS).filter(w => {
-            if (!w || !w.id || w.instanceId) return false;
-            const lvlOk    = w.level && Math.abs(w.level - playerLevel) <= 5;
-            const classOk  = !w.allowedClasses || w.allowedClasses.includes(playerClass);
-            return lvlOk && classOk && !w.unarmed;
-        });
-
-        if (candidates.length === 0) { log('⚠️ No suitable weapon found for boss drop.'); return; }
-
-        const baseWeapon  = pick(candidates);
-        const bonusPct    = (typeof QUALITY_CONFIG !== 'undefined' && QUALITY_CONFIG[quality])
-            ? QUALITY_CONFIG[quality].bonusPct : 0;
-        const instanceId  = `${baseWeapon.id}_${quality}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
-        const qualDisp    = quality.charAt(0).toUpperCase() + quality.slice(1);
-
-        let modifiers = [];
-        if (typeof generateModifiers === 'function') modifiers = generateModifiers(quality, baseWeapon.level);
-
-        let weaponName;
-        if (typeof generateEnhancedWeaponName === 'function' && modifiers.length > 0) {
-            weaponName = generateEnhancedWeaponName(baseWeapon, quality, modifiers);
-        } else {
-            weaponName = `${qualDisp} ${baseWeapon.name}`;
+        if (dropped) {
+            player.inventory.push(dropped);
+            const rarityColor = (typeof QUALITY_CONFIG !== 'undefined' && QUALITY_CONFIG[quality])
+                ? QUALITY_CONFIG[quality].color : '#FFD700';
+            const icon = giveWeapon ? '⚔️' : '🛡️';
+            termAppend('', 'term-separator');
+            termAppend(`${icon} <span style="color:${rarityColor};font-size:18px;font-weight:bold;">BOSS DROP: ${dropped.name}</span>`, 'term-loot');
+            termAppend(`<span style="color:#aaa;">${quality} ${dropped.type || 'item'} — Level ${dropped.level || playerLevel}</span>`, 'term-dim');
         }
 
-        const weapon = {
-            id:            baseWeapon.id,
-            weaponId:      baseWeapon.id,
-            instanceId,
-            name:          weaponName,
-            baseName:      baseWeapon.name,
-            type:          baseWeapon.type || baseWeapon.weaponSubtype,
-            weaponSubtype: baseWeapon.weaponSubtype || baseWeapon.type,
-            baseDamage:    baseWeapon.baseDamage + Math.floor(baseWeapon.baseDamage * bonusPct),
-            maxDamage:     (baseWeapon.maxDamage || baseWeapon.baseDamage) + Math.floor((baseWeapon.maxDamage || baseWeapon.baseDamage) * bonusPct),
-            baseMagicDamage: baseWeapon.baseMagicDamage ? baseWeapon.baseMagicDamage + Math.floor(baseWeapon.baseMagicDamage * bonusPct) : 0,
-            level:         baseWeapon.level,
-            quality,
-            qualityBonus:  bonusPct,
-            modifiers,
-            gemSlots:      { rare: 1, epic: 2, legendary: 3, godly: 4 }[quality] || 0,
-            gems:          [],
-            cost:          baseWeapon.cost || 0,
-            description:   `A ${quality} weapon seized from the Labyrinth's guardian.`,
-            allowedClasses: baseWeapon.allowedClasses,
-            isDropped:     true,
-            dropTimestamp: Date.now(),
-            isEquipped:    false,
-        };
+        termAppend('', 'term-separator');
+        termAppend(`<span style="color:#FFD700;font-style:italic;text-align:center;display:block;">You have proven yourself worthy of these treasures!</span>`, 'term-highlight');
+        termAppend('', 'term-separator');
+    }, 800);
 
-        WEAPONS[instanceId] = weapon;
-        player.inventory.push(weapon);
+    if (typeof saveGame === 'function') saveGame();
+}
 
-        const rarityColor = { epic: '#cc44ff', legendary: '#FFD700', godly: '#ff6600' }[quality] || '#ffffff';
-        log(`⚔️ <strong style="color:${rarityColor};">BOSS DROP: ${weaponName}</strong> added to your inventory!`, 'term-loot');
-    }
 
-    function _grantBossArmor(player, quality, log) {
-        if (typeof ARMOR === 'undefined') {
-            log('⚠️ ARMOR not loaded — skipping armor drop.');
-            return;
-        }
-
-        const playerLevel = player.level || 1;
-        const playerClass = player.baseClass || player.class || '';
-
-        const candidates = Object.values(ARMOR).filter(a => {
-            if (!a || !a.id || a.instanceId) return false;
-            const lvlOk   = a.level && Math.abs(a.level - playerLevel) <= 5;
-            const classOk = !a.allowedClasses || a.allowedClasses.includes(playerClass);
-            return lvlOk && classOk && !a.unarmored;
-        });
-
-        if (candidates.length === 0) { log('⚠️ No suitable armor found for boss drop.'); return; }
-
-        const baseArmor  = pick(candidates);
-        const bonusPct   = (typeof QUALITY_CONFIG !== 'undefined' && QUALITY_CONFIG[quality])
-            ? QUALITY_CONFIG[quality].bonusPct : 0;
-        const instanceId = `${baseArmor.id}_${quality}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
-        const qualDisp   = quality.charAt(0).toUpperCase() + quality.slice(1);
-
-        let modifiers = [];
-        if (typeof generateModifiers === 'function') modifiers = generateModifiers(quality, baseArmor.level);
-
-        let armorName;
-        if (typeof generateEnhancedArmorName === 'function' && modifiers.length > 0) {
-            armorName = generateEnhancedArmorName(baseArmor, quality, modifiers);
-        } else {
-            armorName = `${qualDisp} ${baseArmor.name}`;
-        }
-
-        const armor = {
-            id:           baseArmor.id,
-            armorId:      baseArmor.id,
-            instanceId,
-            name:         armorName,
-            baseName:     baseArmor.name,
-            type:         'armor',
-            baseDefense:  Math.floor((baseArmor.baseDefense || 0) * (1 + bonusPct)),
-            baseMagicBonus: Math.floor((baseArmor.baseMagicBonus || 0) * (1 + bonusPct)),
-            level:        baseArmor.level,
-            quality,
-            qualityBonus: bonusPct,
-            modifiers,
-            gemSlots:     { rare: 1, epic: 2, legendary: 3, godly: 4 }[quality] || 0,
-            gems:         [],
-            cost:         baseArmor.cost || 0,
-            description:  `${quality} armor seized from the Labyrinth's guardian.`,
-            allowedClasses: baseArmor.allowedClasses,
-            isDropped:    true,
-            dropTimestamp: Date.now(),
-            isEquipped:   false,
-        };
-
-        ARMOR[instanceId] = armor;
-        player.inventory.push(armor);
-
-        const rarityColor = { epic: '#cc44ff', legendary: '#FFD700', godly: '#ff6600' }[quality] || '#ffffff';
-        log(`🛡️ <strong style="color:${rarityColor};">BOSS DROP: ${armorName}</strong> added to your inventory!`, 'term-loot');
-    }
 
     // ─────────────────────────────────────────────────────────────────────────
     // PUBLIC — startRandomDungeon()
@@ -753,10 +662,10 @@
         generateRandomDungeon(playerLevel);
 
         // Warning modal
-        const hasRecall  = p.inventory && p.inventory.includes('recall_potion');
-        const recallNote = hasRecall
-            ? `<div style="color:#00ff88;margin-top:8px;">✅ You carry a <strong>Recall Potion</strong> — you can use it to escape at any time.</div>`
-            : `<div style="color:#ff4444;margin-top:8px;">⚠️ You do NOT have a Recall Potion, but the final boss will drop one — if you can reach it.</div>`;
+        const hasElixir  = p.inventory && p.inventory.includes('elixir');
+        const recallNote = hasElixir
+            ? `<div style="color:#00ff88;margin-top:8px;">✅ You carry an <strong>Elixir</strong> — you can use it to escape at any time.</div>`
+            : `<div style="color:#ff4444;margin-top:8px;">⚠️ You do NOT have an Elixir, but the final boss will drop one — if you can reach it.</div>`;
 
         const modal = document.createElement('div');
         modal.id = 'dungeonWarningModal';

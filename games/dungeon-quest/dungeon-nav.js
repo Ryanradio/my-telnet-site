@@ -937,6 +937,141 @@ function checkEnemiesInRoom(roomId, newArrivals) {
     const ds = gameState.dungeon;
     if (!ds || !ds.activeEnemies) return;
 
+    // ─────────────────────────────────────────────────────────
+    // SPECIAL HANDLING FOR RANDOM DUNGEON
+    // The random dungeon stores enemies in room.enemies, not ds.activeEnemies
+    // ─────────────────────────────────────────────────────────
+    if (ds.dungeonKey === 'random_dungeon') {
+        const dungeon = DUNGEONS['random_dungeon'];
+        if (dungeon && dungeon.floors && dungeon.floors[ds.floor]) {
+            const roomData = dungeon.floors[ds.floor].rooms[roomId];
+            if (roomData && roomData.enemies && roomData.enemies.length > 0 && !gameState.combatState) {
+                // Convert room.enemies to the format startDungeonCombat expects
+                const dungeonEnemies = roomData.enemies.map(e => ({
+                    id: crypto.randomUUID(),
+                    monsterId: e.key || e.monsterId,
+                    name: e.name,
+                    currentRoom: roomId,
+                    originalRoom: roomId,
+                    rarity: e.rarity,
+                    hp: e.hp,
+                    maxHp: e.maxHp,
+                    isBoss: e.isBoss || false,
+                    isRandomBoss: e.isRandomBoss || false,
+                    leash: (e.isBoss || e.isRandomBoss) ? 6 : 3,
+                    roomsFollowed: 0,
+                    isChasing: true,
+                    drop: null
+                }));
+
+                // Push into ds.activeEnemies so the leash system tracks them,
+                // then clear room.enemies so re-entry never re-triggers combat.
+                ds.activeEnemies.push(...dungeonEnemies);
+                roomData.enemies = [];
+
+                // DEBUG: Check if boss flags are preserved
+                console.log('🐉 BOSS DATA CHECK:', {
+                    name: dungeonEnemies[0]?.name,
+                    isBoss: dungeonEnemies[0]?.isBoss,
+                    isRandomBoss: dungeonEnemies[0]?.isRandomBoss,
+                    hp: dungeonEnemies[0]?.hp,
+                    maxHp: dungeonEnemies[0]?.maxHp
+                });
+
+                
+                
+                // ─────────────────────────────────────────────────────────
+                // CHECK IF THIS IS A BOSS ROOM - EPIC DRAMATIC ANNOUNCEMENT
+                // ─────────────────────────────────────────────────────────
+                const isBossRoom = roomData.isBossRoom === true;
+                const hasBoss = dungeonEnemies.some(e => e.isBoss === true || e.isRandomBoss === true);
+                
+                if (isBossRoom || hasBoss) {
+                    const bossData = dungeonEnemies.find(e => e.isBoss || e.isRandomBoss);
+                    const bossName = bossData?.name || 'ANCIENT GUARDIAN';
+                    
+                    // EPIC DRAMATIC FLASH - Red/Orange
+                    const bossFlash = document.createElement('div');
+                    bossFlash.style.cssText = 'position:fixed;inset:0;z-index:99998;background:radial-gradient(circle,#ff0000,#ff4400,#000);opacity:0;pointer-events:none;transition:opacity 0.2s ease;';
+                    document.body.appendChild(bossFlash);
+                    setTimeout(() => bossFlash.style.opacity = '0.8', 10);
+                    setTimeout(() => bossFlash.style.opacity = '0.3', 200);
+                    setTimeout(() => bossFlash.style.opacity = '0.7', 400);
+                    setTimeout(() => bossFlash.style.opacity = '0', 600);
+                    setTimeout(() => bossFlash.remove(), 800);
+                    
+                    // WHITE HOT FLASH
+                    setTimeout(() => {
+                        const whiteFlash = document.createElement('div');
+                        whiteFlash.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#fff;opacity:0;pointer-events:none;transition:opacity 0.1s ease;';
+                        document.body.appendChild(whiteFlash);
+                        setTimeout(() => whiteFlash.style.opacity = '0.4', 10);
+                        setTimeout(() => whiteFlash.style.opacity = '0', 150);
+                        setTimeout(() => whiteFlash.remove(), 300);
+                    }, 100);
+                    
+                    // INTENSE SCREEN SHAKE
+                    const terminalWindow = document.getElementById('terminalWindow');
+                    if (terminalWindow) {
+                        terminalWindow.style.transition = 'transform 0.05s ease';
+                        let shakes = 0;
+                        const shakeInterval = setInterval(() => {
+                            if (shakes >= 12) {
+                                clearInterval(shakeInterval);
+                                terminalWindow.style.transform = 'translateX(0)';
+                                terminalWindow.style.transition = '';
+                                return;
+                            }
+                            terminalWindow.style.transform = `translate(${(Math.random() - 0.5) * 12}px, ${(Math.random() - 0.5) * 6}px)`;
+                            shakes++;
+                        }, 35);
+                    }
+                    
+                    // EPIC DRAMATIC TEXT
+                    termAppend('', 'term-separator');
+                    termAppend('<span style="color:#FF0000;font-size:38px;font-weight:bold;text-align:center;display:block;text-shadow:0 0 20px #FF0000;">⚔️⚔️⚔️ BOSS ENCOUNTER! ⚔️⚔️⚔️</span>', 'term-victory');
+                    termAppend('', 'term-separator');
+                    termAppend(`<span style="color:#FF6600;font-size:28px;font-weight:bold;text-align:center;display:block;background:#00000088;padding:8px;border-radius:8px;">🔥 ${bossName.toUpperCase()} 🔥</span>`, 'term-enemy');
+                    termAppend('', 'term-separator');
+                    termAppend('<span style="color:#FFAA00;font-size:20px;font-style:italic;text-align:center;display:block;">✦ THE AIR BECOMES UNBEARABLY HEAVY ✦</span>', 'term-warning');
+                    termAppend('<span style="color:#FF4444;font-size:16px;text-align:center;display:block;">The ground trembles beneath your feet...</span>', 'term-warning');
+                    termAppend('<span style="color:#FF8888;font-size:16px;text-align:center;display:block;">A terrifying roar echoes through the chamber!</span>', 'term-warning');
+                    termAppend('', 'term-separator');
+                    termAppend('<span style="color:#FFD700;font-size:18px;font-weight:bold;text-align:center;display:block;">💀 THIS IS THE MOMENT YOU\'VE BEEN PREPARING FOR! 💀</span>', 'term-highlight');
+                    termAppend('', 'term-separator');
+                    
+                    // PULSING RED BORDER
+                    if (terminalWindow) {
+                        terminalWindow.style.transition = 'box-shadow 0.2s ease';
+                        terminalWindow.style.boxShadow = '0 0 30px rgba(255,0,0,0.8), inset 0 0 20px rgba(255,0,0,0.3)';
+                        setTimeout(() => {
+                            terminalWindow.style.boxShadow = '0 0 15px rgba(255,0,0,0.4), inset 0 0 10px rgba(255,0,0,0.1)';
+                        }, 500);
+                        setTimeout(() => {
+                            terminalWindow.style.boxShadow = '';
+                        }, 2000);
+                    }
+                }
+                
+                console.log(`🌀 Random dungeon: Starting combat with ${dungeonEnemies.length} enemy(s) in ${roomId}`);
+                if (dungeonEnemies.length === 1) {
+                    termAppend(`⚔️ <strong>${dungeonEnemies[0].name}</strong> confronts you!`, 'term-warning');
+                } else {
+                    const names = dungeonEnemies.map(e => `<strong>${e.name}</strong>`).join(', ');
+                    termAppend(`⚔️ ${names} surround you!`, 'term-warning');
+                }
+                startDungeonCombat(dungeonEnemies);
+                // Strip from activeEnemies by monsterId+room so the post-combat
+                // checkEnemiesInRoom call can't start a second fight via this path.
+                const foughtIds = new Set(dungeonEnemies.map(e => e.monsterId));
+                ds.activeEnemies = ds.activeEnemies.filter(
+                    e => !(foughtIds.has(e.monsterId) && e.currentRoom === roomId)
+                );
+                return;
+            }
+        }
+    }
+
     const enemiesHere = ds.activeEnemies.filter(e => e.currentRoom === roomId);
     if (enemiesHere.length === 0) return;
 
@@ -947,7 +1082,6 @@ function checkEnemiesInRoom(roomId, newArrivals) {
         const linkedIds = new Set(cs.dungeonEnemyIds || (cs.dungeonEnemyId ? [cs.dungeonEnemyId] : []));
 
         // Join = any enemy in this room not already tracked in combat
-        // (covers both followers from arrivals AND pre-existing room enemies)
         const joining = enemiesHere.filter(e => !linkedIds.has(e.id));
         if (joining.length === 0) return;
 
@@ -966,7 +1100,6 @@ function checkEnemiesInRoom(roomId, newArrivals) {
             termAppend(`⚔️ <strong>${newMonster.name}</strong> joins the fight!`, 'term-warning');
         });
 
-        // Ensure combat timer is running and reset actionMode so player sees all targets
         cs.actionMode = 'main';
         if (!gameState.combatTimer) startCombatTimer();
         renderDungeonActionBar();
@@ -980,7 +1113,64 @@ function checkEnemiesInRoom(roomId, newArrivals) {
         gameState.postCombatRecovery = false;
     }
 
-    if (enemiesHere.length === 1) {
+    // ── EPIC BOSS INTRO — fires for any boss coming through activeEnemies path ──
+    const bossEnemy = enemiesHere.find(e => e.isBoss || e.isRandomBoss);
+    if (bossEnemy) {
+        const bossName = bossEnemy.name || 'ANCIENT GUARDIAN';
+
+        const bossFlash = document.createElement('div');
+        bossFlash.style.cssText = 'position:fixed;inset:0;z-index:99998;background:radial-gradient(circle,#ff0000,#ff4400,#000);opacity:0;pointer-events:none;transition:opacity 0.2s ease;';
+        document.body.appendChild(bossFlash);
+        setTimeout(() => bossFlash.style.opacity = '0.8', 10);
+        setTimeout(() => bossFlash.style.opacity = '0.3', 200);
+        setTimeout(() => bossFlash.style.opacity = '0.7', 400);
+        setTimeout(() => bossFlash.style.opacity = '0', 600);
+        setTimeout(() => bossFlash.remove(), 800);
+
+        setTimeout(() => {
+            const whiteFlash = document.createElement('div');
+            whiteFlash.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#fff;opacity:0;pointer-events:none;transition:opacity 0.1s ease;';
+            document.body.appendChild(whiteFlash);
+            setTimeout(() => whiteFlash.style.opacity = '0.4', 10);
+            setTimeout(() => whiteFlash.style.opacity = '0', 150);
+            setTimeout(() => whiteFlash.remove(), 300);
+        }, 100);
+
+        const terminalWindow = document.getElementById('terminalWindow');
+        if (terminalWindow) {
+            terminalWindow.style.transition = 'transform 0.05s ease';
+            let shakes = 0;
+            const shakeInterval = setInterval(() => {
+                if (shakes >= 12) {
+                    clearInterval(shakeInterval);
+                    terminalWindow.style.transform = 'translateX(0)';
+                    terminalWindow.style.transition = '';
+                    return;
+                }
+                terminalWindow.style.transform = `translate(${(Math.random() - 0.5) * 12}px, ${(Math.random() - 0.5) * 6}px)`;
+                shakes++;
+            }, 35);
+        }
+
+        termAppend('', 'term-separator');
+        termAppend('<span style="color:#FF0000;font-size:38px;font-weight:bold;text-align:center;display:block;text-shadow:0 0 20px #FF0000;">⚔️⚔️⚔️ BOSS ENCOUNTER! ⚔️⚔️⚔️</span>', 'term-victory');
+        termAppend('', 'term-separator');
+        termAppend(`<span style="color:#FF6600;font-size:28px;font-weight:bold;text-align:center;display:block;background:#00000088;padding:8px;border-radius:8px;">🔥 ${bossName.toUpperCase()} 🔥</span>`, 'term-enemy');
+        termAppend('', 'term-separator');
+        termAppend('<span style="color:#FFAA00;font-size:20px;font-style:italic;text-align:center;display:block;">✦ THE AIR BECOMES UNBEARABLY HEAVY ✦</span>', 'term-warning');
+        termAppend('<span style="color:#FF4444;font-size:16px;text-align:center;display:block;">The ground trembles beneath your feet...</span>', 'term-warning');
+        termAppend('<span style="color:#FF8888;font-size:16px;text-align:center;display:block;">A terrifying roar echoes through the chamber!</span>', 'term-warning');
+        termAppend('', 'term-separator');
+        termAppend('<span style="color:#FFD700;font-size:18px;font-weight:bold;text-align:center;display:block;">💀 THIS IS THE MOMENT YOU\'VE BEEN PREPARING FOR! 💀</span>', 'term-highlight');
+        termAppend('', 'term-separator');
+
+        if (terminalWindow) {
+            terminalWindow.style.transition = 'box-shadow 0.2s ease';
+            terminalWindow.style.boxShadow = '0 0 30px rgba(255,0,0,0.8), inset 0 0 20px rgba(255,0,0,0.3)';
+            setTimeout(() => { terminalWindow.style.boxShadow = '0 0 15px rgba(255,0,0,0.4), inset 0 0 10px rgba(255,0,0,0.1)'; }, 500);
+            setTimeout(() => { terminalWindow.style.boxShadow = ''; }, 2000);
+        }
+    } else if (enemiesHere.length === 1) {
         termAppend(`⚔️ <strong>${enemiesHere[0].name}</strong> confronts you!`, 'term-warning');
     } else {
         const names = enemiesHere.map(e => `<strong>${e.name}</strong>`).join(', ');
@@ -988,7 +1178,7 @@ function checkEnemiesInRoom(roomId, newArrivals) {
     }
     startDungeonCombat(enemiesHere);
 }
-
+/*
 function startDungeonCombat(dungeonEnemies) {
     // Accept either a single enemy or an array
     if (!Array.isArray(dungeonEnemies)) dungeonEnemies = [dungeonEnemies];
@@ -1048,7 +1238,7 @@ function startDungeonCombat(dungeonEnemies) {
 
     saveGame();
 }
-
+*/
 
 // ─────────────────────────────────────────
 // TEMP: DUNGEON TEST HARNESS (SAFE)

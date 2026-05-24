@@ -2713,26 +2713,55 @@ async function loadCharacter(characterId) {
         // ADD THE DUNGEON RESTORATION CODE RIGHT HERE
         // ═══════════════════════════════════════════════════════════════
         
-        gameState.dungeon = data.dungeon ? {
+                // ─────────────────────────────────────────────────────────
+        // VALIDATE RANDOM DUNGEON SAVE - Clear if corrupted
+        // ─────────────────────────────────────────────────────────
+        let validDungeon = data.dungeon ? true : false;
+        
+        if (validDungeon && data.dungeon.dungeonKey === 'random_dungeon') {
+            // Check if the random dungeon data is still valid
+            const dungeonExists = DUNGEONS && DUNGEONS['random_dungeon'];
+            const floorExists = dungeonExists && DUNGEONS['random_dungeon'].floors && DUNGEONS['random_dungeon'].floors[1];
+            
+            if (!dungeonExists || !floorExists) {
+                console.warn('⚠️ Random dungeon data missing or corrupted - clearing from save');
+                validDungeon = false;
+                
+                // Also clean up player's persistent maps for random dungeon
+                if (data.player && data.player.dungeonMaps) {
+                    delete data.player.dungeonMaps['random_dungeon'];
+                }
+                if (data.player && data.player.dungeonTimers) {
+                    delete data.player.dungeonTimers['random_dungeon'];
+                }
+            }
+        }
+        
+        gameState.dungeon = validDungeon ? {
             dungeonKey: data.dungeon.dungeonKey,
             floor: data.dungeon.floor,
             currentRoom: data.dungeon.currentRoom,
             discoveredRooms: data.dungeon.discoveredRooms ? new Set(data.dungeon.discoveredRooms) : new Set(),
             spawnedRooms: data.dungeon.spawnedRooms ? new Set(data.dungeon.spawnedRooms) : new Set(),
             activeEnemies: data.dungeon.activeEnemies ? data.dungeon.activeEnemies.map(e => ({
-    id: e.id,
-    monsterId: e.monsterId,
-    name: e.name,
-    hp: e.hp,
-    maxHp: e.maxHp,
-    currentRoom: e.currentRoom,
-    leash: e.leash,
-    drop: e.drop || null,
-    isChasing: e.isChasing || false,
-    roomsFollowed: e.roomsFollowed || 0
-})) : [],
+                id: e.id,
+                monsterId: e.monsterId,
+                name: e.name,
+                hp: e.hp,
+                maxHp: e.maxHp,
+                currentRoom: e.currentRoom,
+                leash: e.leash,
+                drop: e.drop || null,
+                isChasing: e.isChasing || false,
+                roomsFollowed: e.roomsFollowed || 0
+            })) : [],
             defeatedEnemies: data.dungeon.defeatedEnemies || []
         } : null;
+        
+        // If we cleared the dungeon, also clear combat state
+        if (!validDungeon && gameState.combatState) {
+            gameState.combatState = null;
+        }
         
        gameState.combatState = data.activeCombat || null;
 
@@ -9079,18 +9108,35 @@ ${showSpecial ? `<button onclick="handleAttackType('special')">⭐ Special</butt
     mapBtn.style.cssText = 'padding:4px 6px;font-size:14px;border-color:var(--highlight-color);';
     utilCol.appendChild(mapBtn);
 
-    // Entrance/town-exit button
-    if (ds.currentRoom === floor.startRoom && gameState.dungeon.floor === 1) {
+        // Entrance/town-exit button - Only show if boss is defeated OR at start room
+    const bossDefeated = gameState.dungeon.bossDefeated === true;
+    const isStartRoom = (ds.currentRoom === floor.startRoom && gameState.dungeon.floor === 1);
+    
+    if (bossDefeated) {
+        // Show HOME button after boss is defeated (always visible, works from any room)
+        const homeBtn = document.createElement('button');
+        homeBtn.innerHTML = '🏠';
+        homeBtn.title = 'Return to Town - Boss Defeated!';
+        homeBtn.onclick = () => {
+            if (confirm('The Labyrinth Guardian is defeated! Return to town with your treasures?')) {
+                returnToTown(gameState.currentTown);
+            }
+        };
+        homeBtn.style.cssText = 'padding:4px 6px;font-size:14px;border-color:#00FF88;color:#00FF88;background:#0a1a0a;animation:pulse 1s ease-in-out infinite;';
+        utilCol.appendChild(homeBtn);
+    } else if (isStartRoom) {
+        // Normal start room exit (only at entrance, before boss is defeated)
         const startRoom = floor.rooms[floor.startRoom];
         const exitTown  = startRoom.flags?.townExit || null;
         const exitLabel = startRoom.flags?.townExitLabel || '🏠';
         const exitBtn   = document.createElement('button');
         exitBtn.innerHTML = exitLabel;
-        exitBtn.title = 'Return to Town';
+        exitBtn.title = 'Return to Town (at entrance)';
         exitBtn.onclick = () => returnToTown(exitTown || gameState.currentTown);
         exitBtn.style.cssText = 'padding:4px 6px;font-size:14px;';
         utilCol.appendChild(exitBtn);
     } else {
+        // Check for town exit flag on the current room (portal rooms, etc.)
         const curRoom = floor.rooms[ds.currentRoom];
         if (curRoom?.flags?.townExit) {
             const townId    = curRoom.flags.townExit;

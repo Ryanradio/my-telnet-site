@@ -1231,10 +1231,44 @@ function getEnemyInRoom(roomId) {
 }
 
 
-
+/*
 function checkEnemiesInRoom(roomId, newArrivals) {
     const ds = gameState.dungeon;
     if (!ds || !ds.activeEnemies) return;
+
+    // ─────────────────────────────────────────────────────────
+    // SPECIAL HANDLING FOR RANDOM DUNGEON
+    // The random dungeon stores enemies in room.enemies, not ds.activeEnemies
+    // ─────────────────────────────────────────────────────────
+    if (ds.dungeonKey === 'random_dungeon') {
+        const dungeon = DUNGEONS['random_dungeon'];
+        if (dungeon && dungeon.floors && dungeon.floors[ds.floor]) {
+            const roomData = dungeon.floors[ds.floor].rooms[roomId];
+            if (roomData && roomData.enemies && roomData.enemies.length > 0 && !gameState.combatState) {
+                // Convert room.enemies to the format startDungeonCombat expects
+                const dungeonEnemies = roomData.enemies.map(e => ({
+                    id: crypto.randomUUID(),
+                    monsterId: e.key || e.monsterId,
+                    name: e.name,
+                    currentRoom: roomId,
+                    rarity: e.rarity,
+                    hp: e.hp,
+                    maxHp: e.maxHp,
+                    isBoss: e.isBoss || false,
+                    isRandomBoss: e.isRandomBoss || false,
+                    leash: 6,
+                    roomsFollowed: 0,
+                    drop: null
+                }));
+                
+                // ─────────────────────────────────────────────────────────
+                // dungeon-nav.js overrides checkEnemiesInRoom (loads after this file).
+                // Epic intro and combat start live there. This is intentionally minimal.
+                startDungeonCombat(dungeonEnemies);
+                return;
+            }
+        }
+    }
 
     const enemiesHere = ds.activeEnemies.filter(e => e.currentRoom === roomId);
     if (enemiesHere.length === 0) return;
@@ -1246,7 +1280,6 @@ function checkEnemiesInRoom(roomId, newArrivals) {
         const linkedIds = new Set(cs.dungeonEnemyIds || (cs.dungeonEnemyId ? [cs.dungeonEnemyId] : []));
 
         // Join = any enemy in this room not already tracked in combat
-        // (covers both followers from arrivals AND pre-existing room enemies)
         const joining = enemiesHere.filter(e => !linkedIds.has(e.id));
         if (joining.length === 0) return;
 
@@ -1287,7 +1320,7 @@ function checkEnemiesInRoom(roomId, newArrivals) {
     }
     startDungeonCombat(enemiesHere);
 }
-
+*/
 function startDungeonCombat(dungeonEnemies) {
     // Accept either a single enemy or an array
     if (!Array.isArray(dungeonEnemies)) dungeonEnemies = [dungeonEnemies];
@@ -1314,12 +1347,50 @@ function startDungeonCombat(dungeonEnemies) {
 
     if (!gameState.combatState) return;
 
+    // CRITICAL: Force override boss stats IMMEDIATELY after combat starts
+    // This must happen BEFORE any other processing
+    for (let i = 0; i < dungeonEnemies.length; i++) {
+        const dungeonEnemy = dungeonEnemies[i];
+        if (dungeonEnemy.isBoss || dungeonEnemy.isRandomBoss) {
+            const combatMonster = gameState.combatState.monsters[i];
+                        if (combatMonster && dungeonEnemy) {
+                // SAFE COPY - Check for undefined values
+                console.log(`👑 FORCING BOSS OVERRIDE for ${dungeonEnemy.name}`);
+                console.log(`   Before: HP ${combatMonster.hp}, Dmg ${combatMonster.damage}`);
+                
+                // Only copy if values are valid numbers
+                if (typeof dungeonEnemy.hp === 'number' && !isNaN(dungeonEnemy.hp)) {
+                    combatMonster.hp = dungeonEnemy.hp;
+                    combatMonster.maxHp = dungeonEnemy.maxHp;
+                }
+                if (typeof dungeonEnemy.damage === 'number' && !isNaN(dungeonEnemy.damage)) {
+                    combatMonster.damage = dungeonEnemy.damage;
+                }
+                if (typeof dungeonEnemy.minDamage === 'number' && !isNaN(dungeonEnemy.minDamage)) {
+                    combatMonster.minDamage = dungeonEnemy.minDamage;
+                }
+                if (typeof dungeonEnemy.maxDamage === 'number' && !isNaN(dungeonEnemy.maxDamage)) {
+                    combatMonster.maxDamage = dungeonEnemy.maxDamage;
+                }
+                
+                // Always copy these safely
+                combatMonster.name = dungeonEnemy.name || combatMonster.name;
+                combatMonster.rarity = dungeonEnemy.rarity || combatMonster.rarity;
+                combatMonster.rarityColor = dungeonEnemy.rarityColor || combatMonster.rarityColor;
+                combatMonster.isBoss = true;
+                combatMonster.isRandomBoss = true;
+                
+                console.log(`   After: HP ${combatMonster.hp}, Dmg ${combatMonster.damage}`);
+            }
+        }
+    }
+
     // Link ALL dungeon enemy IDs to combat state for post-combat cleanup
     gameState.combatState.dungeonEnemyIds = dungeonEnemies.map(e => e.id);
     // Legacy single-enemy field (keeps drops working for first enemy)
     gameState.combatState.dungeonEnemyId = dungeonEnemies[0].id;
 
-        // Mark enemies as chasing when combat starts
+    // Mark enemies as chasing when combat starts
     dungeonEnemies.forEach(enemy => {
         enemy.isChasing = true;
         enemy.roomsFollowed = 0;
@@ -1332,19 +1403,11 @@ function startDungeonCombat(dungeonEnemies) {
         if (de.hp !== undefined && de.hp < de.maxHp) {
             const monster = gameState.combatState.monsters[idx];
             if (monster) {
-                monster.hp  = de.hp;
+                monster.hp = de.hp;
                 monster.maxHp = de.maxHp;
             }
         }
     });
-
-    // If this is a random dungeon boss fight, apply the boosted stats now.
-    // startCombat() re-spawns from the base template so we patch after.
-    if (gameState.dungeon && gameState.dungeon.dungeonKey === 'random_dungeon') {
-        if (typeof _applyRandomBossOverrides === 'function') {
-            setTimeout(_applyRandomBossOverrides, 50);
-        }
-    }
 
     saveGame();
 }
@@ -5574,6 +5637,12 @@ function checkCombatEnd() {
                 }
             }
             
+            // ── RANDOM DUNGEON BOSS: guaranteed loot ──────────────────────
+            if (monster.isRandomBoss && typeof awardRandomBossLoot === 'function') {
+                awardRandomBossLoot(gameState.player);
+                termAppend(`👑 <span style="color:#FFD700;">The Labyrinth Guardian's essence coalesces into treasure!</span>`, 'term-victory');
+            }
+            
             // Calculate rewards for THIS enemy
             const baseXp = monster.xp || (monster.level * 10);
             const baseGold = monster.gold || (monster.level * 5);
@@ -5700,12 +5769,6 @@ function checkCombatEnd() {
                     });
                 }
             } 
-                
-            
-            // ── RANDOM DUNGEON BOSS: guaranteed loot ──────────────────────
-            if (monster.isRandomBoss && typeof awardRandomBossLoot === 'function') {
-                awardRandomBossLoot(gameState.player);
-            }
 
             // Track for endCombat kill summary (name, rarityColor, etc.)
             if (!cs.defeatedMonsters) cs.defeatedMonsters = [];
@@ -5737,6 +5800,21 @@ function checkCombatEnd() {
 // END COMBAT
 // ═══════════════════════════════════════════════════════════════
 function endCombat(victory) {
+
+ // Clear boss from room data to prevent respawn
+    if (gameState.dungeon && gameState.dungeon.dungeonKey === 'random_dungeon') {
+        const dungeon = DUNGEONS['random_dungeon'];
+        if (dungeon && dungeon.floors && dungeon.floors[1]) {
+            const bossRoomId = dungeon.floors[1].bossRoom;
+            const roomData = dungeon.floors[1].rooms[bossRoomId];
+            if (roomData && roomData.enemies) {
+                console.log('🧹 Clearing boss from room data');
+                roomData.enemies = [];
+            }
+        }
+    }
+
+
     if (victory) haptic('victory');
     else         haptic('death');
 
@@ -5854,24 +5932,29 @@ function endCombat(victory) {
     const cs = gameState.combatState;
 
 
-// ── Process bounty victory if this was a bounty fight ──
-if (cs.isBountyFight) {
-    const capturedBountyId = processBountyVictory(cs);
-    if (capturedBountyId) {
-        const b = BOUNTIES[capturedBountyId];
-        termAppend('', 'term-separator');
-        termAppend(
-            `<span style="color:#FFD700;font-size:18px;">⚓ BOUNTY TARGET CAPTURED!</span>`,
-            'term-victory'
-        );
-        termAppend(
-            `<span style="color:#cc66ff;">${b.name}</span> has been defeated! ` +
-            `Return to the Bounty Board to collect your reward.`,
-            'term-loot'
-        );
-        termAppend('', 'term-separator');
+    // ── Process bounty victory if this was a bounty fight ──
+    if (cs.isBountyFight) {
+        const capturedBountyId = processBountyVictory(cs);
+        if (capturedBountyId) {
+            const b = BOUNTIES[capturedBountyId];
+            termAppend('', 'term-separator');
+            termAppend(
+                `<span style="color:#FFD700;font-size:18px;">⚓ BOUNTY TARGET CAPTURED!</span>`,
+                'term-victory'
+            );
+            termAppend(
+                `<span style="color:#cc66ff;">${b.name}</span> has been defeated! ` +
+                `Return to the Bounty Board to collect your reward.`,
+                'term-loot'
+            );
+            termAppend('', 'term-separator');
+        }
     }
-}
+
+    // ── Process random dungeon boss loot (in case checkCombatEnd didn't catch it) ──
+    defeated.forEach(e => {
+        
+    });
 
     const isMaster   = defeated.some(m => m.isMaster);
     let masterData   = null;
@@ -6127,11 +6210,26 @@ if (weaponDrop && typeof weaponDrop === 'object') {
 
     const ab = document.getElementById('actionBar');
     
-    if (gameState.dungeon) {
+        if (gameState.dungeon) {
     if (victory) {
         setTimeout(() => {
             const ds = gameState.dungeon;
             if (!ds) return;
+            
+            // ─────────────────────────────────────────────────────────
+            // CHECK IF BOSS WAS DEFEATED - Set flag to show exit button
+            // ─────────────────────────────────────────────────────────
+            const cs = gameState.combatState;
+            const wasBossDefeated = cs && cs.defeatedMonsters && cs.defeatedMonsters.some(m => m.isBoss === true || m.isRandomBoss === true);
+            
+            if (wasBossDefeated) {
+                gameState.dungeon.bossDefeated = true;
+                termAppend('', 'term-separator');
+                termAppend(`<span style="color:#00FF88;font-size:18px;font-weight:bold;text-align:center;display:block;">🏠 The dungeon exit is now available!</span>`, 'term-victory');
+                termAppend(`<span style="color:#FFD700;text-align:center;display:block;">Press the HOME button to leave with your treasures.</span>`, 'term-loot');
+                termAppend('', 'term-separator');
+            }
+            
             const remaining = ds.activeEnemies.filter(e => e.currentRoom === ds.currentRoom);
             if (remaining.length > 0) {
                 checkEnemiesInRoom(ds.currentRoom);
