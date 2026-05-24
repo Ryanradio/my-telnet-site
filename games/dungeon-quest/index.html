@@ -2619,13 +2619,26 @@ function calculateAndSetSpellResistance(player) {
 // YOUR ORIGINAL loadCharacter FUNCTION - WITH ONLY STEP 3.5 COMMENTED OUT
 // ═══════════════════════════════════════════════════════════════
 
-async function loadCharacter(characterId) {
+async function loadCharacter(characterId, skipReconciliation = false) {
     try {
-        // RECONCILE FIRST
-        const tempData = localStorage.getItem(`dq_save_${characterId}`);
-        const tempName = tempData ? JSON.parse(tempData).characterName : null;
+                // RECONCILE FIRST (skip if loading from cloud with user choice)
+        let saveData;
         
-        const saveData = await reconcileSaves(characterId, tempName);
+        if (skipReconciliation) {
+            // Skip cloud reconciliation, just load local save directly
+            const localRaw = localStorage.getItem(`dq_save_${characterId}`);
+            if (!localRaw) {
+                console.error('No local save found for', characterId);
+                showMainMenu();
+                return;
+            }
+            saveData = JSON.parse(localRaw);
+            console.log('📦 Skipping reconciliation - using save from cloud modal choice');
+        } else {
+            const tempData = localStorage.getItem(`dq_save_${characterId}`);
+            const tempName = tempData ? JSON.parse(tempData).characterName : null;
+            saveData = await reconcileSaves(characterId, tempName);
+        }
         
         if (!saveData) {
             console.error('Save file not found:', characterId);
@@ -5028,18 +5041,7 @@ function setupAutoSaveTriggers() {
     // Auto-save every 30 seconds (local only)
     //if (window._autoSaveTimer) clearInterval(window._autoSaveTimer);
     //window._autoSaveTimer = setInterval(autoSave, 30000);
-    
-    // Sync to cloud when leaving the page
-    window.addEventListener('pagehide', () => {
-        syncToCloud(); // Best effort on iOS
-    });
-    
-    // Sync when switching tabs/apps
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'hidden') {
-            syncToCloud(); // Best effort
-        }
-    });
+       
 }
 
 // ======================================================
@@ -5986,7 +5988,7 @@ async function displayCloudCharacterList() {
                             <span style="color: #FFD700; font-size: 20px;">${save.username}</span><br>
                             <span style="color: #8aaa8a;">Level ${save.level} ${save.class || 'Adventurer'}</span>
                         </div>
-                        <button onclick="loadCloudCharacterToLocal('${save.id}')" style="padding: 8px 20px; background: #1a1a1a; border: 2px solid #00FF00; color: #00FF00; cursor: pointer; font-size: 16px;">▶ LOAD</button>
+                        <button onclick="loadCloudCharacter('${save.id}')" style="padding: 8px 20px; background: #1a1a1a; border: 2px solid #00FF00; color: #00FF00; cursor: pointer; font-size: 16px;">▶ LOAD</button>
                     </div>
                     <div style="font-size: 11px; color: #666; margin-top: 8px;">
                         Last played: ${new Date(save.last_login).toLocaleString()}
@@ -6042,14 +6044,8 @@ async function cloudLoadSignup() {
     }
 }
 
-// Logout from cloud load screen
-async function logoutFromCloudLoad() {
-    await calamitySupabase.auth.signOut();
-    showCloudLoadScreen(); // Refresh the screen
-}
-
-// Load cloud character AND save to localStorage
-async function loadCloudCharacterToLocal(saveId) {
+// Load cloud characters list
+async function loadCloudCharacter(saveId) {
     const { data, error } = await calamitySupabase
         .from('calamity_saves')
         .select('character_data, username')
@@ -6064,75 +6060,178 @@ async function loadCloudCharacterToLocal(saveId) {
     const cloudSave = data.character_data;
     const characterId = cloudSave.characterId;
     const localKey = `dq_save_${characterId}`;
+    const localRaw = localStorage.getItem(localKey);
     
-    // ⭐ CHECK LOCAL SAVE FIRST
-    const localData = localStorage.getItem(localKey);
-    let saveToUse = cloudSave;
-    
-    if (localData) {
-        const localSave = JSON.parse(localData);
-        const localTime = localSave.timestamp || 0;
-        const cloudTime = cloudSave.timestamp || 0;
-        
-        console.log(`📊 Local save timestamp: ${new Date(localTime).toLocaleString()}.${String(localTime % 1000).padStart(3,'0')}`);
-        console.log(`📊 Cloud save timestamp: ${new Date(cloudTime).toLocaleString()}.${String(cloudTime % 1000).padStart(3,'0')}`);
-        
-        // If local is newer, use local instead of cloud
-        if (localTime > cloudTime) {
-            console.log(`✅ Local save is NEWER - using LOCAL save instead of cloud`);
-            saveToUse = localSave;
-        } else {
-            console.log(`📥 Cloud save is newer or equal - using cloud save`);
-        }
-    } else {
-        console.log(`📥 No local save found - using cloud save`);
+    // No local save exists - load cloud directly
+    if (!localRaw) {
+        console.log('📥 No local save found, loading cloud directly');
+        localStorage.setItem(localKey, JSON.stringify(cloudSave));
+        updateCharacterList(cloudSave);
+        loadCharacter(characterId, true);  // ← Added ,true
+        return;
     }
     
-    // Write the chosen save to localStorage
-    localStorage.setItem(localKey, JSON.stringify(saveToUse));
+    // Local save exists - show comparison modal
+    const localSave = JSON.parse(localRaw);
     
-    // Update character list
-    let charList = JSON.parse(localStorage.getItem('dq_character_list') || '[]');
-    charList = charList.filter(c => c.id !== characterId);
-    charList.push({
-        id: characterId,
-        name: saveToUse.characterName,
-        level: saveToUse.player.level,
-        class: saveToUse.player.class,
-        timestamp: saveToUse.timestamp || Date.now(),
-        lastSaved: saveToUse.lastSaved || new Date().toLocaleString()
-    });
-    localStorage.setItem('dq_character_list', JSON.stringify(charList));
+    // Helper to get session status
+    function getSessionStatus(saveData) {
+        if (saveData.activeCombat && saveData.activeCombat.monsters?.length > 0) {
+            const count = saveData.activeCombat.monsters.length;
+            return { icon: '⚔️', text: `IN COMBAT (${count} enemy${count !== 1 ? 'ies' : ''})` };
+        }
+        if (saveData.dungeon && saveData.dungeon.dungeonKey) {
+            let name = saveData.dungeon.dungeonKey;
+            if (typeof DUNGEONS !== 'undefined' && DUNGEONS[name]) name = DUNGEONS[name].name || name;
+            return { icon: '🏰', text: `IN DUNGEON: ${name} (Floor ${saveData.dungeon.floor})` };
+        }
+        if (saveData.currentLocation && saveData.currentLocation !== 'town') {
+            let name = saveData.currentLocation;
+            if (typeof LOCATIONS !== 'undefined' && LOCATIONS[name]) name = LOCATIONS[name].name || name;
+            return { icon: '🌲', text: `EXPLORING: ${name}` };
+        }
+        if (saveData.currentTown) {
+            let name = saveData.currentTown;
+            if (typeof TOWNS !== 'undefined' && TOWNS[name]) name = TOWNS[name].name || name;
+            return { icon: '🏘️', text: `IN TOWN: ${name}` };
+        }
+        return { icon: '🏠', text: 'MAIN MENU' };
+    }
     
-    // Clean up old cloud_ duplicates
-    const keysToRemove = [];
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('dq_save_cloud_')) {
-            const d = JSON.parse(localStorage.getItem(key));
-            if (d.characterName === saveToUse.characterName) {
-                keysToRemove.push(key);
+    const localTime = localSave.timestamp || 0;
+    const cloudTime = cloudSave.timestamp || 0;
+    const localIsNewer = localTime > cloudTime;
+    const sameAge = Math.abs(localTime - cloudTime) < 2000;
+    
+    const localDate = new Date(localTime);
+    const cloudDate = new Date(cloudTime);
+    const localStatus = getSessionStatus(localSave);
+    const cloudStatus = getSessionStatus(cloudSave);
+    
+    const formatDate = (d) => d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    
+    // Create modal
+    const modal = document.createElement('div');
+    modal.id = 'cloudCompareModal';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,0.95);display:flex;align-items:center;justify-content:center;font-family:VT323,monospace;padding:16px;box-sizing:border-box;';
+    
+    const container = document.createElement('div');
+    container.style.cssText = 'background:#0a0f0a;border:2px solid #00FF41;border-radius:8px;max-width:500px;width:100%;max-height:90vh;overflow-y:auto;padding:16px;box-sizing:border-box;';
+    
+    const header = document.createElement('div');
+    header.style.cssText = 'text-align:center;color:#FFD700;font-size:22px;letter-spacing:3px;margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid #1a3a1a;';
+    header.textContent = '☁️ CLOUD vs LOCAL CONFLICT';
+    container.appendChild(header);
+    
+    let selected = localIsNewer ? 'local' : 'cloud';
+    
+    function createCard(type, isNewer, save, level, xp, date, status, isSelected) {
+        const card = document.createElement('div');
+        card.style.cssText = `background:#050a05;border:2px solid ${isSelected ? '#FFD700' : '#1a3a1a'};border-radius:8px;padding:14px;margin-bottom:12px;cursor:pointer;transition:all 0.1s;${isSelected ? 'box-shadow:0 0 12px rgba(255,215,0,0.3);' : ''}`;
+        
+        const badgeColor = isNewer ? '#00FF88' : (sameAge ? '#FFAA44' : '#FFAA44');
+        const badgeText = isNewer ? '🟢 NEWER' : (sameAge ? '🟡 SAME AGE' : '🔵 OLDER');
+        
+        card.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #1a3a1a;">
+                <span style="color:${badgeColor};font-size:14px;">${badgeText}</span>
+                <span style="color:#888;font-size:20px;">${isSelected ? '●' : '○'}</span>
+            </div>
+            <div style="font-size:18px;font-weight:bold;color:${type === 'local' ? '#88FF88' : '#88AAFF'};margin-bottom:8px;">${type === 'local' ? '💾 LOCAL SAVE' : '☁️ CLOUD SAVE'}</div>
+            <div style="color:#aaa;font-size:16px;margin-bottom:8px;">Level ${level} · XP ${xp.toLocaleString()}</div>
+            <div style="color:#666;font-size:13px;margin-bottom:10px;">${formatDate(date)}</div>
+            <div style="background:#0a100a;padding:8px 10px;border-radius:4px;font-size:14px;">${status.icon} ${status.text}</div>
+        `;
+        
+        card.onclick = () => {
+            document.querySelectorAll('#cloudCompareModal .compare-card').forEach(c => {
+                c.style.borderColor = '#1a3a1a';
+                c.style.boxShadow = 'none';
+                const radio = c.querySelector('span[style*="font-size:20px"]');
+                if (radio) radio.innerHTML = '○';
+            });
+            card.style.borderColor = '#FFD700';
+            card.style.boxShadow = '0 0 12px rgba(255,215,0,0.3)';
+            const radio = card.querySelector('span[style*="font-size:20px"]');
+            if (radio) radio.innerHTML = '●';
+            selected = type;
+        };
+        card.className = 'compare-card';
+        return card;
+    }
+    
+    // Add cards (newest on top)
+    if (localIsNewer || (sameAge && localTime >= cloudTime)) {
+        container.appendChild(createCard('local', true, localSave, localSave.player?.level || 0, localSave.player?.xp || 0, localDate, localStatus, true));
+        container.appendChild(createCard('cloud', false, cloudSave, cloudSave.player?.level || 0, cloudSave.player?.xp || 0, cloudDate, cloudStatus, false));
+    } else {
+        container.appendChild(createCard('cloud', true, cloudSave, cloudSave.player?.level || 0, cloudSave.player?.xp || 0, cloudDate, cloudStatus, true));
+        container.appendChild(createCard('local', false, localSave, localSave.player?.level || 0, localSave.player?.xp || 0, localDate, localStatus, false));
+    }
+    
+    const btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex;gap:12px;margin-top:20px;flex-wrap:wrap;';
+    
+    const enterBtn = document.createElement('button');
+    enterBtn.textContent = '▶ ENTER GAME';
+    enterBtn.style.cssText = 'flex:2;background:#0a2a0a;border:2px solid #00FF41;color:#00FF41;font-family:VT323,monospace;font-size:20px;padding:12px;cursor:pointer;border-radius:4px;';
+    
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = '❌ CANCEL';
+    cancelBtn.style.cssText = 'flex:1;background:#1a0a0a;border:2px solid #ff4444;color:#ff4444;font-family:VT323,monospace;font-size:20px;padding:12px;cursor:pointer;border-radius:4px;';
+    
+    btnRow.appendChild(enterBtn);
+    btnRow.appendChild(cancelBtn);
+    container.appendChild(btnRow);
+    modal.appendChild(container);
+    document.body.appendChild(modal);
+    
+    enterBtn.onclick = async () => {
+        modal.remove();
+        
+        if (selected === 'local') {
+            console.log('💾 User selected LOCAL save');
+            // Silently upload local to cloud
+            const { data: { user } } = await calamitySupabase.auth.getUser();
+            if (user) {
+                await calamitySupabase
+                    .from('calamity_saves')
+                    .update({
+                        character_data: localSave,
+                        level: localSave.player?.level || 0,
+                        class: localSave.player?.class || '',
+                        last_login: new Date().toISOString()
+                    })
+                    .eq('id', saveId);
+                console.log('☁️ Silently uploaded local to cloud');
+            }
+            loadCharacter(characterId, true);  // ← Added ,true
+        } else {
+            console.log('📥 User selected CLOUD save');
+            localStorage.setItem(localKey, JSON.stringify(cloudSave));
+            updateCharacterList(cloudSave);
+            loadCharacter(characterId, true);  // ← Added ,true
+            
+            const { data: { user } } = await calamitySupabase.auth.getUser();
+            if (user) {
+                await calamitySupabase
+                    .from('calamity_saves')
+                    .update({ last_login: new Date().toISOString() })
+                    .eq('id', saveId);
             }
         }
-    }
-    keysToRemove.forEach(key => {
-        console.log(`🧹 Removing duplicate cloud save: ${key}`);
-        localStorage.removeItem(key);
-    });
+    };
     
-    // Load the character
-    loadCharacter(characterId);
-    
-    // Update last_login in cloud
-    const { data: { user } } = await calamitySupabase.auth.getUser();
-    if (user) {
-        await calamitySupabase
-            .from('calamity_saves')
-            .update({ last_login: new Date().toISOString() })
-            .eq('id', saveId);
-    }
+    cancelBtn.onclick = () => {
+        modal.remove();
+        console.log('❌ User cancelled - returning to main menu');
+        if (gameState.combatTimer) clearInterval(gameState.combatTimer);
+        gameState.player = null;
+        gameState.dungeon = null;
+        gameState.combatState = null;
+        showMainMenu();
+    };
 }
-
 
 // Check cloud login for main menu
 async function checkMainMenuCloud() {
@@ -6335,83 +6434,7 @@ async function simpleCloudSave() {
 }
 
 
-// Load cloud characters list
-// Replace your entire loadCloudCharacter function with this debug version
-async function loadCloudCharacter(saveId) {
-    console.log('🔍 LOAD CLOUD CHARACTER STARTED');
-    console.log('Save ID:', saveId);
-    
-    const { data, error } = await calamitySupabase
-        .from('calamity_saves')
-        .select('character_data, username')
-        .eq('id', saveId)
-        .single();
-    
-    if (error) {
-        alert('Error loading character: ' + error.message);
-        return;
-    }
-    
-    console.log('Cloud data received:', data);
-    
-    // The character_data contains your FULL save snapshot
-    const saveData = data.character_data;
-    console.log('Save data character ID:', saveData.characterId);
-    console.log('Save data name:', saveData.characterName);
-    console.log('Save data level:', saveData.player?.level);
-    
-    // List ALL current localStorage before save
-    console.log('📋 BEFORE SAVE - All Warrior saves:');
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key.startsWith('dq_save_')) {
-            const data = JSON.parse(localStorage.getItem(key));
-            if (data.characterName === 'Warrior') {
-                console.log('  ', key, '→', {
-                    id: data.characterId,
-                    level: data.player?.level,
-                    timestamp: new Date(data.timestamp).toLocaleString()
-                });
-            }
-        }
-    }
-    
-    // Save to localStorage
-    const localKey = `dq_save_${saveData.characterId}`;
-    console.log('💾 Saving to:', localKey);
-    localStorage.setItem(localKey, JSON.stringify(saveData));
-    
-    // List ALL current localStorage AFTER save
-    console.log('📋 AFTER SAVE - All Warrior saves:');
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key.startsWith('dq_save_')) {
-            const data = JSON.parse(localStorage.getItem(key));
-            if (data.characterName === 'Warrior') {
-                console.log('  ', key, '→', {
-                    id: data.characterId,
-                    level: data.player?.level,
-                    timestamp: new Date(data.timestamp).toLocaleString()
-                });
-            }
-        }
-    }
-    
-    // Load the character
-    console.log('📂 Loading character:', saveData.characterId);
-    loadCharacter(saveData.characterId);
-    
-    // Update last_login
-    const { data: { user } } = await calamitySupabase.auth.getUser();
-    if (user) {
-        await calamitySupabase
-            .from('calamity_saves')
-            .update({ last_login: new Date().toISOString() })
-            .eq('id', saveId);
-    }
-    
-    console.log('✅ LOAD CLOUD CHARACTER COMPLETE');
-}
+
 
 
 
@@ -6613,83 +6636,7 @@ async function saveToCloud() {
     }
 }
 
-// Load a specific cloud character
-async function loadCloudCharacter(saveId) {
-    const { data, error } = await calamitySupabase
-        .from('calamity_saves')
-        .select('character_data, username')
-        .eq('id', saveId)
-        .single();
-    
-    if (error) {
-        alert('Error loading character: ' + error.message);
-        return;
-    }
-    
-    // The character_data contains your FULL save snapshot
-    const saveData = data.character_data;
-    
-    // Store in localStorage for your existing loadCharacter function
-   async function loadCloudCharacter(saveId) {
-    const { data, error } = await calamitySupabase
-        .from('calamity_saves')
-        .select('character_data, username')
-        .eq('id', saveId)
-        .single();
-    
-    if (error) {
-        alert('Error loading character: ' + error.message);
-        return;
-    }
-    
-    // The character_data contains your FULL save snapshot
-    const saveData = data.character_data;
-    
-    // ═══════════════════════════════════════════════════════════════
-    // FIX: Overwrite the existing local character instead of creating a new one
-    // ═══════════════════════════════════════════════════════════════
-    // Get the current player's ID if they're logged in
-    const currentPlayer = gameState.player;
-    let localKey;
-    
-    if (currentPlayer && currentPlayer.id) {
-        // Update the existing local save
-        localKey = `dq_save_${currentPlayer.id}`;
-        console.log(`🔄 Updating existing character: ${localKey}`);
-    } else {
-        // Only create a new one if no character is loaded
-        const tempId = 'cloud_' + Date.now();
-        localKey = `dq_save_${tempId}`;
-        console.log(`➕ Creating new local character: ${localKey}`);
-    }
-    
-    localStorage.setItem(localKey, JSON.stringify(saveData));
-    
-    // Use your existing loadCharacter function
-    loadCharacter(localKey.replace('dq_save_', ''));
-    
-    // Update last_login
-    const { data: { user } } = await calamitySupabase.auth.getUser();
-    if (user) {
-        await calamitySupabase
-            .from('calamity_saves')
-            .update({ last_login: new Date().toISOString() })
-            .eq('id', saveId);
-    }
-}
 
-    // Use your existing loadCharacter function
-    loadCharacter(tempId);
-    
-    // Update last_login
-    const { data: { user } } = await calamitySupabase.auth.getUser();
-    if (user) {
-        await calamitySupabase
-            .from('calamity_saves')
-            .update({ last_login: new Date().toISOString() })
-            .eq('id', saveId);
-    }
-}
 
 
         function showTown(townId) {
@@ -7605,57 +7552,8 @@ async function logoutFromCloud() {
     checkCloudLogin();
 }
 
-// Load cloud characters list
-async function loadCloudCharacter(saveId) {
-    const { data, error } = await calamitySupabase
-        .from('calamity_saves')
-        .select('character_data, username')
-        .eq('id', saveId)
-        .single();
-    
-    if (error) {
-        alert('Error loading character: ' + error.message);
-        return;
-    }
-    
-    // The character_data contains your FULL save snapshot
-    const saveData = data.character_data;
-    
-    // ═══════════════════════════════════════════════════════════════
-    // FIX: Always use the character's permanent ID, not a temp cloud ID
-    // ═══════════════════════════════════════════════════════════════
-    const characterId = saveData.characterId;
-    const localKey = `dq_save_${characterId}`;
-    
-    console.log(`💾 Saving cloud character to: ${localKey}`);
-    
-    // Save to localStorage using the PERMANENT character ID
-    localStorage.setItem(localKey, JSON.stringify(saveData));
-    
-    // Clean up any old cloud_ duplicates with the same character ID
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key.startsWith('dq_save_cloud_')) {
-            const data = JSON.parse(localStorage.getItem(key));
-            if (data.characterId === characterId) {
-                console.log(`🧹 Removing duplicate cloud save: ${key}`);
-                localStorage.removeItem(key);
-            }
-        }
-    }
-    
-    // Use your existing loadCharacter function (pass the character ID, not tempId)
-    loadCharacter(characterId);
-    
-    // Update last_login
-    const { data: { user } } = await calamitySupabase.auth.getUser();
-    if (user) {
-        await calamitySupabase
-            .from('calamity_saves')
-            .update({ last_login: new Date().toISOString() })
-            .eq('id', saveId);
-    }
-}
+
+
 
 // ═══════════════════════════════════════════════════════════════
 // SHOP SYSTEM — Featured items, filters, reroll

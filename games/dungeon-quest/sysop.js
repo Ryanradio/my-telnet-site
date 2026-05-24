@@ -1091,19 +1091,9 @@ async function syncToCloud() {
 }
 
 
-// ======================================================
-// BACKWARD COMPATIBILITY WRAPPER
-// Redirects old saveGame() calls to new autoSave()
-// ======================================================
 function saveGame() {
-    // First do local auto-save
+    // Local auto-save only - cloud saves are manual only
     autoSave();
-    
-    // Then try cloud sync in the background (don't wait for it)
-    syncToCloud().catch(err => {
-        // Silently fail - cloud sync is best effort
-        console.log('Background cloud sync failed (non-critical)');
-    });
 }
 
 // ======================================================
