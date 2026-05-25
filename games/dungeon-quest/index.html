@@ -6641,6 +6641,7 @@ async function saveToCloud() {
 
         function showTown(townId) {
             checkGameVersion();
+            gameState.currentLocation = 'town';  
             document.body.classList.remove("terminal-mode");
             
             // Update current town if specified

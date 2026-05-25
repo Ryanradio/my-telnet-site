@@ -17,11 +17,11 @@ const AH_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwh7_fSt6gRjObMZC
 // Keys are duration in MINUTES (integers) to avoid float key ordering issues.
 // Server receives duration_minutes and converts to hours internally.
 const AH_LISTING_FEES = {
-  1:    { label: '1 Min (TEST)', feePct: 0.01,  sysopOnly: true },
-  720:  { label: '12 Hours',     feePct: 0.05 },
-  1440: { label: '1 Day',        feePct: 0.08 },
-  4320: { label: '3 Days',       feePct: 0.12 },
-  10080:{ label: '7 Days',       feePct: 0.15 },
+  1:     { label: '1 Min (TEST)', fee: 0,     sysopOnly: true },  // Free for testing
+  720:   { label: '12 Hours',     fee: 10 },                       // 10 gold
+  1440:  { label: '1 Day',        fee: 25 },                       // 25 gold
+  4320:  { label: '3 Days',       fee: 50 },                       // 50 gold
+  10080: { label: '7 Days',       fee: 100 },                      // 100 gold
 };
 
 const AH_SALE_FEE_PCT  = 10;   // % house takes on sale
@@ -631,7 +631,7 @@ function _ahUpdateFeePreview() {
     const info = AH_LISTING_FEES[durationMinutes];
     
     if (info && buyNowPrice > 0) {
-        const fee = Math.floor(buyNowPrice * info.feePct);
+        const fee = info?.fee || 0;
         const feeSpan = document.getElementById('ahFeeAmount');
         if (feeSpan) {
             feeSpan.textContent = fee;
@@ -708,6 +708,7 @@ function _ahShowListingConfirm(item, startingBid, buyNowPrice, fee, durationMinu
     if (gems.length > 0) {
         gemHtml = '<div style="margin-top:6px;font-size:11px;">';
         gems.forEach(gem => {
+            if (!gem) return;
             gemHtml += `<div style="color:${gem.color || '#FFD700'};">${gem.emoji || '💎'} ${gem.name}: ${gem.description || ''}</div>`;
         });
         gemHtml += '</div>';
@@ -846,7 +847,7 @@ function _ahShowListingConfirm(item, startingBid, buyNowPrice, fee, durationMinu
 }
 
 
-function _ahExecuteListing() {
+async function _ahExecuteListing() {
     const pending = window._pendingListing;
     if (!pending) return;
     
@@ -890,7 +891,8 @@ function _ahExecuteListing() {
     _ahRemoveItemFromInventory(item);
     // Deduct listing fee immediately
     p.gold -= fee;
-    if (typeof saveGame === 'function') saveGame();
+    await _ahForceSave();
+   
     
     const params = new URLSearchParams({
         action: 'ah_list',
@@ -930,7 +932,7 @@ function _ahExecuteListing() {
                 // Rollback: return item and gold
                 _ahReturnItemToInventory(JSON.stringify(item), name);
                 p.gold += fee;
-                if (typeof saveGame === 'function') saveGame();
+                _ahForceSave().catch(e => console.warn('Save failed:', e));
                 _ahSetStatus('Listing failed: ' + (data.error || 'Unknown error'), true);
                 _ahUpdateBody();
             }
@@ -942,7 +944,7 @@ function _ahExecuteListing() {
             // Rollback on network error
             _ahReturnItemToInventory(JSON.stringify(item), name);
             p.gold += fee;
-            if (typeof saveGame === 'function') saveGame();
+            _ahForceSave().catch(e => console.warn('Save failed:', e));
             _ahSetStatus('Network error. Your item and gold have been returned.', true);
             _ahUpdateBody();
         });
@@ -1053,7 +1055,7 @@ function _ahRenderSellConfirm() {
   style="color:#FFD700;font-size:14px;margin-top:6px;font-weight:bold;
          font-family:'Courier New',monospace;text-shadow:0 0 4px #FFD70066;">
   ✦ LISTING FEE: <span id="ahFeeAmount" style="color:#FFFFFF;font-size:16px;">0</span>g ✦
-  <span style="color:#888;font-size:11px;font-weight:normal;">(${currentFeeInfo.feePct * 100}% of Buy Now price)</span>
+  <span style="color:#888;font-size:11px;font-weight:normal;">(fixed listing fee)</span>
 </div>
     </div>
 
@@ -1542,7 +1544,7 @@ function _ahConfirmBuy(listingId, itemName, price) {
       if (data.ok) {
         // Deduct gold from buyer — item and seller payout arrive via mailbox
         p.gold -= price;
-        if (typeof saveGame === 'function') saveGame();
+        _ahForceSave().catch(e => console.warn('Save failed:', e));
         // Update mail badge since buyer now has mail waiting
         if (typeof _mailUpdateBadge === 'function') {
           _mailUnreadCount = (_mailUnreadCount || 0) + 1;
@@ -1562,7 +1564,7 @@ function _ahConfirmBuy(listingId, itemName, price) {
 }
 
 // ── Submit new listing ────────────────────────────────────────────────────
-function _ahSubmitListing() {
+async function _ahSubmitListing() {
     const p = gameState.player;
     const item = _ahSellItem;
     if (!item) return;
@@ -1591,8 +1593,8 @@ function _ahSubmitListing() {
     }
     
     const durationMinutes = _ahSelectedMinutes || 720;
-    const feePct = AH_LISTING_FEES[durationMinutes]?.feePct || 0.05;
-    const listingFee = Math.max(1, Math.floor(buyNowPrice * feePct));
+const feeInfo = AH_LISTING_FEES[durationMinutes] || { fee: 50 };
+const listingFee = feeInfo.fee;
     
     if (p.gold < listingFee) {
         _ahSetStatus('Not enough gold for listing fee (' + listingFee + 'g needed).', true);
@@ -1604,7 +1606,7 @@ function _ahSubmitListing() {
 }
 
 // ── Cancel listing ────────────────────────────────────────────────────────
-function _ahConfirmCancel(listingId, itemName) {
+async function _ahConfirmCancel(listingId, itemName) {
   if (!confirm('Cancel listing for ' + itemName + '? The item will be returned to your inventory. (Listing fee is non-refundable.)')) return;
 
   const p      = gameState.player;
@@ -1842,7 +1844,7 @@ function _ahShowBidModal(listingId, minBid, itemName) {
   }, 100);
 }
 
-function _ahPlaceBid(listingId, maxBid, itemName, modal) {
+async function _ahPlaceBid(listingId, maxBid, itemName, modal) {
     // Prevent multiple submissions
     if (_ahIsSubmitting) {
         _ahSetStatus('Already submitting... please wait.', true);
@@ -1880,7 +1882,7 @@ function _ahPlaceBid(listingId, maxBid, itemName, modal) {
             if (data.ok) {
                 if (data.you_are_winning) {
                     p.gold -= maxBid;
-                    if (typeof saveGame === 'function') saveGame();
+                    _ahForceSave().catch(e => console.warn('Save failed:', e));
                     if (modal) modal.remove();
                     _ahSetStatus('You are the highest bidder on ' + itemName + '!'
                         + ' Current price: ' + data.new_current_bid.toLocaleString() + 'g'
@@ -1919,7 +1921,7 @@ function _ahCloseBidModal() {
 }
 
 // ── Buy It Now handler (client-side) ──────────────────────────────────────
-function _ahBuyNow(listingId, price, itemName) {
+async function _ahBuyNow(listingId, price, itemName) {
     // Prevent multiple submissions
     if (_ahIsSubmitting) {
         _ahSetStatus('Already submitting... please wait.', true);
@@ -1959,7 +1961,7 @@ function _ahBuyNow(listingId, price, itemName) {
             
             if (data.ok && data.buy_now) {
                 p.gold -= price;
-                if (typeof saveGame === 'function') saveGame();
+                _ahForceSave().catch(e => console.warn('Save failed:', e));
                 if (typeof _mailUnreadCount !== 'undefined' && typeof _mailUpdateBadge === 'function') {
                     _mailUnreadCount = (_mailUnreadCount || 0) + 1;
                     _mailUpdateBadge();
@@ -2125,4 +2127,20 @@ function _ahHideLoading() {
     }
     const overlay = document.getElementById('ahLoadingOverlay');
     if (overlay) overlay.remove();
+}
+
+
+async function _ahForceSave() {
+    if (typeof saveGame === 'function') {
+        saveGame(); // Local save
+    }
+    // Also force cloud sync immediately
+    if (typeof syncToCloud === 'function') {
+        try {
+            await syncToCloud();
+            console.log('☁️ AH force cloud save complete');
+        } catch(e) {
+            console.warn('AH cloud sync failed:', e);
+        }
+    }
 }

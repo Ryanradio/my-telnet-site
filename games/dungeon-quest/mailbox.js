@@ -428,7 +428,10 @@ function _mailClaim(mailId) {
         _mailUpdateBadge();
         _mailUpdateHeaderCount();
 
-        if (typeof saveGame === 'function') saveGame();
+        if (typeof _ahForceSave === 'function') {
+    _ahForceSave().catch(e => console.warn('Mailbox save failed:', e));
+}
+
       } else {
         _mailSetStatus('Claim failed: ' + (data.error || ''), true);
         if (btn) { btn.disabled = false; btn.textContent = 'CLAIM'; }
@@ -495,7 +498,9 @@ function _mailClaimAll() {
         failed > 0
       );
       _mailRenderBody();
-      if (typeof saveGame === 'function') saveGame();
+if (typeof _ahForceSave === 'function') {
+    _ahForceSave().catch(e => console.warn('Mailbox save failed:', e));
+}
       return;
     }
 
