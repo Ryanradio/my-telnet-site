@@ -6778,11 +6778,7 @@ async function saveToCloud() {
                     <div class="menu-option" onclick="cloudSave()" style="border-color: #AA88FF;">► ☁️ SAVE TO CLOUD</div>
                     <div class="menu-option" onclick="manualCloudSync()" style="border-color: #AA88FF;">► ☁️ SYNC TO CLOUD</div>
                     <div class="menu-option" onclick="confirmQuitToMenu()">► ⏏ QUIT TO MENU</div>
-                    ${gameState.sysop && gameState.sysop.authenticated ? `
-                    <div class="menu-option" onclick="startRandomDungeon()"
-                         style="border-color:#aa44ff;color:#cc88ff;background:rgba(170,68,255,0.08);margin-top:12px;">
-                        🌀 [SYSOP] THE SHIFTING LABYRINTH <span style="font-size:11px;color:#8855cc;">(test only)</span>
-                    </div>` : ''}
+                    
                 </div>
             `);
                         fetchLeaderboardTicker();

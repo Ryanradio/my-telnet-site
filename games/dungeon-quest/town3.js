@@ -65,7 +65,21 @@ const T3_ELEMENTS = {
         tagline:     'The deep does not give back what it takes.',
         description: `Cold seeps through the Southern arch even on the warmest days. The <strong style="color:#3399FF;">Drowned Archive</strong> lies submerged — a library of a civilization that chose the ocean over the sky. Half-flooded corridors hide creatures that evolved in total darkness. The treasures are real. So are the things guarding them.`,
         lore:        `"AQUA PROFUNDIS — Every time the tide came in, we lost someone. Every time it went out, we found something we hadn't known to look for." — Final log of the Deepwater Expedition, South Archive Level 9`
-    }
+    },
+    void: {
+    label:       'VOID',
+    direction:   'CENTER',
+    emoji:       '🌀',
+    symbol:      '⬤',
+    color:       '#AA44FF',
+    colorDim:    'rgba(170,68,255,0.08)',
+    colorGlow:   'rgba(170,68,255,0.28)',
+    colorBorder: '#6622aa',
+    dungeon:     'random_dungeon',
+    tagline:     'Reality bends. The labyrinth shifts.',
+    description: `The Shifting Labyrinth defies cartography — its corridors rearrange when you aren't looking. No two expeditions map the same path. The creatures within seem just as confused as the adventurers hunting them, making this place both maddening and lucrative for those who can adapt.`,
+    lore:        `"LABYRINTHUS MUTABILIS — I marked every turn with chalk. When I looked back, the chalk had moved to different walls. The labyrinth is not a place. It is a process." — Unsigned note found in the Crossroads archives`
+}
 };
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -234,63 +248,64 @@ window.TOWNS.town3 = {
         }
 
         // ── Elemental arch cards ────────────────────────────────────────
-        const elemKeys   = ['earth', 'fire', 'wind', 'water'];
+        const elemKeys   = ['earth', 'fire', 'wind', 'water', 'void'];
         const archCards  = elemKeys.map((key, i) => {
-            const el       = T3_ELEMENTS[key];
-            const hasDung  = !!el.dungeon;
-            const clickFn  = hasDung ? `enterTownDungeon('${el.dungeon}')` : `t3ShowElement('${key}')`;
-            const badge    = hasDung
-                ? `<span style="color:${el.color};font-size:11px;font-weight:bold;
-                              letter-spacing:1px;animation:t3-pulse-opacity 1.8s ease-in-out infinite;
-                              animation-delay:${i * 0.4}s;">► ENTER</span>`
-                : `<span style="color:#333;font-size:10px;letter-spacing:1px;">⬡ SEALED</span>`;
+    const el       = T3_ELEMENTS[key];
+    const hasDung  = !!el.dungeon;
+    const clickFn  = hasDung ? `startRandomDungeon()` : `t3ShowElement('${key}')`;
+    const isVoid   = key === 'void';
+    const voidStyle = isVoid ? `animation:t3-pulse-opacity 1.5s ease-in-out infinite;` : '';
+    const activeBadge = isVoid ? `<span style="color:#FF44FF;font-size:9px;margin-left:6px;animation:t3-flicker 2s ease-in-out infinite;">⚡ ACTIVE</span>` : '';
+    
+    const badge    = hasDung
+        ? `<span style="color:${el.color};font-size:11px;font-weight:bold;
+                      letter-spacing:1px;animation:t3-pulse-opacity 1.8s ease-in-out infinite;
+                      animation-delay:${i * 0.4}s;">► ENTER</span>${activeBadge}`
+        : `<span style="color:#333;font-size:10px;letter-spacing:1px;">⬡ SEALED</span>`;
 
-            return `
-            <div class="t3-arch t3-scanline-wrap"
-                 style="border-color:${el.colorBorder};
-                        background:${el.colorDim};
-                        box-shadow:0 0 14px ${el.colorGlow}, inset 0 1px 0 rgba(255,255,255,0.04);"
-                 onclick="${clickFn}"
-                 onmouseenter="this.style.boxShadow='0 0 28px ${el.colorGlow}, inset 0 1px 0 rgba(255,255,255,0.04)'"
-                 onmouseleave="this.style.boxShadow='0 0 14px ${el.colorGlow}, inset 0 1px 0 rgba(255,255,255,0.04)'">
+    return `
+    <div class="t3-arch t3-scanline-wrap"
+         style="border-color:${el.colorBorder};
+                background:${el.colorDim};
+                box-shadow:0 0 14px ${el.colorGlow}, inset 0 1px 0 rgba(255,255,255,0.04);
+                ${voidStyle}"
+         onclick="${clickFn}"
+         onmouseenter="this.style.boxShadow='0 0 28px ${el.colorGlow}, inset 0 1px 0 rgba(255,255,255,0.04)'"
+         onmouseleave="this.style.boxShadow='0 0 14px ${el.colorGlow}, inset 0 1px 0 rgba(255,255,255,0.04)'">
 
-                <!-- Direction compass symbol -->
-                <div style="position:absolute;top:8px;right:10px;font-size:18px;color:${el.colorBorder};
-                            opacity:0.5;pointer-events:none;">${el.symbol}</div>
+        <div style="position:absolute;top:8px;right:10px;font-size:18px;color:${el.colorBorder};
+                    opacity:0.5;pointer-events:none;">${el.symbol}</div>
 
-                <!-- Title row -->
-                <div style="display:flex;align-items:center;gap:10px;margin-bottom:7px;">
-                    <span style="font-size:26px;
-                                 animation:t3-float 3.5s ease-in-out infinite;
-                                 animation-delay:${i * 0.6}s;
-                                 display:inline-block;">${el.emoji}</span>
-                    <div>
-                        <div style="color:${el.color};font-size:13px;font-weight:bold;
-                                    letter-spacing:2px;
-                                    text-shadow:0 0 10px ${el.color},0 0 20px ${el.colorGlow};">
-                            ${el.label}
-                        </div>
-                        <div style="color:#444;font-size:9px;letter-spacing:3px;margin-top:1px;">
-                            ${el.direction} PATH
-                        </div>
-                    </div>
-                    <div style="margin-left:auto;">${badge}</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:7px;">
+            <span style="font-size:26px;
+                         animation:t3-float 3.5s ease-in-out infinite;
+                         animation-delay:${i * 0.6}s;
+                         display:inline-block;">${el.emoji}</span>
+            <div>
+                <div style="color:${el.color};font-size:13px;font-weight:bold;
+                            letter-spacing:2px;
+                            text-shadow:0 0 10px ${el.color},0 0 20px ${el.colorGlow};">
+                    ${el.label}
                 </div>
-
-                <!-- Tagline -->
-                <div style="font-size:10px;color:${el.color};opacity:0.6;
-                            font-style:italic;margin-bottom:6px;padding-left:2px;
-                            animation:t3-flicker 12s ease-in-out infinite;
-                            animation-delay:${i * 1.3}s;">
-                    "${el.tagline}"
+                <div style="color:#444;font-size:9px;letter-spacing:3px;margin-top:1px;">
+                    ${el.direction} PATH
                 </div>
+            </div>
+            <div style="margin-left:auto;">${badge}</div>
+        </div>
 
-                <!-- Description -->
-                <div style="font-size:10px;color:#666;line-height:1.65;padding-left:2px;">
-                    ${el.description}
-                </div>
-            </div>`;
-        }).join('');
+        <div style="font-size:10px;color:${el.color};opacity:0.6;
+                    font-style:italic;margin-bottom:6px;padding-left:2px;
+                    animation:t3-flicker 12s ease-in-out infinite;
+                    animation-delay:${i * 1.3}s;">
+            "${el.tagline}"
+        </div>
+
+        <div style="font-size:10px;color:#666;line-height:1.65;padding-left:2px;">
+            ${el.description}
+        </div>
+    </div>`;
+}).join('');
 
         // ── Central nexus sigil (decorative ASCII art) ──────────────────
         const sigil = `
@@ -430,10 +445,7 @@ window.TOWNS.town3 = {
             <!-- ░░ RETURN PORTALS ░░ -->
             <div class="t3-divider">◈ &nbsp; RETURN &nbsp; PORTALS &nbsp; ◈</div>
             <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:12px;">
-                <div class="t3-portal-row" onclick="portalTransition('town1')">
-    🌀 &nbsp;PORTAL → <strong>${t1name}</strong>
-    <span style="font-size:10px;color:#444;margin-left:8px;">the green hills of home</span>
-</div>
+                
 <div class="t3-portal-row" onclick="portalTransition('town2')">
     🌀 &nbsp;PORTAL → <strong>${t2name}</strong>
     <span style="font-size:10px;color:#444;margin-left:8px;">ash and iron await</span>
