@@ -585,8 +585,8 @@ function awardRandomBossLoot(player) {
     const giveWeapon = Math.random() < 0.5;
     const roll = Math.random();
     let quality;
-    if (roll < 0.20)      quality = 'godly';
-    else if (roll < 0.55) quality = 'legendary';
+    if (roll < 0.01)      quality = 'godly';
+    else if (roll < 0.25) quality = 'legendary';
     else                  quality = 'epic';
 
     setTimeout(() => {
@@ -595,11 +595,11 @@ function awardRandomBossLoot(player) {
 
         if (giveWeapon) {
             if (typeof generateWeaponDrop === 'function') {
-                dropped = generateWeaponDrop(player, playerLevel, quality, false, null);
+                dropped = generateWeaponDrop(player, playerLevel, quality, true, quality);
             }
         } else {
             if (typeof generateArmorDrop === 'function') {
-                dropped = generateArmorDrop(player, playerLevel, quality, false, null);
+                dropped = generateArmorDrop(player, playerLevel, quality, true, quality);
             }
         }
 
