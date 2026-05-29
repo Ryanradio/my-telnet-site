@@ -953,10 +953,10 @@ function generateArmorDrop(player, sourceLevel, enemyRarity, skipRoll = false, f
         socketColors = generateSocketColors(1);
     } else if (armorQuality === 'legendary') {
         gemSlots = 2;
-        socketColors = generateSocketColors(2);
+        socketColors = generateSocketColors(1);
     } else if (armorQuality === 'godly') {
         gemSlots = 3;
-        socketColors = generateSocketColors(3);
+        socketColors = generateSocketColors(2);
     }
     
       
@@ -1051,8 +1051,8 @@ function generateArmorDrop(player, sourceLevel, enemyRarity, skipRoll = false, f
         qualityBonus: qualityBonusPct,
         modifiers: modifiers,
         gems: [],
-        socketColors: [],
-        gemSlots: 0,
+        socketColors: socketColors,
+        gemSlots: gemSlots,
         cost: baseArmor.cost,
         description: buildArmorDescription(baseArmor, modifiers, finalHp, finalMp),
         allowedClasses: baseArmor.allowedClasses,

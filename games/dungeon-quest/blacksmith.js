@@ -1619,7 +1619,7 @@ function showSocketSelection(gem, item, target, emptySlots, socketColors) {
     };
     
     const socketOptions = emptySlots.map(slotIndex => {
-        const socketColor = socketColors[slotIndex];
+    const socketColor = (socketColors && socketColors[slotIndex]) || 'white';
         const bracketColor = colorMap[socketColor] || '#aaa';
         const icon = iconMap[socketColor] || '◻️';
         const colorName = socketColor.charAt(0).toUpperCase() + socketColor.slice(1);

@@ -4565,50 +4565,192 @@ if (level >= 20) {
         }
 
         // Final gem check
-        function fixAllGems() {
-            if (!gameState?.player) return;
-            console.log('💎 Checking gems...');
-            let fixed = 0;
-            function fixGem(gem) {
-                if (!gem) return false;
-                const isBroken = !gem.stats || Object.keys(gem.stats).length === 0 || (gem.name && gem.name.includes('undefined'));
-                if (!isBroken) return false;
-                if (gem.type === 'topaz' || gem.name?.includes('Topaz')) {
-                    gem.stats = { lightningDmg: 9, critBonus: 4 };
-                    gem.tier = 1;
-                    gem.name = 'T1 Topaz';
-                    gem.description = '+9 Lightning DMG, +4 Crit %';
-                    return true;
-                }
-                if (gem.type === 'emerald' || gem.name?.includes('Emerald')) {
-                    gem.stats = { weaponDmg: 6, lifesteal: 2 };
-                    gem.tier = 1;
-                    gem.name = 'T1 Emerald';
-                    gem.description = '+6 Weapon DMG, +2 Lifesteal %';
-                    return true;
-                }
-                return false;
-            }
-            if (gameState.player.weapon) {
-                const weapon = WEAPONS[gameState.player.weapon];
-                if (weapon?.gems) weapon.gems.forEach(gem => { if (fixGem(gem)) fixed++; });
-            }
-            if (gameState.player.inventory) {
-                gameState.player.inventory.forEach(item => {
-                    if (item?.gems) item.gems.forEach(gem => { if (fixGem(gem)) fixed++; });
-                });
-            }
-            if (fixed > 0) {
-                console.log(`✅ Fixed ${fixed} gem(s)!`);
-                if (typeof localSave === 'function') localSave();
-            }
+function fixAllGems() {
+    if (!gameState?.player) return;
+    console.log('💎 Checking gems...');
+    let fixed = 0;
+    function fixGem(gem) {
+        if (!gem) return false;
+        const isBroken = !gem.stats || Object.keys(gem.stats).length === 0 || (gem.name && gem.name.includes('undefined'));
+        if (!isBroken) return false;
+        if (gem.type === 'topaz' || gem.name?.includes('Topaz')) {
+            gem.stats = { lightningDmg: 9, critBonus: 4 };
+            gem.tier = 1;
+            gem.name = 'T1 Topaz';
+            gem.description = '+9 Lightning DMG, +4 Crit %';
+            return true;
         }
-        fixAllGems();
+        if (gem.type === 'emerald' || gem.name?.includes('Emerald')) {
+            gem.stats = { weaponDmg: 6, lifesteal: 2 };
+            gem.tier = 1;
+            gem.name = 'T1 Emerald';
+            gem.description = '+6 Weapon DMG, +2 Lifesteal %';
+            return true;
+        }
+        return false;
+    }
+    if (gameState.player.weapon) {
+        const weapon = WEAPONS[gameState.player.weapon];
+        if (weapon?.gems) weapon.gems.forEach(gem => { if (fixGem(gem)) fixed++; });
+    }
+    if (gameState.player.inventory) {
+        gameState.player.inventory.forEach(item => {
+            if (item?.gems) item.gems.forEach(gem => { if (fixGem(gem)) fixed++; });
+        });
+    }
+    if (fixed > 0) {
+        console.log(`✅ Fixed ${fixed} gem(s)!`);
+        if (typeof localSave === 'function') localSave();
+    }
+}
+fixAllGems();
 
 // Clean up any corrupted items in inventory
 validateAndRepairInventory();
 
-        console.log(`✅ Character loaded: ${data.characterName}`);
+// Fix legacy armor with missing or incorrect sockets
+// Fix legacy armor with missing or incorrect sockets
+(function fixLegacyArmorSockets() {
+    const p = gameState.player;
+    let fixedCount = 0;
+    
+    function getCorrectSlotCount(quality) {
+        if (quality === 'godly') return 3;
+        if (quality === 'legendary') return 2;
+        if (quality === 'epic') return 1;
+        return 0;  // Rare, normal, poor = 0 sockets
+    }
+    
+    function fixArmor(item, expectedSlots) {
+        let changed = false;
+        
+        // Fix gemSlots if wrong
+        if (item.gemSlots !== expectedSlots) {
+            item.gemSlots = expectedSlots;
+            changed = true;
+        }
+        
+        // If expectedSlots is 0, clear socketColors
+        if (expectedSlots === 0) {
+            if (item.socketColors && item.socketColors.length > 0) {
+                item.socketColors = [];
+                changed = true;
+            }
+            return changed;
+        }
+        
+        // Fix socketColors if missing or wrong length
+        if (!item.socketColors || item.socketColors.length !== expectedSlots) {
+            item.socketColors = [];
+            for (let i = 0; i < expectedSlots; i++) {
+                // 10% chance for white socket, otherwise random color
+                if (Math.random() < 0.1) {
+                    item.socketColors.push('white');
+                } else {
+                    const colors = ['red', 'blue', 'yellow', 'green', 'purple', 'black'];
+                    item.socketColors.push(colors[Math.floor(Math.random() * colors.length)]);
+                }
+            }
+            changed = true;
+        }
+        
+        return changed;
+    }
+    
+    // Fix equipped armor
+    if (p.armor && p.armor !== 'no_armor') {
+        const armor = ARMOR[p.armor];
+        if (armor) {
+            const expected = getCorrectSlotCount(armor.quality);
+            if (fixArmor(armor, expected)) fixedCount++;
+        }
+    }
+    
+    // Fix armor in inventory
+    p.inventory.forEach(item => {
+        if (item && typeof item === 'object' && item.armorId) {
+            const expected = getCorrectSlotCount(item.quality);
+            if (fixArmor(item, expected)) fixedCount++;
+        }
+    });
+    
+    if (fixedCount > 0) {
+        console.log(`🔧 Fixed ${fixedCount} legacy armor piece(s) with correct sockets (Epic=1, Legendary=2, Godly=3, others=0)`);
+    }
+})();
+
+// Fix legacy weapons with missing or incorrect socket colors
+(function fixLegacyWeaponSockets() {
+    const p = gameState.player;
+    let fixedCount = 0;
+    
+    function getCorrectWeaponSlotCount(quality) {
+        if (quality === 'godly') return 4;
+        if (quality === 'legendary') return 3;
+        if (quality === 'epic') return 2;
+        if (quality === 'rare') return 1;
+        return 0;  // normal, poor = 0 sockets
+    }
+    
+    function fixWeapon(item, expectedSlots) {
+        let changed = false;
+        
+        // Fix gemSlots if wrong
+        if (item.gemSlots !== expectedSlots) {
+            item.gemSlots = expectedSlots;
+            changed = true;
+        }
+        
+        // If expectedSlots is 0, clear socketColors
+        if (expectedSlots === 0) {
+            if (item.socketColors && item.socketColors.length > 0) {
+                item.socketColors = [];
+                changed = true;
+            }
+            return changed;
+        }
+        
+        // Fix socketColors if missing or wrong length
+        if (!item.socketColors || item.socketColors.length !== expectedSlots) {
+            item.socketColors = [];
+            for (let i = 0; i < expectedSlots; i++) {
+                // 10% chance for white socket, otherwise random color
+                if (Math.random() < 0.1) {
+                    item.socketColors.push('white');
+                } else {
+                    const colors = ['red', 'blue', 'yellow', 'green', 'purple', 'black'];
+                    item.socketColors.push(colors[Math.floor(Math.random() * colors.length)]);
+                }
+            }
+            changed = true;
+        }
+        
+        return changed;
+    }
+    
+    // Fix equipped weapon
+    if (p.weapon && p.weapon !== 'bare_fists') {
+        const weapon = WEAPONS[p.weapon];
+        if (weapon && !weapon.unarmed) {
+            const expected = getCorrectWeaponSlotCount(weapon.quality);
+            if (fixWeapon(weapon, expected)) fixedCount++;
+        }
+    }
+    
+    // Fix weapons in inventory
+    p.inventory.forEach(item => {
+        if (item && typeof item === 'object' && item.weaponId) {
+            const expected = getCorrectWeaponSlotCount(item.quality);
+            if (fixWeapon(item, expected)) fixedCount++;
+        }
+    });
+    
+    if (fixedCount > 0) {
+        console.log(`🔧 Fixed ${fixedCount} legacy weapon(s) with correct sockets (Rare=1, Epic=2, Legendary=3, Godly=4)`);
+    }
+})();
+
+console.log(`✅ Character loaded: ${data.characterName}`);
         console.log(`   Weapon: ${gameState.player.weapon} | Armor: ${gameState.player.armor}`);
 
         if (legacyMigrationPerformed) {

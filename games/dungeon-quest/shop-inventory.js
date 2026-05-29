@@ -2393,7 +2393,7 @@ invHtml += `<div class="equipped-card armor item-card" style="text-align:left; b
         invHtml += `<div class="item-name" style="text-align:left;">🫥 No Armor</div>
                     <div class="item-stats" style="text-align:left;">No armor equipped</div>
                     <button class="inv-btn-small" disabled>UNEQUIP</button>`;
-    } else {
+        } else {
         const equippedInstance = p.inventory.find(item => 
             item && typeof item === 'object' && item.instanceId === p.armor
         );
@@ -2425,15 +2425,27 @@ invHtml += `<div class="equipped-card armor item-card" style="text-align:left; b
             modifierDisplay += '</div>';
         }
         
+        // Build gem slot display
+        let gemDisplay = '';
+        if (typeof buildGemSlotHtml === 'function') {
+            gemDisplay = buildGemSlotHtml({
+                ...eqArmor,
+                quality: displayQuality,
+                gems: equippedInstance?.gems || eqArmor.gems || [],
+                socketColors: equippedInstance?.socketColors || eqArmor.socketColors
+            });
+        }
+        
         // Calculate total defense
         const qualityBonus = aqc?.bonusPct ? Math.floor(eqArmor.baseDefense * aqc.bonusPct) : 0;
         const totalDef = eqArmor.baseDefense + qualityBonus;
         
-                invHtml += `<div class="item-name" style="color:${qualityColor};">🛡️ ${equippedInstance?.name || eqArmor.name} ${equippedInstance?.bound ? '<span style="color:#ffaa66; font-size:12px;">🔒 BOUND</span>' : ''}</div>
+        invHtml += `<div class="item-name" style="color:${qualityColor};">🛡️ ${equippedInstance?.name || eqArmor.name} ${equippedInstance?.bound ? '<span style="color:#ffaa66; font-size:12px;">🔒 BOUND</span>' : ''}</div>
                     <div class="item-stats">${eqArmor.armorSubtype || eqArmor.type || 'Armor'} | Lv${eqArmor.level || 1}</div>
                     <div class="item-stats">DEF: ${totalDef}</div>
                     ${hpMpDisplay}
                     ${modifierDisplay}
+                    ${gemDisplay}
                     <button class="inv-btn-small unequip" onclick="unequipItem('armor'); showUnifiedInventory(_inventoryReturnCallback);" style="margin-top:6px;">UNEQUIP</button>`;
     }
     invHtml += `</div></div></div>`;
@@ -2542,12 +2554,18 @@ if (typeof buildGemSlotHtml === 'function') {
         }
         
         invHtml += `<div class="item-card ${qualityClass}" data-item-id="${item.instanceId}">
-            <div class="item-name" style="color:${qualityColor};">🛡️ ${item.name} ${item.bound ? '<span style="color:#ffaa66; font-size:12px;">🔒 BOUND</span>' : ''}</div>
-            <div class="item-stats">Lv${armorData.level || 1} | DEF: ${armorData.baseDefense + (qc?.bonusPct ? Math.floor(armorData.baseDefense * qc.bonusPct) : 0)}</div>
-            ${hpMpDisplay}
-            ${modifierDisplay}
-            ${canEquip ? `<button class="inv-btn-equip" onclick="equipItem('armor', '${item.instanceId}'); showUnifiedInventory(_inventoryReturnCallback);">EQUIP</button>` : `<button class="inv-btn-equip disabled" disabled>CANNOT EQUIP</button>`}
-        </div>`;
+    <div class="item-name" style="color:${qualityColor};">🛡️ ${item.name} ${item.bound ? '<span style="color:#ffaa66; font-size:12px;">🔒 BOUND</span>' : ''}</div>
+    <div class="item-stats">Lv${armorData.level || 1} | DEF: ${armorData.baseDefense + (qc?.bonusPct ? Math.floor(armorData.baseDefense * qc.bonusPct) : 0)}</div>
+    ${hpMpDisplay}
+    ${modifierDisplay}
+    ${item.gemSlots > 0 && typeof buildGemSlotHtml === 'function' ? buildGemSlotHtml({
+        ...armorData,
+        quality: displayQuality,
+        gems: item.gems || [],
+        socketColors: item.socketColors || armorData.socketColors
+    }) : ''}
+    ${canEquip ? `<button class="inv-btn-equip" onclick="equipItem('armor', '${item.instanceId}'); showUnifiedInventory(_inventoryReturnCallback);">EQUIP</button>` : `<button class="inv-btn-equip disabled" disabled>CANNOT EQUIP</button>`}
+</div>`;
     });
     
     if (armorItems.length === 0) {
