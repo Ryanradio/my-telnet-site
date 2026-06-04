@@ -8821,6 +8821,49 @@ ${mapAscii}
            return result;
        }
 
+
+// ═══════════════════════════════════════════════════════════════
+// SHARED ENEMY TARGET SCROLL ROW BUILDER
+// Black button, name only. HP shown as red top-border line,
+// MP shown as blue bottom-border line. Both shrink left→right.
+// Uses CSS custom properties --ehp / --emp (percentage strings)
+// fed into a linear-gradient on ::before and ::after.
+// NOTE: monsters use baseMp as max MP (no maxMp field exists).
+// ═══════════════════════════════════════════════════════════════
+function buildEnemyScrollRow(monsters, actionFn, cancelFn, savedScroll) {
+    const pct = (val, max) => max > 0
+        ? Math.max(0, Math.min(100, Math.round((val / max) * 100))) + '%'
+        : '0%';
+
+    const btnHTML = monsters.map((m, i) => {
+        const ehp  = pct(m.hp,       m.maxHp);
+        const mpMax = m.baseMp || 0;
+        const emp  = pct(m.mp || 0, mpMax);
+        const dead = m.hp <= 0;
+        const fn   = actionFn.replace('%i', i);
+        return `<button class="enemy-btn"
+            onclick="${fn}"
+            ${dead ? 'disabled' : ''}
+            title="${m.name}"
+            style="--ehp:${ehp};--emp:${emp};">
+            <div class="ename">${m.name}</div>
+        </button>`;
+    }).join('');
+
+    const scrollRestore = savedScroll > 0
+        ? `requestAnimationFrame(()=>{const t=document.getElementById('enemy-scroll-row');if(t)t.scrollLeft=${savedScroll};});`
+        : '';
+
+    return `
+        <div class="enemy-target-row">
+            <div class="enemy-scroll-track" id="enemy-scroll-row">
+                ${btnHTML}
+            </div>
+            <button class="enemy-cancel-btn" onclick="${cancelFn}" title="Cancel">❌</button>
+        </div>
+        <script>${scrollRestore}<\/script>`;
+}
+
 function renderDungeonActionBar() {
     const ab = document.getElementById('actionBar');
     const BASE_PIP_COOLDOWN = 10;
@@ -8988,43 +9031,27 @@ ${showSpecial ? `<button onclick="handleAttackType('special')">⭐ Special</butt
 
     /* ───────── ENCHANT TARGET SELECTION ───────── */
     else if (mode === 'enchant_target') {
-        const _etBtns = (cs.monsters || []).map((m, i) =>
-            m.hp > 0
-                ? `<button onclick="activateEnchant(${i})">
-                    ${m.name}<br>
-                    <span style="font-size:11px;color:#aaa;">HP ${m.hp}/${m.maxHp}</span>
-                   </button>`
-                : ''
-        ).join('');
-        combatDiv.innerHTML = `
-            <div style="color:#c8a000;font-size:14px;margin-bottom:4px;text-align:center;">
-                🎯 SELECT ENCHANT TARGET
-            </div>
-            <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;">
-                ${_etBtns}
-                <button onclick="cancelAction()">❌</button>
-            </div>
-        `;
+        const _scEl2  = document.getElementById('enemy-scroll-row');
+        const _saved2 = _scEl2 ? _scEl2.scrollLeft : 0;
+        const _enchTargets = (cs.monsters || []).map(m => m.hp > 0 ? m : { ...m, hp: 0 });
+        combatDiv.innerHTML = buildEnemyScrollRow(
+            _enchTargets,
+            'activateEnchant(%i)',
+            'cancelAction()',
+            _saved2
+        );
     }
 
     /* ───────── TARGET SELECTION ───────── */
     else if (mode === 'target_attack' || mode === 'target_spell') {
-        const targetBtns = cs.monsters.map((m, i) => `
-            <button onclick="executeTargetedAction(${i})">
-                #${i + 1} ${m.name}<br>
-                <span style="font-size:11px;">HP ${m.hp}/${m.maxHp}</span>
-            </button>
-        `).join('');
-
-        combatDiv.innerHTML = `
-            <div style="color:var(--highlight-color);font-size:14px;margin-bottom:4px;text-align:center;">
-                TARGET
-            </div>
-            <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;">
-                ${targetBtns}
-                <button onclick="cancelAction()">❌</button>
-            </div>
-        `;
+        const _scEl  = document.getElementById('enemy-scroll-row');
+        const _saved = _scEl ? _scEl.scrollLeft : 0;
+        combatDiv.innerHTML = buildEnemyScrollRow(
+            cs.monsters,
+            'executeTargetedAction(%i)',
+            'cancelAction()',
+            _saved
+        );
     }
 
     /* ───────── SPELL LIST ───────── */
@@ -10313,17 +10340,14 @@ function handleAttackType(type) {
                 </div>
             `;
         } else if (mode === 'target_attack' || mode === 'target_spell') {
-            const targetBtns = monsters.map((m, i) =>
-                `<button onclick="executeTargetedAction(${i})" class="target-btn" style="position:relative;">
-                    ${i + 1}. ${m.name}<span class="kb-hint">${i + 1}</span>
-                </button>`
-            ).join('');
-            ab.innerHTML = `
-                <div style="display:flex;flex-wrap:wrap;gap:3px;width:100%;">
-                    ${targetBtns}
-                    <button onclick="cancelAction()" class="action-icon-btn" style="border-color:#888;position:relative;">❌<span class="kb-hint">Esc</span></button>
-                </div>
-            `;
+            const _scEl3  = document.getElementById('enemy-scroll-row');
+            const _saved3 = _scEl3 ? _scEl3.scrollLeft : 0;
+            ab.innerHTML = buildEnemyScrollRow(
+                monsters,
+                'executeTargetedAction(%i)',
+                'cancelAction()',
+                _saved3
+            );
         } else if (mode === 'spell_list') {
             // Use equipped loadout (top 3 from spellbook), falling back to knownSpells for legacy saves
             if (typeof initEquippedSpells === 'function') initEquippedSpells();

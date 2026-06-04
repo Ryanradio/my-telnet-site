@@ -3162,3 +3162,156 @@ body.terminal-mode #menuContainer {
     display: inline-block;
     animation: spin 1s linear infinite;
 }
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.4);
+        transform: scale(1);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(0, 255, 136, 0);
+        transform: scale(1.05);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(0, 255, 136, 0);
+        transform: scale(1);
+    }
+}
+/* ═══════════════════════════════════════════════════════════════
+   ENEMY TARGET BUTTONS — swipeable scroll row
+   ═══════════════════════════════════════════════════════════════ */
+
+.enemy-target-row {
+    display: flex;
+    align-items: stretch;
+    gap: 4px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.enemy-scroll-track {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    overflow-x: scroll;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    padding-bottom: 1px;
+}
+.enemy-scroll-track::-webkit-scrollbar { display: none; }
+
+/* Black button — HP/MP shown only as top/bottom border lines */
+.enemy-btn {
+    flex: 0 0 130px;
+    height: 44px;
+    scroll-snap-align: start;
+    position: relative;
+    overflow: hidden;
+    border-left:   2px solid #444;
+    border-right:  2px solid #444;
+    /* Top and bottom borders are rendered via ::before / ::after
+       so we can split them into a colored fill + black remainder */
+    border-top:    none;
+    border-bottom: none;
+    border-radius: 5px;
+    padding: 0;
+    cursor: pointer;
+    box-sizing: border-box;
+    background: #0a0a0a;
+    font-family: 'VT323', monospace;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+/* TOP border = HP bar (red shrinks left→right as HP drops) */
+.enemy-btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 2px;
+    /* gradient: red for HP%, black for the rest */
+    background: linear-gradient(
+        to right,
+        #cc0000 var(--ehp, 100%),
+        #000     var(--ehp, 100%)
+    );
+    border-radius: 5px 5px 0 0;
+    z-index: 2;
+    pointer-events: none;
+}
+
+/* BOTTOM border = MP bar (blue shrinks left→right as MP drops) */
+.enemy-btn::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(
+        to right,
+        #0044cc var(--emp, 100%),
+        #000     var(--emp, 100%)
+    );
+    border-radius: 0 0 5px 5px;
+    z-index: 2;
+    pointer-events: none;
+}
+
+/* Enemy name — left-aligned so ellipsis fires on the right */
+.enemy-btn .ename {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    font-size: 15px;
+    color: #fff;
+    text-shadow: 0 0 4px #000, 0 0 8px #000,
+                 1px 1px 0 #000, -1px -1px 0 #000;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0 6px;
+    pointer-events: none;
+    z-index: 3;
+    letter-spacing: 0.5px;
+}
+
+.enemy-btn:disabled,
+.enemy-btn[disabled] {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+.enemy-btn:not(:disabled):active {
+    background: #1a1a1a;
+    transform: scale(0.97);
+}
+
+.enemy-cancel-btn {
+    flex: 0 0 44px;
+    height: 44px;
+    font-size: 20px;
+    border-radius: 5px;
+    border: 2px solid #888;
+    background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%);
+    color: var(--text-color);
+    cursor: pointer;
+    font-family: 'VT323', monospace;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    box-sizing: border-box;
+}
+.enemy-cancel-btn:active { background: #2a2a2a; }
+
+#actionBar  { min-height: 56px; padding-top: 6px; }
+#sbMpFill   { animation: none !important; }
+#statusBars { z-index: 2; position: relative; }
