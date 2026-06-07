@@ -592,37 +592,7 @@ const openSlots = activeSlots - activeUsed;
     }
 
     else if (subview === 'info') {
-        setScreen(`
-            <div class="location-header">⚒️ HOW GEMS WORK</div>
-            ${anvil}
-            <div class="message" style="font-size:13px;line-height:1.6;">
-                <p><strong style="color:#FF7722;">Finding Gems</strong><br>
-                Raw gems have a <strong>4% drop chance</strong> from any enemy. Enemy level determines gem tier:<br>
-                Lv1-6 = Tier 1 &nbsp;|&nbsp; Lv7-12 = Tier 2 &nbsp;|&nbsp; Lv13-18 = Tier 3 &nbsp;|&nbsp; Lv19+ = Tier 4</p>
-                <p><strong style="color:#c8a000;">Cutting (200g)</strong><br>
-                Cutting a raw gem gives it permanent random stats. Higher tier gems roll stronger bonuses. Stats cannot be rerolled — choose wisely.</p>
-                <p><strong style="color:#00FF88;">Socketing (100g)</strong><br>
-                Socket a cut gem into your equipped weapon or armor. Once socketed, a gem <strong>cannot be removed or replaced</strong>.</p>
-                <p><strong style="color:#AA88FF;">Gem Slots by Quality (Weapons &amp; Armor)</strong><br>
-                Rare: 1 slot &nbsp;|&nbsp; Epic: 2 slots &nbsp;|&nbsp; Legendary: 3 slots &nbsp;|&nbsp; Godly: 4 slots<br>
-                <span style="color:#555;font-size:11px;">Only dropped gear has gem slots — shop gear does not.</span></p>
-                <p><strong style="color:#FF6688;">Gem Colors — Original</strong><br>
-                🔴 Ruby: Weapon DMG + Lifesteal &nbsp;|&nbsp; 🔵 Sapphire: Spell Power + MP<br>
-                🟡 Topaz: Crit + Lightning &nbsp;|&nbsp; 🟢 Emerald: Poison + STR<br>
-                🟣 Amethyst: Defense + HP &nbsp;|&nbsp; ⬛ Onyx: Armor Pierce + Speed<br>
-                🔷 Opal: Luck + Gold Find &nbsp;|&nbsp; 🟤 Garnet: STR + CON</p>
-                <p><strong style="color:#FF6688;">Gem Colors — Rare</strong><br>
-                🩸 Bloodstone: Max HP + HP Regen per turn<br>
-                🌙 Moonstone: MP Regen per turn + Cooldown reduction<br>
-                ☀️ Sunstone: Fire DMG + STR (works on spells)<br>
-                🔮 Voidstone: Spell Leech → absorbs MP + WIS<br>
-                🩶 Ironheart: Defense + CON<br>
-                ⛈️ Stormglass: Lightning DMG + Frost DMG (both elements, both damage types)</p>
-                <p style="color:#888;font-size:11px;">Lightning, Fire, Frost, Poison all apply to both melee and spells.<br>
-                Weapon DMG (Ruby) is melee only. Spell Power (Sapphire) is spells only.<br>
-                Lifesteal (Ruby) works on both melee and spells.</p>
-            </div>
-            <button onclick="showBlacksmith('main', null, '${returnTo}')" style="margin-top:8px; padding:8px 16px;">← BACK</button>`);
+        showGemGuide();
     }
 }
 
@@ -1773,4 +1743,175 @@ function performSocketGem(gem, item, target, slotIndex) {
     showBlacksmith('socket', target);
 }
 
+// ═══════════════════════════════════════════════════════════════
+// GEM CUTTING & SOCKET GUIDE
+// ═══════════════════════════════════════════════════════════════
+
+function showGemGuide() {
+    // Remove existing guide if open
+    const existing = document.getElementById('gemGuideOverlay');
+    if (existing) {
+        existing.remove();
+        return;
+    }
+    
+    const overlay = document.createElement('div');
+    overlay.id = 'gemGuideOverlay';
+    overlay.style.cssText = `
+        position: fixed;
+        inset: 0;
+        z-index: 100000;
+        background: rgba(0, 0, 0, 0.95);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'VT323', monospace;
+        backdrop-filter: blur(4px);
+    `;
+    
+    overlay.innerHTML = `
+        <div style="
+            background: #0a0f0a;
+            border: 3px solid #FFD700;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+        ">
+            <!-- Header -->
+            <div style="
+                background: linear-gradient(135deg, #1a2a1a 0%, #0a1a0a 100%);
+                border-bottom: 2px solid #FFD700;
+                padding: 14px 20px;
+                display: flex;
+            ">
+                <div style="flex: 1;">
+                    <div style="color: #FFD700; font-size: 24px; letter-spacing: 3px;">💎 GEM GUIDE 💎</div>
+                    <div style="color: #8aaa8a; font-size: 13px; margin-top: 4px;">How to cut gems and socket them into your gear</div>
+                </div>
+                <button onclick="closeGemGuide()" style="
+                    background: none;
+                    border: 2px solid #ff4444;
+                    color: #ff4444;
+                    font-size: 20px;
+                    padding: 4px 16px;
+                    cursor: pointer;
+                    font-family: 'VT323', monospace;
+                    border-radius: 6px;
+                ">✕ CLOSE</button>
+            </div>
+            
+            <!-- Scrollable content -->
+            <div style="flex: 1; overflow-y: auto; padding: 18px 22px;">
+                
+                <!-- INSTRUCTIONS SECTION (from old guide) -->
+                <div style="color: #FFD700; font-size: 18px; margin-bottom: 10px; border-left: 3px solid #FFD700; padding-left: 10px;">
+                    📖 HOW GEMS WORK
+                </div>
+                <div style="color: #cccccc; font-size: 14px; line-height: 1.6; margin-bottom: 20px; background: #0a0f0a; padding: 12px; border-radius: 6px;">
+                    <p style="margin: 0 0 8px 0;"><strong style="color:#FF7722;">Finding Gems</strong><br>
+                    Raw gems have a <strong>4% drop chance</strong> from any enemy. Enemy level determines gem tier:<br>
+                    Lv1-6 = Tier 1 &nbsp;|&nbsp; Lv7-12 = Tier 2 &nbsp;|&nbsp; Lv13-18 = Tier 3 &nbsp;|&nbsp; Lv19+ = Tier 4</p>
+                    <p style="margin: 0 0 8px 0;"><strong style="color:#c8a000;">Cutting (200g)</strong><br>
+                    Cutting a raw gem gives it permanent random stats. Higher tier gems roll stronger bonuses. Stats cannot be rerolled — choose wisely.</p>
+                    <p style="margin: 0 0 8px 0;"><strong style="color:#00FF88;">Socketing (100g)</strong><br>
+                    Socket a cut gem into your equipped weapon or armor. Once socketed, a gem <strong>cannot be removed or replaced</strong>.</p>
+                    <p style="margin: 0 0 8px 0;"><strong style="color:#AA88FF;">Gem Slots by Quality</strong><br>
+                    <span style="color:#2196f3;">Rare:</span> 1 slot &nbsp;|&nbsp; <span style="color:#9c27b0;">Epic:</span> 2 slots &nbsp;|&nbsp; <span style="color:#ff9800;">Legendary:</span> 3 slots &nbsp;|&nbsp; <span style="color:#ff4444;">Godly:</span> 4 slots<br>
+                    <span style="color:#555;font-size:11px;">Only dropped gear has gem slots — shop gear does not.</span></p>
+                    <p style="margin: 0;"><strong style="color:#FFD700;">White sockets</strong> (⚪) are rare and accept <strong style="color:#FFD700;">ANY</strong> gem type! Items with white sockets are highly valuable!</p>
+                </div>
+                
+                <!-- SOCKET COLOR CHART -->
+                <div style="color: #FFD700; font-size: 18px; margin-bottom: 10px; border-left: 3px solid #FFD700; padding-left: 10px;">
+                    🎨 SOCKET COLORS & ACCEPTED GEMS
+                </div>
+                
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                    <tr style="border-bottom: 1px solid #2a3a2a;">
+                        <th style="text-align: left; padding: 8px 6px; color: #FFD700; font-size: 16px;">Socket</th>
+                        <th style="text-align: left; padding: 8px 6px; color: #FFD700; font-size: 16px;">Accepted Gems</th>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #1a2a1a;">
+                        <td style="padding: 8px 6px;"><span style="color:#ff6666;">🔴 RED</span></td>
+                        <td style="padding: 8px 6px; color: #aaa;">Ruby, Garnet, Bloodstone</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #1a2a1a;">
+                        <td style="padding: 8px 6px;"><span style="color:#6688ff;">🔵 BLUE</span></td>
+                        <td style="padding: 8px 6px; color: #aaa;">Sapphire, Stormglass, <span style="color:#CCEEFF;">Moonstone</span>, <span style="color:#AADDFF;">Opal</span></td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #1a2a1a;">
+                        <td style="padding: 8px 6px;"><span style="color:#ffdd66;">🟡 YELLOW</span></td>
+                        <td style="padding: 8px 6px; color: #aaa;">Topaz, Sunstone</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #1a2a1a;">
+                        <td style="padding: 8px 6px;"><span style="color:#66ff66;">🟢 GREEN</span></td>
+                        <td style="padding: 8px 6px; color: #aaa;">Emerald</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #1a2a1a;">
+                        <td style="padding: 8px 6px;"><span style="color:#cc66ff;">🟣 PURPLE</span></td>
+                        <td style="padding: 8px 6px; color: #aaa;">Amethyst, Voidstone</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #1a2a1a;">
+                        <td style="padding: 8px 6px;"><span style="color:#888888;">⚫ BLACK</span></td>
+                        <td style="padding: 8px 6px; color: #aaa;">Onyx, Ironheart</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #1a2a1a;">
+                        <td style="padding: 8px 6px;"><span style="color:#ffffff;">⚪ WHITE</span></td>
+                        <td style="padding: 8px 6px; color: #ffdd88; font-weight: bold;">ACCEPTS ALL GEMS!</td>
+                    </tr>
+                </table>
+                
+                <!-- GEM STATS QUICK REFERENCE (merged from both) -->
+                <div style="color: #FFD700; font-size: 18px; margin-bottom: 10px; border-left: 3px solid #FFD700; padding-left: 10px;">
+                    📊 GEM STATS REFERENCE
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; margin-bottom: 20px;">
+                    <div style="background:#0a0f0a; padding: 6px 10px; border-radius: 4px;"><span style="color:#ff6666;">🔴 Ruby</span> <span style="color:#aaa;">→ Weapon DMG, Lifesteal</span></div>
+                    <div style="background:#0a0f0a; padding: 6px 10px; border-radius: 4px;"><span style="color:#6688ff;">🔵 Sapphire</span> <span style="color:#aaa;">→ Spell Power, Max MP</span></div>
+                    <div style="background:#0a0f0a; padding: 6px 10px; border-radius: 4px;"><span style="color:#ffdd66;">🟡 Topaz</span> <span style="color:#aaa;">→ Crit %, Lightning DMG</span></div>
+                    <div style="background:#0a0f0a; padding: 6px 10px; border-radius: 4px;"><span style="color:#66ff66;">🟢 Emerald</span> <span style="color:#aaa;">→ Poison %, STR</span></div>
+                    <div style="background:#0a0f0a; padding: 6px 10px; border-radius: 4px;"><span style="color:#cc66ff;">🟣 Amethyst</span> <span style="color:#aaa;">→ Defense, Max HP</span></div>
+                    <div style="background:#0a0f0a; padding: 6px 10px; border-radius: 4px;"><span style="color:#888888;">⚫ Onyx</span> <span style="color:#aaa;">→ Armor Pierce, Speed</span></div>
+                    <div style="background:#0a0f0a; padding: 6px 10px; border-radius: 4px;"><span style="color:#AADDFF;">🔷 Opal</span> <span style="color:#aaa;">→ Luck, Gold Find</span></div>
+                    <div style="background:#0a0f0a; padding: 6px 10px; border-radius: 4px;"><span style="color:#CCEEFF;">🌙 Moonstone</span> <span style="color:#aaa;">→ MP Regen, Cooldown %</span></div>
+                    <div style="background:#0a0f0a; padding: 6px 10px; border-radius: 4px;"><span style="color:#880022;">🩸 Bloodstone</span> <span style="color:#aaa;">→ Max HP, HP Regen</span></div>
+                    <div style="background:#0a0f0a; padding: 6px 10px; border-radius: 4px;"><span style="color:#FF7700;">☀️ Sunstone</span> <span style="color:#aaa;">→ Fire DMG, STR</span></div>
+                    <div style="background:#0a0f0a; padding: 6px 10px; border-radius: 4px;"><span style="color:#6600BB;">🔮 Voidstone</span> <span style="color:#aaa;">→ Spell Leech, WIS</span></div>
+                    <div style="background:#0a0f0a; padding: 6px 10px; border-radius: 4px;"><span style="color:#AAAAAA;">🩶 Ironheart</span> <span style="color:#aaa;">→ Defense, CON</span></div>
+                    <div style="background:#0a0f0a; padding: 6px 10px; border-radius: 4px;"><span style="color:#44DDFF;">⛈️ Stormglass</span> <span style="color:#aaa;">→ Lightning DMG, Frost DMG</span></div>
+                    <div style="background:#0a0f0a; padding: 6px 10px; border-radius: 4px;"><span style="color:#CC1133;">🟤 Garnet</span> <span style="color:#aaa;">→ STR, CON</span></div>
+                </div>
+                
+                <!-- EXTRA INFO FROM OLD GUIDE -->
+                <div style="background: #1a2a1a; border-left: 3px solid #FFD700; padding: 12px; margin-top: 8px; border-radius: 4px;">
+                    <span style="color:#FFD700;">💡 NOTES:</span>
+                    <div style="color:#aaa; font-size: 13px; margin-top: 6px;">
+                        • Lightning, Fire, Frost, Poison damage apply to BOTH melee and spells<br>
+                        • Weapon DMG (Ruby) is melee only<br>
+                        • Spell Power (Sapphire) is spells only<br>
+                        • Lifesteal (Ruby) works on both melee and spells
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div style="border-top: 1px solid #2a3a2a; padding: 10px 20px; text-align: center; background: #0a0f0a;">
+                <span style="color:#555; font-size: 12px;">Calamity Dungeon — Gem Crafting System</span>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+}
+
+function closeGemGuide() {
+    const overlay = document.getElementById('gemGuideOverlay');
+    if (overlay) overlay.remove();
+}
 

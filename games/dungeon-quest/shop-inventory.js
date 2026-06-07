@@ -2118,7 +2118,13 @@ function showInventory() {
 // Store the callback for when inventory closes
 let _inventoryReturnCallback = null;
 
-function showUnifiedInventory(returnCallback = null) {
+function showUnifiedInventory(returnCallback = null, isRefresh = false) {
+    // Save scroll position before rebuilding (only for refreshes)
+    const screen = document.getElementById('mainScreen');
+    let savedScrollTop = 0;
+    if (isRefresh && screen) {
+        savedScrollTop = screen.scrollTop;
+    }
 
     if (!document.getElementById('inventory-card-styles')) {
         const style = document.createElement('style');
@@ -2172,8 +2178,15 @@ function showUnifiedInventory(returnCallback = null) {
     _inventoryReturnCallback = returnCallback;
     
     const p = gameState.player;
-    const screen = document.getElementById('mainScreen');
     const isInDungeonOrExplore = (origin === 'dungeon' || origin === 'explore');
+    
+    // Track expanded/collapsed state for gems and junk
+    if (typeof window._invGemSectionExpanded === 'undefined') {
+        window._invGemSectionExpanded = false;
+    }
+    if (typeof window._invJunkSectionExpanded === 'undefined') {
+        window._invJunkSectionExpanded = false;
+    }
     
     // Compact stats for dungeon/explore
     let statsHtml = '';
@@ -2270,7 +2283,7 @@ function showUnifiedInventory(returnCallback = null) {
         const cursorStyle = isDisabled ? 'cursor: not-allowed;' : 'cursor: pointer;';
         
         invHtml += `<div class="potion-item ${potionClass}" style="${opacityStyle} ${cursorStyle}" 
-                    onclick="${hasPotion && canUse ? `useInventoryPotion('${potion.key}'); showUnifiedInventory(_inventoryReturnCallback);` : ''}">
+                    onclick="${hasPotion && canUse ? `useInventoryPotion('${potion.key}'); showUnifiedInventory(_inventoryReturnCallback, true);` : ''}">
             <span>${icon}</span>
             <div>
                 <div class="potion-name">${potion.name} ${count > 0 ? `x${count}` : ''}</div>
@@ -2282,7 +2295,7 @@ function showUnifiedInventory(returnCallback = null) {
     // Recall Potion (special case)
     const hasRecall = p.inventory.includes('recall_potion');
     invHtml += `<div class="potion-item recall" style="${!hasRecall ? 'opacity: 0.4;' : ''} ${hasRecall ? 'cursor: pointer;' : 'cursor: not-allowed;'}"
-                onclick="${hasRecall ? `useRecallPotion(); showUnifiedInventory(_inventoryReturnCallback);` : ''}">
+                onclick="${hasRecall ? `useRecallPotion(); showUnifiedInventory(_inventoryReturnCallback, true);` : ''}">
         <span>🌀</span>
         <div>
             <div class="potion-name">Recall Potion ${hasRecall ? '' : '(None)'}</div>
@@ -2327,7 +2340,6 @@ function showUnifiedInventory(returnCallback = null) {
         const displayQuality = equippedInstance?.quality || eqWeapon.quality;
         const qc = QUALITY_CONFIG[displayQuality];
         const qualityColor = qc?.color || '#0f0';
-        const qualityName = qc?.name || displayQuality;
         
         // Build modifiers HTML
         let eqModifierHtml = '';
@@ -2345,7 +2357,7 @@ function showUnifiedInventory(returnCallback = null) {
             eqModifierHtml += '</div>';
         }
         
-                // Build gem slot HTML using colored socket system
+        // Build gem slot HTML using colored socket system
         let gemSlotHtml = '';
         if (typeof buildGemSlotHtml === 'function') {
             gemSlotHtml = buildGemSlotHtml({
@@ -2356,16 +2368,16 @@ function showUnifiedInventory(returnCallback = null) {
             });
         }
         
-                invHtml += `<div class="item-name" style="color:${qualityColor};text-align:left;">⚔️ ${equippedInstance?.name || eqWeapon.name} ${equippedInstance?.bound ? '<span style="color:#ffaa66; font-size:12px;">🔒 BOUND</span>' : ''}</div>
+        invHtml += `<div class="item-name" style="color:${qualityColor};text-align:left;">⚔️ ${equippedInstance?.name || eqWeapon.name} ${equippedInstance?.bound ? '<span style="color:#ffaa66; font-size:12px;">🔒 BOUND</span>' : ''}</div>
                     <div class="item-stats" style="text-align:left;">${eqWeapon.weaponSubtype || eqWeapon.type || 'Weapon'} | Lv${eqWeapon.level || 1}</div>
                     <div class="item-stats" style="text-align:left;">${buildWeaponDmgLine({...eqWeapon, quality: displayQuality}, displayQuality, p)}</div>
                     ${eqModifierHtml}
                     ${gemSlotHtml}
-                    <button class="inv-btn-small unequip" onclick="unequipItem('weapon'); showUnifiedInventory(_inventoryReturnCallback);" style="display:inline-block;margin-top:6px;">UNEQUIP</button>`;
+                    <button class="inv-btn-small unequip" onclick="unequipItem('weapon'); showUnifiedInventory(_inventoryReturnCallback, true);" style="display:inline-block;margin-top:6px;">UNEQUIP</button>`;
     }
     invHtml += `</div>`;
     
-        // Equipped armor
+    // Equipped armor
     const eqArmor = (() => {
         if (!p.armor || p.armor === 'no_armor') return null;
         if (typeof p.armor === 'string' && p.armor.includes('_')) {
@@ -2377,23 +2389,23 @@ function showUnifiedInventory(returnCallback = null) {
         return ARMOR[p.armor];
     })();
     
-// Get armor color FIRST
-let armorBorderColor = '#0f0';
-if (eqArmor && !eqArmor.unarmored) {
-    const tempInstance = p.inventory.find(item => 
-        item && typeof item === 'object' && item.instanceId === p.armor
-    );
-    const tempQuality = tempInstance?.quality || eqArmor.quality;
-    const tempAqc = QUALITY_CONFIG[tempQuality];
-    armorBorderColor = tempAqc?.color || '#0f0';
-}
-
-invHtml += `<div class="equipped-card armor item-card" style="text-align:left; border: 2px solid ${armorBorderColor} !important;">`;
+    // Get armor color FIRST
+    let armorBorderColor = '#0f0';
+    if (eqArmor && !eqArmor.unarmored) {
+        const tempInstance = p.inventory.find(item => 
+            item && typeof item === 'object' && item.instanceId === p.armor
+        );
+        const tempQuality = tempInstance?.quality || eqArmor.quality;
+        const tempAqc = QUALITY_CONFIG[tempQuality];
+        armorBorderColor = tempAqc?.color || '#0f0';
+    }
+    
+    invHtml += `<div class="equipped-card armor item-card" style="text-align:left; border: 2px solid ${armorBorderColor} !important;">`;
     if (!eqArmor || !!eqArmor.unarmored) {
         invHtml += `<div class="item-name" style="text-align:left;">🫥 No Armor</div>
                     <div class="item-stats" style="text-align:left;">No armor equipped</div>
                     <button class="inv-btn-small" disabled>UNEQUIP</button>`;
-        } else {
+    } else {
         const equippedInstance = p.inventory.find(item => 
             item && typeof item === 'object' && item.instanceId === p.armor
         );
@@ -2446,7 +2458,7 @@ invHtml += `<div class="equipped-card armor item-card" style="text-align:left; b
                     ${hpMpDisplay}
                     ${modifierDisplay}
                     ${gemDisplay}
-                    <button class="inv-btn-small unequip" onclick="unequipItem('armor'); showUnifiedInventory(_inventoryReturnCallback);" style="margin-top:6px;">UNEQUIP</button>`;
+                    <button class="inv-btn-small unequip" onclick="unequipItem('armor'); showUnifiedInventory(_inventoryReturnCallback, true);" style="margin-top:6px;">UNEQUIP</button>`;
     }
     invHtml += `</div></div></div>`;
     
@@ -2487,22 +2499,22 @@ invHtml += `<div class="equipped-card armor item-card" style="text-align:left; b
         }
         
         // Build gem slot display using new colored socket system
-let gemDisplay = '';
-if (typeof buildGemSlotHtml === 'function') {
-    gemDisplay = buildGemSlotHtml({
-        ...weaponData,
-        quality: displayQuality,
-        gems: item.gems || [],
-        socketColors: item.socketColors || weaponData.socketColors
-    });
-}
+        let gemDisplay = '';
+        if (typeof buildGemSlotHtml === 'function') {
+            gemDisplay = buildGemSlotHtml({
+                ...weaponData,
+                quality: displayQuality,
+                gems: item.gems || [],
+                socketColors: item.socketColors || weaponData.socketColors
+            });
+        }
         
         invHtml += `<div class="item-card ${qualityClass}" data-item-id="${item.instanceId}">
                         <div class="item-name" style="color:${qualityColor};">⚔️ ${item.name} ${item.bound ? '<span style="color:#ffaa66; font-size:12px;">🔒 BOUND</span>' : ''}</div>
             <div class="item-stats">Lv${weaponData.level || 1} | ${buildWeaponDmgLine({...weaponData, quality: displayQuality}, displayQuality, p)}</div>
             ${modDisplay}
             ${gemDisplay}
-            ${canEquip ? `<button class="inv-btn-equip" onclick="equipItem('weapon', '${item.instanceId}'); showUnifiedInventory(_inventoryReturnCallback);">EQUIP</button>` : `<button class="inv-btn-equip disabled" disabled>CANNOT EQUIP</button>`}
+            ${canEquip ? `<button class="inv-btn-equip" onclick="equipItem('weapon', '${item.instanceId}'); showUnifiedInventory(_inventoryReturnCallback, true);">EQUIP</button>` : `<button class="inv-btn-equip disabled" disabled>CANNOT EQUIP</button>`}
         </div>`;
     });
     
@@ -2564,7 +2576,7 @@ if (typeof buildGemSlotHtml === 'function') {
         gems: item.gems || [],
         socketColors: item.socketColors || armorData.socketColors
     }) : ''}
-    ${canEquip ? `<button class="inv-btn-equip" onclick="equipItem('armor', '${item.instanceId}'); showUnifiedInventory(_inventoryReturnCallback);">EQUIP</button>` : `<button class="inv-btn-equip disabled" disabled>CANNOT EQUIP</button>`}
+    ${canEquip ? `<button class="inv-btn-equip" onclick="equipItem('armor', '${item.instanceId}'); showUnifiedInventory(_inventoryReturnCallback, true);">EQUIP</button>` : `<button class="inv-btn-equip disabled" disabled>CANNOT EQUIP</button>`}
 </div>`;
     });
     
@@ -2573,13 +2585,78 @@ if (typeof buildGemSlotHtml === 'function') {
     }
     invHtml += `</div></div>`;
     
-
-    // ── OTHER ITEMS (junk for selling) ──────────────────────────────────────
+    // ── GEMS SECTION (collapsible, closed by default) ──────────────────────
+    const gemsList = [];
+    p.inventory.forEach(item => {
+        if (typeof item === 'string' && item.startsWith('raw_')) {
+            gemsList.push(item);
+        }
+        else if (typeof item === 'object' && item !== null && item.cut === true) {
+            gemsList.push(item);
+        }
+    });
+    
+    if (gemsList.length > 0) {
+        const gemCounts = {};
+        gemsList.forEach(gem => {
+            let key = '';
+            if (typeof gem === 'string') {
+                key = gem;
+            } else {
+                key = gem.name || 'Unknown';
+            }
+            gemCounts[key] = (gemCounts[key] || 0) + 1;
+        });
+        
+        const gemsDisplayStyle = window._invGemSectionExpanded ? 'grid' : 'none';
+        
+        invHtml += `<div class="inv-section" style="margin-top:10px;" id="gems-section">
+            <div onclick="toggleGemSection()" 
+                 style="cursor:pointer;padding:8px 0;color:#AADDFF;font-size:15px;letter-spacing:2px;display:flex;align-items:center;gap:6px;">
+                ${window._invGemSectionExpanded ? '▼' : '▶'} 💎 GEMS (${gemsList.length})
+            </div>
+            <div class="other-items-grid" id="gems-container" style="display: ${gemsDisplayStyle};">`;
+        
+        Object.keys(gemCounts).forEach(gemKey => {
+            const count = gemCounts[gemKey];
+            let displayName = gemKey;
+            let sellValue = 0;
+            
+            if (gemKey.startsWith('raw_')) {
+                const parts = gemKey.split('_');
+                const typeKey = parts[1];
+                const tier = parts[2] ? parts[2].replace('t', '') : '1';
+                const gemDef = GEM_TYPES[typeKey];
+                displayName = `T${tier} Raw ${gemDef?.name || typeKey}`;
+                sellValue = 25;
+            } else {
+                const gemObj = gemsList.find(g => typeof g === 'object' && g.name === gemKey);
+                if (gemObj && gemObj.description) {
+                    displayName = `${gemObj.name} (${gemObj.description.substring(0, 30)}${gemObj.description.length > 30 ? '...' : ''})`;
+                }
+                sellValue = 100;
+            }
+            
+            invHtml += `<div class="other-item">
+                <span class="other-icon">💎</span>
+                <span class="other-name">${displayName}</span>
+                ${count > 1 ? `<span class="other-count">x${count}</span>` : ''}
+                <span class="other-sell">💰 ${sellValue}g</span>
+            </div>`;
+        });
+        
+        invHtml += `</div></div>`;
+    }
+    
+    // ── OTHER ITEMS (true junk - excluding gems) ───────────────────────────
     const otherItemsList = [];
     p.inventory.forEach(item => {
+        // Skip gems
+        if (typeof item === 'string' && item.startsWith('raw_')) return;
+        if (typeof item === 'object' && item !== null && item.cut === true) return;
+        
         if (typeof item === 'string' && ITEMS[item]) {
             const itemData = ITEMS[item];
-            // Exclude keys, potions, weapons, armor
             if (!itemData.name?.toLowerCase().includes('key') &&
                 itemData.subtype !== 'heal_hp' &&
                 itemData.subtype !== 'heal_mp' &&
@@ -2590,22 +2667,26 @@ if (typeof buildGemSlotHtml === 'function') {
                 otherItemsList.push(item);
             }
         }
-        // Also check for object items that aren't weapons/armor
-        if (typeof item === 'object' && item !== null && !item.weaponId && !item.armorId) {
+        else if (typeof item === 'object' && item !== null && !item.weaponId && !item.armorId && !item.cut) {
             otherItemsList.push(item);
         }
     });
     
     if (otherItemsList.length > 0) {
-        invHtml += `<div class="inv-section">
-            <div class="inv-section-title">📦 OTHER ITEMS</div>
-            <div class="other-items-grid">`;
-        
         const otherCounts = {};
         otherItemsList.forEach(item => {
             const key = typeof item === 'string' ? item : (item.name || 'unknown');
             otherCounts[key] = (otherCounts[key] || 0) + 1;
         });
+        
+        const junkDisplayStyle = window._invJunkSectionExpanded ? 'grid' : 'none';
+        
+        invHtml += `<div class="inv-section" style="margin-top:10px;" id="junk-section">
+            <div onclick="toggleJunkSection()" 
+                 style="cursor:pointer;padding:8px 0;color:#8aaa8a;font-size:15px;letter-spacing:2px;display:flex;align-items:center;gap:6px;">
+                ${window._invJunkSectionExpanded ? '▼' : '▶'} 📦 OTHER ITEMS (${otherItemsList.length})
+            </div>
+            <div class="other-items-grid" id="junk-container" style="display: ${junkDisplayStyle};">`;
         
         Object.keys(otherCounts).forEach(itemKey => {
             const item = typeof itemKey === 'string' && ITEMS[itemKey] ? ITEMS[itemKey] : null;
@@ -2623,8 +2704,7 @@ if (typeof buildGemSlotHtml === 'function') {
         
         invHtml += `</div></div>`;
     }
-
-
+    
     // ── I'M STUCK BUTTON (dungeon only) ───────────────────────────────────
     if (origin === 'dungeon') {
         invHtml += `
@@ -2639,7 +2719,37 @@ if (typeof buildGemSlotHtml === 'function') {
     invHtml += `<button class="inv-close-btn" onclick="closeUnifiedInventory()">← BACK</button>`;
     
     setScreen(invHtml);
-   
+    
+    // Restore scroll position only for refresh (toggling sections)
+    if (isRefresh && savedScrollTop) {
+        setTimeout(() => {
+            const currentScreen = document.getElementById('mainScreen');
+            if (currentScreen) currentScreen.scrollTop = savedScrollTop;
+        }, 10);
+    } else {
+        // Fresh open: ensure scroll is at top
+        setTimeout(() => {
+            const currentScreen = document.getElementById('mainScreen');
+            if (currentScreen) currentScreen.scrollTop = 0;
+        }, 10);
+    }
+}
+
+// Helper functions to toggle sections without refreshing the page
+function toggleGemSection() {
+    window._invGemSectionExpanded = !window._invGemSectionExpanded;
+    const gemContainer = document.getElementById('gems-container');
+    if (gemContainer) {
+        gemContainer.style.display = window._invGemSectionExpanded ? 'grid' : 'none';
+    }
+}
+
+function toggleJunkSection() {
+    window._invJunkSectionExpanded = !window._invJunkSectionExpanded;
+    const junkContainer = document.getElementById('junk-container');
+    if (junkContainer) {
+        junkContainer.style.display = window._invJunkSectionExpanded ? 'grid' : 'none';
+    }
 }
 
 // Replace the old inventory overlay with unified inventory

@@ -9419,6 +9419,12 @@ function showInventoryOverlay() {
     const playerClass = p.baseClass || p.class;
     const hasStatPoints = (p.statPoints || 0) > 0;
 
+    // Track expanded/collapsed state for collapsible sections
+    if (typeof window._invGemSectionExpanded === 'undefined') {
+        window._invGemSectionExpanded = false;
+        window._invJunkSectionExpanded = false;
+    }
+
     // ── Key metadata for display ─────────────────────────────────────
     const KEY_META = {
         bronze_key:   { color: '#cd7f32', glow: '#7a3a00', label: 'BRONZE',   ascii: '&lt;=-[O' },
@@ -9552,7 +9558,7 @@ function showInventoryOverlay() {
         </div>`;
     }
 
-    // ── KEY RING SECTION (NEW!) ──────────────────────────────────────
+    // ── KEY RING SECTION ──────────────────────────────────────
     html += `<div style="color:var(--highlight-color);font-size:15px;letter-spacing:2px;margin-bottom:6px;">— KEY RING —</div>`;
     if (!hasAnyKey) {
         html += `<div style="color:#555;font-size:13px;margin-bottom:14px;padding:8px;border:1px solid #1a1a1a;text-align:center;">[ NO KEYS COLLECTED ]</div>`;
@@ -9637,7 +9643,7 @@ function showInventoryOverlay() {
     }
     html += `</div>`;
 
-    // ── WEAPONS SECTION ──────────────────────────────────────────────
+    // ── WEAPONS SECTION (UNCHANGED) ──────────────────────────────────
     html += `<div style="color:var(--highlight-color);font-size:15px;letter-spacing:2px;margin-bottom:6px;">— WEAPONS —</div>`;
     html += `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">`;
 
@@ -9777,7 +9783,7 @@ if (modifiers && modifiers.length > 0) {
     }
     html += `</div>`;
 
-    // ── ARMOR SECTION ────────────────────────────────────────────────
+    // ── ARMOR SECTION (UNCHANGED) ───────────────────────────────────
     html += `<div style="color:var(--highlight-color);font-size:15px;letter-spacing:2px;margin-bottom:6px;">— ARMOR —</div>`;
     html += `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">`;
 
@@ -9921,7 +9927,7 @@ if (modifiers && modifiers.length > 0) {
     }
     html += `</div>`;
 
-        // ── GEMS SECTION ─────────────────────────────────────────────────
+    // ── GEMS SECTION (COLLAPSIBLE) ─────────────────────────────────
     const rawGems = p.inventory
         .map((item, idx) => ({item, idx}))
         .filter(({item}) => typeof item === 'string' && item.startsWith('raw_'));
@@ -9929,9 +9935,15 @@ if (modifiers && modifiers.length > 0) {
         .map((item, idx) => ({item, idx}))
         .filter(({item}) => typeof item === 'object' && item && item.cut);
 
-    if (rawGems.length > 0 || cutGems_inv.length > 0) {
-        html += `<div style="color:var(--highlight-color);font-size:15px;letter-spacing:2px;margin-bottom:6px;">— GEMS —</div>`;
-        html += `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">`;
+    const totalGems = rawGems.length + cutGems_inv.length;
+    
+    if (totalGems > 0) {
+        html += `<div style="margin-top:10px;border-top:1px solid #1a3a1a;">
+            <div onclick="window._invGemSectionExpanded = !window._invGemSectionExpanded; showInventoryOverlay();" 
+                 style="cursor:pointer;padding:8px 0 4px 0;color:#AADDFF;font-size:15px;letter-spacing:2px;display:flex;align-items:center;gap:6px;">
+                ${window._invGemSectionExpanded ? '▼' : '▶'} 💎 GEMS (${totalGems})
+            </div>
+            <div style="display: ${window._invGemSectionExpanded ? 'flex' : 'none'}; flex-wrap:wrap; gap:8px; margin-top:6px; margin-bottom:10px;">`;
 
         rawGems.forEach(({item: ik, idx}) => {
             const def = ITEMS[ik];
@@ -9957,7 +9969,54 @@ if (modifiers && modifiers.length > 0) {
             </div>`;
         });
 
-        html += `</div>`;
+        html += `</div></div>`;
+    }
+
+    // ── OTHER/JUNK SECTION (COLLAPSIBLE) ─────────────────────────────────
+    // Collect items that are NOT weapons, armor, potions, keys, or gems
+    const junkItems = [];
+    p.inventory.forEach(item => {
+        // Skip weapons
+        if (typeof item === 'object' && item !== null && item.weaponId) return;
+        if (typeof item === 'string' && WEAPONS[item] && !WEAPONS[item].unarmed) return;
+        // Skip armor
+        if (typeof item === 'object' && item !== null && item.armorId) return;
+        if (typeof item === 'string' && ARMOR[item] && !ARMOR[item].unarmored) return;
+        // Skip potions
+        const itemDef = ITEMS[item];
+        if (typeof item === 'string' && itemDef && (itemDef.subtype === 'heal_hp' || itemDef.subtype === 'heal_mp' || itemDef.subtype === 'full_restore' || itemDef.subtype === 'recall' || itemDef.subtype?.startsWith('buff_'))) return;
+        // Skip keys
+        if (typeof item === 'string' && item.includes('_key')) return;
+        // Skip gems
+        if (typeof item === 'string' && item.startsWith('raw_')) return;
+        if (typeof item === 'object' && item !== null && item.cut === true) return;
+        junkItems.push(item);
+    });
+    
+    if (junkItems.length > 0) {
+        html += `<div style="margin-top:10px;border-top:1px solid #1a3a1a;">
+            <div onclick="window._invJunkSectionExpanded = !window._invJunkSectionExpanded; showInventoryOverlay();" 
+                 style="cursor:pointer;padding:8px 0 4px 0;color:#8aaa8a;font-size:15px;letter-spacing:2px;display:flex;align-items:center;gap:6px;">
+                ${window._invJunkSectionExpanded ? '▼' : '▶'} 📦 OTHER (${junkItems.length})
+            </div>
+            <div style="display: ${window._invJunkSectionExpanded ? 'flex' : 'none'}; flex-wrap:wrap; gap:8px; margin-top:6px; margin-bottom:10px;">`;
+        
+        junkItems.forEach(item => {
+            if (typeof item === 'string') {
+                const def = ITEMS[item];
+                const name = def ? def.name : item.substring(0, 20);
+                html += `<div style="min-width:100px;padding:8px;border:1px solid #333;background:#050a05;font-size:12px;text-align:center;">
+                    <span style="color:#aaa;">📦 ${name}</span>
+                </div>`;
+            } else if (typeof item === 'object' && item !== null) {
+                const name = item.name || 'Unknown';
+                html += `<div style="min-width:100px;padding:8px;border:1px solid #333;background:#050a05;font-size:12px;text-align:center;">
+                    <span style="color:#aaa;">📦 ${name}</span>
+                </div>`;
+            }
+        });
+        
+        html += `</div></div>`;
     }
 
     // ── I'M STUCK BUTTON (dungeon only) ──────────────────────────────
