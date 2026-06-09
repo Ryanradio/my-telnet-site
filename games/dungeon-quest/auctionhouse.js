@@ -35,12 +35,12 @@ let _ahLastFetch   = 0;
 let _ahSellItem    = null;       // item selected for listing
 let _ahSellStep    = 'pick';     // pick | confirm
 let _ahFilters     = {
-  type: '', quality: '', cls: '', subtype: '',
+  type: '', quality: '', class: '', subtype: '',
   minLevel: '', maxLevel: '', minPrice: '', maxPrice: '',
   sort: 'newest'
 };
 let _ahSellFilters = {
-  type: '', quality: '', search: '', sort: 'level_desc'
+  type: '', quality: '', class: '', search: '', sort: 'level_desc'
 };
 let _ahLoading     = false;
 let _ahStatusMsg   = '';
@@ -225,10 +225,24 @@ function _ahRenderBrowse() {
         ${subtypeOpts}
       </select>
 
-      <select onchange="_ahSetFilter('quality',this.value)"
+            <select onchange="_ahSetFilter('quality',this.value)"
         style="background:#0a0a00;border:1px solid #2a2a00;color:#aaa;
                font-family:'VT323',monospace;font-size:13px;padding:3px 6px;">
         ${qualityOpts}
+      </select>
+
+            <select onchange="_ahSetFilter('class',this.value)"
+        style="background:#0a0a00;border:1px solid #2a2a00;color:#aaa;
+               font-family:'VT323',monospace;font-size:13px;padding:3px 6px;">
+        <option value="" ${_ahFilters.class === '' ? 'selected' : ''}>All Classes</option>
+        <option value="warrior" ${_ahFilters.class === 'warrior' ? 'selected' : ''}>⚔️ Warrior</option>
+        <option value="rogue" ${_ahFilters.class === 'rogue' ? 'selected' : ''}>🗡️ Rogue</option>
+        <option value="paladin" ${_ahFilters.class === 'paladin' ? 'selected' : ''}>🛡️ Paladin</option>
+        <option value="mage" ${_ahFilters.class === 'mage' ? 'selected' : ''}>🔮 Mage</option>
+        <option value="cleric" ${_ahFilters.class === 'cleric' ? 'selected' : ''}>⛪ Cleric</option>
+        <option value="hunter" ${_ahFilters.class === 'hunter' ? 'selected' : ''}>🏹 Hunter</option>
+        <option value="warlock" ${_ahFilters.class === 'warlock' ? 'selected' : ''}>😈 Warlock</option>
+        <option value="runesmith" ${_ahFilters.class === 'runesmith' ? 'selected' : ''}>⚙️ Runesmith</option>
       </select>
 
       <input type="number" placeholder="Min Level" value="${_ahFilters.minLevel}"
@@ -490,10 +504,17 @@ function _ahRenderSellPick() {
 
   // ── Apply filters ─────────────────────────────────────────────────────
   const sf = _ahSellFilters;
-  let filtered = enriched.filter(e => {
+      let filtered = enriched.filter(e => {
     if (sf.type === 'weapon' && !e.isWeapon) return false;
     if (sf.type === 'armor'  &&  e.isWeapon) return false;
     if (sf.quality && e.quality !== sf.quality) return false;
+        if (sf.class && sf.class !== 'all') {
+      const classReq = e.baseData?.classRestriction || e.baseData?.allowedClasses;
+      if (classReq && classReq !== 'all') {
+        const classList = Array.isArray(classReq) ? classReq : [classReq];
+        if (!classList.includes(sf.class)) return false;
+      }
+    }
     if (sf.search) {
       const q = sf.search.toLowerCase();
       if (!e.name.toLowerCase().includes(q) && !e.subtype.toLowerCase().includes(q)) return false;
@@ -548,11 +569,26 @@ function _ahRenderSellPick() {
         <option value="weapon" ${sf.type==='weapon'?'selected':''}>⚔️ Weapons</option>
         <option value="armor"  ${sf.type==='armor' ?'selected':''}>🛡️ Armor</option>
       </select>
-      <select onchange="_ahSellSetFilter('quality',this.value)"
+            <select onchange="_ahSellSetFilter('quality',this.value)"
         style="background:#0a0a00;border:1px solid #2a2a00;color:#aaa;
                font-family:'VT323',monospace;font-size:13px;padding:3px 6px;">
         ${qualOpts}
       </select>
+
+      <select onchange="_ahSellSetFilter('class',this.value)"
+        style="background:#0a0a00;border:1px solid #2a2a00;color:#aaa;
+               font-family:'VT323',monospace;font-size:13px;padding:3px 6px;">
+        <option value="all">All Classes</option>
+        <option value="warrior">⚔️ Warrior</option>
+        <option value="rogue">🗡️ Rogue</option>
+        <option value="paladin">🛡️ Paladin</option>
+        <option value="mage">🔮 Mage</option>
+        <option value="cleric">⛪ Cleric</option>
+        <option value="hunter">🏹 Hunter</option>
+        <option value="warlock">😈 Warlock</option>
+        <option value="runesmith">⚙️ Runesmith</option>
+      </select>
+
       <select onchange="_ahSellSetFilter('sort',this.value)"
         style="background:#0a0a00;border:1px solid #2a2a00;color:#aaa;
                font-family:'VT323',monospace;font-size:13px;padding:3px 6px;">
@@ -875,8 +911,8 @@ async function _ahExecuteListing() {
     const name = item.name || baseData?.name || 'Unknown';
     const level = baseData?.level || item.level || 1;
     const subtype = baseData?.weaponSubtype || baseData?.armorType || '';
-    const classReq = baseData?.classRestriction
-        ? (Array.isArray(baseData.classRestriction) ? baseData.classRestriction.join(',') : baseData.classRestriction)
+        const classReq = baseData?.allowedClasses
+        ? (Array.isArray(baseData.allowedClasses) ? baseData.allowedClasses.join(',') : baseData.allowedClasses)
         : 'all';
     const charId = p.characterId || p.id || '';
     
@@ -965,7 +1001,7 @@ function _ahRenderSellConfirm() {
   const name      = item.name || baseData?.name || 'Unknown';
   const level     = baseData?.level || item.level || 1;
   const subtype   = baseData?.weaponSubtype || baseData?.armorType || '';
-  const classReq  = baseData?.classRestriction
+    const classReq  = baseData?.allowedClasses
     ? (Array.isArray(baseData.classRestriction) ? baseData.classRestriction.join(',') : baseData.classRestriction)
     : 'all';
   const icon      = isWeapon ? '⚔️' : '🛡️';
@@ -1406,7 +1442,7 @@ function _ahFetchBrowse(force) {
     character_id:     p.characterId || p.id || '',
     filter_type:      _ahFilters.type,
     filter_quality:   _ahFilters.quality,
-    filter_class:     _ahFilters.cls,
+    filter_class:     _ahFilters.class,
     filter_subtype:   _ahFilters.subtype,
     filter_min_level: _ahFilters.minLevel || 0,
     filter_max_level: _ahFilters.maxLevel || 9999,
@@ -1417,19 +1453,25 @@ function _ahFetchBrowse(force) {
 
   fetch(AH_SCRIPT_URL + '?' + params.toString(), { redirect: 'follow' })
     .then(r => r.json())
-    .then(data => {
+        .then(data => {
       _ahLoading    = false;
       _ahLastFetch  = Date.now();
       if (data.ok) {
-        _ahListings = data.listings || [];
+        let listings = data.listings || [];
+        
+                // Client-side class filter
+        if (_ahFilters.class && _ahFilters.class !== '') {
+          listings = listings.filter(listing => {
+            const classReq = listing.item_class_req;
+            // Show item if it has no restriction (all) OR matches the selected class
+            return !classReq || classReq === 'all' || classReq === _ahFilters.class;
+          });
+        }
+        
+        _ahListings = listings;
       } else {
         _ahSetStatus('Failed to load listings: ' + (data.error || ''), true);
       }
-      _ahUpdateBody();
-    })
-    .catch(err => {
-      _ahLoading = false;
-      _ahSetStatus('Network error loading listings.', true);
       _ahUpdateBody();
     });
 }
