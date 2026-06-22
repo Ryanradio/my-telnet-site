@@ -3766,6 +3766,7 @@ dark_mage: {
     baseGold: 100, 
     level: 12,
     description: 'A corrupted spellcaster wielding shadow magic',
+    baseSpellResist: 20,
     possibleDrops: ['mana_potion', 'greater_mana_potion', 'enchanted_robes', 'large_gem'],
     abilities: [
         {
@@ -7717,7 +7718,7 @@ seraphim: {
 },
 
 god_avatar: {
-    name: 'Avatar of a God',
+    name: 'Avatar of a god',
     baseHp: 1120,
     baseDamage: 95,
     minDamage: 66,
