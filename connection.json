@@ -1,7 +1,9 @@
 {
-  "last_updated": "2026-06-30 04:00:02 UTC",
+  "last_updated": "2026-07-01 01:35:09 UTC",
   "status": "active",
-  "ip": "3.141.210.37",
-  "port": "15171",
-  "hostname": "6.tcp.ngrok.io"
+  "proxy_hostname": "cold-proceed-blond-packard.trycloudflare.com",
+  "type": "cloudflare_tunnel",
+  "ip": "13.58.157.220",
+  "port": "24655",
+  "hostname": "8.tcp.ngrok.io"
 }
