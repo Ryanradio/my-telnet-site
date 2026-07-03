@@ -1,8 +1,6 @@
 {
-  "last_updated": "2026-07-02 04:00:02 UTC",
+  "last_updated": "2026-07-03 04:00:02 UTC",
   "status": "active",
-  "proxy_hostname": "gel-donna-horn-existing.trycloudflare.com",
-  "type": "cloudflare_tunnel",
   "ip": "18.189.106.45",
   "port": "23927",
   "hostname": "6.tcp.ngrok.io"
