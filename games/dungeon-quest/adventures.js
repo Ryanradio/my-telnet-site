@@ -7047,6 +7047,7 @@ const MERCHANT_TRADES = {
             { key: 'bone_dust', name: 'Bone Dust', count: 8, bonusMultiplier: 1.5 },
         ],
         rewards: [
+            // Potions
             {
                 type: 'potion',
                 key: 'monster_blood_vial',
@@ -7076,6 +7077,27 @@ const MERCHANT_TRADES = {
                 buffType: 'buff_dodge',
                 buffPower: 10,
                 buffDuration: 600000
+            },
+            // Gems
+            {
+                type: 'gem',
+                key: 'cut_ruby_t2',
+                cost: { 'imp_horn': 10 },
+                name: 'T2 Cut Ruby',
+                description: '+8 Weapon DMG, +3 Lifesteal',
+                gemType: 'ruby',
+                gemTier: 2,
+                stats: { weaponDmg: 8, lifesteal: 3 }
+            },
+            {
+                type: 'gem',
+                key: 'cut_emerald_t2',
+                cost: { 'spider_silk': 10 },
+                name: 'T2 Cut Emerald',
+                description: '+10 Poison Chance, +2 STR',
+                gemType: 'emerald',
+                gemTier: 2,
+                stats: { poisonChance: 10, strBonus: 2 }
             }
         ]
     },
@@ -7093,6 +7115,7 @@ const MERCHANT_TRADES = {
             { key: 'ectoplasm', name: 'Ectoplasm', count: 8, bonusMultiplier: 1.4 },
         ],
         rewards: [
+            // Potions
             {
                 type: 'potion',
                 key: 'dragonfire_elixir',
@@ -7113,6 +7136,28 @@ const MERCHANT_TRADES = {
                 buffPower: 1,
                 buffDuration: 60000
             },
+            // Gems
+            {
+                type: 'gem',
+                key: 'cut_topaz_t3',
+                cost: { 'drake_scale': 12 },
+                name: 'T3 Cut Topaz',
+                description: '+8 Crit, +8 Lightning DMG',
+                gemType: 'topaz',
+                gemTier: 3,
+                stats: { critBonus: 8, lightningDmg: 8 }
+            },
+            {
+                type: 'gem',
+                key: 'cut_amethyst_t3',
+                cost: { 'dark_essence': 10 },
+                name: 'T3 Cut Amethyst',
+                description: '+7 Defense, +20 HP',
+                gemType: 'amethyst',
+                gemTier: 3,
+                stats: { defenseBonus: 7, hpBonus: 20 }
+            },
+            // Armor
             {
                 type: 'armor',
                 key: 'demonskin_armor',
@@ -7139,6 +7184,7 @@ const MERCHANT_TRADES = {
             { key: 'fire_essence', name: 'Fire Essence', count: 8, bonusMultiplier: 1.4 },
         ],
         rewards: [
+            // Potions
             {
                 type: 'potion',
                 key: 'dragonblood_elixir',
@@ -7149,6 +7195,28 @@ const MERCHANT_TRADES = {
                 buffPower: 100,
                 buffDuration: 900000
             },
+            // Gems
+            {
+                type: 'gem',
+                key: 'cut_ruby_t4',
+                cost: { 'dragon_scale': 15 },
+                name: 'T4 Cut Ruby',
+                description: '+15 Weapon DMG, +6 Lifesteal',
+                gemType: 'ruby',
+                gemTier: 4,
+                stats: { weaponDmg: 15, lifesteal: 6 }
+            },
+            {
+                type: 'gem',
+                key: 'cut_sapphire_t4',
+                cost: { 'void_crystal': 12 },
+                name: 'T4 Cut Sapphire',
+                description: '+15 Spell Power, +25 MP',
+                gemType: 'sapphire',
+                gemTier: 4,
+                stats: { spellPower: 15, mpBonus: 25 }
+            },
+            // Weapons & Armor
             {
                 type: 'weapon',
                 key: 'dragonbone_greatsword',
@@ -7195,6 +7263,28 @@ const MERCHANT_TRADES = {
             { key: 'dragon_bone', name: 'Dragon Bone', count: 15, bonusMultiplier: 1.5 },
         ],
         rewards: [
+            // Legendary Gems
+            {
+                type: 'gem',
+                key: 'cut_opal_t4',
+                cost: { 'dragon_heart': 8 },
+                name: 'T4 Cut Opal',
+                description: '+6 Luck, +25 Gold Find',
+                gemType: 'opal',
+                gemTier: 4,
+                stats: { lckBonus: 6, goldFind: 25 }
+            },
+            {
+                type: 'gem',
+                key: 'cut_voidstone_t4',
+                cost: { 'demon_crown': 8 },
+                name: 'T4 Cut Voidstone',
+                description: '+10 Spell Leech, +4 WIS',
+                gemType: 'voidstone',
+                gemTier: 4,
+                stats: { spellLeech: 10, wisBonus: 4 }
+            },
+            // Legendary Weapons & Armor
             {
                 type: 'weapon',
                 key: 'dragons_wrath',
@@ -7418,26 +7508,19 @@ function merchantTradeUp(fromKey, fromCount, toKey, toCount) {
 
 // ── MAIN MERCHANT UI ──────────────────────────────────────────────
 function showMerchantUI() {
-    // ─────────────────────────────────────────────────────────
-    // FIRST: Remove any existing overlay completely
-    // ─────────────────────────────────────────────────────────
+    // Remove any existing overlay completely
     const existingOverlay = document.getElementById('merchantOverlay');
-    if (existingOverlay) {
-        existingOverlay.remove();
-    }
-    // Also remove any orphaned overlays
+    if (existingOverlay) existingOverlay.remove();
     document.querySelectorAll('[id*="merchantOverlay"]').forEach(el => el.remove());
     
     const p = gameState.player;
     const playerLevel = p.level;
     const allTiers = ['tier1', 'tier2', 'tier3', 'tier4', 'tier5'];
     
-    // Track which tab is active
     if (typeof window._merchantTab === 'undefined') {
         window._merchantTab = 'trade';
     }
     
-    // Build the merchant UI overlay
     const overlay = document.createElement('div');
     overlay.id = 'merchantOverlay';
     overlay.style.cssText = `
@@ -7450,21 +7533,23 @@ function showMerchantUI() {
     
     let allTradeHtml = '';
     let allGearHtml = '';
+    let allPotionHtml = '';
+    let allGemHtml = '';
     let allTradeUpHtml = '';
     
     // ─────────────────────────────────────────────────────────────
-    // TAB 1: TRADE (Sell items for gold)
+    // Helper to build tier HTML for each tab
     // ─────────────────────────────────────────────────────────────
-    allTiers.forEach(tierKey => {
+    function buildTierContent(tierKey, filterType) {
         const tierData = MERCHANT_TRADES[tierKey];
-        if (!tierData) return;
+        if (!tierData) return '';
         
         const isUnlocked = playerLevel >= tierData.minLevel;
         const tierName = isUnlocked ? tierData.name : `${tierData.name} 🔒`;
         const tierColor = isUnlocked ? '#FFD700' : '#444';
         const tierOpacity = isUnlocked ? '1' : '0.5';
         
-        let tierHtml = `
+        let html = `
             <div style="
                 margin: 12px 0 8px 0; 
                 padding: 8px 12px; 
@@ -7485,144 +7570,120 @@ function showMerchantUI() {
                 </div>
         `;
         
-        if (tierData.requests && tierData.requests.length > 0) {
-            tierHtml += `<div style="color: #888; font-size: 13px; margin: 6px 0 4px 0;">💰 SELL ITEMS (Gold)</div>`;
-            tierData.requests.forEach(req => {
-                const count = countPlayerItem(req.key);
-                const bonusPrice = Math.floor(ITEMS[req.key]?.sellValue * req.bonusMultiplier) || 10;
-                const canTrade = isUnlocked && count >= req.count;
-                tierHtml += `
-                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 8px; margin: 2px 0; border: 1px solid ${canTrade ? '#2a4a2a' : '#1a1a1a'}; background: ${canTrade ? '#0a1a0a' : '#0a0a0a'}; border-radius: 4px;">
-                        <span style="color: #aaa; font-size: 13px;">${req.name} (${count}/${req.count})</span>
-                        <span style="color: #FFD700; font-size: 13px;">${bonusPrice}g each</span>
-                        <button onclick="merchantSellItems('${req.key}', ${req.count}, ${bonusPrice})" ${canTrade ? '' : 'disabled'} style="
-                            background: ${canTrade ? '#0a2a0a' : '#0a0a0a'};
-                            border: 1px solid ${canTrade ? '#3a8a3a' : '#333'};
-                            color: ${canTrade ? '#88ff88' : '#444'};
-                            font-family: 'VT323', monospace;
-                            padding: 2px 10px;
-                            cursor: ${canTrade ? 'pointer' : 'not-allowed'};
-                            border-radius: 4px;
-                            font-size: 13px;
-                        ">Sell</button>
-                    </div>
-                `;
-            });
+        // For SELL tab: show sell requests
+        if (filterType === 'sell') {
+            if (tierData.requests && tierData.requests.length > 0) {
+                html += `<div style="color: #888; font-size: 13px; margin: 6px 0 4px 0;">💰 SELL ITEMS (Gold)</div>`;
+                tierData.requests.forEach(req => {
+                    const count = countPlayerItem(req.key);
+                    const bonusPrice = Math.floor(ITEMS[req.key]?.sellValue * req.bonusMultiplier) || 10;
+                    const canTrade = isUnlocked && count >= req.count;
+                    html += `
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 8px; margin: 2px 0; border: 1px solid ${canTrade ? '#2a4a2a' : '#1a1a1a'}; background: ${canTrade ? '#0a1a0a' : '#0a0a0a'}; border-radius: 4px;">
+                            <span style="color: #aaa; font-size: 13px;">${req.name} (${count}/${req.count})</span>
+                            <span style="color: #FFD700; font-size: 13px;">${bonusPrice}g each</span>
+                            <button onclick="merchantSellItems('${req.key}', ${req.count}, ${bonusPrice})" ${canTrade ? '' : 'disabled'} style="
+                                background: ${canTrade ? '#0a2a0a' : '#0a0a0a'};
+                                border: 1px solid ${canTrade ? '#3a8a3a' : '#333'};
+                                color: ${canTrade ? '#88ff88' : '#444'};
+                                font-family: 'VT323', monospace;
+                                padding: 2px 10px;
+                                cursor: ${canTrade ? 'pointer' : 'not-allowed'};
+                                border-radius: 4px;
+                                font-size: 13px;
+                            ">Sell</button>
+                        </div>
+                    `;
+                });
+            }
         }
         
-        tierHtml += `</div>`;
-        allTradeHtml += tierHtml;
-    });
-    
-    // ─────────────────────────────────────────────────────────────
-    // TAB 2: GEAR (Weapons & Armor trades)
-    // ─────────────────────────────────────────────────────────────
-    let hasGear = false;
-    allTiers.forEach(tierKey => {
-        const tierData = MERCHANT_TRADES[tierKey];
-        if (!tierData) return;
-        if (!tierData.rewards || tierData.rewards.length === 0) return;
-        
-        const hasWeaponOrArmor = tierData.rewards.some(r => r.type === 'weapon' || r.type === 'armor');
-        if (!hasWeaponOrArmor) return;
-        
-        hasGear = true;
-        const isUnlocked = playerLevel >= tierData.minLevel;
-        const tierName = isUnlocked ? tierData.name : `${tierData.name} 🔒`;
-        const tierColor = isUnlocked ? '#FFD700' : '#444';
-        const tierOpacity = isUnlocked ? '1' : '0.5';
-        
-        let tierHtml = `
-            <div style="
-                margin: 12px 0 8px 0; 
-                padding: 8px 12px; 
-                background: ${isUnlocked ? '#0a0a00' : '#050505'};
-                border: 1px solid ${isUnlocked ? '#3a3a00' : '#1a1a00'};
-                border-radius: 4px;
-                opacity: ${tierOpacity};
-            ">
-                <div style="
-                    color: ${tierColor}; 
-                    font-size: 16px; 
-                    letter-spacing: 2px;
-                    border-bottom: 1px solid ${isUnlocked ? '#2a2a00' : '#1a1a00'};
-                    padding-bottom: 4px;
-                    margin-bottom: 8px;
-                ">
-                    ⚔️ ${tierName} ${isUnlocked ? '' : `<span style="color:#555;font-size:12px;">(Requires Level ${tierData.minLevel})</span>`}
-                </div>
-        `;
-        
-        tierData.rewards.forEach(reward => {
-            if (reward.type !== 'weapon' && reward.type !== 'armor') return;
+        // For other tabs: filter rewards by type
+        if (tierData.rewards && tierData.rewards.length > 0) {
+            let filtered = [];
+            let label = '';
             
-            let canAfford = true;
-            let costDisplay = [];
-            for (const [reqKey, reqCount] of Object.entries(reward.cost)) {
-                const have = countPlayerItem(reqKey);
-                const reqName = ITEMS[reqKey]?.name || reqKey;
-                costDisplay.push(`${reqName} (${have}/${reqCount})`);
-                if (have < reqCount) canAfford = false;
+            if (filterType === 'gear') {
+                filtered = tierData.rewards.filter(r => r.type === 'weapon' || r.type === 'armor');
+                label = '⚔️ GEAR';
+            } else if (filterType === 'potion') {
+                filtered = tierData.rewards.filter(r => r.type === 'potion');
+                label = '🧪 POTIONS';
+            } else if (filterType === 'gem') {
+                filtered = tierData.rewards.filter(r => r.type === 'gem');
+                label = '💎 GEMS';
             }
             
-            let classRestricted = false;
-            if (reward.classRestriction && reward.classRestriction !== 'all') {
-                const playerClass = p.baseClass || p.class;
-                const restrictions = Array.isArray(reward.classRestriction) ? reward.classRestriction : [reward.classRestriction];
-                if (!restrictions.includes(playerClass)) {
-                    classRestricted = true;
-                }
+            if (filtered.length > 0) {
+                html += `<div style="color: #888; font-size: 13px; margin: 10px 0 4px 0;">${label}</div>`;
+                
+                filtered.forEach(reward => {
+                    let canAfford = true;
+                    let costDisplay = [];
+                    for (const [reqKey, reqCount] of Object.entries(reward.cost)) {
+                        const have = countPlayerItem(reqKey);
+                        const reqName = ITEMS[reqKey]?.name || reqKey;
+                        costDisplay.push(`${reqName} (${have}/${reqCount})`);
+                        if (have < reqCount) canAfford = false;
+                    }
+                    
+                    let classRestricted = false;
+                    if (reward.classRestriction && reward.classRestriction !== 'all') {
+                        const playerClass = p.baseClass || p.class;
+                        const restrictions = Array.isArray(reward.classRestriction) ? reward.classRestriction : [reward.classRestriction];
+                        if (!restrictions.includes(playerClass)) {
+                            classRestricted = true;
+                        }
+                    }
+                    
+                    const canTrade = isUnlocked && canAfford && !classRestricted;
+                    const icon = reward.type === 'weapon' ? '⚔️' : 
+                                 reward.type === 'armor' ? '🛡️' : 
+                                 reward.type === 'gem' ? '💎' : '🧪';
+                    const qualityColor = QUALITY_CONFIG[reward.quality]?.color || '#FFD700';
+                    
+                    html += `
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; margin: 3px 0; border: 1px solid ${canTrade ? qualityColor : '#333'}; background: ${canTrade ? '#0a0f0a' : '#0a0a0a'}; border-radius: 4px; ${classRestricted ? 'opacity: 0.4;' : ''}">
+                            <div>
+                                <span style="color: ${qualityColor};">${icon} ${reward.name}</span>
+                                <span style="color: #888; font-size: 11px; margin-left: 6px;">${reward.description}</span>
+                                <div style="color: #555; font-size: 11px;">${costDisplay.join(' | ')}</div>
+                                ${classRestricted ? `<div style="color: #ff4444; font-size: 11px;">⚠️ Not for your class</div>` : ''}
+                                ${!isUnlocked ? `<div style="color: #ff8844; font-size: 11px;">🔒 Requires Level ${tierData.minLevel}</div>` : ''}
+                            </div>
+                            <button onclick="merchantTradeReward('${reward.key}')" ${canTrade ? '' : 'disabled'} style="
+                                background: ${canTrade ? '#0a2a0a' : '#0a0a0a'};
+                                border: 1px solid ${canTrade ? '#3a8a3a' : '#333'};
+                                color: ${canTrade ? '#88ff88' : '#444'};
+                                font-family: 'VT323', monospace;
+                                padding: 4px 12px;
+                                cursor: ${canTrade ? 'pointer' : 'not-allowed'};
+                                border-radius: 4px;
+                                font-size: 13px;
+                            ">Trade</button>
+                        </div>
+                    `;
+                });
             }
-            
-            const canTrade = isUnlocked && canAfford && !classRestricted;
-            const icon = reward.type === 'weapon' ? '⚔️' : '🛡️';
-            const qualityColor = QUALITY_CONFIG[reward.quality]?.color || '#FFD700';
-            
-            tierHtml += `
-                <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; margin: 3px 0; border: 1px solid ${canTrade ? qualityColor : '#333'}; background: ${canTrade ? '#0a0f0a' : '#0a0a0a'}; border-radius: 4px; ${classRestricted ? 'opacity: 0.4;' : ''}">
-                    <div>
-                        <span style="color: ${qualityColor};">${icon} ${reward.name}</span>
-                        <span style="color: #888; font-size: 11px; margin-left: 6px;">${reward.description}</span>
-                        <div style="color: #555; font-size: 11px;">${costDisplay.join(' | ')}</div>
-                        ${classRestricted ? `<div style="color: #ff4444; font-size: 11px;">⚠️ Not for your class</div>` : ''}
-                        ${!isUnlocked ? `<div style="color: #ff8844; font-size: 11px;">🔒 Requires Level ${tierData.minLevel}</div>` : ''}
-                    </div>
-                    <button onclick="merchantTradeReward('${reward.key}')" ${canTrade ? '' : 'disabled'} style="
-                        background: ${canTrade ? '#0a2a0a' : '#0a0a0a'};
-                        border: 1px solid ${canTrade ? '#3a8a3a' : '#333'};
-                        color: ${canTrade ? '#88ff88' : '#444'};
-                        font-family: 'VT323', monospace;
-                        padding: 4px 12px;
-                        cursor: ${canTrade ? 'pointer' : 'not-allowed'};
-                        border-radius: 4px;
-                        font-size: 13px;
-                    ">Trade</button>
-                </div>
-            `;
-        });
+        }
         
-        tierHtml += `</div>`;
-        allGearHtml += tierHtml;
-    });
-    
-    if (!hasGear) {
-        allGearHtml = `<div style="color: #555; text-align: center; padding: 30px; font-size: 14px;">
-            No weapons or armor available for trade yet.<br>
-            <span style="color: #444; font-size: 12px;">Keep leveling up to unlock gear trades!</span>
-        </div>`;
+        html += `</div>`;
+        return html;
     }
     
-    // ─────────────────────────────────────────────────────────────
-    // TAB 3: TRADE-UP
-    // ─────────────────────────────────────────────────────────────
-    const availableChains = Object.values(TRADE_UP_CHAINS).filter(chain => {
-        return playerLevel >= chain.minLevel;
+    // Build each tab
+    allTiers.forEach(tierKey => {
+        allTradeHtml += buildTierContent(tierKey, 'sell');
+        allGearHtml += buildTierContent(tierKey, 'gear');
+        allPotionHtml += buildTierContent(tierKey, 'potion');
+        allGemHtml += buildTierContent(tierKey, 'gem');
     });
     
+    // Trade-Up Tab
+    const availableChains = Object.values(TRADE_UP_CHAINS).filter(chain => playerLevel >= chain.minLevel);
     if (availableChains.length > 0) {
         allTradeUpHtml += `<div style="color: #FFAA44; font-size: 16px; margin: 10px 0 8px 0; border-bottom: 1px solid #3a3a00; padding-bottom: 4px;">🔄 UPGRADE ITEMS</div>`;
         allTradeUpHtml += `<div style="color: #888; font-size: 12px; margin-bottom: 10px;">Convert lower-tier items into higher-tier materials</div>`;
-        
         availableChains.forEach(chain => {
             const fromCount = countPlayerItem(chain.from.key);
             const canTrade = fromCount >= chain.from.count;
@@ -7652,19 +7713,29 @@ function showMerchantUI() {
             `;
         });
     } else {
-        allTradeUpHtml += `<div style="color: #555; text-align: center; padding: 20px; font-size: 14px;">
+        allTradeUpHtml = `<div style="color: #555; text-align: center; padding: 20px; font-size: 14px;">
             No trade-up chains available yet.<br>
             <span style="color: #444; font-size: 12px;">Reach level 6 to start upgrading items.</span>
         </div>`;
     }
     
     // ─────────────────────────────────────────────────────────────
-    // BUILD THE OVERLAY WITH 3 TABS
+    // BUILD THE OVERLAY WITH 5 TABS
     // ─────────────────────────────────────────────────────────────
     const activeTab = window._merchantTab;
     const tabTradeActive = activeTab === 'trade' ? 'selected' : '';
     const tabGearActive = activeTab === 'gear' ? 'selected' : '';
+    const tabPotionActive = activeTab === 'potion' ? 'selected' : '';
+    const tabGemActive = activeTab === 'gem' ? 'selected' : '';
     const tabTradeUpActive = activeTab === 'tradeup' ? 'selected' : '';
+    
+    // Determine which content to show
+    let contentHtml = '';
+    if (activeTab === 'trade') contentHtml = allTradeHtml;
+    else if (activeTab === 'gear') contentHtml = allGearHtml || '<div style="color:#555;text-align:center;padding:20px;">No gear available for trade yet.</div>';
+    else if (activeTab === 'potion') contentHtml = allPotionHtml || '<div style="color:#555;text-align:center;padding:20px;">No potions available for trade yet.</div>';
+    else if (activeTab === 'gem') contentHtml = allGemHtml || '<div style="color:#555;text-align:center;padding:20px;">No gems available for trade yet.</div>';
+    else if (activeTab === 'tradeup') contentHtml = allTradeUpHtml;
     
     overlay.innerHTML = `
         <div style="
@@ -7683,15 +7754,15 @@ function showMerchantUI() {
             <div style="
                 background: linear-gradient(90deg, #0a0a00, #1a1a00, #0a0a00);
                 border-bottom: 2px solid #FFD700;
-                padding: 12px 16px;
+                padding: 10px 16px;
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
                 flex-shrink: 0;
             ">
                 <div>
-                    <div style="color: #FFD700; font-size: 22px; letter-spacing: 3px;">🛒 THE WANDERING MERCHANT</div>
-                    <div style="color: #8a7a40; font-size: 12px;">"I pay top gold for rare materials!"</div>
+                    <div style="color: #FFD700; font-size: 20px; letter-spacing: 2px;">🛒 THE WANDERING MERCHANT</div>
+                    <div style="color: #8a7a40; font-size: 11px;">"I pay top gold for rare materials!"</div>
                 </div>
                 <button onclick="window.closeMerchantUI()" style="
                     background: none;
@@ -7705,67 +7776,100 @@ function showMerchantUI() {
                 ">✕</button>
             </div>
             
-            <!-- 3 Tabs -->
+            <!-- 5 Tabs -->
             <div style="
                 display: flex;
                 border-bottom: 2px solid #2a2a00;
                 flex-shrink: 0;
                 background: #050500;
+                overflow-x: auto;
+                flex-wrap: nowrap;
             ">
                 <button onclick="window._merchantTab='trade'; window.showMerchantUI();" style="
                     flex: 1;
-                    padding: 10px 16px;
+                    padding: 8px 10px;
                     background: ${tabTradeActive === 'selected' ? '#0a0a00' : 'transparent'};
                     border: none;
                     border-bottom: 3px solid ${tabTradeActive === 'selected' ? '#FFD700' : 'transparent'};
                     color: ${tabTradeActive === 'selected' ? '#FFD700' : '#666'};
                     font-family: 'VT323', monospace;
-                    font-size: 16px;
+                    font-size: 13px;
                     cursor: pointer;
-                    letter-spacing: 2px;
+                    letter-spacing: 1px;
+                    white-space: nowrap;
                 ">
                     💰 SELL
                 </button>
                 <button onclick="window._merchantTab='gear'; window.showMerchantUI();" style="
                     flex: 1;
-                    padding: 10px 16px;
+                    padding: 8px 10px;
                     background: ${tabGearActive === 'selected' ? '#0a0a00' : 'transparent'};
                     border: none;
                     border-bottom: 3px solid ${tabGearActive === 'selected' ? '#FFD700' : 'transparent'};
                     color: ${tabGearActive === 'selected' ? '#FFD700' : '#666'};
                     font-family: 'VT323', monospace;
-                    font-size: 16px;
+                    font-size: 13px;
                     cursor: pointer;
-                    letter-spacing: 2px;
+                    letter-spacing: 1px;
+                    white-space: nowrap;
                 ">
                     ⚔️ GEAR
                 </button>
+                <button onclick="window._merchantTab='potion'; window.showMerchantUI();" style="
+                    flex: 1;
+                    padding: 8px 10px;
+                    background: ${tabPotionActive === 'selected' ? '#0a0a00' : 'transparent'};
+                    border: none;
+                    border-bottom: 3px solid ${tabPotionActive === 'selected' ? '#FFD700' : 'transparent'};
+                    color: ${tabPotionActive === 'selected' ? '#FFD700' : '#666'};
+                    font-family: 'VT323', monospace;
+                    font-size: 13px;
+                    cursor: pointer;
+                    letter-spacing: 1px;
+                    white-space: nowrap;
+                ">
+                    🧪 POTIONS
+                </button>
+                <button onclick="window._merchantTab='gem'; window.showMerchantUI();" style="
+                    flex: 1;
+                    padding: 8px 10px;
+                    background: ${tabGemActive === 'selected' ? '#0a0a00' : 'transparent'};
+                    border: none;
+                    border-bottom: 3px solid ${tabGemActive === 'selected' ? '#FFD700' : 'transparent'};
+                    color: ${tabGemActive === 'selected' ? '#FFD700' : '#666'};
+                    font-family: 'VT323', monospace;
+                    font-size: 13px;
+                    cursor: pointer;
+                    letter-spacing: 1px;
+                    white-space: nowrap;
+                ">
+                    💎 GEMS
+                </button>
                 <button onclick="window._merchantTab='tradeup'; window.showMerchantUI();" style="
                     flex: 1;
-                    padding: 10px 16px;
+                    padding: 8px 10px;
                     background: ${tabTradeUpActive === 'selected' ? '#0a0a00' : 'transparent'};
                     border: none;
                     border-bottom: 3px solid ${tabTradeUpActive === 'selected' ? '#FFD700' : 'transparent'};
                     color: ${tabTradeUpActive === 'selected' ? '#FFD700' : '#666'};
                     font-family: 'VT323', monospace;
-                    font-size: 16px;
+                    font-size: 13px;
                     cursor: pointer;
-                    letter-spacing: 2px;
+                    letter-spacing: 1px;
+                    white-space: nowrap;
                 ">
                     🔄 UPGRADE
                 </button>
             </div>
             
             <!-- Content -->
-            <div style="flex: 1; overflow-y: auto; padding: 8px 16px 12px 16px;">
-                <div style="color: #666; font-size: 12px; margin-bottom: 8px; text-align: center; border-bottom: 1px solid #1a1a00; padding-bottom: 6px;">
+            <div style="flex: 1; overflow-y: auto; padding: 8px 12px 12px 12px;">
+                <div style="color: #666; font-size: 11px; margin-bottom: 6px; text-align: center; border-bottom: 1px solid #1a1a00; padding-bottom: 4px;">
                     Level ${playerLevel} — <span style="color:#FFD700;">${playerLevel >= 21 ? 'All Tiers Unlocked!' : 'Unlock higher tiers as you level up'}</span>
                 </div>
-                
-                ${activeTab === 'trade' ? allTradeHtml : activeTab === 'gear' ? allGearHtml : allTradeUpHtml}
-                
-                <div style="border-top: 1px solid #1a1a00; margin: 10px 0; padding-top: 8px;">
-                    <div style="color: #666; font-size: 11px; text-align: center;">
+                ${contentHtml}
+                <div style="border-top: 1px solid #1a1a00; margin: 10px 0; padding-top: 6px;">
+                    <div style="color: #666; font-size: 10px; text-align: center;">
                         💡 Items are consumed on trade. Trades are permanent.
                     </div>
                 </div>
@@ -7774,7 +7878,7 @@ function showMerchantUI() {
             <!-- Footer -->
             <div style="
                 border-top: 1px solid #2a2a00;
-                padding: 8px 16px;
+                padding: 6px 16px;
                 text-align: center;
                 background: #0a0a0a;
                 flex-shrink: 0;
@@ -7784,8 +7888,8 @@ function showMerchantUI() {
                     border: 1px solid #444;
                     color: #888;
                     font-family: 'VT323', monospace;
-                    font-size: 16px;
-                    padding: 6px 20px;
+                    font-size: 15px;
+                    padding: 4px 16px;
                     cursor: pointer;
                     border-radius: 4px;
                 ">Close</button>
