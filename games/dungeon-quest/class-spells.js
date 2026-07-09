@@ -705,19 +705,21 @@ const CLASS_SPELL_TREES = {
         }
     },
 
-    // ═══════════════════════════════════════════════════════════════
-    // WARLOCK - DARK DAMAGE + LIFESTEAL/LEECH
+        // ═══════════════════════════════════════════════════════════════
+    // WARLOCK - DARK DAMAGE + LIFESTEAL/LEECH (BALANCED)
+    // Shadow Damage: Lower MP, Higher Damage (Glass Cannon)
+    // Lifesteal: Higher MP, Lower Damage (Sustain/Survival)
     // ═══════════════════════════════════════════════════════════════
     warlock: {
         startingSpell: 'shadow_bolt_1',
         spellTree: {
-            // SHADOW DAMAGE LINE
+            // SHADOW DAMAGE LINE (Lower MP, Higher Damage)
             shadow_bolt_1: {
                 name: 'Shadow Bolt',
                 level: 1,
-                mpCost: 14,
-                minPower: 5,
-                maxPower: 18,
+                mpCost: 10,
+                minPower: 8,
+                maxPower: 22,
                 type: 'damage',
                 cost: 0,
                 description: 'Hurl a bolt of shadow energy',
@@ -726,9 +728,9 @@ const CLASS_SPELL_TREES = {
             shadow_bolt_2: {
                 name: 'Dark Missile',
                 level: 4,
-                mpCost: 20,
-                minPower: 9,
-                maxPower: 32,
+                mpCost: 14,
+                minPower: 15,
+                maxPower: 40,
                 type: 'damage',
                 cost: 4500,
                 description: 'A missile of pure darkness',
@@ -738,9 +740,9 @@ const CLASS_SPELL_TREES = {
             shadow_bolt_3: {
                 name: 'Void Strike',
                 level: 7,
-                mpCost: 28,
-                minPower: 16,
-                maxPower: 50,
+                mpCost: 20,
+                minPower: 25,
+                maxPower: 65,
                 type: 'damage',
                 cost: 4500,
                 description: 'Strike from the void itself',
@@ -750,10 +752,9 @@ const CLASS_SPELL_TREES = {
             shadow_bolt_4: {
                 name: 'Necrotic Blast',
                 level: 10,
-                mpCost: 38,
-                minPower: 38,
-
-                maxPower: 190,
+                mpCost: 28,
+                minPower: 45,
+                maxPower: 220,
                 type: 'damage',
                 cost: 10500,
                 description: 'Blast of death energy',
@@ -763,10 +764,9 @@ const CLASS_SPELL_TREES = {
             shadow_bolt_5: {
                 name: 'Curse of Agony',
                 level: 13,
-                mpCost: 50,
-                minPower: 52,
-
-                maxPower: 262,
+                mpCost: 38,
+                minPower: 60,
+                maxPower: 300,
                 type: 'damage',
                 cost: 63000,
                 description: 'Inflict terrible suffering',
@@ -776,10 +776,9 @@ const CLASS_SPELL_TREES = {
             shadow_bolt_6: {
                 name: 'Soul Shatter',
                 level: 16,
-                mpCost: 64,
-                minPower: 70,
-
-                maxPower: 350,
+                mpCost: 48,
+                minPower: 80,
+                maxPower: 400,
                 type: 'damage',
                 cost: 108000,
                 description: 'Shatter the enemy\'s soul',
@@ -789,10 +788,9 @@ const CLASS_SPELL_TREES = {
             shadow_bolt_7: {
                 name: 'Damnation',
                 level: 19,
-                mpCost: 80,
-                minPower: 92,
-
-                maxPower: 462,
+                mpCost: 60,
+                minPower: 105,
+                maxPower: 525,
                 type: 'damage',
                 cost: 180000,
                 description: 'Eternal damnation for your foes',
@@ -802,10 +800,9 @@ const CLASS_SPELL_TREES = {
             shadow_bolt_8: {
                 name: 'Oblivion',
                 level: 22,
-                mpCost: 100,
-                minPower: 122,
-
-                maxPower: 612,
+                mpCost: 75,
+                minPower: 140,
+                maxPower: 700,
                 type: 'damage',
                 cost: 105000,
                 description: 'Send them to oblivion',
@@ -815,24 +812,22 @@ const CLASS_SPELL_TREES = {
             shadow_bolt_9: {
                 name: 'Apocalypse',
                 level: 25,
-                mpCost: 125,
-                minPower: 170,
-
-                maxPower: 850,
+                mpCost: 90,
+                minPower: 200,
+                maxPower: 1000,
                 type: 'damage',
                 cost: 150000,
                 description: 'Bring about the end of all things',
                 requires: 'shadow_bolt_8'
             },
-            
-            // LIFESTEAL/LEECH LINE
+
+            // LIFESTEAL LINE (Higher MP, Lower Damage, Self-Heal)
             drain_1: {
                 name: 'Siphon Life',
                 level: 3,
-                mpCost: 12,
-                minPower: 7,
-
-                maxPower: 25,
+                mpCost: 15,
+                minPower: 5,
+                maxPower: 18,
                 type: 'lifesteal',
                 lifestealPercent: 50,
                 cost: 2700,
@@ -841,12 +836,11 @@ const CLASS_SPELL_TREES = {
             drain_2: {
                 name: 'Vampiric Touch',
                 level: 6,
-                mpCost: 18,
-                minPower: 14,
-
-                maxPower: 70,
+                mpCost: 22,
+                minPower: 10,
+                maxPower: 45,
                 type: 'lifesteal',
-                lifestealPercent: 50,
+                lifestealPercent: 60,
                 cost: 9000,
                 description: 'Steal life from your enemy (60% returned)',
                 upgradesTo: 'drain_3',
@@ -855,12 +849,11 @@ const CLASS_SPELL_TREES = {
             drain_3: {
                 name: 'Soul Leech',
                 level: 9,
-                mpCost: 26,
-                minPower: 22,
-
-                maxPower: 110,
+                mpCost: 32,
+                minPower: 16,
+                maxPower: 70,
                 type: 'lifesteal',
-                lifestealPercent: 50,
+                lifestealPercent: 70,
                 cost: 2500,
                 description: 'Leech the enemy\'s soul (70% returned)',
                 upgradesTo: 'drain_4',
@@ -869,12 +862,11 @@ const CLASS_SPELL_TREES = {
             drain_4: {
                 name: 'Death Pact',
                 level: 12,
-                mpCost: 36,
-                minPower: 32,
-
-                maxPower: 162,
+                mpCost: 45,
+                minPower: 24,
+                maxPower: 110,
                 type: 'lifesteal',
-                lifestealPercent: 50,
+                lifestealPercent: 75,
                 cost: 45000,
                 description: 'Pact with death itself (75% returned)',
                 upgradesTo: 'drain_5',
@@ -883,12 +875,11 @@ const CLASS_SPELL_TREES = {
             drain_5: {
                 name: 'Blood Ritual',
                 level: 15,
-                mpCost: 48,
-                minPower: 45,
-
-                maxPower: 225,
+                mpCost: 58,
+                minPower: 32,
+                maxPower: 160,
                 type: 'lifesteal',
-                lifestealPercent: 50,
+                lifestealPercent: 80,
                 cost: 9000,
                 description: 'Dark ritual that feeds on life (80% returned)',
                 upgradesTo: 'drain_6',
@@ -897,12 +888,11 @@ const CLASS_SPELL_TREES = {
             drain_6: {
                 name: 'Consume Soul',
                 level: 18,
-                mpCost: 62,
-                minPower: 60,
-
-                maxPower: 300,
+                mpCost: 75,
+                minPower: 44,
+                maxPower: 220,
                 type: 'lifesteal',
-                lifestealPercent: 50,
+                lifestealPercent: 85,
                 cost: 45000,
                 description: 'Consume the enemy\'s essence (85% returned)',
                 upgradesTo: 'drain_7',
@@ -911,12 +901,11 @@ const CLASS_SPELL_TREES = {
             drain_7: {
                 name: 'Life Harvest',
                 level: 21,
-                mpCost: 78,
-                minPower: 80,
-
-                maxPower: 400,
+                mpCost: 95,
+                minPower: 60,
+                maxPower: 300,
                 type: 'lifesteal',
-                lifestealPercent: 50,
+                lifestealPercent: 90,
                 cost: 225000,
                 description: 'Harvest abundant life energy (90% returned)',
                 upgradesTo: 'drain_8',
@@ -925,12 +914,11 @@ const CLASS_SPELL_TREES = {
             drain_8: {
                 name: 'Essence Drain',
                 level: 24,
-                mpCost: 96,
-                minPower: 105,
-
-                maxPower: 525,
+                mpCost: 115,
+                minPower: 80,
+                maxPower: 400,
                 type: 'lifesteal',
-                lifestealPercent: 50,
+                lifestealPercent: 95,
                 cost: 120000,
                 description: 'Drain the very essence of life (95% returned)',
                 upgradesTo: 'drain_9',
@@ -939,12 +927,11 @@ const CLASS_SPELL_TREES = {
             drain_9: {
                 name: 'Immortal Hunger',
                 level: 25,
-                mpCost: 115,
-                minPower: 140,
-
-                maxPower: 700,
+                mpCost: 130,
+                minPower: 100,
+                maxPower: 500,
                 type: 'lifesteal',
-                lifestealPercent: 50,
+                lifestealPercent: 100,
                 cost: 150000,
                 description: 'Feed eternally on life itself (100% returned)',
                 requires: 'drain_8'
