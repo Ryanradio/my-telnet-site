@@ -10994,10 +10994,19 @@ function getItemName(item) {
                 // Show outcome
                 termAppend(selectedOutcome.text, 'term-highlight');
                 
-                // Apply rewards
+                                // Apply rewards
                 if (selectedOutcome.rewards) {
                     applyAdventureRewards(selectedOutcome.rewards);
                 }
+                
+                // ─────────────────────────────────────────────────────────
+                // SPECIAL: Merchant UI Trigger
+                // ─────────────────────────────────────────────────────────
+                if (selectedOutcome.rewards && selectedOutcome.rewards.special === 'open_merchant_ui') {
+                    showMerchantUI();
+                    return; // Keep the adventure open
+                }
+                // ─────────────────────────────────────────────────────────
                 
                 // Start combat if needed
                 if (selectedOutcome.combat) {

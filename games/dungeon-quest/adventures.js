@@ -42,6 +42,87 @@ function getLevelAppropriateEnemy(playerLevel, enemyType = null) {
 const ADVENTURES = {
 
     
+
+    // ═══════════════════════════════════════════════════════════════
+    // TRAVELING MERCHANT — Random Adventure Encounter
+    // ═══════════════════════════════════════════════════════════════
+    traveling_merchant: {
+        id: 'traveling_merchant',
+        name: 'The Wandering Merchant',
+        rarity: 'common',
+        minLevel: 1,
+        description: 'A weathered merchant with a cart full of strange wares...',
+        intro: 'You come across a merchant sitting by the side of the road, surrounded by crates and barrels. Their cart is packed with exotic goods. "Ho there, traveler! I deal in rare items — monster parts, exotic materials, and things you won\'t find in any shop. Take a look!"',
+
+        choices: [
+            {
+                text: '"What do you have for trade?"',
+                outcomes: [
+                    {
+                        weight: 100,
+                        text: 'The merchant grins and gestures to their cart. "I\'m always buying materials. And I have some very special items for sale — but only for those who bring me what I need."',
+                        nextChoices: [
+                            {
+                                text: 'Open the Trade Menu',
+                                outcomes: [
+                                    {
+                                        weight: 100,
+                                        text: 'The merchant spreads their wares before you...',
+                                        // This triggers the merchant UI
+                                        // The actual menu is rendered by the handler
+                                        rewards: { special: 'open_merchant_ui' }
+                                    }
+                                ]
+                            },
+                            {
+                                text: '"Maybe later."',
+                                outcomes: [
+                                    {
+                                        weight: 100,
+                                        text: '"Suit yourself! I\'ll be here if you change your mind."',
+                                        rewards: { xp: 25 }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                text: '"Any advice for the road?"',
+                outcomes: [
+                    {
+                        weight: 50,
+                        text: 'The merchant shares a secret: "There\'s a cave to the east with a rich vein of ore. But watch out for the trolls."',
+                        rewards: { xp: 150, items: ['treasure_map'] }
+                    },
+                    {
+                        weight: 30,
+                        text: '"Always carry a spare weapon. And never trust a goblin with a smile."',
+                        rewards: { xp: 100 }
+                    },
+                    {
+                        weight: 20,
+                        text: '"The dragon cults are getting bolder. Watch your back."',
+                        rewards: { xp: 200, items: ['cult_intelligence'] }
+                    }
+                ]
+            },
+            {
+                text: 'Continue on your journey',
+                outcomes: [
+                    {
+                        weight: 100,
+                        text: '"Safe travels, friend! Come back if you find anything interesting!"',
+                        rewards: { xp: 25 }
+                    }
+                ]
+            }
+        ]
+    },
+    
+
+
     // ═══════════════════════════════════════════════════════════════
     // TREASURE ADVENTURES
     // ═══════════════════════════════════════════════════════════════
@@ -6881,6 +6962,22 @@ const ADVENTURE_ENEMIES = {
     }
 };
 
+
+
+// ── Helper: Get merchant tier for player level ──────────────────
+function getMerchantTier(playerLevel) {
+    if (playerLevel <= 5) return 'tier1';
+    if (playerLevel <= 10) return 'tier2';
+    if (playerLevel <= 15) return 'tier3';
+    if (playerLevel <= 20) return 'tier4';
+    return 'tier5';
+}
+
+
+
+
+
+
 // Rarity chances
 // Total trigger rate: ~15% per exploration tick
 // Roll < cumulative threshold to trigger that rarity
@@ -6895,23 +6992,1003 @@ const ADVENTURE_RARITY_CHANCES = {
 // Helper function to roll for random adventure
 function rollForAdventure(playerLevel) {
     // The zone's adventureChance already gates whether we get here.
-    // Just pick a random eligible adventure for this player's level.
     const eligibleAdventures = Object.values(ADVENTURES)
         .filter(adv => playerLevel >= (adv.minLevel || 1));
 
     if (eligibleAdventures.length === 0) return null;
 
-    // Weight selection by rarity so legendary adventures are still rare
-    // even when the zone gate has already fired
+    // Weight selection by rarity
     const rarityWeights = { legendary: 1, rare: 5, uncommon: 15, common: 30 };
     const weighted = [];
     eligibleAdventures.forEach(adv => {
-        const w = rarityWeights[adv.rarity] || 10;
+        let w = rarityWeights[adv.rarity] || 10;
+        // Give merchant 10x weight
+        if (adv.id === 'traveling_merchant') {
+            w = 300;  // Very high weight
+        }
         for (let i = 0; i < w; i++) weighted.push(adv);
     });
 
     return weighted[Math.floor(Math.random() * weighted.length)];
 }
+
+
+// ═══════════════════════════════════════════════════════════════
+// TRAVELING MERCHANT — Trade System
+// ═══════════════════════════════════════════════════════════════
+
+// ── Merchant Trade Data ──────────────────────────────────────────
+const MERCHANT_TRADES = {
+    // Level 1-5: "The Scavenger"
+    tier1: {
+        minLevel: 1,
+        maxLevel: 5,
+        name: 'The Scavenger',
+        requests: [
+            { key: 'rat_tail', name: 'Rat Tail', count: 5, bonusMultiplier: 1.5 },
+            { key: 'bat_wing', name: 'Bat Wing', count: 3, bonusMultiplier: 1.5 },
+            { key: 'slime_gel', name: 'Slime Gel', count: 4, bonusMultiplier: 1.4 },
+            { key: 'wolf_pelt', name: 'Wolf Pelt', count: 2, bonusMultiplier: 1.4 },
+            { key: 'boar_hide', name: 'Boar Hide', count: 2, bonusMultiplier: 1.4 },
+        ],
+        rewards: []
+    },
+    
+    // Level 6-10: "The Collector"
+    tier2: {
+        minLevel: 6,
+        maxLevel: 10,
+        name: 'The Collector',
+        requests: [
+            { key: 'imp_horn', name: 'Imp Horn', count: 8, bonusMultiplier: 1.5 },
+            { key: 'ghoul_claw', name: 'Ghoul Claw', count: 5, bonusMultiplier: 1.5 },
+            { key: 'dire_pelt', name: 'Dire Pelt', count: 4, bonusMultiplier: 1.4 },
+            { key: 'spider_silk', name: 'Spider Silk', count: 6, bonusMultiplier: 1.4 },
+            { key: 'bone_dust', name: 'Bone Dust', count: 8, bonusMultiplier: 1.5 },
+        ],
+        rewards: [
+            {
+                type: 'potion',
+                key: 'monster_blood_vial',
+                cost: { 'imp_horn': 15 },
+                name: 'Monster Blood Vial',
+                description: '+15% XP for 10 min',
+                buffType: 'buff_xp',
+                buffPower: 15,
+                buffDuration: 600000
+            },
+            {
+                type: 'potion',
+                key: 'gilded_pouch',
+                cost: { 'dire_pelt': 10 },
+                name: 'Gilded Pouch',
+                description: '+15% Gold Find for 10 min',
+                buffType: 'buff_gold',
+                buffPower: 15,
+                buffDuration: 600000
+            },
+            {
+                type: 'potion',
+                key: 'spider_silk_wrap',
+                cost: { 'spider_silk': 12 },
+                name: 'Spider Silk Wrap',
+                description: '+10% Dodge for 10 min',
+                buffType: 'buff_dodge',
+                buffPower: 10,
+                buffDuration: 600000
+            }
+        ]
+    },
+    
+    // Level 11-15: "The Appraiser"
+    tier3: {
+        minLevel: 11,
+        maxLevel: 15,
+        name: 'The Appraiser',
+        requests: [
+            { key: 'drake_scale', name: 'Drake Scale', count: 8, bonusMultiplier: 1.5 },
+            { key: 'dark_essence', name: 'Dark Essence', count: 6, bonusMultiplier: 1.5 },
+            { key: 'shadow_essence', name: 'Shadow Essence', count: 6, bonusMultiplier: 1.5 },
+            { key: 'demon_horn', name: 'Demon Horn', count: 4, bonusMultiplier: 1.5 },
+            { key: 'ectoplasm', name: 'Ectoplasm', count: 8, bonusMultiplier: 1.4 },
+        ],
+        rewards: [
+            {
+                type: 'potion',
+                key: 'dragonfire_elixir',
+                cost: { 'drake_scale': 15 },
+                name: 'Dragonfire Elixir',
+                description: '+20% Fire Damage for 10 min',
+                buffType: 'buff_fire_damage',
+                buffPower: 20,
+                buffDuration: 600000
+            },
+            {
+                type: 'potion',
+                key: 'shadowcloak_potion',
+                cost: { 'shadow_essence': 12 },
+                name: 'Shadowcloak Potion',
+                description: 'Invisibility for 1 min',
+                buffType: 'buff_invisibility',
+                buffPower: 1,
+                buffDuration: 60000
+            },
+            {
+                type: 'armor',
+                key: 'demonskin_armor',
+                cost: { 'demon_horn': 20 },
+                name: 'Demonskin Armor',
+                quality: 'rare',
+                description: 'DEF: 45, +10% Fire Resist',
+                stats: { defense: 45, fireResist: 10 },
+                classRestriction: 'all'
+            }
+        ]
+    },
+    
+    // Level 16-20: "The Master Trader"
+    tier4: {
+        minLevel: 16,
+        maxLevel: 20,
+        name: 'The Master Trader',
+        requests: [
+            { key: 'dragon_scale', name: 'Dragon Scale', count: 10, bonusMultiplier: 1.5 },
+            { key: 'golem_core', name: 'Golem Core', count: 5, bonusMultiplier: 1.5 },
+            { key: 'void_crystal', name: 'Void Crystal', count: 4, bonusMultiplier: 1.5 },
+            { key: 'chaos_essence', name: 'Chaos Essence', count: 8, bonusMultiplier: 1.5 },
+            { key: 'fire_essence', name: 'Fire Essence', count: 8, bonusMultiplier: 1.4 },
+        ],
+        rewards: [
+            {
+                type: 'potion',
+                key: 'dragonblood_elixir',
+                cost: { 'dragon_scale': 15 },
+                name: 'Dragonblood Elixir',
+                description: '+100 Max HP, +10% DMG for 15 min',
+                buffType: 'buff_dragonblood',
+                buffPower: 100,
+                buffDuration: 900000
+            },
+            {
+                type: 'weapon',
+                key: 'dragonbone_greatsword',
+                cost: { 'dragon_scale': 25, 'dragon_bone': 10 },
+                name: 'Dragonbone Greatsword',
+                quality: 'epic',
+                description: 'DMG: 45-85, +25% vs Dragons',
+                stats: { baseDamage: 45, maxDamage: 85, dragonBonus: 25 },
+                classRestriction: ['warrior', 'paladin']
+            },
+            {
+                type: 'armor',
+                key: 'voidwalker_boots',
+                cost: { 'void_crystal': 15 },
+                name: 'Voidwalker Boots',
+                quality: 'epic',
+                description: '+20 Speed, +15% Dodge',
+                stats: { speed: 20, dodgeBonus: 15 },
+                classRestriction: 'all'
+            },
+            {
+                type: 'armor',
+                key: 'chaos_shield',
+                cost: { 'chaos_essence': 20 },
+                name: 'Chaos Shield',
+                quality: 'epic',
+                description: 'DEF: 55, +15% Block',
+                stats: { defense: 55, blockBonus: 15 },
+                classRestriction: ['warrior', 'paladin']
+            }
+        ]
+    },
+    
+    // Level 21-25: "The Dragon Collector"
+    tier5: {
+        minLevel: 21,
+        maxLevel: 25,
+        name: 'The Dragon Collector',
+        requests: [
+            { key: 'dragon_heart', name: 'Dragon Heart', count: 3, bonusMultiplier: 1.6 },
+            { key: 'demon_crown', name: 'Demon Crown', count: 5, bonusMultiplier: 1.6 },
+            { key: 'seraphim_feather', name: 'Seraphim Feather', count: 5, bonusMultiplier: 1.6 },
+            { key: 'reality_shard', name: 'Reality Shard', count: 5, bonusMultiplier: 1.6 },
+            { key: 'dragon_bone', name: 'Dragon Bone', count: 15, bonusMultiplier: 1.5 },
+        ],
+        rewards: [
+            {
+                type: 'weapon',
+                key: 'dragons_wrath',
+                cost: { 'dragon_bone': 50, 'dragon_heart': 30 },
+                name: "Dragon's Wrath",
+                quality: 'legendary',
+                description: 'DMG: 150-280, +50% vs Dragons, +30% Fire Damage, +20% Crit',
+                stats: { baseDamage: 150, maxDamage: 280, dragonBonus: 50, fireDamageBonus: 30, critBonus: 20 },
+                classRestriction: ['warrior']
+            },
+            {
+                type: 'weapon',
+                key: 'heartseeker',
+                cost: { 'dragon_bone': 50, 'dragon_heart': 25 },
+                name: 'Heartseeker',
+                quality: 'legendary',
+                description: 'DMG: 95-170, +50% Crit, +30% Lifesteal, +15% Dodge',
+                stats: { baseDamage: 95, maxDamage: 170, critBonus: 50, lifesteal: 30, dodgeBonus: 15 },
+                classRestriction: ['rogue']
+            },
+            {
+                type: 'weapon',
+                key: 'dragonfire_staff',
+                cost: { 'dragon_bone': 50, 'dragon_heart': 20, 'fire_essence': 15 },
+                name: 'Dragonfire Staff',
+                quality: 'legendary',
+                description: 'DMG: 110-200 (Fire), +40% Spell Power, +25% Fire Damage',
+                stats: { baseDamage: 110, maxDamage: 200, spellPower: 40, fireDamageBonus: 25 },
+                classRestriction: ['mage']
+            },
+            {
+                type: 'armor',
+                key: 'dragonplate_armor',
+                cost: { 'dragon_scale': 30, 'dragon_heart': 15 },
+                name: 'Dragonplate Armor',
+                quality: 'legendary',
+                description: 'DEF: 120-150, +30% Fire Resist, +200 HP, +15% All Resist',
+                stats: { defense: 120, fireResist: 30, hpBonus: 200, allResist: 15 },
+                classRestriction: 'all'
+            }
+        ]
+    }
+};
+
+// ── Trade-Up Chains ──────────────────────────────────────────────────
+const TRADE_UP_CHAINS = {
+    // Tier 1 → Tier 2 (Level 6+)
+    rat_tail_to_imp_horn: {
+        from: { key: 'rat_tail', name: 'Rat Tail', count: 10 },
+        to: { key: 'imp_horn', name: 'Imp Horn', count: 1 },
+        minLevel: 6
+    },
+    bat_wing_to_imp_horn: {
+        from: { key: 'bat_wing', name: 'Bat Wing', count: 8 },
+        to: { key: 'imp_horn', name: 'Imp Horn', count: 1 },
+        minLevel: 6
+    },
+    wolf_pelt_to_dire_pelt: {
+        from: { key: 'wolf_pelt', name: 'Wolf Pelt', count: 5 },
+        to: { key: 'dire_pelt', name: 'Dire Pelt', count: 1 },
+        minLevel: 6
+    },
+    slime_gel_to_bone_dust: {
+        from: { key: 'slime_gel', name: 'Slime Gel', count: 8 },
+        to: { key: 'bone_dust', name: 'Bone Dust', count: 1 },
+        minLevel: 6
+    },
+    
+    // Tier 2 → Tier 3 (Level 11+)
+    imp_horn_to_demon_horn: {
+        from: { key: 'imp_horn', name: 'Imp Horn', count: 10 },
+        to: { key: 'demon_horn', name: 'Demon Horn', count: 1 },
+        minLevel: 11
+    },
+    ghoul_claw_to_demon_horn: {
+        from: { key: 'ghoul_claw', name: 'Ghoul Claw', count: 8 },
+        to: { key: 'demon_horn', name: 'Demon Horn', count: 1 },
+        minLevel: 11
+    },
+    dire_pelt_to_drake_scale: {
+        from: { key: 'dire_pelt', name: 'Dire Pelt', count: 5 },
+        to: { key: 'drake_scale', name: 'Drake Scale', count: 1 },
+        minLevel: 11
+    },
+    spider_silk_to_ectoplasm: {
+        from: { key: 'spider_silk', name: 'Spider Silk', count: 10 },
+        to: { key: 'ectoplasm', name: 'Ectoplasm', count: 1 },
+        minLevel: 11
+    },
+    bone_dust_to_shadow_essence: {
+        from: { key: 'bone_dust', name: 'Bone Dust', count: 10 },
+        to: { key: 'shadow_essence', name: 'Shadow Essence', count: 1 },
+        minLevel: 11
+    },
+    
+    // Tier 3 → Tier 4 (Level 16+)
+    demon_horn_to_dragon_scale: {
+        from: { key: 'demon_horn', name: 'Demon Horn', count: 10 },
+        to: { key: 'dragon_scale', name: 'Dragon Scale', count: 1 },
+        minLevel: 16
+    },
+    drake_scale_to_dragon_scale: {
+        from: { key: 'drake_scale', name: 'Drake Scale', count: 8 },
+        to: { key: 'dragon_scale', name: 'Dragon Scale', count: 1 },
+        minLevel: 16
+    },
+    dark_essence_to_chaos_essence: {
+        from: { key: 'dark_essence', name: 'Dark Essence', count: 10 },
+        to: { key: 'chaos_essence', name: 'Chaos Essence', count: 1 },
+        minLevel: 16
+    },
+    shadow_essence_to_void_crystal: {
+        from: { key: 'shadow_essence', name: 'Shadow Essence', count: 10 },
+        to: { key: 'void_crystal', name: 'Void Crystal', count: 1 },
+        minLevel: 16
+    },
+    ectoplasm_to_chaos_essence: {
+        from: { key: 'ectoplasm', name: 'Ectoplasm', count: 12 },
+        to: { key: 'chaos_essence', name: 'Chaos Essence', count: 1 },
+        minLevel: 16
+    },
+    
+    // Tier 4 → Tier 5 (Level 21+)
+    dragon_scale_to_dragon_heart: {
+        from: { key: 'dragon_scale', name: 'Dragon Scale', count: 10 },
+        to: { key: 'dragon_heart', name: 'Dragon Heart', count: 1 },
+        minLevel: 21
+    },
+    chaos_essence_to_demon_crown: {
+        from: { key: 'chaos_essence', name: 'Chaos Essence', count: 10 },
+        to: { key: 'demon_crown', name: 'Demon Crown', count: 1 },
+        minLevel: 21
+    },
+    void_crystal_to_reality_shard: {
+        from: { key: 'void_crystal', name: 'Void Crystal', count: 8 },
+        to: { key: 'reality_shard', name: 'Reality Shard', count: 1 },
+        minLevel: 21
+    },
+    dragon_scale_to_dragon_bone: {
+        from: { key: 'dragon_scale', name: 'Dragon Scale', count: 5 },
+        to: { key: 'dragon_bone', name: 'Dragon Bone', count: 1 },
+        minLevel: 21
+    },
+    fire_essence_to_dragon_heart: {
+        from: { key: 'fire_essence', name: 'Fire Essence', count: 12 },
+        to: { key: 'dragon_heart', name: 'Dragon Heart', count: 1 },
+        minLevel: 21
+    },
+};
+
+// ── Helper: Get merchant tier for player level ──────────────────
+function getMerchantTier(playerLevel) {
+    if (playerLevel <= 5) return 'tier1';
+    if (playerLevel <= 10) return 'tier2';
+    if (playerLevel <= 15) return 'tier3';
+    if (playerLevel <= 20) return 'tier4';
+    return 'tier5';
+}
+
+// ── Helper: Count how many of an item the player has ────────────
+function countPlayerItem(itemKey) {
+    const inv = gameState.player.inventory || [];
+    let count = 0;
+    for (const item of inv) {
+        if (typeof item === 'string' && item === itemKey) count++;
+        else if (typeof item === 'object' && item !== null) {
+            if (item.key === itemKey || item.instanceId === itemKey) count++;
+        }
+    }
+    return count;
+}
+
+// ── Helper: Remove items from player inventory ──────────────────
+function removePlayerItems(itemKey, count) {
+    const inv = gameState.player.inventory || [];
+    let removed = 0;
+    for (let i = inv.length - 1; i >= 0 && removed < count; i--) {
+        const item = inv[i];
+        if (typeof item === 'string' && item === itemKey) {
+            inv.splice(i, 1);
+            removed++;
+        } else if (typeof item === 'object' && item !== null) {
+            if (item.key === itemKey || item.instanceId === itemKey) {
+                inv.splice(i, 1);
+                removed++;
+            }
+        }
+    }
+    return removed;
+}
+
+// ── Helper: Add an item to player inventory ─────────────────────
+function addPlayerItem(item) {
+    if (!gameState.player.inventory) gameState.player.inventory = [];
+    gameState.player.inventory.push(item);
+}
+
+
+// ── Helper: Trade-Up function ──────────────────────────────────────
+function merchantTradeUp(fromKey, fromCount, toKey, toCount) {
+    const have = countPlayerItem(fromKey);
+    if (have < fromCount) {
+        termAppend(`You don't have enough ${ITEMS[fromKey]?.name || fromKey}!`, 'term-error');
+        return;
+    }
+    
+    const fromName = ITEMS[fromKey]?.name || fromKey;
+    const toName = ITEMS[toKey]?.name || toKey;
+    
+    if (!confirm(`Upgrade ${fromCount}x ${fromName} into ${toCount}x ${toName}?`)) return;
+    
+    removePlayerItems(fromKey, fromCount);
+    addPlayerItem(toKey);
+    
+    saveGame();
+    updateHud();
+    termAppend(`✅ Upgraded ${fromCount}x ${fromName} → ${toCount}x ${toName}!`, 'term-loot');
+    showMerchantUI(); // Refresh
+}
+
+
+// ── MAIN MERCHANT UI ──────────────────────────────────────────────
+function showMerchantUI() {
+    // ─────────────────────────────────────────────────────────
+    // FIRST: Remove any existing overlay completely
+    // ─────────────────────────────────────────────────────────
+    const existingOverlay = document.getElementById('merchantOverlay');
+    if (existingOverlay) {
+        existingOverlay.remove();
+    }
+    // Also remove any orphaned overlays
+    document.querySelectorAll('[id*="merchantOverlay"]').forEach(el => el.remove());
+    
+    const p = gameState.player;
+    const playerLevel = p.level;
+    const allTiers = ['tier1', 'tier2', 'tier3', 'tier4', 'tier5'];
+    
+    // Track which tab is active
+    if (typeof window._merchantTab === 'undefined') {
+        window._merchantTab = 'trade';
+    }
+    
+    // Build the merchant UI overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'merchantOverlay';
+    overlay.style.cssText = `
+        position: fixed; inset: 0; z-index: 9999;
+        background: rgba(0,0,0,0.92);
+        display: flex; align-items: center; justify-content: center;
+        font-family: 'VT323', monospace;
+        backdrop-filter: blur(4px);
+    `;
+    
+    let allTradeHtml = '';
+    let allGearHtml = '';
+    let allTradeUpHtml = '';
+    
+    // ─────────────────────────────────────────────────────────────
+    // TAB 1: TRADE (Sell items for gold)
+    // ─────────────────────────────────────────────────────────────
+    allTiers.forEach(tierKey => {
+        const tierData = MERCHANT_TRADES[tierKey];
+        if (!tierData) return;
+        
+        const isUnlocked = playerLevel >= tierData.minLevel;
+        const tierName = isUnlocked ? tierData.name : `${tierData.name} 🔒`;
+        const tierColor = isUnlocked ? '#FFD700' : '#444';
+        const tierOpacity = isUnlocked ? '1' : '0.5';
+        
+        let tierHtml = `
+            <div style="
+                margin: 12px 0 8px 0; 
+                padding: 8px 12px; 
+                background: ${isUnlocked ? '#0a0a00' : '#050505'};
+                border: 1px solid ${isUnlocked ? '#3a3a00' : '#1a1a00'};
+                border-radius: 4px;
+                opacity: ${tierOpacity};
+            ">
+                <div style="
+                    color: ${tierColor}; 
+                    font-size: 16px; 
+                    letter-spacing: 2px;
+                    border-bottom: 1px solid ${isUnlocked ? '#2a2a00' : '#1a1a00'};
+                    padding-bottom: 4px;
+                    margin-bottom: 8px;
+                ">
+                    ${tierName} ${isUnlocked ? '' : `<span style="color:#555;font-size:12px;">(Requires Level ${tierData.minLevel})</span>`}
+                </div>
+        `;
+        
+        if (tierData.requests && tierData.requests.length > 0) {
+            tierHtml += `<div style="color: #888; font-size: 13px; margin: 6px 0 4px 0;">💰 SELL ITEMS (Gold)</div>`;
+            tierData.requests.forEach(req => {
+                const count = countPlayerItem(req.key);
+                const bonusPrice = Math.floor(ITEMS[req.key]?.sellValue * req.bonusMultiplier) || 10;
+                const canTrade = isUnlocked && count >= req.count;
+                tierHtml += `
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 8px; margin: 2px 0; border: 1px solid ${canTrade ? '#2a4a2a' : '#1a1a1a'}; background: ${canTrade ? '#0a1a0a' : '#0a0a0a'}; border-radius: 4px;">
+                        <span style="color: #aaa; font-size: 13px;">${req.name} (${count}/${req.count})</span>
+                        <span style="color: #FFD700; font-size: 13px;">${bonusPrice}g each</span>
+                        <button onclick="merchantSellItems('${req.key}', ${req.count}, ${bonusPrice})" ${canTrade ? '' : 'disabled'} style="
+                            background: ${canTrade ? '#0a2a0a' : '#0a0a0a'};
+                            border: 1px solid ${canTrade ? '#3a8a3a' : '#333'};
+                            color: ${canTrade ? '#88ff88' : '#444'};
+                            font-family: 'VT323', monospace;
+                            padding: 2px 10px;
+                            cursor: ${canTrade ? 'pointer' : 'not-allowed'};
+                            border-radius: 4px;
+                            font-size: 13px;
+                        ">Sell</button>
+                    </div>
+                `;
+            });
+        }
+        
+        tierHtml += `</div>`;
+        allTradeHtml += tierHtml;
+    });
+    
+    // ─────────────────────────────────────────────────────────────
+    // TAB 2: GEAR (Weapons & Armor trades)
+    // ─────────────────────────────────────────────────────────────
+    let hasGear = false;
+    allTiers.forEach(tierKey => {
+        const tierData = MERCHANT_TRADES[tierKey];
+        if (!tierData) return;
+        if (!tierData.rewards || tierData.rewards.length === 0) return;
+        
+        const hasWeaponOrArmor = tierData.rewards.some(r => r.type === 'weapon' || r.type === 'armor');
+        if (!hasWeaponOrArmor) return;
+        
+        hasGear = true;
+        const isUnlocked = playerLevel >= tierData.minLevel;
+        const tierName = isUnlocked ? tierData.name : `${tierData.name} 🔒`;
+        const tierColor = isUnlocked ? '#FFD700' : '#444';
+        const tierOpacity = isUnlocked ? '1' : '0.5';
+        
+        let tierHtml = `
+            <div style="
+                margin: 12px 0 8px 0; 
+                padding: 8px 12px; 
+                background: ${isUnlocked ? '#0a0a00' : '#050505'};
+                border: 1px solid ${isUnlocked ? '#3a3a00' : '#1a1a00'};
+                border-radius: 4px;
+                opacity: ${tierOpacity};
+            ">
+                <div style="
+                    color: ${tierColor}; 
+                    font-size: 16px; 
+                    letter-spacing: 2px;
+                    border-bottom: 1px solid ${isUnlocked ? '#2a2a00' : '#1a1a00'};
+                    padding-bottom: 4px;
+                    margin-bottom: 8px;
+                ">
+                    ⚔️ ${tierName} ${isUnlocked ? '' : `<span style="color:#555;font-size:12px;">(Requires Level ${tierData.minLevel})</span>`}
+                </div>
+        `;
+        
+        tierData.rewards.forEach(reward => {
+            if (reward.type !== 'weapon' && reward.type !== 'armor') return;
+            
+            let canAfford = true;
+            let costDisplay = [];
+            for (const [reqKey, reqCount] of Object.entries(reward.cost)) {
+                const have = countPlayerItem(reqKey);
+                const reqName = ITEMS[reqKey]?.name || reqKey;
+                costDisplay.push(`${reqName} (${have}/${reqCount})`);
+                if (have < reqCount) canAfford = false;
+            }
+            
+            let classRestricted = false;
+            if (reward.classRestriction && reward.classRestriction !== 'all') {
+                const playerClass = p.baseClass || p.class;
+                const restrictions = Array.isArray(reward.classRestriction) ? reward.classRestriction : [reward.classRestriction];
+                if (!restrictions.includes(playerClass)) {
+                    classRestricted = true;
+                }
+            }
+            
+            const canTrade = isUnlocked && canAfford && !classRestricted;
+            const icon = reward.type === 'weapon' ? '⚔️' : '🛡️';
+            const qualityColor = QUALITY_CONFIG[reward.quality]?.color || '#FFD700';
+            
+            tierHtml += `
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; margin: 3px 0; border: 1px solid ${canTrade ? qualityColor : '#333'}; background: ${canTrade ? '#0a0f0a' : '#0a0a0a'}; border-radius: 4px; ${classRestricted ? 'opacity: 0.4;' : ''}">
+                    <div>
+                        <span style="color: ${qualityColor};">${icon} ${reward.name}</span>
+                        <span style="color: #888; font-size: 11px; margin-left: 6px;">${reward.description}</span>
+                        <div style="color: #555; font-size: 11px;">${costDisplay.join(' | ')}</div>
+                        ${classRestricted ? `<div style="color: #ff4444; font-size: 11px;">⚠️ Not for your class</div>` : ''}
+                        ${!isUnlocked ? `<div style="color: #ff8844; font-size: 11px;">🔒 Requires Level ${tierData.minLevel}</div>` : ''}
+                    </div>
+                    <button onclick="merchantTradeReward('${reward.key}')" ${canTrade ? '' : 'disabled'} style="
+                        background: ${canTrade ? '#0a2a0a' : '#0a0a0a'};
+                        border: 1px solid ${canTrade ? '#3a8a3a' : '#333'};
+                        color: ${canTrade ? '#88ff88' : '#444'};
+                        font-family: 'VT323', monospace;
+                        padding: 4px 12px;
+                        cursor: ${canTrade ? 'pointer' : 'not-allowed'};
+                        border-radius: 4px;
+                        font-size: 13px;
+                    ">Trade</button>
+                </div>
+            `;
+        });
+        
+        tierHtml += `</div>`;
+        allGearHtml += tierHtml;
+    });
+    
+    if (!hasGear) {
+        allGearHtml = `<div style="color: #555; text-align: center; padding: 30px; font-size: 14px;">
+            No weapons or armor available for trade yet.<br>
+            <span style="color: #444; font-size: 12px;">Keep leveling up to unlock gear trades!</span>
+        </div>`;
+    }
+    
+    // ─────────────────────────────────────────────────────────────
+    // TAB 3: TRADE-UP
+    // ─────────────────────────────────────────────────────────────
+    const availableChains = Object.values(TRADE_UP_CHAINS).filter(chain => {
+        return playerLevel >= chain.minLevel;
+    });
+    
+    if (availableChains.length > 0) {
+        allTradeUpHtml += `<div style="color: #FFAA44; font-size: 16px; margin: 10px 0 8px 0; border-bottom: 1px solid #3a3a00; padding-bottom: 4px;">🔄 UPGRADE ITEMS</div>`;
+        allTradeUpHtml += `<div style="color: #888; font-size: 12px; margin-bottom: 10px;">Convert lower-tier items into higher-tier materials</div>`;
+        
+        availableChains.forEach(chain => {
+            const fromCount = countPlayerItem(chain.from.key);
+            const canTrade = fromCount >= chain.from.count;
+            const fromName = ITEMS[chain.from.key]?.name || chain.from.key;
+            const toName = ITEMS[chain.to.key]?.name || chain.to.key;
+            
+            allTradeUpHtml += `
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; margin: 3px 0; border: 1px solid ${canTrade ? '#4a3a00' : '#1a1a1a'}; background: ${canTrade ? '#0a0a00' : '#0a0a0a'}; border-radius: 4px;">
+                    <span style="color: #aaa; font-size: 13px;">
+                        ${chain.from.count}x ${fromName} 
+                        <span style="color: #FFD700;">→</span> 
+                        ${chain.to.count}x ${toName}
+                        <span style="color: #666; font-size: 11px; margin-left: 8px;">(${fromCount}/${chain.from.count})</span>
+                        <span style="color: #555; font-size: 10px; margin-left: 8px;">(Lv${chain.minLevel}+)</span>
+                    </span>
+                    <button onclick="merchantTradeUp('${chain.from.key}', ${chain.from.count}, '${chain.to.key}', ${chain.to.count})" ${canTrade ? '' : 'disabled'} style="
+                        background: ${canTrade ? '#2a2a0a' : '#0a0a0a'};
+                        border: 1px solid ${canTrade ? '#6a5a00' : '#333'};
+                        color: ${canTrade ? '#FFD700' : '#444'};
+                        font-family: 'VT323', monospace;
+                        padding: 2px 10px;
+                        cursor: ${canTrade ? 'pointer' : 'not-allowed'};
+                        border-radius: 4px;
+                        font-size: 13px;
+                    ">Upgrade</button>
+                </div>
+            `;
+        });
+    } else {
+        allTradeUpHtml += `<div style="color: #555; text-align: center; padding: 20px; font-size: 14px;">
+            No trade-up chains available yet.<br>
+            <span style="color: #444; font-size: 12px;">Reach level 6 to start upgrading items.</span>
+        </div>`;
+    }
+    
+    // ─────────────────────────────────────────────────────────────
+    // BUILD THE OVERLAY WITH 3 TABS
+    // ─────────────────────────────────────────────────────────────
+    const activeTab = window._merchantTab;
+    const tabTradeActive = activeTab === 'trade' ? 'selected' : '';
+    const tabGearActive = activeTab === 'gear' ? 'selected' : '';
+    const tabTradeUpActive = activeTab === 'tradeup' ? 'selected' : '';
+    
+    overlay.innerHTML = `
+        <div style="
+            background: #0a0a0a;
+            border: 3px solid #FFD700;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 0 60px rgba(255,215,0,0.2);
+        ">
+            <!-- Header -->
+            <div style="
+                background: linear-gradient(90deg, #0a0a00, #1a1a00, #0a0a00);
+                border-bottom: 2px solid #FFD700;
+                padding: 12px 16px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-shrink: 0;
+            ">
+                <div>
+                    <div style="color: #FFD700; font-size: 22px; letter-spacing: 3px;">🛒 THE WANDERING MERCHANT</div>
+                    <div style="color: #8a7a40; font-size: 12px;">"I pay top gold for rare materials!"</div>
+                </div>
+                <button onclick="window.closeMerchantUI()" style="
+                    background: none;
+                    border: 2px solid #ff4444;
+                    color: #ff4444;
+                    font-size: 18px;
+                    padding: 4px 14px;
+                    cursor: pointer;
+                    font-family: 'VT323', monospace;
+                    border-radius: 4px;
+                ">✕</button>
+            </div>
+            
+            <!-- 3 Tabs -->
+            <div style="
+                display: flex;
+                border-bottom: 2px solid #2a2a00;
+                flex-shrink: 0;
+                background: #050500;
+            ">
+                <button onclick="window._merchantTab='trade'; window.showMerchantUI();" style="
+                    flex: 1;
+                    padding: 10px 16px;
+                    background: ${tabTradeActive === 'selected' ? '#0a0a00' : 'transparent'};
+                    border: none;
+                    border-bottom: 3px solid ${tabTradeActive === 'selected' ? '#FFD700' : 'transparent'};
+                    color: ${tabTradeActive === 'selected' ? '#FFD700' : '#666'};
+                    font-family: 'VT323', monospace;
+                    font-size: 16px;
+                    cursor: pointer;
+                    letter-spacing: 2px;
+                ">
+                    💰 SELL
+                </button>
+                <button onclick="window._merchantTab='gear'; window.showMerchantUI();" style="
+                    flex: 1;
+                    padding: 10px 16px;
+                    background: ${tabGearActive === 'selected' ? '#0a0a00' : 'transparent'};
+                    border: none;
+                    border-bottom: 3px solid ${tabGearActive === 'selected' ? '#FFD700' : 'transparent'};
+                    color: ${tabGearActive === 'selected' ? '#FFD700' : '#666'};
+                    font-family: 'VT323', monospace;
+                    font-size: 16px;
+                    cursor: pointer;
+                    letter-spacing: 2px;
+                ">
+                    ⚔️ GEAR
+                </button>
+                <button onclick="window._merchantTab='tradeup'; window.showMerchantUI();" style="
+                    flex: 1;
+                    padding: 10px 16px;
+                    background: ${tabTradeUpActive === 'selected' ? '#0a0a00' : 'transparent'};
+                    border: none;
+                    border-bottom: 3px solid ${tabTradeUpActive === 'selected' ? '#FFD700' : 'transparent'};
+                    color: ${tabTradeUpActive === 'selected' ? '#FFD700' : '#666'};
+                    font-family: 'VT323', monospace;
+                    font-size: 16px;
+                    cursor: pointer;
+                    letter-spacing: 2px;
+                ">
+                    🔄 UPGRADE
+                </button>
+            </div>
+            
+            <!-- Content -->
+            <div style="flex: 1; overflow-y: auto; padding: 8px 16px 12px 16px;">
+                <div style="color: #666; font-size: 12px; margin-bottom: 8px; text-align: center; border-bottom: 1px solid #1a1a00; padding-bottom: 6px;">
+                    Level ${playerLevel} — <span style="color:#FFD700;">${playerLevel >= 21 ? 'All Tiers Unlocked!' : 'Unlock higher tiers as you level up'}</span>
+                </div>
+                
+                ${activeTab === 'trade' ? allTradeHtml : activeTab === 'gear' ? allGearHtml : allTradeUpHtml}
+                
+                <div style="border-top: 1px solid #1a1a00; margin: 10px 0; padding-top: 8px;">
+                    <div style="color: #666; font-size: 11px; text-align: center;">
+                        💡 Items are consumed on trade. Trades are permanent.
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div style="
+                border-top: 1px solid #2a2a00;
+                padding: 8px 16px;
+                text-align: center;
+                background: #0a0a0a;
+                flex-shrink: 0;
+            ">
+                <button onclick="window.closeMerchantUI()" style="
+                    background: none;
+                    border: 1px solid #444;
+                    color: #888;
+                    font-family: 'VT323', monospace;
+                    font-size: 16px;
+                    padding: 6px 20px;
+                    cursor: pointer;
+                    border-radius: 4px;
+                ">Close</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+}
+
+
+// ── Helper: Count how many of an item the player has ────────────
+function countPlayerItem(itemKey) {
+    const inv = gameState.player.inventory || [];
+    return inv.filter(item => {
+        if (typeof item === 'string') return item === itemKey;
+        if (typeof item === 'object' && item !== null) return item.key === itemKey || item.instanceId === itemKey;
+        return false;
+    }).length;
+}
+
+// ── Helper: Remove items from player inventory ──────────────────
+function removePlayerItems(itemKey, count) {
+    const inv = gameState.player.inventory || [];
+    let removed = 0;
+    for (let i = inv.length - 1; i >= 0 && removed < count; i--) {
+        const item = inv[i];
+        if (typeof item === 'string' && item === itemKey) {
+            inv.splice(i, 1);
+            removed++;
+        } else if (typeof item === 'object' && item !== null && (item.key === itemKey || item.instanceId === itemKey)) {
+            inv.splice(i, 1);
+            removed++;
+        }
+    }
+    return removed;
+}
+
+// ── Helper: Add an item to player inventory ─────────────────────
+function addPlayerItem(item) {
+    if (!gameState.player.inventory) gameState.player.inventory = [];
+    if (typeof item === 'string') {
+        gameState.player.inventory.push(item);
+    } else {
+        gameState.player.inventory.push(item);
+    }
+}
+
+
+
+window.closeMerchantUI = function() {
+    // Use the stored reference
+    if (window._currentMerchantOverlay) {
+        window._currentMerchantOverlay.remove();
+        window._currentMerchantOverlay = null;
+    }
+    
+    // Fallback: try by ID
+    const overlay = document.getElementById('merchantOverlay');
+    if (overlay) overlay.remove();
+    
+    gameState.currentAdventure = null;
+    renderActionBar();
+    termAppend('', 'term-separator');
+    termAppend('You step back from the merchant\'s cart and continue on your way.', 'term-dim');
+};
+
+function merchantSellItems(itemKey, requiredCount, pricePerItem) {
+    const count = countPlayerItem(itemKey);
+    if (count < requiredCount) {
+        termAppend(`You don't have enough ${ITEMS[itemKey]?.name || itemKey}!`, 'term-error');
+        return;
+    }
+    
+    const totalGold = requiredCount * pricePerItem;
+    if (!confirm(`Sell ${requiredCount} ${ITEMS[itemKey]?.name || itemKey} for ${totalGold}g?`)) return;
+    
+    removePlayerItems(itemKey, requiredCount);
+    gameState.player.gold += totalGold;
+    saveGame();
+    updateHud();
+    termAppend(`✅ Sold ${requiredCount} ${ITEMS[itemKey]?.name || itemKey} for ${totalGold}g!`, 'term-loot');
+    showMerchantUI();
+}
+
+function merchantTradeReward(rewardKey) {
+    const tier = getMerchantTier(gameState.player.level);
+    const tierData = MERCHANT_TRADES[tier];
+    const reward = tierData.rewards.find(r => r.key === rewardKey);
+    if (!reward) {
+        termAppend('Reward not found!', 'term-error');
+        return;
+    }
+    
+    // Check if player has the required items
+    let canAfford = true;
+    let costItems = [];
+    for (const [reqKey, reqCount] of Object.entries(reward.cost)) {
+        const have = countPlayerItem(reqKey);
+        if (have < reqCount) canAfford = false;
+        costItems.push({ key: reqKey, count: reqCount, have: have });
+    }
+    
+    if (!canAfford) {
+        termAppend("You don't have the required items!", 'term-error');
+        return;
+    }
+    
+    // Check class restriction
+    if (reward.classRestriction && reward.classRestriction !== 'all') {
+        const playerClass = gameState.player.baseClass || gameState.player.class;
+        const restrictions = Array.isArray(reward.classRestriction) ? reward.classRestriction : [reward.classRestriction];
+        if (!restrictions.includes(playerClass)) {
+            termAppend('This item is not for your class!', 'term-error');
+            return;
+        }
+    }
+    
+    // Build confirmation message
+    let confirmMsg = `Trade ${reward.name}?\n\nYou will give up:\n`;
+    costItems.forEach(ci => {
+        const itemName = ITEMS[ci.key]?.name || ci.key;
+        confirmMsg += `   - ${ci.count}x ${itemName} (you have ${ci.have})\n`;
+    });
+    confirmMsg += `\nYou will receive:\n   - ${reward.name} (${reward.description})`;
+    
+    if (!confirm(confirmMsg)) return;
+    
+    // Remove cost items
+    costItems.forEach(ci => {
+        removePlayerItems(ci.key, ci.count);
+    });
+    
+    // Create and add the reward
+    if (reward.type === 'potion') {
+        // Add to ITEMS if not exists
+        if (!ITEMS[rewardKey]) {
+            ITEMS[rewardKey] = {
+                name: reward.name,
+                subtype: 'buff',
+                power: reward.buffPower,
+                duration: reward.buffDuration,
+                description: reward.description,
+                sellValue: 0,
+                maxStack: 1,
+                icon: '🧪'
+            };
+        }
+        addPlayerItem(rewardKey);
+        termAppend(`✅ Acquired ${reward.name}!`, 'term-loot');
+    } else if (reward.type === 'weapon') {
+        // Generate a weapon
+        const drop = generateWeaponDrop(
+            gameState.player,
+            gameState.player.level,
+            reward.quality,
+            true,
+            reward.quality,
+            true
+        );
+        if (drop) {
+            drop.name = reward.name;
+            drop.baseDamage = reward.stats.baseDamage || 0;
+            drop.maxDamage = reward.stats.maxDamage || 0;
+            drop.description = reward.description;
+            drop.classRestriction = reward.classRestriction || null;
+            // Add custom stats as modifiers
+            if (reward.stats.critBonus) {
+                drop.critBonus = reward.stats.critBonus;
+            }
+            if (reward.stats.lifesteal) {
+                drop.lifestealPercent = reward.stats.lifesteal;
+            }
+            addPlayerItem(drop);
+            termAppend(`✅ Acquired ${reward.name}!`, 'term-loot');
+        }
+    } else if (reward.type === 'armor') {
+        const drop = generateArmorDrop(
+            gameState.player,
+            gameState.player.level,
+            reward.quality,
+            true,
+            reward.quality,
+            true
+        );
+        if (drop) {
+            drop.name = reward.name;
+            drop.baseDefense = reward.stats.defense || 0;
+            drop.description = reward.description;
+            drop.classRestriction = reward.classRestriction || null;
+            if (reward.stats.hpBonus) {
+                drop.bonusHp = reward.stats.hpBonus;
+            }
+            addPlayerItem(drop);
+            termAppend(`✅ Acquired ${reward.name}!`, 'term-loot');
+        }
+    }
+    
+    saveGame();
+    updateHud();
+    showMerchantUI();
+}
+
 
 // Export
 if (typeof module !== 'undefined' && module.exports) {
