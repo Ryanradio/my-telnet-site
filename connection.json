@@ -1,9 +1,9 @@
 {
-  "last_updated": "2026-07-15 04:00:02 UTC",
+  "last_updated": "2026-07-16 04:00:02 UTC",
   "status": "active",
-  "proxy_hostname": "johnston-invisible-grades-prisoners.trycloudflare.com",
+  "proxy_hostname": "confidential-profits-towns-pan.trycloudflare.com",
   "type": "cloudflare_tunnel",
-  "ip": "18.189.106.45",
+  "ip": "3.132.159.158",
   "port": "23927",
   "hostname": "6.tcp.ngrok.io"
 }
