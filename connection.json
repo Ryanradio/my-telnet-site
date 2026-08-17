@@ -1,6 +1,9 @@
 {
-  "last_updated": "2026-08-12 04:00:02 UTC",
+  "last_updated": "2026-08-17 04:00:02 UTC",
   "status": "active",
-  "proxy_hostname": "agreements-equal-hwy-replication.trycloudflare.com",
-  "type": "cloudflare_tunnel"
+  "proxy_hostname": "facts-abstract-actor-raymond.trycloudflare.com",
+  "type": "cloudflare_tunnel",
+  "ip": "3.146.103.81",
+  "port": "12193",
+  "hostname": "0.tcp.ngrok.io"
 }
