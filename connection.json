@@ -1,9 +1,7 @@
 {
-  "last_updated": "2026-09-11 04:00:02 UTC",
+  "last_updated": "2026-09-12 04:00:02 UTC",
   "status": "active",
-  "proxy_hostname": "semester-container-mortgage-eat.trycloudflare.com",
-  "type": "cloudflare_tunnel",
-  "ip": "3.12.57.198",
+  "ip": "18.217.92.205",
   "port": "12193",
   "hostname": "0.tcp.ngrok.io"
 }
