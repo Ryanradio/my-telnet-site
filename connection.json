@@ -1,7 +1,9 @@
 {
-  "last_updated": "2026-09-12 04:00:02 UTC",
+  "last_updated": "2026-09-13 04:00:04 UTC",
   "status": "active",
-  "ip": "18.217.92.205",
+  "proxy_hostname": "playstation-matt-vitamin-divisions.trycloudflare.com",
+  "type": "cloudflare_tunnel",
+  "ip": "3.137.60.53",
   "port": "12193",
   "hostname": "0.tcp.ngrok.io"
 }
