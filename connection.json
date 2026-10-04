@@ -1,9 +1,7 @@
 {
-  "last_updated": "2026-10-03 04:00:02 UTC",
+  "last_updated": "2026-10-04 04:00:04 UTC",
   "status": "active",
-  "proxy_hostname": "parental-hardwood-lace-continuous.trycloudflare.com",
-  "type": "cloudflare_tunnel",
-  "ip": "3.150.141.41",
+  "ip": "3.12.57.198",
   "port": "12193",
   "hostname": "0.tcp.ngrok.io"
 }
