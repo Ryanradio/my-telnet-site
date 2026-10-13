@@ -1,9 +1,9 @@
 {
-  "last_updated": "2026-10-12 04:00:03 UTC",
+  "last_updated": "2026-10-13 04:00:02 UTC",
   "status": "active",
   "proxy_hostname": "vintage-tariff-answering-pepper.trycloudflare.com",
   "type": "cloudflare_tunnel",
-  "ip": "3.135.250.11",
+  "ip": "3.12.245.36",
   "port": "12193",
   "hostname": "0.tcp.ngrok.io"
 }
