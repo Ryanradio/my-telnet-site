@@ -1,9 +1,9 @@
 {
-  "last_updated": "2026-11-02 02:11:21 UTC",
+  "last_updated": "2026-11-02 05:00:02 UTC",
   "status": "active",
   "proxy_hostname": "recognized-survival-tissue-warren.trycloudflare.com",
   "type": "cloudflare_tunnel",
-  "ip": "3.151.2.98",
+  "ip": "13.58.157.220",
   "port": "27875",
   "hostname": "8.tcp.ngrok.io"
 }
