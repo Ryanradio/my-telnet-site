@@ -1,7 +1,9 @@
 {
-  "last_updated": "2026-11-12 00:25:49 UTC",
+  "last_updated": "2026-11-12 01:05:23 UTC",
   "status": "active",
-  "ip": "3.135.250.11",
+  "proxy_hostname": "desktop-resistant-among-ringtones.trycloudflare.com",
+  "type": "cloudflare_tunnel",
+  "ip": "18.217.92.205",
   "port": "12193",
   "hostname": "0.tcp.ngrok.io"
 }
