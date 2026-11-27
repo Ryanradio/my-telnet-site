@@ -1,9 +1,9 @@
 {
-  "last_updated": "2026-11-26 05:00:02 UTC",
+  "last_updated": "2026-11-27 05:00:02 UTC",
   "status": "active",
   "proxy_hostname": "arrive-independent-voip-vector.trycloudflare.com",
   "type": "cloudflare_tunnel",
-  "ip": "18.217.92.205",
-  "port": "26765",
-  "hostname": "0.tcp.ngrok.io"
+  "ip": "3.137.49.2",
+  "port": "26472",
+  "hostname": "6.tcp.ngrok.io"
 }
